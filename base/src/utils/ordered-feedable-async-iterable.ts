@@ -1,0 +1,51 @@
+import { AwaitableMap } from './collections/awaitable';
+import { FeedableAsyncIterable } from './feedable-async-iterable';
+
+export class OrderedFeedableAsyncIterable<T> implements AsyncIterable<T> {
+  private readonly inBuffer: AwaitableMap<number, T>;
+  private readonly out: FeedableAsyncIterable<T>;
+
+  private currentIndex: number = 0;
+
+  get read(): Promise<void> {
+    return this.out.read;
+  }
+
+  get empty(): Promise<void> {
+    return this.out.empty;
+  }
+
+  get closed(): boolean {
+    return this.out.closed;
+  }
+
+  constructor() {
+    this.inBuffer = new AwaitableMap<number, T>();
+    this.out = new FeedableAsyncIterable<T>();
+  }
+
+  feed(item: T, index: number): void {
+    if (this.out.closed) {
+      throw new Error('closed');
+    }
+
+    this.inBuffer.set(index, item);
+
+    this.dispatch();
+  }
+
+  end(): void {
+    this.out.end();
+  }
+
+  [Symbol.asyncIterator](): AsyncIterableIterator<T> {
+    return this.out[Symbol.asyncIterator]();
+  }
+
+  private dispatch(): void {
+    while (this.inBuffer.has(this.currentIndex)) {
+      const item = this.inBuffer.get(this.currentIndex++) as T;
+      this.out.feed(item);
+    }
+  }
+}

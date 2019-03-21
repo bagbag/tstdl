@@ -1,0 +1,18 @@
+{
+  "name": "@common-ts/mongo",
+  "version": "1.0.2",
+  "description": "",
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist --access=public"
+  },
+  "author": "Patrick Hein",
+  "dependencies": {
+    "@common-ts/base": "^1.0.7",
+    "mongodb": "^3.1.13"
+  },
+  "devDependencies": {
+    "@types/mongodb": "^3.1.22",
+    "typescript": "^3.3.4000"
+  }
+}

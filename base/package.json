@@ -1,0 +1,17 @@
+{
+  "name": "@common-ts/base",
+  "version": "1.0.11",
+  "description": "",
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist --access=public"
+  },
+  "author": "Patrick Hein",
+  "dependencies": {
+    "rxjs": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^11.11.4",
+    "typescript": "^3.3.4000"
+  }
+}

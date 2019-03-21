@@ -1,0 +1,20 @@
+{
+  "name": "@common-ts/server",
+  "version": "1.0.3",
+  "description": "",
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist --access=public"
+  },
+  "author": "Patrick Hein",
+  "dependencies": {
+    "@common-ts/base": "^1.0.7",
+    "koa": "^2.7.0",
+    "koa-router": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.0.48",
+    "@types/koa-router": "^7.0.40",
+    "typescript": "^3.3.4000"
+  }
+}
