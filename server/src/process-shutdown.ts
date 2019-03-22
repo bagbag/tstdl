@@ -51,6 +51,10 @@ export function forceShutdown(): void {
 }
 
 export function initializeSignals(): void {
+  if (logger == undefined) {
+    throw new Error('logger must be set');
+  }
+
   let signalCounter = 0;
 
   for (const event of QUIT_EVENTS) {
