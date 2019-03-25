@@ -8,7 +8,7 @@ export type TypeOf<T extends object, P extends keyof T> = T[P];
 export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
 export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
-export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
+export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | ReadonlyArray<any>) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 export interface DeepReadonlyArray<T> extends ReadonlyArray<DeepReadonly<T>> { }
