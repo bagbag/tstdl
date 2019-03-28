@@ -4,6 +4,8 @@ import { Entity, EntityWithPartialId } from './entity';
 import { MongoDocument, toEntity, toMongoDocumentWithPartialId } from './mongo-document';
 import { IdsMap, objectIdOrStringToString, stringToObjectIdOrString } from './utils';
 
+export type FilterQuery<T extends Entity> = Mongo.FilterQuery<MongoDocument<T>>;
+
 export class MongoBaseRepository<T extends Entity> {
   private readonly collection: Mongo.Collection<MongoDocument<T>>;
 

@@ -36,8 +36,10 @@ export function toMongoDocument<T extends Entity>(entity: T): MongoDocument<T> {
 export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(entity: T): MongoDocumentWitPartialId<T> {
   const { id, ...entityRest } = entity;
 
+  const partialIdObject = (id != undefined) ? { _id: stringToObjectIdOrString(id) } : {};
+
   const document = {
-    _id: (id != undefined) ? stringToObjectIdOrString(id) : undefined,
+    ...partialIdObject,
     ...entityRest
   };
 

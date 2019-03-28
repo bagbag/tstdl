@@ -1,4 +1,4 @@
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const uint8Array = new Uint8Array(buffer);
 
   let base64: string;
@@ -26,7 +26,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return base64;
 }
 
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   if (typeof Buffer != 'undefined') {
     return Buffer.from(base64, 'base64');
   }

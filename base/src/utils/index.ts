@@ -1,5 +1,6 @@
 export * from './any-iterable-iterator';
 export * from './async-iterable-helpers';
+export * from './base64';
 export * from './benchmark';
 export * from './cancelable-async-iterable';
 export * from './date';

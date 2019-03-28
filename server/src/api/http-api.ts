@@ -27,6 +27,22 @@ export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, res
 export type GetFunctionHandler<Q extends Query, P extends Parameters, TResult> = (data: GetData<Q, P>) => TResult | Promise<TResult>;
 export type PostFunctionHandler<Q extends Query, P extends Parameters, B extends Body, TResult> = (data: PostData<Q, P, B>) => TResult | Promise<TResult>;
 
+export type Route = GetRoute<any, any, any> | PostRoute<any, any, any, any>;
+
+export type GetRoute<Q extends Query, P extends Parameters, TResult> = {
+  type: 'get',
+  path: string,
+  validator: GetValidationFunction<Q, P>,
+  handler: GetFunctionHandler<Q, P, TResult>
+};
+
+export type PostRoute<Q extends Query, P extends Parameters, B extends Body, TResult> = {
+  type: 'post',
+  path: string,
+  validator: PostValidationFunction<Q, P, B>,
+  handler: PostFunctionHandler<Q, P, B, TResult>
+};
+
 export class HttpApi {
   private readonly logger: Logger;
   private readonly koa: Koa<void, void>;
@@ -52,6 +68,23 @@ export class HttpApi {
 
   handleRequest(request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse): void {
     this.requestHandler(request, response);
+  }
+
+  registerRoutes(routes: Route[]): void {
+    for (const route of routes) {
+      switch (route.type) {
+        case 'get':
+          this.registerGetRoute(route.path, route.validator, route.handler);
+          break;
+
+        case 'post':
+          this.registerPostRoute(route.path, route.validator, route.handler);
+          break;
+
+        default:
+          throw new Error('unknown route type');
+      }
+    }
   }
 
   registerGetRoute<Q extends Query, P extends Parameters, TResult>(path: string, validator: GetValidationFunction<Q, P>, handler: GetFunctionHandler<Q, P, TResult>): void {
