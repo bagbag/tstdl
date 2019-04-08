@@ -5,10 +5,10 @@ export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export interface PrimitiveArray extends Array<PrimitiveValue> { }
 
+export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
-export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
-export type JsonObject = { [key: string]: JsonValue };
-export interface JsonArray extends Array<JsonValue> { }
+export type JsonObject = { [key: string]: Json };
+export interface JsonArray extends Array<Json> { }
 
 export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };
