@@ -6,6 +6,13 @@ export type CryptionOptions = {
   iv: Crypto.BinaryLike
 };
 
+export type ScryptOptions = {
+  cost?: number,
+  blockSize?: number,
+  parallelization?: number,
+  maximumMemory?: number
+};
+
 export interface CryptionResult {
   toBuffer(): Buffer;
   toHex(): string;
@@ -144,6 +151,20 @@ export async function pbkdf2(secret: Crypto.BinaryLike, salt: Crypto.BinaryLike,
   });
 }
 
+export async function scrypt(secret: Crypto.BinaryLike, salt: Crypto.BinaryLike, keyLength: number, options: ScryptOptions): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
+    const convertedOptions = convertScryptOptions(options);
+    Crypto.scrypt(secret, salt, keyLength, convertedOptions, (error, derivedKey) => {
+      if (error != undefined) {
+        reject(error);
+      }
+      else {
+        resolve(derivedKey);
+      }
+    });
+  });
+}
+
 export function createHash(algorithm: string, data: Crypto.BinaryLike): HashResult;
 export function createHash(algorithm: string, data: string, encoding: Crypto.Utf8AsciiLatin1Encoding): HashResult;
 export function createHash(algorithm: string, data: string | Crypto.BinaryLike, encoding?: Crypto.Utf8AsciiLatin1Encoding): HashResult {
@@ -164,4 +185,13 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
   };
 
   return result;
+}
+
+function convertScryptOptions({ cost, blockSize, parallelization, maximumMemory }: ScryptOptions): Crypto.ScryptOptions {
+  return {
+    N: cost,
+    r: blockSize,
+    p: parallelization,
+    maxmem: maximumMemory
+  };
 }
