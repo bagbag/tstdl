@@ -1,6 +1,6 @@
 import { createErrorResponse, createResultResponse, ResultResponse } from '@common-ts/base/api';
 import { Logger } from '@common-ts/base/logger';
-import { StringMap } from '@common-ts/base/types';
+import { Json, StringMap } from '@common-ts/base/types';
 import { precisionRound, Timer } from '@common-ts/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
@@ -8,39 +8,39 @@ import * as Koa from 'koa';
 import * as KoaRouter from 'koa-router';
 import { readStream } from '../utils';
 import { ValidationFunction } from './validation';
+import { noopValidator } from './validation/validators';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.IRouterParamContext<void, void>>;
 
-export type Query = StringMap<string>;
 export type Parameters = StringMap<string>;
 
 export type BodyPrimitive = string | number | true | false | null;
-export type Body = BodyPrimitive | StringMap<BodyPrimitive> | BodyPrimitive[];
+export type Body = Json;
 
-export type GetData<Q extends Query, P extends Parameters> = { query: Q, parameters: P };
-export type PostData<Q extends Query, P extends Parameters, B extends Body> = GetData<Q, P> & { body: B };
+export type GetData<P extends Parameters> = { parameters: P };
+export type PostData<P extends Parameters, B extends Body> = GetData<P> & { body: B };
 
-export type GetValidationFunction<Q extends Query, P extends Parameters> = ValidationFunction<GetData<Q, P>>;
-export type PostValidationFunction<Q extends Query, P extends Parameters, B extends Body> = ValidationFunction<PostData<Q, P, B>>;
+export type GetValidationFunction<P extends Parameters> = ValidationFunction<GetData<P>>;
+export type PostValidationFunction<P extends Parameters, B extends Body> = ValidationFunction<PostData<P, B>>;
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
-export type GetFunctionHandler<Q extends Query, P extends Parameters, TResult> = (data: GetData<Q, P>) => TResult | Promise<TResult>;
-export type PostFunctionHandler<Q extends Query, P extends Parameters, B extends Body, TResult> = (data: PostData<Q, P, B>) => TResult | Promise<TResult>;
+export type GetFunctionHandler<P extends Parameters, TResult> = (data: GetData<P>) => TResult | Promise<TResult>;
+export type PostFunctionHandler<P extends Parameters, B extends Body, TResult> = (data: PostData<P, B>) => TResult | Promise<TResult>;
 
-export type Route = GetRoute<any, any, any> | PostRoute<any, any, any, any>;
+export type Route = GetRoute<any, any> | PostRoute<any, any, any>;
 
-export type GetRoute<Q extends Query, P extends Parameters, TResult> = {
+export type GetRoute<P extends Parameters, TResult> = {
   type: 'get',
   path: string,
-  validator: GetValidationFunction<Q, P>,
-  handler: GetFunctionHandler<Q, P, TResult>
+  validator: GetValidationFunction<P>,
+  handler: GetFunctionHandler<P, TResult>
 };
 
-export type PostRoute<Q extends Query, P extends Parameters, B extends Body, TResult> = {
+export type PostRoute<P extends Parameters, B extends Body, TResult> = {
   type: 'post',
   path: string,
-  validator: PostValidationFunction<Q, P, B>,
-  handler: PostFunctionHandler<Q, P, B, TResult>
+  validator: PostValidationFunction<P, B>,
+  handler: PostFunctionHandler<P, B, TResult>
 };
 
 export class HttpApi {
@@ -87,35 +87,47 @@ export class HttpApi {
     }
   }
 
-  registerGetRoute<Q extends Query, P extends Parameters, TResult>(path: string, validator: GetValidationFunction<Q, P>, handler: GetFunctionHandler<Q, P, TResult>): void {
+  registerGetRoute<TResult>(path: string, handler: GetFunctionHandler<{}, TResult>): void;
+  registerGetRoute<P extends Parameters, TResult>(path: string, validator: GetValidationFunction<P>, handler: GetFunctionHandler<P, TResult>): void;
+  registerGetRoute<P extends Parameters, TResult>(path: string, validatorOrHandler: GetValidationFunction<P> | GetFunctionHandler<P, TResult>, handler?: GetFunctionHandler<P, TResult>): void {
+    const _validator = typeof handler == 'function' ? validatorOrHandler as GetValidationFunction<P> : noopValidator;
+    const _handler = typeof handler == 'function' ? handler : validatorOrHandler as GetFunctionHandler<P, TResult>;
+
     this.router.get(path, async (context: Context, next) => {
-      await this.handle(context, validator, handler);
+      await this.handle(context, _validator, _handler);
       return next();
     });
   }
 
-  registerPostRoute<Q extends Query, P extends Parameters, B extends Body, TResult>(path: string, validator: PostValidationFunction<Q, P, B>, handler: PostFunctionHandler<Q, P, B, TResult>): void {
+  registerPostRoute<B extends Body, TResult>(path: string, validator: PostValidationFunction<{}, B>, handler: PostFunctionHandler<{}, B, TResult>): void;
+  registerPostRoute<P extends Parameters, B extends Body, TResult>(path: string, validator: PostValidationFunction<P, B>, handler: PostFunctionHandler<P, B, TResult>): void;
+  registerPostRoute<P extends Parameters, B extends Body, TResult>(path: string, validatorOrHandler: PostValidationFunction<P, B> | PostFunctionHandler<P, B, TResult>, handler?: PostFunctionHandler<P, B, TResult>): void {
+    const _validator = typeof handler == 'function' ? validatorOrHandler as PostValidationFunction<P, B> : noopValidator;
+    const _handler = typeof handler == 'function' ? handler : validatorOrHandler as PostFunctionHandler<P, B, TResult>;
+
     this.router.post(path, async (context: Context, next) => {
-      await this.handle(context, validator, handler);
+      await this.handle(context, _validator, _handler);
       return next();
     });
   }
 
-  private async handle<Q extends Query, P extends Parameters, B extends Body, TResult>(context: Context, validator: GetValidationFunction<Q, P> | PostValidationFunction<Q, P, B>, handler: GetFunctionHandler<Q, P, TResult> | PostFunctionHandler<Q, P, B, TResult>): Promise<void> {
-    const { request, response, params: parameters } = context;
+  private async handle<P extends Parameters, B extends Body, TResult>(context: Context, validator: GetValidationFunction<P> | PostValidationFunction<P, B>, handler: GetFunctionHandler<P, TResult> | PostFunctionHandler<P, B, TResult>): Promise<void> {
+    const { request, response, params } = context;
     const { method, query: { ...query } } = request;
 
-    let requestData: GetData<Q, P> | PostData<Q, P, B>;
+    const parameters = { ...params, ...query };
+
+    let requestData: GetData<P> | PostData<P, B>;
 
     switch (method) {
       case 'GET':
-        requestData = { query, parameters };
+        requestData = { parameters };
         break;
 
       case 'POST':
         try {
           const body = await readJsonBody(request);
-          requestData = { query, parameters, body };
+          requestData = { parameters, body };
         }
         catch (error) {
           response.status = 400;
@@ -129,11 +141,11 @@ export class HttpApi {
     }
 
     const validationResult = method == 'GET'
-      ? (validator as GetValidationFunction<Q, P>)(requestData)
-      : (validator as PostValidationFunction<Q, P, B>)(requestData as PostData<Q, P, B>);
+      ? (validator as GetValidationFunction<P>)(requestData)
+      : (validator as PostValidationFunction<P, B>)(requestData as PostData<P, B>);
 
     if (validationResult.valid) {
-      const handlerReturnValue = handler(requestData as PostData<Q, P, B>);
+      const handlerReturnValue = handler(requestData as PostData<P, B>);
       const result = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
       (response.body as ResultResponse<TResult>) = createResultResponse(result);

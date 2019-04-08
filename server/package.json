@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/server",
-  "version": "1.7.0",
+  "version": "2.2.1",
   "description": "",
   "scripts": {
     "build": "rm -rf dist && tsc",
@@ -8,13 +8,13 @@
   },
   "author": "Patrick Hein",
   "dependencies": {
-    "@common-ts/base": "^1.1.0",
+    "@common-ts/base": "^1.5.0",
     "koa": "^2.7.0",
     "koa-router": "^7.4.0"
   },
   "devDependencies": {
     "@types/koa": "^2.0.48",
     "@types/koa-router": "^7.0.40",
-    "typescript": "^3.3.4000"
+    "typescript": "^3.4.2"
   }
 }
