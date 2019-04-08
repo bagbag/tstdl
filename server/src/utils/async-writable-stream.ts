@@ -28,7 +28,7 @@ export class AsyncWritableStream<T = NonObjectMode> {
   async write(data: Data<T>, encoding?: BufferEncoding): Promise<void> {
     this.checkError();
 
-    const canContinue = this.writable.write(data, encoding);
+    const canContinue = (encoding != undefined) ? this.writable.write(data, encoding) : this.writable.write(data);
 
     if (!canContinue) {
       await this.drain;
