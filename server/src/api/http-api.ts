@@ -1,4 +1,4 @@
-import { createErrorResponse, createResultResponse, ResultResponse } from '@common-ts/base/api';
+import { createErrorResponse, createResultResponse, ResultResponse, ErrorResponse } from '@common-ts/base/api';
 import { Logger } from '@common-ts/base/logger';
 import { Json, StringMap } from '@common-ts/base/types';
 import { precisionRound, Timer } from '@common-ts/base/utils';
@@ -145,10 +145,15 @@ export class HttpApi {
       : (validator as PostValidationFunction<P, B>)(requestData as PostData<P, B>);
 
     if (validationResult.valid) {
-      const handlerReturnValue = handler(requestData as PostData<P, B>);
-      const result = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
+      try {
+        const handlerReturnValue = handler(requestData as PostData<P, B>);
+        const result = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
-      (response.body as ResultResponse<TResult>) = createResultResponse(result);
+        (response.body as ResultResponse<TResult>) = createResultResponse(result);
+      }
+      catch (error) {
+        (response.body as ErrorResponse) = createErrorResponse((error as Error).message, (error as Error).name);
+      }
     }
     else {
       response.status = 400;
