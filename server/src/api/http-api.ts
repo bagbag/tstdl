@@ -152,6 +152,7 @@ export class HttpApi {
         (response.body as ResultResponse<TResult>) = createResultResponse(result);
       }
       catch (error) {
+        response.status = 400;
         (response.body as ErrorResponse) = createErrorResponse((error as Error).message, (error as Error).name);
       }
     }
