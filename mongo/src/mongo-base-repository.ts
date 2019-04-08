@@ -67,15 +67,29 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async load(id: string): Promise<T> {
+  async load(id: string): Promise<T>;
+  async load(id: string, throwIfNotFound: true): Promise<T>;
+  async load(id: string, throwIfNotFound: boolean): Promise<T | undefined>;
+  async load(id: string, throwIfNotFound: boolean = true): Promise<T | undefined> {
     const filter = {
       _id: stringToObjectIdOrString(id)
     };
 
+    return this.loadByFilter(filter, throwIfNotFound);
+  }
+
+  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>): Promise<T>;
+  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: true): Promise<T>;
+  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean): Promise<T | undefined>;
+  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean = true): Promise<T | undefined> {
     const document = await this.collection.findOne(filter);
 
     if (document == undefined) {
-      throw new Error(`document ${id} not found`);
+      if (throwIfNotFound) {
+        throw new Error('document not found');
+      }
+
+      return undefined;
     }
 
     const entity = toEntity(document);
