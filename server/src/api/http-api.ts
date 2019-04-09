@@ -1,4 +1,4 @@
-import { createErrorResponse, createResultResponse, ResultResponse, ErrorResponse } from '@common-ts/base/api';
+import { createErrorResponse, createResultResponse, ErrorResponse, ResultResponse } from '@common-ts/base/api';
 import { Logger } from '@common-ts/base/logger';
 import { Json, StringMap } from '@common-ts/base/types';
 import { precisionRound, Timer } from '@common-ts/base/utils';
@@ -24,19 +24,19 @@ export type GetValidationFunction<P extends Parameters> = ValidationFunction<Get
 export type PostValidationFunction<P extends Parameters, B extends Body> = ValidationFunction<PostData<P, B>>;
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
-export type GetFunctionHandler<P extends Parameters, TResult> = (data: GetData<P>) => TResult | Promise<TResult>;
-export type PostFunctionHandler<P extends Parameters, B extends Body, TResult> = (data: PostData<P, B>) => TResult | Promise<TResult>;
+export type GetFunctionHandler<P extends Parameters, TResult extends Json> = (data: GetData<P>) => TResult | Promise<TResult>;
+export type PostFunctionHandler<P extends Parameters, B extends Body, TResult extends Json> = (data: PostData<P, B>) => TResult | Promise<TResult>;
 
 export type Route = GetRoute<any, any> | PostRoute<any, any, any>;
 
-export type GetRoute<P extends Parameters, TResult> = {
+export type GetRoute<P extends Parameters, TResult extends Json> = {
   type: 'get',
   path: string,
   validator: GetValidationFunction<P>,
   handler: GetFunctionHandler<P, TResult>
 };
 
-export type PostRoute<P extends Parameters, B extends Body, TResult> = {
+export type PostRoute<P extends Parameters, B extends Body, TResult extends Json> = {
   type: 'post',
   path: string,
   validator: PostValidationFunction<P, B>,
@@ -87,9 +87,9 @@ export class HttpApi {
     }
   }
 
-  registerGetRoute<TResult>(path: string, handler: GetFunctionHandler<{}, TResult>): void;
-  registerGetRoute<P extends Parameters, TResult>(path: string, validator: GetValidationFunction<P>, handler: GetFunctionHandler<P, TResult>): void;
-  registerGetRoute<P extends Parameters, TResult>(path: string, validatorOrHandler: GetValidationFunction<P> | GetFunctionHandler<P, TResult>, handler?: GetFunctionHandler<P, TResult>): void {
+  registerGetRoute<TResult extends Json>(path: string, handler: GetFunctionHandler<{}, TResult>): void;
+  registerGetRoute<P extends Parameters, TResult extends Json>(path: string, validator: GetValidationFunction<P>, handler: GetFunctionHandler<P, TResult>): void;
+  registerGetRoute<P extends Parameters, TResult extends Json>(path: string, validatorOrHandler: GetValidationFunction<P> | GetFunctionHandler<P, TResult>, handler?: GetFunctionHandler<P, TResult>): void {
     const _validator = typeof handler == 'function' ? validatorOrHandler as GetValidationFunction<P> : noopValidator;
     const _handler = typeof handler == 'function' ? handler : validatorOrHandler as GetFunctionHandler<P, TResult>;
 
@@ -99,9 +99,9 @@ export class HttpApi {
     });
   }
 
-  registerPostRoute<B extends Body, TResult>(path: string, validator: PostValidationFunction<{}, B>, handler: PostFunctionHandler<{}, B, TResult>): void;
-  registerPostRoute<P extends Parameters, B extends Body, TResult>(path: string, validator: PostValidationFunction<P, B>, handler: PostFunctionHandler<P, B, TResult>): void;
-  registerPostRoute<P extends Parameters, B extends Body, TResult>(path: string, validatorOrHandler: PostValidationFunction<P, B> | PostFunctionHandler<P, B, TResult>, handler?: PostFunctionHandler<P, B, TResult>): void {
+  registerPostRoute<B extends Body, TResult extends Json>(path: string, validator: PostValidationFunction<{}, B>, handler: PostFunctionHandler<{}, B, TResult>): void;
+  registerPostRoute<P extends Parameters, B extends Body, TResult extends Json>(path: string, validator: PostValidationFunction<P, B>, handler: PostFunctionHandler<P, B, TResult>): void;
+  registerPostRoute<P extends Parameters, B extends Body, TResult extends Json>(path: string, validatorOrHandler: PostValidationFunction<P, B> | PostFunctionHandler<P, B, TResult>, handler?: PostFunctionHandler<P, B, TResult>): void {
     const _validator = typeof handler == 'function' ? validatorOrHandler as PostValidationFunction<P, B> : noopValidator;
     const _handler = typeof handler == 'function' ? handler : validatorOrHandler as PostFunctionHandler<P, B, TResult>;
 
@@ -111,7 +111,7 @@ export class HttpApi {
     });
   }
 
-  private async handle<P extends Parameters, B extends Body, TResult>(context: Context, validator: GetValidationFunction<P> | PostValidationFunction<P, B>, handler: GetFunctionHandler<P, TResult> | PostFunctionHandler<P, B, TResult>): Promise<void> {
+  private async handle<P extends Parameters, B extends Body, TResult extends Json>(context: Context, validator: GetValidationFunction<P> | PostValidationFunction<P, B>, handler: GetFunctionHandler<P, TResult> | PostFunctionHandler<P, B, TResult>): Promise<void> {
     const { request, response, params } = context;
     const { method, query: { ...query } } = request;
 
