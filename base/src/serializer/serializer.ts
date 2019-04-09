@@ -7,7 +7,7 @@ import { SerializedElement } from './serialized-element';
 
 declare const serializedSymbol: unique symbol;
 
-export type Serialized<T> = { _: typeof serializedSymbol } & SerializedElement;
+export type Serialized<T> = { [serializedSymbol]?: T } & SerializedElement;
 
 interface SerializerStatic {
   registerHandler(...handlers: SerializeHandler[]): void;
@@ -48,13 +48,13 @@ class _Serializer {
     const handler = _Serializer.getSerializationHandler(obj);
     const serializedElement = handler.serialize(obj);
 
-    return serializedElement as any as Serialized<T>;
+    return serializedElement;
   }
 
   static deserialize<T = unknown>(serializedStringOrElement: string | Serialized<T>): T {
     const serializedElement: SerializedElement = (typeof serializedStringOrElement == 'string')
       ? JSON.parse(serializedStringOrElement) as SerializedElement
-      : serializedStringOrElement as any as SerializedElement;
+      : serializedStringOrElement;
 
     const handler = _Serializer.getDeserializationHandler(serializedElement);
     const result = handler.deserialize(serializedElement);
@@ -99,3 +99,5 @@ const handlers: SerializeHandler[] = [
 
 _Serializer.setPrototypeSerializerHandler(prototypeSerializeHandler);
 _Serializer.registerHandler(...handlers);
+
+export const Serializer = _Serializer as SerializerStatic;
