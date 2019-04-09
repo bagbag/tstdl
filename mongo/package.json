@@ -8,11 +8,11 @@
   },
   "author": "Patrick Hein",
   "dependencies": {
-    "@common-ts/base": "^1.3.1",
-    "mongodb": "^3.2.2"
+    "@common-ts/base": "^1.5.0",
+    "mongodb": "^3.2.3"
   },
   "devDependencies": {
     "@types/mongodb": "^3.1.22",
-    "typescript": "^3.3.4000"
+    "typescript": "^3.4.2"
   }
 }
