@@ -14,7 +14,6 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insert(entity: EntityWithPartialId<T>): Promise<T> {
-    //  const savedEntities = await this.insertMany([entity]);
     const document = toMongoDocumentWithPartialId(entity);
     const result = await this.collection.insertOne(document as MongoDocument<T>);
 
@@ -31,6 +30,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertMany(entities: EntityWithPartialId<T>[]): Promise<T[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
     const operations = entities.map(toInsertOneOperation);
     const bulkWriteResult = await this.collection.bulkWrite(operations);
     const insertedIds = bulkWriteResult.insertedIds as IdsMap;
@@ -50,6 +53,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async replaceMany(entities: EntityWithPartialId<T>[], upsert: boolean): Promise<T[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
     const operations = entities.map((entity) => toReplaceOneOperation(entity, upsert));
     const bulkWriteResult = await this.collection.bulkWrite(operations);
     const upsertedIds = bulkWriteResult.upsertedIds as IdsMap;
@@ -67,8 +74,7 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async load(id: string): Promise<T>;
-  async load(id: string, throwIfNotFound: true): Promise<T>;
+  async load(id: string, throwIfNotFound?: true): Promise<T>;
   async load(id: string, throwIfNotFound: boolean): Promise<T | undefined>;
   async load(id: string, throwIfNotFound: boolean = true): Promise<T | undefined> {
     const filter = {
@@ -78,8 +84,7 @@ export class MongoBaseRepository<T extends Entity> {
     return this.loadByFilter(filter, throwIfNotFound);
   }
 
-  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>): Promise<T>;
-  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: true): Promise<T>;
+  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound?: true): Promise<T>;
   async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean): Promise<T | undefined>;
   async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean = true): Promise<T | undefined> {
     const document = await this.collection.findOne(filter);
