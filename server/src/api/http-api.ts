@@ -131,7 +131,7 @@ export class HttpApi {
         }
         catch (error) {
           response.status = 400;
-          response.body = createErrorResponse((error as Error).message);
+          response.body = createErrorResponse((error as Error).name, (error as Error).message);
           return;
         }
         break;
@@ -145,16 +145,10 @@ export class HttpApi {
       : (validator as PostValidationFunction<P, B>)(requestData as PostData<P, B>);
 
     if (validationResult.valid) {
-      try {
-        const handlerReturnValue = handler(requestData as PostData<P, B>);
-        const result = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
+      const handlerReturnValue = handler(requestData as PostData<P, B>);
+      const result = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
-        (response.body as ResultResponse<TResult>) = createResultResponse(result);
-      }
-      catch (error) {
-        response.status = 400;
-        (response.body as ErrorResponse) = createErrorResponse((error as Error).message, (error as Error).name);
-      }
+      (response.body as ResultResponse<TResult>) = createResultResponse(result);
     }
     else {
       response.status = 400;
@@ -189,7 +183,7 @@ function errorCatchMiddleware(logger: Logger) {
       logger.error(error as Error);
 
       response.status = 500;
-      response.body = createErrorResponse('server error', { name: (error as Error).name, message: (error as Error).message });
+      (response.body as ErrorResponse) = createErrorResponse('500', 'Internal Server Error');
     }
   };
 }
