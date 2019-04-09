@@ -5,14 +5,18 @@ import { SerializableStatic } from './serializable';
 import { SerializeHandler } from './serialize-handler';
 import { SerializedElement } from './serialized-element';
 
+declare const serializedSymbol: unique symbol;
+
+export type Serialized<T> = { _: typeof serializedSymbol } & SerializedElement;
+
 interface SerializerStatic {
   registerHandler(...handlers: SerializeHandler[]): void;
   registerPrototype(prototype: SerializableStatic): void;
 
   serialize(obj: any): string;
-  rawSerialize(obj: any): SerializedElement;
+  rawSerialize<T>(obj: T): Serialized<T>;
 
-  deserialize(serializedStringOrElement: string | SerializedElement): any;
+  deserialize<T = unknown>(serializedStringOrElement: string | Serialized<T>): T;
 }
 
 // tslint:disable-next-line: class-name
@@ -40,17 +44,17 @@ class _Serializer {
     return serializedString;
   }
 
-  static rawSerialize(obj: any): SerializedElement {
+  static rawSerialize<T>(obj: T): Serialized<T> {
     const handler = _Serializer.getSerializationHandler(obj);
     const serializedElement = handler.serialize(obj);
 
-    return serializedElement;
+    return serializedElement as any as Serialized<T>;
   }
 
-  static deserialize(serializedStringOrElement: string | SerializedElement): any {
+  static deserialize<T = unknown>(serializedStringOrElement: string | Serialized<T>): T {
     const serializedElement: SerializedElement = (typeof serializedStringOrElement == 'string')
       ? JSON.parse(serializedStringOrElement) as SerializedElement
-      : serializedStringOrElement;
+      : serializedStringOrElement as any as SerializedElement;
 
     const handler = _Serializer.getDeserializationHandler(serializedElement);
     const result = handler.deserialize(serializedElement);
@@ -95,5 +99,3 @@ const handlers: SerializeHandler[] = [
 
 _Serializer.setPrototypeSerializerHandler(prototypeSerializeHandler);
 _Serializer.registerHandler(...handlers);
-
-export const Serializer = _Serializer as SerializerStatic;
