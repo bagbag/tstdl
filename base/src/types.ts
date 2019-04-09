@@ -10,6 +10,8 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
 export interface JsonArray extends Array<Json> { }
 
+export type Type<T> = new () => T;
+
 export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };

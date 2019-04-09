@@ -1,4 +1,6 @@
 import { ArraySerializeHandler, DateSerializeHandler, ObjectSerializeHandler, PrimitivesSerializeHandler, PrototypeSerializeHandler, RegexSerializeHandler } from './handlers';
+import { ArrayBufferSerializeHandler } from './handlers/array-buffer';
+import { TypedArraySerializeHandler } from './handlers/typed-array';
 import { SerializableStatic } from './serializable';
 import { SerializeHandler } from './serialize-handler';
 import { SerializedElement } from './serialized-element';
@@ -86,6 +88,8 @@ const handlers: SerializeHandler[] = [
   new ArraySerializeHandler(),
   new DateSerializeHandler(),
   new RegexSerializeHandler(),
+  new ArrayBufferSerializeHandler(),
+  new TypedArraySerializeHandler(),
   prototypeSerializeHandler
 ];
 
