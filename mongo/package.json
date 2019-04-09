@@ -8,7 +8,7 @@
   },
   "author": "Patrick Hein",
   "dependencies": {
-    "@common-ts/base": "^1.5.0",
+    "@common-ts/base": "^1.6.0",
     "mongodb": "^3.2.3"
   },
   "devDependencies": {
