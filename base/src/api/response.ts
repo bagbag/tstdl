@@ -9,6 +9,7 @@ export type ErrorResponse = {
 export type Response<T> = ResultResponse<T> | ErrorResponse;
 
 export type ResultError = {
+  name: string,
   message: string,
   details?: any
 };
@@ -21,9 +22,10 @@ export function createResultResponse<T>(result: T): ResultResponse<T> {
   return response;
 }
 
-export function createErrorResponse(message: string, details?: any): ErrorResponse {
+export function createErrorResponse(name: string, message: string, details?: any): ErrorResponse {
   const response: ErrorResponse = {
     error: {
+      name,
       message,
       details
     }
