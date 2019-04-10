@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/mongo",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "",
   "scripts": {
     "build": "rm -rf dist && tsc",
@@ -8,11 +8,11 @@
   },
   "author": "Patrick Hein",
   "dependencies": {
-    "@common-ts/base": "^1.6.0",
+    "@common-ts/base": "^1.9.0",
     "mongodb": "^3.2.3"
   },
   "devDependencies": {
     "@types/mongodb": "^3.1.22",
-    "typescript": "^3.4.2"
+    "typescript": "^3.4.3"
   }
 }
