@@ -9,10 +9,7 @@ const type = 'object';
 
 export class ObjectSerializeHandler implements SerializeHandler {
   canSerialize(obj: any): boolean {
-    const prototype = Object.getPrototypeOf(obj);
-    const result = prototype.constructor.name == 'Object'; // tslint:disable-line: no-unsafe-any
-
-    return result;
+    return obj.constructor == Object;
   }
 
   serialize(obj: any): SerializedObject {

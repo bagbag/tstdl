@@ -8,7 +8,7 @@ type SerializedArray = SerializedElement<SerializedElement[]>;
 
 export class ArraySerializeHandler implements SerializeHandler {
   canSerialize(obj: any): boolean {
-    return Array.isArray(obj);
+    return obj.constructor == Array;
   }
 
   serialize(array: any[]): SerializedArray {
