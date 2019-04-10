@@ -5,7 +5,7 @@ export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export interface PrimitiveArray extends Array<PrimitiveValue> { }
 
-export type AsJson<T> = T;
+export type AsJson<T> = T extends Json ? Json : Json;
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
