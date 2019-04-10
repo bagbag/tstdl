@@ -34,8 +34,8 @@ const types: { type: TypedArrayConstructor, name: string }[] = [
 ];
 
 export class TypedArraySerializeHandler implements SerializeHandler {
-  canSerialize(obj: unknown): boolean {
-    return types.some(({ type }) => obj instanceof type);
+  canSerialize(obj: any): boolean {
+    return types.some(({ type }) => obj.constructor == type);
   }
 
   serialize(binary: TypedArray): SerializedBinary {

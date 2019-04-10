@@ -1,7 +1,10 @@
+export const serialize: unique symbol = Symbol();
+export const deserialize: unique symbol = Symbol();
+
 export interface Serializable {
-  serialize(): any;
+  [serialize](): any;
 }
 
 export interface SerializableStatic extends Function {
-  deserialize(data: any): Serializable;
+  [deserialize](data: any): Serializable;
 }

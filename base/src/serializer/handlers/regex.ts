@@ -10,7 +10,7 @@ type SerializedRegexData = {
 
 export class RegexSerializeHandler implements SerializeHandler {
   canSerialize(obj: any): boolean {
-    return obj instanceof RegExp;
+    return obj.constructor == RegExp;
   }
 
   serialize(obj: any): SerializedElement {

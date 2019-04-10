@@ -1,4 +1,4 @@
-import { Serializable, SerializableStatic } from '../serializable';
+import { deserialize, Serializable, SerializableStatic, serialize } from '../serializable';
 import { SerializeHandler } from '../serialize-handler';
 import { SerializedElement } from '../serialized-element';
 import { Serializer } from '../serializer';
@@ -29,13 +29,13 @@ export class PrototypeSerializeHandler implements SerializeHandler {
 
   canSerialize(obj: any): boolean {
     // tslint:disable-next-line: no-unbound-method
-    return typeof (obj as Serializable).serialize == 'function';
+    return typeof (obj as Serializable)[serialize] == 'function';
   }
 
   serialize(obj: any): SerializedInstance {
     const instance = obj as Serializable;
 
-    const data = instance.serialize();
+    const data = instance[serialize]();
     const serializedData = Serializer.rawSerialize(data);
 
     const serializedInstanceData: SerializedInstanceData = {
@@ -67,7 +67,7 @@ export class PrototypeSerializeHandler implements SerializeHandler {
 
     // tslint:disable-next-line: no-unsafe-any
     const deserializedData = Serializer.deserialize(serializedInstanceData.data);
-    const instance = prototype.deserialize(deserializedData);
+    const instance = prototype[deserialize](deserializedData);
 
     return instance;
   }

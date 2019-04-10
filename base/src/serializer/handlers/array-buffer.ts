@@ -6,8 +6,8 @@ type SerializedBinary = SerializedElement<number[]>;
 const type = 'array-buffer';
 
 export class ArrayBufferSerializeHandler implements SerializeHandler {
-  canSerialize(obj: unknown): boolean {
-    return obj instanceof ArrayBuffer;
+  canSerialize(obj: any): boolean {
+    return obj.constructor == ArrayBuffer;
   }
 
   serialize(buffer: ArrayBuffer): SerializedBinary {

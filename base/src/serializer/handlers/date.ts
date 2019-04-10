@@ -7,7 +7,7 @@ const TYPE = 'date';
 
 export class DateSerializeHandler implements SerializeHandler {
   canSerialize(obj: any): boolean {
-    return obj instanceof Date;
+    return obj.constructor == Date;
   }
 
   serialize(obj: any): SerializedDate {
