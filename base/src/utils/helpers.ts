@@ -1,4 +1,4 @@
-import { StringMap } from '../types';
+import { StringMap, DeepArray } from '../types';
 
 export function getGetter<T, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -118,8 +118,8 @@ export function formatDuration(milliseconds: number, precision: number): string 
   return result;
 }
 
-export function flatten<T>(array: (T | T[])[]): T[] {
-  return (array as any[]).reduce((acc, item) => Array.isArray(item) ? [...acc, ...item] : [...acc, item], [] as T[]);
+export function flatten<T>(array: DeepArray<T>): T[] {
+  return (array as any[]).reduce((acc, item) => Array.isArray(item) ? [...acc, ...flatten(item)] : [...acc, item], [] as T[]);
 }
 
 export function toError(obj: any): Error {
