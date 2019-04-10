@@ -13,23 +13,23 @@ export class MongoBaseRepository<T extends Entity> {
     this.collection = collection;
   }
 
-  async insert(entity: EntityWithPartialId<T>): Promise<T> {
+  async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     const document = toMongoDocumentWithPartialId(entity);
-    const result = await this.collection.insertOne(document as MongoDocument<T>);
+    const result = await this.collection.insertOne(document as MongoDocument<U>);
 
     const entityCopy = (entity.id != undefined)
-      ? { ...(entity as T) }
-      : { ...(entity as T), id: objectIdOrStringToString(result.insertedId) };
+      ? { ...(entity as U) }
+      : { ...(entity as U), id: objectIdOrStringToString(result.insertedId) };
 
     return entityCopy;
   }
 
-  async replace(entity: EntityWithPartialId<T>, upsert: boolean): Promise<T> {
+  async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
     const savedEntities = await this.replaceMany([entity], upsert);
     return SyncEnumerable.from(savedEntities).single();
   }
 
-  async insertMany(entities: EntityWithPartialId<T>[]): Promise<T[]> {
+  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
     if (entities.length == 0) {
       return [];
     }
@@ -46,13 +46,13 @@ export class MongoBaseRepository<T extends Entity> {
         entityCopy.id = objectIdOrStringToString(insertedIds[index] as any as Mongo.ObjectId);
       }
 
-      return entityCopy as T;
+      return entityCopy as U;
     });
 
     return savedEntities;
   }
 
-  async replaceMany(entities: EntityWithPartialId<T>[], upsert: boolean): Promise<T[]> {
+  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
     if (entities.length == 0) {
       return [];
     }
@@ -68,15 +68,15 @@ export class MongoBaseRepository<T extends Entity> {
         entityCopy.id = objectIdOrStringToString(upsertedIds[index]._id);
       }
 
-      return entityCopy as T;
+      return entityCopy as U;
     });
 
     return savedEntities;
   }
 
-  async load(id: string, throwIfNotFound?: true): Promise<T>;
-  async load(id: string, throwIfNotFound: boolean): Promise<T | undefined>;
-  async load(id: string, throwIfNotFound: boolean = true): Promise<T | undefined> {
+  async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
+  async load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
+  async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
     const filter = {
       _id: stringToObjectIdOrString(id)
     };
@@ -84,10 +84,10 @@ export class MongoBaseRepository<T extends Entity> {
     return this.loadByFilter(filter, throwIfNotFound);
   }
 
-  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound?: true): Promise<T>;
-  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean): Promise<T | undefined>;
-  async loadByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>, throwIfNotFound: boolean = true): Promise<T | undefined> {
-    const document = await this.collection.findOne(filter);
+  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound?: true): Promise<U>;
+  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound: boolean): Promise<U | undefined>;
+  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound: boolean = true): Promise<U | undefined> {
+    const document = await this.collection.findOne<MongoDocument<U>>(filter);
 
     if (document == undefined) {
       if (throwIfNotFound) {
@@ -101,7 +101,7 @@ export class MongoBaseRepository<T extends Entity> {
     return entity;
   }
 
-  async *loadManyById(ids: string[]): AsyncIterableIterator<T> {
+  async *loadManyById<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     const normalizedIds = ids.map(stringToObjectIdOrString);
 
     const filter: Mongo.FilterQuery<MongoDocument<T>> = {
@@ -111,8 +111,8 @@ export class MongoBaseRepository<T extends Entity> {
     yield* this.loadManyByFilter(filter);
   }
 
-  async *loadManyByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>): AsyncIterableIterator<T> {
-    const cursor = this.collection.find<MongoDocument<T>>(filter);
+  async *loadManyByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): AsyncIterableIterator<U> {
+    const cursor = this.collection.find<MongoDocument<U>>(filter);
 
     while (true) {
       const document = await cursor.next();
@@ -126,11 +126,11 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async countByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>): Promise<number> {
+  async countByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): Promise<number> {
     return this.collection.countDocuments(filter);
   }
 
-  async hasByFilter(filter: Mongo.FilterQuery<MongoDocument<T>>): Promise<boolean> {
+  async hasByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): Promise<boolean> {
     const count = await this.countByFilter(filter);
     return count > 0;
   }

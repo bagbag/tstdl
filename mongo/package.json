@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/mongo",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "",
   "scripts": {
     "build": "rm -rf dist && tsc",
