@@ -5,6 +5,7 @@ export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export interface PrimitiveArray extends Array<PrimitiveValue> { }
 
+// AsJson as workaround for https://github.com/Microsoft/TypeScript/issues/15300
 export type AsJson<T> = T extends Json ? Json : Json;
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
