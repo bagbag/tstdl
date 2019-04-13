@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/base",
-  "version": "1.11.1",
+  "version": "1.11.3",
   "description": "",
   "scripts": {
     "build": "rm -rf dist && tsc",
@@ -8,10 +8,10 @@
   },
   "author": "Patrick Hein",
   "dependencies": {
-    "rxjs": "^6.4.0"
+    "rxjs": "^6.0.0"
   },
   "devDependencies": {
-    "@types/node": "^11.13.2",
-    "typescript": "^3.4.2"
+    "@types/node": "^11.0.0",
+    "typescript": "~3.4.0"
   }
 }

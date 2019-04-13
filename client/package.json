@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "scripts": {
     "build": "rm -rf dist && tsc",
@@ -9,6 +9,6 @@
   "author": "Patrick Hein",
   "dependencies": {},
   "devDependencies": {
-    "typescript": "^3.4.2"
+    "typescript": "~3.4.0"
   }
 }
