@@ -1,19 +1,13 @@
-import { Observable } from 'rxjs';
-
 export enum ModuleMetricType {
   Counter,
   Gauge
 }
 
-export type ModuleMetricValue = {
-  value: number,
-  labels: string[]
-};
-
 export type ModuleMetric = {
   name: string,
   type: ModuleMetricType,
-  values: Observable<ModuleMetricValue>
+  value: number,
+  labels: string[]
 };
 
 export enum ModuleState {
@@ -25,7 +19,8 @@ export enum ModuleState {
 
 export interface Module {
   readonly name: string;
-  readonly metrics: ReadonlyArray<ModuleMetric>;
-  start(): Promise<void>;
+
+  getMetrics(): ModuleMetric[];
+  run(): Promise<void>;
   stop(): Promise<void>;
 }

@@ -1,13 +1,13 @@
 import { Logger } from '@common-ts/base/logger';
 import { Module } from './module';
 
-export async function startModules(modules: Module[], logger?: Logger): Promise<void> {
+export async function runModules(modules: Module[], logger?: Logger): Promise<void> {
   const promises = modules.map(async (module) => {
     if (logger != undefined) {
       logger.verbose(`starting module ${module.name}`);
     }
 
-    await module.start();
+    await module.run();
   });
 
   await Promise.all(promises);

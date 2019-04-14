@@ -8,7 +8,6 @@ export abstract class ModuleBase implements Module {
   private state: ModuleState;
 
   readonly name: string;
-  abstract readonly metrics: ModuleMetric[];
 
   protected get cancellationToken(): CancellationToken {
     return this._cancellationToken;
@@ -25,7 +24,9 @@ export abstract class ModuleBase implements Module {
     this._cancellationToken = new CancellationToken();
   }
 
-  async start(): Promise<void> {
+  abstract getMetrics(): ModuleMetric[];
+
+  async run(): Promise<void> {
     if (this.state != ModuleState.Stopped) {
       throw new Error(`cannot start module, it is ${this.stateString}`);
     }
@@ -34,7 +35,7 @@ export abstract class ModuleBase implements Module {
 
     try {
       this.state = ModuleState.Running;
-      this.runPromise = this.run(this._cancellationToken);
+      this.runPromise = this._run(this._cancellationToken);
       await this.runPromise;
       this.state = ModuleState.Stopped;
     }
@@ -53,5 +54,5 @@ export abstract class ModuleBase implements Module {
     await this.runPromise;
   }
 
-  protected abstract run(cancellationToken: CancellationToken): Promise<void>;
+  protected abstract _run(cancellationToken: CancellationToken): Promise<void>;
 }
