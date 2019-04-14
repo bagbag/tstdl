@@ -1,4 +1,4 @@
-import { StringMap, DeepArray } from '../types';
+import { DeepArray, StringMap } from '../types';
 
 export function getGetter<T, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -169,4 +169,19 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
   while (match != undefined);
 
   return matches;
+}
+
+export function dotNotation<T, Key1 extends keyof T>(typeInferHelper: T, key1: Key1): string;
+export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1]>(typeInferHelper: T, key1: Key1, key2: Key2): string;
+export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3): string;
+export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2], Key4 extends keyof T[Key1][Key2][Key3]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4): string;
+export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2], Key4 extends keyof T[Key1][Key2][Key3], Key5 extends keyof T[Key1][Key2][Key3][Key4]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4, key5: Key5): string;
+export function dotNotation(_type: any, ...keys: string[]): string {
+  for (const key of keys) {
+    if (typeof key == 'symbol') {
+      throw new Error('symbol not supported');
+    }
+  }
+
+  return keys.join('.');
 }
