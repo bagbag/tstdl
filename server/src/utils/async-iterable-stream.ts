@@ -1,7 +1,8 @@
-import { Readable, ReadableOptions } from 'stream';
 import { nextTick } from '@common-ts/base/utils';
+import { ReadableOptions } from 'stream';
+import { TypedReadable } from './typed-readable';
 
-export class AsyncIterableStream extends Readable {
+class AsyncIterableStream extends TypedReadable {
   private readonly iterable: AsyncIterable<any>;
 
   private _iterator: AsyncIterator<any> | undefined;

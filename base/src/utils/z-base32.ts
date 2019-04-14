@@ -1,8 +1,8 @@
 // tslint:disable: no-bitwise
 const alphabet = 'ybndrfg8ejkmcpqxot1uwisza345h769';
-const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index] as [string, number]));
+const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index]));
 
-export function zBase32Encode(buffer: ArrayBuffer | SharedArrayBuffer): string {
+export function zBase32Encode(buffer: ArrayBufferLike): string {
   const byteView = new Uint8Array(buffer);
 
   let result: string = '';
@@ -28,12 +28,12 @@ export function zBase32Encode(buffer: ArrayBuffer | SharedArrayBuffer): string {
 }
 
 export function zBase32Decode(input: string): ArrayBuffer {
-  const arrayBuffer = new ArrayBuffer((input.length * 5 / 8) | 0);
-  const byteView = new Uint8Array(arrayBuffer);
+  const bytes = new Uint8Array((input.length * 5 / 8) | 0);
 
   let bits = 0;
   let value = 0;
   let byteIndex = 0;
+
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
     const charValue = charValueMap.get(char);
@@ -46,10 +46,10 @@ export function zBase32Decode(input: string): ArrayBuffer {
     bits += 5;
 
     if (bits >= 8) {
-      byteView[byteIndex++] = (value >>> (bits - 8)) & 255;
+      bytes[byteIndex++] = (value >>> (bits - 8)) & 255;
       bits -= 8;
     }
   }
 
-  return arrayBuffer;
+  return bytes.buffer;
 }

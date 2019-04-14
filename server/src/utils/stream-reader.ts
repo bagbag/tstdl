@@ -1,13 +1,11 @@
-import { Readable } from 'stream';
-import { AsyncStreamIterable } from './async-stream-iterable';
+import { TypedReadable } from './typed-readable';
+import { NonObjectBufferMode } from './stream-helper-types';
 
-export async function readStream(readable: Readable, maxBytes?: number): Promise<Buffer> {
-  const streamIterable = new AsyncStreamIterable<Buffer>(readable);
-
+export async function readStream(readable: TypedReadable<NonObjectBufferMode>, maxBytes?: number): Promise<Buffer> {
   let totalLength: number = 0;
   const chunks: Buffer[] = [];
 
-  for await (const chunk of streamIterable) { // tslint:disable-line: await-promise
+  for await (const chunk of readable) { // tslint:disable-line: await-promise
     chunks.push(chunk);
     totalLength += chunk.length;
 

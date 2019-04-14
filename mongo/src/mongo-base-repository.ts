@@ -1,8 +1,6 @@
-import { SyncEnumerable } from '@common-ts/base/enumerable';
+import { Entity, EntityWithPartialId } from '@common-ts/database';
 import * as Mongo from 'mongodb';
-import { Entity, EntityWithPartialId } from './entity';
-import { MongoDocument, toEntity, toMongoDocumentWithPartialId } from './mongo-document';
-import { IdsMap, objectIdOrStringToString, stringToObjectIdOrString } from './utils';
+import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './mongo-document';
 
 export type FilterQuery<T extends Entity> = Mongo.FilterQuery<MongoDocument<T>>;
 
@@ -14,19 +12,25 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
-    const document = toMongoDocumentWithPartialId(entity);
-    const result = await this.collection.insertOne(document as MongoDocument<U>);
+    const document = toMongoDocumentWithNewId(entity);
 
-    const entityCopy = (entity.id != undefined)
-      ? { ...(entity as U) }
-      : { ...(entity as U), id: objectIdOrStringToString(result.insertedId) };
+    const result = await this.collection.insertOne(document);
 
-    return entityCopy;
+    if (result.insertedId != undefined) {
+      throw new Error('should not happen?!');
+    }
+
+    return toEntity(document);
   }
 
   async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
-    const savedEntities = await this.replaceMany([entity], upsert);
-    return SyncEnumerable.from(savedEntities).single();
+    const document = toMongoDocumentWithNewId(entity);
+
+    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
+
+    await this.collection.replaceOne(filter, replacement, { upsert });
+
+    return toEntity(document);
   }
 
   async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
@@ -34,21 +38,15 @@ export class MongoBaseRepository<T extends Entity> {
       return [];
     }
 
-    const operations = entities.map(toInsertOneOperation);
+    const documents = entities.map(toMongoDocumentWithNewId);
+    const operations = documents.map(toInsertOneOperation);
     const bulkWriteResult = await this.collection.bulkWrite(operations);
-    const insertedIds = bulkWriteResult.insertedIds as IdsMap;
-    const savedEntities = entities.map((entity, index) => {
-      const entityCopy = { ...entity };
 
-      const hasInsertedId = insertedIds.hasOwnProperty(index);
+    if (Object.keys(bulkWriteResult.insertedIds).length > 0) {
+      throw new Error('should not happen?!');
+    }
 
-      if (hasInsertedId) {
-        entityCopy.id = objectIdOrStringToString(insertedIds[index] as any as Mongo.ObjectId);
-      }
-
-      return entityCopy as U;
-    });
-
+    const savedEntities = documents.map(toEntity);
     return savedEntities;
   }
 
@@ -57,28 +55,23 @@ export class MongoBaseRepository<T extends Entity> {
       return [];
     }
 
-    const operations = entities.map((entity) => toReplaceOneOperation(entity, upsert));
+    const documents = entities.map(toMongoDocumentWithNewId);
+    const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
     const bulkWriteResult = await this.collection.bulkWrite(operations);
-    const upsertedIds = bulkWriteResult.upsertedIds as IdsMap;
-    const savedEntities = entities.map((entity, index) => {
-      const entityCopy = { ...entity };
 
-      const hasUpsertedId = upsertedIds.hasOwnProperty(index);
-      if (hasUpsertedId) {
-        entityCopy.id = objectIdOrStringToString(upsertedIds[index]._id);
-      }
+    if (Object.keys(bulkWriteResult.insertedIds).length > 0) {
+      throw new Error('should not happen?!');
+    }
 
-      return entityCopy as U;
-    });
-
+    const savedEntities = documents.map(toEntity);
     return savedEntities;
   }
 
   async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
   async load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
   async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
-    const filter = {
-      _id: stringToObjectIdOrString(id)
+    const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+      _id: id
     };
 
     return this.loadByFilter(filter, throwIfNotFound);
@@ -102,10 +95,8 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async *loadManyById<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
-    const normalizedIds = ids.map(stringToObjectIdOrString);
-
     const filter: Mongo.FilterQuery<MongoDocument<T>> = {
-      _id: { $in: normalizedIds }
+      _id: { $in: ids }
     };
 
     yield* this.loadManyByFilter(filter);
@@ -114,13 +105,7 @@ export class MongoBaseRepository<T extends Entity> {
   async *loadManyByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): AsyncIterableIterator<U> {
     const cursor = this.collection.find<MongoDocument<U>>(filter);
 
-    while (true) {
-      const document = await cursor.next();
-
-      if (document == undefined) {
-        break;
-      }
-
+    for await (const document of (cursor as AsyncIterable<MongoDocument<U>>)) {
       const entity = toEntity(document);
       yield entity;
     }
@@ -136,15 +121,13 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async has(id: string): Promise<boolean> {
-    const filter = { _id: stringToObjectIdOrString(id) };
+    const filter = { _id: id };
     return this.hasByFilter(filter);
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
-    const normalizedIds = ids.map(stringToObjectIdOrString);
-
     const filter: Mongo.FilterQuery<MongoDocument<T>> = {
-      _id: { $in: normalizedIds }
+      _id: { $in: ids }
     };
 
     const result = await this.collection.distinct('_id', filter) as string[];
@@ -156,9 +139,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
-function toInsertOneOperation<T extends Entity>(entity: EntityWithPartialId<T>): object {
-  const document = toMongoDocumentWithPartialId(entity);
-
+function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   const operation = {
     insertOne: {
       document
@@ -168,19 +149,15 @@ function toInsertOneOperation<T extends Entity>(entity: EntityWithPartialId<T>):
   return operation;
 }
 
-function toReplaceOneOperation<T extends Entity>(entity: EntityWithPartialId<T>, upsert: boolean): object {
-  const filter: Mongo.FilterQuery<MongoDocument<T>> = {};
-
-  if (entity.id != undefined) {
-    filter._id = entity.id;
-  }
-
-  const replacement = toMongoDocumentWithPartialId(entity);
+function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
+  const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+    _id: document._id
+  };
 
   const operation = {
     replaceOne: {
       filter,
-      replacement,
+      replacement: document,
       upsert
     }
   };

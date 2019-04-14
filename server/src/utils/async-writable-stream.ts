@@ -1,11 +1,6 @@
 import { DeferredPromise } from '@common-ts/base/promise';
 import { Writable } from 'stream';
-
-type NonObjectMode = {
-  readonly _nonObjectMode: unique symbol
-};
-
-export type Data<T> = T extends NonObjectMode ? (string | Buffer | Uint8Array) : (T extends null ? never : T);
+import { NonObjectMode, Data } from './stream-helper-types';
 
 export class AsyncWritableStream<T = NonObjectMode> {
   private readonly writable: Writable;

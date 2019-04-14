@@ -1,6 +1,6 @@
 {
-  "name": "@common-ts/client",
-  "version": "1.1.1",
+  "name": "@common-ts/database",
+  "version": "1.2.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -9,7 +9,9 @@
     "build": "rm -rf dist && tsc",
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@common-ts/base": "^1.12.0"
+  },
   "devDependencies": {
     "typescript": "~3.4.0"
   }
