@@ -1,13 +1,11 @@
 import { Entity, EntityWithPartialId } from '@common-ts/database';
-import * as Mongo from 'mongodb';
 import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './mongo-document';
-
-export type FilterQuery<T extends Entity> = Mongo.FilterQuery<MongoDocument<T>>;
+import { Collection, FilterQuery } from './types';
 
 export class MongoBaseRepository<T extends Entity> {
-  private readonly collection: Mongo.Collection<MongoDocument<T>>;
+  private readonly collection: Collection<T>;
 
-  constructor(collection: Mongo.Collection<MongoDocument<T>>) {
+  constructor(collection: Collection<T>) {
     this.collection = collection;
   }
 
@@ -70,16 +68,16 @@ export class MongoBaseRepository<T extends Entity> {
   async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
   async load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
   async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
-    const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+    const filter: FilterQuery<U> = {
       _id: id
     };
 
     return this.loadByFilter(filter, throwIfNotFound);
   }
 
-  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound?: true): Promise<U>;
-  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound: boolean): Promise<U | undefined>;
-  async loadByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>, throwIfNotFound: boolean = true): Promise<U | undefined> {
+  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound?: true): Promise<U>;
+  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean): Promise<U | undefined>;
+  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean = true): Promise<U | undefined> {
     const document = await this.collection.findOne<MongoDocument<U>>(filter);
 
     if (document == undefined) {
@@ -95,14 +93,14 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async *loadManyById<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
-    const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+    const filter: FilterQuery<U> = {
       _id: { $in: ids }
     };
 
     yield* this.loadManyByFilter(filter);
   }
 
-  async *loadManyByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): AsyncIterableIterator<U> {
+  async *loadManyByFilter<U extends T = T>(filter: FilterQuery<U>): AsyncIterableIterator<U> {
     const cursor = this.collection.find<MongoDocument<U>>(filter);
 
     for await (const document of (cursor as AsyncIterable<MongoDocument<U>>)) {
@@ -111,11 +109,11 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async countByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): Promise<number> {
+  async countByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
     return this.collection.countDocuments(filter);
   }
 
-  async hasByFilter<U extends T = T>(filter: Mongo.FilterQuery<MongoDocument<U>>): Promise<boolean> {
+  async hasByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
     const count = await this.countByFilter(filter);
     return count > 0;
   }
@@ -126,7 +124,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
-    const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+    const filter: FilterQuery<T> = {
       _id: { $in: ids }
     };
 
@@ -139,6 +137,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
+// tslint:disable-next-line: typedef
 function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   const operation = {
     insertOne: {
@@ -149,8 +148,9 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   return operation;
 }
 
+// tslint:disable-next-line: typedef
 function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
-  const filter: Mongo.FilterQuery<MongoDocument<T>> = {
+  const filter: FilterQuery<T> = {
     _id: document._id
   };
 

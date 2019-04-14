@@ -1,15 +1,15 @@
 import { AsyncEnumerable } from '@common-ts/base/enumerable';
 import { Entity, EntityRepository, EntityWithPartialId } from '@common-ts/database';
-import { Collection, IndexSpecification } from 'mongodb';
+import { IndexSpecification } from 'mongodb';
 import { MongoBaseRepository } from './mongo-base-repository';
-import { MongoDocument } from './mongo-document';
+import { Collection } from './types';
 
 export class MongoEntityRepository<T extends Entity> implements EntityRepository<T> {
-  protected readonly collection: Collection<MongoDocument<T>>;
+  protected readonly collection: Collection<T>;
   protected readonly indexes: IndexSpecification[];
   protected readonly baseRepository: MongoBaseRepository<T>;
 
-  constructor(collection: Collection, indexes: IndexSpecification[] = []) {
+  constructor(collection: Collection<T>, indexes: IndexSpecification[] = []) {
     this.collection = collection;
     this.indexes = indexes;
 
