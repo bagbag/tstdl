@@ -1,36 +1,21 @@
-import { SerializeHandler } from '../serialize-handler';
-import { SerializedElement } from '../serialized-element';
+import { Serializer } from '../serializer';
 
-const TYPE = 'regexp';
+export function registerRegExpType(serializer: typeof Serializer): void {
+  serializer.registerType(RegExp, serialize, deserialize);
+}
 
-type SerializedRegexData = {
+type RegExpData = {
   pattern: string,
   flags: string
 };
 
-export class RegexSerializeHandler implements SerializeHandler {
-  canSerialize(obj: any): boolean {
-    return obj.constructor == RegExp;
-  }
+function serialize(regex: RegExp): RegExpData {
+  return {
+    pattern: regex.source,
+    flags: regex.flags
+  };
+}
 
-  serialize(obj: any): SerializedElement {
-    const data: SerializedRegexData = {
-      pattern: (obj as RegExp).source,
-      flags: (obj as RegExp).flags
-    };
-
-    return {
-      type: TYPE,
-      data
-    };
-  }
-
-  canDeserialize(serialized: SerializedElement): boolean {
-    return serialized.type == TYPE;
-  }
-
-  deserialize(serialized: SerializedElement): any {
-    const data = (serialized.data as SerializedRegexData);
-    return new RegExp(data.pattern, data.flags);
-  }
+function deserialize({pattern, flags}: RegExpData): RegExp {
+  return new RegExp(pattern, flags);
 }

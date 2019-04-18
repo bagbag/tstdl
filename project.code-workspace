@@ -1,0 +1,25 @@
+{
+  "folders": [{
+      "path": "base"
+    },
+    {
+      "path": "client"
+    },
+    {
+      "path": "server"
+    },
+    {
+      "path": "database"
+    },
+    {
+      "path": "mongo"
+    },
+    {
+      "path": "redis"
+    },
+    {
+      "name": "root",
+      "path": "."
+    }
+  ]
+}

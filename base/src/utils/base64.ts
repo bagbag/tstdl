@@ -1,34 +1,31 @@
-export function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const uint8Array = new Uint8Array(buffer);
+import { TypedArray } from '../types';
 
-  let base64: string;
-
+export function encodeBase64(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
   if (typeof Buffer != 'undefined') {
-    base64 = Buffer.from(uint8Array).toString('base64');
-  }
-  else {
-    const chunkSize = 2 ** 15; // arbitrary number
-    const length = uint8Array.length;
-
-    let index = 0;
-    let result = '';
-    let slice;
-
-    while (index < length) {
-      slice = uint8Array.subarray(index, Math.min(index + chunkSize, length));
-      result += String.fromCharCode.apply(undefined, [...slice]);
-      index += chunkSize;
-    }
-
-    base64 = btoa(result);
+    const buffer = Buffer.from((array as TypedArray).buffer != undefined ? (array as TypedArray).buffer : array, bytesOffset, length);
+    return buffer.toString('base64');
   }
 
-  return base64;
+  const uint8Array = new Uint8Array(array);
+  const chunkSize = 2 ** 15; // arbitrary number
+  const arrayLength = uint8Array.length;
+
+  let index = 0;
+  let result = '';
+
+  while (index < arrayLength) {
+    const slice = uint8Array.subarray(index, Math.min(index + chunkSize, arrayLength));
+    result += String.fromCharCode.apply(undefined, [...slice]);
+    index += chunkSize;
+  }
+
+  return btoa(result);
 }
 
-export function base64ToArrayBuffer(base64: string): ArrayBuffer {
+export function decodeBase64(base64: string): ArrayBuffer {
   if (typeof Buffer != 'undefined') {
-    return Buffer.from(base64, 'base64');
+    const buffer = Buffer.from(base64, 'base64');
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   }
 
   const binaryString = atob(base64);

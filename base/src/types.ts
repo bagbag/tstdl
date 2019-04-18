@@ -12,7 +12,7 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
 export interface JsonArray extends Array<Json> { }
 
-export type Type<T> = new () => T;
+export type Type<T, Args = any> = new (...args: Args[]) => T;
 
 export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };
@@ -32,3 +32,16 @@ export interface DeepArray<T> extends Array<T | DeepArray<T>> { }
 export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | ReadonlyArray<any>) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 export interface DeepReadonlyArray<T> extends ReadonlyArray<DeepReadonly<T>> { }
+
+export type TypedArray =
+  | Int8Array
+  | Uint8Array
+  | Uint8ClampedArray
+  | Int16Array
+  | Uint16Array
+  | Int32Array
+  | Uint32Array
+  | Float32Array
+  | Float64Array
+  | BigInt64Array
+  | BigUint64Array;

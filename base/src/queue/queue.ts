@@ -1,12 +1,12 @@
 import { CancellationToken } from '../utils/cancellation-token';
 
 export type Job<T> = {
-  data: T,
-  schedule?: number
+  id: string,
+  data: T
 };
 
 export interface Queue<T> {
-  enqueue(data: T, timestamp?: number): Promise<Job<T>>;
+  enqueue(data: T): Promise<Job<T>>;
   enqueueMany(data: T[]): Promise<Job<T>[]>;
 
   acknowledge(...jobs: Job<T>[]): Promise<void>;
