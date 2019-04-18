@@ -28,7 +28,6 @@ export class PrototypeSerializeHandler implements SerializeHandler {
   }
 
   canSerialize(obj: any): boolean {
-    // tslint:disable-next-line: no-unbound-method
     return typeof (obj as Serializable)[serialize] == 'function';
   }
 

@@ -59,7 +59,7 @@ class _Serializer {
     const handler = _Serializer.getDeserializationHandler(serializedElement);
     const result = handler.deserialize(serializedElement);
 
-    return result;
+    return result as T;
   }
 
   private static getSerializationHandler(obj: any): SerializeHandler {
