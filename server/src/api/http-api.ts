@@ -49,7 +49,7 @@ export class HttpApi {
   private readonly router: KoaRouter<void, void>;
   private readonly requestHandler: RequestHandler;
 
-  constructor({ prefix, logger, behindProxy }: { prefix: string, logger: Logger, behindProxy?: boolean | undefined }) {
+  constructor({ prefix, logger, behindProxy = false }: { prefix: string, logger: Logger, behindProxy?: boolean }) {
     this.logger = logger;
 
     this.koa = new Koa();
@@ -57,7 +57,7 @@ export class HttpApi {
 
     this.requestHandler = this.koa.callback();
 
-    this.koa.proxy = (behindProxy === true);
+    this.koa.proxy = behindProxy;
     this.router.prefix(prefix);
 
     this.koa.use(errorCatchMiddleware(logger));

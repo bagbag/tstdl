@@ -11,21 +11,14 @@ export class MongoBaseRepository<T extends Entity> {
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     const document = toMongoDocumentWithNewId(entity);
-
     const result = await this.collection.insertOne(document);
-
-    if (result.insertedId != undefined) {
-      throw new Error('should not happen?!');
-    }
 
     return toEntity(document);
   }
 
   async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
     const document = toMongoDocumentWithNewId(entity);
-
     const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
-
     await this.collection.replaceOne(filter, replacement, { upsert });
 
     return toEntity(document);
@@ -40,10 +33,6 @@ export class MongoBaseRepository<T extends Entity> {
     const operations = documents.map(toInsertOneOperation);
     const bulkWriteResult = await this.collection.bulkWrite(operations);
 
-    if (Object.keys(bulkWriteResult.insertedIds).length > 0) {
-      throw new Error('should not happen?!');
-    }
-
     const savedEntities = documents.map(toEntity);
     return savedEntities;
   }
@@ -56,10 +45,6 @@ export class MongoBaseRepository<T extends Entity> {
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
     const bulkWriteResult = await this.collection.bulkWrite(operations);
-
-    if (Object.keys(bulkWriteResult.insertedIds).length > 0) {
-      throw new Error('should not happen?!');
-    }
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;

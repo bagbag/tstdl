@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/mongo",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
