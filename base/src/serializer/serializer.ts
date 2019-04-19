@@ -1,5 +1,5 @@
 import { Json, JsonPrimitive, StringMap, Type } from '../types';
-import { registerBinaryTypes, registerDateType, registerRegExpType } from './handlers';
+import { registerBinaryTypes, registerDateType, registerFunctionType, registerRegExpType } from './handlers';
 import { deserialize, Serializable, SerializableStatic, serialize } from './serializable';
 
 declare const serializedSymbol: unique symbol;
@@ -79,6 +79,10 @@ function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
     return object as JsonPrimitive;
   }
 
+  if (object === undefined) {
+    return { __type: 'undefined', data: undefined } as UndefinedNonPrimitive;
+  }
+
   if (object.constructor == Object) {
     const serializedObject: StringMap<Json> = {};
     const properties = Object.getOwnPropertyNames(object);
@@ -95,10 +99,6 @@ function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
 
   if (object.constructor == Array) {
     return (object as any[]).map((item) => _rawSerialize(item, customTypes));
-  }
-
-  if (object === undefined) {
-    return { __type: 'undefined', data: undefined } as UndefinedNonPrimitive;
   }
 
   const customType = customTypes.get(object.constructor.name);
@@ -118,7 +118,7 @@ function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
     return { __type: 'custom', data } as CustomNonPrimitive;
   }
 
-  throw new Error('no suitable handler available');
+  throw new Error(`no suitable handler for ${object.constructor.name} available`);
 }
 
 function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
@@ -182,6 +182,7 @@ function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
 registerDateType(_Serializer);
 registerRegExpType(_Serializer);
 registerBinaryTypes(_Serializer);
+registerFunctionType(_Serializer);
 
 // tslint:disable-next-line: variable-name
 export const Serializer = _Serializer as SerializerStatic;
