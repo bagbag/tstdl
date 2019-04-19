@@ -26,6 +26,8 @@ export type TypeOf<T extends object, P extends keyof T> = T[P];
 export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
 export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
+export type PropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? P : never }[keyof T];
+export type ExtractPropertiesOfType<T, U> = { [P in PropertiesOfType<T, U>]: T[P] };
 
 export interface DeepArray<T> extends Array<T | DeepArray<T>> { }
 

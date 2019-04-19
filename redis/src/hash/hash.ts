@@ -1,13 +1,17 @@
 import { Serializer } from '@common-ts/base/serializer';
-import { Redis } from 'ioredis';
+import { PropertiesOfType, StringMap } from '@common-ts/base/types';
+import { Pipeline, Redis } from 'ioredis';
+import { RedisTransaction } from '../transaction';
 
 enum SetResult {
   New = 1,
   Updated = 0
 }
 
-export class RedisHash<T> {
-  private readonly redis: Redis;
+type Fields<T> = keyof T & string;
+
+export class RedisHash<T = StringMap<string>> {
+  private readonly redis: Redis | RedisTransaction;
   private readonly key: string;
 
   constructor(redis: Redis, key: string) {
@@ -15,14 +19,14 @@ export class RedisHash<T> {
     this.key = key;
   }
 
-  async exists<Field extends keyof T>(field: Field): Promise<boolean> {
+  async exists<Field extends Fields<T>>(field: Field): Promise<boolean> {
     const exists = await this.redis.hexists(this.key, field as string);
     return exists == 1;
   }
 
-  async get<Field extends keyof T>(field: Field, throwIfNotFound?: true): Promise<T[Field]>;
-  async get<Field extends keyof T>(field: Field, throwIfNotFound: boolean): Promise<T[Field] | undefined>;
-  async get<Field extends keyof T>(field: Field, throwIfNotFound: boolean = true): Promise<T[Field] | undefined> {
+  async get<Field extends Fields<T>>(field: Field, throwIfNotFound?: true): Promise<T[Field]>;
+  async get<Field extends Fields<T>>(field: Field, throwIfNotFound: boolean): Promise<T[Field] | undefined>;
+  async get<Field extends Fields<T>>(field: Field, throwIfNotFound: boolean = true): Promise<T[Field] | undefined> {
     const result = await this.redis.hget(this.key, field as string);
 
     if (result == undefined) {
@@ -36,12 +40,12 @@ export class RedisHash<T> {
     return Serializer.deserialize(result);
   }
 
-  async set<Field extends keyof T>(field: Field, value: T[Field]): Promise<SetResult> {
+  async set<Field extends Fields<T>>(field: Field, value: T[Field]): Promise<SetResult> {
     const serialized = Serializer.serialize(value);
     return this.redis.hset(this.key, field as string, serialized);
   }
 
-  async delete<Field extends keyof T>(...fields: Field[]): Promise<number> {
+  async delete<Field extends Fields<T>>(...fields: Field[]): Promise<number> {
     return this.redis.hdel(this.key, ...fields as string[]) as Promise<number>;
   }
 
@@ -61,7 +65,63 @@ export class RedisHash<T> {
     return result;
   }
 
-  async increase(value: number, asFloat: boolean): Promise<number> {
+  async increase<Field extends PropertiesOfType<T, number> & string>(field: Field, increment: number, asFloat: boolean): Promise<number> {
+    return asFloat
+      ? this.redis.hincrbyfloat(this.key, field, increment)
+      : this.redis.hincrby(this.key, field, increment);
+  }
 
+  async fields(): Promise<string[]> {
+    return this.redis.hkeys(this.key) as Promise<string[]>;
+  }
+
+  async values(): Promise<T[keyof T][]> {
+    const reply = await (this.redis.hvals(this.key) as Promise<string[]>);
+    const values = reply.map((serialized) => Serializer.deserialize(serialized));
+
+    return values as T[keyof T][];
+  }
+
+  async length(): Promise<number> {
+    return this.redis.hlen(this.key);
+  }
+
+  async getMany<Field extends Fields<T>>(...fields: Field[]): Promise<Partial<{ [P in Field]: T[Field] }>> {
+    const reply = await (this.redis.hmget(this.key, ...fields) as Promise<(string | null)[]>);
+    const result: Partial<{ [P in Field]: T[Field] }> = {};
+
+    for (let i = 0; i < fields.length; i++) {
+      const value = reply[i];
+
+      if (value != undefined) {
+        result[fields[i]] = Serializer.deserialize(value);
+      }
+    }
+
+    return result;
+  }
+
+  async setMany<Field extends Fields<T>>(values: Partial<{ [P in Field]: T[P] }>): Promise<void> {
+    const args = Object.entries(values).flat();
+    await this.redis.hmset(this.key, ...args);
+  }
+
+  async *scan({ pattern, count }: { pattern?: string, count?: number } = {}): AsyncIterableIterator<{ field: string, value: any }> {
+    const args = [...(pattern != undefined ? ['PATTERN', pattern] : []), ...(count != undefined ? ['COUNT', count] : [])];
+
+    let cursor = 0;
+
+    do {
+      const [newCursor, entries] = await (this.redis.hscan(this.key, cursor, ...args) as Promise<[number, string[]]>);
+      cursor = newCursor;
+
+      for (let i = 0; i < entries.length; i += 2) {
+        const field = entries[i];
+        const value = Serializer.deserialize(entries[i + 1]);
+
+        yield { field, value };
+      }
+    }
+    while (cursor != 0);
   }
 }
