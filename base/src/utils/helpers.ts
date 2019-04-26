@@ -1,14 +1,14 @@
 import { DeepArray, StringMap } from '../types';
 
-export function getGetter<T, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
+export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
     throw new Error(`property ${property} does not exist`);
   }
 
-  let objOrPrototype = obj;
+  let objOrPrototype = obj as object;
 
   while (!objOrPrototype.hasOwnProperty(property)) {
-    objOrPrototype = Object.getPrototypeOf(objOrPrototype);
+    objOrPrototype = Object.getPrototypeOf(objOrPrototype) as object;
   }
 
   const descriptor = Object.getOwnPropertyDescriptor(objOrPrototype, property);
@@ -25,6 +25,12 @@ export function getGetter<T, U extends keyof T>(obj: T, property: keyof T, bind:
   const getter = bind ? descriptor.get.bind(obj) : descriptor.get;
 
   return getter;
+}
+
+export function toArray<T>(value: T | T[]): T[] {
+  return Array.isArray(value)
+    ? value
+    : [value];
 }
 
 export function now(): Date {
