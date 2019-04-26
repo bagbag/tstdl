@@ -6,11 +6,11 @@ const redis = new Redis();
 const transaction = new RedisTransaction(redis);
 
 const replies = Promise.all([
-  transaction.hmset('test', ['field', 'value']),
-  transaction.hmset('test', ['field2', 'value2']),
-  transaction.hmget('test', 'field', 'field2')
+  redis.zadd('test2', 1 as any as string, 'asd'),
+  redis.zscore('test2', 'asd')
 ]);
 
 replies.then(console.log).catch(console.error);
 
-transaction.exec().then(console.log).catch(console.error);
+transaction.exec().then(console.log).catch(console.error).then(() => redis.disconnect());
+

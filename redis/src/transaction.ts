@@ -15,16 +15,19 @@ type SupportedCommands =
   | 'hmset'
   | 'hset'
   | 'hvals'
-  | 'hscan';
+  | 'hscan'
+  | 'zpopmin';
 
 export class RedisTransaction implements Pick<Redis, SupportedCommands> {
   private readonly multi: Pipeline;
   private readonly promises: DeferredPromise<any>[];
 
   // tslint:disable: typedef
-  hget = this.wrap('hget');
-  hexists = this.wrap('hexists');
+
+  /* Hash */
   hdel = this.wrap('hdel');
+  hexists = this.wrap('hexists');
+  hget = this.wrap('hget');
   hgetall = this.wrap('hgetall');
   hincrby = this.wrap('hincrby');
   hincrbyfloat = this.wrap('hincrbyfloat');
@@ -32,9 +35,37 @@ export class RedisTransaction implements Pick<Redis, SupportedCommands> {
   hlen = this.wrap('hlen');
   hmget = this.wrap('hmget');
   hmset = this.wrap('hmset');
+  hscan = this.wrap('hscan');
   hset = this.wrap('hset');
   hvals = this.wrap('hvals');
-  hscan = this.wrap('hscan');
+
+  /* Sorted Set */
+  bzpopmax = this.wrap('bzpopmax');
+  bzpopmin = this.wrap('bzpopmin');
+  zadd = this.wrap('zadd');
+  zcard = this.wrap('zcard');
+  zcount = this.wrap('zcount');
+  zincrby = this.wrap('zincrby');
+  zinterstore = this.wrap('zinterstore');
+  zlexcount = this.wrap('zlexcount');
+  zpopmax = this.wrap('zpopmax');
+  zpopmin = this.wrap('zpopmin');
+  zrange = this.wrap('zrange');
+  zrangebylex = this.wrap('zrangebylex');
+  zrangebyscore = this.wrap('zrangebyscore');
+  zrank = this.wrap('zrank');
+  zrem = this.wrap('zrem');
+  zremrangebylex = this.wrap('zremrangebylex');
+  zremrangebyrank = this.wrap('zremrangebyrank');
+  zremrangebyscore = this.wrap('zremrangebyscore');
+  zrevrange = this.wrap('zrevrange');
+  zrevrangebylex = this.wrap('zrevrangebylex');
+  zrevrangebyscore = this.wrap('zrevrangebyscore');
+  zrevrank = this.wrap('zrevrank');
+  zscan = this.wrap('zscan');
+  zscore = this.wrap('zscore');
+  zunionstore = this.wrap('zunionstore');
+
   // tslint:enable: typedef
 
   constructor(redis: Redis) {
