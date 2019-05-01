@@ -1,5 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 import { bufferCount, filter, map } from 'rxjs/operators';
+import { compareByValue } from './helpers';
 import { average } from './math';
 import { timeout } from './timing';
 
@@ -76,17 +77,17 @@ export class PeriodicSampler {
         return average(...values);
 
       case AggregationMode.Median:
-        values.sort((a, b) => a - b);
+        values.sort(compareByValue);
         const median = Math.round(values.length / 2);
         return values[median];
 
       case AggregationMode.FirstQuartile:
-        values.sort((a, b) => a - b);
+        values.sort(compareByValue);
         const firstQuartile = Math.round(values.length / 4 * 1);
         return values[firstQuartile];
 
       case AggregationMode.ThirdQuartile:
-        values.sort((a, b) => a - b);
+        values.sort(compareByValue);
         const thirdQuartile = Math.round(values.length / 4 * 3);
         return values[thirdQuartile];
 

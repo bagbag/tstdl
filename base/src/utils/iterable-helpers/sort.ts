@@ -1,9 +1,7 @@
-import { Comparator } from './types';
+import { compareByValue } from '../helpers';
+import { Comparator } from '../sort';
 
-export function sort<T>(iterable: Iterable<T>): Iterable<T>;
-export function sort<T>(iterable: Iterable<T>, comparator: Comparator<T>): Iterable<T>;
-export function sort<T>(iterable: Iterable<T>, comparator?: Comparator<T>): Iterable<T>;
-export function sort<T>(iterable: Iterable<T>, comparator?: Comparator<T>): Iterable<T> {
+export function sort<T>(iterable: Iterable<T>, comparator: Comparator<T> = compareByValue): Iterable<T> {
   const array = [...iterable];
   const sorted = array.sort(comparator);
 

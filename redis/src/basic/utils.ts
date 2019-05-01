@@ -1,9 +1,9 @@
-export function conditional<T, U>(predicate: boolean, whenTrue: T): [T] | [];
-export function conditional<T, U>(predicate: boolean, whenTrue: T, whenFalse: U): [T] | [U];
-export function conditional<T, U>(predicate: boolean, whenTrue: T, whenFalse?: U | undefined): [T] | [U] | [] {
+export function conditional<T, U>(predicate: boolean, whenTrue: T | T[]): [T] | [];
+export function conditional<T, U>(predicate: boolean, whenTrue: T | T[], whenFalse: U | U[]): [T] | [U];
+export function conditional<T, U>(predicate: boolean, whenTrue: T | T[], whenFalse?: U | U[] | undefined): T[] | U[] | [] {
   return predicate
-    ? [whenTrue]
+    ? Array.isArray(whenTrue) ? whenTrue : [whenTrue]
     : whenFalse != undefined
-      ? [whenFalse]
+      ? Array.isArray(whenFalse) ? whenFalse : [whenFalse]
       : [];
 }

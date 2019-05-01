@@ -1,6 +1,6 @@
 import { Omit } from '@common-ts/base/types';
+import { getRandomString } from '@common-ts/base/utils';
 import { Entity, EntityWithPartialId } from '@common-ts/database';
-import { uniqueIdSync } from '@common-ts/server/utils';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id: string;
@@ -50,7 +50,7 @@ export function toMongoDocumentWithNewId<T extends Entity>(entity: EntityWithPar
 
   // tslint:disable-next-line: no-object-literal-type-assertion
   const document = {
-    _id: (id != undefined) ? id : uniqueIdSync(16),
+    _id: (id != undefined) ? id : getRandomString(15),
     ...entityRest
   } as MongoDocument<T>;
 

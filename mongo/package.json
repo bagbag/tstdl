@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/mongo",
-  "version": "1.8.2",
+  "version": "1.8.3",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,13 +10,13 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@common-ts/base": "^1.12.0",
+    "@common-ts/base": "^1.17.0",
     "@common-ts/database": "^1.2.0",
-    "@common-ts/server": "^2.6.0",
-    "mongodb": "^3.2.0"
+    "@common-ts/server": "^2.8.0",
+    "mongodb": "^3.2.3"
   },
   "devDependencies": {
-    "@types/mongodb": "^3.1.0",
-    "typescript": "~3.4.0"
+    "@types/mongodb": "^3.1.26",
+    "typescript": "~3.4.5"
   }
 }

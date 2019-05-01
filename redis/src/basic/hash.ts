@@ -1,7 +1,7 @@
-import { Serializer } from '@common-ts/base/serializer';
 import { PropertiesOfType, StringMap } from '@common-ts/base/types';
 import { Pipeline, Redis } from 'ioredis';
 import { RedisTransaction } from '../transaction';
+import { getCursor } from './cursor';
 
 enum SetResult {
   New = 1,
@@ -10,7 +10,7 @@ enum SetResult {
 
 type Fields<T> = keyof T & string;
 
-export class RedisHash<T = StringMap<string>> {
+export class RedisHash {
   private readonly redis: Redis | RedisTransaction;
   private readonly key: string;
 
@@ -94,7 +94,7 @@ export class RedisHash<T = StringMap<string>> {
       const value = reply[i];
 
       if (value != undefined) {
-        result[fields[i]] = Serializer.deserialize(value);
+        result[fields[i]] = value;
       }
     }
 
@@ -106,22 +106,11 @@ export class RedisHash<T = StringMap<string>> {
     await this.redis.hmset(this.key, ...args);
   }
 
-  async *scan({ pattern, count }: { pattern?: string, count?: number } = {}): AsyncIterableIterator<{ field: string, value: any }> {
-    const args = [...(pattern != undefined ? ['PATTERN', pattern] : []), ...(count != undefined ? ['COUNT', count] : [])];
+  async *scan(options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<SortedSetEntry> {
+    const cursor = getCursor(this.redis, this.key, 'hscan', options);
 
-    let cursor = 0;
-
-    do {
-      const [newCursor, entries] = await (this.redis.hscan(this.key, cursor, ...args) as Promise<[number, string[]]>);
-      cursor = newCursor;
-
-      for (let i = 0; i < entries.length; i += 2) {
-        const field = entries[i];
-        const value = Serializer.deserialize(entries[i + 1]);
-
-        yield { field, value };
-      }
+    for await (const [field, value] of cursor) {
+      yield { field, value };
     }
-    while (cursor != 0);
   }
 }

@@ -1,9 +1,9 @@
 import { Redis, Pipeline } from 'ioredis';
 
 interface Commands {
-  bzpopmax(...keys: string[], timeout: number): Promise<null | string[]>;
+  bzpopmax(keys: string[], timeout: number): Promise<null | string[]>;
 
-  bzpopmin(...keys: string[], timeout: number): Promise<null | string[]>;
+  bzpopmin(keys: string[], timeout: number): Promise<null | string[]>;
 
   zlexcount(key: string, min: string, max: string): Promise<number>;
 
@@ -53,8 +53,6 @@ interface Commands {
 
    */
 }
-
-(null as Commands).zuinionstore('asd', 5, '', 'adasd', 5, 3, 3)
 
 declare module 'ioredis' {
   declare interface Redis extends Commands {

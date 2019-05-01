@@ -5,7 +5,7 @@ const millisecondsPerTimerRead = measureTimerOverhead(3);
 
 export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPerOperation: number };
 
-export function benchmark(runs: number, func: (...args: any[]) => any, ...parameters: any[]): BenchmarkResult {
+export function benchmark<F extends (...args: any[]) => any>(runs: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
   const timer = new Timer(true);
 
   for (let i = 0; i < runs; i++) {
@@ -15,7 +15,7 @@ export function benchmark(runs: number, func: (...args: any[]) => any, ...parame
   return calculateResult(runs, timer.milliseconds);
 }
 
-export function timedBenchmark(ms: number, func: (...args: any[]) => any, ...parameters: any[]): BenchmarkResult {
+export function timedBenchmark<F extends (...args: any[]) => any>(milliseconds: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
   const timer = new Timer(true);
 
   let runs = 0;
@@ -23,12 +23,12 @@ export function timedBenchmark(ms: number, func: (...args: any[]) => any, ...par
     func(...parameters);
     runs++;
   }
-  while (timer.milliseconds < ms);
+  while (timer.milliseconds < milliseconds);
 
   return calculateTimedResult(runs, timer.milliseconds);
 }
 
-export async function benchmarkAsync(runs: number, func: (...args: any[]) => Promise<any>, ...parameters: any[]): Promise<BenchmarkResult> {
+export async function benchmarkAsync<F extends (...args: any[]) => Promise<any>>(runs: number, func: F, ...parameters: Parameters<F>): Promise<BenchmarkResult> {
   const timer = new Timer(true);
 
   for (let i = 0; i < runs; i++) {
@@ -38,7 +38,7 @@ export async function benchmarkAsync(runs: number, func: (...args: any[]) => Pro
   return calculateResult(runs, timer.milliseconds);
 }
 
-export async function timedBenchmarkAsync(ms: number, func: (...args: any[]) => Promise<any>, ...parameters: any[]): Promise<BenchmarkResult> {
+export async function timedBenchmarkAsync<F extends (...args: any[]) => Promise<any>>(milliseconds: number, func: F, ...parameters: Parameters<F>): Promise<BenchmarkResult> {
   const timer = new Timer(true);
 
   let runs = 0;
@@ -46,7 +46,7 @@ export async function timedBenchmarkAsync(ms: number, func: (...args: any[]) => 
     await func(...parameters);
     runs++;
   }
-  while (timer.milliseconds < ms);
+  while (timer.milliseconds < milliseconds);
 
   return calculateTimedResult(runs, timer.milliseconds);
 }
@@ -61,19 +61,19 @@ function calculateResult(runs: number, time: number): BenchmarkResult {
   const millisecondsPerOperation = time / runs;
 
   return {
-    operationsPerMillisecond: operationsPerMillisecond,
-    millisecondsPerOperation: millisecondsPerOperation
+    operationsPerMillisecond,
+    millisecondsPerOperation
   };
 }
 
-function measureTimerOverhead(runs: number) {
+function measureTimerOverhead(runs: number): number {
   const timer = new Timer(true);
   const millisecondsGetter = getGetter(timer, 'milliseconds', true);
 
   const results: number[] = [];
 
-  runs += 1; // because first is skipped as warmup
-  for (let i = 0; i < runs; i++) {
+  // runs + 1 because first is skipped as warmup
+  for (let i = 0; i < (runs + 1); i++) {
     const result = benchmark(1000000, millisecondsGetter);
 
     if (i > 0) {
