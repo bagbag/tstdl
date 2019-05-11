@@ -4,5 +4,7 @@ import { toArrayAsync } from './to-array';
 
 export async function sortAsync<T>(iterable: AnyIterable<T>, comparator?: AsyncComparator<T>): Promise<T[]> {
   const array = await toArrayAsync(iterable);
-  return quickSortInPlaceAsync(array, comparator);
+  quickSortInPlaceAsync(array, comparator);
+
+  return array;
 }

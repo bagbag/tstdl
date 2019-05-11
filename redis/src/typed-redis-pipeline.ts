@@ -1,12 +1,12 @@
 import { Redis } from 'ioredis';
-import { RedisTransactionWrapper } from './transaction-wrapper';
+import { RedisPipelineWrapper } from './pipeline-wrapper';
 import { TypedRedis } from './typed-redis';
 
-export class TypedRedisTransaction extends TypedRedis {
-  private readonly transactionWrapper: RedisTransactionWrapper;
+export class TypedRedisPipeline extends TypedRedis {
+  private readonly transactionWrapper: RedisPipelineWrapper;
 
-  constructor(redis: Redis) {
-    const transactionWrapper = new RedisTransactionWrapper(redis);
+  constructor(redis: Redis, transaction: boolean) {
+    const transactionWrapper = new RedisPipelineWrapper(redis, transaction);
 
     super(transactionWrapper);
 

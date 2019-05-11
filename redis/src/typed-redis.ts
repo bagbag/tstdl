@@ -1,8 +1,8 @@
 import { StringMap } from '@common-ts/base/types';
 import { toArray } from '@common-ts/base/utils';
 import { Redis } from 'ioredis';
-import { RedisTransactionWrapper } from './transaction-wrapper';
-import { TypedRedisTransaction } from './typed-redis-transaction';
+import { RedisPipelineWrapper } from './pipeline-wrapper';
+import { TypedRedisPipeline } from './typed-redis-pipeline';
 import { conditional } from './utils';
 
 type ScanType = /* 'scan' | 'sscan' | */ 'hscan' | 'zscan';
@@ -40,18 +40,26 @@ enum SortedSetReplyOrder {
 }
 
 export class TypedRedis {
-  private readonly redis: Redis | RedisTransactionWrapper;
+  private readonly redis: Redis | RedisPipelineWrapper;
 
-  constructor(redis: Redis | RedisTransactionWrapper) {
+  constructor(redis: Redis | RedisPipelineWrapper) {
     this.redis = redis;
   }
 
-  transaction(): TypedRedisTransaction {
-    if (this.redis instanceof RedisTransactionWrapper) {
-      throw new Error('transaction already started');
+  pipeline(): TypedRedisPipeline {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('already in pipeline mode');
     }
 
-    return new TypedRedisTransaction(this.redis);
+    return new TypedRedisPipeline(this.redis, false);
+  }
+
+  transaction(): TypedRedisPipeline {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('already in transaction mode');
+    }
+
+    return new TypedRedisPipeline(this.redis, true);
   }
 
   async hExists(key: string, field: string): Promise<boolean> {
@@ -135,8 +143,11 @@ export class TypedRedis {
     return result;
   }
 
-  async hSetMany(key: string, values: StringMap<string>): Promise<void> {
-    const args = Object.entries(values).flat();
+  async hSetMany(key: string, values: StringMap<string> | [string, string][]): Promise<void> {
+    const args = Array.isArray(values)
+      ? values.flat()
+      : Object.entries(values).flat();
+
     await this.redis.hmset(key, ...args);
   }
 
@@ -290,6 +301,10 @@ export class TypedRedis {
 
   async zUnion(key: string, destionation: string, sets: string[], options: SortedSetCombineOptions): Promise<number> {
     return this.zCombine(key, 'zunionstore', destionation, sets, options);
+  }
+
+  async lPush(key: string, values: string[]): Promise<number> {
+    return this.redis.lpush(key, ...values) as Promise<number>;
   }
 
   private async zBlockPop(key: string, type: 'bzpopmin' | 'bzpopmax', setsOrTimeout: string[] | number, timeoutOrUndefined?: number): Promise<undefined | SortedSetBlockingPopResult> {

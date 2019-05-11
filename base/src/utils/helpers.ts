@@ -191,3 +191,13 @@ export function dotNotation(_type: any, ...keys: string[]): string {
 
   return keys.join('.');
 }
+
+export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
+  const array = new Array(length);
+
+  for (let i = 0; i < length; i++) {
+    array[i] = valueProvider(i);
+  }
+
+  return array;
+}

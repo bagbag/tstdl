@@ -2,27 +2,11 @@ import { DeferredPromise } from '@common-ts/base/promise';
 import { PropertiesOfType } from '@common-ts/base/types';
 import { Pipeline, Redis } from 'ioredis';
 
-type SupportedCommands =
-  | 'hget'
-  | 'hexists'
-  | 'hdel'
-  | 'hgetall'
-  | 'hincrby'
-  | 'hincrbyfloat'
-  | 'hkeys'
-  | 'hlen'
-  | 'hmget'
-  | 'hmset'
-  | 'hset'
-  | 'hvals'
-  | 'hscan'
-  | 'zpopmin';
-
 const redisTransactionWrapperSymbol: unique symbol = Symbol();
 
 // tslint:disable-next-line: class-name
-export class RedisTransactionWrapper implements Pick<Redis, SupportedCommands> {
-  private readonly multi: Pipeline;
+export class RedisPipelineWrapper {
+  private readonly pipeline: Pipeline;
   private readonly promises: DeferredPromise<any>[];
 
   readonly [redisTransactionWrapperSymbol]: undefined = undefined;
@@ -71,16 +55,20 @@ export class RedisTransactionWrapper implements Pick<Redis, SupportedCommands> {
   zscore = this.wrap('zscore');
   zunionstore = this.wrap('zunionstore');
 
+  /* List */
+  lpush = this.wrap('lpush');
+  rpush = this.wrap('rpush');
+
   // tslint:enable: typedef
 
-  constructor(redis: Redis) {
-    this.multi = redis.multi();
+  constructor(redis: Redis, transaction: boolean) {
+    this.pipeline = transaction ? redis.multi() : redis.pipeline();
     this.promises = [];
   }
 
   async discard(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.multi.discard((error) => {
+      this.pipeline.discard((error) => {
         if (error != undefined) {
           reject(error);
         }
@@ -92,7 +80,7 @@ export class RedisTransactionWrapper implements Pick<Redis, SupportedCommands> {
   }
 
   async execute(): Promise<[Error | null, any][]> {
-    const replies = await this.multi.exec() as [Error | null, any][];
+    const replies = await this.pipeline.exec() as [Error | null, any][];
 
     for (let i = 0; i < replies.length; i++) {
       const [error, reply] = replies[i];
@@ -119,22 +107,21 @@ export class RedisTransactionWrapper implements Pick<Redis, SupportedCommands> {
       const lastParameterIsCallback = typeof callback == 'function';
 
       if (lastParameterIsCallback) {
-        promise.then((reply) => callback(null, reply)).catch((error) => callback(error, null));
+        throw new Error('callback not supported');
       }
 
-      const commandArguments =
-        lastParameterIsCallback
-          ? args.slice(0, -1)
-          : args;
-
-      (this.multi as any)[func](...commandArguments);
+      (this.pipeline as any)[func](...args, (error: Error) => {
+        if (error != undefined) {
+          promise.reject(error);
+        }
+      });
 
       return promise;
     }) as (...args: Args) => ReturnType<Redis[F]>;
   }
 
   // tslint:disable-next-line: promise-function-async
-  private register<T>(): Promise<T> {
+  private register<T>(): DeferredPromise<T> {
     const deferredPromise = new DeferredPromise<T>();
     this.promises.push(deferredPromise);
 
