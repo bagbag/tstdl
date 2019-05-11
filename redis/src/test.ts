@@ -1,5 +1,5 @@
 import * as Redis from 'ioredis';
-import { RedisTransaction } from './transaction';
+import { RedisTransactionWrapper } from './transaction-wrapper';
 
 const redis = new Redis();
 

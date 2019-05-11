@@ -18,9 +18,14 @@ type SupportedCommands =
   | 'hscan'
   | 'zpopmin';
 
-export class RedisTransaction implements Pick<Redis, SupportedCommands> {
+const redisTransactionWrapperSymbol: unique symbol = Symbol();
+
+// tslint:disable-next-line: class-name
+export class RedisTransactionWrapper implements Pick<Redis, SupportedCommands> {
   private readonly multi: Pipeline;
   private readonly promises: DeferredPromise<any>[];
+
+  readonly [redisTransactionWrapperSymbol]: undefined = undefined;
 
   // tslint:disable: typedef
 
@@ -73,7 +78,40 @@ export class RedisTransaction implements Pick<Redis, SupportedCommands> {
     this.promises = [];
   }
 
-  wrap<F extends PropertiesOfType<Pipeline, Function>, Args extends Parameters<Pipeline[F]>>(func: F): (...args: Args) => ReturnType<Redis[F]> {
+  async discard(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.multi.discard((error) => {
+        if (error != undefined) {
+          reject(error);
+        }
+        else {
+          resolve();
+        }
+      });
+    });
+  }
+
+  async execute(): Promise<[Error | null, any][]> {
+    const replies = await this.multi.exec() as [Error | null, any][];
+
+    for (let i = 0; i < replies.length; i++) {
+      const [error, reply] = replies[i];
+      const deferredPromise = this.promises[i];
+
+      if (error != undefined) {
+        deferredPromise.reject(error);
+      }
+      else {
+        deferredPromise.resolve(reply);
+      }
+    }
+
+    return replies;
+  }
+
+  // tslint:disable-next-line: ban-types
+  private wrap<F extends PropertiesOfType<Pipeline, Function>, Args extends Parameters<Pipeline[F]>>(func: F): Redis[F] {
+    // tslint:disable-next-line: promise-function-async
     return ((...args: Args) => {
       const promise = this.register();
       const callback = args[args.length - 1];
@@ -93,24 +131,6 @@ export class RedisTransaction implements Pick<Redis, SupportedCommands> {
 
       return promise;
     }) as (...args: Args) => ReturnType<Redis[F]>;
-  }
-
-  async exec(): Promise<[Error | null, any][]> {
-    const replies = await this.multi.exec() as [Error | null, any][];
-
-    for (let i = 0; i < replies.length; i++) {
-      const [error, reply] = replies[i];
-      const deferredPromise = this.promises[i];
-
-      if (error != undefined) {
-        deferredPromise.reject(error);
-      }
-      else {
-        deferredPromise.resolve(reply);
-      }
-    }
-
-    return replies;
   }
 
   // tslint:disable-next-line: promise-function-async
