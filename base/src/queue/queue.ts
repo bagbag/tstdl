@@ -19,10 +19,10 @@ export interface Queue<T> {
   enqueue(data: T, priority?: Priority): Promise<Job<T>>;
   enqueueMany(data: T[], priority?: Priority): Promise<Job<T>[]>;
 
-  dequeue(): Promise<Job<T>>;
-  dequeueMany(): Promise<Job<T>[]>;
+  dequeue(): Promise<Job<T> | undefined>;
+  dequeueMany(count: number): Promise<Job<T>[]>;
 
-  acknowledge(...jobs: Job<T>[]): Promise<void>;
+  acknowledge(jobs: Job<T> | Job<T>[]): Promise<void>;
 
   getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>>;
   getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]>;

@@ -1,12 +1,15 @@
 import * as Redis from 'ioredis';
-import { RedisTransactionWrapper } from './transaction-wrapper';
+import { TypedRedis } from './typed-redis';
+import { dequeueLuaScript } from './lua';
+import { benchmarkAsync, timedBenchmarkAsync, Timer } from '@common-ts/base/utils';
 
-const redis = new Redis();
+const redis = new TypedRedis(new Redis()).transaction();
 
-redis.set('asd', 5);
-redis.set('asd2', 5);
-redis.set('asd3', 5);
-redis.set('asd4', 5);
+for (let i = 0; i < 1000; i++) {
+  redis.scriptLoad(dequeueLuaScript);
+}
 
-
-redis.scan(0, 'COUNT', 1).then(console.log)
+(async () => {
+  const result = Timer.measureAsync(() => redis.execute());
+  console.log(result);
+})();

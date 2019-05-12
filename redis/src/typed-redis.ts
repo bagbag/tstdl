@@ -62,8 +62,16 @@ export class TypedRedis {
     return new TypedRedisPipeline(this.redis, true);
   }
 
+  async scriptLoad(script: string): Promise<string> {
+    return this.redis.script('LOAD', script) as Promise<string>;
+  }
+
   async evaluate<T>(script: string, keys: string[], args: string[]): Promise<T> {
     return this.redis.eval(script, keys.length, ...keys, ...args) as Promise<T>;
+  }
+
+  async evaluateSha<T>(sha: string, keys: string[], args: string[]): Promise<T> {
+    return this.redis.evalsha(sha, keys.length, ...keys, ...args) as Promise<T>;
   }
 
   async hExists(key: string, field: string): Promise<boolean> {
@@ -91,7 +99,7 @@ export class TypedRedis {
     return this.redis.hset(key, field, value);
   }
 
-  async hDelete(key: string, ...fields: string[]): Promise<number> {
+  async hDelete(key: string, fields: string[]): Promise<number> {
     return this.redis.hdel(key, ...fields) as Promise<number>;
   }
 

@@ -3,22 +3,20 @@ import { LockProvider } from '@common-ts/base/lock';
 import { Logger } from '@common-ts/base/logger';
 import { availablePriorities, Job, Priority, Queue } from '@common-ts/base/queue';
 import { Serializer } from '@common-ts/base/serializer';
-import { compareByValueSelection, createArray, getRandomString } from '@common-ts/base/utils';
+import { compareByValueSelection, createArray, currentTimestamp, getRandomString } from '@common-ts/base/utils';
 import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
 import { DistributedLoop, DistributedLoopProvider } from '@common-ts/server/distributed-loop';
-import { readFileSync } from 'fs';
+import { dequeueLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 
-const BLOCK_DURATION = 2500;
-
-const dequeueLuaScript = readFileSync('dequeue.lua', { encoding: 'utf8' }).trim();
+const BLOCK_DURATION_SECONDS = 2;
+const BLOCK_DURATION_SECONDS_STRING = BLOCK_DURATION_SECONDS.toString();
 
 export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly redis: TypedRedis;
   private readonly disposer: AsyncDisposer;
   private readonly lockProvider: LockProvider;
   private readonly distributedLoopProvider: DistributedLoopProvider;
-  private readonly key: string;
   private readonly dataHashKey: string;
   private readonly dequeueTimestampSortedSetKey: string;
   private readonly listKeys: Map<Priority, string>;
@@ -32,7 +30,6 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     this.redis = redis;
     this.lockProvider = lockProvider;
     this.distributedLoopProvider = distributedLoopProvider;
-    this.key = key;
     this.retryAfter = retryAfter;
     this.maxRetries = maxRetries;
     this.logger = logger;
@@ -84,25 +81,88 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     return jobs;
   }
 
-  async dequeue(): Promise<Job<T>> {
-    const jobId = await this.redis.evaluate<string | null>(dequeueLuaScript, [this.dequeueTimestampSortedSetKey], this.listKeysArray);
-
-
+  async dequeue(): Promise<Job<T> | undefined> {
+    return this._dequeue(this.redis, '0');
   }
 
-  async dequeueMany(): Promise<Job<T>[]> {
+  async dequeueMany(count: number): Promise<Job<T>[]> {
+    const pipeline = this.redis.pipeline();
+    const promises = createArray(count, () => this.dequeueLua(pipeline, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, '0'));
 
+    return Promise.all(promises);
   }
 
   async acknowledge(...jobs: Job<T>[]): Promise<void> {
-    throw new Error("Method not implemented.");
+    const transaction = this.redis.transaction();
+
+    const ids = jobs.map((job) => job.id);
+
+    await Promise.all([
+      transaction.hDelete(this.dataHashKey, ids),
+      transaction.zRemove(this.dequeueTimestampSortedSetKey, ids),
+      transaction.execute()
+    ]);
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {
-    throw new Error("Method not implemented.");
+    const deferrer = this.disposer.getDeferrer();
+
+    try {
+      while (!this.disposer.disposing && !cancellationToken.isSet) {
+        const job = await this._dequeue(this.redis, BLOCK_DURATION_SECONDS_STRING);
+
+        if (job != undefined) {
+          yield job;
+        }
+      }
+    }
+    finally {
+      deferrer.yield();
+    }
   }
 
   async *getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]> {
-    throw new Error("Method not implemented.");
+    const deferrer = this.disposer.getDeferrer();
+
+    try {
+      while (!this.disposer.disposing && !cancellationToken.isSet) {
+        const blockJob = await this._dequeue(this.redis, BLOCK_DURATION_SECONDS_STRING);
+
+        if (blockJob == undefined) {
+          continue;
+        }
+
+        const transaction = this.redis.transaction();
+
+        const [, ...unfilteredJobs] = await Promise.all<any>([
+          transaction.scriptLoad(dequeueLuaScript),
+          ...createArray(size - 1, () => this._dequeue(transaction, '0')),
+          transaction.execute().then(() => undefined)
+        ]) as [string, ...(Job<T> | undefined)[]];
+
+        const jobs = unfilteredJobs.filter((job) => job != undefined) as Job<T>[];
+        jobs.push(blockJob);
+
+        if (jobs.length > 0) {
+          yield jobs;
+        }
+      }
+    }
+    finally {
+      deferrer.yield();
+    }
+  }
+
+  async _dequeue(redis: TypedRedis, blockDurationSecondsString: string): Promise<Job<T> | undefined> {
+    return this.dequeueLua(redis, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, blockDurationSecondsString);
+  }
+
+  private async dequeueLua(redis: TypedRedis, dataHashKey: string, dequeueTimestampSortedSetKey: string, listKeys: string[], blockDurationSecondsString: string): Promise<Job<T>> {
+    const timestampString = currentTimestamp().toString();
+
+    const serializedJob = await redis.evaluate<string | null>(dequeueLuaScript, [dequeueTimestampSortedSetKey, dataHashKey, ...listKeys], [blockDurationSecondsString, timestampString]) as string;
+    const job = Serializer.deserialize<Job<T>>(serializedJob);
+
+    return job;
   }
 }
