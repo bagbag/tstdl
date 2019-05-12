@@ -1,18 +1,17 @@
 import { AsyncDisposable, AsyncDisposer } from '@common-ts/base/disposable';
 import { LockProvider } from '@common-ts/base/lock';
 import { Logger } from '@common-ts/base/logger';
-import { Job, Queue, Priority, availablePriorities } from '@common-ts/base/queue';
-import { getRandomString, createArray } from '@common-ts/base/utils';
+import { availablePriorities, Job, Priority, Queue } from '@common-ts/base/queue';
 import { Serializer } from '@common-ts/base/serializer';
+import { compareByValueSelection, createArray, getRandomString } from '@common-ts/base/utils';
 import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
 import { DistributedLoop, DistributedLoopProvider } from '@common-ts/server/distributed-loop';
+import { readFileSync } from 'fs';
 import { TypedRedis } from '../typed-redis';
 
 const BLOCK_DURATION = 2500;
 
-const dequeueLuaScript = `
-
-`.trim();
+const dequeueLuaScript = readFileSync('dequeue.lua', { encoding: 'utf8' }).trim();
 
 export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly redis: TypedRedis;
@@ -21,7 +20,9 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly distributedLoopProvider: DistributedLoopProvider;
   private readonly key: string;
   private readonly dataHashKey: string;
+  private readonly dequeueTimestampSortedSetKey: string;
   private readonly listKeys: Map<Priority, string>;
+  private readonly listKeysArray: string[];
   private readonly retryAfter: number;
   private readonly maxRetries: number;
   private readonly logger: Logger;
@@ -37,7 +38,9 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     this.logger = logger;
 
     this.dataHashKey = `queue:${key}:data`;
+    this.dequeueTimestampSortedSetKey = `queue:${key}:dequeueTime`;
     this.listKeys = new Map(availablePriorities.map((priority) => [priority, `queue:${key}:jobs:${priority}`]));
+    this.listKeysArray = [...this.listKeys.entries()].sort(compareByValueSelection(([priority]) => priority)).map(([, key]) => key);
   }
 
   async dispose(): Promise<void> {
@@ -82,6 +85,8 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   }
 
   async dequeue(): Promise<Job<T>> {
+    const jobId = await this.redis.evaluate<string | null>(dequeueLuaScript, [this.dequeueTimestampSortedSetKey], this.listKeysArray);
+
 
   }
 

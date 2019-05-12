@@ -13,6 +13,10 @@ export class RedisPipelineWrapper {
 
   // tslint:disable: typedef
 
+  /* - */
+  eval = this.wrap('eval');
+  evalsha = this.wrap('evalsha');
+
   /* Hash */
   hdel = this.wrap('hdel');
   hexists = this.wrap('hexists');

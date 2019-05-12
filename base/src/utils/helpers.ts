@@ -153,6 +153,24 @@ export function formatError(error: Error, includeStack: boolean): string {
   return `${error.name}: ${error.message}${stackMessage}`;
 }
 
+export function compareByValueSelection<T, U>(selector: (item: T) => U): (a: T, b: T) => number {
+  return (a: T, b: T) => {
+    const selectedA = selector(a);
+    const selectedB = selector(b);
+
+    return compareByValue(selectedA, selectedB);
+  };
+}
+
+export function compareByValueSelectionDescending<T, U>(selector: (item: T) => U): (a: T, b: T) => number {
+  return (a: T, b: T) => {
+    const selectedA = selector(a);
+    const selectedB = selector(b);
+
+    return compareByValueDescending(selectedA, selectedB);
+  };
+}
+
 export function compareByValue<T>(a: T, b: T): number {
   return (a > b) ? 1 : ((b > a) ? -1 : 0);
 }

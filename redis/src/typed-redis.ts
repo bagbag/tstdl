@@ -62,6 +62,10 @@ export class TypedRedis {
     return new TypedRedisPipeline(this.redis, true);
   }
 
+  async evaluate<T>(script: string, keys: string[], args: string[]): Promise<T> {
+    return this.redis.eval(script, keys.length, ...keys, ...args) as Promise<T>;
+  }
+
   async hExists(key: string, field: string): Promise<boolean> {
     const exists = await this.redis.hexists(key, field);
     return exists == 1;
