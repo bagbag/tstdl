@@ -3,11 +3,9 @@ import { isAsyncIterable } from './is-async-iterable';
 import { AsyncPredicate } from './types';
 
 export function whileAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
-  if (isAsyncIterable(iterable)) {
-    return async(iterable, predicate);
-  } else {
-    return sync(iterable, predicate);
-  }
+  return (isAsyncIterable(iterable))
+    ? async(iterable, predicate)
+    : sync(iterable, predicate);
 }
 
 async function* sync<T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {

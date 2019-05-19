@@ -1,20 +1,9 @@
 import { AnyIterable } from '../any-iterable-iterator';
 import { isIterable } from '../iterable-helpers/is-iterable';
+import { toArrayAsync } from './to-array';
 
 export async function toSync<T>(iterable: AnyIterable<T>): Promise<Iterable<T>> {
-  if (isIterable(iterable)) {
-    return iterable;
-  } else {
-    return toSyncAsync(iterable);
-  }
-}
-
-async function toSyncAsync<T>(iterable: AsyncIterable<T>): Promise<Iterable<T>> {
-  const array: T[] = [];
-
-  for await (const value of iterable) {
-    array.push(value);
-  }
-
-  return array;
+  return (isIterable(iterable))
+    ? iterable
+    : toArrayAsync(iterable);
 }

@@ -2,12 +2,10 @@ import { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
 import { AsyncPredicate } from './types';
 
-export async function anyAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): Promise<boolean> {
-  if (isAsyncIterable(iterable)) {
-    return async(iterable, predicate);
-  } else {
-    return sync(iterable, predicate);
-  }
+export async function anyAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> = () => true): Promise<boolean> {
+  return isAsyncIterable(iterable)
+    ? async(iterable, predicate)
+    : sync(iterable, predicate);
 }
 
 async function sync<T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): Promise<boolean> {

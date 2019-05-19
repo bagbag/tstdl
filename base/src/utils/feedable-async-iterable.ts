@@ -60,18 +60,16 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
       const out = this.buffer;
       this.buffer = new AwaitableList();
 
-      for (const { item, error } of out) {
-        if (error != undefined) {
-          throw error;
+      for (const entry of out) {
+        if (entry.error != undefined) {
+          throw entry.error;
         }
 
-        yield item as T;
-        this._read.resolve();
-        this._read.reset();
+        yield entry.item;
+        this._read.resolveAndReset();
 
         if (this.buffer.size == 0) {
-          this._empty.resolve();
-          this._empty.reset();
+          this._empty.resolveAndReset();
         }
       }
     }

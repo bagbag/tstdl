@@ -1,5 +1,6 @@
 export * from './any';
 export * from './batch';
+export * from './drain';
 export * from './filter';
 export * from './first';
 export * from './for-each';
@@ -13,4 +14,6 @@ export * from './reduce';
 export * from './single';
 export * from './sort';
 export * from './types';
-
+export * from './while';
+export * from './skip';
+export * from './take';

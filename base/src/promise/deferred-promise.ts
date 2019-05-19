@@ -64,6 +64,11 @@ export class DeferredPromise<T = void> implements Promise<T> {
     this._resolved = true;
   }
 
+  resolveAndReset(value?: T | PromiseLike<T>): void {
+    this.resolve(value);
+    this.reset();
+  }
+
   // tslint:disable-next-line: no-any
   reject(reason?: any): void {
     this.ensurePendingState();

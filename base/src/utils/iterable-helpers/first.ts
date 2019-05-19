@@ -1,18 +1,12 @@
 import { Predicate } from './types';
+import { filter } from './filter';
 
-export function first<T>(iterable: Iterable<T>): T;
-export function first<T>(iterable: Iterable<T>, predicate: Predicate<T>): T;
-export function first<T>(iterable: Iterable<T>, predicate?: Predicate<T>): T;
-export function first<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() => true)): T {
-  let index = 0;
+export function first<T>(iterable: Iterable<T>, predicate?: Predicate<T>): T {
+  const source = (predicate == undefined) ? iterable : filter(iterable, predicate);
 
-  for (const item of iterable) {
-    const matches = predicate(item, index++);
-
-    if (matches) {
-      return item;
-    }
+  for (const item of source) {
+    return item;
   }
 
-  throw new Error('iterable was empty');
+  throw new Error('iterable was either empty or no element matched predicate');
 }

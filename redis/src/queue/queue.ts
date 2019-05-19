@@ -134,7 +134,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
 
         const transaction = this.redis.transaction();
 
-        const [, ...unfilteredJobs] = await Promise.all<any>([
+        const [_scriptLoadReply, ...unfilteredJobs] = await Promise.all<any>([
           transaction.scriptLoad(dequeueLuaScript),
           ...createArray(size - 1, () => this._dequeue(transaction, '0')),
           transaction.execute().then(() => undefined)

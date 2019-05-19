@@ -2,7 +2,6 @@ import { StringMap } from '@common-ts/base/types';
 import { toArray } from '@common-ts/base/utils';
 import { Redis } from 'ioredis';
 import { RedisPipelineWrapper } from './pipeline-wrapper';
-import { TypedRedisPipeline } from './typed-redis-pipeline';
 import { conditional } from './utils';
 
 type ScanType = /* 'scan' | 'sscan' | */ 'hscan' | 'zscan';
@@ -86,7 +85,7 @@ export class TypedRedis {
 
     if (result == undefined) {
       if (throwIfNotFound) {
-        throw new Error('not found');
+        throw new Error(`key '${key}' or field '${field}' not found`);
       }
 
       return undefined;
@@ -148,7 +147,7 @@ export class TypedRedis {
         result.set(fields[i], value);
       }
       else if (throwIfNotFound) {
-        throw new Error(`${fields[i]} not found`);
+        throw new Error(`field ${fields[i]} not found`);
       }
     }
 
@@ -389,4 +388,31 @@ function zParseEntriesReply(reply: string[], order: SortedSetReplyOrder): Sorted
   }
 
   return entries;
+}
+
+// tslint:disable-next-line: max-classes-per-file
+export class TypedRedisPipeline extends TypedRedis {
+  private readonly pipelineWrapper: RedisPipelineWrapper;
+
+  constructor(redis: Redis, transaction: boolean) {
+    const transactionWrapper = new RedisPipelineWrapper(redis, transaction);
+
+    super(transactionWrapper);
+
+    this.pipelineWrapper = transactionWrapper;
+  }
+
+  async discard(): Promise<void> {
+    return this.pipelineWrapper.discard();
+  }
+
+  async execute(): Promise<void> {
+    const replies = await this.pipelineWrapper.execute();
+
+    for (const [error] of replies) {
+      if (error != undefined) {
+        throw error;
+      }
+    }
+  }
 }

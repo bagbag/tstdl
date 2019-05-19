@@ -1,7 +1,8 @@
+import { Omit } from '../types';
 import { AwaitableMap } from './collections/awaitable';
 import { FeedableAsyncIterable } from './feedable-async-iterable';
 
-export class OrderedFeedableAsyncIterable<T> implements AsyncIterable<T> {
+export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterable<T>, 'feed'> {
   private readonly inBuffer: AwaitableMap<number, T>;
   private readonly out: FeedableAsyncIterable<T>;
 
@@ -17,6 +18,10 @@ export class OrderedFeedableAsyncIterable<T> implements AsyncIterable<T> {
 
   get closed(): boolean {
     return this.out.closed;
+  }
+
+  get bufferSize(): number {
+    return this.out.bufferSize;
   }
 
   constructor() {
@@ -38,13 +43,19 @@ export class OrderedFeedableAsyncIterable<T> implements AsyncIterable<T> {
     this.out.end();
   }
 
+  throw(error: Error): void {
+    this.out.throw(error);
+  }
+
   [Symbol.asyncIterator](): AsyncIterableIterator<T> {
     return this.out[Symbol.asyncIterator]();
   }
 
   private dispatch(): void {
     while (this.inBuffer.has(this.currentIndex)) {
-      const item = this.inBuffer.get(this.currentIndex++) as T;
+      const item = this.inBuffer.get(this.currentIndex) as T;
+
+      this.inBuffer.delete(this.currentIndex++);
       this.out.feed(item);
     }
   }

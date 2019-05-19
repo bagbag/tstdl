@@ -1,6 +1,6 @@
 import { cancelablePromise } from '../promise/cancelable-promise';
 import { AnyIterable } from './any-iterable-iterator';
-import { iterableToAsyncIterator } from './async-iterable-helpers/to-iterator';
+import { iterableToAsyncIterator } from './async-iterable-helpers/to-async-iterator';
 
 export async function* CancelableAsyncIterableIterator<T>(source: AnyIterable<T>, cancelationPromise: PromiseLike<void>): AsyncIterableIterator<T> {
   const iterator = iterableToAsyncIterator(source);

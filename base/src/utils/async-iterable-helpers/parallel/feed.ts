@@ -18,7 +18,9 @@ export function parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency:
 
   parallelForEach(iterable, concurrency, async (item, index) => {
     await func(item, index, feed);
-  }).then(() => out.end());
+  })
+    .then(() => out.end())
+    .catch((error) => out.throw(error as Error));
 
   return out;
 }

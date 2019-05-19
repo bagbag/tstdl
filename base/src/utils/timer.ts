@@ -2,22 +2,19 @@ const NS_PER_SEC = 1e9;
 const NS_PER_MS = 1e6;
 const NS_PER_US = 1e3;
 
-declare const performance: any;
-declare const process: any;
-
 let getBegin: () => any;
 let getDuration: (begin: any) => number;
 
 if (typeof process == 'object' && typeof process.hrtime == 'function') {
   getBegin = () => process.hrtime();
-  getDuration = (begin: any) => {
+  getDuration = (begin: [number, number]) => {
     const [secondsDiff, nanosecondsDiff] = process.hrtime(begin);
     const nanoseconds = (secondsDiff * NS_PER_SEC) + nanosecondsDiff;
 
     return nanoseconds;
   };
 }
-else if (typeof performance == 'object' && typeof performance.now == 'function') {
+else if (typeof performance == 'object' && typeof performance.now == 'function') { // tslint:disable-line: no-unbound-method
   getBegin = () => performance.now();
   getDuration = (begin: number) => (performance.now() - begin) * NS_PER_MS;
 }
@@ -31,13 +28,17 @@ export class Timer {
   private begin?: any;
 
   static measure(func: () => void): number {
-    const timer = new Timer();
-    return timer.measure(func);
+    const timer = new Timer(true);
+    func();
+
+    return timer.milliseconds;
   }
 
   static async measureAsync(func: () => Promise<void>): Promise<number> {
-    const timer = new Timer();
-    return timer.measureAsync(func);
+    const timer = new Timer(true);
+    await func();
+
+    return timer.milliseconds;
   }
 
   constructor(start: boolean = false) {
@@ -87,20 +88,6 @@ export class Timer {
 
   get seconds(): number {
     return this.nanoseconds / NS_PER_SEC;
-  }
-
-  measure(func: () => void): number {
-    this.restart();
-    func();
-
-    return this.milliseconds;
-  }
-
-  async measureAsync(func: () => Promise<void>): Promise<number> {
-    this.restart();
-    await func();
-
-    return this.milliseconds;
   }
 
   private read(): number {

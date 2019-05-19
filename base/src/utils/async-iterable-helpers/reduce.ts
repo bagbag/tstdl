@@ -5,14 +5,12 @@ import { AsyncReducer } from './types';
 export function reduceAsync<T>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, T>): Promise<T>;
 export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U>;
 export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> { // tslint:disable-line: promise-function-async
-  if (isAsyncIterable(iterable)) {
-    return asyncReduce(iterable, reducer, initialValue);
-  } else {
-    return syncReduce(iterable, reducer, initialValue);
-  }
+  return (isAsyncIterable(iterable))
+    ? async(iterable, reducer, initialValue)
+    : sync(iterable, reducer, initialValue);
 }
 
-async function syncReduce<T, U>(iterable: Iterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> {
+async function sync<T, U>(iterable: Iterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> {
   let accumulator: T | U | undefined = initialValue;
   let index = 0;
 
@@ -23,18 +21,16 @@ async function syncReduce<T, U>(iterable: Iterable<T>, reducer: AsyncReducer<T, 
     else {
       const returnValue = reducer(accumulator as U, currentValue, index++);
 
-      if (returnValue instanceof Promise) {
-        accumulator = await returnValue;
-      } else {
-        accumulator = returnValue;
-      }
+      accumulator = (returnValue instanceof Promise)
+        ? await returnValue
+        : returnValue;
     }
   }
 
   return accumulator as U;
 }
 
-async function asyncReduce<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> {
+async function async<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> {
   let accumulator: T | U | undefined = initialValue;
   let index = 0;
 
@@ -44,13 +40,12 @@ async function asyncReduce<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer
     }
     else {
       const returnValue = reducer(accumulator as U, currentValue, index++);
-      if (returnValue instanceof Promise) {
-        accumulator = await returnValue;
-      }
-      else {
-        accumulator = returnValue;
-      }
+
+      accumulator = (returnValue instanceof Promise)
+        ? await returnValue
+        : returnValue;
     }
   }
+
   return accumulator as U;
 }

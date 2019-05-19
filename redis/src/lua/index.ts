@@ -5,7 +5,7 @@ export const { script: dequeueLuaScript, sha: dequeueLuaScriptSha } = load('dequ
 
 function load(file: string): { script: string, sha: string } {
   const script = readFileSync(`${__dirname}/${file}`, { encoding: 'utf8' }).trim();
-  const sha = createHash('sha1', dequeueLuaScript, 'utf8').toHex();
+  const sha = createHash('sha1', script, 'utf8').toHex();
 
   return { script, sha };
 }

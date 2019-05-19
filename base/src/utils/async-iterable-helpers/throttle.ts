@@ -8,11 +8,9 @@ export function throttle<T>(iterable: AnyIterable<T>, delayOrThrottleFunction: n
 export async function* throttle<T>(iterable: AnyIterable<T>, delayOrThrottleFunction: number | ThrottleFunction): AsyncIterableIterator<T> {
   let throttleFunction: ThrottleFunction;
 
-  if (typeof delayOrThrottleFunction == 'number') {
-    throttleFunction = () => timeout(delayOrThrottleFunction);
-  } else {
-    throttleFunction = delayOrThrottleFunction;
-  }
+  throttleFunction = (typeof delayOrThrottleFunction == 'number')
+    ? () => timeout(delayOrThrottleFunction)
+    : delayOrThrottleFunction;
 
   for await (const item of iterable) {
     yield item;

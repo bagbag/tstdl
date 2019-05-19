@@ -3,14 +3,12 @@ import { isAsyncIterable } from './is-async-iterable';
 import { AsyncRetryPredicate } from './types';
 
 export function retryAsync<T>(iterable: AnyIterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
-  if (isAsyncIterable(iterable)) {
-    return asyncRetryAsync(iterable, throwOnRetryFalse, predicate);
-  } else {
-    return syncRetryAsync(iterable, throwOnRetryFalse, predicate);
-  }
+  return isAsyncIterable(iterable)
+    ? async(iterable, throwOnRetryFalse, predicate)
+    : sync(iterable, throwOnRetryFalse, predicate);
 }
 
-async function* syncRetryAsync<T>(iterable: Iterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
+async function* sync<T>(iterable: Iterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
   let index = -1;
 
   for (const item of iterable) {
@@ -39,7 +37,7 @@ async function* syncRetryAsync<T>(iterable: Iterable<T>, throwOnRetryFalse: bool
   }
 }
 
-async function* asyncRetryAsync<T>(iterable: AsyncIterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
+async function* async<T>(iterable: AsyncIterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
   let index = -1;
 
   for await (const item of iterable) {

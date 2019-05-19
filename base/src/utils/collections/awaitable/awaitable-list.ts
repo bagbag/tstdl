@@ -41,16 +41,14 @@ export class AwaitableList<T> implements Iterable<T> {
 
   append(...items: T[]): number {
     const result = this.backingArray.push(...items);
-    this._added.resolve(items);
-    this._added.reset();
+    this._added.resolveAndReset(items);
 
     return result;
   }
 
   prepend(...items: T[]): number {
     const result = this.backingArray.unshift(...items);
-    this._added.resolve(items);
-    this._added.reset();
+    this._added.resolveAndReset(items);
 
     return result;
   }
@@ -61,8 +59,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     this.backingArray.splice(index, 0, ...items);
-    this._added.resolve(items);
-    this._added.reset();
+    this._added.resolveAndReset(items);
   }
 
   remove(index: number, count: number = 1): T[] {
@@ -75,8 +72,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const removedItems = this.backingArray.splice(index, count);
-    this._removed.resolve(removedItems);
-    this._removed.reset();
+    this._removed.resolveAndReset(removedItems);
 
     return removedItems;
   }
@@ -87,8 +83,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const result = this.backingArray.pop() as T;
-    this._removed.resolve(result);
-    this._removed.reset();
+    this._removed.resolveAndReset(result);
 
     return result;
   }
@@ -99,18 +94,15 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const result = this.backingArray.shift() as T;
-    this._removed.resolve(result);
-    this._removed.reset();
+    this._removed.resolveAndReset(result);
 
     return result;
   }
 
   clear(): void {
     this.backingArray = [];
-    this._cleared.resolve();
-    this._cleared.reset();
-    this._removed.resolve();
-    this._removed.reset();
+    this._cleared.resolveAndReset();
+    this._removed.resolveAndReset();
   }
 
   *[Symbol.iterator](): IterableIterator<T> {

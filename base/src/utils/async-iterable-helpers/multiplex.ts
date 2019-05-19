@@ -1,7 +1,7 @@
 import { AnyIterable } from '../any-iterable-iterator';
 import { FeedableAsyncIterable } from '../feedable-async-iterable';
 
-export function multiplex<T>(iterable: AnyIterable<T>, count: number, bufferSize: number): AsyncIterable<T>[] {
+export function multiplexAsync<T>(iterable: AnyIterable<T>, count: number, bufferSize: number): AsyncIterable<T>[] {
   if (bufferSize <= 0) {
     throw new Error('bufferSize must be greater than 0');
   }
@@ -13,20 +13,23 @@ export function multiplex<T>(iterable: AnyIterable<T>, count: number, bufferSize
     feedableIterables.push(feedableIterable);
   }
 
+  // tslint:disable-next-line: no-floating-promises
   multiplexTo(iterable, feedableIterables, bufferSize);
 
   return feedableIterables;
 }
 
-async function multiplexTo<T>(input: AnyIterable<T>, outputs: FeedableAsyncIterable<T>[], bufferSize: number) {
+async function multiplexTo<T>(input: AnyIterable<T>, outputs: FeedableAsyncIterable<T>[], bufferSize: number): Promise<void> {
   try {
     for await (const item of input) {
       await waitForDrain(outputs, bufferSize);
       outputs.forEach((feedableIterable) => feedableIterable.feed(item));
     }
+
+    outputs.forEach((feedableIterable) => feedableIterable.end());
   }
   catch (error) {
-    outputs.forEach((feedableIterable) => feedableIterable.throw(error));
+    outputs.forEach((feedableIterable) => feedableIterable.throw(error as Error));
   }
 }
 

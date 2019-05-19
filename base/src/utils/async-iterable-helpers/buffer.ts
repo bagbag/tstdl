@@ -1,13 +1,15 @@
-import { AnyIterable } from '..';
+import { AnyIterable } from '../any-iterable-iterator';
 import { AwaitableList } from '../collections/awaitable';
 
 type BufferItem<T> =
-  | { end: false; value: T; }
-  | { end: true, error?: Error; };
+  | { end: false, value: T }
+  | { end: true, error?: Error };
 
 export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIterableIterator<T> {
   const buffer = new AwaitableList<BufferItem<T>>();
-  let stop: boolean = false;
+
+  let end: boolean = false;
+  let consumerError: Error | undefined;
 
   // tslint:disable-next-line: no-floating-promises
   (async () => {
@@ -19,7 +21,11 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
           await buffer.removed;
         }
 
-        if (stop) {
+        if (consumerError != undefined) {
+          throw consumerError;
+        }
+
+        if (end) {
           break;
         }
       }
@@ -27,7 +33,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
       buffer.append({ end: true });
     }
     catch (error) {
-      buffer.append({ end: true, error: (error as Error) });
+      buffer.append({ end: true, error: error as Error });
     }
   })();
 
@@ -50,8 +56,12 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
       yield item.value;
     }
   }
+  catch (error) {
+    consumerError = error as Error;
+    throw error;
+  }
   finally {
-    stop = true;
+    end = true;
     buffer.clear();
   }
 }

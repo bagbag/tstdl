@@ -3,11 +3,9 @@ import { AsyncIteratorFunction } from './types';
 import { isAsyncIterable } from './is-async-iterable';
 
 export async function groupAsync<TIn, TGroup>(iterable: AnyIterable<TIn>, selector: AsyncIteratorFunction<TIn, TGroup>): Promise<Map<TGroup, TIn[]>> {
-  if (isAsyncIterable(iterable)) {
-    return async(iterable, selector);
-  } else {
-    return sync(iterable, selector);
-  }
+  return isAsyncIterable(iterable)
+    ? async(iterable, selector)
+    : sync(iterable, selector);
 }
 
 async function async<TIn, TGroup>(iterable: AsyncIterable<TIn>, selector: AsyncIteratorFunction<TIn, TGroup>): Promise<Map<TGroup, TIn[]>> {

@@ -4,10 +4,6 @@ declare function requestIdleCallback(callback: IdleRequestCallback, options?: { 
 export type FrameRequestCallback = (time: number) => void;
 export type IdleRequestCallback = (idleDeadline: IdleDeadline) => void;
 
-interface DOMHighResTimeStamp {
-  _: never;
-}
-
 export interface IdleDeadline {
   didTimeout: boolean;
   timeRemaining(): DOMHighResTimeStamp;
