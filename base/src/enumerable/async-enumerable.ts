@@ -1,10 +1,8 @@
-import { anyAsync, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, drainAsync, filterAsync, forEachAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, singleAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
+import { anyAsync, AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import { AnyIterable } from '../utils/any-iterable-iterator';
-import { groupAsync } from '../utils/async-iterable-helpers/group';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
-import { retryAsync } from '../utils/async-iterable-helpers/retry';
+import { Enumerable } from './enumerable';
 import { EnumerableMethods } from './enumerable-methods';
-import { SyncEnumerable } from './sync-enumerable';
 
 export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableIterator<T>  {
   private readonly source: AnyIterable<T>;
@@ -50,6 +48,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(filtered);
   }
 
+  async first(predicate?: AsyncPredicate<T>): Promise<T> {
+    return firstAsync(this.source, predicate);
+  }
+
   forceCast<TNew>(): AsyncEnumerable<TNew> {
     return this as AsyncEnumerable<any> as AsyncEnumerable<TNew>;
   }
@@ -75,6 +77,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   interruptPerSecond(value: number): AsyncEnumerable<T> {
     const interrupted = interruptPerSecondAsync(this.source, value);
     return new AsyncEnumerable(interrupted);
+  }
+
+  async last(predicate?: AsyncPredicate<T>): Promise<T> {
+    return lastAsync(this.source, predicate);
   }
 
   map<TOut>(mapper: AsyncIteratorFunction<T, TOut>): AsyncEnumerable<TOut> {
@@ -109,6 +115,30 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return singleAsync(this.source, predicate);
   }
 
+  skip(count: number): AsyncEnumerable<T> {
+    const skipped = skipAsync(this.source, count);
+    return new AsyncEnumerable(skipped);
+  }
+
+  skipWhile(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
+    const skipped = skipWhileAsync(this.source, predicate);
+    return new AsyncEnumerable(skipped);
+  }
+
+  async sort(comparator?: AsyncComparator<T>): Promise<T[]> {
+    return sortAsync(this.source, comparator);
+  }
+
+  take(count: number): AsyncEnumerable<T> {
+    const taken = takeAsync(this.source, count);
+    return new AsyncEnumerable(taken);
+  }
+
+  takeWhile(breakWhenFalse: boolean, predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
+    const taken = takeWhileAsync(this.source, breakWhenFalse, predicate);
+    return new AsyncEnumerable(taken);
+  }
+
   throttle(delayOrThrottleFunction: number | ThrottleFunction): AsyncEnumerable<T> {
     const result = throttle(this.source, delayOrThrottleFunction);
     return new AsyncEnumerable(result);
@@ -127,9 +157,9 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return iterator;
   }
 
-  async toSync(): Promise<SyncEnumerable<T>> {
+  async toSync(): Promise<Enumerable<T>> {
     const syncIterable = await toSync(this.source);
-    return new SyncEnumerable(syncIterable);
+    return new Enumerable(syncIterable);
   }
 
   while(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {

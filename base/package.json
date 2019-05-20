@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/base",
-  "version": "1.26.0",
+  "version": "1.27.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -13,7 +13,7 @@
     "rxjs": "^6.5.2"
   },
   "devDependencies": {
-    "@types/node": "^12.0.0",
+    "@types/node": "^12.0.2",
     "typescript": "~3.4.5"
   }
 }
