@@ -152,7 +152,7 @@ function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
           instance = customType.type[deserialize](data);
         }
         else {
-          throw new Error(`neither SerializableStatic implemented nor deserialize method provided for ${object.constrcutor.name}`);
+          throw new Error(`neither SerializableStatic implemented nor deserialize method provided for ${(object as object).constructor.name}`);
         }
 
         return instance;
