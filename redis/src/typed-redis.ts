@@ -1,6 +1,8 @@
 import { StringMap } from '@common-ts/base/types';
 import { toArray } from '@common-ts/base/utils';
 import { Redis } from 'ioredis';
+import { Observable } from 'rxjs';
+import { share } from 'rxjs/operators';
 import { RedisPipelineWrapper } from './pipeline-wrapper';
 import { conditional } from './utils';
 
@@ -16,6 +18,8 @@ enum HashSetResult {
   New = 1,
   Updated = 0
 }
+
+export type Message = { channel: string, message: string };
 
 export type SortedSetEntry = { score: number, member: string };
 
@@ -41,8 +45,25 @@ enum SortedSetReplyOrder {
 export class TypedRedis {
   private readonly redis: Redis | RedisPipelineWrapper;
 
+  private readonly messageObservable: Observable<Message>;
+
+  get message$(): Observable<Message> {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('subscribe not supported in pipeline and transaction');
+    }
+
+    return this.messageObservable;
+  }
+
   constructor(redis: Redis | RedisPipelineWrapper) {
     this.redis = redis;
+
+    this.messageObservable = new Observable<Message>((subscriber) => {
+      const listener = (channel: string, message: string) => subscriber.next({ channel, message });
+      (this.redis as Redis).addListener('message', listener);
+      subscriber.add(() => (this.redis as Redis).removeListener('message', listener));
+    })
+      .pipe(share());
   }
 
   pipeline(): TypedRedisPipeline {
@@ -168,6 +189,30 @@ export class TypedRedis {
     for await (const [field, value] of cursor) {
       yield { field, value };
     }
+  }
+
+  async publish(channel: string, message: string): Promise<number> {
+    return this.redis.publish(channel, message);
+  }
+
+  async subscribe(...channels: string[]): Promise<void> {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('subscribe not supported in pipeline and transaction');
+    }
+
+    const returnValue = this.redis.subscribe(...channels);
+
+    throw new Error(`verify that ${(returnValue as Object).constructor.name} is Promise`);
+
+    await (returnValue as Promise<void>);
+  }
+
+  async unsubscribe(...channels: string[]): Promise<void> {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('unsubscribe not supported in pipeline and transaction');
+    }
+
+    await (this.redis.unsubscribe(...channels) as Promise<void>);
   }
 
   async zAdd(key: string, entries: SortedSetEntry | SortedSetEntry[], { updateOnly = false, addOnly = false, returnChanged = false, increment = false }: SortedSetAddOptions | SortedSetAddIncrementOptions = {}): Promise<number> {

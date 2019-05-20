@@ -34,6 +34,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     this.maxRetries = maxRetries;
     this.logger = logger;
 
+    this.disposer = new AsyncDisposer();
     this.dataHashKey = `queue:${key}:data`;
     this.dequeueTimestampSortedSetKey = `queue:${key}:dequeueTime`;
     this.listKeys = new Map(availablePriorities.map((priority) => [priority, `queue:${key}:jobs:${priority}`]));
@@ -153,7 +154,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     }
   }
 
-  async _dequeue(redis: TypedRedis, blockDurationSecondsString: string): Promise<Job<T> | undefined> {
+  private async _dequeue(redis: TypedRedis, blockDurationSecondsString: string): Promise<Job<T> | undefined> {
     return this.dequeueLua(redis, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, blockDurationSecondsString);
   }
 

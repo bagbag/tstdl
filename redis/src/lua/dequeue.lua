@@ -1,16 +1,16 @@
 local dataHash = KEYS[1]
 local dequeueTimeZetKey = KEYS[2]
-local blpopArgs = { 'blpop' };
-local blockDuration = ARGS[1]
-local timestamp = ARGS[2]
+local lpopArgs = { 'lpop' };
+local blockDuration = ARGV[1]
+local timestamp = ARGV[2]
 
 for i = 3, #KEYS do
-  table.insert(blpopArgs, KEYS[i])
+  table.insert(lpopArgs, KEYS[i])
 end
 
-table.insert(blockDuration)
+table.insert(lpopArgs, blockDuration)
 
-local jobId = redis.call(unpack(blpopArgs))
+local jobId = redis.call(unpack(lpopArgs))
 
 if (jobId ~= false) then
   redis.call('zadd', dequeueTimeZetKey, timestamp, jobId)

@@ -18,6 +18,9 @@ export class RedisPipelineWrapper {
   evalsha = this.wrap('evalsha');
   script = this.wrap('script');
 
+  /* Pub/Sub */
+  publish = this.wrap('publish');
+
   /* Hash */
   hdel = this.wrap('hdel');
   hexists = this.wrap('hexists');
