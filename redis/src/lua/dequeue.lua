@@ -1,20 +1,24 @@
 local dataHash = KEYS[1]
 local dequeueTimeZetKey = KEYS[2]
-local lpopArgs = { 'lpop' };
-local blockDuration = ARGV[1]
-local timestamp = ARGV[2]
+local timestamp = tonumber(ARGV[1])
+local count = tonumber(ARGV[2])
+
+local items = { }
 
 for i = 3, #KEYS do
-  table.insert(lpopArgs, KEYS[i])
+  local list = KEYS[i]
+
+  while #items < count do
+    local jobId = redis.call('lpop', list)
+
+    if jobId ~= false then
+      redis.call('zadd', dequeueTimeZetKey, timestamp, jobId)
+      local jobData = redis.call('hget', dataHash, jobId)
+      table.insert(items, jobData)
+    else
+      break
+    end
+  end
 end
 
-table.insert(lpopArgs, blockDuration)
-
-local jobId = redis.call(unpack(lpopArgs))
-
-if (jobId ~= false) then
-  redis.call('zadd', dequeueTimeZetKey, timestamp, jobId)
-  return redis.call('hget', jobId)
-else
-  return false
-end
+return items

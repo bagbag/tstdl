@@ -1,6 +1,5 @@
 import '@common-ts/base/global-this';
 import { noopLogger } from '@common-ts/base/logger/noop';
-import { currentTimestamp } from '@common-ts/base/utils';
 import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
 import { DistributedLoopProvider } from '@common-ts/server/distributed-loop';
 import * as Redis from 'ioredis';
@@ -16,15 +15,15 @@ redisClient.on('ready', () => {
 
   const queue = new RedisQueue<number>(redis, lockProvider, distributedLoopProvider, 'test', 5000, 3, noopLogger);
 
-  setInterval(() => queue.enqueue(currentTimestamp()), 1000);
+  let counter = 0;
+  setInterval(() => queue.enqueue(++counter), 1000);
 
+// tslint:disable-next-line: no-floating-promises
   (async () => {
-
-    const consumer = queue.getConsumer(new CancellationToken());
+    const consumer = queue.getBatchConsumer(20, new CancellationToken());
 
     for await (const item of consumer) {
       console.log(item);
     }
-
   })();
 });

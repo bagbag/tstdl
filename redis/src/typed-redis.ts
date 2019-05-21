@@ -202,7 +202,7 @@ export class TypedRedis {
 
     const returnValue = this.redis.subscribe(...channels);
 
-    throw new Error(`verify that ${(returnValue as Object).constructor.name} is Promise`);
+    if (1 == 1) throw new Error(`verify that ${(returnValue as Object).constructor.name} is Promise`);
 
     await (returnValue as Promise<void>);
   }

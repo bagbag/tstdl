@@ -3,14 +3,13 @@ import { LockProvider } from '@common-ts/base/lock';
 import { Logger } from '@common-ts/base/logger';
 import { availablePriorities, Job, Priority, Queue } from '@common-ts/base/queue';
 import { Serializer } from '@common-ts/base/serializer';
-import { compareByValueSelection, createArray, currentTimestamp, getRandomString } from '@common-ts/base/utils';
+import { compareByValueSelection, createArray, currentTimestamp, getRandomString, single, timeout } from '@common-ts/base/utils';
 import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
 import { DistributedLoop, DistributedLoopProvider } from '@common-ts/server/distributed-loop';
 import { dequeueLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 
-const BLOCK_DURATION_SECONDS = 2;
-const BLOCK_DURATION_SECONDS_STRING = BLOCK_DURATION_SECONDS.toString();
+const BLOCK_DURATION = 2000;
 
 export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly redis: TypedRedis;
@@ -39,6 +38,10 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     this.dequeueTimestampSortedSetKey = `queue:${key}:dequeueTime`;
     this.listKeys = new Map(availablePriorities.map((priority) => [priority, `queue:${key}:jobs:${priority}`]));
     this.listKeysArray = [...this.listKeys.entries()].sort(compareByValueSelection(([priority]) => priority)).map(([, key]) => key);
+
+    // const retryLoop = distributedLoopProvider.get(`queue:${key}:retry`);
+    // const retryLoopController = retryLoop.run(() => console.log('retry'), 2000, 1000);
+    // this.disposer.addDisposeTasks(() => retryLoopController.stop());
   }
 
   async dispose(): Promise<void> {
@@ -83,14 +86,11 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   }
 
   async dequeue(): Promise<Job<T> | undefined> {
-    return this._dequeue(this.redis, '0');
+    return this._dequeue(this.redis);
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
-    const pipeline = this.redis.pipeline();
-    const promises = createArray(count, () => this.dequeueLua(pipeline, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, '0'));
-
-    return Promise.all(promises);
+    return this._dequeueMany(this.redis, count);
   }
 
   async acknowledge(...jobs: Job<T>[]): Promise<void> {
@@ -110,10 +110,13 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
 
     try {
       while (!this.disposer.disposing && !cancellationToken.isSet) {
-        const job = await this._dequeue(this.redis, BLOCK_DURATION_SECONDS_STRING);
+        const job = await this._dequeue(this.redis);
 
         if (job != undefined) {
           yield job;
+        }
+        else {
+          await timeout(BLOCK_DURATION);
         }
       }
     }
@@ -125,27 +128,25 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   async *getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]> {
     const deferrer = this.disposer.getDeferrer();
 
+    let blockDuration = BLOCK_DURATION;
+
     try {
       while (!this.disposer.disposing && !cancellationToken.isSet) {
-        const blockJob = await this._dequeue(this.redis, BLOCK_DURATION_SECONDS_STRING);
-
-        if (blockJob == undefined) {
-          continue;
-        }
-
         const transaction = this.redis.transaction();
 
-        const [_scriptLoadReply, ...unfilteredJobs] = await Promise.all<any>([
+        const [_scriptLoadReply, jobs] = await Promise.all([
           transaction.scriptLoad(dequeueLuaScript),
-          ...createArray(size - 1, () => this._dequeue(transaction, '0')),
+          this._dequeueMany(transaction, size),
           transaction.execute().then(() => undefined)
-        ]) as [string, ...(Job<T> | undefined)[]];
-
-        const jobs = unfilteredJobs.filter((job) => job != undefined) as Job<T>[];
-        jobs.push(blockJob);
+        ]);
 
         if (jobs.length > 0) {
+          blockDuration = 10;
           yield jobs;
+        }
+        else {
+          await timeout(blockDuration);
+          blockDuration = Math.min(blockDuration * 2, BLOCK_DURATION);
         }
       }
     }
@@ -154,16 +155,25 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     }
   }
 
-  private async _dequeue(redis: TypedRedis, blockDurationSecondsString: string): Promise<Job<T> | undefined> {
-    return this.dequeueLua(redis, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, blockDurationSecondsString);
+  private async _dequeue(redis: TypedRedis): Promise<Job<T> | undefined> {
+    const jobs = await this._dequeueMany(redis, 1);
+
+    if (jobs.length == 0) {
+      return undefined;
+    }
+
+    return single(jobs);
   }
 
-  private async dequeueLua(redis: TypedRedis, dataHashKey: string, dequeueTimestampSortedSetKey: string, listKeys: string[], blockDurationSecondsString: string): Promise<Job<T>> {
+  private async _dequeueMany(redis: TypedRedis, count: number): Promise<Job<T>[]> {
+    return this.dequeueLua(redis, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, count);
+  }
+
+  private async dequeueLua(redis: TypedRedis, dataHashKey: string, dequeueTimestampSortedSetKey: string, listKeys: string[], count: number): Promise<Job<T>[]> {
     const timestampString = currentTimestamp().toString();
+    const serializedJobs = await redis.evaluate<string[]>(dequeueLuaScript, [dataHashKey, dequeueTimestampSortedSetKey, ...listKeys], [timestampString, count.toString()]);
+    const jobs = serializedJobs.map((serializedJob) => Serializer.deserialize<Job<T>>(serializedJob));
 
-    const serializedJob = await redis.evaluate<string | null>(dequeueLuaScript, [dequeueTimestampSortedSetKey, dataHashKey, ...listKeys], [blockDurationSecondsString, timestampString]) as string;
-    const job = Serializer.deserialize<Job<T>>(serializedJob);
-
-    return job;
+    return jobs;
   }
 }
