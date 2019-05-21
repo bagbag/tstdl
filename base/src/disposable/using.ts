@@ -1,19 +1,19 @@
-import { AsyncDisposable, Disposable } from './disposable';
+import { AsyncDisposable, Disposable, dispose, disposeAsync } from './disposable';
 
-export function using<T extends Disposable>(disposable: T, user: (disposable: T) => void): void {
+export function using<T extends Disposable, U>(disposable: T, user: (disposable: T) => U): U {
   try {
-    user(disposable);
+    return user(disposable);
   }
   finally {
-    disposable.dispose();
+    disposable[dispose]();
   }
 }
 
-export async function usingAsync<T extends AsyncDisposable>(disposable: T, user: (disposable: T) => void | Promise<void>): Promise<void> {
+export async function usingAsync<T extends AsyncDisposable, U>(disposable: T, user: (disposable: T) => U | Promise<U>): Promise<U> {
   try {
-    await user(disposable);
+    return await user(disposable);
   }
   finally {
-    await disposable.dispose();
+    await disposable[disposeAsync]();
   }
 }

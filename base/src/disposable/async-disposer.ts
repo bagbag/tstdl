@@ -1,7 +1,7 @@
-import { AsyncEnumerable } from '../enumerable';
 import { DeferredPromise } from '../promise';
+import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
 import { MultiError } from '../utils/multi-error';
-import { AsyncDisposable } from './disposable';
+import { AsyncDisposable, Disposable, dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
 
 const deferrerPromiseSymbol: unique symbol = Symbol('DeferrerPromise');
 
@@ -45,7 +45,6 @@ export class AsyncDisposer implements AsyncDisposable {
 
   getDeferrer(): Deferrer {
     const deferredPromise = new DeferredPromise();
-
     const deferrer: Deferrer = {
       [deferrerPromiseSymbol]: deferredPromise,
       yield: () => {
@@ -70,13 +69,21 @@ export class AsyncDisposer implements AsyncDisposable {
     }
   }
 
-  addDisposeTasks(...tasks: Task[]): void {
+  add(...tasks: (Task | Disposable | AsyncDisposable)[]): void {
     for (const task of tasks) {
-      this.tasks.add(task);
+      if (isDisposable(task)) {
+        this.tasks.add(() => task[dispose]());
+      }
+      else if (isAsyncDisposable(task)) {
+        this.tasks.add(() => task[disposeAsync]());
+      }
+      else {
+        this.tasks.add(task);
+      }
     }
   }
 
-  async dispose(): Promise<void> {
+  async [disposeAsync](): Promise<void> {
     if (this.disposing) {
       await this.disposedPromise;
       return;
@@ -96,19 +103,15 @@ export class AsyncDisposer implements AsyncDisposable {
       }
     }
 
-    await AsyncEnumerable.from(this.tasks)
-      .parallelForEach(10, async (task) => {
-        try {
-          const returnValue = task();
-
-          if (returnValue instanceof Promise) {
-            await returnValue;
-          }
-        }
-        catch (error) {
-          errors.push(error as Error);
-        }
-      });
+    await parallelForEach(this.tasks, 10, async (task) => {
+      try {
+        // tslint:disable-next-line: no-unsafe-any
+        await task();
+      }
+      catch (error) {
+        errors.push(error as Error);
+      }
+    });
 
     this._disposed = true;
     this.disposedPromise.resolve();
@@ -116,7 +119,8 @@ export class AsyncDisposer implements AsyncDisposable {
     if (errors.length == 1) {
       throw errors[0];
     }
-    else if (errors.length > 1) {
+
+    if (errors.length > 1) {
       throw new MultiError(errors, 'dispose errors');
     }
   }
