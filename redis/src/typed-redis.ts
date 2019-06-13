@@ -200,11 +200,7 @@ export class TypedRedis {
       throw new Error('subscribe not supported in pipeline and transaction');
     }
 
-    const returnValue = this.redis.subscribe(...channels);
-
-    if (1 == 1) throw new Error(`verify that ${(returnValue as Object).constructor.name} is Promise`);
-
-    await (returnValue as Promise<void>);
+    return this.redis.subscribe(...channels) as Promise<void>;
   }
 
   async unsubscribe(...channels: string[]): Promise<void> {
@@ -357,6 +353,10 @@ export class TypedRedis {
 
   async zUnion(key: string, destionation: string, sets: string[], options: SortedSetCombineOptions): Promise<number> {
     return this.zCombine(key, 'zunionstore', destionation, sets, options);
+  }
+
+  async rPush(key: string, values: string[]): Promise<number> {
+    return this.redis.rpush(key, ...values) as Promise<number>;
   }
 
   async lPush(key: string, values: string[]): Promise<number> {

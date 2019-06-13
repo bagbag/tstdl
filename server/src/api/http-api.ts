@@ -127,7 +127,7 @@ export class HttpApi {
       case 'POST':
         try {
           const body = await readJsonBody(request);
-          requestData = { parameters, body };
+          requestData = { parameters, body } as PostData<P, B>;
         }
         catch (error) {
           response.status = 400;
@@ -157,9 +157,9 @@ export class HttpApi {
   }
 }
 
-async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Promise<unknown> {
+async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Promise<Json> {
   const body = await readBody(request, maxLength);
-  const json = JSON.parse(body) as unknown;
+  const json = JSON.parse(body) as Json;
   return json;
 }
 

@@ -108,16 +108,16 @@ export class RedisPipelineWrapper {
   // tslint:disable-next-line: ban-types
   private wrap<F extends PropertiesOfType<Pipeline, Function>, Args extends Parameters<Pipeline[F]>>(func: F): Redis[F] {
     // tslint:disable-next-line: promise-function-async
-    return ((...args: Args) => {
+    const wrappedFunction = ((...args: Args) => {
       const promise = this.register();
-      const callback = args[args.length - 1];
-
-      const lastParameterIsCallback = typeof callback == 'function';
+      const possibleCallback = args[args.length - 1];
+      const lastParameterIsCallback = typeof possibleCallback == 'function';
 
       if (lastParameterIsCallback) {
-        throw new Error('callback not supported');
+        throw new Error('callback-style not supported, use promise-style instead');
       }
 
+      // tslint:disable-next-line: no-unsafe-any
       (this.pipeline as any)[func](...args, (error: Error) => {
         if (error != undefined) {
           promise.reject(error);
@@ -125,7 +125,9 @@ export class RedisPipelineWrapper {
       });
 
       return promise;
-    }) as (...args: Args) => ReturnType<Redis[F]>;
+    }) as Redis[F];
+
+    return wrappedFunction;
   }
 
   // tslint:disable-next-line: promise-function-async

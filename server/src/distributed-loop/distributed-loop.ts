@@ -3,7 +3,7 @@ import { DeferredPromise } from '@common-ts/base/promise';
 import { cancelableTimeout, Timer } from '@common-ts/base/utils';
 import { LoopController } from './controller';
 
-export type LoopFunction = (controller: LoopController) => void | Promise<void>;
+export type LoopFunction = (controller: LoopController) => any | Promise<any>;
 
 export class DistributedLoop {
   private readonly key: string;

@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/server",
-  "version": "2.8.2",
+  "version": "2.9.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,14 +10,14 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@common-ts/base": "^1.29.1",
+    "@common-ts/base": "^1.32.0",
     "koa": "^2.7.0",
     "koa-router": "^7.4.0"
   },
   "devDependencies": {
     "@types/koa": "^2.0.48",
     "@types/koa-router": "^7.0.40",
-    "@types/node": "^12.0.2",
-    "typescript": "~3.4.5"
+    "@types/node": "^12.0.8",
+    "typescript": "~3.5.2"
   }
 }
