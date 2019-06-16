@@ -62,8 +62,34 @@ export class TypedRedis {
       const listener = (channel: string, message: string) => subscriber.next({ channel, message });
       (this.redis as Redis).addListener('message', listener);
       subscriber.add(() => (this.redis as Redis).removeListener('message', listener));
-    })
-      .pipe(share());
+    }).pipe(
+      share()
+    );
+  }
+
+  duplicate(): TypedRedis {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    const duplicate = this.redis.duplicate();
+    return new TypedRedis(duplicate);
+  }
+
+  disconnect(): void {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    this.redis.disconnect();
+  }
+
+  async quit(): Promise<string> {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    return this.redis.quit();
   }
 
   pipeline(): TypedRedisPipeline {
