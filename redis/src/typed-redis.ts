@@ -108,6 +108,14 @@ export class TypedRedis {
     return new TypedRedisPipeline(this.redis, true);
   }
 
+  defineCommand(name: string, definition: { numberOfKeys?: number, lua?: string }): void {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    this.redis.defineCommand(name, definition);
+  }
+
   async scriptLoad(script: string): Promise<string> {
     return this.redis.script('LOAD', script) as Promise<string>;
   }
@@ -118,6 +126,10 @@ export class TypedRedis {
 
   async evaluateSha<T>(sha: string, keys: string[], args: string[]): Promise<T> {
     return this.redis.evalsha(sha, keys.length, ...keys, ...args) as Promise<T>;
+  }
+
+  async exists(...keys: string[]): Promise<number> {
+    return this.redis.exists(...keys);
   }
 
   async hExists(key: string, field: string): Promise<boolean> {
