@@ -2,20 +2,20 @@ import { Lock, LockController, LockedFunction } from '@common-ts/base/lock';
 import { Logger } from '@common-ts/base/logger';
 import { DeferredPromise } from '@common-ts/base/promise';
 import { cancelableTimeout, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@common-ts/base/utils';
-import { Redis } from 'ioredis';
+import { TypedRedis } from '../typed-redis';
 import { AcquireResult } from './acquire-result';
 
 const LOCK_DURATION = 10000;
 const RETRY_DELAY = 50;
 
 export class RedisLock implements Lock {
-  private readonly redis: Redis;
+  private readonly redis: TypedRedis;
   private readonly key: string;
   private readonly logger: Logger;
   private readonly lockDuration: number;
   private readonly retryDelay: number;
 
-  constructor(redis: Redis, key: string, logger: Logger, { lockDuration = LOCK_DURATION, retryDelay = RETRY_DELAY }: { lockDuration?: number, retryDelay?: number } = {}) {
+  constructor(redis: TypedRedis, key: string, logger: Logger, { lockDuration = LOCK_DURATION, retryDelay = RETRY_DELAY }: { lockDuration?: number, retryDelay?: number } = {}) {
     this.redis = redis;
     this.key = key;
     this.logger = logger;

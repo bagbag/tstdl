@@ -1,13 +1,13 @@
 import { LockProvider } from '@common-ts/base/lock';
 import { Logger } from '@common-ts/base/logger';
-import { Redis } from 'ioredis';
+import { TypedRedis } from '../typed-redis';
 import { RedisLock } from './lock';
 
 export class RedisLockProvider implements LockProvider {
-  private readonly redis: Redis;
+  private readonly redis: TypedRedis;
   private readonly logger: Logger;
 
-  constructor(redis: Redis, logger: Logger) {
+  constructor(redis: TypedRedis, logger: Logger) {
     this.redis = redis;
     this.logger = logger;
 

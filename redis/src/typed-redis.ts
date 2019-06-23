@@ -62,8 +62,34 @@ export class TypedRedis {
       const listener = (channel: string, message: string) => subscriber.next({ channel, message });
       (this.redis as Redis).addListener('message', listener);
       subscriber.add(() => (this.redis as Redis).removeListener('message', listener));
-    })
-      .pipe(share());
+    }).pipe(
+      share()
+    );
+  }
+
+  duplicate(): TypedRedis {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    const duplicate = this.redis.duplicate();
+    return new TypedRedis(duplicate);
+  }
+
+  disconnect(): void {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    this.redis.disconnect();
+  }
+
+  async quit(): Promise<string> {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    return this.redis.quit();
   }
 
   pipeline(): TypedRedisPipeline {
@@ -82,6 +108,14 @@ export class TypedRedis {
     return new TypedRedisPipeline(this.redis, true);
   }
 
+  defineCommand(name: string, definition: { numberOfKeys?: number, lua?: string }): void {
+    if (this.redis instanceof RedisPipelineWrapper) {
+      throw new Error('not supported for RedisPipelineWrapper');
+    }
+
+    this.redis.defineCommand(name, definition);
+  }
+
   async scriptLoad(script: string): Promise<string> {
     return this.redis.script('LOAD', script) as Promise<string>;
   }
@@ -92,6 +126,10 @@ export class TypedRedis {
 
   async evaluateSha<T>(sha: string, keys: string[], args: string[]): Promise<T> {
     return this.redis.evalsha(sha, keys.length, ...keys, ...args) as Promise<T>;
+  }
+
+  async exists(...keys: string[]): Promise<number> {
+    return this.redis.exists(...keys);
   }
 
   async hExists(key: string, field: string): Promise<boolean> {
@@ -200,11 +238,7 @@ export class TypedRedis {
       throw new Error('subscribe not supported in pipeline and transaction');
     }
 
-    const returnValue = this.redis.subscribe(...channels);
-
-    if (1 == 1) throw new Error(`verify that ${(returnValue as Object).constructor.name} is Promise`);
-
-    await (returnValue as Promise<void>);
+    return this.redis.subscribe(...channels) as Promise<void>;
   }
 
   async unsubscribe(...channels: string[]): Promise<void> {
@@ -357,6 +391,10 @@ export class TypedRedis {
 
   async zUnion(key: string, destionation: string, sets: string[], options: SortedSetCombineOptions): Promise<number> {
     return this.zCombine(key, 'zunionstore', destionation, sets, options);
+  }
+
+  async rPush(key: string, values: string[]): Promise<number> {
+    return this.redis.rpush(key, ...values) as Promise<number>;
   }
 
   async lPush(key: string, values: string[]): Promise<number> {

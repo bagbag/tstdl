@@ -1,15 +1,15 @@
-import { AsyncDisposable, AsyncDisposer } from '@common-ts/base/disposable';
+import { AsyncDisposable, AsyncDisposer, disposeAsync } from '@common-ts/base/disposable';
 import { LockProvider } from '@common-ts/base/lock';
-import { Logger } from '@common-ts/base/logger';
-import { availablePriorities, Job, Priority, Queue } from '@common-ts/base/queue';
+import { Job, Queue } from '@common-ts/base/queue';
 import { Serializer } from '@common-ts/base/serializer';
-import { compareByValueSelection, createArray, currentTimestamp, getRandomString, single, timeout } from '@common-ts/base/utils';
+import { createArray, currentTimestamp, getRandomString, single, timeout, toArray } from '@common-ts/base/utils';
 import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
 import { DistributedLoop, DistributedLoopProvider } from '@common-ts/server/distributed-loop';
-import { dequeueLuaScript } from '../lua';
+import { dequeueLuaScript, retryLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 
 const BLOCK_DURATION = 2000;
+const RETRY_BATCH_COUNT = 50;
 
 export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly redis: TypedRedis;
@@ -18,67 +18,58 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   private readonly distributedLoopProvider: DistributedLoopProvider;
   private readonly dataHashKey: string;
   private readonly dequeueTimestampSortedSetKey: string;
-  private readonly listKeys: Map<Priority, string>;
-  private readonly listKeysArray: string[];
-  private readonly retryAfter: number;
-  private readonly maxRetries: number;
-  private readonly logger: Logger;
+  private readonly listKey: string;
+  private readonly retryAfterMilliseconds: number;
   private readonly retryLoop: DistributedLoop;
 
-  constructor(redis: TypedRedis, lockProvider: LockProvider, distributedLoopProvider: DistributedLoopProvider, key: string, retryAfter: number, maxRetries: number, logger: Logger) {
+  constructor(redis: TypedRedis, lockProvider: LockProvider, distributedLoopProvider: DistributedLoopProvider, key: string, retryAfterMilliseconds: number) {
     this.redis = redis;
     this.lockProvider = lockProvider;
     this.distributedLoopProvider = distributedLoopProvider;
-    this.retryAfter = retryAfter;
-    this.maxRetries = maxRetries;
-    this.logger = logger;
+    this.retryAfterMilliseconds = retryAfterMilliseconds;
 
     this.disposer = new AsyncDisposer();
     this.dataHashKey = `queue:${key}:data`;
     this.dequeueTimestampSortedSetKey = `queue:${key}:dequeueTime`;
-    this.listKeys = new Map(availablePriorities.map((priority) => [priority, `queue:${key}:jobs:${priority}`]));
-    this.listKeysArray = [...this.listKeys.entries()].sort(compareByValueSelection(([priority]) => priority)).map(([, key]) => key);
+    this.listKey = `queue:${key}:jobs`;
 
-    // const retryLoop = distributedLoopProvider.get(`queue:${key}:retry`);
-    // const retryLoopController = retryLoop.run(() => console.log('retry'), 2000, 1000);
-    // this.disposer.addDisposeTasks(() => retryLoopController.stop());
+    const retryLoop = distributedLoopProvider.get(`queue:${key}:retry`);
+    const retryLoopController = retryLoop.run(async () => this.retryAll(), 2000, 1000);
+    this.disposer.add(() => retryLoopController.stop());
   }
 
-  async dispose(): Promise<void> {
-    return this.disposer.dispose();
+  async [disposeAsync](): Promise<void> {
+    return this.disposer[disposeAsync]();
   }
 
-  async enqueue(data: T, priority: Priority = Priority.Normal): Promise<Job<T>> {
+  async enqueue(data: T): Promise<Job<T>> {
     const job: Job<T> = {
       id: getRandomString(15),
-      priority,
       data
     };
 
-    const listKey = this.listKeys.get(priority) as string;
     const serializedJob = Serializer.serialize(job);
 
     const transaction = this.redis.transaction();
     await Promise.all([
       transaction.hSet(this.dataHashKey, job.id, serializedJob),
-      transaction.lPush(listKey, [job.id]),
+      transaction.rPush(this.listKey, [job.id]),
       transaction.execute()
     ]);
 
     return job;
   }
 
-  async enqueueMany(datas: T[], priority: Priority = Priority.Normal): Promise<Job<T>[]> {
+  async enqueueMany(datas: T[]): Promise<Job<T>[]> {
     const ids = createArray(datas.length, () => getRandomString(15));
-    const jobs: Job<T>[] = datas.map((data, index) => ({ id: ids[index], priority, data }));
+    const jobs: Job<T>[] = datas.map((data, index) => ({ id: ids[index], data }));
 
-    const listKey = this.listKeys.get(priority) as string;
     const hashEntries = jobs.map((job) => [job.id, Serializer.serialize(job)] as [string, string]);
 
     const transaction = this.redis.transaction();
     await Promise.all([
       transaction.hSetMany(this.dataHashKey, hashEntries),
-      transaction.lPush(listKey, ids),
+      transaction.rPush(this.listKey, ids),
       transaction.execute()
     ]);
 
@@ -93,7 +84,8 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     return this._dequeueMany(this.redis, count);
   }
 
-  async acknowledge(...jobs: Job<T>[]): Promise<void> {
+  async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
+    const jobs = toArray(jobOrJobs);
     const transaction = this.redis.transaction();
 
     const ids = jobs.map((job) => job.id);
@@ -134,8 +126,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
       while (!this.disposer.disposing && !cancellationToken.isSet) {
         const transaction = this.redis.transaction();
 
-        const [_scriptLoadReply, jobs] = await Promise.all([
-          transaction.scriptLoad(dequeueLuaScript),
+        const [jobs] = await Promise.all([
           this._dequeueMany(transaction, size),
           transaction.execute().then(() => undefined)
         ]);
@@ -155,6 +146,32 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     }
   }
 
+  private async retryAll(): Promise<number> {
+    let totalRequeuedJobsCount = 0;
+
+    while (true) {
+      const requeuedJobsCount = await this.retry();
+      totalRequeuedJobsCount += requeuedJobsCount;
+
+      if (requeuedJobsCount != RETRY_BATCH_COUNT) {
+        break;
+      }
+    }
+
+    return totalRequeuedJobsCount;
+  }
+
+  private async retry(): Promise<number> {
+    const transaction = this.redis.transaction();
+
+    const [requeuedJobsCount] = await Promise.all([
+      this._retry(transaction, this.retryAfterMilliseconds, RETRY_BATCH_COUNT),
+      transaction.execute().then(() => undefined)
+    ]);
+
+    return requeuedJobsCount;
+  }
+
   private async _dequeue(redis: TypedRedis): Promise<Job<T> | undefined> {
     const jobs = await this._dequeueMany(redis, 1);
 
@@ -166,14 +183,26 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   }
 
   private async _dequeueMany(redis: TypedRedis, count: number): Promise<Job<T>[]> {
-    return this.dequeueLua(redis, this.dataHashKey, this.dequeueTimestampSortedSetKey, this.listKeysArray, count);
+    return this.dequeueLua(redis, this.listKey, this.dataHashKey, this.dequeueTimestampSortedSetKey, count);
   }
 
-  private async dequeueLua(redis: TypedRedis, dataHashKey: string, dequeueTimestampSortedSetKey: string, listKeys: string[], count: number): Promise<Job<T>[]> {
+  private async _retry(redis: TypedRedis, retryAfterMilliseconds: number, count: number): Promise<number> {
+    const timestamp = currentTimestamp() - retryAfterMilliseconds;
+    return this.retryLua(redis, this.listKey, this.dequeueTimestampSortedSetKey, timestamp, count);
+  }
+
+  private async dequeueLua(redis: TypedRedis, listKey: string, dataHashKey: string, dequeueTimestampSortedSetKey: string, count: number): Promise<Job<T>[]> {
     const timestampString = currentTimestamp().toString();
-    const serializedJobs = await redis.evaluate<string[]>(dequeueLuaScript, [dataHashKey, dequeueTimestampSortedSetKey, ...listKeys], [timestampString, count.toString()]);
+    const serializedJobs = await redis.evaluate<string[]>(dequeueLuaScript, [listKey, dataHashKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
     const jobs = serializedJobs.map((serializedJob) => Serializer.deserialize<Job<T>>(serializedJob));
 
     return jobs;
+  }
+
+  private async retryLua(redis: TypedRedis, listKey: string, dequeueTimestampSortedSetKey: string, timestamp: number, count: number): Promise<number> {
+    const timestampString = timestamp.toString();
+    const requeuedJobsCount = await redis.evaluate<number>(retryLuaScript, [listKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
+
+    return requeuedJobsCount;
   }
 }

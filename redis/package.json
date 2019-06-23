@@ -1,6 +1,6 @@
 {
   "name": "@common-ts/redis",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,12 +10,13 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@common-ts/base": "^1.30.0",
-    "@common-ts/server": "^2.8.2",
-    "ioredis": "^4.9.5"
+    "@common-ts/base": "^1.35.1",
+    "@common-ts/server": "^2.9.0",
+    "ioredis": "^4.10.0",
+    "rxjs": "^6.5.2"
   },
   "devDependencies": {
-    "@types/ioredis": "^4.0.10",
-    "typescript": "~3.4.5"
+    "@types/ioredis": "^4.0.12",
+    "typescript": "~3.5.2"
   }
 }
