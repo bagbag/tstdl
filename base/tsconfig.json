@@ -1,12 +1,38 @@
 {
-  "extends": "../tsconfig.json",
+  "compileOnSave": false,
   "compilerOptions": {
     "module": "commonjs",
-    "lib": ["esnext", "dom"],
-    "sourceMap": false,
-    "moduleResolution": "node",
+    "lib": ["esnext"],
+    "target": "es2018",
     "outDir": "./dist",
     "rootDir": "./src",
-    "target": "es2018"
+
+    "declaration": true,
+    "forceConsistentCasingInFileNames": true,
+    "newLine": "lf",
+    "pretty": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "sourceMap": false,
+
+    "downlevelIteration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    "alwaysStrict": true,
+    "strict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": false,
+
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": true
   }
 }
