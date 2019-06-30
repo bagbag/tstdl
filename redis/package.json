@@ -7,11 +7,11 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc && cp src/lua/*.lua dist/lua",
-    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
+    "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^1.35.1",
-    "@tstdl/server": "^2.9.1",
+    "@tstdl/base": "^0.35.2",
+    "@tstdl/server": "^0.9.1",
     "ioredis": "^4.10.0",
     "rxjs": "^6.5.2"
   },

@@ -50,8 +50,8 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async update<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>): Promise<void> {
-    this.collection.updateOne(filter, update);
+  async update<U extends T>(filter: FilterQuery<U>, update: MongoDocument<U> | UpdateQuery<U>): Promise<void> {
+    this.collection.updateOne(filter, update as MongoDocument<U> | UpdateQuery<T>);
   }
 
   async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;

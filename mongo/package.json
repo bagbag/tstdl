@@ -7,16 +7,16 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
+    "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^1.17.0",
-    "@tstdl/database": "^1.2.0",
-    "@tstdl/server": "^2.8.0",
-    "mongodb": "^3.2.3"
+    "@tstdl/base": "^0.35.2",
+    "@tstdl/database": "^0.2.0",
+    "@tstdl/server": "^0.9.1",
+    "mongodb": "^3.2.7"
   },
   "devDependencies": {
-    "@types/mongodb": "^3.1.26",
-    "typescript": "~3.4.5"
+    "@types/mongodb": "^3.1.28",
+    "typescript": "~3.5.2"
   }
 }

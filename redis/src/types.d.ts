@@ -55,9 +55,9 @@ interface Commands {
 }
 
 declare module 'ioredis' {
-  declare interface Redis extends Commands {
+  interface Redis extends Commands {
   }
 
-  declare interface Pipeline extends Commands {
+  interface Pipeline extends Commands {
   }
 }
