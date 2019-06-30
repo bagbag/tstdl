@@ -1,5 +1,5 @@
-import { AsyncEnumerable } from '@common-ts/base/enumerable';
-import { Entity, EntityRepository, EntityWithPartialId } from '@common-ts/database';
+import { AsyncEnumerable } from '@tstdl/base/enumerable';
+import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
 import { IndexSpecification } from 'mongodb';
 import { MongoBaseRepository } from './mongo-base-repository';
 import { Collection } from './types';

@@ -1,5 +1,5 @@
 {
-  "name": "@common-ts/database",
+  "name": "@tstdl/database",
   "version": "1.2.0",
   "author": "Patrick Hein",
   "publishConfig": {
@@ -10,7 +10,7 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@common-ts/base": "^1.12.0"
+    "@tstdl/base": "^1.12.0"
   },
   "devDependencies": {
     "typescript": "~3.4.0"

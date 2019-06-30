@@ -1,4 +1,4 @@
-import { Omit } from '@common-ts/base/types';
+import { Omit } from '@tstdl/base/types';
 import { Readable, ReadableOptions } from 'stream';
 import { Data, NonObjectMode, NonObjectModeTypes } from './stream-helper-types';
 

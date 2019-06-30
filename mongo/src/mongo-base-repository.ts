@@ -1,4 +1,4 @@
-import { Entity, EntityWithPartialId } from '@common-ts/database';
+import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './mongo-document';
 import { Collection, FilterQuery, UpdateQuery } from './types';
 

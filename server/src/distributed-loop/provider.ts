@@ -1,4 +1,4 @@
-import { LockProvider } from '@common-ts/base/lock';
+import { LockProvider } from '@tstdl/base/lock';
 import { DistributedLoop } from './distributed-loop';
 
 export class DistributedLoopProvider {

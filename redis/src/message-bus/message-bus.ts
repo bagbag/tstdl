@@ -1,5 +1,5 @@
-import { MessageBus } from '@common-ts/base/message-bus';
-import { Serializer } from '@common-ts/base/serializer';
+import { MessageBus } from '@tstdl/base/message-bus';
+import { Serializer } from '@tstdl/base/serializer';
 import { Observable } from 'rxjs';
 import { TypedRedis } from '../typed-redis';
 

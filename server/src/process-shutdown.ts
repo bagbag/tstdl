@@ -1,5 +1,5 @@
-import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
-import { Logger } from '@common-ts/base/logger';
+import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
+import { Logger } from '@tstdl/base/logger';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';

@@ -1,5 +1,5 @@
 {
-  "name": "@common-ts/client",
+  "name": "@tstdl/client",
   "version": "1.1.1",
   "author": "Patrick Hein",
   "publishConfig": {

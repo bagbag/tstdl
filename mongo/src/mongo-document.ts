@@ -1,6 +1,6 @@
-import { Omit } from '@common-ts/base/types';
-import { getRandomString } from '@common-ts/base/utils';
-import { Entity, EntityWithPartialId } from '@common-ts/database';
+import { Omit } from '@tstdl/base/types';
+import { getRandomString } from '@tstdl/base/utils';
+import { Entity, EntityWithPartialId } from '@tstdl/database';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id: string;

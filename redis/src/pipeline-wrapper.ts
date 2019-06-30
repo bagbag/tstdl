@@ -1,5 +1,5 @@
-import { DeferredPromise } from '@common-ts/base/promise';
-import { PropertiesOfType } from '@common-ts/base/types';
+import { DeferredPromise } from '@tstdl/base/promise';
+import { PropertiesOfType } from '@tstdl/base/types';
 import { Pipeline, Redis } from 'ioredis';
 
 const redisTransactionWrapperSymbol: unique symbol = Symbol();

@@ -35,7 +35,7 @@
     "no-null-undefined-union": false,
     "no-return-await": false,
     "no-shadowed-variable": false,
-    "no-submodule-imports": [true, "src", "rxjs", "@angular", "@common-ts"],
+    "no-submodule-imports": [true, "src", "rxjs", "@angular", "@tstdl"],
     "no-unbound-method": [true, "ignore-static"],
     "no-unused-variable": false,
     "no-void-expression": [true, "ignore-arrow-function-shorthand"],

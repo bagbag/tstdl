@@ -1,4 +1,4 @@
-import { Logger } from '@common-ts/base/logger';
+import { Logger } from '@tstdl/base/logger';
 import { Module } from './module';
 
 export async function runModules(modules: Module[], logger?: Logger): Promise<void> {

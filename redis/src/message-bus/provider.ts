@@ -1,6 +1,6 @@
-import { MessageBus, MessageBusProvider } from '@common-ts/base/message-bus';
-import { teardown } from '@common-ts/base/rxjs';
-import { Serializer } from '@common-ts/base/serializer';
+import { MessageBus, MessageBusProvider } from '@tstdl/base/message-bus';
+import { teardown } from '@tstdl/base/rxjs';
+import { Serializer } from '@tstdl/base/serializer';
 import { defer, from, Observable } from 'rxjs';
 import { filter, map, share, switchMap } from 'rxjs/operators';
 import { TypedRedis } from '../typed-redis';

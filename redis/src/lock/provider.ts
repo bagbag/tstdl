@@ -1,5 +1,5 @@
-import { LockProvider } from '@common-ts/base/lock';
-import { Logger } from '@common-ts/base/logger';
+import { LockProvider } from '@tstdl/base/lock';
+import { Logger } from '@tstdl/base/logger';
 import { TypedRedis } from '../typed-redis';
 import { RedisLock } from './lock';
 

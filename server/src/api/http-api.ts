@@ -1,7 +1,7 @@
-import { createErrorResponse, createResultResponse, ErrorResponse, ResultResponse } from '@common-ts/base/api';
-import { Logger } from '@common-ts/base/logger';
-import { Json, StringMap } from '@common-ts/base/types';
-import { precisionRound, Timer } from '@common-ts/base/utils';
+import { createErrorResponse, createResultResponse, ErrorResponse, ResultResponse } from '@tstdl/base/api';
+import { Logger } from '@tstdl/base/logger';
+import { Json, StringMap } from '@tstdl/base/types';
+import { precisionRound, Timer } from '@tstdl/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';

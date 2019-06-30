@@ -1,4 +1,4 @@
-import { createHash } from '@common-ts/server/utils';
+import { createHash } from '@tstdl/server/utils';
 import { readFileSync } from 'fs';
 
 export const { script: dequeueLuaScript, sha: dequeueLuaScriptSha } = load('dequeue.lua');

@@ -1,7 +1,7 @@
-import { Lock, LockController, LockedFunction } from '@common-ts/base/lock';
-import { Logger } from '@common-ts/base/logger';
-import { DeferredPromise } from '@common-ts/base/promise';
-import { cancelableTimeout, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@common-ts/base/utils';
+import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
+import { Logger } from '@tstdl/base/logger';
+import { DeferredPromise } from '@tstdl/base/promise';
+import { cancelableTimeout, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@tstdl/base/utils';
 import { TypedRedis } from '../typed-redis';
 import { AcquireResult } from './acquire-result';
 

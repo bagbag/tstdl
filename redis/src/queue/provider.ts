@@ -1,6 +1,6 @@
-import { LockProvider } from '@common-ts/base/lock';
-import { Queue, QueueProvider } from '@common-ts/base/queue';
-import { DistributedLoopProvider } from '@common-ts/server/distributed-loop';
+import { LockProvider } from '@tstdl/base/lock';
+import { Queue, QueueProvider } from '@tstdl/base/queue';
+import { DistributedLoopProvider } from '@tstdl/server/distributed-loop';
 import { TypedRedis } from '../typed-redis';
 import { RedisQueue } from './queue';
 

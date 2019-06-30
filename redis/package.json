@@ -1,5 +1,5 @@
 {
-  "name": "@common-ts/redis",
+  "name": "@tstdl/redis",
   "version": "1.2.2",
   "author": "Patrick Hein",
   "publishConfig": {
@@ -10,8 +10,8 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@common-ts/base": "^1.35.1",
-    "@common-ts/server": "^2.9.1",
+    "@tstdl/base": "^1.35.1",
+    "@tstdl/server": "^2.9.1",
     "ioredis": "^4.10.0",
     "rxjs": "^6.5.2"
   },

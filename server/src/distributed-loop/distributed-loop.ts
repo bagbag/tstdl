@@ -1,6 +1,6 @@
-import { LockProvider } from '@common-ts/base/lock';
-import { DeferredPromise } from '@common-ts/base/promise';
-import { cancelableTimeout, Timer } from '@common-ts/base/utils';
+import { LockProvider } from '@tstdl/base/lock';
+import { DeferredPromise } from '@tstdl/base/promise';
+import { cancelableTimeout, Timer } from '@tstdl/base/utils';
 import { LoopController } from './controller';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;

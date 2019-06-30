@@ -1,4 +1,4 @@
-import { Omit, PartialProperty } from '@common-ts/base/types';
+import { Omit, PartialProperty } from '@tstdl/base/types';
 
 export type Entity = {
   id: string

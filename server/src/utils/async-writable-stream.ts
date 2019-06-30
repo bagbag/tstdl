@@ -1,4 +1,4 @@
-import { DeferredPromise } from '@common-ts/base/promise';
+import { DeferredPromise } from '@tstdl/base/promise';
 import { Writable } from 'stream';
 import { NonObjectMode, Data } from './stream-helper-types';
 

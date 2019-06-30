@@ -1,4 +1,4 @@
-import { nextTick } from '@common-ts/base/utils';
+import { nextTick } from '@tstdl/base/utils';
 import { ReadableOptions } from 'stream';
 import { TypedReadable } from './typed-readable';
 

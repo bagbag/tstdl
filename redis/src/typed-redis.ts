@@ -1,5 +1,5 @@
-import { StringMap } from '@common-ts/base/types';
-import { toArray } from '@common-ts/base/utils';
+import { StringMap } from '@tstdl/base/types';
+import { toArray } from '@tstdl/base/utils';
 import { Redis } from 'ioredis';
 import { Observable } from 'rxjs';
 import { share } from 'rxjs/operators';

@@ -1,10 +1,10 @@
-import { AsyncDisposable, AsyncDisposer, disposeAsync } from '@common-ts/base/disposable';
-import { LockProvider } from '@common-ts/base/lock';
-import { Job, Queue } from '@common-ts/base/queue';
-import { Serializer } from '@common-ts/base/serializer';
-import { createArray, currentTimestamp, getRandomString, single, timeout, toArray } from '@common-ts/base/utils';
-import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
-import { DistributedLoop, DistributedLoopProvider } from '@common-ts/server/distributed-loop';
+import { AsyncDisposable, AsyncDisposer, disposeAsync } from '@tstdl/base/disposable';
+import { LockProvider } from '@tstdl/base/lock';
+import { Job, Queue } from '@tstdl/base/queue';
+import { Serializer } from '@tstdl/base/serializer';
+import { createArray, currentTimestamp, getRandomString, single, timeout, toArray } from '@tstdl/base/utils';
+import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
+import { DistributedLoop, DistributedLoopProvider } from '@tstdl/server/distributed-loop';
 import { dequeueLuaScript, retryLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 

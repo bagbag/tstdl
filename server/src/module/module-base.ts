@@ -1,4 +1,4 @@
-import { CancellationToken } from '@common-ts/base/utils/cancellation-token';
+import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import { Module, ModuleMetric, ModuleState } from './module';
 
 export abstract class ModuleBase implements Module {
