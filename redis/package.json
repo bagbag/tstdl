@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@common-ts/base": "^1.35.1",
-    "@common-ts/server": "^2.9.0",
+    "@common-ts/server": "^2.9.1",
     "ioredis": "^4.10.0",
     "rxjs": "^6.5.2"
   },

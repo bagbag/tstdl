@@ -51,6 +51,7 @@
     "prefer-function-over-method": false,
     "quotemark": [true, "single", "avoid-escape", "avoid-template"],
     "radix": false,
+    "strict-comparisons": false,
     "strict-type-predicates": false,
     "switch-final-break": [true, "always"],
     "trailing-comma": false,

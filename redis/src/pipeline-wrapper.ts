@@ -22,6 +22,11 @@ export class RedisPipelineWrapper {
   /* Pub/Sub */
   publish = this.wrap('publish');
 
+  /* Strings */
+  get = this.wrap('set');
+  set = this.wrap('set');
+  getSet = this.wrap('getset');
+
   /* Hash */
   hdel = this.wrap('hdel');
   hexists = this.wrap('hexists');

@@ -14,9 +14,14 @@ type ScanReturnType<T extends ScanType> = {
   zscan: [string, string]
 }[T];
 
-enum HashSetResult {
-  New = 1,
-  Updated = 0
+export enum ExpireType {
+  Seconds = 'ex',
+  Milliseconds = 'px'
+}
+
+export enum UpdateType {
+  OnlyNonExisting = 'nx',
+  OnlyExisting = 'xx'
 }
 
 export type Message = { channel: string, message: string };
@@ -128,6 +133,21 @@ export class TypedRedis {
     return this.redis.evalsha(sha, keys.length, ...keys, ...args) as Promise<T>;
   }
 
+  async get(key: string): Promise<string | undefined> {
+    const reply = await this.redis.get(key, undefined as any);
+    return reply == undefined ? undefined : reply;
+  }
+
+  async set(key: string, value: string, options: ({ expireType: ExpireType, expireValue: number } | { expireType?: undefined, expireValue?: undefined }) & { updateType?: UpdateType } = {}): Promise<boolean> {
+    const args = [
+      ...conditional(options.expireType != undefined, [options.expireType as string, (options.expireValue as number).toString()]),
+      ...conditional(options.updateType != undefined, options.updateType as string)
+    ];
+
+    const reply = await this.redis.set(key, value, ...args);
+    return reply == undefined ? false : true;
+  }
+
   async exists(...keys: string[]): Promise<number> {
     return this.redis.exists(...keys);
   }
@@ -221,7 +241,7 @@ export class TypedRedis {
     await this.redis.hmset(key, ...args);
   }
 
-  async *hScan(key: string, options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<{ field: string, value: string }> {
+  async * hScan(key: string, options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<{ field: string, value: string }> {
     const cursor = this.getCursor(key, 'hscan', options);
 
     for await (const [field, value] of cursor) {
@@ -373,7 +393,7 @@ export class TypedRedis {
     return this.redis.zremrangebyscore(key, min, max) as Promise<number>;
   }
 
-  async *zScan(key: string, options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<SortedSetEntry> {
+  async * zScan(key: string, options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<SortedSetEntry> {
     const cursor = this.getCursor(key, 'zscan', options);
 
     for await (const [member, scoreString] of cursor) {
@@ -429,7 +449,7 @@ export class TypedRedis {
     return this.redis[type](destination, sets.length, key, ...sets, ...args) as Promise<number>;
   }
 
-  private async *getCursor<T extends ScanType>(key: string, type: T, { pattern, count }: { pattern?: string, count?: number } = {}): AsyncIterableIterator<ScanReturnType<T>> {
+  private async * getCursor<T extends ScanType>(key: string, type: T, { pattern, count }: { pattern?: string, count?: number } = {}): AsyncIterableIterator<ScanReturnType<T>> {
     const args = [...conditional(pattern != undefined, ['PATTERN', pattern]), ...conditional(count != undefined, ['COUNT', count])];
 
     let cursor = 0;

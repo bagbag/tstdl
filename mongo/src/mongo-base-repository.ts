@@ -1,6 +1,6 @@
 import { Entity, EntityWithPartialId } from '@common-ts/database';
 import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './mongo-document';
-import { Collection, FilterQuery } from './types';
+import { Collection, FilterQuery, UpdateQuery } from './types';
 
 export class MongoBaseRepository<T extends Entity> {
   private readonly collection: Collection<T>;
@@ -48,6 +48,10 @@ export class MongoBaseRepository<T extends Entity> {
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;
+  }
+
+  async update<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>): Promise<void> {
+    this.collection.updateOne(filter, update);
   }
 
   async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
