@@ -7,13 +7,13 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && cp tslint.json dist/ && npm publish dist"
+    "pub": "npm run build && cp package.json package-lock.json tslint.json tsconfig.json dist/ && npm publish dist"
   },
   "dependencies": {
     "rxjs": "^6.5.2"
   },
   "devDependencies": {
-    "@types/node": "^12.0.8",
+    "@types/node": "^12.0.10",
     "typescript": "~3.5.2"
   }
 }
