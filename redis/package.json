@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/redis",
-  "version": "1.2.2",
+  "version": "0.2.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
