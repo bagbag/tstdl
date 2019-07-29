@@ -19,38 +19,40 @@ export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   stream?: Readable
 };
 
-export type Parameters = StringMap<string>;
+export enum BodyType {
+  None,
+  Json,
+  Stream
+}
 
-export type BodyPrimitive = string | number | true | false | null;
-export type Body = UndefinableJson;
+export type Query = StringMap<string>;
+export type Body = UndefinableJson | Readable | undefined;
 
-export type GetData<P extends object> = { parameters: P };
-export type PostData<P extends object, B extends Body> = GetData<P> & { body: B };
+export type GetData = { parameters: Query };
+export type PostData<B extends BodyType> = GetData & { body: B extends BodyType.Json ? UndefinableJson : B extends BodyType.Stream ? Readable : undefined };
 
-export type GetFunctionHandlerData<P> = { parameters: P };
-export type PostFunctionHandlerData<P, B extends Body> = GetFunctionHandlerData<P> & { body: B };
-
-export type GetValidationFunction<P extends Parameters, ParsedParameters = P> = ValidationFunction<GetData<P>, ParsedParameters>;
-export type PostValidationFunction<P extends Parameters, B extends Body, ParsedParameters = P> = ValidationFunction<PostData<P, B>, ParsedParameters>;
+export type GetValidationFunction<Parameters = GetData> = ValidationFunction<GetData, Parameters>;
+export type PostValidationFunction<B extends BodyType, Parameters = PostData<BodyType>> = ValidationFunction<PostData<B>, Parameters>;
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
-export type GetFunctionHandler<P, Response extends HttpResponse> = (data: GetFunctionHandlerData<P>) => Response | Promise<Response>;
-export type PostFunctionHandler<P, B extends Body, Response extends HttpResponse> = (data: PostFunctionHandlerData<P, B>) => Response | Promise<Response>;
 
-export type Route = GetRoute<any, any, any> | PostRoute<any, any, any, any>;
+export type RouteHandler<Data> = (data: Data) => HttpResponse | Promise<HttpResponse>;
 
-export type GetRoute<P extends Parameters, Response extends HttpResponse, ParsedParameters = P> = {
+export type Route = GetRoute<any> | PostRoute<any, any>;
+
+export type GetRoute<Parameters = GetData> = {
   type: 'get',
   path: string,
-  validator: GetValidationFunction<P, ParsedParameters>,
-  handler: GetFunctionHandler<ParsedParameters, Response>
+  validator: GetValidationFunction<Parameters>,
+  handler: RouteHandler<Parameters>
 };
 
-export type PostRoute<P extends Parameters, B extends Body, Response extends HttpResponse, ParsedParameters = P> = {
+export type PostRoute<B extends BodyType, Parameters = PostData<BodyType>> = {
   type: 'post',
   path: string,
-  validator: PostValidationFunction<P, B, ParsedParameters>,
-  handler: PostFunctionHandler<ParsedParameters, B, Response>
+  bodyType: BodyType,
+  validator: PostValidationFunction<B, Parameters>,
+  handler: RouteHandler<Parameters>
 };
 
 export class HttpApi {
@@ -88,7 +90,7 @@ export class HttpApi {
           break;
 
         case 'post':
-          this.registerPostRoute(route.path, route.validator, route.handler);
+          this.registerPostRoute(route.path, route.bodyType, route.validator, route.handler);
           break;
 
         default:
@@ -97,27 +99,37 @@ export class HttpApi {
     }
   }
 
-  registerGetRoute<P extends Parameters, Response extends HttpResponse, ParsedParameters extends object = P>(path: string, validator: GetValidationFunction<P, ParsedParameters>, handler: GetFunctionHandler<ParsedParameters, Response>): void {
+  registerGetRoute<Parameters = GetData>(path: string, validator: GetValidationFunction<Parameters>, handler: RouteHandler<Parameters>): void {
     this.router.get(path, async (context: Context, next) => {
-      await this.handle(context, validator, handler);
+      await this.handle(context, BodyType.None, validator, handler);
       return next();
     });
   }
 
-  registerPostRoute<P extends Parameters, B extends Body, Response extends HttpResponse, ParsedParameters extends object = P>(path: string, validator: PostValidationFunction<P, B, ParsedParameters>, handler: PostFunctionHandler<ParsedParameters, B, Response>): void {
+  registerPostRoute<B extends BodyType, Parameters = GetData>(path: string, bodyType: BodyType, validator: PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): void {
     this.router.post(path, async (context: Context, next) => {
-      await this.handle(context, validator, handler);
+      await this.handle(context, bodyType, validator, handler);
       return next();
     });
   }
 
-  private async handle<P extends Parameters, B extends Body, Response extends HttpResponse, ParsedParameters extends object = P>(context: Context, validator: GetValidationFunction<P, ParsedParameters> | PostValidationFunction<P, B, ParsedParameters>, handler: GetFunctionHandler<ParsedParameters, Response> | PostFunctionHandler<ParsedParameters, B, Response>): Promise<void> {
+  private async handle<B extends BodyType, Parameters>(context: Context, bodyType: BodyType, validator: GetValidationFunction<Parameters> | PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): Promise<void> {
     const { request, response, params } = context;
     const { method, query: { ...query } } = request;
 
     const parameters = { ...params, ...query };
 
-    let requestData: GetData<P> | PostData<P, B>;
+    let body: Body;
+    try {
+      body = await getBody(request, bodyType);
+    }
+    catch (error) {
+      response.status = 400;
+      response.body = createErrorResponse((error as Error).name, (error as Error).message);
+      return;
+    }
+
+    let requestData: GetData | PostData<B>;
 
     switch (method) {
       case 'GET':
@@ -125,32 +137,23 @@ export class HttpApi {
         break;
 
       case 'POST':
-        try {
-          const body = await readJsonBody(request);
-          requestData = { parameters, body } as PostData<P, B>;
-        }
-        catch (error) {
-          response.status = 400;
-          response.body = createErrorResponse((error as Error).name, (error as Error).message);
-          return;
-        }
+        requestData = { parameters, body } as PostData<B>;
         break;
 
       default:
-        throw new Error(`method ${request.method} not supported`);
+        response.status = 405;
+        response.body = createErrorResponse('Method Not Allowed', `method ${request.method} not supported for this endpoint`);
+        return;
     }
 
     const validationResult = method == 'GET'
-      ? (validator as GetValidationFunction<P, ParsedParameters>)(requestData)
-      : (validator as PostValidationFunction<P, B, ParsedParameters>)(requestData as PostData<P, B>);
+      ? (validator as GetValidationFunction<Parameters>)(requestData)
+      : (validator as PostValidationFunction<B, Parameters>)(requestData as PostData<B>);
 
     if (validationResult.valid) {
-      const parsedRequestData = {
-        ...requestData,
-        parameters: validationResult.value
-      };
+      const parsedRequestData = validationResult.value;
 
-      const handlerReturnValue = handler(parsedRequestData as PostData<ParsedParameters, B>);
+      const handlerReturnValue = handler(parsedRequestData);
       const responseResult = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
       if (responseResult.headers != undefined) {
@@ -173,6 +176,22 @@ export class HttpApi {
       response.status = 400;
       response.body = createErrorResponse('invalid request data', validationResult.error);
     }
+  }
+}
+
+async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> {
+  switch (bodyType) {
+    case BodyType.Json:
+      return readJsonBody(request);
+
+    case BodyType.Stream:
+      return request.req;
+
+    case BodyType.None:
+      return undefined;
+
+    default:
+      throw new Error('unknown BodyType');
   }
 }
 
