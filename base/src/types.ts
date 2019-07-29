@@ -12,11 +12,13 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
 export interface JsonArray extends Array<Json> { }
 
-export type AsExtendedJson<T> = T extends ExtendedJson ? ExtendedJson : ExtendedJson;
-export type ExtendedJson = ExtendedJsonPrimitive | ExtendedJsonObject | ExtendedJsonArray;
-export type ExtendedJsonPrimitive = string | number | boolean | null | undefined;
-export type ExtendedJsonObject = { [key: string]: ExtendedJson };
-export interface ExtendedJsonArray extends Array<ExtendedJson> { }
+export type AsUndefinableJson<T> = T extends UndefinableJson ? UndefinableJson : UndefinableJson;
+export type AsUndefinableJsonInnerNode<T> = T extends UndefinableJsonInnerNode ? UndefinableJsonInnerNode : UndefinableJsonInnerNode;
+export type UndefinableJson = JsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
+export type UndefinableJsonInnerNode = UndefinableJsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
+export type UndefinableJsonPrimitive = string | number | boolean | null | undefined;
+export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
+export interface UndefinableJsonArray extends Array<UndefinableJsonInnerNode> { }
 
 export type Type<T, Args = any> = new (...args: Args[]) => T;
 
