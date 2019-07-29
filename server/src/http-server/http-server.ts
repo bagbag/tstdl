@@ -22,13 +22,31 @@ export class HttpServer {
     this.sockets = new Set();
   }
 
-  listen(port: number): void {
+  async listen(port: number): Promise<void> {
     if (this.server.listening) {
       throw new Error('already listening');
     }
 
-    this.untrackConnectedSockets = trackConnectedSockets(this.server, this.sockets);
     this.server.listen(port);
+
+    return new Promise<void>((resolve, reject) => {
+      let listeningListener: () => void;
+      let errorListener: (error: Error) => void;
+
+      listeningListener = () => {
+        this.untrackConnectedSockets = trackConnectedSockets(this.server, this.sockets);
+        this.server.removeListener('error', errorListener);
+        resolve();
+      };
+
+      errorListener = (error: Error) => {
+        this.server.removeListener('listening', listeningListener);
+        reject(error);
+      };
+
+      this.server.once('listening', listeningListener);
+      this.server.once('error', errorListener);
+    });
   }
 
   async close(timeout: number): Promise<void> {
