@@ -1,2 +1,5 @@
-export type ValidationFunction<T> = (object: T) => ValidationResult;
-export type ValidationResult = { valid: true, error?: undefined } | { valid: false, error: NonNullable<any> };
+export type ValidationFunction<Input, Output = Input> = (object: Input) => ValidationResult<Output>;
+
+export type ValidationResult<Output> =
+  | { valid: true, value: Output, error?: undefined }
+  | { valid: false, value?: undefined, error: NonNullable<any> };
