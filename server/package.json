@@ -10,7 +10,7 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.36.2",
+    "@tstdl/base": "^0.37.2",
     "koa": "^2.7.0",
     "koa-router": "^7.4.0"
   },
