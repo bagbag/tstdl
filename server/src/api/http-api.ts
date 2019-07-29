@@ -14,9 +14,12 @@ type Context = Koa.ParameterizedContext<void, KoaRouter.IRouterParamContext<void
 
 export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   headers?: StringMap<string | string[]>,
+  statusCode?: number,
+  statusMessage?: string
   text?: string,
   json?: JsonType,
-  stream?: Readable
+  stream?: Readable,
+  binary?: Buffer
 };
 
 export enum BodyType {
@@ -106,7 +109,7 @@ export class HttpApi {
     });
   }
 
-  registerPostRoute<B extends BodyType, Parameters = GetData>(path: string, bodyType: BodyType, validator: PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): void {
+  registerPostRoute<Parameters = GetData, B extends BodyType = BodyType.None>(path: string, bodyType: BodyType, validator: PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): void {
     this.router.post(path, async (context: Context, next) => {
       await this.handle(context, bodyType, validator, handler);
       return next();
@@ -156,26 +159,38 @@ export class HttpApi {
       const handlerReturnValue = handler(parsedRequestData);
       const responseResult = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
-      if (responseResult.headers != undefined) {
-        for (const [field, value] of Object.entries(responseResult.headers)) {
-          response.set(field, value);
-        }
-      }
-
-      if (responseResult.json != undefined) {
-        (response.body as ResultResponse<UndefinableJson>) = createResultResponse(responseResult.json);
-      }
-      if (responseResult.text != undefined) {
-        response.body = responseResult.text;
-      }
-      if (responseResult.stream != undefined) {
-        response.body = responseResult.stream;
-      }
+      applyResponse(response, responseResult);
     }
     else {
       response.status = 400;
       response.body = createErrorResponse('invalid request data', validationResult.error);
     }
+  }
+}
+
+function applyResponse(response: Koa.Response, responseResult: HttpResponse): void {
+  if (responseResult.headers != undefined) {
+    for (const [field, value] of Object.entries(responseResult.headers)) {
+      response.set(field, value);
+    }
+  }
+
+  if (responseResult.statusCode != undefined) {
+    response.status = responseResult.statusCode;
+  }
+
+  if (responseResult.statusMessage != undefined) {
+    response.message = responseResult.statusMessage;
+  }
+
+  if (responseResult.json != undefined) {
+    (response.body as ResultResponse<UndefinableJson>) = createResultResponse(responseResult.json);
+  }
+  if (responseResult.text != undefined) {
+    response.body = responseResult.text;
+  }
+  if (responseResult.stream != undefined) {
+    response.body = responseResult.stream;
   }
 }
 
