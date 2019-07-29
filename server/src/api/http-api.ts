@@ -12,10 +12,10 @@ import { ValidationFunction } from './validation';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.IRouterParamContext<void, void>>;
 
-type HttpResponse = {
+export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   headers?: StringMap<string | string[]>,
   text?: string,
-  json?: UndefinableJson,
+  json?: JsonType,
   stream?: Readable
 };
 
