@@ -9,6 +9,7 @@ import * as KoaRouter from 'koa-router';
 import { Readable } from 'stream';
 import { readStream } from '../utils';
 import { ValidationFunction } from './validation';
+import { ValidationError } from './validation/error';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.IRouterParamContext<void, void>>;
 
@@ -163,7 +164,13 @@ export class HttpApi {
     }
     else {
       response.status = 400;
-      response.body = createErrorResponse('invalid request data', validationResult.error);
+
+      if (validationResult.error instanceof ValidationError) {
+        response.body = createErrorResponse(validationResult.error.name, validationResult.error.message, validationResult.error.details);
+      }
+      else {
+        response.body = createErrorResponse('invalid request data', 'validation failed', validationResult.error);
+      }
     }
   }
 }
