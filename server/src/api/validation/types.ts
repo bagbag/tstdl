@@ -1,4 +1,4 @@
-import { ValidationError } from "./error";
+import { ValidationError } from './error';
 
 export type ValidationFunction<Input, Output = Input> = (object: Input) => ValidationResult<Output>;
 
