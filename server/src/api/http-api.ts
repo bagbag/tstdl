@@ -1,4 +1,4 @@
-import { createErrorResponse, createResultResponse, ErrorResponse, ResultResponse } from '@tstdl/base/api';
+import { createErrorResponse, ErrorResponse } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
 import { StringMap, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer } from '@tstdl/base/utils';
@@ -191,7 +191,7 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   }
 
   if (responseResult.json != undefined) {
-    (response.body as ResultResponse<UndefinableJson>) = createResultResponse(responseResult.json);
+    response.body = responseResult.json;
   }
   if (responseResult.text != undefined) {
     response.body = responseResult.text;
