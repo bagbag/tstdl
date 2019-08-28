@@ -26,7 +26,7 @@ const typedArrays: TypedArrayConstructor[] = [
 ].filter((type) => type != undefined);
 
 export function registerBinaryTypes(serializer: typeof Serializer): void {
-  if (ArrayBuffer != undefined) {
+  if (typeof ArrayBuffer != 'undefined') {
     serializer.registerType(ArrayBuffer, encodeBase64, decodeBase64);
   }
 
@@ -34,7 +34,7 @@ export function registerBinaryTypes(serializer: typeof Serializer): void {
     serializer.registerType(typedArray, encodeBase64, (data) => new typedArray(decodeBase64(data)));
   }
 
-  if (Buffer != undefined) {
+  if (typeof Buffer != 'undefined') {
     serializer.registerType(Buffer, (buffer) => buffer.toString('base64'), (data) => Buffer.from(data, 'base64'));
   }
 }
