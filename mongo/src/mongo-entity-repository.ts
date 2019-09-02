@@ -46,4 +46,20 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   async saveMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
     return this.baseRepository.insertMany(entities);
   }
+
+  async delete<U extends T>(entity: U): Promise<boolean> {
+    return this.baseRepository.delete(entity);
+  }
+
+  async deleteMany<U extends T>(entities: U[]): Promise<number> {
+    return this.baseRepository.deleteMany(entities);
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    return this.baseRepository.deleteById(id);
+  }
+
+  async deleteManyById(ids: string[]): Promise<number> {
+    return this.baseRepository.deleteManyById(ids);
+  }
 }

@@ -59,7 +59,7 @@ export class MongoBaseRepository<T extends Entity> {
   async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
     const filter: FilterQuery<U> = {
       _id: id
-    };
+    } as FilterQuery<U>;
 
     return this.loadByFilter(filter, throwIfNotFound);
   }
@@ -84,7 +84,7 @@ export class MongoBaseRepository<T extends Entity> {
   async *loadManyById<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     const filter: FilterQuery<U> = {
       _id: { $in: ids }
-    };
+    } as FilterQuery<U>;
 
     yield* this.loadManyByFilter(filter);
   }
@@ -98,6 +98,41 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
+  async delete<U extends T = T>(entity: U): Promise<boolean> {
+    return this.deleteById(entity.id);
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    const filter: FilterQuery<T> = {
+      id: id
+    } as FilterQuery<T>;
+
+    return this.deleteOneByFilter(filter);
+  }
+
+  async deleteMany<U extends T = T>(entities: U[]): Promise<number> {
+    const ids = entities.map((entity) => entity.id);
+    return this.deleteManyById(ids);
+  }
+
+  deleteManyById(ids: string[]): Promise<number> {
+    const filter: FilterQuery<T> = {
+      _id: { $in: ids }
+    } as FilterQuery<T>;
+
+    return this.deleteManyByFilter(filter);
+  }
+
+  async deleteOneByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
+    const { deletedCount } = await this.collection.deleteOne(filter);
+    return deletedCount == 1;
+  }
+
+  async deleteManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
+    const { deletedCount } = await this.collection.deleteMany(filter);
+    return deletedCount as number;
+  }
+
   async countByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
     return this.collection.countDocuments(filter);
   }
@@ -108,14 +143,14 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async has(id: string): Promise<boolean> {
-    const filter = { _id: id };
+    const filter: FilterQuery<T> = { _id: id } as FilterQuery<T>;
     return this.hasByFilter(filter);
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
     const filter: FilterQuery<T> = {
       _id: { $in: ids }
-    };
+    } as FilterQuery<T>;
 
     const result = await this.collection.distinct('_id', filter) as string[];
     return result;
@@ -141,7 +176,7 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
 function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
   const filter: FilterQuery<T> = {
     _id: document._id
-  };
+  } as FilterQuery<T>;
 
   const operation = {
     replaceOne: {

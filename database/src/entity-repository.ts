@@ -7,4 +7,9 @@ export interface EntityRepository<T extends Entity> {
 
   save<U extends T>(entity: EntityWithPartialId<U>): Promise<U>;
   saveMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]>;
+
+  delete<U extends T>(entity: U): Promise<boolean>;
+  deleteMany<U extends T>(entities: U[]): Promise<number>;
+  deleteById(id: string): Promise<boolean>;
+  deleteManyById(ids: string[]): Promise<number>;
 }
