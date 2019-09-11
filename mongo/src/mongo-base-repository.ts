@@ -1,5 +1,5 @@
 import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './mongo-document';
+import { MongoDocument, toEntity, toMongoDocumentWithNewId, toMongoDocument } from './mongo-document';
 import { Collection, FilterQuery, UpdateQuery } from './types';
 
 export class MongoBaseRepository<T extends Entity> {
@@ -44,6 +44,39 @@ export class MongoBaseRepository<T extends Entity> {
 
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
+    const bulkWriteResult = await this.collection.bulkWrite(operations);
+
+    const savedEntities = documents.map(toEntity);
+    return savedEntities;
+  }
+
+  async insertOrReplace<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
+    const documents: MongoDocument<U>[] = [];
+    const operations: object[] = [];
+
+    for (const entity of entities) {
+      let operation: object;
+
+      if (entity.id == undefined) {
+        const document = toMongoDocument(entity as U);
+        operation = toInsertOneOperation(document);
+
+        documents.push(document);
+      }
+      else {
+        const document = toMongoDocumentWithNewId(entity);
+        operation = toReplaceOneOperation(document, upsert);
+
+        documents.push(document);
+      }
+
+      operations.push(operation);
+    }
+
     const bulkWriteResult = await this.collection.bulkWrite(operations);
 
     const savedEntities = documents.map(toEntity);
