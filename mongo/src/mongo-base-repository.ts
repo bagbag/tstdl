@@ -62,13 +62,13 @@ export class MongoBaseRepository<T extends Entity> {
       let operation: object;
 
       if (entity.id == undefined) {
-        const document = toMongoDocument(entity as U);
+        const document = toMongoDocumentWithNewId(entity);
         operation = toInsertOneOperation(document);
 
         documents.push(document);
       }
       else {
-        const document = toMongoDocumentWithNewId(entity);
+        const document = toMongoDocument(entity as U);
         operation = toReplaceOneOperation(document, upsert);
 
         documents.push(document);
