@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/mongo",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tstdl/base": "^0.38.0",
-    "@tstdl/database": "^0.3.1",
+    "@tstdl/database": "^0.3.2",
     "@tstdl/server": "^0.18.1",
     "mongodb": "^3.3.2"
   },
