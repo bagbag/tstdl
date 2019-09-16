@@ -1,5 +1,5 @@
 import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { MongoDocument, toEntity, toMongoDocumentWithNewId, toMongoDocument } from './mongo-document';
+import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
 import { Collection, FilterQuery, UpdateQuery } from './types';
 
 export class MongoBaseRepository<T extends Entity> {
@@ -137,7 +137,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async deleteById(id: string): Promise<boolean> {
     const filter: FilterQuery<T> = {
-      id: id
+      _id: id
     } as FilterQuery<T>;
 
     return this.deleteOneByFilter(filter);
