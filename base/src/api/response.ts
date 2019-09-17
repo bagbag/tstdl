@@ -21,12 +21,12 @@ export type ResponseError = {
   name: string,
   message: string,
   details?: any,
-  errorData?: UndefinableJson
+  errorData?: ErrorHandlerData
 };
 
 const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
 
-export function registerErrorHandler<T extends Error, TData extends UndefinableJson>(constructor: new (...args: any[]) => T, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: new (...args: any[]) => T, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   errorHandlers.set(constructor.name, { statusCode, serializer, deserializer });
 }
 
@@ -56,7 +56,7 @@ export function createErrorResponse(errorOrName: Error | string, message: string
     const handler = errorHandlers.get(errorOrName.constructor.name);
 
     if (handler != undefined) {
-      const errorData = handler.serializer(errorOrName) as UndefinableJson;
+      const errorData = handler.serializer(errorOrName) as ErrorHandlerData;
 
       response = {
         error: {
