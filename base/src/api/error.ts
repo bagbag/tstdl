@@ -1,14 +1,12 @@
-import { CustomError } from '../utils/custom-error';
+import { CustomError } from '../error/custom-error';
 import { ErrorResponse } from './response';
 
 export class ApiError extends CustomError {
-  readonly name: string;
   readonly details: any;
 
   constructor(response: ErrorResponse) {
-    super(response.error.message);
+    super({ message: response.error.message, name: response.error.name });
 
-    this.name = response.error.name;
     this.details = response.error.details;
   }
 }

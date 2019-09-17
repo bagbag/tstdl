@@ -1,3 +1,10 @@
+import { Json } from '../types';
+import { ApiError } from './error';
+
+export type ErrorSerializer<T extends Error, TData extends Json> = (error: T) => TData;
+export type ErrorDeserializer<T extends Error, TData extends Json> = (data: TData) => T;
+export type ErrorHandler<T extends Error = Error, TData extends Json = Json> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData> };
+
 export type ResultResponse<T> = {
   result: T
 };
@@ -11,8 +18,24 @@ export type Response<T> = ResultResponse<T> | ErrorResponse;
 export type ResultError = {
   name: string,
   message: string,
-  details?: any
+  details?: any,
+  errorData?: Json
 };
+
+const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
+
+export function registerErrorHandler<T extends Error, TData extends Json>(constructor: new (...args: any[]) => T, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+  errorHandlers.set(constructor.name, { statusCode, serializer, deserializer });
+}
+
+export function hasErrorHandler(constructor: new (...args: any[]) => any): boolean {
+  return errorHandlers.has(constructor.name);
+}
+
+export function getErrorStatusCode(error: Error, defaultStatusCode: number = 500): number {
+  const handler = errorHandlers.get(error.constructor.name);
+  return (handler != undefined) ? handler.statusCode : defaultStatusCode;
+}
 
 export function createResultResponse<T>(result: T): ResultResponse<T> {
   const response: ResultResponse<T> = {
@@ -22,16 +45,58 @@ export function createResultResponse<T>(result: T): ResultResponse<T> {
   return response;
 }
 
-export function createErrorResponse(name: string, message: string, details?: any): ErrorResponse {
-  const response: ErrorResponse = {
-    error: {
-      name,
-      message,
-      details
+export function createErrorResponse(error: Error, details?: any): ErrorResponse;
+export function createErrorResponse(name: string, message: string, details?: any): ErrorResponse;
+export function createErrorResponse(errorOrName: Error | string, message: string = '', details?: any): ErrorResponse {
+  let response: ErrorResponse;
+
+  if (errorOrName instanceof Error) {
+    const handler = errorHandlers.get(errorOrName.constructor.name);
+
+    if (handler != undefined) {
+      const errorData = handler.serializer(errorOrName) as Json;
+
+      response = {
+        error: {
+          name: errorOrName.constructor.name,
+          message: errorOrName.message,
+          details,
+          errorData
+        }
+      };
     }
-  };
+    else {
+      response = {
+        error: {
+          name: errorOrName.name,
+          message: errorOrName.message,
+          details
+        }
+      };
+    }
+  }
+  else {
+    response = {
+      error: {
+        name,
+        message,
+        details
+      }
+    };
+  }
 
   return response;
+}
+
+export function handleErrorResponse(response: ErrorResponse): never {
+  const handler = errorHandlers.get(response.error.name);
+
+  if (handler != undefined) {
+    const error = handler.deserializer(response.error.errorData);
+    throw error;
+  }
+
+  throw new ApiError(response);
 }
 
 export function isResultResponse<T = any>(response: Response<T> | unknown): response is ResultResponse<T> {

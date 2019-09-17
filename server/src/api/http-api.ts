@@ -1,4 +1,4 @@
-import { createErrorResponse, ErrorResponse } from '@tstdl/base/api';
+import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
 import { StringMap, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer } from '@tstdl/base/utils';
@@ -128,8 +128,8 @@ export class HttpApi {
       body = await getBody(request, bodyType);
     }
     catch (error) {
-      response.status = 400;
-      response.body = createErrorResponse((error as Error).name, (error as Error).message);
+      response.status = getErrorStatusCode(error as Error, 400);
+      response.body = createErrorResponse(error as Error);
       return;
     }
 
@@ -165,14 +165,16 @@ export class HttpApi {
     else {
       response.status = 400;
 
-      if (validationResult.error instanceof ValidationError) {
-        response.body = createErrorResponse(validationResult.error.name, validationResult.error.message, validationResult.error.details);
-      }
-      else {
-        response.body = createErrorResponse('invalid request data', 'validation failed', validationResult.error);
-      }
+      (response.body as ErrorResponse) = (validationResult.error instanceof ValidationError)
+        ? createErrorResponse(validationResult.error.name, validationResult.error.message, validationResult.error.details)
+        : createErrorResponse('invalid request data', 'validation failed', validationResult.error);
     }
   }
+}
+
+function setErrorResponse(response: Koa.Response, error: Error): void {
+  response.status = getErrorStatusCode(error);
+  (response.body as ErrorResponse) = createErrorResponse(error);
 }
 
 function applyResponse(response: Koa.Response, responseResult: HttpResponse): void {
@@ -193,9 +195,11 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   if (responseResult.json != undefined) {
     response.body = responseResult.json;
   }
+
   if (responseResult.text != undefined) {
     response.body = responseResult.text;
   }
+
   if (responseResult.stream != undefined) {
     response.body = responseResult.stream;
   }
@@ -213,7 +217,7 @@ async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> 
       return undefined;
 
     default:
-      throw new Error('unknown BodyType');
+      throw new Error('unknown body-type');
   }
 }
 
@@ -242,8 +246,14 @@ function errorCatchMiddleware(logger: Logger) {
     catch (error) {
       logger.error(error as Error);
 
-      response.status = 500;
-      (response.body as ErrorResponse) = createErrorResponse('500', 'Internal Server Error');
+      if (hasErrorHandler(error.constructor)) {
+        response.status = getErrorStatusCode(error as Error);
+        (response.body as ErrorResponse) = createErrorResponse(error as Error);
+      }
+      else {
+        response.status = 500;
+        (response.body as ErrorResponse) = createErrorResponse('500', 'Internal Server Error');
+      }
     }
   };
 }

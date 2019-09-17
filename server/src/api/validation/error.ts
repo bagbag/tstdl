@@ -1,12 +1,11 @@
-import { CustomError } from '@tstdl/base/utils/custom-error';
+import { CustomError } from '@tstdl/base/error';
 
 export class ValidationError extends CustomError {
   readonly details: any;
 
   constructor(name: string, message: string, details?: any) {
-    super(message);
+    super({ name, message });
 
-    this.name = name;
     this.details = details;
   }
 }

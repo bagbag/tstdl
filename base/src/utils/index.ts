@@ -1,3 +1,4 @@
+export * from '../error/multi-error';
 export * from './any-iterable-iterator';
 export * from './async-iterable-helpers';
 export * from './base64';
@@ -10,7 +11,6 @@ export * from './iterable-helpers';
 export * from './map';
 export * from './math';
 export * from './moving-metric';
-export * from './multi-error';
 export * from './ordered-feedable-async-iterable';
 export * from './periodic-reporter';
 export * from './periodic-sampler';

@@ -1,6 +1,6 @@
+import { MultiError } from '../error/multi-error';
 import { DeferredPromise } from '../promise';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
-import { MultiError } from '../utils/multi-error';
 import { AsyncDisposable, Disposable, dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
 
 const deferrerPromiseSymbol: unique symbol = Symbol('DeferrerPromise');
