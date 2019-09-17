@@ -1,9 +1,11 @@
 import { UndefinableJson } from '../types';
 import { ApiError } from './error';
 
-export type ErrorSerializer<T extends Error, TData extends UndefinableJson> = (error: T) => TData;
-export type ErrorDeserializer<T extends Error, TData extends undefined | UndefinableJson> = (data: TData, responseError: ResponseError) => T;
-export type ErrorHandler<T extends Error = Error, TData extends UndefinableJson = UndefinableJson> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData> };
+type ErrorHandlerData = undefined | UndefinableJson;
+
+export type ErrorSerializer<T extends Error, TData extends ErrorHandlerData> = (error: T) => TData;
+export type ErrorDeserializer<T extends Error, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
+export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData> };
 
 export type ResultResponse<T> = {
   result: T

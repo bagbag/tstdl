@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,7 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.42.0",
+    "@tstdl/base": "^0.42.2",
     "koa": "^2.8.1",
     "koa-router": "^7.4.0"
   },
