@@ -90,15 +90,15 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   return response;
 }
 
-export function handleErrorResponse(response: ErrorResponse): never {
+export function parseErrorResponse(response: ErrorResponse): Error {
   const handler = errorHandlers.get(response.error.name);
 
   if (handler != undefined) {
-    const error = handler.deserializer(response.error.errorData, response.error);
-    throw error;
+    const error = handler.deserializer(response.error.errorData, response.error) as Error;
+    return error;
   }
 
-  throw new ApiError(response);
+  return new ApiError(response);
 }
 
 export function isResultResponse<T = any>(response: Response<T> | unknown): response is ResultResponse<T> {
