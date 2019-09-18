@@ -20,7 +20,7 @@ export type UndefinableJsonPrimitive = string | number | boolean | null | undefi
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export interface UndefinableJsonArray extends Array<UndefinableJsonInnerNode> { }
 
-export type Type<T, Args = any> = new (...args: Args[]) => T;
+export type Type<T, Args extends any[] = any> = new (...args: Args) => T;
 
 export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };

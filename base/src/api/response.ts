@@ -1,4 +1,4 @@
-import { UndefinableJson } from '../types';
+import { Type, UndefinableJson } from '../types';
 import { ApiError } from './error';
 
 type ErrorHandlerData = undefined | UndefinableJson;
@@ -26,11 +26,11 @@ export type ResponseError = {
 
 const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
 
-export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: new (...args: any[]) => T, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   errorHandlers.set(constructor.name, { statusCode, serializer, deserializer });
 }
 
-export function hasErrorHandler(constructor: new (...args: any[]) => any): boolean {
+export function hasErrorHandler(constructor: Type<Error>): boolean {
   return errorHandlers.has(constructor.name);
 }
 
