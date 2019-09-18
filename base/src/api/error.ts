@@ -5,7 +5,7 @@ export class ApiError extends CustomError {
   readonly details: any;
 
   constructor(response: ErrorResponse) {
-    super({ message: response.error.message, name: response.error.name });
+    super({ message: `${response.error.name}: ${response.error.message}` });
 
     this.details = response.error.details;
   }
