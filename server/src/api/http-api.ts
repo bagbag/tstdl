@@ -1,6 +1,6 @@
 import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
-import { StringMap, UndefinableJson } from '@tstdl/base/types';
+import { StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer } from '@tstdl/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
@@ -64,19 +64,21 @@ export class HttpApi {
   private readonly koa: Koa<void, void>;
   private readonly router: KoaRouter<void, void>;
   private readonly requestHandler: RequestHandler;
+  private readonly supressedErrors: Set<Type<Error>>;
 
   constructor({ prefix, logger, behindProxy = false }: { prefix: string, logger: Logger, behindProxy?: boolean }) {
     this.logger = logger;
 
     this.koa = new Koa();
     this.router = new KoaRouter();
+    this.supressedErrors = new Set<Type<Error>>();
 
     this.requestHandler = this.koa.callback();
 
     this.koa.proxy = behindProxy;
     this.router.prefix(prefix);
 
-    this.koa.use(errorCatchMiddleware(logger));
+    this.koa.use(errorCatchMiddleware(logger, this.supressedErrors));
     this.koa.use(responseTimeMiddleware);
     this.koa.use(this.router.routes());
     this.koa.use(this.router.allowedMethods());
@@ -84,6 +86,10 @@ export class HttpApi {
 
   handleRequest(request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse): void {
     this.requestHandler(request, response);
+  }
+
+  supressErrorLog(errorConstructor: Type<Error>): void {
+    this.supressedErrors.add(errorConstructor);
   }
 
   registerRoutes(routes: Route[]): void {
@@ -172,11 +178,6 @@ export class HttpApi {
   }
 }
 
-function setErrorResponse(response: Koa.Response, error: Error): void {
-  response.status = getErrorStatusCode(error);
-  (response.body as ErrorResponse) = createErrorResponse(error);
-}
-
 function applyResponse(response: Koa.Response, responseResult: HttpResponse): void {
   if (responseResult.headers != undefined) {
     for (const [field, value] of Object.entries(responseResult.headers)) {
@@ -238,15 +239,20 @@ async function readBody(request: Koa.Request, maxBytes: number): Promise<string>
 }
 
 // tslint:disable-next-line: typedef
-function errorCatchMiddleware(logger: Logger) {
+function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
   return async function errorCatchMiddleware({ response }: Context, next: () => Promise<any>): Promise<any> {
     try {
       await next();
     }
     catch (error) {
-      logger.error(error as Error);
+      const errorConstructor = (error as Error).constructor as Type<Error>;
+      const supressed = supressedErrors.has(errorConstructor);
 
-      if (hasErrorHandler(error.constructor)) {
+      if (!supressed) {
+        logger.error(error as Error);
+      }
+
+      if (hasErrorHandler(errorConstructor)) {
         response.status = getErrorStatusCode(error as Error);
         (response.body as ErrorResponse) = createErrorResponse(error as Error);
       }
