@@ -5,6 +5,7 @@ export * from './base64';
 export * from './benchmark';
 export * from './cancelable-async-iterable';
 export * from './date';
+export * from './factory-map';
 export * from './feedable-async-iterable';
 export * from './helpers';
 export * from './iterable-helpers';
