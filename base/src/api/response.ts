@@ -80,7 +80,7 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   else {
     response = {
       error: {
-        name,
+        name: errorOrName,
         message,
         details
       }
