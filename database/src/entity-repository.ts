@@ -1,6 +1,8 @@
 import { Entity, EntityWithPartialId } from './entity';
 
 export interface EntityRepository<T extends Entity> {
+  _type: T;
+
   load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
   load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
