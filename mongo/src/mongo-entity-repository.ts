@@ -5,6 +5,8 @@ import { MongoBaseRepository } from './mongo-base-repository';
 import { Collection } from './types';
 
 export class MongoEntityRepository<T extends Entity> implements EntityRepository<T> {
+  _type: T;
+
   protected readonly collection: Collection<T>;
   protected readonly indexes: IndexSpecification[];
   protected readonly baseRepository: MongoBaseRepository<T>;
