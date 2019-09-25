@@ -1,16 +1,14 @@
 // https://mathiasbynens.be/notes/globalthis
 
-// tslint:disable
+declare const __magic__: { globalThis: any };
 
-declare const __magic__: any;
-
-(function () {
+export function ensureGlobalThis(): void {
   if (typeof globalThis === 'object') {
     return;
   }
 
   Object.defineProperty(Object.prototype, '__magic__', {
-    get: function () {
+    get(): any {
       return this;
     },
     configurable: true // This makes it possible to `delete` the getter later.
@@ -18,4 +16,4 @@ declare const __magic__: any;
 
   __magic__.globalThis = __magic__; // lolwat
   delete (Object.prototype as any).__magic__;
-}());
+}
