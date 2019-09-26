@@ -6,6 +6,7 @@ export class CancellationToken implements PromiseLike<void> {
 
   constructor() {
     this.deferredPromise = new DeferredPromise();
+    this._isSet = false;
   }
 
   get isSet(): boolean {
