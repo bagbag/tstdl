@@ -1,4 +1,3 @@
-import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
 import { IndexSpecification } from 'mongodb';
 import { MongoBaseRepository } from './mongo-base-repository';
@@ -31,14 +30,11 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   }
 
   async loadMany<U extends T = T>(ids: string[]): Promise<U[]> {
-    const iterable = this.baseRepository.loadManyById<U>(ids);
-    const entities = await AsyncEnumerable.from(iterable).toArray();
-
-    return entities;
+    return this.baseRepository.loadManyById<U>(ids);
   }
 
   async *loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
-    yield* this.baseRepository.loadManyById<U>(ids);
+    yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
 
   async save<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean = false): Promise<U> {

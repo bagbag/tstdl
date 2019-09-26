@@ -1,3 +1,4 @@
+import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
 import { Collection, FilterQuery, UpdateQuery } from './types';
@@ -114,15 +115,26 @@ export class MongoBaseRepository<T extends Entity> {
     return entity;
   }
 
-  async *loadManyById<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
+
+  async loadManyById<U extends T = T>(ids: string[]): Promise<U[]> {
+    const iterator = this.loadManyByIdWithCursor<U>(ids);
+    return AsyncEnumerable.from(iterator).toArray();
+  }
+
+  async loadManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U[]> {
+    const iterator = this.loadManyByFilterWithCursor<U>(filter);
+    return AsyncEnumerable.from(iterator).toArray();
+  }
+
+  async *loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     const filter: FilterQuery<U> = {
       _id: { $in: ids }
     } as FilterQuery<U>;
 
-    yield* this.loadManyByFilter(filter);
+    yield* this.loadManyByFilterWithCursor(filter);
   }
 
-  async *loadManyByFilter<U extends T = T>(filter: FilterQuery<U>): AsyncIterableIterator<U> {
+  async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>): AsyncIterableIterator<U> {
     const cursor = this.collection.find<MongoDocument<U>>(filter);
 
     for await (const document of (cursor as AsyncIterable<MongoDocument<U>>)) {
