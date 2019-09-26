@@ -1,10 +1,11 @@
 import { DeferredPromise } from '../promise/deferred-promise';
 import { AwaitableList } from './collections/awaitable';
+import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   private readonly _read: DeferredPromise;
   private readonly _empty: DeferredPromise;
-  private _closed: boolean;
+  private readonly _closed: CancellationToken;
   private buffer: AwaitableList<{ item: T, error: undefined } | { item: undefined, error: Error }>;
 
   get read(): Promise<void> {
@@ -16,7 +17,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   get closed(): boolean {
-    return this._closed;
+    return this._closed.isSet;
   }
 
   get bufferSize(): number {
@@ -24,7 +25,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   constructor() {
-    this._closed = false;
+    this._closed = new CancellationToken();
     this.buffer = new AwaitableList();
     this._read = new DeferredPromise();
     this._empty = new DeferredPromise();
@@ -39,7 +40,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   end(): void {
-    this._closed = true;
+    this._closed.set();
   }
 
   throw(error: Error): void {
@@ -54,7 +55,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
     while (!this.closed || this.buffer.size > 0) {
       if (this.buffer.size == 0) {
-        await this.buffer.added;
+        await Promise.race([this._closed, this.buffer.added]);
       }
 
       const out = this.buffer;
