@@ -25,6 +25,13 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
+  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
+    const document = toMongoDocumentWithNewId(entity);
+    await this.collection.replaceOne(filter, document, { upsert });
+
+    return toEntity(document);
+  }
+
   async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
     if (entities.length == 0) {
       return [];
@@ -152,7 +159,7 @@ export class MongoBaseRepository<T extends Entity> {
       _id: id
     } as FilterQuery<T>;
 
-    return this.deleteOneByFilter(filter);
+    return this.deleteByFilter(filter);
   }
 
   async deleteMany<U extends T = T>(entities: U[]): Promise<number> {
@@ -168,7 +175,7 @@ export class MongoBaseRepository<T extends Entity> {
     return this.deleteManyByFilter(filter);
   }
 
-  async deleteOneByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
+  async deleteByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
     const { deletedCount } = await this.collection.deleteOne(filter);
     return deletedCount == 1;
   }
