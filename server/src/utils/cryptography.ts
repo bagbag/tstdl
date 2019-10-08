@@ -1,4 +1,5 @@
 import * as Crypto from 'crypto';
+import { HexBase64Latin1Encoding } from 'crypto';
 
 export type CryptionOptions = {
   algorithm: string,
@@ -14,14 +15,15 @@ export type ScryptOptions = {
 };
 
 export interface CryptionResult {
-  toBuffer(): Buffer;
-  toHex(): string;
-  toBase64(): string;
-  toLatin1(): string;
+  toBuffer(): Promise<Buffer>;
+  toHex(): Promise<string>;
+  toBase64(): Promise<string>;
+  toLatin1(): Promise<string>;
+  toString(encoding: BufferEncoding): Promise<string>;
 }
 
 export interface DecryptionResult extends CryptionResult {
-  toUtf8(): string;
+  toUtf8(): Promise<string>;
 }
 
 export interface HashResult {
@@ -29,15 +31,28 @@ export interface HashResult {
   toHex(): string;
   toBase64(): string;
   toLatin1(): string;
+  toString(encoding: HexBase64Latin1Encoding): string;
 }
 
-export async function encryptString(input: string, options: CryptionOptions): Promise<CryptionResult> {
+export function encryptString(input: string, options: CryptionOptions): CryptionResult {
   const inputBuffer = Buffer.from(input, 'utf8');
   return encrypt(inputBuffer, options);
 }
 
-export async function encrypt(input: Buffer | Uint8Array, options: CryptionOptions): Promise<CryptionResult> {
-  return new Promise<CryptionResult>((resolve, reject) => {
+export function encrypt(input: Buffer | Uint8Array, options: CryptionOptions): CryptionResult {
+  const encryptedBuffer = _encrypt(input, options);
+
+  return {
+    toBuffer: async () => encryptedBuffer,
+    toHex: () => encryptedBuffer.then((buffer) => buffer.toString('hex')),
+    toBase64: () => encryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toLatin1: () => encryptedBuffer.then((buffer) => buffer.toString('latin1')),
+    toString: (encoding: BufferEncoding) => encryptedBuffer.then((buffer) => buffer.toString(encoding))
+  };
+}
+
+async function _encrypt(input: Buffer | Uint8Array, options: CryptionOptions): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
     try {
       const cipher = Crypto.createCipheriv(options.algorithm, options.key, options.iv);
       const chunks: Buffer[] = [];
@@ -56,16 +71,8 @@ export async function encrypt(input: Buffer | Uint8Array, options: CryptionOptio
       });
 
       cipher.on('end', () => {
-        const encrypted = Buffer.concat(chunks);
-
-        const result: CryptionResult = {
-          toBuffer: () => encrypted,
-          toHex: () => encrypted.toString('hex'),
-          toBase64: () => encrypted.toString('base64'),
-          toLatin1: () => encrypted.toString('latin1')
-        };
-
-        resolve(result);
+        const encryptedBuffer = Buffer.concat(chunks);
+        resolve(encryptedBuffer);
       });
 
       cipher.on('error', (err) => {
@@ -84,13 +91,26 @@ export async function encrypt(input: Buffer | Uint8Array, options: CryptionOptio
   });
 }
 
-export async function decryptString(input: string, encoding: 'hex' | 'base64' | 'latin1' | 'utf8', options: CryptionOptions): Promise<DecryptionResult> {
+export function decryptString(input: string, encoding: BufferEncoding, options: CryptionOptions): DecryptionResult {
   const inputBuffer = Buffer.from(input, encoding);
   return decrypt(inputBuffer, options);
 }
 
-export async function decrypt(input: Buffer | Uint8Array, options: CryptionOptions): Promise<DecryptionResult> {
-  return new Promise<DecryptionResult>(async (resolve, reject) => {
+export function decrypt(input: Buffer | Uint8Array, options: CryptionOptions): DecryptionResult {
+  const decryptedBuffer = _decrypt(input, options);
+
+  return {
+    toBuffer: async () => decryptedBuffer,
+    toHex: () => decryptedBuffer.then((buffer) => buffer.toString('hex')),
+    toBase64: () => decryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toLatin1: () => decryptedBuffer.then((buffer) => buffer.toString('latin1')),
+    toUtf8: () => decryptedBuffer.then((buffer) => buffer.toString('utf8')),
+    toString: (encoding: BufferEncoding) => decryptedBuffer.then((buffer) => buffer.toString(encoding))
+  };
+}
+
+async function _decrypt(input: Buffer | Uint8Array, options: CryptionOptions): Promise<Buffer> {
+  return new Promise<Buffer>((resolve, reject) => {
     try {
       const decipher = Crypto.createDecipheriv(options.algorithm, options.key, options.iv);
       const chunks: Buffer[] = [];
@@ -109,17 +129,8 @@ export async function decrypt(input: Buffer | Uint8Array, options: CryptionOptio
       });
 
       decipher.on('end', () => {
-        const decrypted = Buffer.concat(chunks);
-
-        const result: DecryptionResult = {
-          toBuffer: () => decrypted,
-          toHex: () => decrypted.toString('hex'),
-          toBase64: () => decrypted.toString('base64'),
-          toLatin1: () => decrypted.toString('latin1'),
-          toUtf8: () => decrypted.toString('utf8')
-        };
-
-        resolve(result);
+        const decryptedBuffer = Buffer.concat(chunks);
+        resolve(decryptedBuffer);
       });
 
       decipher.on('error', (err) => {
@@ -181,7 +192,8 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
     toBuffer: () => hasher.digest(),
     toHex: () => hasher.digest('hex'),
     toBase64: () => hasher.digest('base64'),
-    toLatin1: () => hasher.digest('latin1')
+    toLatin1: () => hasher.digest('latin1'),
+    toString: (encoding: HexBase64Latin1Encoding) => hasher.digest(encoding)
   };
 
   return result;
