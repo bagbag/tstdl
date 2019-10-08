@@ -14,18 +14,18 @@ export interface DecompressionResult extends CompressionResult {
 
 type Algorithms = 'gzip' | 'brotli' | 'deflate' | 'deflate-raw';
 
-export function compressString(input: string, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options: Zlib.ZlibOptions): CompressionResult;
-export function compressString(input: string, algorithm: 'brotli', options: Zlib.BrotliOptions): CompressionResult;
-export function compressString(input: string, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult;
-export function compressString(input: string, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult {
+export function compressString(input: string, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: Zlib.ZlibOptions): CompressionResult;
+export function compressString(input: string, algorithm: 'brotli', options?: Zlib.BrotliOptions): CompressionResult;
+export function compressString(input: string, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult;
+export function compressString(input: string, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult {
   const inputBuffer = Buffer.from(input, 'utf8');
   return compress(inputBuffer, algorithm, options);
 }
 
-export function compress(buffer: Zlib.InputType, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options: Zlib.ZlibOptions): CompressionResult;
-export function compress(buffer: Zlib.InputType, algorithm: 'brotli', options: Zlib.BrotliOptions): CompressionResult;
-export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult;
-export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult {
+export function compress(buffer: Zlib.InputType, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: Zlib.ZlibOptions): CompressionResult;
+export function compress(buffer: Zlib.InputType, algorithm: 'brotli', options?: Zlib.BrotliOptions): CompressionResult;
+export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult;
+export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult {
   const compressedBuffer = _compress(buffer, algorithm, options);
 
   return {
@@ -37,9 +37,9 @@ export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options:
   };
 }
 
-async function _compress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
+async function _compress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    const compressor: ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined =
+    const compressor: ((buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void) | ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined =
       algorithm == 'gzip' ? Zlib.gzip :
         algorithm == 'brotli' ? Zlib.brotliDecompress :
           algorithm == 'deflate' ? Zlib.deflate :
@@ -50,29 +50,36 @@ async function _compress(buffer: Zlib.InputType, algorithm: Algorithms, options:
       throw new Error(`unsupported algorithm ${algorithm}`);
     }
 
-    compressor(buffer, options, (error, result) => {
+    const callback: Zlib.CompressCallback = (error, result) => {
       if (error != undefined) {
         reject(error);
       }
       else {
         resolve(result);
       }
-    });
+    };
+
+    if (options == undefined) {
+      (compressor as (buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void)(buffer, callback);
+    }
+    else {
+      (compressor as (buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void)(buffer, options, callback);
+    }
   });
 }
 
-export function decompressString(input: string, encoding: BufferEncoding, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options: Zlib.ZlibOptions): DecompressionResult;
-export function decompressString(input: string, encoding: BufferEncoding, algorithm: 'brotli', options: Zlib.BrotliOptions): DecompressionResult;
-export function decompressString(input: string, encoding: BufferEncoding, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult;
-export function decompressString(input: string, encoding: BufferEncoding, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult {
+export function decompressString(input: string, encoding: BufferEncoding, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: Zlib.ZlibOptions): DecompressionResult;
+export function decompressString(input: string, encoding: BufferEncoding, algorithm: 'brotli', options?: Zlib.BrotliOptions): DecompressionResult;
+export function decompressString(input: string, encoding: BufferEncoding, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult;
+export function decompressString(input: string, encoding: BufferEncoding, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult {
   const inputBuffer = Buffer.from(input, encoding);
   return decompress(inputBuffer, algorithm, options);
 }
 
-export function decompress(buffer: Zlib.InputType, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options: Zlib.ZlibOptions): DecompressionResult;
-export function decompress(buffer: Zlib.InputType, algorithm: 'brotli', options: Zlib.BrotliOptions): DecompressionResult;
-export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult;
-export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult {
+export function decompress(buffer: Zlib.InputType, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: Zlib.ZlibOptions): DecompressionResult;
+export function decompress(buffer: Zlib.InputType, algorithm: 'brotli', options?: Zlib.BrotliOptions): DecompressionResult;
+export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult;
+export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult {
   const compressedBuffer = _decompress(buffer, algorithm, options);
 
   return {
@@ -85,9 +92,9 @@ export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, option
   };
 }
 
-async function _decompress(buffer: Zlib.InputType, algorithm: Algorithms, options: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
+async function _decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
   return new Promise<Buffer>((resolve, reject) => {
-    const decompressor: ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined =
+    const decompressor: ((buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void) | ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined =
       algorithm == 'gzip' ? Zlib.gunzip :
         algorithm == 'brotli' ? Zlib.brotliDecompress :
           algorithm == 'deflate' ? Zlib.inflate :
@@ -98,13 +105,20 @@ async function _decompress(buffer: Zlib.InputType, algorithm: Algorithms, option
       throw new Error(`unsupported algorithm ${algorithm}`);
     }
 
-    decompressor(buffer, options, (error, result) => {
+    const callback: Zlib.CompressCallback = (error, result) => {
       if (error != undefined) {
         reject(error);
       }
       else {
         resolve(result);
       }
-    });
+    };
+
+    if (options == undefined) {
+      (decompressor as (buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void)(buffer, callback);
+    }
+    else {
+      (decompressor as (buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void)(buffer, options, callback);
+    }
   });
 }
