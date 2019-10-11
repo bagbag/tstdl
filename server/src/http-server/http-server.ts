@@ -62,13 +62,13 @@ export class HttpServer {
       }
 
       if (timer.milliseconds >= timeout) {
-        this.logger.info(`force closing of remaining sockets after waiting for ${timeout} milliseconds`);
+        this.logger.info(`force closing of ${connections} remaining sockets after waiting for ${timeout} milliseconds`);
         destroySockets(this.sockets);
         break;
       }
 
       if (connections > 0) {
-        this.logger.info(`waiting for ${connections} to end`);
+        this.logger.info(`waiting for ${connections} connections to end`);
         await cancelableTimeout(1000, closePromise);
       }
     }
@@ -76,7 +76,7 @@ export class HttpServer {
     this.untrackConnectedSockets();
   }
 
-  registerRequestHandler(handler: (request: Http.IncomingMessage, response: Http.ServerResponse) => void) {
+  registerRequestHandler(handler: (request: Http.IncomingMessage, response: Http.ServerResponse) => void): void {
     this.server.on('request', handler);
   }
 }
