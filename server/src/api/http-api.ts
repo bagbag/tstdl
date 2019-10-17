@@ -26,14 +26,20 @@ export type HttpResponse<JsonType extends UndefinableJson = {}> = {
 export enum BodyType {
   None,
   Json,
-  Stream
+  Stream,
+  Binary
 }
 
 export type Query = StringMap<string>;
-export type Body = UndefinableJson | Readable | undefined;
+export type Body = UndefinableJson | Readable | Buffer | undefined;
 
 export type GetData = { parameters: Query };
-export type PostData<B extends BodyType> = GetData & { body: B extends BodyType.Json ? UndefinableJson : B extends BodyType.Stream ? Readable : undefined };
+export type PostData<B extends BodyType> = GetData & {
+  body: B extends BodyType.Json ? UndefinableJson
+  : B extends BodyType.Stream ? Readable
+  : B extends BodyType.Binary ? Buffer
+  : undefined;
+};
 
 export type GetValidationFunction<Parameters = GetData> = ValidationFunction<GetData, Parameters>;
 export type PostValidationFunction<B extends BodyType, Parameters = PostData<BodyType>> = ValidationFunction<PostData<B>, Parameters>;
@@ -204,6 +210,10 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   if (responseResult.stream != undefined) {
     response.body = responseResult.stream;
   }
+
+  if (responseResult.binary != undefined) {
+    response.body = responseResult.binary;
+  }
 }
 
 async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> {
@@ -213,6 +223,9 @@ async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> 
 
     case BodyType.Stream:
       return request.req;
+
+    case BodyType.Binary:
+      return readStream(request.req);
 
     case BodyType.None:
       return undefined;
