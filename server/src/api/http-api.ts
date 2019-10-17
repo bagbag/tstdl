@@ -122,7 +122,7 @@ export class HttpApi {
     });
   }
 
-  registerPostRoute<Parameters = GetData, B extends BodyType = BodyType.None>(path: string, bodyType: B, validator: PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): void {
+  registerPostRoute<ValidatedData, B extends BodyType>(path: string, bodyType: B, validator: PostValidationFunction<B, ValidatedData>, handler: RouteHandler<ValidatedData>): void {
     this.router.post(path, async (context: Context, next) => {
       await this.handle(context, bodyType, validator, handler);
       return next();
