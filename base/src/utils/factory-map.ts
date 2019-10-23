@@ -10,6 +10,8 @@ export class FactoryMap<K, V> {
 
   constructor(factory: Factory<K, V>) {
     this.factory = factory;
+
+    this.map = new Map();
   }
 
   clear(): void {
