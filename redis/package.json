@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/redis",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,13 +10,13 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.48.1",
-    "@tstdl/server": "^0.21.1",
+    "@tstdl/base": "^0.49.0",
+    "@tstdl/server": "^0.25.1",
     "ioredis": "^4.14.1",
     "rxjs": "^6.5.3"
   },
   "devDependencies": {
     "@types/ioredis": "^4.0.18",
-    "typescript": "~3.6.3"
+    "typescript": "~3.6.4"
   }
 }
