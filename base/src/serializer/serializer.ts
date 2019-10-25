@@ -5,6 +5,7 @@ import { deserialize, Serializable, SerializableStatic, serialize } from './seri
 declare const serializedSymbol: unique symbol;
 
 export type Serialized<T> = { [serializedSymbol]?: T };
+export type StringSerialized<T> = string & { [serializedSymbol]?: T };
 
 export type SerializerFunction<Type, Data> = (instance: Type) => Data;
 export type DeserializerFunction<Type, Data> = (data: Data) => Type;
@@ -26,10 +27,10 @@ interface SerializerStatic {
   registerType<T, D extends Json>(type: Type<T>, serializer: SerializerFunction<T, D>, deserializer: DeserializerFunction<T, D>): void;
   registerType<T, D extends Json>(type: SerializableStatic, serializer?: SerializerFunction<T, D>, deserializer?: DeserializerFunction<T, D>): void;
 
-  serialize(object: any): string;
+  serialize<T>(object: T): StringSerialized<T>;
   rawSerialize<T>(object: T): Serialized<T>;
 
-  deserialize<T = unknown>(serialized: string): T;
+  deserialize<T = unknown>(serialized: StringSerialized<T> | string): T;
   rawDeserialize<T = unknown>(serialized: Serialized<T>): T;
 }
 
@@ -48,7 +49,7 @@ class _Serializer {
     }
   }
 
-  static serialize(object: any): string {
+  static serialize<T>(object: T): StringSerialized<T> {
     const serializedElement = _Serializer.rawSerialize(object);
     const serializedString = JSON.stringify(serializedElement);
 
@@ -59,7 +60,7 @@ class _Serializer {
     return _rawSerialize(object, _Serializer.customTypes) as Serialized<T>;
   }
 
-  static deserialize<T = unknown>(serialized: string): T {
+  static deserialize<T = unknown>(serialized: StringSerialized<T> | string): T {
     const parsed = JSON.parse(serialized) as Serialized<T>;
     const deserialized = _Serializer.rawDeserialize(parsed);
 
