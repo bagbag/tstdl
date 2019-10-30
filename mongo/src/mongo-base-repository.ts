@@ -3,6 +3,11 @@ import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
+export type UpdateResult = {
+  matched: number,
+  modified: number
+}
+
 export class MongoBaseRepository<T extends Entity> {
   private readonly collection: Collection<T>;
 
@@ -95,8 +100,26 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<void> {
-    this.collection.updateOne(filter, update);
+  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
+    const result = await this.collection.updateOne(filter, update);
+
+    const updateResult: UpdateResult = {
+      matched: result.matchedCount,
+      modified: result.modifiedCount
+    };
+
+    return updateResult;
+  }
+
+  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
+    const result = await this.collection.updateMany(filter, update);
+
+    const updateResult: UpdateResult = {
+      matched: result.matchedCount,
+      modified: result.modifiedCount
+    };
+
+    return updateResult;
   }
 
   async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
