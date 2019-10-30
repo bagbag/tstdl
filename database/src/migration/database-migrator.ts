@@ -11,7 +11,7 @@ export type DatabaseMigrationDefinition = {
 export type DatabaseMigration = {
   from: number,
   to: number,
-  migrator: () => Promise<void>;
+  migrator: () => Promise<any>;
 }
 
 export class DatabaseMigrator {
