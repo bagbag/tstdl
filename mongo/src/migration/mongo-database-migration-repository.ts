@@ -16,6 +16,6 @@ export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository
   }
 
   async setRevision(entity: string, revision: number): Promise<void> {
-    await this.baseRepository.update({ entity }, { revision });
+    await this.baseRepository.update({ entity }, { $set: { revision } });
   }
 }
