@@ -1,6 +1,7 @@
+import { LockProvider } from '@tstdl/base/lock';
+import { Logger } from '@tstdl/base/logger';
 import { compareByValueSelectionDescending } from '@tstdl/base/utils';
 import { DatabaseMigrationStateRepository } from './database-migration-state-repository';
-import { Logger } from '@tstdl/base/logger';
 
 export type DatabaseMigrationDefinition = {
   entity: string,
@@ -15,10 +16,12 @@ export type DatabaseMigration = {
 
 export class DatabaseMigrator {
   private readonly databaseMigrationStateRepository: DatabaseMigrationStateRepository;
+  private readonly lockProvider: LockProvider;
   private readonly logger: Logger;
 
-  constructor(databaseMigrationStateRepository: DatabaseMigrationStateRepository, logger: Logger) {
+  constructor(databaseMigrationStateRepository: DatabaseMigrationStateRepository, lockProvider: LockProvider, logger: Logger) {
     this.databaseMigrationStateRepository = databaseMigrationStateRepository;
+    this.lockProvider = lockProvider;
     this.logger = logger;
   }
 
@@ -27,26 +30,35 @@ export class DatabaseMigrator {
       throw new Error('no migrations provided');
     }
 
-    const currentState = await this.databaseMigrationStateRepository.loadByEntity(entity);
-    const currentRevision = currentState == undefined ? 0 : currentState.revision;
-    const highestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
+    const lock = this.lockProvider.get(`database-migrator-${entity}`);
 
-    if (currentRevision == highestRevision) {
-      return;
+    const result = await lock.acquire(30000, async () => {
+      const currentState = await this.databaseMigrationStateRepository.loadByEntity(entity);
+      const currentRevision = currentState == undefined ? 0 : currentState.revision;
+      const highestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
+
+      if (currentRevision == highestRevision) {
+        return;
+      }
+
+      const suitableMigrations = migrations.filter((migration) => migration.from == currentRevision);
+
+      if (suitableMigrations.length == 0) {
+        throw new Error(`no suitable migration path from current revision ${currentRevision} to latest revision ${highestRevision} found`);
+      }
+
+      const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0];
+
+      this.logger.warn(`migration database for entity ${entity} from revision ${currentRevision} to ${largestMigration.to}`);
+
+      await largestMigration.migrator();
+      await this.databaseMigrationStateRepository.setRevision(entity, largestMigration.to);
+    });
+
+    if (result == false) {
+      throw new Error('failed to acquire lock for database-migration');
     }
 
-    const suitableMigrations = migrations.filter((migration) => migration.from == currentRevision);
-
-    if (suitableMigrations.length == 0) {
-      throw new Error(`no suitable migration path from current revision ${currentRevision} to latest revision ${highestRevision} found`);
-    }
-
-    const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0];
-
-    this.logger.warn(`migration database for entity ${entity} from revision ${currentRevision} to ${largestMigration.to}`);
-
-    await largestMigration.migrator();
-    await this.databaseMigrationStateRepository.setRevision(entity, largestMigration.to);
     await this.migrate({ entity, migrations });
   }
 }
