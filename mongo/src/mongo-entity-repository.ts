@@ -9,7 +9,6 @@ type Migration = {
 };
 
 type Options<T> = {
-  migration?: Migration,
   indexes?: TypedIndexSpecification<T>[]
 }
 
@@ -17,16 +16,20 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   _type: T;
 
   protected readonly collection: Collection<T>;
-  protected readonly migration?: Migration;
   protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
 
-  constructor(collection: Collection<T>, { migration, indexes }: Options<T> = {}) {
+  protected migration?: Migration;
+
+  constructor(collection: Collection<T>, { indexes }: Options<T> = {}) {
     this.collection = collection;
-    this.migration = migration;
     this.indexes = indexes;
 
     this.baseRepository = new MongoBaseRepository(collection);
+  }
+
+  protected setMigration(migration: Migration): void {
+    this.migration = migration;
   }
 
   async initialize(): Promise<void> {
