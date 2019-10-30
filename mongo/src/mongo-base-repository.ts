@@ -1,13 +1,17 @@
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
-import { Collection, FilterQuery, UpdateQuery } from './types';
+import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export class MongoBaseRepository<T extends Entity> {
   private readonly collection: Collection<T>;
 
   constructor(collection: Collection<T>) {
     this.collection = collection;
+  }
+
+  async createIndexes(indexes: TypedIndexSpecification<T>[]): Promise<void> {
+    return this.collection.createIndexes(indexes);
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {

@@ -1,25 +1,41 @@
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
-import { IndexSpecification } from 'mongodb';
+import { DatabaseMigrationDefinition, DatabaseMigrator } from '@tstdl/database/migration';
 import { MongoBaseRepository } from './mongo-base-repository';
-import { Collection } from './types';
+import { Collection, TypedIndexSpecification } from './types';
+
+type Migration = {
+  migrator: DatabaseMigrator,
+  migrationDefinition: DatabaseMigrationDefinition
+};
+
+type Options<T> = {
+  migration?: Migration,
+  indexes?: TypedIndexSpecification<T>[]
+}
 
 export class MongoEntityRepository<T extends Entity> implements EntityRepository<T> {
   _type: T;
 
   protected readonly collection: Collection<T>;
-  protected readonly indexes: IndexSpecification[];
+  protected readonly migration?: Migration;
+  protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
 
-  constructor(collection: Collection<T>, indexes: IndexSpecification[] = []) {
+  constructor(collection: Collection<T>, { migration, indexes }: Options<T> = {}) {
     this.collection = collection;
+    this.migration = migration;
     this.indexes = indexes;
 
     this.baseRepository = new MongoBaseRepository(collection);
   }
 
   async initialize(): Promise<void> {
-    if (this.indexes.length > 0) {
-      await this.collection.createIndexes(this.indexes);
+    if (this.indexes != undefined && this.indexes.length > 0) {
+      await this.baseRepository.createIndexes(this.indexes);
+    }
+
+    if (this.migration != undefined && this.migration.migrationDefinition.migrations.length > 0) {
+      await this.migration.migrator.migrate(this.migration.migrationDefinition);
     }
   }
 

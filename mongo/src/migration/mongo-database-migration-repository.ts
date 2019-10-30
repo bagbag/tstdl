@@ -8,7 +8,7 @@ const indexes: TypedIndexSpecification<DatabaseMigrationState>[] = [
 
 export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository<DatabaseMigrationState> implements DatabaseMigrationStateRepository {
   constructor(collection: Collection<DatabaseMigrationState>) {
-    super(collection, indexes);
+    super(collection, { indexes });
   }
 
   async loadByEntity(entity: string): Promise<DatabaseMigrationState | undefined> {
