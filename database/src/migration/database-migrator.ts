@@ -1,6 +1,6 @@
 import { LockProvider } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
-import { compareByValueSelectionDescending } from '@tstdl/base/utils';
+import { compareByValueSelectionDescending, precisionRound, Timer } from '@tstdl/base/utils';
 import { DatabaseMigrationStateRepository } from './database-migration-state-repository';
 
 export type DatabaseMigrationDefinition = {
@@ -49,9 +49,12 @@ export class DatabaseMigrator {
 
       const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0];
 
-      this.logger.warn(`migration database for entity ${entity} from revision ${currentRevision} to ${largestMigration.to}`);
+      this.logger.warn(`starting database migration for entity ${entity} from revision ${currentRevision} to ${largestMigration.to}`);
 
-      await largestMigration.migrator();
+      const time = await Timer.measureAsync(async () => largestMigration.migrator());
+
+      this.logger.warn(`finished migration for entity ${entity} in ${precisionRound(time / 1000, 2)} seconds`);
+
       await this.databaseMigrationStateRepository.setRevision(entity, largestMigration.to);
     });
 
