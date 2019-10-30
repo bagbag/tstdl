@@ -2,6 +2,7 @@ import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
 import { DeferredPromise } from '@tstdl/base/promise';
 import { cancelableTimeout, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@tstdl/base/utils';
+import { lockAcquireLuaScript, lockOwnedLuaScript, lockRefreshLuaScript, lockReleaseLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 import { AcquireResult } from './acquire-result';
 
@@ -101,7 +102,7 @@ export class RedisLock implements Lock {
   }
 
   async getExpireTimestamp(id: string): Promise<number> {
-    const expireTimestamp = await (this.redis as any)['lock:owned'](this.key, id) as number; // tslint:disable-line: no-unsafe-any
+    const expireTimestamp = await this.redis.evaluate<number>(lockOwnedLuaScript, [this.key], [id]);
     return expireTimestamp;
   }
 
@@ -127,19 +128,19 @@ export class RedisLock implements Lock {
   }
 
   private async release(id: string, force: boolean = false): Promise<boolean> {
-    const result = await (this.redis as any)['lock:release'](this.key, id, force ? 1 : 0); // tslint:disable-line: no-unsafe-any
+    const result = await this.redis.evaluate<number>(lockReleaseLuaScript, [this.key], [id, force ? '1' : '0']);
     const success = (result == 1);
 
     return success;
   }
 
   private async tryAcquire(id: string, expireTimestamp: number): Promise<AcquireResult> {
-    const result = await (this.redis as any)['lock:acquire'](this.key, id, expireTimestamp) as AcquireResult; // tslint:disable-line: no-unsafe-any
+    const result = await this.redis.evaluate<AcquireResult>(lockAcquireLuaScript, [this.key], [id, expireTimestamp.toString()]);
     return result;
   }
 
   private async refresh(id: string, expireTimestamp: number): Promise<boolean> {
-    const result = await (this.redis as any)['lock:refresh'](this.key, id, expireTimestamp); // tslint:disable-line: no-unsafe-any
+    const result = await this.redis.evaluate<number>(lockRefreshLuaScript, [this.key], [id, expireTimestamp.toString()]);
     const success = (result == 1);
 
     return success;
