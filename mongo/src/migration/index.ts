@@ -1,1 +1,1 @@
-export * from './mongo-database-migration-repository';
+export * from './mongo-database-migration-state-repository';
