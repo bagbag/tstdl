@@ -3,9 +3,10 @@ import { registerBinaryTypes, registerDateType, registerFunctionType, registerRe
 import { deserialize, Serializable, SerializableStatic, serialize } from './serializable';
 
 declare const serializedSymbol: unique symbol;
+declare const stringSerializedSymbol: unique symbol;
 
 export type Serialized<T> = { [serializedSymbol]?: T };
-export type StringSerialized<T> = string & { [serializedSymbol]?: T };
+export type StringSerialized<T> = string & { [stringSerializedSymbol]?: T };
 
 export type SerializerFunction<Type, Data> = (instance: Type) => Data;
 export type DeserializerFunction<Type, Data> = (data: Data) => Type;
