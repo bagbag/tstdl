@@ -1,6 +1,6 @@
 import { Entity } from '../entity';
 
 export type DatabaseMigrationState = Entity & {
-  entity: string,
+  name: string,
   revision: number
 };

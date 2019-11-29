@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.49.1",
+  "version": "0.50.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -13,7 +13,7 @@
     "rxjs": "^6.5.3"
   },
   "devDependencies": {
-    "@types/node": "^12.11.7",
-    "typescript": "~3.6.4"
+    "@types/node": "^12.12.14",
+    "typescript": "~3.7.2"
   }
 }

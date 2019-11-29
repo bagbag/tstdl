@@ -4,7 +4,7 @@ import { compareByValueSelectionDescending, precisionRound, Timer } from '@tstdl
 import { DatabaseMigrationStateRepository } from './database-migration-state-repository';
 
 export type DatabaseMigrationDefinition = {
-  entity: string,
+  name: string,
   migrations: DatabaseMigration[]
 }
 
@@ -25,15 +25,20 @@ export class DatabaseMigrator {
     this.logger = logger;
   }
 
-  async migrate({ entity, migrations }: DatabaseMigrationDefinition): Promise<void> {
+  async migrate({ name, migrations }: DatabaseMigrationDefinition): Promise<void> {
     if (migrations.length == 0) {
       throw new Error('no migrations provided');
     }
 
-    const lock = this.lockProvider.get(`database-migrator-${entity}`);
+    const lock = this.lockProvider.get(`database-migrator-${name}`);
+    const lockResult = await lock.acquire(30000);
 
-    const result = await lock.acquire(30000, async () => {
-      const currentState = await this.databaseMigrationStateRepository.loadByEntity(entity);
+    if (lockResult == false) {
+      throw new Error('failed to acquire lock for database-migration');
+    }
+
+    try {
+      const currentState = await this.databaseMigrationStateRepository.loadByName(name);
       const currentRevision = currentState == undefined ? 0 : currentState.revision;
       const highestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
 
@@ -49,19 +54,17 @@ export class DatabaseMigrator {
 
       const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0];
 
-      this.logger.warn(`starting database migration for entity ${entity} from revision ${currentRevision} to ${largestMigration.to}`);
+      this.logger.warn(`starting database migration for ${name} from revision ${currentRevision} to ${largestMigration.to}`);
 
       const time = await Timer.measureAsync(async () => largestMigration.migrator());
+      await this.databaseMigrationStateRepository.setRevision(name, largestMigration.to);
 
-      this.logger.warn(`finished migration for entity ${entity} in ${precisionRound(time / 1000, 2)} seconds`);
-
-      await this.databaseMigrationStateRepository.setRevision(entity, largestMigration.to);
-    });
-
-    if (result == false) {
-      throw new Error('failed to acquire lock for database-migration');
+      this.logger.warn(`finished migration in ${precisionRound(time / 1000, 2)} seconds`);
+    }
+    finally {
+      await lockResult.release();
     }
 
-    await this.migrate({ entity, migrations });
+    await this.migrate({ name, migrations });
   }
 }

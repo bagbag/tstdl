@@ -1,12 +1,6 @@
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
-import { DatabaseMigrationDefinition, DatabaseMigrator } from '@tstdl/database/migration';
 import { MongoBaseRepository } from './mongo-base-repository';
 import { Collection, TypedIndexSpecification } from './types';
-
-type Migration = {
-  migrator: DatabaseMigrator,
-  migrationDefinition: DatabaseMigrationDefinition
-};
 
 type Options<T> = {
   indexes?: TypedIndexSpecification<T>[]
@@ -19,8 +13,6 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
 
-  protected migration?: Migration;
-
   constructor(collection: Collection<T>, { indexes }: Options<T> = {}) {
     this.collection = collection;
     this.indexes = indexes;
@@ -28,17 +20,9 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     this.baseRepository = new MongoBaseRepository(collection);
   }
 
-  protected setMigration(migration: Migration): void {
-    this.migration = migration;
-  }
-
   async initialize(): Promise<void> {
     if (this.indexes != undefined && this.indexes.length > 0) {
       await this.baseRepository.createIndexes(this.indexes);
-    }
-
-    if (this.migration != undefined && this.migration.migrationDefinition.migrations.length > 0) {
-      await this.migration.migrator.migrate(this.migration.migrationDefinition);
     }
   }
 
