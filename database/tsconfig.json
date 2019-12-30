@@ -1,7 +1,7 @@
 {
   "extends": "@tstdl/base",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist"
+    "rootDir": "src",
+    "outDir": "dist"
   }
 }

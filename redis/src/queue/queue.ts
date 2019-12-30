@@ -128,7 +128,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
 
         const [jobs] = await Promise.all([
           this._dequeueMany(transaction, size),
-          transaction.execute().then(() => undefined)
+          transaction.execute()
         ]);
 
         if (jobs.length > 0) {
@@ -166,7 +166,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
 
     const [requeuedJobsCount] = await Promise.all([
       this._retry(transaction, this.retryAfterMilliseconds, RETRY_BATCH_COUNT),
-      transaction.execute().then(() => undefined)
+      transaction.execute()
     ]);
 
     return requeuedJobsCount;

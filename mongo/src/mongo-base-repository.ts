@@ -21,7 +21,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     const document = toMongoDocumentWithNewId(entity);
-    const result = await this.collection.insertOne(document);
+    const result = await this.collection.insertOne(document as any);
 
     return toEntity(document);
   }

@@ -130,7 +130,7 @@ export class TypedRedis {
   }
 
   async evaluateSha<T>(sha: string, keys: string[], args: string[]): Promise<T> {
-    return this.redis.evalsha(sha, keys.length, ...keys, ...args) as Promise<T>;
+    return this.redis.evalsha(sha, keys.length.toString(), ...keys, ...args) as Promise<T>;
   }
 
   async get(key: string): Promise<string | undefined> {
@@ -181,18 +181,8 @@ export class TypedRedis {
     return this.redis.hdel(key, ...fields) as Promise<number>;
   }
 
-  async hGetAll(key: string): Promise<Map<string, string>> {
-    const reply = await this.redis.hgetall(key) as string[];
-    const result = new Map<string, string>();
-
-    for (let i = 0; i < reply.length; i += 2) {
-      const field = reply[i];
-      const value = reply[i + 1];
-
-      result.set(field, value);
-    }
-
-    return result;
+  async hGetAll(key: string): Promise<StringMap<string | number>> {
+    return this.redis.hgetall(key);
   }
 
   async hIncrease(key: string, field: string, increment: number, asFloat: boolean): Promise<number> {
@@ -253,20 +243,20 @@ export class TypedRedis {
     return this.redis.publish(channel, message);
   }
 
-  async subscribe(...channels: string[]): Promise<void> {
+  async subscribe(...channels: string[]): Promise<number> {
     if (this.redis instanceof RedisPipelineWrapper) {
       throw new Error('subscribe not supported in pipeline and transaction');
     }
 
-    return this.redis.subscribe(...channels) as Promise<void>;
+    return this.redis.subscribe(...channels);
   }
 
-  async unsubscribe(...channels: string[]): Promise<void> {
+  async unsubscribe(...channels: string[]): Promise<number> {
     if (this.redis instanceof RedisPipelineWrapper) {
       throw new Error('unsubscribe not supported in pipeline and transaction');
     }
 
-    await (this.redis.unsubscribe(...channels) as Promise<void>);
+    return this.redis.unsubscribe(...channels);
   }
 
   async zAdd(key: string, entries: SortedSetEntry | SortedSetEntry[], { updateOnly = false, addOnly = false, returnChanged = false, increment = false }: SortedSetAddOptions | SortedSetAddIncrementOptions = {}): Promise<number> {
@@ -355,7 +345,7 @@ export class TypedRedis {
       ...conditional(limit != undefined, ['LIMIT', (limit as SortedSetLimit).offset.toString(), (limit as SortedSetLimit).count.toString()])
     ];
 
-    const reply = await (this.redis[command](key, min, max, ...args) as Promise<string[]>);
+    const reply = await (this.redis[command](key, min, max, ...(args as any)) as Promise<string[]>);
 
     const result = withScores
       ? zParseEntriesReply(reply, SortedSetReplyOrder.MembersFirst)
