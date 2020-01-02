@@ -100,8 +100,8 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
-    const result = await this.collection.updateOne(filter, update);
+  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
+    const result = await this.collection.updateOne(filter, update, { upsert });
 
     const updateResult: UpdateResult = {
       matched: result.matchedCount,
@@ -111,8 +111,8 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
-  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
-    const result = await this.collection.updateMany(filter, update);
+  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
+    const result = await this.collection.updateMany(filter, update, { upsert });
 
     const updateResult: UpdateResult = {
       matched: result.matchedCount,
