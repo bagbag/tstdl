@@ -1,20 +1,24 @@
 import { Job, Queue } from '@tstdl/base/queue';
-import { createArray, currentTimestamp, timeout, toArray } from '@tstdl/base/utils';
-import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
+import { backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, toArray } from '@tstdl/base/utils';
 import { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
 import { Collection } from '../types';
 import { MongoJob, MongoJobWithoutId } from './job';
 
+const backoffOptions: BackoffOptions = {
+  strategy: BackoffStrategy.Exponential,
+  initialDelay: 10,
+  increase: 2,
+  maximumDelay: 5000
+};
+
 export class MongoQueue<T> implements Queue<T> {
   private readonly baseRepository: MongoBaseRepository<MongoJob<T>>;
-  private readonly consumerCheckInterval: number;
   private readonly processTimeout: number;
   private readonly maxTries: number;
 
-  constructor(collection: Collection<MongoJob<T>>, consumerCheckInterval: number, processTimeout: number, maxTries: number) {
+  constructor(collection: Collection<MongoJob<T>>, processTimeout: number, maxTries: number) {
     this.baseRepository = new MongoBaseRepository(collection);
-    this.consumerCheckInterval = consumerCheckInterval;
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;
   }
@@ -69,27 +73,27 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {
-    while (!cancellationToken.isSet) {
+    for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const job = await this.dequeue();
 
       if (job != undefined) {
         yield job;
       }
       else {
-        await timeout(this.consumerCheckInterval);
+        backoff();
       }
     }
   }
 
   async *getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]> {
-    while (!cancellationToken.isSet) {
+    for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const jobs = await this.dequeueMany(size);
 
       if (jobs.length > 0) {
         yield jobs;
       }
       else {
-        await timeout(this.consumerCheckInterval);
+        backoff();
       }
     }
   }
