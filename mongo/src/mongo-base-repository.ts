@@ -1,12 +1,27 @@
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
+import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
+import { FindAndModifyWriteOpResultObject } from 'mongodb';
 import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export type UpdateResult = {
   matched: number,
   modified: number
-}
+};
+
+export type LoadOptions<T extends Entity> = {
+  sort?: [keyof MongoDocument<T>, 1 | -1][],
+  upsert?: boolean
+};
+
+export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
+  limit: number
+};
+
+export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
+  returnOriginal?: boolean
+};
 
 export class MongoBaseRepository<T extends Entity> {
   private readonly collection: Collection<T>;
@@ -132,6 +147,24 @@ export class MongoBaseRepository<T extends Entity> {
     return this.loadByFilter(filter, throwIfNotFound);
   }
 
+  async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>): Promise<U | undefined> {
+    const filter: FilterQuery<U> = {
+      _id: id
+    } as FilterQuery<U>;
+
+    return this.tryLoadByFilterAndUpdate(filter, update);
+  }
+
+  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>): Promise<U> {
+    const entity = await this.tryLoadAndUpdate(id, update);
+
+    if (entity == undefined) {
+      throw new NotFoundError('document not found');
+    }
+
+    return entity;
+  }
+
   async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound?: true): Promise<U>;
   async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean): Promise<U | undefined>;
   async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean = true): Promise<U | undefined> {
@@ -149,14 +182,33 @@ export class MongoBaseRepository<T extends Entity> {
     return entity;
   }
 
+  async tryLoadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
+    const { value: document } = await this.collection.findOneAndUpdate(filter, update, options) as FindAndModifyWriteOpResultObject<MongoDocument<U>>;
+
+    if (document == undefined) {
+      return undefined;
+    }
+
+    return toEntity(document);
+  }
+
+  async loadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
+    const entity = await this.tryLoadByFilterAndUpdate(filter, update, options);
+
+    if (entity == undefined) {
+      throw new NotFoundError('document not found');
+    }
+
+    return entity;
+  }
 
   async loadManyById<U extends T = T>(ids: string[]): Promise<U[]> {
     const iterator = this.loadManyByIdWithCursor<U>(ids);
     return AsyncEnumerable.from(iterator).toArray();
   }
 
-  async loadManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U[]> {
-    const iterator = this.loadManyByFilterWithCursor<U>(filter);
+  async loadManyByFilter<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): Promise<U[]> {
+    const iterator = this.loadManyByFilterWithCursor<U>(filter, options);
     return AsyncEnumerable.from(iterator).toArray();
   }
 
@@ -168,8 +220,8 @@ export class MongoBaseRepository<T extends Entity> {
     yield* this.loadManyByFilterWithCursor(filter);
   }
 
-  async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>): AsyncIterableIterator<U> {
-    const cursor = this.collection.find<MongoDocument<U>>(filter);
+  async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
+    const cursor = this.collection.find<MongoDocument<U>>(filter, options);
 
     for await (const document of (cursor as AsyncIterable<MongoDocument<U>>)) {
       const entity = toEntity(document);
