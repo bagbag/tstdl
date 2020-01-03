@@ -1,5 +1,5 @@
 import { DatabaseMigrationState, DatabaseMigrationStateRepository } from '@tstdl/database/migration/';
-import { MongoEntityRepository } from '../mongo-entity-repository';
+import { MongoEntityRepository } from '../entity-repository';
 import { Collection, TypedIndexSpecification } from '../types';
 
 const indexes: TypedIndexSpecification<DatabaseMigrationState>[] = [

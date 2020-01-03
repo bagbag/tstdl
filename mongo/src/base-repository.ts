@@ -2,7 +2,7 @@ import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './mongo-document';
+import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export type UpdateResult = {

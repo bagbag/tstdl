@@ -1,6 +1,6 @@
 import { Omit } from '@tstdl/base/types';
 import * as Mongo from 'mongodb';
-import { MongoDocument } from './mongo-document';
+import { MongoDocument } from './model';
 
 export type TypedIndexSpecification<T> = Omit<Mongo.IndexSpecification, 'key'> & {
   key: { [P in keyof T]?: 1 | -1 | 'text' | 'hashed' }

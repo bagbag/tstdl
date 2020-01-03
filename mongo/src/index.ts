@@ -1,4 +1,4 @@
-export * from './mongo-base-repository';
-export * from './mongo-document';
-export * from './mongo-entity-repository';
+export * from './base-repository';
+export * from './entity-repository';
+export * from './model';
 export * from './types';

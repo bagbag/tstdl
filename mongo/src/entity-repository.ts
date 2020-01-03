@@ -1,5 +1,5 @@
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
-import { MongoBaseRepository } from './mongo-base-repository';
+import { MongoBaseRepository } from './base-repository';
 import { Collection, TypedIndexSpecification } from './types';
 
 type Options<T> = {
