@@ -6,7 +6,7 @@ export enum BackoffStrategy {
   Exponential
 }
 
-type BackoffOptions = {
+export type BackoffOptions = {
   strategy: BackoffStrategy;
   initialDelay: number;
   increase: number;
