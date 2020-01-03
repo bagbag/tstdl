@@ -1,4 +1,4 @@
-import { CancellationToken } from '../utils/cancellation-token';
+import { CancellationToken } from '../utils';
 
 export type Job<T> = {
   id: string,
