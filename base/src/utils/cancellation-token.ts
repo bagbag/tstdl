@@ -1,30 +1,79 @@
-import { DeferredPromise } from '../promise';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { distinctUntilChanged, filter, map, skip, take } from 'rxjs/operators';
+
+type InheritanceMode = 'set' | 'reset' | 'both';
 
 export class CancellationToken implements PromiseLike<void> {
-  private readonly deferredPromise: DeferredPromise;
-  private _isSet: boolean;
-
-  constructor() {
-    this.deferredPromise = new DeferredPromise();
-    this._isSet = false;
-  }
+  private readonly stateSubject: BehaviorSubject<boolean>;
+  private readonly value$: Observable<boolean>;
 
   get isSet(): boolean {
-    return this._isSet;
+    return this.stateSubject.value;
+  }
+
+  get set$(): Observable<void> {
+    return this.value$.pipe(filter((state) => state), map(() => undefined));
+  }
+
+  get reset$(): Observable<void> {
+    return this.value$.pipe(filter((state) => !state), map(() => undefined));
+  }
+
+  get setAwaitable(): Promise<void> {
+    return this.set$.pipe(take(1)).toPromise();
+  }
+
+  get resetAwaitable(): Promise<void> {
+    return this.reset$.pipe(take(1)).toPromise();
+  }
+
+  constructor() {
+    this.stateSubject = new BehaviorSubject<boolean>(false);
+    this.value$ = this.stateSubject.pipe(distinctUntilChanged());
+  }
+
+  createChild(mode: InheritanceMode): CancellationToken {
+    const token = new CancellationToken();
+    this.connect(mode, this, token);
+
+    return token;
+  }
+
+  inherit(token: CancellationToken, mode: InheritanceMode): void {
+    this.connect(mode, token, this);
   }
 
   set(): void {
-    this._isSet = true;
-    this.deferredPromise.resolve();
+    this.stateSubject.next(true);
   }
 
   reset(): void {
-    this._isSet = false;
-    this.deferredPromise.reset();
+    this.stateSubject.next(false);
   }
 
   // tslint:disable-next-line: promise-function-async
   then<TResult1, TResult2 = never>(onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
-    return this.deferredPromise.then(onfulfilled, onrejected);
+    return this.setAwaitable.then(onfulfilled, onrejected);
+  }
+
+  private connect(mode: string, source: CancellationToken, target: CancellationToken): void {
+    const sourceValue$ = source.value$.pipe(skip(1));
+
+    switch (mode) {
+      case 'set':
+        sourceValue$.pipe(filter((state) => state)).subscribe(target.stateSubject);
+        break;
+
+      case 'reset':
+        sourceValue$.pipe(filter((state) => !state)).subscribe(target.stateSubject);
+        break;
+
+      case 'both':
+        sourceValue$.subscribe(target.stateSubject);
+        break;
+
+      default:
+        throw new Error('unsupported mode');
+    }
   }
 }
