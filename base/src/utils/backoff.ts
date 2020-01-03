@@ -38,14 +38,15 @@ export class BackoffHelper {
   }
 }
 
-type LoopFunction = (cancellationToken: CancellationToken) => Promise<boolean>;
+type LoopFunction = (cancellationToken: CancellationToken) => void | boolean | Promise<void | boolean>;
 
 export async function backoffLoop(options: BackoffOptions, cancellationToken: CancellationToken, loopFunction: LoopFunction): Promise<void> {
   const backoffHelper = new BackoffHelper(options);
   const loopCancellationToken = cancellationToken.createChild('set');
 
   while (!loopCancellationToken.isSet) {
-    const backoff = await loopFunction(loopCancellationToken);
+    const returnValue = loopFunction(loopCancellationToken);
+    const backoff = (returnValue instanceof Promise ? await returnValue : returnValue) == true;
 
     if (backoff) {
       await backoffHelper.backoff(loopCancellationToken);
