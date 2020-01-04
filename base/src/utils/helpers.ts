@@ -1,4 +1,5 @@
 import { DeepArray, StringMap } from '../types';
+import { random } from './math';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -218,4 +219,12 @@ export function createArray<T>(length: number, valueProvider: (index: number) =>
   }
 
   return array;
+}
+
+export function randomElement<T>(array: T[], { min, max }: { min?: number, max?: number } = {}): T {
+  const _min = min != undefined ? Math.max(min, 0) : 0;
+  const _max = max != undefined ? Math.min(max, array.length - 1) : array.length - 1;
+  const index = random(_min, _max, true);
+
+  return array[index];
 }
