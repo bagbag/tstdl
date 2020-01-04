@@ -1,5 +1,5 @@
 import { Job, Queue } from '@tstdl/base/queue';
-import { backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, toArray } from '@tstdl/base/utils';
+import { backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, toArray, getRandomString } from '@tstdl/base/utils';
 import { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
 import { Collection, TypedIndexSpecification } from '../types';
@@ -13,7 +13,8 @@ const backoffOptions: BackoffOptions = {
 };
 
 const indexes: TypedIndexSpecification<MongoJob<any>>[] = [
-  { key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } }
+  { key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
+  { key: { batch: 1 } }
 ];
 
 export class MongoQueue<T> implements Queue<T> {
@@ -36,7 +37,8 @@ export class MongoQueue<T> implements Queue<T> {
       data,
       enqueueTimestamp: currentTimestamp(),
       tries: 0,
-      lastDequeueTimestamp: 0
+      lastDequeueTimestamp: 0,
+      batch: null
     };
 
     const job = await this.baseRepository.insert(newJob);
@@ -51,7 +53,8 @@ export class MongoQueue<T> implements Queue<T> {
         data,
         enqueueTimestamp: now,
         tries: 0,
-        lastDequeueTimestamp: 0
+        lastDequeueTimestamp: 0,
+        batch: null
       };
 
       return newJob;
@@ -63,16 +66,21 @@ export class MongoQueue<T> implements Queue<T> {
 
   async dequeue(): Promise<Job<T> | undefined> {
     const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout);
+
     const job = await this.baseRepository.tryLoadByFilterAndUpdate(filter, update, { returnOriginal: false, sort: [['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]] });
 
     return job == undefined ? undefined : toModelJob(job);
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
-    const promises = createArray(count, (i) => i).map(() => this.dequeue());
-    const jobs = await Promise.all(promises);
+    const batch = getRandomString(10);
+    const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout, batch);
 
-    return jobs.filter((job) => job != undefined) as Job<T>[];
+    const operations = createArray(count, () => ({ updateOne: { filter, update } }));
+    await this.baseRepository.collection.bulkWrite(operations);
+    const jobs = await this.baseRepository.loadManyByFilter({ batch });
+
+    return jobs.map(toModelJob);
   }
 
   async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
@@ -116,7 +124,7 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
   return job;
 }
 
-function getDequeueFindParameters(maxTries: number, processTimeout: number) {
+function getDequeueFindParameters(maxTries: number, processTimeout: number, batch: null | string = null) {
   const maximumLastDequeueTimestamp = currentTimestamp() - processTimeout;
 
   const filter: FilterQuery<MongoJob<any>> = {
@@ -126,7 +134,10 @@ function getDequeueFindParameters(maxTries: number, processTimeout: number) {
 
   const update: UpdateQuery<MongoJob<any>> = {
     $inc: { tries: 1 },
-    $set: { lastDequeueTimestamp: currentTimestamp() }
+    $set: {
+      lastDequeueTimestamp: currentTimestamp(),
+      batch
+    }
   };
 
   return { filter, update };

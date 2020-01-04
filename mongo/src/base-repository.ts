@@ -24,9 +24,9 @@ export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
 };
 
 export class MongoBaseRepository<T extends Entity> {
-  private readonly collection: Collection<T>;
+  readonly collection: Collection<MongoDocument<T>>;
 
-  constructor(collection: Collection<T>) {
+  constructor(collection: Collection<MongoDocument<T>>) {
     this.collection = collection;
   }
 
