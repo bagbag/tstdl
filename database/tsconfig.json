@@ -2,6 +2,7 @@
   "extends": "@tstdl/base",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "target": "es2018"
   }
 }
