@@ -2,7 +2,7 @@ import { Job, Queue } from '@tstdl/base/queue';
 import { backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, toArray } from '@tstdl/base/utils';
 import { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
-import { Collection } from '../types';
+import { Collection, TypedIndexSpecification } from '../types';
 import { MongoJob, MongoJobWithoutId } from './job';
 
 const backoffOptions: BackoffOptions = {
@@ -11,6 +11,10 @@ const backoffOptions: BackoffOptions = {
   increase: 2,
   maximumDelay: 5000
 };
+
+const indexes: TypedIndexSpecification<MongoJob<any>>[] = [
+  { key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } }
+];
 
 export class MongoQueue<T> implements Queue<T> {
   private readonly baseRepository: MongoBaseRepository<MongoJob<T>>;
@@ -21,6 +25,10 @@ export class MongoQueue<T> implements Queue<T> {
     this.baseRepository = new MongoBaseRepository(collection);
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;
+  }
+
+  async initialize(): Promise<void> {
+    return this.baseRepository.createIndexes(indexes);
   }
 
   async enqueue(data: T): Promise<Job<T>> {
