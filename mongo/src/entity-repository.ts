@@ -1,6 +1,7 @@
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
 import { Collection, TypedIndexSpecification } from './types';
+import { MongoDocument } from './model';
 
 type Options<T> = {
   indexes?: TypedIndexSpecification<T>[]
@@ -9,11 +10,11 @@ type Options<T> = {
 export class MongoEntityRepository<T extends Entity> implements EntityRepository<T> {
   _type: T;
 
-  protected readonly collection: Collection<T>;
+  protected readonly collection: Collection<MongoDocument<T>>;
   protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
 
-  constructor(collection: Collection<T>, { indexes }: Options<T> = {}) {
+  constructor(collection: Collection<MongoDocument<T>>, { indexes }: Options<T> = {}) {
     this.collection = collection;
     this.indexes = indexes;
 
