@@ -1,6 +1,6 @@
 export * from './any-iterable-iterator';
 export * from './async-iterable-helpers';
-export * from './async-iterator-iterable';
+export * from './async-iterator-iterable-iterator';
 export * from './backoff';
 export * from './base64';
 export * from './benchmark';
