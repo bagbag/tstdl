@@ -1,5 +1,4 @@
 import * as Crypto from 'crypto';
-import { HexBase64Latin1Encoding } from 'crypto';
 
 export type CryptionOptions = {
   algorithm: string,
@@ -31,7 +30,7 @@ export interface HashResult {
   toHex(): string;
   toBase64(): string;
   toLatin1(): string;
-  toString(encoding: HexBase64Latin1Encoding): string;
+  toString(encoding: Crypto.HexBase64Latin1Encoding): string;
 }
 
 export function encryptString(input: string, options: CryptionOptions): CryptionResult {
@@ -193,7 +192,7 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
     toHex: () => hasher.digest('hex'),
     toBase64: () => hasher.digest('base64'),
     toLatin1: () => hasher.digest('latin1'),
-    toString: (encoding: HexBase64Latin1Encoding) => hasher.digest(encoding)
+    toString: (encoding: Crypto.HexBase64Latin1Encoding) => hasher.digest(encoding)
   };
 
   return result;

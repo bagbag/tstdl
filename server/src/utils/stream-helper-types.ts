@@ -1,5 +1,5 @@
-const nonObjectBufferModeSymbol: unique symbol = Symbol();
-const nonObjectStringModeSymbol: unique symbol = Symbol();
+declare const nonObjectBufferModeSymbol: unique symbol;
+declare const nonObjectStringModeSymbol: unique symbol;
 
 export type NonObjectMode = NonObjectBufferMode | NonObjectStringMode;
 

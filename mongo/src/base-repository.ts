@@ -76,7 +76,7 @@ export class MongoBaseRepository<T extends Entity> {
 
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
-    const bulkWriteResult = await this.collection.bulkWrite(operations);
+    await this.collection.bulkWrite(operations);
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;
@@ -109,7 +109,7 @@ export class MongoBaseRepository<T extends Entity> {
       operations.push(operation);
     }
 
-    const bulkWriteResult = await this.collection.bulkWrite(operations);
+    await this.collection.bulkWrite(operations);
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;
