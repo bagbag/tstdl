@@ -1,5 +1,4 @@
-import { any, batch, Comparator, drain, filter, first, forEach, group, intercept, IteratorFunction, last, map, mapMany, Predicate, range, reduce, Reducer, single, skip, skipWhile, sort, take, takeWhile } from '../utils';
-import { whileSync } from '../utils/iterable-helpers/while';
+import { any, batch, Comparator, distinct, drain, filter, first, forEach, group, intercept, IteratorFunction, last, map, mapMany, Predicate, range, reduce, Reducer, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import { EnumerableMethods } from './enumerable-methods';
 
@@ -34,6 +33,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   cast<TNew extends T>(): Enumerable<TNew> {
     return this as any as Enumerable<TNew>;
+  }
+
+  distinct(selector?: IteratorFunction<T, any>): AsyncEnumerable<T> {
+    const result = distinct(this.source, selector);
+    return new AsyncEnumerable(result);
   }
 
   drain(): void {
