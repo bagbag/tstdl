@@ -1,6 +1,6 @@
 import { LockProvider } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
-import { compareByValueSelectionDescending, precisionRound, Timer } from '@tstdl/base/utils';
+import { compareByValueSelectionDescending, precisionRound, Timer, toArray } from '@tstdl/base/utils';
 import { DatabaseMigrationStateRepository } from './database-migration-state-repository';
 
 export type DatabaseMigrationDefinition = {
@@ -9,7 +9,7 @@ export type DatabaseMigrationDefinition = {
 }
 
 export type DatabaseMigration = {
-  from: number,
+  from: number | number[],
   to: number,
   migrator: () => Promise<any>;
 }
@@ -46,7 +46,7 @@ export class DatabaseMigrator {
         return;
       }
 
-      const suitableMigrations = migrations.filter((migration) => migration.from == currentRevision);
+      const suitableMigrations = migrations.filter((migration) => toArray(migration.from).includes(currentRevision));
 
       if (suitableMigrations.length == 0) {
         throw new Error(`no suitable migration path from current revision ${currentRevision} to latest revision ${highestRevision} found`);
