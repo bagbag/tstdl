@@ -1,4 +1,3 @@
-export * from './async-iterable-stream';
 export * from './async-writable-stream';
 export * from './compression';
 export * from './cryptography';
