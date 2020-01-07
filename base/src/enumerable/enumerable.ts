@@ -35,9 +35,9 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return this as any as Enumerable<TNew>;
   }
 
-  distinct(selector?: IteratorFunction<T, any>): AsyncEnumerable<T> {
+  distinct(selector?: IteratorFunction<T, any>): Enumerable<T> {
     const result = distinct(this.source, selector);
-    return new AsyncEnumerable(result);
+    return new Enumerable(result);
   }
 
   drain(): void {
