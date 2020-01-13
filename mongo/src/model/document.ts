@@ -1,6 +1,6 @@
 import { Omit } from '@tstdl/base/types';
-import { getRandomString } from '@tstdl/base/utils';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
+import { getNewDocumentId } from '../id';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id: string;
@@ -50,7 +50,7 @@ export function toMongoDocumentWithNewId<T extends Entity>(entity: EntityWithPar
 
   // tslint:disable-next-line: no-object-literal-type-assertion
   const document = {
-    _id: (id != undefined) ? id : getRandomString(15),
+    _id: (id != undefined) ? id : getNewDocumentId(),
     ...entityRest
   } as MongoDocument<T>;
 
