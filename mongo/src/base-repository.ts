@@ -6,8 +6,9 @@ import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } fr
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export type UpdateResult = {
-  matched: number,
-  modified: number
+  matchedCount: number,
+  modifiedCount: number,
+  upsertedCount: number
 };
 
 export type LoadOptions<T extends Entity> = {
@@ -116,22 +117,24 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
-    const result = await this.collection.updateOne(filter, update, { upsert });
+    const { matchedCount, modifiedCount, upsertedCount } = await this.collection.updateOne(filter, update, { upsert });
 
     const updateResult: UpdateResult = {
-      matched: result.matchedCount,
-      modified: result.modifiedCount
+      matchedCount,
+      modifiedCount,
+      upsertedCount
     };
 
     return updateResult;
   }
 
   async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
-    const result = await this.collection.updateMany(filter, update, { upsert });
+    const { matchedCount, modifiedCount, upsertedCount } = await this.collection.updateMany(filter, update, { upsert });
 
     const updateResult: UpdateResult = {
-      matched: result.matchedCount,
-      modified: result.modifiedCount
+      matchedCount,
+      modifiedCount,
+      upsertedCount
     };
 
     return updateResult;
