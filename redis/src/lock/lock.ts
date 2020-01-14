@@ -28,7 +28,9 @@ export class RedisLock implements Lock {
    * @param func Function to run after the lock is acquired. Lock is automatically released after the function has returned.
    * @returns False if acquiring the lock has failed, or a LockController otherwise.
    */
-  async acquire(timeout: number, func?: LockedFunction): Promise<LockController | false> {
+  acquire(timeout: number): Promise<LockController | false>;
+  acquire(timeout: number, func: LockedFunction): Promise<boolean>;
+  async acquire(timeout: number, func?: LockedFunction): Promise<LockController | boolean> {
     const id = getRandomString(15);
     const newExpireTimestamp = await this._acquire(id, timeout);
 
