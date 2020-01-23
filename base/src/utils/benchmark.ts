@@ -1,9 +1,26 @@
 import { getGetter } from './helpers';
 import { Timer } from './timer';
 
-const millisecondsPerTimerRead = measureTimerOverhead(3);
+let millisecondsPerTimerRead: number = 0;
 
 export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPerOperation: number };
+
+export function measureTimerOverhead(): void {
+  const timer = new Timer(true);
+  const millisecondsGetter = getGetter(timer, 'milliseconds', true);
+
+  let operations = 0;
+
+  while (timer.milliseconds < 500) {
+    for (let i = 0; i < 1000; i++) {
+      millisecondsGetter();
+    }
+
+    operations += 1001;
+  }
+
+  millisecondsPerTimerRead = 500 / operations;
+}
 
 export function benchmark<F extends (...args: any[]) => any>(runs: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
   const timer = new Timer(true);
@@ -64,25 +81,4 @@ function calculateResult(runs: number, time: number): BenchmarkResult {
     operationsPerMillisecond,
     millisecondsPerOperation
   };
-}
-
-function measureTimerOverhead(runs: number): number {
-  const timer = new Timer(true);
-  const millisecondsGetter = getGetter(timer, 'milliseconds', true);
-
-  const results: number[] = [];
-
-  // runs + 1 because first is skipped as warmup
-  for (let i = 0; i < (runs + 1); i++) {
-    const result = benchmark(1000000, millisecondsGetter);
-
-    if (i > 0) {
-      results.push(result.millisecondsPerOperation);
-    }
-  }
-
-  const sum = results.reduce((previous, current) => previous + current, 0);
-  const average = sum / results.length;
-
-  return average;
 }
