@@ -1,3 +1,4 @@
+import * as KoaRouter from '@koa/router';
 import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
 import { StringMap, Type, UndefinableJson } from '@tstdl/base/types';
@@ -5,13 +6,12 @@ import { precisionRound, Timer } from '@tstdl/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
-import * as KoaRouter from 'koa-router';
 import { Readable } from 'stream';
 import { readStream } from '../utils';
 import { ValidationFunction } from './validation';
 import { ValidationError } from './validation/error';
 
-type Context = Koa.ParameterizedContext<void, KoaRouter.IRouterParamContext<void, void>>;
+type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
 export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   headers?: StringMap<string | string[]>,
