@@ -50,15 +50,15 @@ export class MovingMetric {
     }
 
     const sortedSamples = this.sortedByValue();
-    const index = sortedSamples.length / 2;
 
-    if (index % 1 == 0) {
-      const [value] = sortedSamples[index];
-      return value;
+    if (sortedSamples.length % 2 == 1) {
+      const index = (sortedSamples.length - 1) / 2;
+      return sortedSamples[index][0];
     }
     else {
-      const [lower] = sortedSamples[index - 1];
-      const [upper] = sortedSamples[index + 1];
+      const upperIndex = sortedSamples.length / 2;
+      const [lower] = sortedSamples[upperIndex - 1];
+      const [upper] = sortedSamples[upperIndex];
 
       return (lower + upper) / 2;
     }
