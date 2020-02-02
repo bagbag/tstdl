@@ -1,3 +1,4 @@
+import { zBase32Encode } from '@tstdl/base/utils';
 import * as Crypto from 'crypto';
 
 export type CryptionOptions = {
@@ -17,6 +18,7 @@ export interface CryptionResult {
   toBuffer(): Promise<Buffer>;
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
+  toZBase32(): Promise<string>;
   toLatin1(): Promise<string>;
   toString(encoding: BufferEncoding): Promise<string>;
 }
@@ -29,6 +31,7 @@ export interface HashResult {
   toBuffer(): Buffer;
   toHex(): string;
   toBase64(): string;
+  toZBase32(): string;
   toLatin1(): string;
   toString(encoding: Crypto.HexBase64Latin1Encoding): string;
 }
@@ -45,6 +48,7 @@ export function encrypt(input: Buffer | Uint8Array, options: CryptionOptions): C
     toBuffer: async () => encryptedBuffer,
     toHex: () => encryptedBuffer.then((buffer) => buffer.toString('hex')),
     toBase64: () => encryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: () => encryptedBuffer.then(zBase32Encode),
     toLatin1: () => encryptedBuffer.then((buffer) => buffer.toString('latin1')),
     toString: (encoding: BufferEncoding) => encryptedBuffer.then((buffer) => buffer.toString(encoding))
   };
@@ -102,6 +106,7 @@ export function decrypt(input: Buffer | Uint8Array, options: CryptionOptions): D
     toBuffer: async () => decryptedBuffer,
     toHex: () => decryptedBuffer.then((buffer) => buffer.toString('hex')),
     toBase64: () => decryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: () => decryptedBuffer.then(zBase32Encode),
     toLatin1: () => decryptedBuffer.then((buffer) => buffer.toString('latin1')),
     toUtf8: () => decryptedBuffer.then((buffer) => buffer.toString('utf8')),
     toString: (encoding: BufferEncoding) => decryptedBuffer.then((buffer) => buffer.toString(encoding))
@@ -191,6 +196,7 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
     toBuffer: () => hasher.digest(),
     toHex: () => hasher.digest('hex'),
     toBase64: () => hasher.digest('base64'),
+    toZBase32: () => zBase32Encode(hasher.digest()),
     toLatin1: () => hasher.digest('latin1'),
     toString: (encoding: Crypto.HexBase64Latin1Encoding) => hasher.digest(encoding)
   };

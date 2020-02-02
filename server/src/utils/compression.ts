@@ -1,9 +1,11 @@
+import { zBase32Encode } from '@tstdl/base/utils';
 import * as Zlib from 'zlib';
 
 export interface CompressionResult {
   toBuffer(): Promise<Buffer>;
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
+  toZBase32(): Promise<string>;
   toLatin1(): Promise<string>;
   toString(encoding: BufferEncoding): Promise<string>;
 }
@@ -32,6 +34,7 @@ export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options?
     toBuffer: async () => compressedBuffer,
     toHex: () => compressedBuffer.then((buffer) => buffer.toString('hex')),
     toBase64: () => compressedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: () => compressedBuffer.then(zBase32Encode),
     toLatin1: () => compressedBuffer.then((buffer) => buffer.toString('latin1')),
     toString: (encoding: BufferEncoding) => compressedBuffer.then((buffer) => buffer.toString(encoding))
   };
@@ -80,15 +83,16 @@ export function decompress(buffer: Zlib.InputType, algorithm: 'gzip' | 'deflate'
 export function decompress(buffer: Zlib.InputType, algorithm: 'brotli', options?: Zlib.BrotliOptions): DecompressionResult;
 export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult;
 export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): DecompressionResult {
-  const compressedBuffer = _decompress(buffer, algorithm, options);
+  const decompressedBuffer = _decompress(buffer, algorithm, options);
 
   return {
-    toBuffer: async () => compressedBuffer,
-    toHex: () => compressedBuffer.then((buffer) => buffer.toString('hex')),
-    toBase64: () => compressedBuffer.then((buffer) => buffer.toString('base64')),
-    toLatin1: () => compressedBuffer.then((buffer) => buffer.toString('latin1')),
-    toUtf8: () => compressedBuffer.then((buffer) => buffer.toString('utf8')),
-    toString: (encoding: BufferEncoding) => compressedBuffer.then((buffer) => buffer.toString(encoding))
+    toBuffer: async () => decompressedBuffer,
+    toHex: () => decompressedBuffer.then((buffer) => buffer.toString('hex')),
+    toBase64: () => decompressedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: () => decompressedBuffer.then(zBase32Encode),
+    toLatin1: () => decompressedBuffer.then((buffer) => buffer.toString('latin1')),
+    toUtf8: () => decompressedBuffer.then((buffer) => buffer.toString('utf8')),
+    toString: (encoding: BufferEncoding) => decompressedBuffer.then((buffer) => buffer.toString(encoding))
   };
 }
 
