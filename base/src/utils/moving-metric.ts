@@ -45,6 +45,10 @@ export class MovingMetric {
       return NaN;
     }
 
+    if (this.samples.length == 1) {
+      return this.samples[0][0];
+    }
+
     const sortedSamples = this.sortedByValue();
     const index = sortedSamples.length / 2;
 
@@ -117,6 +121,10 @@ export class MovingMetric {
       return NaN;
     }
 
+    if (this.samples.length == 1) {
+      return this.samples[0][0];
+    }
+
     const sum = this.sum();
     const interval = this.actualInterval();
     const seconds = interval / 1000;
@@ -128,12 +136,13 @@ export class MovingMetric {
   actualInterval(): number {
     this.removeOld();
 
-    if (this.samples.length == 0) {
+    if (this.samples.length <= 1) {
       return NaN;
     }
 
     const [, oldestTimer] = this.samples[0];
-    return oldestTimer.milliseconds;
+    const [, newestTimer] = this.samples[this.samples.length - 1];
+    return oldestTimer.milliseconds - newestTimer.milliseconds;
   }
 
   private sortedByValue(): Sample[] {
