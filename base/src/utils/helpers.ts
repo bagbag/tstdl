@@ -97,10 +97,6 @@ export function throttleFunction(func: (...args: any[]) => void, interval: numbe
   return throttled;
 }
 
-export function objectToDotNotation(_obj: object): StringMap {
-  throw new Error('not implemented');
-}
-
 export function formatDuration(milliseconds: number, precision: number): string {
   let value: number;
   let suffix: string;
@@ -196,11 +192,11 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
   return matches;
 }
 
-export function dotNotation<T, Key1 extends keyof T>(typeInferHelper: T, key1: Key1): string;
-export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1]>(typeInferHelper: T, key1: Key1, key2: Key2): string;
-export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3): string;
-export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2], Key4 extends keyof T[Key1][Key2][Key3]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4): string;
-export function dotNotation<T, Key1 extends keyof T, Key2 extends keyof T[Key1], Key3 extends keyof T[Key1][Key2], Key4 extends keyof T[Key1][Key2][Key3], Key5 extends keyof T[Key1][Key2][Key3][Key4]>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4, key5: Key5): string;
+export function dotNotation<T, Key1 extends keyof NonNullable<T>>(typeInferHelper: T, key1: Key1): string;
+export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>>(typeInferHelper: T, key1: Key1, key2: Key2): string;
+export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3): string;
+export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>, Key4 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4): string;
+export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>, Key4 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>, Key5 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>[Key4]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4, key5: Key5): string;
 export function dotNotation(_type: any, ...keys: string[]): string {
   for (const key of keys) {
     if (typeof key == 'symbol') {
