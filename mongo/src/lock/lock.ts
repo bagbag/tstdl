@@ -1,11 +1,11 @@
 import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
-import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, now, Timer, timeout } from '@tstdl/base/utils';
+import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, now, timeout, Timer } from '@tstdl/base/utils';
+import { MongoError } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
 import { getNewDocumentId } from '../id';
 import { FilterQuery } from '../types';
 import { LockEntity } from './model';
-import { MongoError } from 'mongodb';
 
 const EXPIRE_TIME = 30000;
 
@@ -29,8 +29,12 @@ export class MongoLock implements Lock {
     let result: boolean | Date = false;
 
     const timer = new Timer(true);
-    while (result == false && timer.milliseconds < _timeout) {
+    while (result == false && (timer.milliseconds < _timeout || _timeout == 0)) {
       result = await this.tryAcquireOrRefresh(this.ressource, key);
+
+      if (!result && _timeout == 0) {
+        break;
+      }
 
       if (result == false) {
         await timeout(timeoutDuration);
