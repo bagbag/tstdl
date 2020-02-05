@@ -18,8 +18,10 @@ export class MovingMetric {
     this.samples.push(sample);
   }
 
-  sum(): number {
-    this.removeOld();
+  sum(skipRemoveOldSamples: boolean = false): number {
+    if (!skipRemoveOldSamples) {
+      this.removeOld();
+    }
 
     if (this.samples.length == 0) {
       return NaN;
@@ -35,7 +37,7 @@ export class MovingMetric {
       return NaN;
     }
 
-    return this.sum() / this.samples.length;
+    return this.sum(true) / this.samples.length;
   }
 
   median(): number {
@@ -125,16 +127,39 @@ export class MovingMetric {
       return this.samples[0][0];
     }
 
-    const sum = this.sum();
-    const interval = this.actualInterval();
+    const [oldestValue, oldestTimer] = this.samples[0];
+    const [newestValue, newestTimer] = this.samples[this.samples.length - 1];
+
+    const delta = newestValue - oldestValue;
+    const seconds = (oldestTimer.milliseconds - newestTimer.milliseconds) / 1000;
+    const rate = delta / seconds;
+
+    return rate;
+  }
+
+  rateBySum(): number {
+    this.removeOld();
+
+    if (this.samples.length == 0) {
+      return NaN;
+    }
+
+    if (this.samples.length == 1) {
+      return this.samples[0][0];
+    }
+
+    const sum = this.sum(true);
+    const interval = this.actualInterval(true);
     const seconds = interval / 1000;
     const rate = sum / seconds;
 
     return rate;
   }
 
-  actualInterval(): number {
-    this.removeOld();
+  actualInterval(skipRemoveOldSamples: boolean = false): number {
+    if (!skipRemoveOldSamples) {
+      this.removeOld();
+    }
 
     if (this.samples.length <= 1) {
       return NaN;
