@@ -7,7 +7,7 @@ export type ModuleMetric = {
   name: string,
   type: ModuleMetricType,
   value: number,
-  labels: string[]
+  labels?: string[]
 };
 
 export enum ModuleState {
