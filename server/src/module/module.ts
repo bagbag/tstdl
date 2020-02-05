@@ -1,13 +1,15 @@
+import { StringMap } from '@tstdl/base/types';
+
 export enum ModuleMetricType {
   Counter,
   Gauge
 }
 
 export type ModuleMetric = {
-  name: string,
+  displayName: string,
   type: ModuleMetricType,
-  value: number,
-  labels?: string[]
+  labels?: string[],
+  getValue(): number
 };
 
 export enum ModuleState {
@@ -20,7 +22,7 @@ export enum ModuleState {
 export interface Module {
   readonly name: string;
 
-  getMetrics(): ModuleMetric[];
+  metrics: StringMap<ModuleMetric>;
   run(): Promise<void>;
   stop(): Promise<void>;
 }
