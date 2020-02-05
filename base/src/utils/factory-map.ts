@@ -1,12 +1,16 @@
 type Factory<Key, Value> = (key: Key) => Value;
 
-export class FactoryMap<K, V> {
+export class FactoryMap<K, V> implements Map<K, V> {
   private readonly factory: Factory<K, V>;
   private readonly map: Map<K, V>;
 
   get size(): number {
     return this.map.size;
   }
+
+  get [Symbol.toStringTag](): string {
+    return 'FactoryMap';
+  };
 
   constructor(factory: Factory<K, V>) {
     this.factory = factory;
