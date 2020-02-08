@@ -1,5 +1,4 @@
 import { Enumerable } from '@tstdl/base/enumerable';
-import { Logger } from '@tstdl/base/logger';
 import { cancelableTimeout, CancellationToken, MetricAggregation, MetricAggregationOptions, MovingMetric } from '@tstdl/base/utils';
 import { ModuleMetric } from './module';
 
@@ -17,18 +16,16 @@ type MetricReportRegistration = {
 
 export class ModuleMetricReporter {
   private readonly metricGroups: { groupName: string, registrations: MetricReportRegistration[] }[];
-  private readonly logger: Logger;
-  private readonly sampleCount: number;
   private readonly sampleInterval: number;
+  private readonly sampleCount: number;
   private readonly reportEveryNthSample: number;
 
   private longestGroupName: number;
   private longestDisplayName: number;
 
-  constructor(logger: Logger, sampleCount: number, sampleInterval: number, reportEveryNthSample: number) {
-    this.logger = logger;
-    this.sampleCount = sampleCount;
+  constructor(sampleInterval: number, sampleCount: number, reportEveryNthSample: number) {
     this.sampleInterval = sampleInterval;
+    this.sampleCount = sampleCount;
     this.reportEveryNthSample = reportEveryNthSample;
 
     this.metricGroups = [];
