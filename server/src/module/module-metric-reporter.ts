@@ -1,16 +1,29 @@
-import { cancelableTimeout, CancellationToken, FactoryMap, MovingMetric } from '@tstdl/base/utils';
-import { ModuleMetric } from './module';
-import { Logger } from '@tstdl/base/logger';
 import { Enumerable } from '@tstdl/base/enumerable';
+import { Logger } from '@tstdl/base/logger';
+import { cancelableTimeout, CancellationToken, MetricAggregation, MetricAggregationOptions, MovingMetric } from '@tstdl/base/utils';
+import { ModuleMetric } from './module';
 
-type
+type MetricReport<Aggregation extends MetricAggregation> = {
+  displayName: string,
+  aggregation: Aggregation,
+  aggregationOptions?: MetricAggregationOptions<Aggregation>
+};
+
+type MetricReportRegistration = {
+  metric: ModuleMetric,
+  moving: MovingMetric,
+  reports: MetricReport<MetricAggregation>[]
+};
 
 export class ModuleMetricReporter {
-  private readonly metricGroups: FactoryMap<string, Map<ModuleMetric, MovingMetric>>;
+  private readonly metricGroups: { groupName: string, registrations: MetricReportRegistration[] }[];
   private readonly logger: Logger;
   private readonly sampleCount: number;
   private readonly sampleInterval: number;
   private readonly reportEveryNthSample: number;
+
+  private longestGroupName: number;
+  private longestDisplayName: number;
 
   constructor(logger: Logger, sampleCount: number, sampleInterval: number, reportEveryNthSample: number) {
     this.logger = logger;
@@ -18,36 +31,59 @@ export class ModuleMetricReporter {
     this.sampleInterval = sampleInterval;
     this.reportEveryNthSample = reportEveryNthSample;
 
-    this.metricGroups = new FactoryMap(() => new Map());
+    this.metricGroups = [];
+    this.longestGroupName = 0;
+    this.longestDisplayName = 0;
   }
 
-  registerModuleMetrics(groupName: string, ...metrics: ModuleMetric[]): void {
-    for (const metric of metrics) {
-      this.metricGroups.get(groupName).set(metric, new MovingMetric(this.sampleCount * this.sampleInterval));
-    }
+  register(groupName: string, ...metrics: { metric: ModuleMetric, reports: MetricReport<MetricAggregation>[] }[]): void {
+    const registrations = metrics.map(({ metric, reports }) => {
+      const registration: MetricReportRegistration = {
+        metric,
+        moving: new MovingMetric(this.sampleCount * this.sampleInterval),
+        reports
+      };
+
+      return registration;
+    });
+
+    this.metricGroups.push({ groupName, registrations });
+
+    this.updateNameLengths();
+  }
+
+  private updateNameLengths(): void {
+    this.longestGroupName = Enumerable.from(this.metricGroups)
+      .reduce((longest, { groupName }) => Math.max(longest, groupName.length), 0);
+
+    this.longestDisplayName = Enumerable.from(this.metricGroups)
+      .mapMany((group) => group.registrations)
+      .mapMany(({ reports }) => reports)
+      .reduce((longest, { displayName }) => Math.max(longest, displayName.length), 0);
   }
 
   async run(cancellationToken: CancellationToken): Promise<void> {
     let counter = 0;
 
     while (!cancellationToken.isSet) {
-      for (const [group, metrics] of this.metricGroups) {
-        for (const [metric, movingMetric] of metrics) {
-          movingMetric.add(metric.getValue());
+      for (const { registrations } of this.metricGroups) {
+        for (const { metric, moving } of registrations) {
+          moving.add(metric.getValue());
         }
       }
 
       if (counter++ % this.reportEveryNthSample == 0) {
-        const longestGroupName = Enumerable.from(this.metricGroups.keys()).reduce((longest, name) => Math.max(longest, name.length), 0);
-        const longestMetricName = Enumerable.from(this.metricGroups.values()).map((map) => map.keys()).reduce((longest, metric) => Math.max(longest, metric), 0);
+        for (const { groupName, registrations } of this.metricGroups) {
+          console.log(`--- ${groupName} `.padEnd(this.longestGroupName + 8));
 
-        console.log(`
---- Indexer -----
-| import-count       : 512355
-| another-large-name : 444.3
---- Importer ----
-|
-        `);
+          for (const { moving, reports } of registrations) {
+            for (const report of reports) {
+              const value = moving.aggregate(report.aggregation, report.aggregationOptions);
+              const paddedName = report.displayName.padEnd(this.longestDisplayName);
+              console.log(`| ${paddedName} : ${value}`);
+            }
+          }
+        }
       }
 
       await cancelableTimeout(this.sampleInterval, cancellationToken);

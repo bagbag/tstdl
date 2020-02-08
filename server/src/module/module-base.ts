@@ -1,3 +1,4 @@
+import { StringMap } from '@tstdl/base/types';
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import { Module, ModuleMetric, ModuleState } from './module';
 
@@ -8,6 +9,8 @@ export abstract class ModuleBase implements Module {
   private state: ModuleState;
 
   readonly name: string;
+
+  abstract readonly metrics: StringMap<ModuleMetric>;
 
   protected get cancellationToken(): CancellationToken {
     return this._cancellationToken;
@@ -23,8 +26,6 @@ export abstract class ModuleBase implements Module {
     this.state = ModuleState.Stopped;
     this._cancellationToken = new CancellationToken();
   }
-
-  abstract getMetrics(): ModuleMetric[];
 
   async run(): Promise<void> {
     if (this.state != ModuleState.Stopped) {
