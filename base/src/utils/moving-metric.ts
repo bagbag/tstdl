@@ -1,5 +1,22 @@
 import { Timer } from './timer';
 
+export enum MetricAggregation {
+  Sum,
+  Mean,
+  Median,
+  Minimum,
+  Maximum,
+  Count,
+  Quantile,
+  Rate,
+  RateBySum
+}
+
+export type MetricAggregationOptions<T extends MetricAggregation> =
+  T extends MetricAggregation.Quantile
+  ? { scalar: number }
+  : never;
+
 type Sample = [number, Timer];
 
 export class MovingMetric {
@@ -16,6 +33,29 @@ export class MovingMetric {
     const sample = [value, timer] as Sample;
 
     this.samples.push(sample);
+
+    this.aggregate(MetricAggregation.Quantile);
+  }
+
+  aggregate<T extends MetricAggregation>(aggregation: T, options?: MetricAggregationOptions<T>): number {
+    switch (aggregation) {
+      case MetricAggregation.Sum: return this.sum();
+      case MetricAggregation.Mean: return this.mean();
+      case MetricAggregation.Median: return this.median();
+      case MetricAggregation.Minimum: return this.minimum();
+      case MetricAggregation.Maximum: return this.maximum();
+      case MetricAggregation.Count: return this.count();
+      case MetricAggregation.Quantile:
+        if (options == undefined) {
+          throw new Error('quantile requires scalar parameter to be provided');
+        }
+
+        return this.quantile(options.scalar);
+
+      case MetricAggregation.Rate: return this.rate();
+      case MetricAggregation.RateBySum: return this.rateBySum();
+      default: throw new Error('unknown aggregation');
+    }
   }
 
   sum(skipRemoveOldSamples: boolean = false): number {
@@ -30,7 +70,7 @@ export class MovingMetric {
     return this.samples.reduce((sum, [value]) => sum + value, 0);
   }
 
-  average(): number {
+  mean(): number {
     this.removeOld();
 
     if (this.samples.length == 0) {
