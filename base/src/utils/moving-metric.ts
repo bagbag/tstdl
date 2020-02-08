@@ -33,8 +33,6 @@ export class MovingMetric {
     const sample = [value, timer] as Sample;
 
     this.samples.push(sample);
-
-    this.aggregate(MetricAggregation.Quantile);
   }
 
   aggregate<T extends MetricAggregation>(aggregation: T, options?: MetricAggregationOptions<T>): number {
