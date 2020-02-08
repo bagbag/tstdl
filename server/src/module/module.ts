@@ -6,7 +6,6 @@ export enum ModuleMetricType {
 }
 
 export type ModuleMetric = {
-  displayName: string,
   type: ModuleMetricType,
   labels?: string[],
   getValue(): number
