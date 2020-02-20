@@ -1,20 +1,16 @@
 import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
-import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, now, timeout, Timer } from '@tstdl/base/utils';
-import { MongoError } from 'mongodb';
-import { MongoBaseRepository } from '../base-repository';
-import { getNewDocumentId } from '../id';
-import { FilterQuery } from '../types';
-import { LockEntity } from './model';
+import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, timeout, Timer } from '@tstdl/base/utils';
+import { MongoLockRepository } from './mongo-lock-repository';
 
 const EXPIRE_TIME = 30000;
 
 export class MongoLock implements Lock {
-  private readonly lockRepository: MongoBaseRepository<LockEntity>;
+  private readonly lockRepository: MongoLockRepository;
   private readonly logger: Logger;
   private readonly ressource: string;
 
-  constructor(lockRepository: MongoBaseRepository<LockEntity>, logger: Logger, ressource: string) {
+  constructor(lockRepository: MongoLockRepository, logger: Logger, ressource: string) {
     this.lockRepository = lockRepository;
     this.logger = logger;
     this.ressource = ressource;
@@ -32,7 +28,7 @@ export class MongoLock implements Lock {
     while (result == false && (timer.milliseconds < _timeout || _timeout == 0)) {
       result = await this.tryAcquireOrRefresh(this.ressource, key);
 
-      if (!result && _timeout == 0) {
+      if (result == false && _timeout == 0) {
         break;
       }
 
@@ -97,50 +93,24 @@ export class MongoLock implements Lock {
   }
 
   async exists(): Promise<boolean> {
-    return this.lockRepository.hasByFilter({ ressource: this.ressource, expire: { $gt: now() } });
+    return this.lockRepository.exists(this.ressource);
   }
 
   private async tryAcquireOrRefresh(ressource: string, key: string): Promise<false | Date> {
-    const expire = getExpireDate();
-
-    const filter: FilterQuery<LockEntity> = {
-      $and: [
-        { ressource },
-        {
-          $or: [
-            { key },
-            { expire: { $lte: now() } }
-          ]
-        }
-      ]
-    };
-
-    try {
-      const { upsertedCount, modifiedCount } = await this.lockRepository.update(filter, { $set: { expire }, $setOnInsert: { _id: getNewDocumentId(), key } }, true);
-      return (upsertedCount > 0 || modifiedCount > 0) ? expire : false;
-    }
-    catch (error) {
-      if (error instanceof MongoError && error.code == 11000) {
-        return false;
-      }
-
-      throw error;
-    }
+    const expirationDate = getExpirationDate();
+    return this.lockRepository.tryInsertOrRefresh(ressource, key, expirationDate);
   }
 
   private async tryRefresh(ressource: string, key: string): Promise<false | Date> {
-    const expire = getExpireDate();
-
-    const filter = { ressource, key };
-    const result = await this.lockRepository.update(filter, { $set: { expire } });
-    return result.modifiedCount > 0 ? expire : false;
+    const expire = getExpirationDate();
+    return this.lockRepository.tryUpdateExpiration(ressource, key, expire);
   }
 
-  private async release(ressource: string, key: string): Promise<void> {
-    await this.lockRepository.deleteByFilter({ ressource, key });
+  private async release(ressource: string, key: string): Promise<boolean> {
+    return this.lockRepository.deleteByRessource(ressource, key);
   }
 }
 
-function getExpireDate(): Date {
+function getExpirationDate(): Date {
   return new Date(currentTimestamp() + EXPIRE_TIME);
 }
