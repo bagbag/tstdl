@@ -48,7 +48,6 @@ export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(enti
 export function toMongoDocumentWithNewId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocument<T> {
   const { id, ...entityRest } = entity;
 
-  // tslint:disable-next-line: no-object-literal-type-assertion
   const document = {
     _id: (id != undefined) ? id : getNewDocumentId(),
     ...entityRest

@@ -49,7 +49,7 @@ export class PeriodicSampler {
   watch(threshold: number = 0, samples: number = 1, aggregation: AggregationMode = AggregationMode.Maximum): Observable<number> {
     const observable = this.subject.pipe(
       bufferCount(samples),
-      map((measures) => this.aggregate(aggregation, measures)),
+      map((measures) => aggregate(aggregation, measures)),
       filter((ms) => ms >= threshold)
     );
 
@@ -64,35 +64,35 @@ export class PeriodicSampler {
       await timeout(this.sampleInterval);
     }
   }
+}
 
-  private aggregate(aggregation: AggregationMode, values: number[]): number {
-    switch (aggregation) {
-      case AggregationMode.Minimum:
-        return Math.min(...values);
+function aggregate(aggregation: AggregationMode, values: number[]): number {
+  switch (aggregation) {
+    case AggregationMode.Minimum:
+      return Math.min(...values);
 
-      case AggregationMode.Maximum:
-        return Math.max(...values);
+    case AggregationMode.Maximum:
+      return Math.max(...values);
 
-      case AggregationMode.Mean:
-        return average(...values);
+    case AggregationMode.Mean:
+      return average(...values);
 
-      case AggregationMode.Median:
-        values.sort(compareByValue);
-        const median = Math.round(values.length / 2);
-        return values[median];
+    case AggregationMode.Median:
+      values.sort(compareByValue);
+      const median = Math.round(values.length / 2);
+      return values[median];
 
-      case AggregationMode.FirstQuartile:
-        values.sort(compareByValue);
-        const firstQuartile = Math.round(values.length / 4 * 1);
-        return values[firstQuartile];
+    case AggregationMode.FirstQuartile:
+      values.sort(compareByValue);
+      const firstQuartile = Math.round(values.length / 4 * 1);
+      return values[firstQuartile];
 
-      case AggregationMode.ThirdQuartile:
-        values.sort(compareByValue);
-        const thirdQuartile = Math.round(values.length / 4 * 3);
-        return values[thirdQuartile];
+    case AggregationMode.ThirdQuartile:
+      values.sort(compareByValue);
+      const thirdQuartile = Math.round(values.length / 4 * 3);
+      return values[thirdQuartile];
 
-      default:
-        throw new Error(`aggregation mode ${aggregation} (${AggregationMode[aggregation]}) not implemented`);
-    }
+    default:
+      throw new Error(`aggregation mode ${aggregation as number} (${AggregationMode[aggregation]}) not implemented`);
   }
 }

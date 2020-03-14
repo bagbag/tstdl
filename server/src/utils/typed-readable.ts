@@ -2,7 +2,6 @@ import { Omit } from '@tstdl/base/types';
 import { Readable, ReadableOptions } from 'stream';
 import { Data, NonObjectMode, NonObjectModeTypes } from './stream-helper-types';
 
-// tslint:disable: adjacent-overload-signatures unified-signatures
 
 interface TypedReadableOverrides<T> {
   read(size?: T extends NonObjectMode ? number : undefined): Data<T> | null;
@@ -71,5 +70,4 @@ interface TypedReadableConstructor {
 
 export type TypedReadable<T = NonObjectMode> = Omit<Readable, keyof TypedReadableOverrides<T>> & TypedReadableOverrides<T>;
 
-// tslint:disable-next-line: variable-name
 export const TypedReadable = Readable as TypedReadableConstructor;

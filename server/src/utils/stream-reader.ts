@@ -5,7 +5,7 @@ export async function readStream(readable: TypedReadable<NonObjectBufferMode>, m
   let totalLength: number = 0;
   const chunks: Buffer[] = [];
 
-  for await (const chunk of readable) { // tslint:disable-line: await-promise
+  for await (const chunk of readable) {
     chunks.push(chunk);
     totalLength += chunk.length;
 

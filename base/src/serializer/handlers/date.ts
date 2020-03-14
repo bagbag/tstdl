@@ -1,5 +1,5 @@
-import { Serializer } from '../serializer';
+import { registerSerializationType } from '../serializer';
 
-export function registerDateType(serializer: typeof Serializer): void {
-  serializer.registerType(Date, (date) => date.getTime(), (timestamp) => new Date(timestamp));
+export function registerDateType(register: typeof registerSerializationType): void {
+  register(Date, (date) => date.getTime(), (timestamp) => new Date(timestamp));
 }

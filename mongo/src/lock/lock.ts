@@ -54,7 +54,6 @@ export class MongoLock implements Lock {
       }
     };
 
-    // tslint:disable-next-line: no-floating-promises
     (async () => {
       await cancelableTimeout(5000, releaseToken);
 

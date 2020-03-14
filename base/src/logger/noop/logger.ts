@@ -1,6 +1,7 @@
+/* eslint-disable class-methods-use-this, @typescript-eslint/no-empty-function */
+
 import { Logger } from '../logger';
 
-// tslint:disable: no-empty
 export class NoopLogger implements Logger {
   prefix(): Logger {
     return this;

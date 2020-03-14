@@ -34,7 +34,6 @@ export class DistributedLoop {
       stopped
     };
 
-    // tslint:disable-next-line: no-floating-promises
     (async () => {
       const lock = this.lockProvider.get(this.key);
       const timer = new Timer();

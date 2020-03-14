@@ -12,8 +12,7 @@ export enum MetricAggregation {
   RateBySum
 }
 
-export type MetricAggregationOptions<T extends MetricAggregation> =
-  T extends MetricAggregation.Quantile
+export type MetricAggregationOptions<T extends MetricAggregation> = T extends MetricAggregation.Quantile
   ? { scalar: number }
   : never;
 
@@ -78,6 +77,7 @@ export class MovingMetric {
     return this.sum(true) / this.samples.length;
   }
 
+  // eslint-disable-next-line max-statements
   median(): number {
     this.removeOld();
 
@@ -95,13 +95,12 @@ export class MovingMetric {
       const index = (sortedSamples.length - 1) / 2;
       return sortedSamples[index][0];
     }
-    else {
-      const upperIndex = sortedSamples.length / 2;
-      const [lower] = sortedSamples[upperIndex - 1];
-      const [upper] = sortedSamples[upperIndex];
 
-      return (lower + upper) / 2;
-    }
+    const upperIndex = sortedSamples.length / 2;
+    const [lower] = sortedSamples[upperIndex - 1];
+    const [upper] = sortedSamples[upperIndex];
+
+    return (lower + upper) / 2;
   }
 
   minimum(): number {
@@ -129,6 +128,7 @@ export class MovingMetric {
     return this.samples.length;
   }
 
+  // eslint-disable-next-line max-statements
   quantile(scalar: number): number {
     this.removeOld();
 
@@ -143,17 +143,17 @@ export class MovingMetric {
       const [value] = sortedSamples[index];
       return value;
     }
-    else {
-      const flooredIndex = Math.floor(index);
-      const [lower] = sortedSamples[flooredIndex];
-      const [upper] = sortedSamples[flooredIndex + 1];
-      const difference = upper - lower;
-      const ratio = index % 1;
 
-      return lower + (ratio * difference);
-    }
+    const flooredIndex = Math.floor(index);
+    const [lower] = sortedSamples[flooredIndex];
+    const [upper] = sortedSamples[flooredIndex + 1];
+    const difference = upper - lower;
+    const ratio = index % 1;
+
+    return lower + (ratio * difference);
   }
 
+  // eslint-disable-next-line max-statements
   rate(): number {
     this.removeOld();
 

@@ -1,12 +1,11 @@
 import { AnyIterable } from '../any-iterable-iterator';
 
-export function isAsyncIterable<T>(anyIterable: AnyIterable<T>): anyIterable is AsyncIterable<T>;
-export function isAsyncIterable<T = any>(obj: any): obj is AsyncIterable<T> {
-  if (obj == undefined) {
+export function isAsyncIterable<T>(anyIterable: AnyIterable<T>): anyIterable is AsyncIterable<T> {
+  if (anyIterable == undefined) {
     return false;
   }
 
-  return typeof obj[Symbol.asyncIterator] == 'function';
+  return typeof (anyIterable as AsyncIterable<T>)[Symbol.asyncIterator] == 'function';
 }
 
 export function isAsyncIterableIterator<T>(anyIterable: AnyIterable<T>): anyIterable is AsyncIterableIterator<T>;

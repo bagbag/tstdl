@@ -1,4 +1,4 @@
-/* tslint:disable: no-console no-unbound-method */
+/* eslint-disable no-console */
 
 import { formatError } from '../../utils';
 import { LogLevel } from '../level';
@@ -52,6 +52,7 @@ export class ConsoleLogger implements Logger {
       return;
     }
 
+    /* eslint-disable newline-per-chained-call */
     const now = new Date();
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -61,6 +62,7 @@ export class ConsoleLogger implements Logger {
     const seconds = now.getSeconds().toString().padStart(2, '0');
     const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
     const dateTimeString = `[${year}-${month}-${date} ${hours}:${minutes}:${seconds}.${milliseconds}]`;
+    /* eslint-enable newline-per-chained-call */
 
     func(`${dateTimeString} - ${this.logPrefix}${entry}`);
   }

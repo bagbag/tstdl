@@ -1,16 +1,15 @@
-// tslint:disable: no-null-undefined-union
-
 export type Primitive = string | number | boolean | undefined | null;
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
-export interface PrimitiveArray extends Array<PrimitiveValue> { }
+export type PrimitiveArray = PrimitiveValue[];
 
+// eslint-disable-next-line capitalized-comments
 // AsJson as workaround for https://github.com/Microsoft/TypeScript/issues/15300
 export type AsJson<T> = T extends Json ? Json : Json;
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
-export interface JsonArray extends Array<Json> { }
+export type JsonArray = Json[];
 
 export type AsUndefinableJson<T> = T extends UndefinableJson ? UndefinableJson : UndefinableJson;
 export type AsUndefinableJsonInnerNode<T> = T extends UndefinableJsonInnerNode ? UndefinableJsonInnerNode : UndefinableJsonInnerNode;
@@ -18,7 +17,7 @@ export type UndefinableJson = JsonPrimitive | UndefinableJsonObject | Undefinabl
 export type UndefinableJsonInnerNode = UndefinableJsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
 export type UndefinableJsonPrimitive = string | number | boolean | null | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
-export interface UndefinableJsonArray extends Array<UndefinableJsonInnerNode> { }
+export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
 export type Type<T, Args extends any[] = any> = new (...args: Args) => T;
 
@@ -37,11 +36,11 @@ export type Of<T> = T;
 export type PropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? P : never }[keyof T];
 export type ExtractPropertiesOfType<T, U> = { [P in PropertiesOfType<T, U>]: T[P] };
 
-export interface DeepArray<T> extends Array<T | DeepArray<T>> { }
+export type DeepArray<T> = (T | DeepArray<T>)[];
 
-export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | ReadonlyArray<any>) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;
+export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
-export interface DeepReadonlyArray<T> extends ReadonlyArray<DeepReadonly<T>> { }
+export type DeepReadonlyArray<T> = readonly DeepReadonly<T>[];
 
 export type TypedArray =
   | Int8Array

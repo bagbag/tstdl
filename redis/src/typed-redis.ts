@@ -483,7 +483,6 @@ function zParseEntriesReply(reply: string[], order: SortedSetReplyOrder): Sorted
   return entries;
 }
 
-// tslint:disable-next-line: max-classes-per-file
 export class TypedRedisPipeline extends TypedRedis {
   private readonly pipelineWrapper: RedisPipelineWrapper;
 

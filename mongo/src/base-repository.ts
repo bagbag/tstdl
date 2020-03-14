@@ -295,7 +295,6 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
-// tslint:disable-next-line: typedef
 function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   const operation = {
     insertOne: {
@@ -306,7 +305,6 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   return operation;
 }
 
-// tslint:disable-next-line: typedef
 function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
   const filter: FilterQuery<T> = {
     _id: document._id

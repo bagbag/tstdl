@@ -1,4 +1,4 @@
-declare const process: { nextTick(callback: () => any, ...args: any[]): void; };
+declare const process: { nextTick(callback: () => void, ...args: unknown[]): void }; // eslint-disable-line init-declarations
 declare function requestIdleCallback(callback: IdleRequestCallback, options?: { timeout?: number }): void;
 
 export type FrameRequestCallback = (time: number) => void;
@@ -13,8 +13,9 @@ export async function timeout(milliseconds: number = 0): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
-export async function cancelableTimeout(milliseconds: number = 0, cancelPromise: PromiseLike<void>): Promise<boolean> {
-  return new Promise<boolean>(async (resolve) => {
+export async function cancelableTimeout(milliseconds: number, cancelPromise: PromiseLike<void>): Promise<boolean> {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise<boolean>((resolve) => {
     let pending = true;
 
     const timer = setTimeout(() => {
@@ -24,13 +25,14 @@ export async function cancelableTimeout(milliseconds: number = 0, cancelPromise:
       }
     }, milliseconds);
 
-    await cancelPromise;
-
-    if (pending) {
-      pending = false;
-      clearTimeout(timer);
-      resolve(true);
-    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    cancelPromise.then(() => {
+      if (pending) {
+        pending = false;
+        clearTimeout(timer);
+        resolve(true);
+      }
+    });
   });
 }
 
@@ -46,6 +48,7 @@ export async function animationFrame(): Promise<number> {
   return new Promise<number>(requestAnimationFrame);
 }
 
+// eslint-disable-next-line no-shadow
 export async function idle(timeout?: number): Promise<IdleDeadline> {
   return new Promise<IdleDeadline>((resolve) => requestIdleCallback(resolve, { timeout }));
 }

@@ -1,12 +1,12 @@
 import { Json } from '../types';
 
-export const serialize: unique symbol = Symbol();
-export const deserialize: unique symbol = Symbol();
+export const serializeSymbol: unique symbol = Symbol('Symbol for serialization function');
+export const deserializeSymbol: unique symbol = Symbol('Symbol for deserialization function');
 
 export interface Serializable {
-  [serialize](): Json;
+  [serializeSymbol](): Json;
 }
 
 export interface SerializableStatic extends Function {
-  [deserialize](data: any): Serializable;
+  [deserializeSymbol](data: any): Serializable;
 }

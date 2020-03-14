@@ -25,6 +25,6 @@ export function runEventLoopWatcher(logger: Logger, cancellationToken: Cancellat
 
   sampler.start();
 
-  // tslint:disable-next-line: no-floating-promises
-  cancellationToken.then(async () => await sampler.stop());
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  cancellationToken.then(async () => sampler.stop());
 }

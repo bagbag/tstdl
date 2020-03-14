@@ -14,7 +14,7 @@ if (typeof process == 'object' && typeof process.hrtime == 'function') {
     return nanoseconds;
   };
 }
-else if (typeof performance == 'object' && typeof performance.now == 'function') { // tslint:disable-line: no-unbound-method
+else if (typeof performance == 'object' && typeof performance.now == 'function') {
   getBegin = () => performance.now();
   getDuration = (begin: number) => (performance.now() - begin) * NS_PER_MS;
 }
@@ -26,6 +26,14 @@ else {
 export class Timer {
   private elapsedNanoseconds: number;
   private begin?: any;
+
+  constructor(start: boolean = false) {
+    this.elapsedNanoseconds = 0;
+
+    if (start) {
+      this.start();
+    }
+  }
 
   static measure(func: () => void): number {
     const timer = new Timer(true);
@@ -39,14 +47,6 @@ export class Timer {
     await func();
 
     return timer.milliseconds;
-  }
-
-  constructor(start: boolean = false) {
-    this.elapsedNanoseconds = 0;
-
-    if (start) {
-      this.start();
-    }
   }
 
   start(): void {

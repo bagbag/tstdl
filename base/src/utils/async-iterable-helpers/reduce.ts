@@ -4,7 +4,7 @@ import { AsyncReducer } from './types';
 
 export function reduceAsync<T>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, T>): Promise<T>;
 export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U>;
-export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> { // tslint:disable-line: promise-function-async
+export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U> { // eslint-disable-line @typescript-eslint/promise-function-async
   return (isAsyncIterable(iterable))
     ? async(iterable, reducer, initialValue)
     : sync(iterable, reducer, initialValue);

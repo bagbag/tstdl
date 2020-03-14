@@ -2,7 +2,7 @@ import { timeout } from './timing';
 
 export type ProviderFunction<T> = () => ProviderFunctionResult<T> | Promise<ProviderFunctionResult<T>>;
 
-export type ProviderFunctionResult<T> = { hasItem: boolean; item: T; } | { hasItem: false; item?: null };
+export type ProviderFunctionResult<T> = { hasItem: boolean, item: T } | { hasItem: false, item?: null };
 
 export class ProviderFunctionIterable<T> implements AsyncIterable<T> {
   private readonly providerFunction: ProviderFunction<T>;
@@ -31,7 +31,8 @@ export class ProviderFunctionIterable<T> implements AsyncIterable<T> {
 
       if (result.hasItem) {
         yield result.item;
-      } else {
+      }
+      else {
         await timeout(this.delay);
       }
     }

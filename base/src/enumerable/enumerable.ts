@@ -7,6 +7,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   private iterator: Iterator<T> | undefined;
 
+  constructor(iterable: Iterable<T>) {
+    this.source = iterable;
+    this.iterator = undefined;
+  }
+
   static from<T>(iterable: Iterable<T>): Enumerable<T> {
     return new Enumerable(iterable);
   }
@@ -14,11 +19,6 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   static fromRange(fromInclusive: number, toInclusive: number): Enumerable<number> {
     const rangeIterable = range(fromInclusive, toInclusive);
     return new Enumerable(rangeIterable);
-  }
-
-  constructor(iterable: Iterable<T>) {
-    this.source = iterable;
-    this.iterator = undefined;
   }
 
   any(predicate?: Predicate<T>): boolean {

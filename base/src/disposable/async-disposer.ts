@@ -8,8 +8,8 @@ const deferrerPromiseSymbol: unique symbol = Symbol('DeferrerPromise');
 export type Task = () => any | Promise<any>;
 
 export type Deferrer = {
-  [deferrerPromiseSymbol]: DeferredPromise;
-  yield(): void;
+  [deferrerPromiseSymbol]: DeferredPromise,
+  yield(): void
 };
 
 export class AsyncDisposer implements AsyncDisposable {
@@ -75,7 +75,7 @@ export class AsyncDisposer implements AsyncDisposable {
         this.tasks.add(() => task[dispose]());
       }
       else if (isAsyncDisposable(task)) {
-        this.tasks.add(() => task[disposeAsync]());
+        this.tasks.add(async () => task[disposeAsync]());
       }
       else {
         this.tasks.add(task);
@@ -83,6 +83,7 @@ export class AsyncDisposer implements AsyncDisposable {
     }
   }
 
+  // eslint-disable-next-line max-statements
   async [disposeAsync](): Promise<void> {
     if (this.disposing) {
       await this.disposedPromise;
@@ -105,7 +106,6 @@ export class AsyncDisposer implements AsyncDisposable {
 
     await parallelForEach(this.tasks, 10, async (task) => {
       try {
-        // tslint:disable-next-line: no-unsafe-any
         await task();
       }
       catch (error) {

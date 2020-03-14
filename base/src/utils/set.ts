@@ -1,3 +1,5 @@
+/* eslint-disable max-statements */
+
 export function intersectSets<T>(...sets: Set<T>[]): Set<T> {
   const intersection = new Set<T>();
 

@@ -4,9 +4,13 @@ import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, para
 import { Enumerable } from './enumerable';
 import { EnumerableMethods } from './enumerable-methods';
 
-export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableIterator<T>  {
+export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableIterator<T> {
   private readonly source: AnyIterable<T>;
   private asyncIterator?: AsyncIterator<T>;
+
+  constructor(iterable: AnyIterable<T>) {
+    this.source = iterable;
+  }
 
   static from<T>(iterable: AnyIterable<T>): AsyncEnumerable<T> {
     return new AsyncEnumerable(iterable);
@@ -15,10 +19,6 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   static fromRange(fromInclusive: number, toInclusive: number): AsyncEnumerable<number> {
     const rangeIterable = range(fromInclusive, toInclusive);
     return new AsyncEnumerable(rangeIterable);
-  }
-
-  constructor(iterable: AnyIterable<T>) {
-    this.source = iterable;
   }
 
   async any(predicate?: AsyncPredicate<T>): Promise<boolean> {

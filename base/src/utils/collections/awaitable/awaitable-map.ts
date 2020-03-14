@@ -25,6 +25,14 @@ export class AwaitableMap<K, V> implements Map<K, V> {
     return this.backingMap.size;
   }
 
+  constructor(backingMap: Map<K, V> = new Map<K, V>()) {
+    this.backingMap = backingMap;
+
+    this._setted = new DeferredPromise();
+    this._cleared = new DeferredPromise();
+    this._deleted = new DeferredPromise();
+  }
+
   static from<K, V>(map: Map<K, V>, clone: boolean = true): AwaitableMap<K, V> {
     if (!clone) {
       return new AwaitableMap(map);
@@ -37,14 +45,6 @@ export class AwaitableMap<K, V> implements Map<K, V> {
     }
 
     return awaitableMap;
-  }
-
-  constructor(backingMap: Map<K, V> = new Map<K, V>()) {
-    this.backingMap = backingMap;
-
-    this._setted = new DeferredPromise();
-    this._cleared = new DeferredPromise();
-    this._deleted = new DeferredPromise();
   }
 
   [Symbol.iterator](): IterableIterator<[K, V]> {

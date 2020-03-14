@@ -251,7 +251,6 @@ async function readBody(request: Koa.Request, maxBytes: number): Promise<string>
   return body;
 }
 
-// tslint:disable-next-line: typedef
 function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
   return async function errorCatchMiddleware({ response }: Context, next: () => Promise<any>): Promise<any> {
     try {

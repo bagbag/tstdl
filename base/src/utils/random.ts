@@ -5,7 +5,7 @@ type NodeCrypto = typeof import('crypto');
 let nodeCrypto: NodeCrypto | undefined;
 
 try {
-  // tslint:disable-next-line: no-require-imports no-var-requires
+  // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
   nodeCrypto = require('crypto') as NodeCrypto;
 }
 catch {
@@ -26,23 +26,23 @@ function getBrowserCryptoRandomBytes(size: number): Uint8Array {
   return uint8Array;
 }
 
-const randomBytes: (size: number) => Uint8Array =
-  (nodeCrypto != undefined)
+const randomBytes: (size: number) => Uint8Array
+  = (nodeCrypto != undefined)
     ? getNodeCryptoRandomBytes
     : getBrowserCryptoRandomBytes;
 
-let index = 0;
-let buffer = new Uint8Array();
+let randomBytesBufferIndex = 0;
+let randomBytesBuffer = new Uint8Array();
 
 export function getRandomBytes(count: number): Uint8Array {
-  if (count > (buffer.byteLength - index)) {
-    buffer = randomBytes(Math.max(count, 1024));
-    index = 0;
+  if (count > (randomBytesBuffer.byteLength - randomBytesBufferIndex)) {
+    randomBytesBuffer = randomBytes(Math.max(count, 1024));
+    randomBytesBufferIndex = 0;
   }
 
-  const end = index + count;
-  const bytes = buffer.slice(index, end);
-  index = end;
+  const end = randomBytesBufferIndex + count;
+  const bytes = randomBytesBuffer.slice(randomBytesBufferIndex, end);
+  randomBytesBufferIndex = end;
 
   return bytes;
 }

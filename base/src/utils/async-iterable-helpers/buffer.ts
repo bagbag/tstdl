@@ -5,13 +5,14 @@ type BufferItem<T> =
   | { end: false, value: T }
   | { end: true, error?: Error };
 
+// eslint-disable-next-line max-lines-per-function, max-statements
 export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIterableIterator<T> {
   const buffer = new AwaitableList<BufferItem<T>>();
 
   let end: boolean = false;
   let consumerError: Error | undefined;
 
-  // tslint:disable-next-line: no-floating-promises
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   (async () => {
     try {
       for await (const item of iterable) {
@@ -25,6 +26,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
           throw consumerError;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (end) {
           break;
         }
@@ -38,6 +40,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   })();
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       if (buffer.size == 0) {
         await buffer.added;

@@ -1,3 +1,5 @@
+/* eslint-disable max-statements */
+
 export function intersectMaps<K, V>(...maps: Map<K, V>[]): Map<K, V> {
   const intersection = new Map<K, V>();
 

@@ -188,7 +188,6 @@ export class RedisStream<T extends StringMap<string>> {
       id
     ] as ['GROUP', string, string, ...string[]];
 
-    // tslint:disable-next-line: no-unsafe-any
     const data = await this.redis.xreadgroup(...parametersArray) as ReadReturnValue;
 
     if (data == undefined) {
@@ -292,7 +291,6 @@ export class RedisStream<T extends StringMap<string>> {
   }
 
   async getPendingEntries({ group, consumer, start, end, count }: GetPendingEntriesParameters): Promise<PendingEntry[]> {
-    // tslint:disable-next-line: no-unsafe-any
     const pending = await this.redis.xpending(this.stream, group, start, end, count, ...(consumer != undefined ? [consumer] : [])) as [string, string, number, number][];
     const pendingEntries: PendingEntry[] = pending.map(([id, consumerName, elapsed, deliveryCount]) => ({ id, consumer: consumerName, elapsed, deliveryCount }));
 

@@ -1,14 +1,15 @@
 import { DeepArray, StringMap } from '../types';
 import { random } from './math';
+import { DetailsError } from '../error';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
-    throw new Error(`property ${property} does not exist`);
+    throw new Error(`property ${property as string} does not exist`);
   }
 
   let objOrPrototype = obj as object;
 
-  while (!objOrPrototype.hasOwnProperty(property)) {
+  while (!Object.prototype.hasOwnProperty.call(objOrPrototype, property)) {
     objOrPrototype = Object.getPrototypeOf(objOrPrototype) as object;
   }
 
@@ -19,10 +20,10 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
   }
 
   if (descriptor.get == undefined) {
-    throw new Error(`property ${property} has no getter`);
+    throw new Error(`property ${property as string} has no getter`);
   }
 
-  // tslint:disable-next-line: no-unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const getter = bind ? descriptor.get.bind(obj) : descriptor.get;
 
   return getter;
@@ -61,37 +62,41 @@ export function clone<T>(object: T, deep: boolean): T {
 
   const properties = Object.getOwnPropertyNames(object);
   for (const property of properties) {
-    result[property] = clone((object as any)[property] as unknown, true);
+    result[property] = clone((object as StringMap)[property] as unknown, true);
   }
 
   return result as T;
 }
 
-export function throttleFunction(func: () => void, interval: number): () => void;
-export function throttleFunction<T>(func: (arg: T) => void, interval: number): (arg: T) => void;
-export function throttleFunction<T1, T2>(func: (arg1: T1, arg2: T2) => void, interval: number): (arg1: T1, arg2: T2) => void;
-export function throttleFunction<T1, T2, T3>(func: (arg1: T1, arg2: T2, arg3: T3) => void, interval: number): (arg1: T1, arg2: T2, arg3: T3) => void;
-export function throttleFunction<T1, T2, T3, T4>(func: (arg1: T1, arg2: T2, arg3: T3, arg4: T4) => void, interval: number): (arg1: T1, arg2: T2, arg3: T3, arg4: T4) => void;
-export function throttleFunction(func: (...args: any[]) => void, interval: number): (...args: any[]) => void {
+type DidNotRun = {};
+export const didNotRun: DidNotRun = Object.freeze({});
+
+export function throttleFunction<Args extends any[], ReturnValue>(func: (...args: Args) => ReturnValue, interval: number, queue: boolean = false): (...args: Args) => (ReturnValue | DidNotRun) {
   let lastCall = 0;
-  let nextArguments: any[];
-  let callPending = false;
+  let pending = false;
+  let nextArgs: Args;
 
-  const throttled = (...args: any[]) => {
-    nextArguments = args;
-
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  const throttled = (...args: Args) => {
     const nextAllowedCall = lastCall + interval;
-    const now = Date.now();
+    const now = currentTimestamp(); // eslint-disable-line no-shadow
 
     if (now >= nextAllowedCall) {
+      pending = false;
       lastCall = now;
-      func(...nextArguments);
-      callPending = false;
-    } else if (!callPending) {
-      const delay = nextAllowedCall - now;
-      setTimeout(() => throttled(...nextArguments), delay);
-      callPending = true;
+      return func(...args);
     }
+    else if (queue) {
+      nextArgs = args;
+
+      if (!pending) {
+        const delay = nextAllowedCall - now;
+        setTimeout(() => throttled(...nextArgs), delay);
+        pending = true;
+      }
+    }
+
+    return didNotRun;
   };
 
   return throttled;
@@ -104,13 +109,16 @@ export function formatDuration(milliseconds: number, precision: number): string 
   if (milliseconds >= (10 ** 3)) {
     value = milliseconds / (10 ** 3);
     suffix = 's';
-  } else if (milliseconds >= 1) {
+  }
+  else if (milliseconds >= 1) {
     value = milliseconds;
     suffix = 'ms';
-  } else if (milliseconds >= 1 / (10 ** 3)) {
+  }
+  else if (milliseconds >= 1 / (10 ** 3)) {
     value = milliseconds * (10 ** 3);
     suffix = 'us';
-  } else {
+  }
+  else {
     value = milliseconds * (10 ** 6);
     suffix = 'ns';
   }
@@ -122,7 +130,7 @@ export function formatDuration(milliseconds: number, precision: number): string 
 }
 
 export function flatten<T>(array: DeepArray<T>): T[] {
-  return (array as any[]).reduce((acc, item) => Array.isArray(item) ? [...acc, ...flatten(item)] : [...acc, item], [] as T[]);
+  return array.reduce((acc, item) => (Array.isArray(item) ? [...(acc as T[]), ...flatten(item)] : [...(acc as T[]), item]), [] as T[]) as T[];
 }
 
 export function toError(obj: any): Error {
@@ -136,12 +144,10 @@ export function toError(obj: any): Error {
     message = JSON.stringify(obj);
   }
   catch {
-    message = 'serialization of error reason failed. Take a look at the data property of this error instance.';
+    message = 'serialization of error reason failed. Take a look at the details property of this error instance.';
   }
 
-  const error = new Error(message);
-  (error as any).data = obj;
-
+  const error = new DetailsError(message, obj);
   return error;
 }
 
@@ -208,7 +214,7 @@ export function dotNotation(_type: any, ...keys: string[]): string {
 }
 
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
-  const array = new Array(length);
+  const array = new Array<T>(length);
 
   for (let i = 0; i < length; i++) {
     array[i] = valueProvider(i);

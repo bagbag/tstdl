@@ -14,8 +14,7 @@ export async function lastAsync<T>(iterable: AnyIterable<T>, predicate?: AsyncPr
   }
 
   if (hasLastItem) {
-    // tslint:disable-next-line: no-non-null-assertion
-    return lastItem!;
+    return lastItem!; // eslint-disable-line @typescript-eslint/no-non-null-assertion
   }
 
   throw new Error('iterable was either empty or no element matched predicate');

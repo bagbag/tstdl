@@ -4,14 +4,12 @@ import { Pipeline, Redis } from 'ioredis';
 
 const redisTransactionWrapperSymbol: unique symbol = Symbol();
 
-// tslint:disable-next-line: class-name
 export class RedisPipelineWrapper {
   private readonly pipeline: Pipeline;
   private readonly promises: DeferredPromise<any>[];
 
   readonly [redisTransactionWrapperSymbol]: undefined = undefined;
 
-  // tslint:disable: typedef
 
   /* - */
   eval = this.wrap('eval');
@@ -73,7 +71,6 @@ export class RedisPipelineWrapper {
   lpush = this.wrap('lpush');
   rpush = this.wrap('rpush');
 
-  // tslint:enable: typedef
 
   constructor(redis: Redis, transaction: boolean) {
     this.pipeline = transaction ? redis.multi() : redis.pipeline();
@@ -111,9 +108,7 @@ export class RedisPipelineWrapper {
     return replies;
   }
 
-  // tslint:disable-next-line: ban-types
   private wrap<F extends PropertiesOfType<Pipeline, Function>, Args extends Parameters<Pipeline[F]>>(func: F): Redis[F] {
-    // tslint:disable-next-line: promise-function-async
     const wrappedFunction = ((...args: Args) => {
       const promise = this.register();
       const possibleCallback = args[args.length - 1];
@@ -123,7 +118,6 @@ export class RedisPipelineWrapper {
         throw new Error('callback-style not supported, use promise-style instead');
       }
 
-      // tslint:disable-next-line: no-unsafe-any
       (this.pipeline as any)[func](...args, (error: Error) => {
         if (error != undefined) {
           promise.reject(error);
@@ -136,7 +130,6 @@ export class RedisPipelineWrapper {
     return wrappedFunction;
   }
 
-  // tslint:disable-next-line: promise-function-async
   private register<T>(): DeferredPromise<T> {
     const deferredPromise = new DeferredPromise<T>();
     this.promises.push(deferredPromise);

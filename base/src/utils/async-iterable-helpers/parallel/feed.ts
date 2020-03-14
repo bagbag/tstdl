@@ -11,7 +11,8 @@ export function parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency:
   if (keepOrder) {
     out = new OrderedFeedableAsyncIterable();
     feed = (item: TOut, index: number) => (out as OrderedFeedableAsyncIterable<TOut>).feed(item, index);
-  } else {
+  }
+  else {
     out = new FeedableAsyncIterable();
     feed = (item: TOut) => (out as FeedableAsyncIterable<TOut>).feed(item);
   }

@@ -25,11 +25,13 @@ export function iteratorToAsyncIterator<T>(iterator: AnyIterator<T>): AsyncItera
   };
 
   if (iterator.return != undefined) {
-    asyncIterator.return = (value?: any) => (value instanceof Promise) ? value : Promise.resolve(iterator.return!(value)); // tslint:disable-line: no-non-null-assertion
+    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-non-null-assertion, @typescript-eslint/unbound-method
+    asyncIterator.return = (value?: any) => ((value instanceof Promise) ? value : Promise.resolve(iterator.return!(value)));
   }
 
   if (iterator.throw != undefined) {
-    asyncIterator.throw = (e?: any) => (e instanceof Promise) ? e : Promise.resolve(iterator.throw!(e)); // tslint:disable-line: no-non-null-assertion
+    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-non-null-assertion, @typescript-eslint/unbound-method
+    asyncIterator.throw = (e?: any) => ((e instanceof Promise) ? e : Promise.resolve(iterator.throw!(e)));
   }
 
   return asyncIterator;

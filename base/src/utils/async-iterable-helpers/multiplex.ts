@@ -13,7 +13,7 @@ export function multiplexAsync<T>(iterable: AnyIterable<T>, count: number, buffe
     feedableIterables.push(feedableIterable);
   }
 
-  // tslint:disable-next-line: no-floating-promises
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   multiplexTo(iterable, feedableIterables, bufferSize);
 
   return feedableIterables;

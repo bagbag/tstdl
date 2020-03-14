@@ -61,7 +61,6 @@ export class RedisLock implements Lock {
       }
     };
 
-    // tslint:disable-next-line: no-floating-promises
     (async () => {
       while (!stop && !controller.lost) {
         try {
@@ -73,7 +72,7 @@ export class RedisLock implements Lock {
           }
         }
         catch (error) {
-          this.logger.error(error); // tslint:disable-line: no-unsafe-any
+          this.logger.error(error);
         }
 
         const millisecondsLeft = (expireTimestamp - currentTimestamp());
@@ -83,7 +82,7 @@ export class RedisLock implements Lock {
 
       stoppedPromise.resolve();
     })()
-      .catch((error) => this.logger.error(error)); // tslint:disable-line: no-unsafe-any
+      .catch((error) => this.logger.error(error));
 
     if (func != undefined) {
       try {

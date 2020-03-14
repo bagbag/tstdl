@@ -4,13 +4,11 @@ export class FactoryMap<K, V> implements Map<K, V> {
   private readonly factory: Factory<K, V>;
   private readonly map: Map<K, V>;
 
+  readonly [Symbol.toStringTag]: string = 'FactoryMap';
+
   get size(): number {
     return this.map.size;
   }
-
-  get [Symbol.toStringTag](): string {
-    return 'FactoryMap';
-  };
 
   constructor(factory: Factory<K, V>) {
     this.factory = factory;

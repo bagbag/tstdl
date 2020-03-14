@@ -40,16 +40,17 @@ export class PeriodicReporter {
 
     this.running = true;
 
-    const promise = (async () => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    (async () => {
       this.counter = 0;
       this.stopRequested = false;
       this.stopPromise.reset();
       this.stopped.reset();
 
-      while (!this.stopRequested) {
+      while (!this.stopRequested) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
         await cancelableTimeout(this.interval, this.stopPromise);
 
-        if (!this.stopRequested && (!this.ignoreZero || (this.counter > 0))) {
+        if (!this.stopRequested && (!this.ignoreZero || (this.counter > 0))) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
           this.emitReport(this.resetAfterReport);
         }
       }

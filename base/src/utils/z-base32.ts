@@ -1,11 +1,13 @@
-// tslint:disable: no-bitwise
+/* eslint-disable no-bitwise, @typescript-eslint/no-magic-numbers */
+
 const alphabet = 'ybndrfg8ejkmcpqxot1uwisza345h769';
 const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index]));
 
+// eslint-disable-next-line max-statements
 export function zBase32Encode(buffer: ArrayBufferLike): string {
   const byteView = new Uint8Array(buffer);
 
-  let result: string = '';
+  let result = '';
   let bits = 0;
   let value = 0;
 
@@ -27,6 +29,7 @@ export function zBase32Encode(buffer: ArrayBufferLike): string {
   return result;
 }
 
+// eslint-disable-next-line max-statements
 export function zBase32Decode(input: string): ArrayBuffer {
   const bytes = new Uint8Array((input.length * 5 / 8) | 0);
 

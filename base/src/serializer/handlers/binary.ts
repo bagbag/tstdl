@@ -1,5 +1,6 @@
+
 import { decodeBase64, encodeBase64 } from '../../utils';
-import { Serializer } from '../serializer';
+import { registerSerializationType } from '../serializer';
 
 type TypedArray =
   | Int8Array
@@ -14,6 +15,7 @@ type TypedArray =
 
 type TypedArrayConstructor = new (arrayOrArrayBuffer: ArrayLike<number> | ArrayBufferLike) => TypedArray;
 
+/* eslint-disable no-undef */
 const typedArrays: TypedArrayConstructor[] = [
   globalThis.Int8Array,
   globalThis.Uint8Array,
@@ -24,17 +26,18 @@ const typedArrays: TypedArrayConstructor[] = [
   globalThis.Float32Array,
   globalThis.Float64Array
 ].filter((type) => type != undefined);
+/* eslint-enable no-undef */
 
-export function registerBinaryTypes(serializer: typeof Serializer): void {
+export function registerBinaryTypes(register: typeof registerSerializationType): void {
   if (typeof ArrayBuffer != 'undefined') {
-    serializer.registerType(ArrayBuffer, encodeBase64, decodeBase64);
+    register(ArrayBuffer, encodeBase64, decodeBase64);
   }
 
   for (const typedArray of typedArrays) {
-    serializer.registerType(typedArray, encodeBase64, (data) => new typedArray(decodeBase64(data)));
+    register(typedArray, encodeBase64, (data) => new typedArray(decodeBase64(data)));
   }
 
   if (typeof Buffer != 'undefined') {
-    serializer.registerType(Buffer, (buffer) => buffer.toString('base64'), (data) => Buffer.from(data, 'base64'));
+    register(Buffer, (buffer) => buffer.toString('base64'), (data) => Buffer.from(data, 'base64'));
   }
 }

@@ -7,6 +7,7 @@ export function batchAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIter
     : sync(iterable, size);
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
 async function* sync<T>(iterable: Iterable<T>, size: number): AsyncIterableIterator<T[]> {
   let buffer: T[] = [];
 

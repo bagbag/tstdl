@@ -5,12 +5,10 @@ export function random(min: number, max: number, integer: boolean = false): numb
 
 export function average(...values: number[]): number {
   const total = values.reduce((previous, current) => previous + current, 0);
-  const average = total / values.length;
-
-  return average;
+  return total / values.length;
 }
 
 export function precisionRound(value: number, precision: number): number {
-  const factor = Math.pow(10, precision);
+  const factor = 10 ** precision;
   return Math.round(value * factor) / factor;
 }

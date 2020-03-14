@@ -1,11 +1,11 @@
 export type Builder<T> = () => T;
 
-const globalScope = Symbol();
+const globalScope = Symbol('default global scope');
 const scopes: Map<any, Map<any, any>> = new Map();
 
 export function singleton<T>(type: any, builder: Builder<T>): T;
 export function singleton<T>(scope: any, type: any, builder: Builder<T>): T;
-export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | any, _builder?: Builder<T>): T {
+export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | any, _builder?: Builder<T>): T { // eslint-disable-line @typescript-eslint/explicit-module-boundary-types
   const builder = _builder != undefined ? _builder : typeOrBuilder as Builder<T>;
   const scope = _builder != undefined ? scopeOrType : globalScope;
   const type = _builder != undefined ? typeOrBuilder : scopeOrType;

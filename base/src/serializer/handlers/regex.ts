@@ -1,7 +1,7 @@
-import { Serializer } from '../serializer';
+import { registerSerializationType } from '../serializer';
 
-export function registerRegExpType(serializer: typeof Serializer): void {
-  serializer.registerType(RegExp, serialize, deserialize);
+export function registerRegExpType(register: typeof registerSerializationType): void {
+  register(RegExp, serialize, deserialize);
 }
 
 type RegExpData = {
@@ -16,6 +16,6 @@ function serialize(regex: RegExp): RegExpData {
   };
 }
 
-function deserialize({pattern, flags}: RegExpData): RegExp {
+function deserialize({ pattern, flags }: RegExpData): RegExp {
   return new RegExp(pattern, flags);
 }

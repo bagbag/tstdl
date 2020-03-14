@@ -7,10 +7,10 @@ export enum BackoffStrategy {
 }
 
 export type BackoffOptions = {
-  strategy: BackoffStrategy;
-  initialDelay: number;
-  increase: number;
-  maximumDelay: number;
+  strategy: BackoffStrategy,
+  initialDelay: number,
+  increase: number,
+  maximumDelay: number
 };
 
 export class BackoffHelper {
@@ -33,7 +33,7 @@ export class BackoffHelper {
   }
 
   async backoff(cancellationToken?: CancellationToken): Promise<void> {
-    (cancellationToken == undefined) ? await timeout(this.delay) : await cancelableTimeout(this.delay, cancellationToken);
+    await ((cancellationToken == undefined) ? timeout(this.delay) : cancelableTimeout(this.delay, cancellationToken));
     this.delay = getNewDelay(this.strategy, this.delay, this.increase, this.maximumDelay);
   }
 }
@@ -63,9 +63,9 @@ export async function* backoffGenerator(options: BackoffOptions, cancellationTok
 
   while (!cancellationToken.isSet) {
     let backoff = false;
-    yield () => backoff = true;
+    yield () => (backoff = true);
 
-    if (backoff) {
+    if (backoff) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       await backoffHelper.backoff(loopCancellationToken);
     }
     else {

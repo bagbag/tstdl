@@ -42,7 +42,7 @@ export class AwaitableSet<T> implements Set<T> {
 
   clear(): void {
     this.backingSet.clear();
-    this._cleared.resolve()
+    this._cleared.resolve();
     this._cleared.reset();
   }
 

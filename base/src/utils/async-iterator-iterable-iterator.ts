@@ -35,7 +35,7 @@ export class AsyncIteratorIterableIterator<T, TReturn = any, TNext = undefined> 
     let finished = false;
 
     try {
-      while (true) {
+      while (true) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
         const result = await this.iterator.next();
 
         if (result.done == true) {

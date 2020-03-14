@@ -1,9 +1,9 @@
 import { Json, JsonPrimitive, StringMap, Type } from '../types';
-import { registerBinaryTypes, registerDateType, registerFunctionType, registerRegExpType } from './handlers';
-import { deserialize, Serializable, SerializableStatic, serialize } from './serializable';
+import { registerBinaryTypes, registerDateType, registerRegExpType } from './handlers';
+import { deserializeSymbol, Serializable, SerializableStatic, serializeSymbol } from './serializable';
 
-declare const serializedSymbol: unique symbol;
-declare const stringSerializedSymbol: unique symbol;
+declare const serializedSymbol: unique symbol; // eslint-disable-line init-declarations
+declare const stringSerializedSymbol: unique symbol; // eslint-disable-line init-declarations
 
 export type Serialized<T> = { [serializedSymbol]?: T };
 export type StringSerialized<T> = string & { [stringSerializedSymbol]?: T };
@@ -23,59 +23,44 @@ type CustomNonPrimitive = NonPrimitive<'custom', { type: string, data: Json }>;
 
 type CustomTypesMap = Map<string, { type: SerializableStatic, serializer?: undefined, deserializer?: undefined } | { type?: undefined, serializer: SerializerFunction<any, any>, deserializer: DeserializerFunction<any, any> }>;
 
-interface SerializerStatic {
-  registerType(type: SerializableStatic): void;
-  registerType<T, D extends Json>(type: Type<T>, serializer: SerializerFunction<T, D>, deserializer: DeserializerFunction<T, D>): void;
-  registerType<T, D extends Json>(type: SerializableStatic, serializer?: SerializerFunction<T, D>, deserializer?: DeserializerFunction<T, D>): void;
+const customTypes: CustomTypesMap = new Map();
 
-  serialize<T>(object: T): StringSerialized<T>;
-  rawSerialize<T>(object: T): Serialized<T>;
-
-  deserialize<T = unknown>(serialized: StringSerialized<T> | string): T;
-  rawDeserialize<T = unknown>(serialized: Serialized<T>): T;
-}
-
-// tslint:disable-next-line: class-name
-class _Serializer {
-  private static readonly customTypes: CustomTypesMap = new Map();
-
-  static registerType(type: SerializableStatic): void;
-  static registerType<T, D extends Json>(type: Type<T>, serializer: SerializerFunction<T, D>, deserializer: DeserializerFunction<T, D>): void;
-  static registerType<T, D extends Json>(type: SerializableStatic | Type<T>, serializer?: SerializerFunction<T, D>, deserializer?: DeserializerFunction<T, D>): void {
-    if (serializer != undefined && deserializer != undefined) {
-      _Serializer.customTypes.set(type.name, { serializer, deserializer });
-    }
-    else {
-      _Serializer.customTypes.set(type.name, { type: type as SerializableStatic });
-    }
+export function registerSerializationType(type: SerializableStatic): void;
+export function registerSerializationType<T, D extends Json>(type: Type<T>, serializer: SerializerFunction<T, D>, deserializer: DeserializerFunction<T, D>): void;
+export function registerSerializationType<T, D extends Json>(type: SerializableStatic | Type<T>, serializer?: SerializerFunction<T, D>, deserializer?: DeserializerFunction<T, D>): void {
+  if (serializer != undefined && deserializer != undefined) {
+    customTypes.set(type.name, { serializer, deserializer });
   }
-
-  static serialize<T>(object: T): StringSerialized<T> {
-    const serializedElement = _Serializer.rawSerialize(object);
-    const serializedString = JSON.stringify(serializedElement);
-
-    return serializedString;
-  }
-
-  static rawSerialize<T>(object: T): Serialized<T> {
-    return _rawSerialize(object, _Serializer.customTypes) as Serialized<T>;
-  }
-
-  static deserialize<T = unknown>(serialized: StringSerialized<T> | string): T {
-    const parsed = JSON.parse(serialized) as Serialized<T>;
-    const deserialized = _Serializer.rawDeserialize(parsed);
-
-    return deserialized;
-  }
-
-  static rawDeserialize<T = unknown>(serialized: Serialized<T>): T {
-    return _rawDeserialize(serialized, _Serializer.customTypes) as T;
+  else {
+    customTypes.set(type.name, { type: type as SerializableStatic });
   }
 }
 
-// tslint:disable: no-unsafe-any no-object-literal-type-assertion
+export function rawSerialize<T>(object: T): Serialized<T> {
+  return _rawSerialize(object) as Serialized<T>;
+}
 
-function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
+export function serialize<T>(object: T): StringSerialized<T> {
+  const serializedElement = rawSerialize(object);
+  const serializedString = JSON.stringify(serializedElement);
+
+  return serializedString;
+}
+
+export function rawDeserialize<T = unknown>(serialized: Serialized<T>): T {
+  return _rawDeserialize(serialized) as T;
+}
+
+export function deserialize<T = unknown>(serialized: StringSerialized<T> | string): T {
+  const parsed = JSON.parse(serialized) as Serialized<T>;
+  const deserialized = rawDeserialize(parsed);
+
+  return deserialized;
+}
+
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+// eslint-disable-next-line max-statements, max-lines-per-function, no-underscore-dangle
+function _rawSerialize(object: any): any {
   const type = typeof object;
   if (object === null || type == 'string' || type == 'number' || type == 'boolean') {
     return object as JsonPrimitive;
@@ -91,7 +76,7 @@ function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
 
     for (const property of properties) {
       const value = object[property];
-      const serialized = _rawSerialize(value, customTypes);
+      const serialized = _rawSerialize(value);
 
       serializedObject[property] = serialized;
     }
@@ -100,37 +85,42 @@ function _rawSerialize(object: any, customTypes: CustomTypesMap): any {
   }
 
   if (object.constructor == Array) {
-    return (object as any[]).map((item) => _rawSerialize(item, customTypes));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (object as any[]).map((item) => _rawSerialize(item));
   }
 
-  const customType = customTypes.get(object.constructor.name);
+  const objectConstructorName = object.constructor.name as string;
+  const customType = customTypes.get(objectConstructorName);
+
   if (customType != undefined) {
-    let data: CustomNonPrimitive['data'] = { type: object.constructor.name, data: null };
+    const data: CustomNonPrimitive['data'] = { type: objectConstructorName, data: null };
 
     if (customType.serializer != undefined) {
       data.data = customType.serializer(object);
     }
-    else if (object[serialize] != undefined) {
-      data.data = (object as Serializable)[serialize]();
+    else if (object[serializeSymbol] != undefined) {
+      data.data = (object as Serializable)[serializeSymbol]();
     }
     else {
-      throw new Error(`neither Serializable implemented nor serialize method provided for ${object.constrcutor.name}`);
+      throw new Error(`neither Serializable implemented nor serialize method provided for ${objectConstructorName}`);
     }
 
     return { __type: 'custom', data } as CustomNonPrimitive;
   }
 
-  throw new Error(`no suitable handler for ${object.constructor.name} available`);
+  throw new Error(`no suitable handler for ${objectConstructorName} available`);
 }
 
-function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
+// eslint-disable-next-line max-statements, max-lines-per-function, no-underscore-dangle
+function _rawDeserialize(object: any): any {
   const type = typeof object;
   if (object === null || type == 'string' || type == 'number' || type == 'boolean') {
     return object as JsonPrimitive;
   }
 
   if (object.constructor == Object) {
-    if (object.hasOwnProperty(typeField)) {
+    if (Object.prototype.hasOwnProperty.call(object, typeField)) {
+      // eslint-disable-next-line no-shadow
       const type = object[typeField];
 
       if (type == 'undefined') {
@@ -145,19 +135,14 @@ function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
           throw new Error(`type ${customTypeName} not registered`);
         }
 
-        let instance: any;
+        const deserializer = customType.deserializer ?? customType.type[deserializeSymbol];
 
-        if (customType.deserializer != undefined) {
-          instance = customType.deserializer(data);
-        }
-        else if (customType.type[deserialize] != undefined) {
-          instance = customType.type[deserialize](data);
-        }
-        else {
+        if (deserializer == undefined) {
           throw new Error(`neither SerializableStatic implemented nor deserialize method provided for ${(object as object).constructor.name}`);
         }
 
-        return instance;
+        const instance = deserializer(data);
+        return instance; // eslint-disable-line @typescript-eslint/no-unsafe-return
       }
     }
 
@@ -166,7 +151,7 @@ function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
 
     for (const property of properties) {
       const value = object[property];
-      const deserialized = _rawDeserialize(value, customTypes);
+      const deserialized = _rawDeserialize(value);
 
       deserializedObject[property] = deserialized;
     }
@@ -175,16 +160,14 @@ function _rawDeserialize(object: any, customTypes: CustomTypesMap): any {
   }
 
   if (object.constructor == Array) {
-    return (object as any[]).map((item) => _rawDeserialize(item, customTypes));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (object as any[]).map((item) => _rawDeserialize(item));
   }
 
   throw new Error('no suitable handler available');
 }
+/* eslint-enable @typescript-eslint/no-unsafe-member-access */
 
-registerDateType(_Serializer);
-registerRegExpType(_Serializer);
-registerBinaryTypes(_Serializer);
-registerFunctionType(_Serializer);
-
-// tslint:disable-next-line: variable-name
-export const Serializer = _Serializer as SerializerStatic;
+registerDateType(registerSerializationType);
+registerRegExpType(registerSerializationType);
+registerBinaryTypes(registerSerializationType);

@@ -51,11 +51,12 @@ export class CancellationToken implements PromiseLike<void> {
     this.stateSubject.next(false);
   }
 
-  // tslint:disable-next-line: promise-function-async
+  // eslint-disable-next-line @typescript-eslint/promise-function-async
   then<TResult1, TResult2 = never>(onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
     return this.setAwaitable.then(onfulfilled, onrejected);
   }
 
+  // eslint-disable-next-line class-methods-use-this
   private connect(mode: string, source: CancellationToken, target: CancellationToken): void {
     const sourceValue$ = source.value$.pipe(skip(1));
 

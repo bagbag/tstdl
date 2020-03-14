@@ -6,10 +6,10 @@ export function skipWhileAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPred
   return takeWhileAsync(iterable, false, (item, index) => {
     const returnValue = predicate(item, index);
 
-    const skip = (returnValue instanceof Promise)
+    const take = (returnValue instanceof Promise)
       ? returnValue.then((skip) => !skip)
       : !returnValue;
 
-    return skip;
+    return take;
   });
 }
