@@ -62,6 +62,7 @@ module.exports = {
     "new-cap": "off",
     "no-await-in-loop": "off",
     "no-case-declarations": "off",
+    "no-constant-condition": "off",
     "no-inline-comments": "off",
     "no-negated-condition": "off",
     "no-nested-ternary": "off",
