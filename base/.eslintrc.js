@@ -35,6 +35,7 @@ module.exports = {
     "@typescript-eslint/no-inferrable-types": ["error", { "ignoreParameters": true, "ignoreProperties": true }],
     "@typescript-eslint/no-magic-numbers": ["off", { "ignoreNumericLiteralTypes": true, "ignoreEnums": true, "ignore": [0, 1, 128, 256, 512, 1024, 2048, 4096], "ignoreArrayIndexes": true }],
     "@typescript-eslint/no-type-alias": "off",
+    "@typescript-eslint/no-unused-vars-experimental": "off",
     "@typescript-eslint/no-unused-vars": ["error", { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-use-before-define": ["error", { "functions": false }],
     "@typescript-eslint/prefer-readonly-parameter-types": ["off", { "checkParameterProperties": false }],
