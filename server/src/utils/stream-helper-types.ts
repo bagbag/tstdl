@@ -13,9 +13,6 @@ export type NonObjectStringMode = {
 
 export type NonObjectModeTypes = string | Buffer | Uint8Array;
 
-export type Data<T> =
-  T extends NonObjectStringMode
-  ? string
-  : T extends NonObjectBufferMode
-  ? Buffer
-  : (T extends null ? never : T);
+export type Data<T> = T extends NonObjectStringMode ? string
+  : T extends NonObjectBufferMode ? Buffer
+    : (T extends null ? never : T);

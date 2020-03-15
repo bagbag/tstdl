@@ -1,6 +1,6 @@
 import { LockProvider } from '@tstdl/base/lock';
 import { DeferredPromise } from '@tstdl/base/promise';
-import { cancelableTimeout, Timer } from '@tstdl/base/utils';
+import { cancelableTimeout, CancellationToken, Timer } from '@tstdl/base/utils';
 import { LoopController } from './controller';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;
@@ -16,14 +16,11 @@ export class DistributedLoop {
 
   run(func: LoopFunction, interval: number, accuracy: number): LoopController {
     const stopped = new DeferredPromise();
-    const stopPromise = new DeferredPromise();
+    const stopToken = new CancellationToken();
 
-    let stop = false;
-
-    const stopFunction = async () => {
-      if (!stop) {
-        stop = true;
-        stopPromise.resolve();
+    const stopFunction = async (): Promise<void> => {
+      if (!stopToken.isSet) {
+        stopToken.set();
       }
 
       await stopped;
@@ -34,12 +31,14 @@ export class DistributedLoop {
       stopped
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async () => {
       const lock = this.lockProvider.get(this.key);
       const timer = new Timer();
 
       try {
-        while (!stop) {
+        // eslint-disable-next-line no-unmodified-loop-condition
+        while (!stopToken.isSet) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
           timer.restart();
 
           await lock.acquire(0, async () => {
@@ -47,10 +46,10 @@ export class DistributedLoop {
 
             const timeLeft = interval - timer.milliseconds;
             const timeoutDuration = timeLeft - (accuracy / 2);
-            await cancelableTimeout(timeoutDuration, stopPromise);
+            await cancelableTimeout(timeoutDuration, stopToken);
           });
 
-          await cancelableTimeout(accuracy, stopPromise);
+          await cancelableTimeout(accuracy, stopToken);
         }
       }
       finally {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-delimiter-style */
 import { Enumerable } from '@tstdl/base/enumerable';
 import { StringMap } from '@tstdl/base/types';
 import { Redis } from 'ioredis';
@@ -59,7 +60,7 @@ export class RedisStream<T extends StringMap<string>> {
 
   async add(entry: SourceEntry<T>): Promise<string> {
     const { id: sourceId, data } = entry;
-    const parameters = this.buildFieldValueArray(data);
+    const parameters = buildFieldValueArray(data);
 
     const id = await this.redis.xadd(this.stream, (sourceId != undefined) ? sourceId : '*', ...parameters);
     return id;
@@ -70,7 +71,7 @@ export class RedisStream<T extends StringMap<string>> {
 
     for (const entry of entries) {
       const { id: sourceId, data } = entry;
-      const parameters = this.buildFieldValueArray(data);
+      const parameters = buildFieldValueArray(data);
 
       transaction.xadd(this.stream, (sourceId != undefined) ? sourceId : '*', ...parameters);
     }
@@ -85,14 +86,14 @@ export class RedisStream<T extends StringMap<string>> {
     const parameters = [this.stream, start, end, ...(count != undefined ? [count] : [])] as [string, string, string, number];
 
     const range = await this.redis.xrange(...parameters);
-    const entries = this.parseEntriesReturnValue(range);
+    const entries = parseEntriesReturnValue<T>(range);
 
     return entries;
   }
 
   async get(id: string): Promise<Entry<T> | undefined> {
     const result = await this.redis.xrange(this.stream, id, id, 'COUNT', '1');
-    const entries = this.parseEntriesReturnValue(result);
+    const entries = parseEntriesReturnValue<T>(result);
 
     return entries[0];
   }
@@ -117,7 +118,7 @@ export class RedisStream<T extends StringMap<string>> {
         throw error;
       }
 
-      const parsedEntries = this.parseEntriesReturnValue(value);
+      const parsedEntries = parseEntriesReturnValue<T>(value);
       entries = [...entries, ...parsedEntries];
     }
 
@@ -134,7 +135,7 @@ export class RedisStream<T extends StringMap<string>> {
     transaction.xack(this.stream, group, ...ids);
     transaction.xdel(this.stream, ...ids);
 
-    const result = await transaction.exec() as [[Error | null, number], [Error | null, number]];
+    await transaction.exec();
   }
 
   async acknowledgeDeleteAddTransaction(group: string, acknowledgeDeleteIds: string[], entries: SourceEntry<T>[]): Promise<string[]> {
@@ -152,13 +153,13 @@ export class RedisStream<T extends StringMap<string>> {
 
     for (const entry of entries) {
       const { id, data } = entry;
-      const parameters = this.buildFieldValueArray(data);
+      const parameters = buildFieldValueArray(data);
 
       transaction.xadd(this.stream, (id != undefined) ? id : '*', ...parameters);
     }
 
     const results = await transaction.exec() as [[Error | null, number], ...[Error | null, string][]];
-    const [acknowledgeResult, deleteResult, ...addResults] = results;
+    const [acknowledgeResult, deleteResult, ...addResults] = results; // eslint-disable-line @typescript-eslint/no-unused-vars
 
     const newIds = addResults.map(([, id]) => id);
     return newIds;
@@ -168,23 +169,27 @@ export class RedisStream<T extends StringMap<string>> {
     const parametersArray = [
       ...(count != undefined ? ['COUNT', count] : []),
       ...(block != undefined ? ['BLOCK', block] : []),
-      'STREAMS', this.stream,
+      'STREAMS',
+      this.stream,
       id
     ];
 
     const data = await (this.redis.xread(...parametersArray) as any as Promise<ReadReturnValue>);
-    const entries = this.parseReadReturnValue(data);
+    const entries = parseReadReturnValue<T>(data);
 
     return entries;
   }
 
   async readGroup({ id, group, consumer, count, block, noAck }: ReadGroupParameters): Promise<Entry<T>[]> {
     const parametersArray = [
-      'GROUP', group, consumer,
+      'GROUP',
+      group,
+      consumer,
       ...(count != undefined ? ['COUNT', count] : []),
       ...(block != undefined ? ['BLOCK', block] : []),
       ...(noAck != undefined ? ['NOACK'] : []),
-      'STREAMS', this.stream,
+      'STREAMS',
+      this.stream,
       id
     ] as ['GROUP', string, string, ...string[]];
 
@@ -194,7 +199,7 @@ export class RedisStream<T extends StringMap<string>> {
       return [];
     }
 
-    const entries = this.parseReadReturnValue(data);
+    const entries = parseReadReturnValue<T>(data);
 
     return entries;
   }
@@ -218,7 +223,7 @@ export class RedisStream<T extends StringMap<string>> {
     }
 
     const claimedEntries = await this.redis.xclaim(this.stream, group, consumer, minimumIdleTime, ...ids) as EntriesReturnValue;
-    const entries = this.parseEntriesReturnValue(claimedEntries);
+    const entries = parseEntriesReturnValue<T>(claimedEntries);
 
     return entries;
   }
@@ -230,7 +235,7 @@ export class RedisStream<T extends StringMap<string>> {
 
   async info(): Promise<StreamInfo<T>> {
     const info = await this.redis.xinfo('STREAM', this.stream) as InfoReturnValue;
-    const streamInfo = this.parseInfoReturnValue(info);
+    const streamInfo = parseInfoReturnValue<T>(info);
 
     return streamInfo;
   }
@@ -253,14 +258,14 @@ export class RedisStream<T extends StringMap<string>> {
 
   async getGroups(): Promise<ConsumerGroup[]> {
     const info = await this.redis.xinfo('GROUPS', this.stream) as (string | number)[][];
-    const groups = info.map((groupInfo) => this.parseGroupInfo(groupInfo));
+    const groups = info.map((groupInfo) => parseGroupInfo(groupInfo));
 
     return groups;
   }
 
   async getConsumers(group: string): Promise<Consumer[]> {
     const info = await this.redis.xinfo('CONSUMERS', this.stream, group) as (string | number)[][];
-    const consumers = info.map((consumerInfo) => this.parseConsumer(consumerInfo));
+    const consumers = info.map((consumerInfo) => parseConsumer(consumerInfo));
 
     return consumers;
   }
@@ -275,10 +280,10 @@ export class RedisStream<T extends StringMap<string>> {
   async getPendingInfo(group: string): Promise<PendingInfo> {
     const [count, firstId, lastId, pendingConsumerInfo] = await this.redis.xpending(this.stream, group) as PendingReturnValue;
 
-    const consumers =
-      (pendingConsumerInfo == undefined)
+    const consumers
+      = (pendingConsumerInfo == undefined)
         ? []
-        : pendingConsumerInfo.map(([name, count]) => ({ name, count: parseInt(count) }));
+        : pendingConsumerInfo.map(([name, count]) => ({ name, count: parseInt(count, 10) })); // eslint-disable-line no-shadow
 
     const pendingInfo: PendingInfo = {
       count,
@@ -305,129 +310,129 @@ export class RedisStream<T extends StringMap<string>> {
 
     await this.redis.xgroup('CREATE', this.stream, group, startAtId, ...(makeStream ? ['MKSTREAM'] : []));
   }
+}
 
-  private buildFieldValueArray(data: StringMap<string>): string[] {
-    const parameters: string[] = [];
-    const fields = Object.keys(data);
+function buildFieldValueArray(data: StringMap<string>): string[] {
+  const parameters: string[] = [];
+  const fields = Object.keys(data);
 
-    for (const field of fields) {
-      parameters.push(field, data[field]);
+  for (const field of fields) {
+    parameters.push(field, data[field]);
+  }
+
+  return parameters;
+}
+
+function parseReadReturnValue<T>(data: ReadReturnValue): Entry<T>[] {
+  const entries = Enumerable.from(data)
+    .mapMany(([_stream, items]) => items)
+    .map((entry) => parseEntryReturnValue<T>(entry))
+    .toArray();
+
+  return entries;
+}
+
+function parseInfoReturnValue<T>(info: InfoReturnValue): StreamInfo<T> {
+  const consumerGroup: StreamInfo<T> = {} as any;
+
+  for (let i = 0; i < info.length; i += 2) {
+    switch (info[i]) {
+      case 'length':
+        consumerGroup.length = info[i + 1] as number;
+        break;
+
+      case 'radix-tree-keys':
+        consumerGroup.radixTreeKeys = info[i + 1] as number;
+        break;
+
+      case 'radix-tree-nodes':
+        consumerGroup.radixTreeNodes = info[i + 1] as number;
+        break;
+
+      case 'groups':
+        consumerGroup.groups = info[i + 1] as number;
+        break;
+
+      case 'first-entry':
+        consumerGroup.firstEntry = parseEntryReturnValue(info[i + 1] as EntryReturnValue);
+        break;
+
+      case 'last-entry':
+        consumerGroup.lastEntry = parseEntryReturnValue(info[i + 1] as EntryReturnValue);
+        break;
+
+      default:
+        break;
     }
-
-    return parameters;
   }
 
-  private parseReadReturnValue(data: ReadReturnValue): Entry<T>[] {
-    const entries = Enumerable.from(data)
-      .mapMany(([_stream, entries]) => entries)
-      .map((entry) => this.parseEntryReturnValue(entry))
-      .toArray();
+  return consumerGroup;
+}
 
-    return entries;
+function parseEntriesReturnValue<T>(items: EntriesReturnValue): Entry<T>[] {
+  const entries = items.map((item) => parseEntryReturnValue<T>(item));
+  return entries;
+}
+
+function parseEntryReturnValue<T>([id, dataArray]: EntryReturnValue): Entry<T> {
+  const entry: Entry<T> = { id, data: {} } as any;
+
+  for (let i = 0; i < dataArray.length; i += 2) {
+    const field = dataArray[i];
+    const value = dataArray[i + 1];
+
+    (entry.data as StringMap)[field] = value;
   }
 
-  private parseInfoReturnValue(info: InfoReturnValue): StreamInfo<T> {
-    const consumerGroup: StreamInfo<T> = {} as any;
+  return entry;
+}
 
-    for (let i = 0; i < info.length; i += 2) {
-      switch (info[i]) {
-        case 'length':
-          consumerGroup.length = info[i + 1] as number;
-          break;
+function parseGroupInfo(info: (string | number)[]): ConsumerGroup {
+  const consumerGroup: ConsumerGroup = {} as any;
 
-        case 'radix-tree-keys':
-          consumerGroup.radixTreeKeys = info[i + 1] as number;
-          break;
+  for (let i = 0; i < info.length; i += 2) {
+    switch (info[i]) {
+      case 'name':
+        consumerGroup.name = info[i + 1] as string;
+        break;
 
-        case 'radix-tree-nodes':
-          consumerGroup.radixTreeNodes = info[i + 1] as number;
-          break;
+      case 'consumers':
+        consumerGroup.consumers = info[i + 1] as number;
+        break;
 
-        case 'groups':
-          consumerGroup.groups = info[i + 1] as number;
-          break;
+      case 'pending':
+        consumerGroup.pending = info[i + 1] as number;
+        break;
 
-        case 'first-entry':
-          consumerGroup.firstEntry = this.parseEntryReturnValue(info[i + 1] as EntryReturnValue);
-          break;
-
-        case 'last-entry':
-          consumerGroup.lastEntry = this.parseEntryReturnValue(info[i + 1] as EntryReturnValue);
-          break;
-
-        default:
-          break;
-      }
+      default:
+        break;
     }
-
-    return consumerGroup;
   }
 
-  private parseEntriesReturnValue(items: EntriesReturnValue): Entry<T>[] {
-    const entries = items.map((item) => this.parseEntryReturnValue(item));
-    return entries;
-  }
+  return consumerGroup;
+}
 
-  private parseEntryReturnValue([id, dataArray]: EntryReturnValue): Entry<T> {
-    const entry: Entry<T> = { id, data: {} } as any;
+function parseConsumer(info: (string | number)[]): Consumer {
+  const consumer: Consumer = {} as any;
 
-    for (let i = 0; i < dataArray.length; i += 2) {
-      const field = dataArray[i];
-      const value = dataArray[i + 1];
+  for (let i = 0; i < info.length; i += 2) {
+    switch (info[i]) {
+      case 'name':
+        consumer.name = info[i + 1] as string;
+        break;
 
-      (entry.data as StringMap)[field] = value;
+      case 'pending':
+        consumer.pending = info[i + 1] as number;
+        break;
+
+      case 'idle':
+        consumer.idle = info[i + 1] as number;
+        break;
+
+      default:
+        break;
     }
-
-    return entry;
   }
 
-  private parseGroupInfo(info: (string | number)[]): ConsumerGroup {
-    const consumerGroup: ConsumerGroup = {} as any;
-
-    for (let i = 0; i < info.length; i += 2) {
-      switch (info[i]) {
-        case 'name':
-          consumerGroup.name = info[i + 1] as string;
-          break;
-
-        case 'consumers':
-          consumerGroup.consumers = info[i + 1] as number;
-          break;
-
-        case 'pending':
-          consumerGroup.pending = info[i + 1] as number;
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    return consumerGroup;
-  }
-
-  private parseConsumer(info: (string | number)[]): Consumer {
-    const consumer: Consumer = {} as any;
-
-    for (let i = 0; i < info.length; i += 2) {
-      switch (info[i]) {
-        case 'name':
-          consumer.name = info[i + 1] as string;
-          break;
-
-        case 'pending':
-          consumer.pending = info[i + 1] as number;
-          break;
-
-        case 'idle':
-          consumer.idle = info[i + 1] as number;
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    return consumer;
-  }
+  return consumer;
 }

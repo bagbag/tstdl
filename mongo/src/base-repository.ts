@@ -32,12 +32,12 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async createIndexes(indexes: TypedIndexSpecification<T>[]): Promise<void> {
-    return this.collection.createIndexes(indexes);
+    return this.collection.createIndexes(indexes) as Promise<void>;
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     const document = toMongoDocumentWithNewId(entity);
-    const result = await this.collection.insertOne(document as any);
+    await this.collection.insertOne(document as any);
 
     return toEntity(document);
   }
@@ -64,7 +64,7 @@ export class MongoBaseRepository<T extends Entity> {
 
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map(toInsertOneOperation);
-    const bulkWriteResult = await this.collection.bulkWrite(operations);
+    await this.collection.bulkWrite(operations);
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;
@@ -83,6 +83,7 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
+  // eslint-disable-next-line max-statements
   async insertOrReplace<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
     if (entities.length == 0) {
       return [];
@@ -215,6 +216,7 @@ export class MongoBaseRepository<T extends Entity> {
     return AsyncEnumerable.from(iterator).toArray();
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async *loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     const filter: FilterQuery<U> = {
       _id: { $in: ids }
@@ -249,7 +251,7 @@ export class MongoBaseRepository<T extends Entity> {
     return this.deleteManyById(ids);
   }
 
-  deleteManyById(ids: string[]): Promise<number> {
+  async deleteManyById(ids: string[]): Promise<number> {
     const filter: FilterQuery<T> = {
       _id: { $in: ids }
     } as FilterQuery<T>;
@@ -295,6 +297,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   const operation = {
     insertOne: {
@@ -305,6 +308,7 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
   return operation;
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
   const filter: FilterQuery<T> = {
     _id: document._id

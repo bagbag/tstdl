@@ -1,5 +1,5 @@
 import { MessageBus } from '@tstdl/base/message-bus';
-import { Serializer } from '@tstdl/base/serializer';
+import { serialize } from '@tstdl/base/serializer';
 import { Observable } from 'rxjs';
 import { TypedRedis } from '../typed-redis';
 
@@ -19,7 +19,7 @@ export class RedisMessageBus<T> implements MessageBus<T> {
   }
 
   async publish(message: T): Promise<void> {
-    const serialized = Serializer.serialize(message);
+    const serialized = serialize(message);
     await this.redis.publish(this.channel, serialized);
   }
 }

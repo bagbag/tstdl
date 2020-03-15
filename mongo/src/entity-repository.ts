@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/semi */
 import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
 import { Collection, TypedIndexSpecification } from './types';
@@ -10,9 +11,11 @@ type Options<T> = {
 export class MongoEntityRepository<T extends Entity> implements EntityRepository<T> {
   _type: T;
 
+  /* eslint-disable @typescript-eslint/member-ordering */
   protected readonly collection: Collection<MongoDocument<T>>;
   protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
+  /* eslint-enable @typescript-eslint/member-ordering */
 
   constructor(collection: Collection<MongoDocument<T>>, { indexes }: Options<T> = {}) {
     this.collection = collection;
@@ -37,6 +40,7 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     return this.baseRepository.loadManyById<U>(ids);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async *loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
@@ -45,9 +49,8 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     if (entity.id == undefined) {
       return this.baseRepository.insert(entity);
     }
-    else {
-      return this.baseRepository.replace(entity, upsert);
-    }
+
+    return this.baseRepository.replace(entity, upsert);
   }
 
   async saveMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean = false): Promise<U[]> {

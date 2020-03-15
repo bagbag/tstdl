@@ -18,14 +18,14 @@ export class MongoLock implements Lock {
 
   async acquire(timeout: number): Promise<false | LockController>;
   async acquire(timeout: number, func: LockedFunction): Promise<boolean>;
-  async acquire(_timeout: number, func?: LockedFunction | undefined): Promise<boolean | LockController> {
+  async acquire(_timeout: number, func?: LockedFunction | undefined): Promise<boolean | LockController> { // eslint-disable-line max-lines-per-function, max-statements
     const key = getRandomString(15);
     const timeoutDuration = Math.max(50, Math.min(1000, _timeout / 10));
 
     let result: boolean | Date = false;
 
     const timer = new Timer(true);
-    while (result == false && (timer.milliseconds < _timeout || _timeout == 0)) {
+    while (result == false && (timer.milliseconds < _timeout || _timeout == 0)) { // eslint-disable-line no-unmodified-loop-condition
       result = await this.tryAcquireOrRefresh(this.ressource, key);
 
       if (result == false && _timeout == 0) {
@@ -54,20 +54,15 @@ export class MongoLock implements Lock {
       }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async () => {
       await cancelableTimeout(5000, releaseToken);
 
       while (!releaseToken.isSet && !controller.lost) {
         try {
+          // eslint-disable-next-line no-shadow
           const result = await this.tryRefresh(this.ressource, key);
-
-          if (result == false) {
-            expiration = (result == false) ? new Date(0) : result;
-            return;
-          }
-          else {
-            expiration = result;
-          }
+          expiration = (result == false) ? new Date(0) : result;
         }
         catch (error) {
           this.logger.error(error as Error);

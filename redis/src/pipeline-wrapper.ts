@@ -1,8 +1,8 @@
 import { DeferredPromise } from '@tstdl/base/promise';
-import { PropertiesOfType } from '@tstdl/base/types';
+import { PropertiesOfType, StringMap } from '@tstdl/base/types';
 import { Pipeline, Redis } from 'ioredis';
 
-const redisTransactionWrapperSymbol: unique symbol = Symbol();
+const redisTransactionWrapperSymbol: unique symbol = Symbol('redisTransactionWrapperSymbol');
 
 export class RedisPipelineWrapper {
   private readonly pipeline: Pipeline;
@@ -11,21 +11,22 @@ export class RedisPipelineWrapper {
   readonly [redisTransactionWrapperSymbol]: undefined = undefined;
 
 
+  /* eslint-disable no-invalid-this */
   /* - */
   eval = this.wrap('eval');
   evalsha = this.wrap('evalsha');
   script = this.wrap('script');
   exists = this.wrap('exists');
 
-  /* Pub/Sub */
+  /* pub/Sub */
   publish = this.wrap('publish');
 
-  /* Strings */
+  /* strings */
   get = this.wrap('set');
   set = this.wrap('set');
   getSet = this.wrap('getset');
 
-  /* Hash */
+  /* hash */
   hdel = this.wrap('hdel');
   hexists = this.wrap('hexists');
   hget = this.wrap('hget');
@@ -40,7 +41,7 @@ export class RedisPipelineWrapper {
   hset = this.wrap('hset');
   hvals = this.wrap('hvals');
 
-  /* Sorted Set */
+  /* sorted Set */
   bzpopmax = this.wrap('bzpopmax');
   bzpopmin = this.wrap('bzpopmin');
   zadd = this.wrap('zadd');
@@ -67,9 +68,10 @@ export class RedisPipelineWrapper {
   zscore = this.wrap('zscore');
   zunionstore = this.wrap('zunionstore');
 
-  /* List */
+  /* list */
   lpush = this.wrap('lpush');
   rpush = this.wrap('rpush');
+  /* eslint-enable no-invalid-this */
 
 
   constructor(redis: Redis, transaction: boolean) {
@@ -91,7 +93,7 @@ export class RedisPipelineWrapper {
   }
 
   async execute(): Promise<[Error | null, any][]> {
-    const replies = await this.pipeline.exec() as [Error | null, any][];
+    const replies = await this.pipeline.exec();
 
     for (let i = 0; i < replies.length; i++) {
       const [error, reply] = replies[i];
@@ -118,7 +120,7 @@ export class RedisPipelineWrapper {
         throw new Error('callback-style not supported, use promise-style instead');
       }
 
-      (this.pipeline as any)[func](...args, (error: Error) => {
+      (this.pipeline as any as StringMap<Function>)[func](...args, (error: Error) => {
         if (error != undefined) {
           promise.reject(error);
         }

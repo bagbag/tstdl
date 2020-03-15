@@ -1,6 +1,7 @@
+import { Logger } from '@tstdl/base/logger';
 import { MessageBus, MessageBusProvider } from '@tstdl/base/message-bus';
 import { teardown } from '@tstdl/base/rxjs';
-import { Serializer } from '@tstdl/base/serializer';
+import { deserialize } from '@tstdl/base/serializer';
 import { defer, from, Observable } from 'rxjs';
 import { filter, map, share, switchMap } from 'rxjs/operators';
 import { TypedRedis } from '../typed-redis';
@@ -10,10 +11,12 @@ export class RedisMessageBusProvider implements MessageBusProvider {
   private readonly redis: TypedRedis;
   private readonly subscriberRedis: TypedRedis;
   private readonly messageObservables: Map<string, Observable<any>>;
+  private readonly logger: Logger;
 
-  constructor(redis: TypedRedis, subscriberRedis: TypedRedis) {
+  constructor(redis: TypedRedis, subscriberRedis: TypedRedis, logger: Logger) {
     this.redis = redis;
     this.subscriberRedis = subscriberRedis;
+    this.logger = logger;
 
     this.messageObservables = new Map();
   }
@@ -34,8 +37,8 @@ export class RedisMessageBusProvider implements MessageBusProvider {
       .pipe(
         switchMap(() => this.subscriberRedis.message$),
         filter((message) => message.channel == channel),
-        map(({ message }) => Serializer.deserialize<T>(message)),
-        teardown(() => this.subscriberRedis.unsubscribe(channel)),
+        map(({ message }) => deserialize<T>(message)),
+        teardown(async () => this.subscriberRedis.unsubscribe(channel).catch((error) => this.logger.error(error))),
         share()
       );
 

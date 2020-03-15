@@ -48,9 +48,9 @@ export class MongoQueue<T> implements Queue<T> {
   async enqueueMany(data: T[]): Promise<Job<T>[]> {
     const now = currentTimestamp();
 
-    const newJobs: MongoJobWithoutId<T>[] = data.map((data) => {
+    const newJobs: MongoJobWithoutId<T>[] = data.map((item) => {
       const newJob: MongoJobWithoutId<T> = {
-        data,
+        data: item,
         enqueueTimestamp: now,
         tries: 0,
         lastDequeueTimestamp: 0,
@@ -124,6 +124,7 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
   return job;
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function getDequeueFindParameters(maxTries: number, processTimeout: number, batch: null | string = null) {
   const maximumLastDequeueTimestamp = currentTimestamp() - processTimeout;
 

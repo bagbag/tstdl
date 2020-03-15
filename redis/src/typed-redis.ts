@@ -1,3 +1,5 @@
+/* eslint-disable max-classes-per-file */
+
 import { StringMap } from '@tstdl/base/types';
 import { toArray } from '@tstdl/base/utils';
 import { Redis } from 'ioredis';
@@ -64,12 +66,10 @@ export class TypedRedis {
     this.redis = redis;
 
     this.messageObservable = new Observable<Message>((subscriber) => {
-      const listener = (channel: string, message: string) => subscriber.next({ channel, message });
+      const listener = (channel: string, message: string): void => subscriber.next({ channel, message });
       (this.redis as Redis).addListener('message', listener);
       subscriber.add(() => (this.redis as Redis).removeListener('message', listener));
-    }).pipe(
-      share()
-    );
+    }).pipe(share());
   }
 
   duplicate(): TypedRedis {
@@ -102,6 +102,7 @@ export class TypedRedis {
       throw new Error('already in pipeline mode');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     return new TypedRedisPipeline(this.redis, false);
   }
 
@@ -110,6 +111,7 @@ export class TypedRedis {
       throw new Error('already in transaction mode');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
     return new TypedRedisPipeline(this.redis, true);
   }
 
@@ -145,7 +147,7 @@ export class TypedRedis {
     ];
 
     const reply = await this.redis.set(key, value, ...args);
-    return reply == undefined ? false : true;
+    return reply != undefined;
   }
 
   async exists(...keys: string[]): Promise<number> {
@@ -178,7 +180,7 @@ export class TypedRedis {
   }
 
   async hDelete(key: string, fields: string[]): Promise<number> {
-    return this.redis.hdel(key, ...fields) as Promise<number>;
+    return this.redis.hdel(key, ...fields);
   }
 
   async hGetAll(key: string): Promise<StringMap<string | number>> {
@@ -192,11 +194,11 @@ export class TypedRedis {
   }
 
   async hFields(key: string): Promise<string[]> {
-    return this.redis.hkeys(key) as Promise<string[]>;
+    return this.redis.hkeys(key);
   }
 
   async hValues(key: string): Promise<string[]> {
-    return this.redis.hvals(key) as Promise<string[]>;
+    return this.redis.hvals(key);
   }
 
   async hLength(key: string): Promise<number> {
@@ -206,7 +208,7 @@ export class TypedRedis {
   async hGetMany(key: string, fields: string[], throwIfNotFound?: true): Promise<Map<string, string>>;
   async hGetMany(key: string, fields: string[], throwIfNotFound: boolean): Promise<Map<string, string | undefined>>;
   async hGetMany(key: string, fields: string[], throwIfNotFound: boolean = true): Promise<Map<string, string | undefined>> {
-    const reply = await (this.redis.hmget(key, ...fields) as Promise<(string | null)[]>);
+    const reply = await this.redis.hmget(key, ...fields);
     const result = new Map<string, string | undefined>();
 
     for (let i = 0; i < fields.length; i++) {
@@ -291,7 +293,7 @@ export class TypedRedis {
   }
 
   async zIncrement(key: string, member: string, amount: number): Promise<number> {
-    const reply = await this.redis.zincrby(key, amount, member) as string;
+    const reply = await this.redis.zincrby(key, amount, member);
     return parseFloat(reply);
   }
 
@@ -318,8 +320,8 @@ export class TypedRedis {
   async zRange(key: string, start: number, stop: number, withScores: boolean, reverse: boolean = false): Promise<string[] | SortedSetEntry[]> {
     const command = reverse ? 'zrevrange' : 'zrange';
     const reply = withScores
-      ? await this.redis[command](key, start, stop, 'WITHSCORES') as string[]
-      : await this.redis[command](key, start, stop) as string[];
+      ? await this.redis[command](key, start, stop, 'WITHSCORES')
+      : await this.redis[command](key, start, stop);
 
     const result = withScores
       ? zParseEntriesReply(reply, SortedSetReplyOrder.MembersFirst)
@@ -345,12 +347,13 @@ export class TypedRedis {
       ...conditional(limit != undefined, ['LIMIT', (limit as SortedSetLimit).offset.toString(), (limit as SortedSetLimit).count.toString()])
     ];
 
-    const reply = await (this.redis[command](key, min, max, ...(args as any)) as Promise<string[]>);
+    const reply = await (this.redis[command](key, min, max, ...(args as any)));
 
     const result = withScores
       ? zParseEntriesReply(reply, SortedSetReplyOrder.MembersFirst)
       : reply;
 
+    // eslint-disable-next-line no-self-compare, @typescript-eslint/no-unnecessary-condition, curly
     if (1 == 1) throw new Error('check if SortedSetReplyOrder is correct');
 
     return result;
@@ -358,7 +361,7 @@ export class TypedRedis {
 
   async zRank(key: string, member: string, reverse: boolean = false): Promise<number | undefined> {
     const command = reverse ? 'zrevrank' : 'zrank';
-    const reply = await this.redis[command](key, member) as number | null;
+    const reply = await this.redis[command](key, member);
 
     if (reply == undefined) {
       return undefined;
@@ -368,7 +371,7 @@ export class TypedRedis {
   }
 
   async zRemove(key: string, members: string[]): Promise<number> {
-    return this.redis.zrem(key, ...members) as Promise<number>;
+    return this.redis.zrem(key, ...members);
   }
 
   async zRemoveRangeByLex(key: string, min: string, max: string): Promise<number> {
@@ -376,11 +379,11 @@ export class TypedRedis {
   }
 
   async zRemoveRangeByRank(key: string, start: number, stop: number): Promise<number> {
-    return this.redis.zremrangebyrank(key, start, stop) as Promise<number>;
+    return this.redis.zremrangebyrank(key, start, stop);
   }
 
   async zRemoveRangeByScore(key: string, min: number, max: number): Promise<number> {
-    return this.redis.zremrangebyscore(key, min, max) as Promise<number>;
+    return this.redis.zremrangebyscore(key, min, max);
   }
 
   async * zScan(key: string, options: { pattern?: string, count?: number } = {}): AsyncIterableIterator<SortedSetEntry> {
@@ -404,11 +407,11 @@ export class TypedRedis {
   }
 
   async rPush(key: string, values: string[]): Promise<number> {
-    return this.redis.rpush(key, ...values) as Promise<number>;
+    return this.redis.rpush(key, ...values);
   }
 
   async lPush(key: string, values: string[]): Promise<number> {
-    return this.redis.lpush(key, ...values) as Promise<number>;
+    return this.redis.lpush(key, ...values);
   }
 
   private async zBlockPop(key: string, type: 'bzpopmin' | 'bzpopmax', setsOrTimeout: string[] | number, timeoutOrUndefined?: number): Promise<undefined | SortedSetBlockingPopResult> {
@@ -436,7 +439,7 @@ export class TypedRedis {
       ...conditional(options.aggregate != undefined, ['AGGREGATE', (options.aggregate as string).toUpperCase()])
     ];
 
-    return this.redis[type](destination, sets.length, key, ...sets, ...args) as Promise<number>;
+    return this.redis[type](destination, sets.length, key, ...sets, ...args);
   }
 
   private async * getCursor<T extends ScanType>(key: string, type: T, { pattern, count }: { pattern?: string, count?: number } = {}): AsyncIterableIterator<ScanReturnType<T>> {
@@ -446,7 +449,7 @@ export class TypedRedis {
 
     do {
       const [newCursor, entries] = await ((this.redis[type] as (key: string, cursor: number, ...args: any[]) => any)(key, cursor, ...args) as Promise<[string, ScanReturnType<T>[]]>);
-      cursor = parseInt(newCursor);
+      cursor = parseInt(newCursor, 10);
 
       yield* entries;
     }

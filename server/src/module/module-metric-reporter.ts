@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 import { Enumerable } from '@tstdl/base/enumerable';
 import { cancelableTimeout, CancellationToken, MetricAggregation, MetricAggregationOptions, MovingMetric } from '@tstdl/base/utils';
 import { ModuleMetric } from './module';
@@ -49,16 +51,6 @@ export class ModuleMetricReporter {
     this.updateNameLengths();
   }
 
-  private updateNameLengths(): void {
-    this.longestGroupName = Enumerable.from(this.metricGroups)
-      .reduce((longest, { groupName }) => Math.max(longest, groupName.length), 0);
-
-    this.longestDisplayName = Enumerable.from(this.metricGroups)
-      .mapMany((group) => group.registrations)
-      .mapMany(({ reports }) => reports)
-      .reduce((longest, { displayName }) => Math.max(longest, displayName.length), 0);
-  }
-
   async run(cancellationToken: CancellationToken): Promise<void> {
     let counter = 0;
 
@@ -74,7 +66,7 @@ export class ModuleMetricReporter {
           console.log(`--- ${groupName} `.padEnd(this.longestGroupName + 8));
 
           for (const { moving, reports } of registrations) {
-            for (const report of reports) {
+            for (const report of reports) { // eslint-disable-line max-depth
               const value = moving.aggregate(report.aggregation, report.aggregationOptions);
               const paddedName = report.displayName.padEnd(this.longestDisplayName);
               console.log(`| ${paddedName} : ${value}`);
@@ -85,5 +77,15 @@ export class ModuleMetricReporter {
 
       await cancelableTimeout(this.sampleInterval, cancellationToken);
     }
+  }
+
+  private updateNameLengths(): void {
+    this.longestGroupName = Enumerable.from(this.metricGroups)
+      .reduce((longest, { groupName }) => Math.max(longest, groupName.length), 0);
+
+    this.longestDisplayName = Enumerable.from(this.metricGroups)
+      .mapMany((group) => group.registrations)
+      .mapMany(({ reports }) => reports)
+      .reduce((longest, { displayName }) => Math.max(longest, displayName.length), 0);
   }
 }

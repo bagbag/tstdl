@@ -31,9 +31,9 @@ export class HttpServer {
 
     return new Promise<void>((resolve, reject) => {
       let listeningListener: () => void;
-      let errorListener: (error: Error) => void;
+      let errorListener: (error: Error) => void; // eslint-disable-line prefer-const
 
-      listeningListener = () => {
+      listeningListener = () => { // eslint-disable-line prefer-const
         this.untrackConnectedSockets = trackConnectedSockets(this.server, this.sockets);
         this.server.removeListener('error', errorListener);
         resolve();
@@ -52,8 +52,9 @@ export class HttpServer {
   async close(timeout: number): Promise<void> {
     const timer = new Timer(true);
 
-    const closePromise = new Promise<void>((resolve, reject) => this.server.close((error) => error != undefined ? reject(error) : resolve(undefined)));
+    const closePromise = new Promise<void>((resolve, reject) => this.server.close((error) => (error != undefined ? reject(error) : resolve(undefined))));
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       const connections = await getConnectionsCount(this.server);
 
@@ -82,10 +83,10 @@ export class HttpServer {
 }
 
 function trackConnectedSockets(server: Http.Server, sockets: Set<Socket>): () => void {
-  const connectionListener = (socket: Socket) => {
+  const connectionListener = (socket: Socket): void => {
     sockets.add(socket);
 
-    const closeListener = () => {
+    const closeListener = (): void => {
       sockets.delete(socket);
       socket.removeListener('close', closeListener);
     };
@@ -99,7 +100,7 @@ function trackConnectedSockets(server: Http.Server, sockets: Set<Socket>): () =>
 }
 
 async function getConnectionsCount(server: Http.Server): Promise<number> {
-  return new Promise<number>((resolve, reject) => server.getConnections((error, count) => error != undefined ? reject(error) : resolve(count)));
+  return new Promise<number>((resolve, reject) => server.getConnections((error, count) => (error != undefined ? reject(error) : resolve(count))));
 }
 
 function destroySockets(sockets: Iterable<Socket>): void {

@@ -1,7 +1,7 @@
 import { AsyncDisposable, AsyncDisposer, disposeAsync } from '@tstdl/base/disposable';
 import { LockProvider } from '@tstdl/base/lock';
 import { Job, Queue } from '@tstdl/base/queue';
-import { Serializer } from '@tstdl/base/serializer';
+import { deserialize, serialize } from '@tstdl/base/serializer';
 import { createArray, currentTimestamp, getRandomString, single, timeout, toArray } from '@tstdl/base/utils';
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import { DistributedLoop, DistributedLoopProvider } from '@tstdl/server/distributed-loop';
@@ -35,7 +35,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
 
     const retryLoop = distributedLoopProvider.get(`queue:${key}:retry`);
     const retryLoopController = retryLoop.run(async () => this.retryAll(), 2000, 1000);
-    this.disposer.add(() => retryLoopController.stop());
+    this.disposer.add(async () => retryLoopController.stop());
   }
 
   async [disposeAsync](): Promise<void> {
@@ -48,7 +48,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
       data
     };
 
-    const serializedJob = Serializer.serialize(job);
+    const serializedJob = serialize(job);
 
     const transaction = this.redis.transaction();
     await Promise.all([
@@ -64,7 +64,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     const ids = createArray(datas.length, () => getRandomString(15));
     const jobs: Job<T>[] = datas.map((data, index) => ({ id: ids[index], data }));
 
-    const hashEntries = jobs.map((job) => [job.id, Serializer.serialize(job)] as [string, string]);
+    const hashEntries = jobs.map((job) => [job.id, serialize(job)] as [string, string]);
 
     const transaction = this.redis.transaction();
     await Promise.all([
@@ -183,26 +183,26 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
   }
 
   private async _dequeueMany(redis: TypedRedis, count: number): Promise<Job<T>[]> {
-    return this.dequeueLua(redis, this.listKey, this.dataHashKey, this.dequeueTimestampSortedSetKey, count);
+    return dequeueLua(redis, this.listKey, this.dataHashKey, this.dequeueTimestampSortedSetKey, count);
   }
 
   private async _retry(redis: TypedRedis, retryAfterMilliseconds: number, count: number): Promise<number> {
     const timestamp = currentTimestamp() - retryAfterMilliseconds;
-    return this.retryLua(redis, this.listKey, this.dequeueTimestampSortedSetKey, timestamp, count);
+    return retryLua(redis, this.listKey, this.dequeueTimestampSortedSetKey, timestamp, count);
   }
+}
 
-  private async dequeueLua(redis: TypedRedis, listKey: string, dataHashKey: string, dequeueTimestampSortedSetKey: string, count: number): Promise<Job<T>[]> {
-    const timestampString = currentTimestamp().toString();
-    const serializedJobs = await redis.evaluate<string[]>(dequeueLuaScript, [listKey, dataHashKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
-    const jobs = serializedJobs.map((serializedJob) => Serializer.deserialize<Job<T>>(serializedJob));
+async function dequeueLua<T>(redis: TypedRedis, listKey: string, dataHashKey: string, dequeueTimestampSortedSetKey: string, count: number): Promise<Job<T>[]> {
+  const timestampString = currentTimestamp().toString();
+  const serializedJobs = await redis.evaluate<string[]>(dequeueLuaScript, [listKey, dataHashKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
+  const jobs = serializedJobs.map((serializedJob) => deserialize<Job<T>>(serializedJob));
 
-    return jobs;
-  }
+  return jobs;
+}
 
-  private async retryLua(redis: TypedRedis, listKey: string, dequeueTimestampSortedSetKey: string, timestamp: number, count: number): Promise<number> {
-    const timestampString = timestamp.toString();
-    const requeuedJobsCount = await redis.evaluate<number>(retryLuaScript, [listKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
+async function retryLua(redis: TypedRedis, listKey: string, dequeueTimestampSortedSetKey: string, timestamp: number, count: number): Promise<number> {
+  const timestampString = timestamp.toString();
+  const requeuedJobsCount = await redis.evaluate<number>(retryLuaScript, [listKey, dequeueTimestampSortedSetKey], [timestampString, count.toString()]);
 
-    return requeuedJobsCount;
-  }
+  return requeuedJobsCount;
 }

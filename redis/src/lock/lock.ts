@@ -1,7 +1,7 @@
 import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
 import { DeferredPromise } from '@tstdl/base/promise';
-import { cancelableTimeout, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@tstdl/base/utils';
+import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, immediate, timeout, Timer } from '@tstdl/base/utils';
 import { lockAcquireLuaScript, lockOwnedLuaScript, lockRefreshLuaScript, lockReleaseLuaScript } from '../lua';
 import { TypedRedis } from '../typed-redis';
 import { AcquireResult } from './acquire-result';
@@ -30,17 +30,16 @@ export class RedisLock implements Lock {
    */
   acquire(timeout: number): Promise<LockController | false>;
   acquire(timeout: number, func: LockedFunction): Promise<boolean>;
-  async acquire(timeout: number, func?: LockedFunction): Promise<LockController | boolean> {
+  async acquire(acquireTimeout: number, func?: LockedFunction): Promise<LockController | boolean> { // eslint-disable-line max-lines-per-function, max-statements
     const id = getRandomString(15);
-    const newExpireTimestamp = await this._acquire(id, timeout);
 
-    if (newExpireTimestamp == -1) {
+    let expireTimestamp = await this._acquire(id, acquireTimeout);
+
+    if (expireTimestamp == -1) {
       return false;
     }
 
-    let stop = false;
-    let expireTimestamp = newExpireTimestamp;
-    const stopPromise = new DeferredPromise();
+    const stopToken = new CancellationToken();
     const stoppedPromise = new DeferredPromise();
 
     const controller: LockController = {
@@ -48,13 +47,12 @@ export class RedisLock implements Lock {
         return (expireTimestamp < currentTimestamp());
       },
       release: async () => {
-        if (stop) {
+        if (stopToken.isSet) {
           await stoppedPromise;
           return;
         }
 
-        stop = true;
-        stopPromise.resolve();
+        stopToken.set();
         await stoppedPromise;
         await this.release(id);
         expireTimestamp = -1;
@@ -62,7 +60,7 @@ export class RedisLock implements Lock {
     };
 
     (async () => {
-      while (!stop && !controller.lost) {
+      while (!stopToken.isSet && !controller.lost) {
         try {
           const newExpireTimestamp = this.getNewExpireTimestamp();
           const success = await this.refresh(id, newExpireTimestamp);
@@ -77,7 +75,7 @@ export class RedisLock implements Lock {
 
         const millisecondsLeft = (expireTimestamp - currentTimestamp());
         const delay = Math.max(millisecondsLeft * 0.5, this.retryDelay);
-        await cancelableTimeout(delay, stopPromise);
+        await cancelableTimeout(delay, stopToken);
       }
 
       stoppedPromise.resolve();

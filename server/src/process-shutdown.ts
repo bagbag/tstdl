@@ -1,3 +1,6 @@
+/* eslint-disable no-process-exit */
+/* eslint-disable no-console */
+
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import { Logger } from '@tstdl/base/logger';
 
@@ -15,6 +18,7 @@ function setLogger(_logger: Logger): void {
   logger = _logger;
 }
 
+// eslint-disable-next-line no-shadow
 export function setProcessShutdownLogger(logger: Logger): void {
   setLogger(logger);
 }
@@ -58,6 +62,7 @@ export function initializeSignals(): void {
   let signalCounter = 0;
 
   for (const event of QUIT_EVENTS) {
+    // eslint-disable-next-line no-loop-func
     process.on(event as any, (...args: any[]) => {
       console.error(event, ...args);
       quitReason = args;
@@ -66,6 +71,7 @@ export function initializeSignals(): void {
   }
 
   for (const signal of QUIT_SIGNALS) {
+    // eslint-disable-next-line no-loop-func, no-shadow
     process.on(signal, (signal) => {
       logger.info(`${signal} received, quitting.`);
       requestShutdown();

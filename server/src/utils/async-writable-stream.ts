@@ -40,7 +40,7 @@ export class AsyncWritableStream<T = NonObjectMode> {
 
   private checkError(): void {
     if (this.hasError) {
-      throw this.error;
+      throw this.error; // eslint-disable-line @typescript-eslint/no-throw-literal
     }
   }
 

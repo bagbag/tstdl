@@ -6,13 +6,13 @@ import { DatabaseMigrationStateRepository } from './database-migration-state-rep
 export type DatabaseMigrationDefinition = {
   name: string,
   migrations: DatabaseMigration[]
-}
+};
 
 export type DatabaseMigration = {
   from: number | number[],
   to: number,
-  migrator: () => Promise<any>;
-}
+  migrator: () => Promise<any>
+};
 
 export class DatabaseMigrator {
   private readonly databaseMigrationStateRepository: DatabaseMigrationStateRepository;
@@ -25,6 +25,7 @@ export class DatabaseMigrator {
     this.logger = logger;
   }
 
+  // eslint-disable-next-line max-statements
   async migrate({ name, migrations }: DatabaseMigrationDefinition): Promise<void> {
     if (migrations.length == 0) {
       throw new Error('no migrations provided');

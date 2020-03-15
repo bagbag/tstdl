@@ -1,6 +1,6 @@
 import { Observable, OperatorFunction } from 'rxjs';
 
-export function teardown<T>(teardownFn: (lastValue: T | undefined, lastError: any) => void): OperatorFunction<T, T> {
+export function teardown<T>(teardownFn: (lastValue: T | undefined, lastError: any) => unknown): OperatorFunction<T, T> {
   return (source: Observable<T>) => { // eslint-disable-line arrow-body-style
     return new Observable((subscriber) => {
       let lastValue: T | undefined;

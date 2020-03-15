@@ -35,14 +35,14 @@ export class Timer {
     }
   }
 
-  static measure(func: () => void): number {
+  static measure(func: () => any): number {
     const timer = new Timer(true);
     func();
 
     return timer.milliseconds;
   }
 
-  static async measureAsync(func: () => Promise<void>): Promise<number> {
+  static async measureAsync(func: () => Promise<any>): Promise<number> {
     const timer = new Timer(true);
     await func();
 

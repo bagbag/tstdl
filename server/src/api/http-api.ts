@@ -16,7 +16,7 @@ type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void,
 export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   headers?: StringMap<string | string[]>,
   statusCode?: number,
-  statusMessage?: string
+  statusMessage?: string,
   text?: string,
   json?: JsonType,
   stream?: Readable,
@@ -36,9 +36,9 @@ export type Body = UndefinableJson | Readable | Buffer | undefined;
 export type GetData = { parameters: Query };
 export type PostData<B extends BodyType> = GetData & {
   body: B extends BodyType.Json ? UndefinableJson
-  : B extends BodyType.Stream ? Readable
-  : B extends BodyType.Binary ? Buffer
-  : undefined;
+    : B extends BodyType.Stream ? Readable
+      : B extends BodyType.Binary ? Buffer
+        : undefined
 };
 
 export type GetValidationFunction<Parameters = GetData> = ValidationFunction<GetData, Parameters>;
@@ -129,6 +129,7 @@ export class HttpApi {
     });
   }
 
+  // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
   private async handle<B extends BodyType, Parameters>(context: Context, bodyType: BodyType, validator: GetValidationFunction<Parameters> | PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): Promise<void> {
     const { request, response, params } = context;
     const { method, query: { ...query } } = request;
@@ -252,8 +253,10 @@ async function readBody(request: Koa.Request, maxBytes: number): Promise<string>
 }
 
 function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
+  // eslint-disable-next-line no-shadow
   return async function errorCatchMiddleware({ response }: Context, next: () => Promise<any>): Promise<any> {
     try {
+      // eslint-disable-next-line callback-return
       await next();
     }
     catch (error) {
@@ -276,6 +279,7 @@ function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>)
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function corsMiddleware(context: Context, next: () => Promise<any>): Promise<any> {
   context.response.set({
     'Access-Control-Allow-Origin': '*',

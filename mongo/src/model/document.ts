@@ -3,11 +3,11 @@ import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { getNewDocumentId } from '../id';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
-  _id: string;
+  _id: string
 };
 
 export type MongoDocumentWitPartialId<T extends EntityWithPartialId> = Omit<T, 'id'> & {
-  _id?: string;
+  _id?: string
 };
 
 export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
@@ -22,7 +22,7 @@ export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
 }
 
 export function toMongoDocument<T extends Entity>(entity: T): MongoDocument<T> {
-  const { id, ...entityRest } = entity;
+  const { id, ...entityRest } = entity; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const document: MongoDocument<T> = {
     _id: entity.id,

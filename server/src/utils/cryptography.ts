@@ -46,11 +46,11 @@ export function encrypt(input: Buffer | Uint8Array, options: CryptionOptions): C
 
   return {
     toBuffer: async () => encryptedBuffer,
-    toHex: () => encryptedBuffer.then((buffer) => buffer.toString('hex')),
-    toBase64: () => encryptedBuffer.then((buffer) => buffer.toString('base64')),
-    toZBase32: () => encryptedBuffer.then(zBase32Encode),
-    toLatin1: () => encryptedBuffer.then((buffer) => buffer.toString('latin1')),
-    toString: (encoding: BufferEncoding) => encryptedBuffer.then((buffer) => buffer.toString(encoding))
+    toHex: async () => encryptedBuffer.then((buffer) => buffer.toString('hex')),
+    toBase64: async () => encryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: async () => encryptedBuffer.then(zBase32Encode),
+    toLatin1: async () => encryptedBuffer.then((buffer) => buffer.toString('latin1')),
+    toString: async (encoding: BufferEncoding) => encryptedBuffer.then((buffer) => buffer.toString(encoding))
   };
 }
 
@@ -104,12 +104,12 @@ export function decrypt(input: Buffer | Uint8Array, options: CryptionOptions): D
 
   return {
     toBuffer: async () => decryptedBuffer,
-    toHex: () => decryptedBuffer.then((buffer) => buffer.toString('hex')),
-    toBase64: () => decryptedBuffer.then((buffer) => buffer.toString('base64')),
-    toZBase32: () => decryptedBuffer.then(zBase32Encode),
-    toLatin1: () => decryptedBuffer.then((buffer) => buffer.toString('latin1')),
-    toUtf8: () => decryptedBuffer.then((buffer) => buffer.toString('utf8')),
-    toString: (encoding: BufferEncoding) => decryptedBuffer.then((buffer) => buffer.toString(encoding))
+    toHex: async () => decryptedBuffer.then((buffer) => buffer.toString('hex')),
+    toBase64: async () => decryptedBuffer.then((buffer) => buffer.toString('base64')),
+    toZBase32: async () => decryptedBuffer.then(zBase32Encode),
+    toLatin1: async () => decryptedBuffer.then((buffer) => buffer.toString('latin1')),
+    toUtf8: async () => decryptedBuffer.then((buffer) => buffer.toString('utf8')),
+    toString: async (encoding: BufferEncoding) => decryptedBuffer.then((buffer) => buffer.toString(encoding))
   };
 }
 
@@ -198,7 +198,7 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
     toBase64: () => hasher.digest('base64'),
     toZBase32: () => zBase32Encode(hasher.digest()),
     toLatin1: () => hasher.digest('latin1'),
-    toString: (encoding: Crypto.HexBase64Latin1Encoding) => hasher.digest(encoding)
+    toString: (encoding: Crypto.HexBase64Latin1Encoding) => hasher.digest(encoding) // eslint-disable-line no-shadow
   };
 
   return result;

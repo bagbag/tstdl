@@ -9,7 +9,12 @@ export const { script: lockRefreshLuaScript, sha: lockRefreshLuaScriptSha } = lo
 export const { script: lockReleaseLuaScript, sha: lockReleaseLuaScriptSha } = load('lock-release.lua');
 
 function load(file: string): { script: string, sha: string } {
-  const script = readFileSync(`${__dirname}/${file}`, { encoding: 'utf8' }).trim().replace(/\n+/g, '\n').replace(/( |\t)+/g, ' ');
+  const source = readFileSync(`${__dirname}/${file}`, { encoding: 'utf8' });
+  const script = source
+    .trim()
+    .replace(/\n+/ug, '\n')
+    .replace(/(?: |\t)+/ug, ' ');
+
   const sha = createHash('sha1', script, 'utf8').toHex();
 
   return { script, sha };
