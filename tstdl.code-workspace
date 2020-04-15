@@ -6,6 +6,9 @@
       "path": "client"
     },
     {
+      "path": "angular"
+    },
+    {
       "path": "server"
     },
     {

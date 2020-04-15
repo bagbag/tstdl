@@ -35,6 +35,7 @@ module.exports = {
     '@typescript-eslint/no-magic-numbers': ['off', { ignoreNumericLiteralTypes: true, ignoreEnums: true, ignore: [0, 1, 128, 256, 512, 1024, 2048, 4096], ignoreArrayIndexes: true }],
     '@typescript-eslint/no-type-alias': 'off',
     '@typescript-eslint/no-unnecessary-condition': ['error', { allowConstantLoopConditions: true }],
+    '@typescript-eslint/no-unsafe-assignment': 'off',
     '@typescript-eslint/no-unused-vars-experimental': 'off',
     '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-use-before-define': ['error', { functions: false }],

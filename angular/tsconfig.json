@@ -1,0 +1,26 @@
+{
+  "extends": "@tstdl/base",
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "./projects",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es2017",
+    "lib": ["esnext", "dom"],
+    "paths": {
+      "tstdl": [
+        "dist/tstdl/tstdl",
+        "dist/tstdl"
+      ]
+    }
+  },
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true
+  }
+}
