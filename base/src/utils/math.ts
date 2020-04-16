@@ -10,5 +10,5 @@ export function average(...values: number[]): number {
 
 export function precisionRound(value: number, precision: number): number {
   const factor = 10 ** precision;
-  return Math.round(value * factor) / factor;
+  return Math.round((value + Number.EPSILON) * factor) / factor;
 }
