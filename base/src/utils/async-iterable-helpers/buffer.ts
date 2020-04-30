@@ -1,5 +1,5 @@
+import { AwaitableList } from '../../collections/awaitable';
 import { AnyIterable } from '../any-iterable-iterator';
-import { AwaitableList } from '../collections/awaitable';
 
 type BufferItem<T> =
   | { end: false, value: T }
@@ -9,7 +9,7 @@ type BufferItem<T> =
 export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIterableIterator<T> {
   const buffer = new AwaitableList<BufferItem<T>>();
 
-  let end: boolean = false;
+  let end = false;
   let consumerError: Error | undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises

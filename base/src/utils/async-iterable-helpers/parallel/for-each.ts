@@ -1,6 +1,6 @@
+import { AwaitableSet } from '../../../collections/awaitable';
 import { MultiError } from '../../../error/multi-error';
 import { AnyIterable } from '../../any-iterable-iterator';
-import { AwaitableSet } from '../../collections/awaitable';
 import { ParallelizableIteratorFunction } from '../types';
 
 export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: number, func: ParallelizableIteratorFunction<T, any>): Promise<void> {

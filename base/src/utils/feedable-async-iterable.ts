@@ -1,5 +1,5 @@
+import { AwaitableList } from '../collections/awaitable';
 import { DeferredPromise } from '../promise/deferred-promise';
-import { AwaitableList } from './collections/awaitable';
 import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
