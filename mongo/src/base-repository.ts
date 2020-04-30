@@ -1,7 +1,7 @@
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { FindAndModifyWriteOpResultObject } from 'mongodb';
+import { BulkWriteOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
 import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
@@ -90,10 +90,10 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     const documents: MongoDocument<U>[] = [];
-    const operations: object[] = [];
+    const operations: BulkWriteOperation<MongoDocument<U>>[] = [];
 
     for (const entity of entities) {
-      let operation: object;
+      let operation: BulkWriteOperation<MongoDocument<U>>;
 
       if (entity.id == undefined) {
         const document = toMongoDocumentWithNewId(entity);

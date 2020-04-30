@@ -45,6 +45,7 @@ module.exports = {
     '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
     '@typescript-eslint/space-before-function-paren': ['error', { anonymous: 'never', named: 'never', asyncArrow: 'always' }],
     '@typescript-eslint/typedef': 'off',
+    '@typescript-eslint/init-declarations': 'off',
     'array-bracket-newline': ['error', 'consistent'],
     'array-element-newline': ['error', 'consistent'],
     'capitalized-comments': ['warn', 'never'],

@@ -10,7 +10,7 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.57.15",
+    "@tstdl/base": "^0.57.16",
     "@tstdl/database": "^0.9.7",
     "@tstdl/server": "^0.28.8",
     "mongodb": "^3.5.7"
