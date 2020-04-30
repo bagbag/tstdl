@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.28.7",
+  "version": "0.28.8",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,15 +11,15 @@
   },
   "dependencies": {
     "@koa/router": "^8.0.8",
-    "@tstdl/base": "^0.57.14",
+    "@tstdl/base": "^0.57.15",
     "koa": "^2.11.0"
   },
   "devDependencies": {
     "@types/koa": "^2.11.3",
     "@types/koa__router": "^8.0.2",
-    "@types/node": "^13.13.2",
-    "@typescript-eslint/eslint-plugin": "^2.29.0",
-    "@typescript-eslint/parser": "^2.29.0",
+    "@types/node": "^13.13.4",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
     "eslint": "^6.8.0",
     "typescript": "~3.8.3"
   }

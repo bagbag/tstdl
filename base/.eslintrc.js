@@ -29,6 +29,7 @@ module.exports = {
     '@typescript-eslint/explicit-member-accessibility': ['error', { accessibility: 'no-public' }],
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/indent': ['warn', 2],
+    '@typescript-eslint/method-signature-style': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-extra-parens': 'off',
     '@typescript-eslint/no-inferrable-types': ['error', { ignoreParameters: true, ignoreProperties: true }],
