@@ -7,7 +7,8 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import { Readable } from 'stream';
-import { readStream } from '../utils';
+import { NonObjectBufferMode, readStream } from '../utils';
+import { TypedReadable } from '../utils/typed-readable';
 import { ValidationFunction } from './validation';
 import { ValidationError } from './validation/error';
 
@@ -36,9 +37,9 @@ export type Body = UndefinableJson | Readable | Buffer | undefined;
 export type GetData = { parameters: Query };
 export type PostData<B extends BodyType> = GetData & {
   body: B extends BodyType.Json ? UndefinableJson
-    : B extends BodyType.Stream ? Readable
-      : B extends BodyType.Binary ? Buffer
-        : undefined
+  : B extends BodyType.Stream ? Readable
+  : B extends BodyType.Binary ? Buffer
+  : undefined
 };
 
 export type GetValidationFunction<Parameters = GetData> = ValidationFunction<GetData, Parameters>;
@@ -226,7 +227,7 @@ async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> 
       return request.req;
 
     case BodyType.Binary:
-      return readStream(request.req);
+      return readStream(request.req as TypedReadable<NonObjectBufferMode>);
 
     case BodyType.None:
       return undefined;
@@ -245,9 +246,9 @@ async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Pro
 async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {
   const { req, charset } = request;
 
-  const rawBody = await readStream(req, maxBytes);
-  const encoding = (charset != undefined && charset.length > 0) ? charset : 'utf-8';
-  const body = rawBody.toString(encoding);
+  const rawBody = await readStream(req as TypedReadable<NonObjectBufferMode>, maxBytes);
+  const encoding = (charset.length > 0) ? charset : 'utf-8';
+  const body = rawBody.toString(encoding as BufferEncoding);
 
   return body;
 }

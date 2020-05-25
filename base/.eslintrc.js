@@ -67,6 +67,7 @@ module.exports = {
     'max-statements': ['error', 15],
     'multiline-ternary': 'off',
     'new-cap': 'off',
+    'newline-per-chained-call': 'off',
     'no-await-in-loop': 'off',
     'no-case-declarations': 'off',
     'no-constant-condition': 'off',
