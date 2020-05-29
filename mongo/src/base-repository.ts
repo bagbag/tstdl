@@ -21,7 +21,8 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
 };
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
-  returnOriginal?: boolean
+  returnOriginal?: boolean,
+  upsert?: boolean
 };
 
 export class MongoBaseRepository<T extends Entity> {
