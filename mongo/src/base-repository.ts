@@ -151,16 +151,16 @@ export class MongoBaseRepository<T extends Entity> {
     return this.loadByFilter(filter, throwIfNotFound);
   }
 
-  async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>): Promise<U | undefined> {
+  async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
     const filter: FilterQuery<U> = {
       _id: id
     } as FilterQuery<U>;
 
-    return this.tryLoadByFilterAndUpdate(filter, update);
+    return this.tryLoadByFilterAndUpdate(filter, update, options);
   }
 
-  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>): Promise<U> {
-    const entity = await this.tryLoadAndUpdate(id, update);
+  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
+    const entity = await this.tryLoadAndUpdate(id, update, options);
 
     if (entity == undefined) {
       throw new NotFoundError('document not found');

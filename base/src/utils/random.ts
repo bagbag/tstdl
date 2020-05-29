@@ -1,5 +1,3 @@
-import { zBase32Encode } from './z-base32';
-
 type NodeCrypto = typeof import('crypto');
 
 let nodeCrypto: NodeCrypto | undefined;
@@ -47,15 +45,21 @@ export function getRandomBytes(count: number): Uint8Array {
   return bytes;
 }
 
-export function getRandomString(length: number): string {
-  if (length == 0) {
-    return '';
+export function getRandomString(length: number, alphabet: string): string {
+  let result = '';
+
+  if (length < 1) {
+    return result;
   }
 
-  const requiredBytes = Math.floor((length + 1) * 5 / 8);
-  const buffer = getRandomBytes(requiredBytes);
-  const encodedString = zBase32Encode(buffer);
-  const result = encodedString.slice(0, length);
+  const bytes = getRandomBytes(length * 2);
+  const uint16Array = new Uint16Array(bytes.buffer);
+
+  for (let i = 0; i < length; i++) {
+    const value = uint16Array[i];
+    const index = Math.floor((value / 65535) * alphabet.length);
+    result += alphabet[index];
+  }
 
   return result;
 }

@@ -1,6 +1,9 @@
 /* eslint-disable no-bitwise, @typescript-eslint/no-magic-numbers */
 
-const alphabet = 'ybndrfg8ejkmcpqxot1uwisza345h769';
+import { Alphabet } from './alphabet';
+
+const alphabet = Alphabet.ZBase32;
+
 const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index]));
 
 // eslint-disable-next-line max-statements

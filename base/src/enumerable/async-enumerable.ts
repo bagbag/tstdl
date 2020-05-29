@@ -1,5 +1,7 @@
+import { Observable } from 'rxjs';
 import { anyAsync, AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import { AnyIterable } from '../utils/any-iterable-iterator';
+import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
 import { Enumerable } from './enumerable';
 import { EnumerableMethods } from './enumerable-methods';
@@ -13,6 +15,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   }
 
   static from<T>(iterable: AnyIterable<T>): AsyncEnumerable<T> {
+    return new AsyncEnumerable(iterable);
+  }
+
+  static fromObservable<T, O extends Observable<T>>(observable: O): AsyncEnumerable<T> {
+    const iterable = observableAsyncIterable(observable);
     return new AsyncEnumerable(iterable);
   }
 

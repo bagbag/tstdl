@@ -1,5 +1,5 @@
 import { Job, Queue } from '@tstdl/base/queue';
-import { backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, toArray, getRandomString } from '@tstdl/base/utils';
+import { Alphabet, backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
 import { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
 import { Collection, TypedIndexSpecification } from '../types';
@@ -73,7 +73,7 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
-    const batch = getRandomString(10);
+    const batch = getRandomString(15, Alphabet.LowerUpperCaseNumbers);
     const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout, batch);
 
     const operations = createArray(count, () => ({ updateOne: { filter, update } }));

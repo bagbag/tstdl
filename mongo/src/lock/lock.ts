@@ -1,6 +1,6 @@
 import { Lock, LockController, LockedFunction } from '@tstdl/base/lock';
 import { Logger } from '@tstdl/base/logger';
-import { cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, timeout, Timer } from '@tstdl/base/utils';
+import { Alphabet, cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, timeout, Timer } from '@tstdl/base/utils';
 import { MongoLockRepository } from './mongo-lock-repository';
 
 const EXPIRE_TIME = 30000;
@@ -19,7 +19,7 @@ export class MongoLock implements Lock {
   async acquire(timeout: number): Promise<false | LockController>;
   async acquire(timeout: number, func: LockedFunction): Promise<boolean>;
   async acquire(_timeout: number, func?: LockedFunction | undefined): Promise<boolean | LockController> { // eslint-disable-line max-lines-per-function, max-statements
-    const key = getRandomString(15);
+    const key = getRandomString(15, Alphabet.LowerUpperCaseNumbers);
     const timeoutDuration = Math.max(50, Math.min(1000, _timeout / 10));
 
     let result: boolean | Date = false;

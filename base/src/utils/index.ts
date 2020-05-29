@@ -1,3 +1,4 @@
+export * from './alphabet';
 export * from './any-iterable-iterator';
 export * from './async-iterable-helpers';
 export * from './async-iterator-iterable-iterator';
