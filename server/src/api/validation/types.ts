@@ -1,4 +1,5 @@
 import { ValidationError } from './error';
+export { ValidationError };
 
 export type ValidationFunction<Input, Output = Input> = (object: Input) => ValidationResult<Output>;
 
