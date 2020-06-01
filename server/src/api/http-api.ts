@@ -11,6 +11,7 @@ import { NonObjectBufferMode, readStream } from '../utils';
 import { TypedReadable } from '../utils/typed-readable';
 import { ValidationFunction } from './validation';
 import { ValidationError } from './validation/error';
+import { noopValidator } from './validation/validators';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
@@ -54,7 +55,7 @@ export type Route = GetRoute<any> | PostRoute<any, any>;
 export type GetRoute<Parameters = GetData> = {
   type: 'get',
   path: string,
-  validator: GetValidationFunction<Parameters>,
+  validator?: GetValidationFunction<Parameters>,
   handler: RouteHandler<Parameters>
 };
 
@@ -62,7 +63,7 @@ export type PostRoute<B extends BodyType, Parameters = PostData<BodyType>> = {
   type: 'post',
   path: string,
   bodyType: BodyType,
-  validator: PostValidationFunction<B, Parameters>,
+  validator?: PostValidationFunction<B, Parameters>,
   handler: RouteHandler<Parameters>
 };
 
@@ -103,11 +104,11 @@ export class HttpApi {
     for (const route of routes) {
       switch (route.type) {
         case 'get':
-          this.registerGetRoute(route.path, route.validator, route.handler);
+          this.registerGetRoute(route.path, route.validator ?? noopValidator, route.handler);
           break;
 
         case 'post':
-          this.registerPostRoute(route.path, route.bodyType, route.validator, route.handler);
+          this.registerPostRoute(route.path, route.bodyType, route.validator ?? noopValidator, route.handler);
           break;
 
         default:
