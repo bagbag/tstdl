@@ -59,7 +59,7 @@ export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, res
 
 export type RouteHandler<Data> = (data: Data, request: HttpRequest) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = GetRoute | ValidatedGetRoute | PostRoute<BodyType> | ValidatedPostRoute<BodyType>;
+export type Route = GetRoute | ValidatedGetRoute<any> | PostRoute<BodyType> | ValidatedPostRoute<BodyType, any>;
 
 type RouteBase<Type extends 'get' | 'post', HandlerParameters> = {
   type: Type,
@@ -118,7 +118,7 @@ export class HttpApi {
 
   registerRoutes(routes: Route[]): void {
     for (const route of routes) {
-      const validator = isValidatedRoute(route) ? route.validator : noopValidator;
+      const validator = isValidatedRoute(route) ? route.validator as ValidationFunction<any, any> : noopValidator;
 
       switch (route.type) {
         case 'get':
