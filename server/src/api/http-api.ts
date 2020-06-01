@@ -112,11 +112,13 @@ export class HttpApi {
     this.requestHandler(request, response);
   }
 
-  supressErrorLog(errorConstructor: Type<Error>): void {
-    this.supressedErrors.add(errorConstructor);
+  supressErrorLog(...errorConstructors: Type<Error>[]): void {
+    for (const errorConstructor of errorConstructors) {
+      this.supressedErrors.add(errorConstructor);
+    }
   }
 
-  registerRoutes(routes: Route[]): void {
+  registerRoutes(...routes: Route[]): void {
     for (const route of routes) {
       const validator = isValidatedRoute(route) ? route.validator as ValidationFunction<any, any> : noopValidator;
 
