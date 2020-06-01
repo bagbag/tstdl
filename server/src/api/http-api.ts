@@ -15,6 +15,13 @@ import { noopValidator } from './validation/validators';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
+export type HttpRequest = {
+  url: URL,
+  method: string,
+  ip: string,
+  headers: StringMap<string | string[]>
+};
+
 export type HttpResponse<JsonType extends UndefinableJson = {}> = {
   headers?: StringMap<string | string[]>,
   statusCode?: number,
@@ -27,6 +34,7 @@ export type HttpResponse<JsonType extends UndefinableJson = {}> = {
 
 export enum BodyType {
   None,
+  String,
   Json,
   Stream,
   Binary
@@ -38,6 +46,7 @@ export type Body = UndefinableJson | Readable | Buffer | undefined;
 export type GetData = { parameters: Query };
 export type PostData<B extends BodyType> = GetData & {
   body: B extends BodyType.Json ? UndefinableJson
+  : B extends BodyType.String ? string
   : B extends BodyType.Stream ? Readable
   : B extends BodyType.Binary ? Buffer
   : undefined
@@ -48,23 +57,30 @@ export type PostValidationFunction<B extends BodyType, Parameters = PostData<Bod
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<Data> = (data: Data) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<Data> = (data: Data, request: HttpRequest) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = GetRoute<any> | PostRoute<any, any>;
+export type Route = GetRoute | ValidatedGetRoute | PostRoute<BodyType> | ValidatedPostRoute<BodyType>;
 
-export type GetRoute<Parameters = GetData> = {
-  type: 'get',
+type RouteBase<Type extends 'get' | 'post', HandlerParameters> = {
+  type: Type,
   path: string,
-  validator?: GetValidationFunction<Parameters>,
-  handler: RouteHandler<Parameters>
+  handler: RouteHandler<HandlerParameters>
 };
 
-export type PostRoute<B extends BodyType, Parameters = PostData<BodyType>> = {
-  type: 'post',
-  path: string,
-  bodyType: BodyType,
-  validator?: PostValidationFunction<B, Parameters>,
-  handler: RouteHandler<Parameters>
+type ValidatedRouteBase<Type extends 'get' | 'post', Input, HandlerParameters, Validator extends ValidationFunction<Input, HandlerParameters>> = RouteBase<Type, HandlerParameters> & {
+  validator: Validator
+}
+
+export type GetRoute = RouteBase<'get', GetData>;
+
+export type ValidatedGetRoute<Parameters = GetData> = ValidatedRouteBase<'get', GetData, Parameters, GetValidationFunction<Parameters>>;
+
+export type PostRoute<B extends BodyType> = RouteBase<'post', PostData<B>> & {
+  bodyType: B
+};
+
+export type ValidatedPostRoute<B extends BodyType, Parameters = PostData<BodyType>> = ValidatedRouteBase<'post', PostData<B>, Parameters, PostValidationFunction<B, Parameters>> & {
+  bodyType: B
 };
 
 export class HttpApi {
@@ -102,13 +118,15 @@ export class HttpApi {
 
   registerRoutes(routes: Route[]): void {
     for (const route of routes) {
+      const validator = isValidatedRoute(route) ? route.validator : noopValidator;
+
       switch (route.type) {
         case 'get':
-          this.registerGetRoute(route.path, route.validator ?? noopValidator, route.handler);
+          this.registerGetRoute(route.path, validator, route.handler);
           break;
 
         case 'post':
-          this.registerPostRoute(route.path, route.bodyType, route.validator ?? noopValidator, route.handler);
+          this.registerPostRoute(route.path, (route as PostRoute<BodyType>).bodyType, validator, route.handler);
           break;
 
         default:
@@ -171,8 +189,14 @@ export class HttpApi {
 
     if (validationResult.valid) {
       const parsedRequestData = validationResult.value;
+      const request: HttpRequest = {
+        url: context.URL,
+        method: context.request.method,
+        headers: context.req.headers as StringMap<string | string[]>,
+        ip: context.request.ip
+      };
 
-      const handlerReturnValue = handler(parsedRequestData);
+      const handlerReturnValue = handler(parsedRequestData, request);
       const responseResult = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
 
       applyResponse(response, responseResult);
@@ -221,6 +245,9 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
 
 async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> {
   switch (bodyType) {
+    case BodyType.String:
+      return readBody(request);
+
     case BodyType.Json:
       return readJsonBody(request);
 
@@ -244,7 +271,7 @@ async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Pro
   return json;
 }
 
-async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {
+async function readBody(request: Koa.Request, maxBytes: number = 10e6): Promise<string> {
   const { req, charset } = request;
 
   const rawBody = await readStream(req as TypedReadable<NonObjectBufferMode>, maxBytes);
@@ -297,4 +324,8 @@ async function responseTimeMiddleware(context: Context, next: () => Promise<any>
   const roundedMilliseconds = precisionRound(milliseconds, 2);
 
   context.response.set('X-Response-Time', `${roundedMilliseconds}ms`);
+}
+
+function isValidatedRoute(route: Route): route is ValidatedRouteBase<any, any, any, any> {
+  return typeof (route as ValidatedRouteBase<any, any, any, any>).validator == 'function';
 }
