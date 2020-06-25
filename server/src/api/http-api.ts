@@ -90,7 +90,7 @@ export class HttpApi {
   private readonly requestHandler: RequestHandler;
   private readonly supressedErrors: Set<Type<Error>>;
 
-  constructor({ prefix, logger, behindProxy = false }: { prefix: string, logger: Logger, behindProxy?: boolean }) {
+  constructor({ prefix, logger, behindProxy = false }: { prefix?: string, logger: Logger, behindProxy?: boolean }) {
     this.logger = logger;
 
     this.koa = new Koa();
@@ -100,7 +100,10 @@ export class HttpApi {
     this.requestHandler = this.koa.callback();
 
     this.koa.proxy = behindProxy;
-    this.router.prefix(prefix);
+
+    if (prefix != undefined) {
+      this.router.prefix(prefix);
+    }
 
     this.koa.use(errorCatchMiddleware(logger, this.supressedErrors));
     this.koa.use(responseTimeMiddleware);
@@ -214,6 +217,20 @@ export class HttpApi {
 }
 
 function applyResponse(response: Koa.Response, responseResult: HttpResponse): void {
+  if (responseResult.json != undefined) {
+    response.set('Content-Type', 'application/json');
+    response.body = JSON.stringify(responseResult.json);
+  }
+  else if (responseResult.text != undefined) {
+    response.body = responseResult.text;
+  }
+  else if (responseResult.stream != undefined) {
+    response.body = responseResult.stream;
+  }
+  else if (responseResult.binary != undefined) {
+    response.body = responseResult.binary;
+  }
+
   if (responseResult.headers != undefined) {
     for (const [field, value] of Object.entries(responseResult.headers)) {
       response.set(field, value);
@@ -226,22 +243,6 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
 
   if (responseResult.statusMessage != undefined) {
     response.message = responseResult.statusMessage;
-  }
-
-  if (responseResult.json != undefined) {
-    response.body = responseResult.json;
-  }
-
-  if (responseResult.text != undefined) {
-    response.body = responseResult.text;
-  }
-
-  if (responseResult.stream != undefined) {
-    response.body = responseResult.stream;
-  }
-
-  if (responseResult.binary != undefined) {
-    response.body = responseResult.binary;
   }
 }
 
