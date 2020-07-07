@@ -45,7 +45,7 @@ export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(enti
   return document;
 }
 
-export function toMongoDocumentWithNewId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocument<T> {
+export function toMongoDocumentWithId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocument<T> {
   const { id, ...entityRest } = entity;
 
   const document = {

@@ -2,7 +2,7 @@ import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './model';
+import { MongoDocument, toEntity, toMongoDocumentWithId } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export type UpdateResult = {
@@ -37,14 +37,14 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
-    const document = toMongoDocumentWithNewId(entity);
+    const document = toMongoDocumentWithId(entity);
     await this.collection.insertOne(document as any);
 
     return toEntity(document);
   }
 
   async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
-    const document = toMongoDocumentWithNewId(entity);
+    const document = toMongoDocumentWithId(entity);
     const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
     await this.collection.replaceOne(filter, replacement, { upsert });
 
@@ -52,7 +52,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
-    const document = toMongoDocumentWithNewId(entity);
+    const document = toMongoDocumentWithId(entity);
     await this.collection.replaceOne(filter, document, { upsert });
 
     return toEntity(document);
@@ -63,7 +63,7 @@ export class MongoBaseRepository<T extends Entity> {
       return [];
     }
 
-    const documents = entities.map(toMongoDocumentWithNewId);
+    const documents = entities.map(toMongoDocumentWithId);
     const operations = documents.map(toInsertOneOperation);
     await this.collection.bulkWrite(operations as any);
 
@@ -76,7 +76,7 @@ export class MongoBaseRepository<T extends Entity> {
       return [];
     }
 
-    const documents = entities.map(toMongoDocumentWithNewId);
+    const documents = entities.map(toMongoDocumentWithId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
     await this.collection.bulkWrite(operations);
 
