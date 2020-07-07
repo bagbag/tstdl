@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/semi */
-import { Entity, EntityRepository, EntityWithPartialId } from '@tstdl/database';
+import { Entity, EntityRepository, EntityWithPartialId, UpdateOptions } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
-import { Collection, TypedIndexSpecification } from './types';
 import { MongoDocument } from './model';
+import { Collection, TypedIndexSpecification } from './types';
 
 type Options<T> = {
   indexes?: TypedIndexSpecification<T>[]
@@ -45,16 +45,21 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
 
-  async save<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean = false): Promise<U> {
-    if (entity.id == undefined) {
-      return this.baseRepository.insert(entity);
-    }
+  async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
+    return this.baseRepository.insert(entity);
+  }
 
+  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+    return this.baseRepository.insertMany(entities);
+  }
+
+
+  async update<U extends T>(entity: U, { upsert }: UpdateOptions): Promise<U> {
     return this.baseRepository.replace(entity, upsert);
   }
 
-  async saveMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean = false): Promise<U[]> {
-    return this.baseRepository.insertOrReplace(entities, upsert);
+  async updateMany<U extends T>(entities: U[], { upsert }: UpdateOptions): Promise<U[]> {
+    return this.baseRepository.replaceMany(entities, upsert);
   }
 
   async delete<U extends T>(entity: U): Promise<boolean> {

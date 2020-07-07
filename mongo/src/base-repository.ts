@@ -1,8 +1,8 @@
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { BulkWriteOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toMongoDocument, toMongoDocumentWithNewId } from './model';
+import { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
+import { MongoDocument, toEntity, toMongoDocumentWithNewId } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export type UpdateResult = {
@@ -65,7 +65,7 @@ export class MongoBaseRepository<T extends Entity> {
 
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map(toInsertOneOperation);
-    await this.collection.bulkWrite(operations);
+    await this.collection.bulkWrite(operations as any);
 
     const savedEntities = documents.map(toEntity);
     return savedEntities;
@@ -78,40 +78,6 @@ export class MongoBaseRepository<T extends Entity> {
 
     const documents = entities.map(toMongoDocumentWithNewId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
-    await this.collection.bulkWrite(operations);
-
-    const savedEntities = documents.map(toEntity);
-    return savedEntities;
-  }
-
-  // eslint-disable-next-line max-statements
-  async insertOrReplace<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
-    if (entities.length == 0) {
-      return [];
-    }
-
-    const documents: MongoDocument<U>[] = [];
-    const operations: BulkWriteOperation<MongoDocument<U>>[] = [];
-
-    for (const entity of entities) {
-      let operation: BulkWriteOperation<MongoDocument<U>>;
-
-      if (entity.id == undefined) {
-        const document = toMongoDocumentWithNewId(entity);
-        operation = toInsertOneOperation(document);
-
-        documents.push(document);
-      }
-      else {
-        const document = toMongoDocument(entity as U);
-        operation = toReplaceOneOperation(document, upsert);
-
-        documents.push(document);
-      }
-
-      operations.push(operation);
-    }
-
     await this.collection.bulkWrite(operations);
 
     const savedEntities = documents.map(toEntity);
@@ -299,10 +265,10 @@ export class MongoBaseRepository<T extends Entity> {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>) {
-  const operation = {
+function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>): BulkWriteInsertOneOperation<MongoDocument<T>> {
+  const operation: BulkWriteInsertOneOperation<MongoDocument<T>> = {
     insertOne: {
-      document
+      document: document as any
     }
   };
 
