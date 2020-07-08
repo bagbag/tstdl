@@ -65,7 +65,7 @@ module.exports = {
     'max-len': ['off', { code: 150 }],
     'max-lines': 'off',
     'max-params': 'off',
-    'max-statements': ['error', 15],
+    'max-statements': ['error', 20],
     'multiline-ternary': 'off',
     'new-cap': 'off',
     'newline-per-chained-call': 'off',
