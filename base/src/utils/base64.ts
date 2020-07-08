@@ -38,3 +38,23 @@ export function decodeBase64(base64: string): ArrayBuffer {
 
   return bytes.buffer;
 }
+
+export function encodeBase64Url(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
+  return base64ToBase64Url(encodeBase64(array, bytesOffset, length));
+}
+
+export function decodeBase64Url(base64Url: string): ArrayBuffer {
+  return decodeBase64(base64UrlToBase64(base64Url));
+}
+
+export function base64ToBase64Url(input: string): string {
+  return input.replace(/\+/ug, '-')
+    .replace(/\//ug, '_')
+    .replace(/=/ug, ''); // eslint-disable-line no-div-regex
+}
+
+export function base64UrlToBase64(input: string): string {
+  return input.padEnd(input.length + ((4 - (input.length % 4)) % 4), '=')
+    .replace(/-/ug, '+')
+    .replace(/_/ug, '/');
+}
