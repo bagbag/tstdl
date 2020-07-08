@@ -48,9 +48,10 @@ export function decodeBase64Url(base64Url: string): ArrayBuffer {
 }
 
 export function base64ToBase64Url(input: string): string {
-  return input.replace(/\+/ug, '-')
-    .replace(/\//ug, '_')
-    .replace(/=/ug, ''); // eslint-disable-line no-div-regex
+  return input
+    .replace(/=/ug, '') // eslint-disable-line no-div-regex
+    .replace(/\+/ug, '-')
+    .replace(/\//ug, '_');
 }
 
 export function base64UrlToBase64(input: string): string {
