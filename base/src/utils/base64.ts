@@ -2,7 +2,7 @@ import { TypedArray } from '../types';
 
 export function encodeBase64(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
   if (typeof Buffer != 'undefined') {
-    const buffer = Buffer.from((array as TypedArray).buffer != undefined ? (array as TypedArray).buffer : array, bytesOffset, length);
+    const buffer = Buffer.from(array, bytesOffset, length);
     return buffer.toString('base64');
   }
 
