@@ -1,8 +1,8 @@
 import { ValidationError } from './error';
 export { ValidationError };
 
-export type ValidationFunction<Input, Output = Input> = (object: Input) => ValidationResult<Output>;
+export type EndpointValidator<Input, Output> = (object: Input) => ValidationResult<Output> | Promise<ValidationResult<Output>>;
 
 export type ValidationResult<Output> =
   | { valid: true, value: Output, error?: undefined }
-  | { valid: false, value?: undefined, error: ValidationError | NonNullable<any> };
+  | { valid: false, value?: undefined, error: ValidationError };

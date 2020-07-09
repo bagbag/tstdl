@@ -9,7 +9,7 @@ export async function readStream(readable: TypedReadable<NonObjectBufferMode>, m
     chunks.push(chunk);
     totalLength += chunk.length;
 
-    if (maxBytes != undefined && totalLength >= maxBytes) {
+    if (maxBytes != undefined && totalLength > maxBytes) {
       readable.destroy(new Error(`maximum size of ${maxBytes} bytes exceeded`));
     }
   }

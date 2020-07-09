@@ -9,9 +9,9 @@ import * as Koa from 'koa';
 import { Readable } from 'stream';
 import { NonObjectBufferMode, readStream } from '../utils';
 import { TypedReadable } from '../utils/typed-readable';
-import { ValidationFunction } from './validation';
+import { ApiEndpoint } from './endpoint';
+import { EndpointValidator } from './validation';
 import { ValidationError } from './validation/error';
-import { noopValidator } from './validation/validators';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
@@ -22,7 +22,7 @@ export type HttpRequest = {
   headers: StringMap<string | string[]>
 };
 
-export type HttpResponse<JsonType extends UndefinableJson = {}> = {
+export type HttpResponse<JsonType extends UndefinableJson = StringMap> = {
   headers?: StringMap<string | string[]>,
   statusCode?: number,
   statusMessage?: string,
@@ -52,36 +52,49 @@ export type PostData<B extends BodyType> = GetData & {
   : undefined
 };
 
-export type GetValidationFunction<Parameters = GetData> = ValidationFunction<GetData, Parameters>;
-export type PostValidationFunction<B extends BodyType, Parameters = PostData<BodyType>> = ValidationFunction<PostData<B>, Parameters>;
+export type GetValidationFunction<Parameters = GetData> = EndpointValidator<GetData, Parameters>;
+export type PostValidationFunction<B extends BodyType, Parameters = PostData<BodyType>> = EndpointValidator<PostData<B>, Parameters>;
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<Data> = (data: Data, request: HttpRequest) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<Data, Result> = (data: Data, request: HttpRequest, apiEndpoint: ApiEndpoint<Data, Result>) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = GetRoute | ValidatedGetRoute<any> | PostRoute<BodyType> | ValidatedPostRoute<BodyType, any>;
+export type Route = GetRoute<any, any> | PostRoute<any, BodyType, any>;
 
-type RouteBase<Type extends 'get' | 'post', HandlerParameters> = {
+type RouteBase<Type extends 'get' | 'post', Parameters, Result> = {
   type: Type,
   path: string,
-  handler: RouteHandler<HandlerParameters>
+  endpoint: ApiEndpoint<Parameters, Result>
 };
 
-type ValidatedRouteBase<Type extends 'get' | 'post', Input, HandlerParameters, Validator extends ValidationFunction<Input, HandlerParameters>> = RouteBase<Type, HandlerParameters> & {
-  validator: Validator
+export type GetRoute<Parameters, Result> = RouteBase<'get', Parameters, Result> & {
+  parametersTransformer?: GetApiEndpointParametersTransformer<Parameters>
+};
+
+export type PostRoute<Parameters, B extends BodyType, Result> = RouteBase<'post', Parameters, Result> & {
+  bodyType: B,
+  parametersTransformer?: PostApiEndpointParametersTransformer<B, Parameters>
+};
+
+export type GetApiEndpointParametersTransformer<Parameters> = (data: GetData) => Parameters;
+export type PostApiEndpointParametersTransformer<B extends BodyType, Parameters> = (data: PostData<B>) => Parameters;
+
+export function getDefaultRouteHandler<Parameters, Result>(endpoint: ApiEndpoint<Parameters, Result>): RouteHandler<Parameters, Result> {
+  const handler: RouteHandler<Parameters, Result> = async (parameters) => {
+    const result = await endpoint(parameters);
+
+    const response: HttpResponse = {
+      json: result
+    };
+
+    return response;
+  };
+
+  return handler;
 }
 
-export type GetRoute = RouteBase<'get', GetData>;
-
-export type ValidatedGetRoute<Parameters = GetData> = ValidatedRouteBase<'get', GetData, Parameters, GetValidationFunction<Parameters>>;
-
-export type PostRoute<B extends BodyType> = RouteBase<'post', PostData<B>> & {
-  bodyType: B
-};
-
-export type ValidatedPostRoute<B extends BodyType, Parameters = PostData<BodyType>> = ValidatedRouteBase<'post', PostData<B>, Parameters, PostValidationFunction<B, Parameters>> & {
-  bodyType: B
-};
+export const getDefaultGetParametersTransformer: GetApiEndpointParametersTransformer<StringMap> = () => (data: GetData) => data.parameters;
+export const getDefaultPostParametersTransformer: PostApiEndpointParametersTransformer<BodyType.Json, StringMap> = () => (data: PostData<BodyType.Json>) => ({ ...data.parameters, ...(data.body as StringMap) });
 
 export class HttpApi {
   private readonly logger: Logger;
@@ -123,15 +136,15 @@ export class HttpApi {
 
   registerRoutes(...routes: Route[]): void {
     for (const route of routes) {
-      const validator = isValidatedRoute(route) ? route.validator as ValidationFunction<any, any> : noopValidator;
+      const validator = route.parametersTransformer ?? ;
 
       switch (route.type) {
         case 'get':
-          this.registerGetRoute(route.path, validator, route.handler);
+          this.registerGetRoute(route.path, validator, route.endpoint);
           break;
 
         case 'post':
-          this.registerPostRoute(route.path, (route as PostRoute<BodyType>).bodyType, validator, route.handler);
+          this.registerPostRoute(route.path, route.bodyType, validator, route.endpoint);
           break;
 
         default:
@@ -140,7 +153,7 @@ export class HttpApi {
     }
   }
 
-  registerGetRoute<Parameters = GetData>(path: string, validator: GetValidationFunction<Parameters>, handler: RouteHandler<Parameters>): void {
+  registerGetRoute<Parameters, Result>(path: string, endpoint: ApiEndpoint<Parameters, Result>, parametersTransform: GetApiEndpointParametersTransformer<Parameters>, handler: RouteHandler<Parameters, Result> = getDefaultRouteHandler(endpoint)): void {
     this.router.get(path, async (context: Context, next) => {
       await this.handle(context, BodyType.None, validator, handler);
       return next();
@@ -188,9 +201,11 @@ export class HttpApi {
         return;
     }
 
-    const validationResult = method == 'GET'
-      ? (validator as GetValidationFunction<Parameters>)(requestData)
-      : (validator as PostValidationFunction<B, Parameters>)(requestData as PostData<B>);
+    const validationResult = await (
+      method == 'GET'
+        ? (validator as GetValidationFunction<Parameters>)(requestData)
+        : (validator as PostValidationFunction<B, Parameters>)(requestData as PostData<B>)
+    );
 
     if (validationResult.valid) {
       const parsedRequestData = validationResult.value;
@@ -327,8 +342,4 @@ async function responseTimeMiddleware(context: Context, next: () => Promise<any>
   const roundedMilliseconds = precisionRound(milliseconds, 2);
 
   context.response.set('X-Response-Time', `${roundedMilliseconds}ms`);
-}
-
-function isValidatedRoute(route: Route): route is ValidatedRouteBase<any, any, any, any> {
-  return typeof (route as ValidatedRouteBase<any, any, any, any>).validator == 'function';
 }
