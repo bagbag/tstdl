@@ -1,17 +1,16 @@
 import * as KoaRouter from '@koa/router';
 import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
-import { StringMap, Type, UndefinableJson } from '@tstdl/base/types';
+import { Json, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer } from '@tstdl/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import { Readable } from 'stream';
+import { HttpServer } from '../http';
 import { NonObjectBufferMode, readStream } from '../utils';
 import { TypedReadable } from '../utils/typed-readable';
 import { ApiEndpoint } from './endpoint';
-import { EndpointValidator } from './validation';
-import { ValidationError } from './validation/error';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
@@ -22,7 +21,7 @@ export type HttpRequest = {
   headers: StringMap<string | string[]>
 };
 
-export type HttpResponse<JsonType extends UndefinableJson = StringMap> = {
+export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
   headers?: StringMap<string | string[]>,
   statusCode?: number,
   statusMessage?: string,
@@ -35,66 +34,71 @@ export type HttpResponse<JsonType extends UndefinableJson = StringMap> = {
 export enum BodyType {
   None,
   String,
-  Json,
+  Json, // eslint-disable-line no-shadow
   Stream,
   Binary
 }
 
-export type Query = StringMap<string>;
-export type Body = UndefinableJson | Readable | Buffer | undefined;
+export enum RequestMethod {
+  Get = 'get',
+  Post = 'post'
+}
 
-export type GetData = { parameters: Query };
-export type PostData<B extends BodyType> = GetData & {
-  body: B extends BodyType.Json ? UndefinableJson
+export type Query = StringMap<string>;
+
+export type BodyValueType<B extends BodyType>
+  = B extends BodyType.Json ? Json
   : B extends BodyType.String ? string
   : B extends BodyType.Stream ? Readable
   : B extends BodyType.Binary ? Buffer
-  : undefined
-};
+  : undefined;
 
-export type GetValidationFunction<Parameters = GetData> = EndpointValidator<GetData, Parameters>;
-export type PostValidationFunction<B extends BodyType, Parameters = PostData<BodyType>> = EndpointValidator<PostData<B>, Parameters>;
+export type RequestData<B extends BodyType = BodyType.None> = {
+  parameters: Query,
+  body: BodyValueType<B>
+};
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<Data, Result> = (data: Data, request: HttpRequest, apiEndpoint: ApiEndpoint<Data, Result>) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult>) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = GetRoute<any, any> | PostRoute<any, BodyType, any>;
+export type Route = RouteBase<RequestMethod, any, any, any, BodyType>;
 
-type RouteBase<Type extends 'get' | 'post', Parameters, Result> = {
-  type: Type,
+type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters, EndpointResult, B extends BodyType = BodyType.None> = {
+  method: Method,
   path: string,
-  endpoint: ApiEndpoint<Parameters, Result>
+  bodyType?: B,
+  parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
+  handler: RouteHandler<RouteParameters, EndpointResult>,
+  endpoint: ApiEndpoint<EndpointParameters, EndpointResult>
 };
 
-export type GetRoute<Parameters, Result> = RouteBase<'get', Parameters, Result> & {
-  parametersTransformer?: GetApiEndpointParametersTransformer<Parameters>
-};
+export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export type PostRoute<Parameters, B extends BodyType, Result> = RouteBase<'post', Parameters, Result> & {
-  bodyType: B,
-  parametersTransformer?: PostApiEndpointParametersTransformer<B, Parameters>
-};
+export const defaultRouteHandler: RouteHandler = async (_request, parameters, endpoint) => {
+  const result = await endpoint(parameters);
 
-export type GetApiEndpointParametersTransformer<Parameters> = (data: GetData) => Parameters;
-export type PostApiEndpointParametersTransformer<B extends BodyType, Parameters> = (data: PostData<B>) => Parameters;
-
-export function getDefaultRouteHandler<Parameters, Result>(endpoint: ApiEndpoint<Parameters, Result>): RouteHandler<Parameters, Result> {
-  const handler: RouteHandler<Parameters, Result> = async (parameters) => {
-    const result = await endpoint(parameters);
-
-    const response: HttpResponse = {
-      json: result
-    };
-
-    return response;
+  const response: HttpResponse = {
+    json: result
   };
 
-  return handler;
-}
+  return response;
+};
 
-export const getDefaultGetParametersTransformer: GetApiEndpointParametersTransformer<StringMap> = () => (data: GetData) => data.parameters;
-export const getDefaultPostParametersTransformer: PostApiEndpointParametersTransformer<BodyType.Json, StringMap> = () => (data: PostData<BodyType.Json>) => ({ ...data.parameters, ...(data.body as StringMap) });
+type DefaultParametersTransformerReturnType<B extends BodyType> = B extends BodyType.None ? StringMap : StringMap & { body: BodyValueType<B> };
+
+export function defaultParametersTransformer<B extends BodyType>(data: RequestData<B>, bodyType: B): DefaultParametersTransformerReturnType<B> {
+  let transformed: StringMap = { ...data.parameters };
+
+  if (bodyType == BodyType.Json && typeof data.body == 'object' && !Array.isArray(data.body)) {
+    transformed = { ...transformed, ...(data.body as StringMap) };
+  }
+  else if (bodyType != BodyType.None) {
+    transformed = { ...transformed, body: data.body };
+  }
+
+  return transformed as DefaultParametersTransformerReturnType<B>;
+}
 
 export class HttpApi {
   private readonly logger: Logger;
@@ -124,6 +128,10 @@ export class HttpApi {
     this.koa.use(this.router.allowedMethods());
   }
 
+  attachHttpServer(httpServer: HttpServer): void {
+    httpServer.registerRequestHandler((request, response) => this.handleRequest(request, response));
+  }
+
   handleRequest(request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse): void {
     this.requestHandler(request, response);
   }
@@ -136,15 +144,13 @@ export class HttpApi {
 
   registerRoutes(...routes: Route[]): void {
     for (const route of routes) {
-      const validator = route.parametersTransformer ?? ;
-
-      switch (route.type) {
-        case 'get':
-          this.registerGetRoute(route.path, validator, route.endpoint);
+      switch (route.method) {
+        case RequestMethod.Get:
+          this.registerRoute(route.method, route.path, BodyType.None, route.parametersTransformer, route.endpoint, route.handler);
           break;
 
-        case 'post':
-          this.registerPostRoute(route.path, route.bodyType, validator, route.endpoint);
+        case RequestMethod.Post:
+          this.registerRoute(route.method, route.path, route.bodyType ?? BodyType.Json, route.parametersTransformer, route.endpoint, route.handler);
           break;
 
         default:
@@ -153,28 +159,22 @@ export class HttpApi {
     }
   }
 
-  registerGetRoute<Parameters, Result>(path: string, endpoint: ApiEndpoint<Parameters, Result>, parametersTransform: GetApiEndpointParametersTransformer<Parameters>, handler: RouteHandler<Parameters, Result> = getDefaultRouteHandler(endpoint)): void {
-    this.router.get(path, async (context: Context, next) => {
-      await this.handle(context, BodyType.None, validator, handler);
-      return next();
-    });
-  }
 
-  registerPostRoute<ValidatedData, B extends BodyType>(path: string, bodyType: B, validator: PostValidationFunction<B, ValidatedData>, handler: RouteHandler<ValidatedData>): void {
-    this.router.post(path, async (context: Context, next) => {
-      await this.handle(context, bodyType, validator, handler);
+  private registerRoute<RouteParameters, EndpointParameters, B extends BodyType, Result>(method: RequestMethod, path: string, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result>, handler: RouteHandler<RouteParameters, EndpointParameters, Result>): void {
+    this.router.register(path, [method], async (context: Context, next) => {
+      await this.handle(context, bodyType, parametersTransformer, endpoint, handler);
       return next();
     });
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
-  private async handle<B extends BodyType, Parameters>(context: Context, bodyType: BodyType, validator: GetValidationFunction<Parameters> | PostValidationFunction<B, Parameters>, handler: RouteHandler<Parameters>): Promise<void> {
+  private async handle<RouteParameters, EndpointParameters, B extends BodyType, Result>(context: Context, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result>, handler: RouteHandler<RouteParameters, EndpointParameters, Result>): Promise<void> {
     const { request, response, params } = context;
-    const { method, query: { ...query } } = request;
+    const { query: { ...query } } = request;
 
-    const parameters = { ...params, ...query };
+    const requestParameters = { ...params, ...query };
 
-    let body: Body;
+    let body: BodyValueType<B>;
     try {
       body = await getBody(request, bodyType);
     }
@@ -184,50 +184,18 @@ export class HttpApi {
       return;
     }
 
-    let requestData: GetData | PostData<B>;
+    const requestData: RequestData<B> = { parameters: requestParameters, body };
 
-    switch (method) {
-      case 'GET':
-        requestData = { parameters };
-        break;
+    const handlerParameters = parametersTransformer(requestData, bodyType);
+    const httpRequest: HttpRequest = {
+      url: context.URL,
+      method: context.request.method,
+      headers: context.req.headers as StringMap<string | string[]>,
+      ip: context.request.ip
+    };
 
-      case 'POST':
-        requestData = { parameters, body } as PostData<B>;
-        break;
-
-      default:
-        response.status = 405;
-        response.body = createErrorResponse('Method Not Allowed', `method ${request.method} not supported for this endpoint`);
-        return;
-    }
-
-    const validationResult = await (
-      method == 'GET'
-        ? (validator as GetValidationFunction<Parameters>)(requestData)
-        : (validator as PostValidationFunction<B, Parameters>)(requestData as PostData<B>)
-    );
-
-    if (validationResult.valid) {
-      const parsedRequestData = validationResult.value;
-      const request: HttpRequest = {
-        url: context.URL,
-        method: context.request.method,
-        headers: context.req.headers as StringMap<string | string[]>,
-        ip: context.request.ip
-      };
-
-      const handlerReturnValue = handler(parsedRequestData, request);
-      const responseResult = (handlerReturnValue instanceof Promise) ? await handlerReturnValue : handlerReturnValue;
-
-      applyResponse(response, responseResult);
-    }
-    else {
-      response.status = 400;
-
-      (response.body as ErrorResponse) = (validationResult.error instanceof ValidationError)
-        ? createErrorResponse(validationResult.error.name, validationResult.error.message, validationResult.error.details)
-        : createErrorResponse('invalid request data', 'validation failed', validationResult.error);
-    }
+    const httpResponse = await handler(httpRequest, handlerParameters, endpoint);
+    applyResponse(response, httpResponse);
   }
 }
 
@@ -261,31 +229,31 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   }
 }
 
-async function getBody(request: Koa.Request, bodyType: BodyType): Promise<Body> {
+async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B): Promise<BodyValueType<B>> {
   switch (bodyType) {
     case BodyType.String:
-      return readBody(request);
+      return readBody(request) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Json:
-      return readJsonBody(request);
+      return readJsonBody(request) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Stream:
-      return request.req;
+      return request.req as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Binary:
-      return readStream(request.req as TypedReadable<NonObjectBufferMode>);
+      return readStream(request.req as TypedReadable<NonObjectBufferMode>) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.None:
-      return undefined;
+      return undefined as unknown as Promise<BodyValueType<B>>;
 
     default:
-      throw new Error('unknown body-type');
+      throw new Error('unknown BodyType');
   }
 }
 
-async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Promise<UndefinableJson> {
+async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Promise<Json> {
   const body = await readBody(request, maxLength);
-  const json = JSON.parse(body) as UndefinableJson;
+  const json = JSON.parse(body) as Json;
   return json;
 }
 
@@ -329,9 +297,11 @@ function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function corsMiddleware(context: Context, next: () => Promise<any>): Promise<any> {
   context.response.set({
+    /* eslint-disable @typescript-eslint/naming-convention */
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': '*',
     'Access-Control-Allow-Headers': context.request.get('Access-Control-Request-Headers')
+    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   return next();

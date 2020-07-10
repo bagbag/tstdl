@@ -1,10 +1,14 @@
 import * as yup from 'yup';
-import { ValidationError, ValidationResult } from '../types';
+import { EndpointParametersValidator, ValidationError, ValidationResult } from '../types';
 
 let defaultOptions: yup.ValidateOptions = { abortEarly: false };
 
 export function setDefaultYupValidationOptions(options: yup.ValidateOptions): void {
   defaultOptions = options;
+}
+
+export function validator<T>(schema: yup.Schema<T>, options?: yup.ValidateOptions): EndpointParametersValidator<unknown, T> {
+  return (value: unknown) => validate(schema, value, options);
 }
 
 export function validate<T, U>(schema: yup.Schema<T>, value: U, options: yup.ValidateOptions = defaultOptions): ValidationResult<T> {

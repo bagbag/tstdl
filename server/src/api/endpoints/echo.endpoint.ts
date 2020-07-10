@@ -1,3 +1,3 @@
-import { createApiEndpoint } from '../endpoint';
+import { ApiEndpoint } from '../endpoint';
 
-export const echoEndpoint = createApiEndpoint((parameters) => parameters);
+export const echoEndpoint: ApiEndpoint<unknown, unknown> = (parameters) => parameters;

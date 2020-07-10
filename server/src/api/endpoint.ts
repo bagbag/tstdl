@@ -1,21 +1,16 @@
-import { EndpointValidator } from './validation';
-import { noopValidator } from './validation/validators';
+import { EndpointParametersValidator } from './validation';
 
-export type EndpointHandler<Parameters, Result> = (parameters: Parameters) => Result | Promise<Result>;
+export type ApiEndpoint<Parameters, Result> = (parameters: Parameters) => Result | Promise<Result>;
 
-export type ApiEndpoint<Parameters, Result> = EndpointHandler<Parameters, Result>;
-
-export function createApiEndpoint<Parameters, Result>(handler: EndpointHandler<Parameters, Result>): EndpointHandler<Parameters, Result>;
-export function createApiEndpoint<Parameters, ValidatedParameters, Result>(handler: EndpointHandler<ValidatedParameters, Result>, validator: EndpointValidator<Parameters, ValidatedParameters>): EndpointHandler<Parameters, Result>;
-export function createApiEndpoint<Parameters, ValidatedParameters, Result>(handler: EndpointHandler<ValidatedParameters, Result>, validator?: EndpointValidator<Parameters, ValidatedParameters>): EndpointHandler<Parameters, Result> {
+export function createValidatedApiEndpoint<Parameters, ValidatedParameters, Result>(validator: EndpointParametersValidator<Parameters, ValidatedParameters>, handler: ApiEndpoint<ValidatedParameters, Result>): ApiEndpoint<Parameters, Result> {
   const endpoint: (parameters: Parameters) => Promise<Result> = async (parameters: Parameters) => {
-    const validationResult = await validator?.(parameters) ?? noopValidator(parameters);
+    const validationResult = await validator(parameters);
 
     if (!validationResult.valid) {
       throw validationResult.error;
     }
 
-    return handler(validationResult.value as ValidatedParameters);
+    return handler(validationResult.value);
   };
 
   return endpoint;
