@@ -5,7 +5,11 @@ type ErrorHandlerData = undefined | UndefinableJson;
 
 export type ErrorSerializer<T extends Error, TData extends ErrorHandlerData> = (error: T) => TData;
 export type ErrorDeserializer<T extends Error, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
-export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData> };
+export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = {
+  statusCode: number,
+  serializer: ErrorSerializer<T, TData>,
+  deserializer: ErrorDeserializer<T, TData>
+};
 
 export type ResultResponse<T> = {
   result: T

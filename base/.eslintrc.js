@@ -50,6 +50,7 @@ module.exports = {
     '@typescript-eslint/typedef': 'off',
     'array-bracket-newline': ['error', 'consistent'],
     'array-element-newline': ['error', 'consistent'],
+    'camelcase': 'off',
     'capitalized-comments': ['warn', 'never'],
     'dot-location': ['error', 'property'],
     'eqeqeq': 'off',
@@ -89,6 +90,25 @@ module.exports = {
     'quote-props': ['error', 'as-needed'],
     'sort-imports': ['off', { ignoreCase: true }],
     'sort-keys': 'off',
+    '@typescript-eslint/naming-convention': [
+      'error',
+      {
+        selector: 'default',
+        format: ['camelCase']
+      },
+      {
+        selector: 'variable',
+        format: ['camelCase', 'UPPER_CASE']
+      },
+      {
+        selector: 'enumMember',
+        format: ['PascalCase']
+      },
+      {
+        selector: 'typeLike',
+        format: ['PascalCase']
+      }
+    ],
     '@typescript-eslint/member-delimiter-style': ['error', {
       multiline: {
         delimiter: 'comma',
