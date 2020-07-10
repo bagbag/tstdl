@@ -4,8 +4,8 @@ import { ApiError } from './error';
 type ErrorHandlerData = undefined | UndefinableJson;
 
 export type ErrorSerializer<T extends Error, TData extends ErrorHandlerData> = (error: T) => TData;
-export type ErrorDeserializer<T extends Error> = (responseError: ResponseError) => T;
-export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T> };
+export type ErrorDeserializer<T extends Error, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
+export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = { statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData> };
 
 export type ResultResponse<T> = {
   result: T
@@ -26,7 +26,7 @@ export type ResponseError = {
 
 const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
 
-export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T>): void {
+export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   errorHandlers.set(constructor.name, { statusCode, serializer, deserializer });
 }
 
@@ -94,7 +94,7 @@ export function parseErrorResponse(response: ErrorResponse): Error {
   const handler = errorHandlers.get(response.error.name);
 
   if (handler != undefined) {
-    const error = handler.deserializer(response.error) as Error;
+    const error = handler.deserializer(response.error.errorData, response.error) as Error;
     return error;
   }
 
