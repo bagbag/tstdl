@@ -12,19 +12,23 @@ export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'val
     name: 'one-of-schemas',
     message,
     test(value: any) {
-      const messages: string[] = [];
+      const errors: yup.ValidationError[] = [];
 
       for (const schema of schemas) {
         try {
-          schema.validateSync(value);
+          schema.validateSync(value, this.options);
           return true;
         }
         catch (error) {
-          messages.push((error as yup.ValidationError).message);
+          errors.push(error);
         }
       }
 
-      return new yup.ValidationError(messages, value, this.path);
+      const messages = errors.map((error) => error.message);
+      const error = new yup.ValidationError(messages, value, this.path);
+      error.inner = errors;
+
+      return error;
     }
   });
 }
