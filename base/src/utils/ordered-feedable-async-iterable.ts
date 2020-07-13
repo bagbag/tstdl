@@ -1,5 +1,4 @@
 import { AwaitableMap } from '../collections/awaitable';
-import { Omit } from '../types';
 import { FeedableAsyncIterable } from './feedable-async-iterable';
 
 export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterable<T>, 'feed'> {

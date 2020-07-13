@@ -27,7 +27,6 @@ export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
-export type Omit<T, P extends keyof T> = Pick<T, Exclude<keyof T, P>>;
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
 export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
