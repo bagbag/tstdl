@@ -60,23 +60,23 @@ export type RequestData<B extends BodyType = BodyType.None> = {
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult>) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any, EndpointContext = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
 
 export type Route = RouteBase<RequestMethod, any, any, any, BodyType>;
 
-type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters, EndpointResult, B extends BodyType = BodyType.None> = {
+type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters, EndpointResult, B extends BodyType = BodyType.None, EndpointContext = unknown> = {
   method: Method,
   path: string,
   bodyType?: B,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
-  handler: RouteHandler<RouteParameters, EndpointResult>,
+  handler: RouteHandler<RouteParameters, EndpointResult, EndpointContext>,
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult>
 };
 
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export const defaultRouteHandler: RouteHandler = async (_request, parameters, endpoint) => {
-  const result = await endpoint(parameters);
+export const defaultRouteHandler: RouteHandler<RequestMethod, any, any, HttpRequest> = async (request, parameters, endpoint) => {
+  const result = await endpoint(parameters, request);
 
   const response: HttpResponse = {
     json: result
@@ -160,7 +160,7 @@ export class HttpApi {
   }
 
 
-  private registerRoute<RouteParameters, EndpointParameters, B extends BodyType, Result>(method: RequestMethod, path: string, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result>, handler: RouteHandler<RouteParameters, EndpointParameters, Result>): void {
+  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
     this.router.register(path, [method], async (context: Context, next) => {
       await this.handle(context, bodyType, parametersTransformer, endpoint, handler);
       return next();
@@ -168,7 +168,7 @@ export class HttpApi {
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
-  private async handle<RouteParameters, EndpointParameters, B extends BodyType, Result>(context: Context, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result>, handler: RouteHandler<RouteParameters, EndpointParameters, Result>): Promise<void> {
+  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
     const { request, response, params } = context;
     const { query: { ...query } } = request;
 
