@@ -11,14 +11,20 @@ export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'val
   return yup.mixed<T>().test({
     name: 'one-of-schemas',
     message,
-    test: (value: any) => {
+    test(value: any) {
+      const messages: string[] = [];
+
       for (const schema of schemas) {
-        if (schema.isValidSync(value)) {
+        try {
+          schema.validateSync(value);
           return true;
+        }
+        catch (error) {
+          messages.push((error as yup.ValidationError).message);
         }
       }
 
-      return false;
+      return new yup.ValidationError(messages, value, this.path);
     }
   });
 }
