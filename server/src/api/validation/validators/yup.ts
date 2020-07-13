@@ -7,6 +7,22 @@ export function setDefaultYupValidationOptions(options: yup.ValidateOptions): vo
   defaultOptions = options;
 }
 
+export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'value did not match any of the allowed schemas'): yup.Schema<T> {
+  return yup.mixed<T>().test({
+    name: 'one-of-schemas',
+    message,
+    test: (value: any) => {
+      for (const schema of schemas) {
+        if (schema.isValidSync(value)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+  });
+}
+
 export function validator<T>(schema: yup.Schema<T>, options?: yup.ValidateOptions): EndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(schema, value, options);
 }
