@@ -1,4 +1,3 @@
-import { Omit } from '@tstdl/base/types';
 import * as Mongo from 'mongodb';
 import { MongoDocument } from './model';
 

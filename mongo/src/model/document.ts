@@ -1,4 +1,3 @@
-import { Omit } from '@tstdl/base/types';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { getNewDocumentId } from '../id';
 

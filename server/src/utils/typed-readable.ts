@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/unified-signatures */
 /* eslint-disable @typescript-eslint/adjacent-overload-signatures */
 
-import { Omit } from '@tstdl/base/types';
 import { Readable, ReadableOptions } from 'stream';
 import { Data, NonObjectMode, NonObjectModeTypes } from './stream-helper-types';
 
