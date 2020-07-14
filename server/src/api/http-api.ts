@@ -71,6 +71,27 @@ export type Route<Method extends RequestMethod = RequestMethod, RouteParameters 
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
+export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(
+  method: Method,
+  path: string,
+  bodyType: B,
+  parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
+  handler: RouteHandler<RouteParameters, EndpointResult, EndpointContext>,
+  endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
+): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
+  // eslint-disable-next-line no-shadow
+  const route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> = {
+    method,
+    path,
+    bodyType,
+    parametersTransformer,
+    handler,
+    endpoint
+  };
+
+  return route;
+}
+
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
 export const defaultRouteHandler: RouteHandler<any, any, any, HttpRequest> = async (request, parameters, endpoint) => {
@@ -141,6 +162,7 @@ export class HttpApi {
   }
 
   registerRoutes(...routes: Route[]): void {
+    // eslint-disable-next-line no-shadow
     for (const route of routes) {
       switch (route.method) {
         case RequestMethod.Get:
