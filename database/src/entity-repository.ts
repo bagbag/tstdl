@@ -12,6 +12,10 @@ export interface EntityRepository<T extends Entity> {
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
   loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U>;
 
+  has(id: string): Promise<boolean>;
+  hasMany(ids: string[]): Promise<string[]>;
+  hasAll(ids: string[]): Promise<boolean>;
+
   insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U>;
   insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]>;
 

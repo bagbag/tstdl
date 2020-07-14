@@ -259,6 +259,12 @@ export class MongoBaseRepository<T extends Entity> {
     return result;
   }
 
+  async hasAll(ids: string[]): Promise<boolean> {
+    const filter: FilterQuery<T> = { _id: { $in: ids } } as FilterQuery<T>;
+    const count = await this.countByFilter(filter);
+    return count == ids.length;
+  }
+
   async drop(): Promise<void> {
     await this.collection.drop();
   }

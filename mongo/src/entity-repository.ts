@@ -45,6 +45,18 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
 
+  async has(id: string): Promise<boolean> {
+    return this.baseRepository.has(id);
+  }
+
+  async hasMany(ids: string[]): Promise<string[]> {
+    return this.baseRepository.hasMany(ids);
+  }
+
+  async hasAll(ids: string[]): Promise<boolean> {
+    return this.baseRepository.countByFilter();
+  }
+
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     return this.baseRepository.insert(entity);
   }
