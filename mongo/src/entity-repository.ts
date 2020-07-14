@@ -54,7 +54,7 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   }
 
   async hasAll(ids: string[]): Promise<boolean> {
-    return this.baseRepository.countByFilter();
+    return this.baseRepository.hasAll(ids);
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/mongo",
-  "version": "0.24.4",
+  "version": "0.24.5",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
