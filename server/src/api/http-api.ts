@@ -126,8 +126,8 @@ export class HttpApi {
       this.router.prefix(prefix);
     }
 
-    this.koa.use(errorCatchMiddleware(logger, this.supressedErrors));
     this.koa.use(responseTimeMiddleware);
+    this.koa.use(errorCatchMiddleware(logger, this.supressedErrors));
     this.koa.use(this.router.routes());
     this.koa.use(this.router.allowedMethods());
   }
