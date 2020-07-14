@@ -62,7 +62,7 @@ export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, res
 
 export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any, EndpointContext = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = RouteBase<RequestMethod, any, any, any, BodyType>;
+export type Route = RouteBase<RequestMethod, any, any, any, BodyType, any>;
 
 type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters, EndpointResult, B extends BodyType = BodyType.None, EndpointContext = unknown> = {
   method: Method,
