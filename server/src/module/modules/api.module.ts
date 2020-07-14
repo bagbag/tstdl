@@ -4,7 +4,7 @@ import { cancelableTimeout, Timer } from '@tstdl/base/utils';
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import * as Http from 'http';
 import * as Net from 'net';
-import { HttpApi, Route } from '../../api';
+import { AnyRoute, HttpApi } from '../../api';
 import { Module, ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
 
@@ -39,7 +39,7 @@ export class ApiModule extends ModuleBase implements Module {
     this.requestCount = 0;
   }
 
-  registerRoutes(...routes: Route[]): void {
+  registerRoutes(...routes: AnyRoute[]): void {
     this.httpApi.registerRoutes(...routes);
   }
 

@@ -60,35 +60,20 @@ export type RequestData<B extends BodyType = BodyType.None> = {
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any, EndpointContext = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
 
-export type Route<Method extends RequestMethod = RequestMethod, RouteParameters = unknown, B extends BodyType = BodyType, EndpointParameters = unknown, EndpointResult = unknown, EndpointContext = unknown> = {
+export type AnyRoute = Route<RequestMethod, any, BodyType, any, any, any>;
+export type Route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext> = {
   method: Method,
   path: string,
   bodyType?: B,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
-  handler: RouteHandler<RouteParameters, EndpointResult, EndpointContext>,
+  handler: RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext>,
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
-export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(
-  method: Method,
-  path: string,
-  bodyType: B,
-  parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
-  handler: RouteHandler<RouteParameters, EndpointResult, EndpointContext>,
-  endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
-): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
-  // eslint-disable-next-line no-shadow
-  const route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> = {
-    method,
-    path,
-    bodyType,
-    parametersTransformer,
-    handler,
-    endpoint
-  };
-
+// eslint-disable-next-line no-shadow
+export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext>): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
   return route;
 }
 
@@ -161,7 +146,7 @@ export class HttpApi {
     }
   }
 
-  registerRoutes(...routes: Route[]): void {
+  registerRoutes(...routes: AnyRoute[]): void {
     // eslint-disable-next-line no-shadow
     for (const route of routes) {
       switch (route.method) {
