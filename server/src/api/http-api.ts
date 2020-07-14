@@ -70,7 +70,7 @@ type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters
   bodyType?: B,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
   handler: RouteHandler<RouteParameters, EndpointResult, EndpointContext>,
-  endpoint: ApiEndpoint<EndpointParameters, EndpointResult>
+  endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
