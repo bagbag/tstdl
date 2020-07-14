@@ -62,9 +62,7 @@ export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, res
 
 export type RouteHandler<RouteParameters = any, EndpointParameters = any, EndpointResult = any, EndpointContext = any> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
 
-export type Route = RouteBase<RequestMethod, any, any, any, BodyType, any>;
-
-type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters, EndpointResult, B extends BodyType = BodyType.None, EndpointContext = unknown> = {
+export type Route<Method extends RequestMethod = RequestMethod, RouteParameters = unknown, B extends BodyType = BodyType, EndpointParameters = unknown, EndpointResult = unknown, EndpointContext = unknown> = {
   method: Method,
   path: string,
   bodyType?: B,
@@ -75,7 +73,7 @@ type RouteBase<Method extends RequestMethod, RouteParameters, EndpointParameters
 
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export const defaultRouteHandler: RouteHandler<RequestMethod, any, any, HttpRequest> = async (request, parameters, endpoint) => {
+export const defaultRouteHandler: RouteHandler<any, any, any, HttpRequest> = async (request, parameters, endpoint) => {
   const result = await endpoint(parameters, request);
 
   const response: HttpResponse = {
@@ -154,7 +152,7 @@ export class HttpApi {
           break;
 
         default:
-          throw new Error('unknown route type');
+          throw new Error('unknown route method');
       }
     }
   }
