@@ -1,7 +1,10 @@
 import * as yup from 'yup';
 import { EndpointParametersValidator, ValidationError, ValidationResult } from '../types';
 
-let defaultOptions: yup.ValidateOptions = { abortEarly: false };
+let defaultOptions: yup.ValidateOptions = {
+  abortEarly: false,
+  stripUnknown: false
+};
 
 export function setDefaultYupValidationOptions(options: yup.ValidateOptions): void {
   defaultOptions = options;

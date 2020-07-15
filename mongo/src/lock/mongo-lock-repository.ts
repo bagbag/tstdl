@@ -30,7 +30,7 @@ export class MongoLockRepository extends MongoEntityRepository<LockEntity> imple
     };
 
     try {
-      const { upsertedCount, modifiedCount } = await this.baseRepository.update(filter, { $set: { expire: newExpirationDate }, $setOnInsert: { _id: getNewDocumentId(), key } }, true);
+      const { upsertedCount, modifiedCount } = await this.baseRepository.collection.updateOne(filter, { $set: { expire: newExpirationDate }, $setOnInsert: { _id: getNewDocumentId(), key } }, { upsert: true });
       return (upsertedCount > 0 || modifiedCount > 0) ? newExpirationDate : false;
     }
     catch (error) {

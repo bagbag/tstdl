@@ -52,6 +52,7 @@ module.exports = {
     'array-element-newline': ['error', 'consistent'],
     'camelcase': 'off',
     'capitalized-comments': ['warn', 'never'],
+    'class-methods-use-this': 'off',
     'dot-location': ['error', 'property'],
     'eqeqeq': 'off',
     'func-style': ['error', 'declaration', { allowArrowFunctions: true }],

@@ -48,7 +48,7 @@ export function toMongoDocumentWithId<T extends Entity>(entity: EntityWithPartia
   const { id, ...entityRest } = entity;
 
   const document = {
-    _id: (id != undefined) ? id : getNewDocumentId(),
+    _id: id ?? getNewDocumentId(),
     ...entityRest
   } as MongoDocument<T>;
 

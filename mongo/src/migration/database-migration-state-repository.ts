@@ -13,7 +13,7 @@ export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository
   }
 
   async loadByName(name: string): Promise<DatabaseMigrationState | undefined> {
-    return this.baseRepository.loadByFilter({ name }, false);
+    return this.baseRepository.tryLoadByFilter({ name });
   }
 
   async setRevision(name: string, revision: number): Promise<void> {

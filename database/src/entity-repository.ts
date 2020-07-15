@@ -7,8 +7,9 @@ export type UpdateOptions = {
 export interface EntityRepository<T extends Entity> {
   _type: T;
 
-  load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
-  load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
+  load<U extends T = T>(id: string): Promise<U>;
+  tryLoad<U extends T = T>(id: string): Promise<U | undefined>;
+
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
   loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U>;
 

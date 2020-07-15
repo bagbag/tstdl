@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/client",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,7 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.58.19",
+    "@tstdl/base": "^0.58.20",
     "rxjs": "^6.6.0",
     "yup": "^0.29.1"
   },

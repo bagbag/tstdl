@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
@@ -7,8 +9,7 @@ import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from '.
 
 export type UpdateResult = {
   matchedCount: number,
-  modifiedCount: number,
-  upsertedCount: number
+  modifiedCount: number
 };
 
 export type LoadOptions<T extends Entity> = {
@@ -21,8 +22,13 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
 };
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
-  returnOriginal?: boolean,
-  upsert?: boolean
+  returnOriginal?: boolean
+};
+
+export type CountOptions = {
+  estimate?: boolean,
+  limit?: number,
+  skip?: number
 };
 
 export class MongoBaseRepository<T extends Entity> {
@@ -33,7 +39,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async createIndexes(indexes: TypedIndexSpecification<T>[]): Promise<void> {
-    return this.collection.createIndexes(indexes) as Promise<void>;
+    await this.collection.createIndexes(indexes);
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
@@ -43,79 +49,22 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
-    const document = toMongoDocumentWithId(entity);
-    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
-    await this.collection.replaceOne(filter, replacement, { upsert });
-
-    return toEntity(document);
+  async load<U extends T = T>(id: string): Promise<U> {
+    const entity = await this.load<U>(id);
+    return throwIfUndefinedElsePass(entity);
   }
 
-  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
-    const document = toMongoDocumentWithId(entity);
-    await this.collection.replaceOne(filter, document, { upsert });
-
-    return toEntity(document);
-  }
-
-  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
-    if (entities.length == 0) {
-      return [];
-    }
-
-    const documents = entities.map(toMongoDocumentWithId);
-    const operations = documents.map(toInsertOneOperation);
-    await this.collection.bulkWrite(operations as any);
-
-    const savedEntities = documents.map(toEntity);
-    return savedEntities;
-  }
-
-  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
-    if (entities.length == 0) {
-      return [];
-    }
-
-    const documents = entities.map(toMongoDocumentWithId);
-    const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
-    await this.collection.bulkWrite(operations);
-
-    const savedEntities = documents.map(toEntity);
-    return savedEntities;
-  }
-
-  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount, upsertedCount } = await this.collection.updateOne(filter, update, { upsert });
-
-    const updateResult: UpdateResult = {
-      matchedCount,
-      modifiedCount,
-      upsertedCount
-    };
-
-    return updateResult;
-  }
-
-  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, upsert: boolean = false): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount, upsertedCount } = await this.collection.updateMany(filter, update, { upsert });
-
-    const updateResult: UpdateResult = {
-      matchedCount,
-      modifiedCount,
-      upsertedCount
-    };
-
-    return updateResult;
-  }
-
-  async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
-  async load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
-  async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
+  async tryLoad<U extends T = T>(id: string): Promise<U | undefined> {
     const filter: FilterQuery<U> = {
       _id: id
     } as FilterQuery<U>;
 
-    return this.loadByFilter(filter, throwIfNotFound);
+    return this.tryLoadByFilter(filter);
+  }
+
+  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
+    const entity = await this.tryLoadAndUpdate(id, update, options);
+    return throwIfUndefinedElsePass(entity);
   }
 
   async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
@@ -126,31 +75,52 @@ export class MongoBaseRepository<T extends Entity> {
     return this.tryLoadByFilterAndUpdate(filter, update, options);
   }
 
-  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
-    const entity = await this.tryLoadAndUpdate(id, update, options);
-
-    if (entity == undefined) {
-      throw new NotFoundError('document not found');
-    }
-
-    return entity;
+  async loadAndDelete<U extends T = T>(id: string): Promise<U> {
+    const entity = await this.tryLoadAndDelete<U>(id);
+    return throwIfUndefinedElsePass(entity);
   }
 
-  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound?: true): Promise<U>;
-  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean): Promise<U | undefined>;
-  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, throwIfNotFound: boolean = true): Promise<U | undefined> {
+  async tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined> {
+    const filter: FilterQuery<U> = {
+      _id: id
+    } as FilterQuery<U>;
+
+    return this.tryLoadByFilter(filter);
+  }
+
+  async loadByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U> {
+    const entity = await this.tryLoadByFilter(filter);
+    return throwIfUndefinedElsePass(entity);
+  }
+
+  async tryLoadByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U | undefined> {
     const document = await this.collection.findOne<MongoDocument<U>>(filter);
 
     if (document == undefined) {
-      if (throwIfNotFound) {
-        throw new Error('document not found');
-      }
-
       return undefined;
     }
 
-    const entity = toEntity(document);
-    return entity;
+    return toEntity(document);
+  }
+
+  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>): Promise<U> {
+    const entity = await this.tryLoadByFilterAndDelete(filter);
+    return throwIfUndefinedElsePass(entity);
+  }
+
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>): Promise<U | undefined> {
+    const result = await this.collection.findOneAndDelete(filter);
+
+    if (result.value == undefined) {
+      return undefined;
+    }
+
+    return toEntity(result.value as MongoDocument<U>);
+  }
+
+  async loadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
+    const entity = await this.tryLoadByFilterAndUpdate(filter, update, options);
+    return throwIfUndefinedElsePass(entity);
   }
 
   async tryLoadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
@@ -161,16 +131,6 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     return toEntity(document);
-  }
-
-  async loadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
-    const entity = await this.tryLoadByFilterAndUpdate(filter, update, options);
-
-    if (entity == undefined) {
-      throw new NotFoundError('document not found');
-    }
-
-    return entity;
   }
 
   async loadManyById<U extends T = T>(ids: string[]): Promise<U[]> {
@@ -195,7 +155,7 @@ export class MongoBaseRepository<T extends Entity> {
   async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
     const cursor = this.collection.find<MongoDocument<U>>(filter, options);
 
-    for await (const document of (cursor as AsyncIterable<MongoDocument<U>>)) {
+    for await (const document of cursor) {
       const entity = toEntity(document);
       yield entity;
     }
@@ -236,18 +196,85 @@ export class MongoBaseRepository<T extends Entity> {
     return deletedCount as number;
   }
 
-  async countByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
-    return this.collection.countDocuments(filter);
+  async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
+    const document = toMongoDocumentWithId(entity);
+    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
+    const result = await this.collection.replaceOne(filter, replacement, { upsert });
+
+    if (result.matchedCount == 0 && result.upsertedCount == 0) {
+      throw new NotFoundError('document not found');
+    }
+
+    return toEntity(document);
   }
 
-  async hasByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
-    const count = await this.countByFilter(filter);
-    return count > 0;
+  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
+    const document = toMongoDocumentWithId(entity);
+    const result = await this.collection.replaceOne(filter, document, { upsert });
+
+    if (result.matchedCount == 0 && result.upsertedCount == 0) {
+      throw new NotFoundError('document not found');
+    }
+
+    return toEntity(document);
+  }
+
+  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+    const documents = entities.map(toMongoDocumentWithId);
+    const operations = documents.map(toInsertOneOperation);
+    await this.collection.bulkWrite(operations as any);
+
+    const savedEntities = documents.map(toEntity);
+    return savedEntities;
+  }
+
+  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
+    const documents = entities.map(toMongoDocumentWithId);
+    const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
+    const result = await this.collection.bulkWrite(operations);
+
+    if (result.matchedCount == undefined || result.upsertedCount == undefined) {
+      throw new Error('unexpected bulkWrite response');
+    }
+
+    if (result.matchedCount + result.upsertedCount != entities.length) {
+      throw new NotFoundError(`${entities.length - (result.matchedCount + result.upsertedCount)} documents not found`);
+    }
+
+    const savedEntities = documents.map(toEntity);
+    return savedEntities;
+  }
+
+  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
+    const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update);
+
+    const updateResult: UpdateResult = {
+      matchedCount,
+      modifiedCount
+    };
+
+    return updateResult;
+  }
+
+  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
+    const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update);
+
+    const updateResult: UpdateResult = {
+      matchedCount,
+      modifiedCount
+    };
+
+    return updateResult;
   }
 
   async has(id: string): Promise<boolean> {
     const filter: FilterQuery<T> = { _id: id } as FilterQuery<T>;
     return this.hasByFilter(filter);
+  }
+
+  async hasByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
+    const count = await this.countByFilter(filter);
+    return count > 0;
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
@@ -263,6 +290,14 @@ export class MongoBaseRepository<T extends Entity> {
     const filter: FilterQuery<T> = { _id: { $in: ids } } as FilterQuery<T>;
     const count = await this.countByFilter(filter);
     return count == ids.length;
+  }
+
+  async countByFilter<U extends T = T>(filter: FilterQuery<U>, { estimate, limit, skip }: CountOptions = { estimate: false }): Promise<number> {
+    if (estimate == true) {
+      return this.collection.estimatedDocumentCount(filter, { limit, skip });
+    }
+
+    return this.collection.countDocuments(filter, { limit, skip });
   }
 
   async drop(): Promise<void> {
@@ -296,4 +331,12 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, ups
   };
 
   return operation;
+}
+
+function throwIfUndefinedElsePass<T>(value: T | undefined): T {
+  if (value == undefined) {
+    throw new NotFoundError('document not found');
+  }
+
+  return value;
 }

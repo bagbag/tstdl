@@ -30,10 +30,12 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     }
   }
 
-  async load<U extends T = T>(id: string, throwIfNotFound?: true): Promise<U>;
-  async load<U extends T = T>(id: string, throwIfNotFound: boolean): Promise<U | undefined>;
-  async load<U extends T = T>(id: string, throwIfNotFound: boolean = true): Promise<U | undefined> {
-    return this.baseRepository.load(id, throwIfNotFound) as Promise<U>;
+  async load<U extends T = T>(id: string): Promise<U> {
+    return this.baseRepository.load(id);
+  }
+
+  async tryLoad<U extends T = T>(id: string): Promise<U | undefined> {
+    return this.baseRepository.tryLoad(id);
   }
 
   async loadMany<U extends T = T>(ids: string[]): Promise<U[]> {
