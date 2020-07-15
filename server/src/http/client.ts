@@ -1,38 +1,179 @@
-import Got, { OptionsOfTextResponseBody } from 'got';
-import { Readable } from 'stream';
+import { DeferredPromise } from '@tstdl/base/promise';
+import { Json, StringMap } from '@tstdl/base/types';
+import Got, { Options as GotOptions, Response } from 'got';
+import * as QueryString from 'querystring';
+import { pipeline, Readable, Transform } from 'stream';
 
-export type HttpResponse<T extends string | Buffer> = {
-  statusCode: number,
-  statusMessage: string,
-  body: T
+export type HttpRequestOptions = {
+  headers?: StringMap<string | string[]>,
+  body?: {
+    form?: StringMap<string>,
+    json?: Json,
+    text?: string,
+    buffer?: Buffer,
+    readable?: Readable
+  },
+  timeout?: number
 };
 
-const gotOptions: OptionsOfTextResponseBody = {
+export enum HttpResponseType {
+  Text = 'text',
+  Buffer = 'buffer',
+  Json = 'json',
+  Stream = 'stream'
+}
+
+export type HttpResponseTypeValueType<T extends HttpResponseType> =
+  T extends HttpResponseType.Text ? string
+  : T extends HttpResponseType.Buffer ? Buffer
+  : T extends HttpResponseType.Json ? Json
+  : Readable;
+
+export type HttpResponse<T extends HttpResponseType> = {
+  statusCode: number,
+  statusMessage: string,
+  header: StringMap<string | string[]>,
+  body: HttpResponseTypeValueType<T>
+};
+
+const defaultGotOptions: GotOptions = {
   retry: 0,
   followRedirect: true
 };
 
+type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
-  static async get(url: string): Promise<HttpResponse<Buffer>> {
-    const response = await Got.get(url, { ...gotOptions, responseType: 'buffer' });
+  static async get<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('get', url, responseType, options);
+  }
 
-    const result: HttpResponse<Buffer> = {
-      statusCode: response.statusCode,
-      statusMessage: response.statusMessage ?? '',
-      body: response.body as any as Buffer
+  static async getString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('get', url, HttpResponseType.Text, options);
+    return response.body;
+  }
+
+  static async getJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('get', url, HttpResponseType.Json, options);
+    return response.body;
+  }
+
+  static async getBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+    const response = await HttpClient.call('get', url, HttpResponseType.Buffer, options);
+    return response.body;
+  }
+
+  static async getStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+    const response = await HttpClient.callStream('get', url, options);
+    return response.body;
+  }
+
+  static async post<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('post', url, responseType, options);
+  }
+
+  static async postString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('post', url, HttpResponseType.Text, options);
+    return response.body;
+  }
+
+  static async postJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('post', url, HttpResponseType.Json, options);
+    return response.body;
+  }
+
+  static async postBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+    const response = await HttpClient.call('post', url, HttpResponseType.Buffer, options);
+    return response.body;
+  }
+
+  static async postStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+    const response = await HttpClient.callStream('post', url, options);
+    return response.body;
+  }
+
+  static async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    switch (responseType) {
+      case HttpResponseType.Stream:
+        return this.callStream(method, url, options) as Promise<HttpResponse<T>>;
+
+      default:
+        return this._call(method, url, responseType, options);
+    }
+  }
+
+  static async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
+    const gotOptions = getGotOptions(method, options);
+
+    const request = Got.stream(url, { ...gotOptions, isStream: true });
+    const dataAwaitable = new DeferredPromise();
+
+    const stream = new Transform({
+      transform(chunk, _encoding, callback) {
+        if (dataAwaitable.pending) {
+          dataAwaitable.resolve();
+        }
+
+        callback(null, chunk);
+      }
+    });
+
+    pipeline(request, stream, () => undefined);
+
+    await dataAwaitable;
+
+    if (request._response == undefined) {
+      throw new Error('response not set');
+    }
+
+    const result: HttpResponse<HttpResponseType.Stream> = {
+      statusCode: request._response.statusCode,
+      statusMessage: request._response.statusMessage ?? '',
+      header: request._response.headers as StringMap<string | string[]>,
+      body: stream
     };
 
     return result;
   }
 
-  static async getString(url: string): Promise<string> {
-    const response = await Got.get(url, { ...gotOptions, responseType: 'text' });
-    return response.body;
+  private static async _call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    const gotOptions = getGotOptions(method, options);
+    const request = Got(url, { ...gotOptions, responseType: responseType as any });
+    const response = await request as Response;
+    const result: HttpResponse<T> = {
+      statusCode: response.statusCode,
+      statusMessage: response.statusMessage ?? '',
+      header: response.headers as StringMap<string | string[]>,
+      body: response.body as HttpResponseTypeValueType<T>
+    };
+
+    return result;
+  }
+}
+
+function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpRequestOptions = {}): GotOptions {
+  const options: GotOptions = {
+    ...defaultGotOptions,
+    method,
+    headers,
+    timeout
+  };
+
+
+  if (body != undefined) {
+    const binary = body.buffer ?? body.readable ?? body.text;
+
+    if (binary != undefined) {
+      options.body = binary;
+    }
+    else if (body.json != undefined) {
+      options.body = JSON.stringify(body.json);
+    }
+    else if (body.form != undefined) {
+      options.body = QueryString.stringify(body.form);
+    }
   }
 
-  static getStream(url: string): Readable {
-    const stream = Got.stream.get(url, { ...gotOptions, isStream: true })
-    return stream;
-  }
+  return options;
 }
