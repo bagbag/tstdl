@@ -50,7 +50,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async load<U extends T = T>(id: string): Promise<U> {
-    const entity = await this.load<U>(id);
+    const entity = await this.tryLoad<U>(id);
     return throwIfUndefinedElsePass(entity);
   }
 

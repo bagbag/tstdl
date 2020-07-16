@@ -47,6 +47,14 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
 
+  async loadAndDelete<U extends T = T>(id: string): Promise<U> {
+    return this.baseRepository.loadAndDelete(id);
+  }
+
+  async tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined> {
+    return this.baseRepository.tryLoadAndDelete(id);
+  }
+
   async has(id: string): Promise<boolean> {
     return this.baseRepository.has(id);
   }

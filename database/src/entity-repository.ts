@@ -13,6 +13,9 @@ export interface EntityRepository<T extends Entity> {
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
   loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U>;
 
+  loadAndDelete<U extends T = T>(id: string): Promise<U>;
+  tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined>;
+
   has(id: string): Promise<boolean>;
   hasMany(ids: string[]): Promise<string[]>;
   hasAll(ids: string[]): Promise<boolean>;
