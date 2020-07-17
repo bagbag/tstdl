@@ -3,49 +3,21 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "tstdl": {
+    "tstdl-angular": {
       "projectType": "library",
-      "root": "projects/tstdl",
-      "sourceRoot": "projects/tstdl/src",
-      "prefix": "lib",
-      "schematics": {
-        "@schematics/angular:component": {
-          "style": "scss",
-          "skipTests": true,
-          "changeDetection": "OnPush"
-        },
-        "@schematics/angular:class": {
-          "skipTests": true
-        },
-        "@schematics/angular:directive": {
-          "skipTests": true
-        },
-        "@schematics/angular:guard": {
-          "skipTests": true
-        },
-        "@schematics/angular:interceptor": {
-          "skipTests": true
-        },
-        "@schematics/angular:module": {
-          "skipTests": true
-        },
-        "@schematics/angular:pipe": {
-          "skipTests": true
-        },
-        "@schematics/angular:service": {
-          "skipTests": true
-        }
-      },
+      "root": "projects/tstdl-angular",
+      "sourceRoot": "projects/tstdl-angular/src",
+      "prefix": "tsl",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-ng-packagr:build",
           "options": {
-            "tsConfig": "projects/tstdl/tsconfig.lib.json",
-            "project": "projects/tstdl/ng-package.json"
+            "tsConfig": "projects/tstdl-angular/tsconfig.lib.json",
+            "project": "projects/tstdl-angular/ng-package.json"
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/tstdl/tsconfig.lib.prod.json"
+              "tsConfig": "projects/tstdl-angular/tsconfig.lib.prod.json"
             }
           }
         }
@@ -53,7 +25,7 @@
     }
   },
   "cli": {
-    "analytics": "98c330f4-8a40-4f80-8b6a-b20585f030c9"
+    "analytics": "44ff302b-c6ea-4ed9-a1e1-884d5e25a0f1"
   },
-  "defaultProject": "tstdl"
+  "defaultProject": "tstdl-angular"
 }

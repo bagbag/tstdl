@@ -7,5 +7,4 @@ import { LocalizePipe } from './pipes/localize.pipe';
   ],
   exports: [LocalizePipe]
 })
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class TstdlModule { }
+export class TstdlAngularModule { }

@@ -1,0 +1,24 @@
+{
+  "extends": "@tstdl/base",
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "es2020",
+    "paths": {
+      "tstdl-angular": [
+        "dist/tstdl-angular/tstdl-angular",
+        "dist/tstdl-angular"
+      ]
+    }
+  },
+  "angularCompilerOptions": {
+    "strictInjectionParameters": true,
+    "strictTemplates": true
+  }
+}
