@@ -3,8 +3,7 @@ import { LocalizePipe } from './pipes/localize.pipe';
 
 @NgModule({
   declarations: [LocalizePipe],
-  imports: [
-  ],
+  imports: [],
   exports: [LocalizePipe]
 })
 export class TstdlAngularModule { }

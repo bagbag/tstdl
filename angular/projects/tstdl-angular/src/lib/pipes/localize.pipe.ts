@@ -28,7 +28,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transform$.unsubscribe();
   }
 
-  transform(key: string, parameters: StringMap<string>): any {
+  transform(key: string, parameters: StringMap<string> = {}): any {
     this.transform$.next({ key, parameters });
     return this.asyncPipe.transform(this.localized$);
   }

@@ -1,23 +1,8 @@
-import { StringMap } from '@tstdl/base/types';
-import { decodeBase64Url, encodeBase64Url } from '@tstdl/base/utils';
-import { BinaryLike, createHmac } from 'crypto';
 import { UnauthorizedError } from '@tstdl/base/error';
-
-export enum JwtTokenAlgorithm {
-  SHA256 = 'HS256',
-  SHA384 = 'HS384',
-  SHA512 = 'HS512'
-}
-
-export type JwtTokenHeader = StringMap & {
-  alg: JwtTokenAlgorithm,
-  typ: 'JWT'
-};
-
-export type JwtToken<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap> = {
-  readonly header: THeader,
-  readonly payload: TPayload
-};
+import { StringMap } from '@tstdl/base/types';
+import { encodeBase64Url } from '@tstdl/base/utils';
+import { JwtToken, JwtTokenAlgorithm, JwtTokenHeader, parseJwtTokenString } from '@tstdl/base/utils/jwt';
+import { BinaryLike, createHmac } from 'crypto';
 
 export function createJwtTokenString({ header, payload }: JwtToken, secret: BinaryLike): string {
   const headerBuffer = Buffer.from(JSON.stringify(header), 'utf8');
@@ -38,26 +23,14 @@ export function createJwtTokenString({ header, payload }: JwtToken, secret: Bina
 
 export function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap>(tokenString: string, secret: BinaryLike): JwtToken<THeader, TPayload> {
   try {
-    const [encodedHeader, encodedPayload, encodedSignature] = tokenString.split('.');
+    const { encoded, bytes, token } = parseJwtTokenString<THeader, TPayload>(tokenString);
 
-    const headerString = Buffer.from(decodeBase64Url(encodedHeader)).toString('utf8');
-    const payloadString = Buffer.from(decodeBase64Url(encodedPayload)).toString('utf8');
-
-    const header = JSON.parse(headerString) as THeader;
-    const payload = JSON.parse(payloadString) as TPayload;
-    const signature = decodeBase64Url(encodedSignature);
-
-    const calculatedSignature = getSignature(`${encodedHeader}.${encodedPayload}`, header.alg, secret);
-    const validSignature = calculatedSignature.equals(Buffer.from(signature));
+    const calculatedSignature = getSignature(`${encoded.header}.${encoded.payload}`, token.header.alg, secret);
+    const validSignature = calculatedSignature.equals(Buffer.from(bytes.signature));
 
     if (!validSignature) {
       throw new UnauthorizedError('invalid token signature');
     }
-
-    const token: JwtToken<THeader, TPayload> = {
-      header,
-      payload
-    };
 
     return token;
   }

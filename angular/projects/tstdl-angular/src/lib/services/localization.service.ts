@@ -9,9 +9,9 @@ export type Language = {
   name: string
 };
 
-export type Localization = {
+export type Localization<T extends StringMap<string> = StringMap<string>> = {
   language: Language,
-  keys: StringMap<string>
+  keys: T
 };
 
 type MappedLocalization = {
@@ -52,17 +52,25 @@ export class LocalizationService {
 
     const mappedLocalization = buildMappedLocalization(localization);
     this.localizations.set(localization.language.code, mappedLocalization);
+
+    if (this.activeLanguage == undefined) {
+      this.setLocalization(localization);
+    }
   }
 
   setLanguage(language: Language): void {
     const has = this.localizations.has(language.code);
 
     if (!has) {
-      throw new Error(`language ${language.code} not available`);
+      throw new Error(`language ${language.code} (${language.name}) not available`);
     }
 
     this.language = language;
     this.languageSubject.next(language);
+  }
+
+  setLocalization(localization: Localization): void {
+    this.setLanguage(localization.language);
   }
 
   localize(key: string, parameters: { [key: string]: string } = {}): string {
