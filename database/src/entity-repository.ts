@@ -1,7 +1,7 @@
 import { Entity, EntityWithPartialId } from './entity';
 
 export type UpdateOptions = {
-  upsert: boolean
+  upsert?: boolean
 };
 
 export interface EntityRepository<T extends Entity> {
@@ -23,8 +23,8 @@ export interface EntityRepository<T extends Entity> {
   insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U>;
   insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]>;
 
-  update<U extends T>(entity: U, options: UpdateOptions): Promise<U>;
-  updateMany<U extends T>(entities: U[], options: UpdateOptions): Promise<U[]>;
+  update<U extends T>(entity: U, options?: UpdateOptions): Promise<U>;
+  updateMany<U extends T>(entities: U[], options?: UpdateOptions): Promise<U[]>;
 
   delete<U extends T>(entity: U): Promise<boolean>;
   deleteMany<U extends T>(entities: U[]): Promise<number>;
