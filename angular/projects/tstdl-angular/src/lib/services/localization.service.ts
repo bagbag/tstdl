@@ -91,7 +91,7 @@ export class LocalizationService {
     }
 
     for (const [parameter, value] of Object.entries(parameters)) {
-      const regex = new RegExp(`\{\{\\s*${parameter}\\s*\}\}`, 'gui');
+      const regex = new RegExp(`\\{\\{\\s*${parameter}\\s*\\}\\}`, 'gui');
       text = text.replace(regex, value.toString());
     }
 
