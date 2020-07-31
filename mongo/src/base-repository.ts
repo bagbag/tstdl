@@ -179,6 +179,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async deleteManyById(ids: string[]): Promise<number> {
+    if (ids.length == 0) {
+      return 0;
+    }
+
     const filter: FilterQuery<T> = {
       _id: { $in: ids }
     } as FilterQuery<T>;
@@ -220,6 +224,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
     const documents = entities.map(toMongoDocumentWithId);
     const operations = documents.map(toInsertOneOperation);
     await this.collection.bulkWrite(operations as any);
@@ -229,6 +237,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
     const documents = entities.map(toMongoDocumentWithId);
     const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
     const result = await this.collection.bulkWrite(operations);
