@@ -12,7 +12,7 @@ import { LocalizationService } from '../services/localization.service';
 export class LocalizePipe implements PipeTransform, OnDestroy {
   private readonly asyncPipe: AsyncPipe;
   private readonly localizationService: LocalizationService;
-  private readonly transform$: ReplaySubject<{ key: string, parameters: StringMap<string> }>;
+  private readonly transform$: ReplaySubject<{ key: string, parameters: StringMap<string | number> }>;
   private readonly localized$: Observable<string>;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
@@ -28,7 +28,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transform$.unsubscribe();
   }
 
-  transform(key: string, parameters: StringMap<string> = {}): any {
+  transform(key: string, parameters: StringMap<string | number> = {}): any {
     this.transform$.next({ key, parameters });
     return this.asyncPipe.transform(this.localized$);
   }

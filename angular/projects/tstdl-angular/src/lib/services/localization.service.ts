@@ -73,7 +73,7 @@ export class LocalizationService {
     this.setLanguage(localization.language);
   }
 
-  localize(key: string, parameters: { [key: string]: string } = {}): string {
+  localize(key: string, parameters: StringMap<string | number> = {}): string {
     if (this.language == undefined) {
       throw new Error('language not set');
     }
@@ -92,13 +92,13 @@ export class LocalizationService {
 
     for (const [parameter, value] of Object.entries(parameters)) {
       const regex = new RegExp(`{{\\s*${parameter}\\s*}}`, 'gui');
-      text = text.replace(regex, value);
+      text = text.replace(regex, value.toString());
     }
 
     return text;
   }
 
-  localize$(key: string, parameters: { [key: string]: string } = {}): Observable<string> {
+  localize$(key: string, parameters: StringMap<string | number> = {}): Observable<string> {
     return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
   }
 }
