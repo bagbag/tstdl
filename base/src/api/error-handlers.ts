@@ -1,6 +1,6 @@
-import { registerErrorHandler } from '@tstdl/base/api';
-import { NotFoundError, UnauthorizedError } from '@tstdl/base/error';
-import { ValidationError } from './validation';
+import { NotFoundError, UnauthorizedError } from '../error';
+import { ValidationError } from '../error/validation';
+import { registerErrorHandler } from './response';
 
 export function registerDefaultErrorHandlers(): void {
   registerErrorHandler(ValidationError, 400, ({ name, message, details }) => ({ name, message, details }), ({ name, message, details }) => new ValidationError(name, message, details));

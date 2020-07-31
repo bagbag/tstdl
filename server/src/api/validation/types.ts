@@ -1,4 +1,4 @@
-import { ValidationError } from './error';
+import { ValidationError } from '@tstdl/base/error';
 export { ValidationError };
 
 export type EndpointParametersValidator<Input, Output> = (object: Input) => ValidationResult<Output> | Promise<ValidationResult<Output>>;

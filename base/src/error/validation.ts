@@ -1,4 +1,4 @@
-import { CustomError } from '@tstdl/base/error';
+import { CustomError } from './custom-error';
 
 export class ValidationError extends CustomError {
   readonly details: any;
