@@ -22,7 +22,8 @@ export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository
       {
         $set: { revision },
         $setOnInsert: { _id: getNewDocumentId() }
-      }
+      },
+      { upsert: true }
     );
   }
 }

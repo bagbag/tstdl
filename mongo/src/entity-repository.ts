@@ -76,11 +76,11 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   }
 
   async update<U extends T>(entity: U, options?: UpdateOptions): Promise<U> {
-    return this.baseRepository.replace(entity, options?.upsert ?? false);
+    return this.baseRepository.replace(entity, options);
   }
 
   async updateMany<U extends T>(entities: U[], options?: UpdateOptions): Promise<U[]> {
-    return this.baseRepository.replaceMany(entities, options?.upsert ?? false);
+    return this.baseRepository.replaceMany(entities, options);
   }
 
   async delete<U extends T>(entity: U): Promise<boolean> {

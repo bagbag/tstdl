@@ -7,6 +7,14 @@ import { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'm
 import { MongoDocument, toEntity, toMongoDocumentWithId } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
+export type ReplaceOptions = {
+  upsert?: boolean
+};
+
+export type UpdateOptions = {
+  upsert?: boolean
+};
+
 export type UpdateResult = {
   matchedCount: number,
   modifiedCount: number
@@ -200,10 +208,10 @@ export class MongoBaseRepository<T extends Entity> {
     return deletedCount as number;
   }
 
-  async replace<U extends T>(entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
+  async replace<U extends T>(entity: EntityWithPartialId<U>, options?: ReplaceOptions): Promise<U> {
     const document = toMongoDocumentWithId(entity);
-    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, upsert);
-    const result = await this.collection.replaceOne(filter, replacement, { upsert });
+    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, options);
+    const result = await this.collection.replaceOne(filter, replacement, options);
 
     if (result.matchedCount == 0 && result.upsertedCount == 0) {
       throw new NotFoundError('document not found');
@@ -212,9 +220,9 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, upsert: boolean): Promise<U> {
+  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, options?: ReplaceOptions): Promise<U> {
     const document = toMongoDocumentWithId(entity);
-    const result = await this.collection.replaceOne(filter, document, { upsert });
+    const result = await this.collection.replaceOne(filter, document, options);
 
     if (result.matchedCount == 0 && result.upsertedCount == 0) {
       throw new NotFoundError('document not found');
@@ -236,13 +244,13 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], upsert: boolean): Promise<U[]> {
+  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], options?: ReplaceOptions): Promise<U[]> {
     if (entities.length == 0) {
       return [];
     }
 
     const documents = entities.map(toMongoDocumentWithId);
-    const operations = documents.map((document) => toReplaceOneOperation(document, upsert));
+    const operations = documents.map((document) => toReplaceOneOperation(document, options));
     const result = await this.collection.bulkWrite(operations);
 
     if (result.matchedCount == undefined || result.upsertedCount == undefined) {
@@ -257,8 +265,8 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update);
+  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
+    const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update, options);
 
     const updateResult: UpdateResult = {
       matchedCount,
@@ -268,8 +276,8 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
-  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update);
+  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
+    const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update, options);
 
     const updateResult: UpdateResult = {
       matchedCount,
@@ -329,7 +337,7 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>): Bul
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, upsert: boolean) {
+function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, options?: ReplaceOptions) {
   const filter: FilterQuery<T> = {
     _id: document._id
   } as FilterQuery<T>;
@@ -338,7 +346,7 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, ups
     replaceOne: {
       filter,
       replacement: document,
-      upsert
+      upsert: options?.upsert ?? false
     }
   };
 

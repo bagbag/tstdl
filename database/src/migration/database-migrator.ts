@@ -40,7 +40,7 @@ export class DatabaseMigrator {
 
     try {
       const currentState = await this.databaseMigrationStateRepository.loadByName(name);
-      const currentRevision = currentState == undefined ? 0 : currentState.revision;
+      const currentRevision = currentState?.revision ?? 0;
       const highestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
 
       if (currentRevision == highestRevision) {
