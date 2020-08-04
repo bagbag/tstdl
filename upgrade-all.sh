@@ -7,7 +7,6 @@ projects=(
   "server"
   "database"
   "mongo"
-  "redis"
 )
 
 for project in "${projects[@]}"; do

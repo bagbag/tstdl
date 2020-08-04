@@ -13,8 +13,13 @@ export interface EntityRepository<T extends Entity> {
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
   loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U>;
 
+  loadAll<U extends T = T>(): Promise<U[]>;
+  loadAllCursor<U extends T = T>(): AsyncIterableIterator<U>;
+
   loadAndDelete<U extends T = T>(id: string): Promise<U>;
   tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined>;
+
+  count(allowEstimation?: boolean): Promise<number>;
 
   has(id: string): Promise<boolean>;
   hasMany(ids: string[]): Promise<string[]>;

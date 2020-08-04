@@ -47,6 +47,15 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
     yield* this.baseRepository.loadManyByIdWithCursor<U>(ids);
   }
 
+  async loadAll<U extends T = T>(): Promise<U[]> {
+    return this.baseRepository.loadManyByFilter({});
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async *loadAllCursor<U extends T = T>(): AsyncIterableIterator<U> {
+    yield* this.baseRepository.loadManyByFilterWithCursor({});
+  }
+
   async loadAndDelete<U extends T = T>(id: string): Promise<U> {
     return this.baseRepository.loadAndDelete(id);
   }
@@ -65,6 +74,10 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
 
   async hasAll(ids: string[]): Promise<boolean> {
     return this.baseRepository.hasAll(ids);
+  }
+
+  async count(allowEstimation: boolean = false): Promise<number> {
+    return this.baseRepository.countByFilter({}, { estimate: allowEstimation });
   }
 
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
