@@ -2,9 +2,14 @@ import { NgModule } from '@angular/core';
 import { CenterComponent } from './components/center/center.component';
 import { LocalizePipe } from './pipes/localize.pipe';
 
+const declarations = [
+  LocalizePipe,
+  CenterComponent
+];
+
 @NgModule({
-  declarations: [LocalizePipe, CenterComponent],
+  declarations: declarations,
   imports: [],
-  exports: [LocalizePipe]
+  exports: declarations
 })
 export class TstdlAngularModule { }
