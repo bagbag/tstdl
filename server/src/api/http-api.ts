@@ -2,7 +2,7 @@ import * as KoaRouter from '@koa/router';
 import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import { Logger } from '@tstdl/base/logger';
 import { Json, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
-import { precisionRound, Timer } from '@tstdl/base/utils';
+import { precisionRound, Timer, toArray } from '@tstdl/base/utils';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
@@ -64,7 +64,7 @@ export type RouteHandler<RouteParameters, EndpointParameters, EndpointResult, En
 
 export type AnyRoute = Route<RequestMethod, any, BodyType, any, any, any>;
 export type Route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext> = {
-  method: Method,
+  method: Method | Method[],
   path: string,
   bodyType?: B,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
@@ -149,17 +149,21 @@ export class HttpApi {
   registerRoutes(...routes: AnyRoute[]): void {
     // eslint-disable-next-line no-shadow
     for (const route of routes) {
-      switch (route.method) {
-        case RequestMethod.Get:
-          this.registerRoute(route.method, route.path, BodyType.None, route.parametersTransformer, route.endpoint, route.handler);
-          break;
+      const methods = toArray(route.method);
 
-        case RequestMethod.Post:
-          this.registerRoute(route.method, route.path, route.bodyType ?? BodyType.Json, route.parametersTransformer, route.endpoint, route.handler);
-          break;
+      for (const method of methods) {
+        switch (method) {
+          case RequestMethod.Get:
+            this.registerRoute(method, route.path, BodyType.None, route.parametersTransformer, route.endpoint, route.handler);
+            break;
 
-        default:
-          throw new Error('unknown route method');
+          case RequestMethod.Post:
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.parametersTransformer, route.endpoint, route.handler);
+            break;
+
+          default:
+            throw new Error('unknown route method');
+        }
       }
     }
   }
