@@ -94,6 +94,18 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   return response;
 }
 
+export function parseResponse<T>(response: Response<T>): T {
+  if (isResultResponse(response)) {
+    return response.result;
+  }
+
+  if (isErrorResponse(response)) {
+    throw parseErrorResponse(response);
+  }
+
+  throw new Error('unsupported response');
+}
+
 export function parseErrorResponse(response: ErrorResponse): Error {
   const handler = errorHandlers.get(response.error.name);
 
@@ -110,7 +122,7 @@ export function isResultResponse<T = any>(response: Response<T> | unknown): resp
   return hasResult;
 }
 
-export function isErrorResponse<T = any>(response: Response<T> | unknown): response is ErrorResponse {
+export function isErrorResponse(response: Response<any> | unknown): response is ErrorResponse {
   const hasError = (response as ErrorResponse).error != undefined;
   return hasError;
 }
