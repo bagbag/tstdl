@@ -21,8 +21,7 @@ export type UpdateResult = {
 };
 
 export type LoadOptions<T extends Entity> = {
-  sort?: [keyof MongoDocument<T>, 1 | -1][],
-  upsert?: boolean
+  sort?: { [P in keyof MongoDocument<T>]: 1 | -1 } | [keyof MongoDocument<T>, 1 | -1][]
 };
 
 export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
@@ -30,6 +29,7 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
 };
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
+  upsert?: boolean,
   returnOriginal?: boolean
 };
 
@@ -83,26 +83,26 @@ export class MongoBaseRepository<T extends Entity> {
     return this.tryLoadByFilterAndUpdate(filter, update, options);
   }
 
-  async loadAndDelete<U extends T = T>(id: string): Promise<U> {
-    const entity = await this.tryLoadAndDelete<U>(id);
+  async loadAndDelete<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
+    const entity = await this.tryLoadAndDelete<U>(id, options);
     return throwIfUndefinedElsePass(entity);
   }
 
-  async tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined> {
+  async tryLoadAndDelete<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U | undefined> {
     const filter: FilterQuery<U> = {
       _id: id
     } as FilterQuery<U>;
 
-    return this.tryLoadByFilter(filter);
+    return this.tryLoadByFilter(filter, options);
   }
 
-  async loadByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U> {
-    const entity = await this.tryLoadByFilter(filter);
+  async loadByFilter<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U> {
+    const entity = await this.tryLoadByFilter(filter, options);
     return throwIfUndefinedElsePass(entity);
   }
 
-  async tryLoadByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<U | undefined> {
-    const document = await this.collection.findOne<MongoDocument<U>>(filter);
+  async tryLoadByFilter<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U | undefined> {
+    const document = await this.collection.findOne<MongoDocument<U>>(filter, options);
 
     if (document == undefined) {
       return undefined;
@@ -111,13 +111,13 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>): Promise<U> {
-    const entity = await this.tryLoadByFilterAndDelete(filter);
+  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U> {
+    const entity = await this.tryLoadByFilterAndDelete(filter, options);
     return throwIfUndefinedElsePass(entity);
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>): Promise<U | undefined> {
-    const result = await this.collection.findOneAndDelete(filter);
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U | undefined> {
+    const result = await this.collection.findOneAndDelete(filter, options);
 
     if (result.value == undefined) {
       return undefined;
