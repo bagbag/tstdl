@@ -21,7 +21,7 @@ export type UpdateResult = {
 };
 
 export type LoadOptions<T extends Entity> = {
-  sort?: { [P in keyof MongoDocument<T>]: 1 | -1 } | [keyof MongoDocument<T>, 1 | -1][]
+  sort?: { [P in keyof MongoDocument<T>]?: 1 | -1 } | [keyof MongoDocument<T>, 1 | -1][]
 };
 
 export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
