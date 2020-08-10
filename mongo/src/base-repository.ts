@@ -21,11 +21,12 @@ export type UpdateResult = {
 };
 
 export type LoadOptions<T extends Entity> = {
+  limit?: number,
+  skip?: number,
   sort?: { [P in keyof MongoDocument<T>]?: 1 | -1 } | [keyof MongoDocument<T>, 1 | -1][]
 };
 
 export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
-  limit: number
 };
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
