@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/semi */
 import { Entity, EntityRepository, EntityWithPartialId, UpdateOptions } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
-import { MongoDocument } from './model';
 import { Collection, TypedIndexSpecification } from './types';
 
 type Options<T> = {
@@ -12,12 +11,12 @@ export class MongoEntityRepository<T extends Entity> implements EntityRepository
   _type: T;
 
   /* eslint-disable @typescript-eslint/member-ordering */
-  protected readonly collection: Collection<MongoDocument<T>>;
+  protected readonly collection: Collection<T>;
   protected readonly indexes?: TypedIndexSpecification<T>[];
   protected readonly baseRepository: MongoBaseRepository<T>;
   /* eslint-enable @typescript-eslint/member-ordering */
 
-  constructor(collection: Collection<MongoDocument<T>>, { indexes }: Options<T> = {}) {
+  constructor(collection: Collection<T>, { indexes }: Options<T> = {}) {
     this.collection = collection;
     this.indexes = indexes;
 

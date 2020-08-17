@@ -4,8 +4,26 @@ import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { Entity, EntityWithPartialId } from '@tstdl/database';
 import { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toMongoDocumentWithId } from './model';
+import { MongoDocument, toEntity, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
+
+export enum ProjectionMode {
+  Include = 0,
+  Exclude = 1
+}
+
+export type Projection<T, M extends ProjectionMode> = { [P in keyof T]?: M extends ProjectionMode.Include ? true : false };
+
+export type ProjectedEntity<T, M extends ProjectionMode, P extends Projection<T, M>> =
+  M extends ProjectionMode.Include
+  ? { [K in keyof T]: P[K] extends true ? T[K] : undefined }
+  : { [K in keyof T]: P[K] extends false ? undefined : T[K] };
+
+export type SortObject<T extends Entity> = { [P in keyof MongoDocument<T>]?: 1 | -1 };
+
+export type SortArray<T extends Entity> = [keyof MongoDocument<T> & string, 1 | -1][];
+
+export type Sort<T extends Entity> = SortObject<T> | SortArray<T>;
 
 export type ReplaceOptions = {
   upsert?: boolean
@@ -23,7 +41,11 @@ export type UpdateResult = {
 export type LoadOptions<T extends Entity> = {
   limit?: number,
   skip?: number,
-  sort?: { [P in keyof MongoDocument<T>]?: 1 | -1 } | [keyof MongoDocument<T>, 1 | -1][]
+  sort?: Sort<T>
+};
+
+export type LoadAndDeleteOptions<T extends Entity> = LoadOptions<T> & {
+  sort: SortObject<T>
 };
 
 export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
@@ -31,7 +53,8 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
   upsert?: boolean,
-  returnOriginal?: boolean
+  returnOriginal?: boolean,
+  sort: SortObject<T>
 };
 
 export type CountOptions = {
@@ -41,9 +64,9 @@ export type CountOptions = {
 };
 
 export class MongoBaseRepository<T extends Entity> {
-  readonly collection: Collection<MongoDocument<T>>;
+  readonly collection: Collection<T>;
 
-  constructor(collection: Collection<MongoDocument<T>>) {
+  constructor(collection: Collection<T>) {
     this.collection = collection;
   }
 
@@ -112,12 +135,27 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U> {
+  async loadProjectionByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P>> {
+    const id = await this.tryLoadProjectionByFilter(filter, mode, projection, options);
+    return throwIfUndefinedElsePass(id);
+  }
+
+  async tryLoadProjectionByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
+    const document = await this.collection.findOne<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) });
+
+    if (document == undefined) {
+      return undefined;
+    }
+
+    return toProjectedEntity<U, M, P>(document);
+  }
+
+  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U> {
     const entity = await this.tryLoadByFilterAndDelete(filter, options);
     return throwIfUndefinedElsePass(entity);
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U | undefined> {
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
     const result = await this.collection.findOneAndDelete(filter, options);
 
     if (result.value == undefined) {
