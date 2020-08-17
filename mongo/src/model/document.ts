@@ -37,7 +37,7 @@ export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P 
 export function toMongoProjection<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(mode: M, projection: P): Projection<MongoDocument<T>, M> {
   const { id, ...projectionRest } = projection;
 
-  const partialIdObject = { _id: id ?? (mode != ProjectionMode.Include) };
+  const partialIdObject = (id != undefined) ? { _id: id } : (mode == ProjectionMode.Include) ? { _id: false } : {};
 
   const mongoProjection: Projection<MongoDocument<T>, M> = {
     ...partialIdObject,
