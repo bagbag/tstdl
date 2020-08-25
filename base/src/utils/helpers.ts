@@ -1,6 +1,8 @@
+import { Enumerable } from '../enumerable';
+import { DetailsError } from '../error';
 import { DeepArray, StringMap } from '../types';
 import { random } from './math';
-import { DetailsError } from '../error';
+import { Comparator } from './sort';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -68,8 +70,8 @@ export function clone<T>(object: T, deep: boolean): T {
   return result as T;
 }
 
-type DidNotRun = {};
-export const didNotRun: DidNotRun = Object.freeze({});
+type DidNotRun = symbol;
+export const didNotRun: DidNotRun = Symbol('did-not-run');
 
 export function throttleFunction<Args extends any[], ReturnValue>(func: (...args: Args) => ReturnValue, interval: number, queue: boolean = false): (...args: Args) => (ReturnValue | DidNotRun) {
   let lastCall = 0;
@@ -229,4 +231,35 @@ export function randomElement<T>(array: T[], { min, max }: { min?: number, max?:
   const index = random(_min, _max, true);
 
   return array[index];
+}
+
+const defaultComparator = (a: unknown, b: unknown): boolean => a == b;
+
+type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
+
+type ArrayEqualsOptions<A, B> = {
+  sort?: Comparator<A | B>,
+  comparator?: ArrayEqualsComparator<A, B>
+};
+
+export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A, B>): boolean {
+  const sort = options?.sort ?? false;
+  const comparator = options?.comparator ?? defaultComparator;
+
+  if (a.length != b.length) {
+    return false;
+  }
+
+  const c = sort != false ? Enumerable.from(a).sort(sort).toArray() : a;
+  const d = sort != false ? Enumerable.from(b).sort(sort).toArray() : b;
+
+  for (let i = 0; i < c.length; i++) {
+    const equals = comparator(c[i], d[i]);
+
+    if (!equals) {
+      return false;
+    }
+  }
+
+  return true;
 }
