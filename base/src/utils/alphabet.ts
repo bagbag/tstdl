@@ -1,9 +1,10 @@
 export enum Alphabet {
   LowerCase = 'abcdefghijklmnopqrstuvwxyz',
-  LowerCaseNumbers = 'abcdefghijklmnopqrstuvwxyz0123456789',
   UpperCase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  UpperCaseNumbers = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+  Numbers = '0123456789',
   LowerUpperCase = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  LowerCaseNumbers = 'abcdefghijklmnopqrstuvwxyz0123456789',
+  UpperCaseNumbers = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
   LowerUpperCaseNumbers = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
   ZBase32 = 'ybndrfg8ejkmcpqxot1uwisza345h769'
 }

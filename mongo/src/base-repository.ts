@@ -171,7 +171,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async tryLoadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
-    const { value: document } = await this.collection.findOneAndUpdate(filter, update, options) as FindAndModifyWriteOpResultObject<MongoDocument<U>>;
+    const { value: document } = await this.collection.findOneAndUpdate(filter, update as UpdateQuery<T>, options) as FindAndModifyWriteOpResultObject<MongoDocument<U>>;
 
     if (document == undefined) {
       return undefined;
@@ -319,7 +319,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update, options);
+    const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update as UpdateQuery<T>, options);
 
     const updateResult: UpdateResult = {
       matchedCount,
@@ -330,7 +330,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
-    const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update, options);
+    const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update as UpdateQuery<T>, options);
 
     const updateResult: UpdateResult = {
       matchedCount,

@@ -2,6 +2,7 @@ import { Job, Queue } from '@tstdl/base/queue';
 import { Alphabet, backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
 import { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
+import { MongoDocument } from '../model';
 import { Collection, TypedIndexSpecification } from '../types';
 import { MongoJob, MongoJobWithoutId } from './job';
 
@@ -128,12 +129,12 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
 function getDequeueFindParameters(maxTries: number, processTimeout: number, batch: null | string = null) {
   const maximumLastDequeueTimestamp = currentTimestamp() - processTimeout;
 
-  const filter: FilterQuery<MongoJob<any>> = {
+  const filter: FilterQuery<MongoDocument<MongoJob<any>>> = {
     tries: { $lt: maxTries },
     lastDequeueTimestamp: { $lte: maximumLastDequeueTimestamp }
   };
 
-  const update: UpdateQuery<MongoJob<any>> = {
+  const update: UpdateQuery<MongoDocument<MongoJob<any>>> = {
     $inc: { tries: 1 },
     $set: {
       lastDequeueTimestamp: currentTimestamp(),
