@@ -222,21 +222,12 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async delete<U extends T = T>(entity: U): Promise<boolean> {
-    return this.deleteById(entity.id);
-  }
-
   async deleteById(id: string): Promise<boolean> {
     const filter: FilterQuery<T> = {
       _id: id
     } as FilterQuery<T>;
 
     return this.deleteByFilter(filter);
-  }
-
-  async deleteMany<U extends T = T>(entities: U[]): Promise<number> {
-    const ids = entities.map((entity) => entity.id);
-    return this.deleteManyById(ids);
   }
 
   async deleteManyById(ids: string[]): Promise<number> {

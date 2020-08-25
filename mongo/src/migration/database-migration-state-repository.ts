@@ -1,5 +1,5 @@
 import { DatabaseMigrationState, DatabaseMigrationStateRepository } from '@tstdl/database/migration/';
-import { MongoEntityRepository } from '../entity-repository';
+import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import { getNewDocumentId } from '../id';
 import { Collection, TypedIndexSpecification } from '../types';
 
@@ -9,7 +9,7 @@ const indexes: TypedIndexSpecification<DatabaseMigrationState>[] = [
 
 export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository<DatabaseMigrationState> implements DatabaseMigrationStateRepository {
   constructor(collection: Collection<DatabaseMigrationState>) {
-    super(collection, { indexes });
+    super(collection, noopTransformer, { indexes });
   }
 
   async loadByName(name: string): Promise<DatabaseMigrationState | undefined> {

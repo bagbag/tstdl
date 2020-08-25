@@ -1,7 +1,7 @@
 import { now } from '@tstdl/base/utils';
 import { EntityRepository } from '@tstdl/database';
 import { MongoError } from 'mongodb';
-import { MongoEntityRepository } from '../entity-repository';
+import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import { getNewDocumentId } from '../id';
 import { Collection, FilterQuery, TypedIndexSpecification } from '../types';
 import { LockEntity } from './model';
@@ -13,7 +13,7 @@ const indexes: TypedIndexSpecification<LockEntity>[] = [
 
 export class MongoLockRepository extends MongoEntityRepository<LockEntity> implements EntityRepository<LockEntity> {
   constructor(collection: Collection<LockEntity>) {
-    super(collection, { indexes });
+    super(collection, noopTransformer, { indexes });
   }
 
   async tryInsertOrRefresh(ressource: string, key: string, newExpirationDate: Date): Promise<false | Date> {
@@ -33,7 +33,7 @@ export class MongoLockRepository extends MongoEntityRepository<LockEntity> imple
       const { upsertedCount, modifiedCount } = await this.baseRepository.collection.updateOne(filter, { $set: { expire: newExpirationDate }, $setOnInsert: { _id: getNewDocumentId(), key } }, { upsert: true });
       return (upsertedCount > 0 || modifiedCount > 0) ? newExpirationDate : false;
     }
-    catch (error) {
+    catch (error: unknown) {
       if (error instanceof MongoError && error.code == 11000) {
         return false;
       }
