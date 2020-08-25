@@ -263,3 +263,77 @@ export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A
 
   return true;
 }
+
+type EqualsOptions = {
+  deep?: boolean,
+  arrayDeep?: boolean,
+  sortArray?: boolean
+};
+
+// eslint-disable-next-line max-statements, max-lines-per-function
+export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
+  if (a === b) {
+    return true;
+  }
+
+  const aType = typeof a;
+  const bType = typeof b;
+
+  if (aType != bType) {
+    return false;
+  }
+
+  switch (aType) {
+    case 'function':
+      return (options.deep == true)
+        ? (a as Function).toString() == (b as Function).toString()
+        : false; // eslint-disable-line @typescript-eslint/ban-types
+
+    case 'object':
+      if (a === null || b === null) { // hasn't passed equals check at top, so one must be a true object
+        return false;
+      }
+
+      const aPrototype = Object.getPrototypeOf(a);
+      const bPrototype = Object.getPrototypeOf(b);
+
+      if (aPrototype != bPrototype) {
+        return false;
+      }
+
+      if (Array.isArray(a)) {
+        return (options.arrayDeep != false && (options.deep == true || options.arrayDeep == true))
+          ? arrayEquals(a, b as any[], { sort: (options.sortArray == true) ? compareByValue : undefined, comparator: (x, y) => equals(x, y, options) })
+          : a === b;
+      }
+
+      if (aPrototype != Object.prototype && aPrototype !== null) {
+        throw new Error('equals only supports plain objects, arrays and primitives');
+      }
+
+      return objectEquals(a, b, options);
+
+    default:
+      return a === b;
+  }
+}
+
+// eslint-disable-next-line max-statements, max-lines-per-function
+function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, options: EqualsOptions): boolean {
+  const aProperties = Object.getOwnPropertyNames(a);
+  const bProperties = Object.getOwnPropertyNames(b);
+
+  if (!arrayEquals(aProperties, bProperties, { sort: compareByValue })) {
+    return false;
+  }
+
+  for (const property of aProperties) {
+    const eq = equals(a[property], b[property], options);
+
+    if (!eq) {
+      return false;
+    }
+  }
+
+  return true;
+}
