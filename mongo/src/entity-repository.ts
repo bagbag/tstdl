@@ -7,17 +7,17 @@ type Options<T> = {
   indexes?: TypedIndexSpecification<T>[]
 }
 
-type Transformer<T extends Entity, TDb extends Entity> = {
+export type EntityTransformer<T extends Entity, TDb extends Entity> = {
   transform: (item: T) => TDb,
   untransform: (item: TDb) => T
 }
 
-export const noopTransformer: Transformer<any, any> = {
+export const noopTransformer: EntityTransformer<any, any> = {
   transform: (item: unknown) => item,
   untransform: (item: unknown) => item
 }
 
-export function getNoopTransformer<T extends Entity = any>(): Transformer<T, T> {
+export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<T, T> {
   return noopTransformer;
 }
 
@@ -28,10 +28,10 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   protected readonly collection: Collection<TDb>;
   protected readonly indexes?: TypedIndexSpecification<TDb>[];
   protected readonly baseRepository: MongoBaseRepository<TDb>;
-  protected readonly transformer: Transformer<T, TDb>;
+  protected readonly transformer: EntityTransformer<T, TDb>;
   /* eslint-enable @typescript-eslint/member-ordering */
 
-  constructor(collection: Collection<TDb>, transformer: Transformer<T, TDb>, { indexes }: Options<TDb> = {}) {
+  constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { indexes }: Options<TDb> = {}) {
     this.collection = collection;
     this.transformer = transformer;
     this.indexes = indexes;
