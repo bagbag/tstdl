@@ -54,7 +54,7 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T> & {
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
   upsert?: boolean,
   returnOriginal?: boolean,
-  sort: SortObject<T>
+  sort?: SortObject<T>
 };
 
 export type CountOptions = {
