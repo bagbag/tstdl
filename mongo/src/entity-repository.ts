@@ -3,7 +3,8 @@ import { Entity, EntityRepository, EntityWithPartialId, UpdateOptions } from '@t
 import { MongoBaseRepository } from './base-repository';
 import { Collection, TypedIndexSpecification } from './types';
 
-type Options<T> = {
+type MongoEntityRepositoryOptions<T> = {
+  entityName?: string,
   indexes?: TypedIndexSpecification<T>[]
 }
 
@@ -31,12 +32,12 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   protected readonly transformer: EntityTransformer<T, TDb>;
   /* eslint-enable @typescript-eslint/member-ordering */
 
-  constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { indexes }: Options<TDb> = {}) {
+  constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { indexes, entityName }: MongoEntityRepositoryOptions<TDb> = {}) {
     this.collection = collection;
     this.transformer = transformer;
     this.indexes = indexes;
 
-    this.baseRepository = new MongoBaseRepository(collection);
+    this.baseRepository = new MongoBaseRepository(collection, { entityName });
   }
 
   async initialize(): Promise<void> {
