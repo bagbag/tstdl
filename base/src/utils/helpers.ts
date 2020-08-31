@@ -200,19 +200,27 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
   return matches;
 }
 
-export function dotNotation<T, Key1 extends keyof NonNullable<T>>(typeInferHelper: T, key1: Key1): string;
-export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>>(typeInferHelper: T, key1: Key1, key2: Key2): string;
-export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3): string;
-export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>, Key4 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4): string;
-export function dotNotation<T, Key1 extends keyof NonNullable<T>, Key2 extends keyof NonNullable<NonNullable<T>[Key1]>, Key3 extends keyof NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>, Key4 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>, Key5 extends keyof NonNullable<NonNullable<NonNullable<NonNullable<NonNullable<T>[Key1]>[Key2]>[Key3]>[Key4]>>(typeInferHelper: T, key1: Key1, key2: Key2, key3: Key3, key4: Key4, key5: Key5): string;
-export function dotNotation(_type: any, ...keys: string[]): string {
+type NN<T> = NonNullable<T>;
+
+export function dotNotation<T>(
+  k1: keyof T,
+  k2?: keyof T[typeof k1],
+  k3?: keyof T[NN<typeof k1>][NN<typeof k2>],
+  k4?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>],
+  k5?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>],
+  k6?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>],
+  k7?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>],
+  k8?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>][NN<typeof k7>],
+  k9?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>][NN<typeof k7>][NN<typeof k8>]
+): string;
+export function dotNotation(...keys: any[]): string {
   for (const key of keys) {
     if (typeof key == 'symbol') {
       throw new Error('symbol not supported');
     }
   }
 
-  return keys.join('.');
+  return keys.filter((key) => key != undefined).join('.');
 }
 
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
