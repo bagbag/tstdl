@@ -63,11 +63,17 @@ export type CountOptions = {
   skip?: number
 };
 
+export type MongoBaseRepositoryOptions = {
+  entityName?: string
+};
+
 export class MongoBaseRepository<T extends Entity> {
   readonly collection: Collection<T>;
+  readonly entityName: string;
 
-  constructor(collection: Collection<T>) {
+  constructor(collection: Collection<T>, options?: MongoBaseRepositoryOptions) {
     this.collection = collection;
+    this.entityName = options?.entityName ?? 'entity';
   }
 
   async createIndexes(indexes: TypedIndexSpecification<T>[]): Promise<void> {
@@ -83,7 +89,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async load<U extends T = T>(id: string): Promise<U> {
     const entity = await this.tryLoad<U>(id);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoad<U extends T = T>(id: string): Promise<U | undefined> {
@@ -96,7 +102,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
     const entity = await this.tryLoadAndUpdate(id, update, options);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
@@ -109,7 +115,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadAndDelete<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
     const entity = await this.tryLoadAndDelete<U>(id, options);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoadAndDelete<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U | undefined> {
@@ -122,7 +128,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadByFilter<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U> {
     const entity = await this.tryLoadByFilter(filter, options);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoadByFilter<U extends T = T>(filter: FilterQuery<U>, options?: LoadOptions<U>): Promise<U | undefined> {
@@ -137,7 +143,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P>> {
     const id = await this.tryLoadProjectedByFilter(filter, mode, projection, options);
-    return throwIfUndefinedElsePass(id);
+    return throwIfUndefinedElsePass(id, this.entityName);
   }
 
   async tryLoadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
@@ -152,7 +158,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U> {
     const entity = await this.tryLoadByFilterAndDelete(filter, options);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
@@ -167,7 +173,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async loadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
     const entity = await this.tryLoadByFilterAndUpdate(filter, update, options);
-    return throwIfUndefinedElsePass(entity);
+    return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
   async tryLoadByFilterAndUpdate<U extends T = T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
@@ -258,7 +264,7 @@ export class MongoBaseRepository<T extends Entity> {
     const result = await this.collection.replaceOne(filter, replacement, options);
 
     if (result.matchedCount == 0 && result.upsertedCount == 0) {
-      throw new NotFoundError('document not found');
+      throw new NotFoundError(`${this.entityName} not found`);
     }
 
     return toEntity(document);
@@ -269,7 +275,7 @@ export class MongoBaseRepository<T extends Entity> {
     const result = await this.collection.replaceOne(filter, document, options);
 
     if (result.matchedCount == 0 && result.upsertedCount == 0) {
-      throw new NotFoundError('document not found');
+      throw new NotFoundError(`${this.entityName} not found`);
     }
 
     return toEntity(document);
@@ -302,7 +308,7 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     if (result.matchedCount + result.upsertedCount != entities.length) {
-      throw new NotFoundError(`${entities.length - (result.matchedCount + result.upsertedCount)} documents not found`);
+      throw new NotFoundError(`${entities.length - (result.matchedCount + result.upsertedCount)} ${this.entityName} entities not found`);
     }
 
     const savedEntities = documents.map(toEntity);
@@ -397,9 +403,9 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, opt
   return operation;
 }
 
-function throwIfUndefinedElsePass<T>(value: T | undefined): T {
+function throwIfUndefinedElsePass<T>(value: T | undefined, entityName: string): T {
   if (value == undefined) {
-    throw new NotFoundError('document not found');
+    throw new NotFoundError(`${entityName} not found`);
   }
 
   return value;
