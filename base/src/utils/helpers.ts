@@ -158,7 +158,7 @@ export function formatError(error: Error, includeStack: boolean): string {
   return `${error.name}: ${error.message}${stackMessage}`;
 }
 
-export function compareByValueSelection<T, U>(...selectors: ((item: T) => U)[]): (a: T, b: T) => number {
+export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
   return (a: T, b: T) => {
     for (const selector of selectors) {
       const selectedA = selector(a);
@@ -174,7 +174,7 @@ export function compareByValueSelection<T, U>(...selectors: ((item: T) => U)[]):
   };
 }
 
-export function compareByValueSelectionDescending<T, U>(...selectors: ((item: T) => U)[]): (a: T, b: T) => number {
+export function compareByValueSelectionDescending<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
   return (a: T, b: T) => {
     for (const selector of selectors) {
       const selectedA = selector(a);
@@ -190,7 +190,7 @@ export function compareByValueSelectionDescending<T, U>(...selectors: ((item: T)
   };
 }
 
-export function compareByValueSelectionOrdered<T, U>(...selectors: [(item: T) => U, 1 | -1][]): (a: T, b: T) => number {
+export function compareByValueSelectionOrdered<T>(...selectors: [(item: T) => unknown, 1 | -1][]): (a: T, b: T) => number {
   return (a: T, b: T) => {
     for (const [selector, order] of selectors) {
       const selectedA = selector(a);
