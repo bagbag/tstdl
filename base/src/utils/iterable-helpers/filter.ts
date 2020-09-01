@@ -1,6 +1,6 @@
-import { FilterPredicate, Predicate } from './types';
+import type { Predicate } from './types';
 
-export function* filter<T, TNew extends T = T>(iterable: Iterable<T>, predicate: Predicate<T> | FilterPredicate<T, TNew>): IterableIterator<TNew> {
+export function* filter<T, TNew extends T = T>(iterable: Iterable<T>, predicate: Predicate<T>): IterableIterator<TNew> {
   let index = 0;
 
   for (const item of iterable) {

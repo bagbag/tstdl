@@ -1,9 +1,8 @@
-import { AnyIterable } from '../any-iterable-iterator';
-import { FilterPredicate } from '../iterable-helpers';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
-import { AsyncPredicate } from './types';
+import type { AsyncPredicate } from './types';
 
-export function filterAsync<T, TNew extends T = T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> | FilterPredicate<T, TNew>): AsyncIterableIterator<TNew> {
+export function filterAsync<T, TNew extends T = T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<TNew> {
   return isAsyncIterable(iterable)
     ? async<T, TNew>(iterable, predicate)
     : sync<T, TNew>(iterable, predicate);

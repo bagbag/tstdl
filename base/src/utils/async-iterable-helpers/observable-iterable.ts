@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { AwaitableList } from '../../collections/awaitable';
 import { CancellationToken } from '../cancellation-token';
 
@@ -6,13 +6,13 @@ export async function* observableAsyncIterable<T>(observable: Observable<T>): As
   const buffer = new AwaitableList<T>();
   const completeToken = new CancellationToken();
   const errorToken = new CancellationToken();
-  let _error: any;
+  let error: any;
 
   const subscription = observable.subscribe({
     next: (value) => buffer.append(value),
     complete: () => completeToken.set(),
-    error: (error) => {
-      _error = error;
+    error: (_error) => {
+      error = _error;
       errorToken.set();
     }
   });
@@ -28,7 +28,7 @@ export async function* observableAsyncIterable<T>(observable: Observable<T>): As
       }
 
       if (errorToken.isSet) {
-        throw _error;
+        throw error;
       }
     }
   }
