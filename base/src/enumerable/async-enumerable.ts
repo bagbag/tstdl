@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { anyAsync, AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
+import { anyAsync, AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync, FilterPredicate } from '../utils';
 import { AnyIterable } from '../utils/any-iterable-iterator';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
@@ -46,6 +46,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return this as AsyncEnumerable<any> as AsyncEnumerable<TNew>;
   }
 
+  concat<TOther>(iterable: Iterable<TOther>): AsyncEnumerable<T | TOther> {
+    const concatted = concatAsync(this.source, iterable);
+    return new AsyncEnumerable(concatted);
+  }
+
   distinct(selector?: AsyncIteratorFunction<T, any>): AsyncEnumerable<T> {
     const result = distinctAsync(this.source, selector);
     return new AsyncEnumerable(result);
@@ -55,8 +60,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     await drainAsync(this.source);
   }
 
-  filter(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
-    const filtered = filterAsync(this.source, predicate);
+  filter<TNew extends T = T>(predicate: AsyncPredicate<T> | FilterPredicate<T, TNew>): AsyncEnumerable<TNew> {
+    const filtered = filterAsync<T, TNew>(this.source, predicate);
     return new AsyncEnumerable(filtered);
   }
 

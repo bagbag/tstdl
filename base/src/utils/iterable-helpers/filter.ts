@@ -1,13 +1,13 @@
-import { Predicate } from './types';
+import { FilterPredicate, Predicate } from './types';
 
-export function* filter<T>(iterable: Iterable<T>, predicate: Predicate<T>): IterableIterator<T> {
+export function* filter<T, TNew extends T = T>(iterable: Iterable<T>, predicate: Predicate<T> | FilterPredicate<T, TNew>): IterableIterator<TNew> {
   let index = 0;
 
   for (const item of iterable) {
     const matches = predicate(item, index++);
 
     if (matches) {
-      yield item;
+      yield item as TNew;
     }
   }
 }

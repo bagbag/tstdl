@@ -1,14 +1,15 @@
 import { AnyIterable } from '../any-iterable-iterator';
+import { FilterPredicate } from '../iterable-helpers';
 import { isAsyncIterable } from './is-async-iterable';
 import { AsyncPredicate } from './types';
 
-export function filterAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+export function filterAsync<T, TNew extends T = T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> | FilterPredicate<T, TNew>): AsyncIterableIterator<TNew> {
   return isAsyncIterable(iterable)
-    ? async(iterable, predicate)
-    : sync(iterable, predicate);
+    ? async<T, TNew>(iterable, predicate)
+    : sync<T, TNew>(iterable, predicate);
 }
 
-async function* sync<T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+async function* sync<T, TNew extends T = T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<TNew> {
   let index = 0;
 
   for (const item of iterable) {
@@ -19,12 +20,12 @@ async function* sync<T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): As
     }
 
     if (matches) {
-      yield item;
+      yield item as TNew;
     }
   }
 }
 
-async function* async<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+async function* async<T, TNew extends T = T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<TNew> {
   let index = 0;
 
   for await (const item of iterable) {
@@ -35,7 +36,7 @@ async function* async<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T
     }
 
     if (matches) {
-      yield item;
+      yield item as TNew;
     }
   }
 }

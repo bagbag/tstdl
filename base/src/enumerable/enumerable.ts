@@ -1,4 +1,4 @@
-import { any, batch, Comparator, distinct, drain, filter, first, forEach, group, intercept, IteratorFunction, last, map, mapMany, Predicate, range, reduce, Reducer, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
+import { any, batch, Comparator, concat, distinct, drain, filter, FilterPredicate, first, forEach, group, intercept, IteratorFunction, last, map, mapMany, Predicate, range, reduce, Reducer, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import { EnumerableMethods } from './enumerable-methods';
 
@@ -35,6 +35,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return this as any as Enumerable<TNew>;
   }
 
+  concat<TOther>(iterable: Iterable<TOther>): Enumerable<T | TOther> {
+    const concatted = concat(this.source, iterable);
+    return new Enumerable(concatted);
+  }
+
   distinct(selector?: IteratorFunction<T, any>): Enumerable<T> {
     const result = distinct(this.source, selector);
     return new Enumerable(result);
@@ -44,8 +49,8 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     drain(this.source);
   }
 
-  filter(predicate: Predicate<T>): Enumerable<T> {
-    const filtered = filter(this.source, predicate);
+  filter<TNew extends T = T>(predicate: Predicate<T> | FilterPredicate<T, TNew>): Enumerable<TNew> {
+    const filtered = filter<T, TNew>(this.source, predicate);
     return new Enumerable(filtered);
   }
 
