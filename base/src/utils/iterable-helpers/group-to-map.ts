@@ -1,6 +1,6 @@
-import { IteratorFunction } from './types';
+import type { IteratorFunction } from './types';
 
-export function group<TIn, TGroup>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, TGroup>): Map<TGroup, TIn[]> {
+export function groupToMap<TIn, TGroup>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, TGroup>): Map<TGroup, TIn[]> {
   const map = new Map<TGroup, TIn[]>();
 
   let index = 0;

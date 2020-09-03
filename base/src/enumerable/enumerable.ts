@@ -1,4 +1,4 @@
-import { any, batch, concat, distinct, drain, filter, first, forEach, group, intercept, last, map, mapMany, materialize, range, reduce, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
+import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, range, reduce, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
 import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
@@ -69,8 +69,20 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   }
 
   group<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T[]]> {
-    const grouped = group<T, TGroup>(this.source, selector);
-    return new Enumerable(grouped);
+    const source = this.source;
+
+    const iterable: Iterable<[TGroup, T[]]> = {
+      [Symbol.iterator](): Iterator<[TGroup, T[]]> {
+        return groupToMap(source, selector)[Symbol.iterator]();
+      }
+    };
+
+    return new Enumerable(iterable);
+  }
+
+  groupToMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T[]> {
+    const grouped = groupToMap<T, TGroup>(this.source, selector);
+    return grouped;
   }
 
   intercept(func: IteratorFunction<T, void>): Enumerable<T> {

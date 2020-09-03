@@ -7,7 +7,7 @@ export * from './drain';
 export * from './filter';
 export * from './first';
 export * from './for-each';
-export * from './group';
+export * from './group-to-map';
 export * from './intercept';
 export * from './interrupt';
 export * from './is-async-iterable';

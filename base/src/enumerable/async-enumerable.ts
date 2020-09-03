@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs';
-import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
+import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupToMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import type { AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
@@ -78,8 +78,21 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     await forEachAsync(this.source, func);
   }
 
-  async group<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T[]>> {
-    return groupAsync<T, TGroup>(this.source, selector);
+  group<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): AsyncEnumerable<[TGroup, T[]]> {
+    const source = this.source;
+
+    const asyncIterable: AsyncIterable<[TGroup, T[]]> = {
+      async *[Symbol.asyncIterator](): AsyncIterableIterator<[TGroup, T[]]> {
+        yield* await groupToMapAsync(source, selector);
+      }
+    };
+
+    return new AsyncEnumerable(asyncIterable);
+  }
+
+  async groupToMap<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T[]>> {
+    const grouped = await groupToMapAsync<T, TGroup>(this.source, selector);
+    return grouped;
   }
 
   intercept(func: AsyncIteratorFunction<T, void>): AsyncEnumerable<T> {

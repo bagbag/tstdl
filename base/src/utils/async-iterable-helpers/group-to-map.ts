@@ -1,8 +1,8 @@
-import { AnyIterable } from '../any-iterable-iterator';
-import { AsyncIteratorFunction } from './types';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
+import type { AsyncIteratorFunction } from './types';
 
-export async function groupAsync<TIn, TGroup>(iterable: AnyIterable<TIn>, selector: AsyncIteratorFunction<TIn, TGroup>): Promise<Map<TGroup, TIn[]>> {
+export async function groupToMapAsync<TIn, TGroup>(iterable: AnyIterable<TIn>, selector: AsyncIteratorFunction<TIn, TGroup>): Promise<Map<TGroup, TIn[]>> {
   return isAsyncIterable(iterable)
     ? async(iterable, selector)
     : sync(iterable, selector);
