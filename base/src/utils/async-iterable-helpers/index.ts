@@ -14,6 +14,7 @@ export * from './is-async-iterable';
 export * from './last';
 export * from './map';
 export * from './map-many';
+export * from './materialize';
 export * from './multiplex';
 export * from './reduce';
 export * from './retry';

@@ -1,5 +1,6 @@
 import type { Observable } from 'rxjs';
-import { anyAsync, AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, multiplexAsync, ParallelizableIteratorFunction, ParallelizablePredicate, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, ThrottleFunction, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
+import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
+import type { AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
@@ -108,6 +109,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   mapMany<TOut>(mapper: AsyncIteratorFunction<T, AnyIterable<TOut>>): AsyncEnumerable<TOut> {
     const result = mapManyAsync(this.source, mapper);
     return new AsyncEnumerable(result);
+  }
+
+  materialize(): AsyncEnumerable<T> {
+    const materialized = materializeAsync(this.source);
+    return new AsyncEnumerable(materialized);
   }
 
   multiplex(count: number, bufferSize: number = 0): AsyncEnumerable<T>[] {

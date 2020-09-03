@@ -1,4 +1,5 @@
-import { any, batch, Comparator, concat, distinct, drain, filter, first, forEach, group, intercept, IteratorFunction, last, map, mapMany, Predicate, range, reduce, Reducer, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
+import { any, batch, concat, distinct, drain, filter, first, forEach, group, intercept, last, map, mapMany, materialize, range, reduce, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
+import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -89,6 +90,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   mapMany<TOut>(mapper: IteratorFunction<T, Iterable<TOut>>): Enumerable<TOut> {
     const result = mapMany(this.source, mapper);
     return new Enumerable(result);
+  }
+
+  materialize(): Enumerable<T> {
+    const materialized = materialize(this.source);
+    return new Enumerable(materialized);
   }
 
   toAsync(): AsyncEnumerable<T> {

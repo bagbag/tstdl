@@ -1,4 +1,4 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isIterable } from '../iterable-helpers';
 
 export async function toArrayAsync<T>(iterable: AnyIterable<T>): Promise<T[]> {

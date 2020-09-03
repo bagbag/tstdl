@@ -12,6 +12,7 @@ export * from './is-iterable';
 export * from './last';
 export * from './map';
 export * from './map-many';
+export * from './materialize';
 export * from './range';
 export * from './reduce';
 export * from './single';
