@@ -1,4 +1,4 @@
-import { PartialProperty } from '@tstdl/base/types';
+import type { PartialProperty } from '@tstdl/base/types';
 
 export type Entity = {
   id: string

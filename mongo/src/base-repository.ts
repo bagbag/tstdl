@@ -2,10 +2,11 @@
 
 import { AsyncEnumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
-import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
-import { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
+import type { Entity, EntityWithPartialId } from '@tstdl/database';
+import type { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
+import { toEntity, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
+import type { MongoDocument } from './model';
+import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export enum ProjectionMode {
   Include = 0,
@@ -87,17 +88,17 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async load<U extends T = T>(id: string): Promise<U> {
-    const entity = await this.tryLoad<U>(id);
+  async load<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
+    const entity = await this.tryLoad<U>(id, options);
     return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
-  async tryLoad<U extends T = T>(id: string): Promise<U | undefined> {
+  async tryLoad<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U | undefined> {
     const filter: FilterQuery<U> = {
       _id: id
     } as FilterQuery<U>;
 
-    return this.tryLoadByFilter(filter);
+    return this.tryLoadByFilter(filter, options);
   }
 
   async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {

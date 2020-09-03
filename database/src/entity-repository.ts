@@ -1,4 +1,4 @@
-import { Entity, EntityWithPartialId } from './entity';
+import type { Entity, EntityWithPartialId } from './entity';
 
 export type UpdateOptions = {
   upsert?: boolean
