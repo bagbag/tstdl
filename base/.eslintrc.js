@@ -75,6 +75,7 @@ module.exports = {
     'no-case-declarations': 'off',
     'no-constant-condition': 'off',
     'no-continue': 'off',
+    'no-duplicate-imports': 'off',
     'no-inline-comments': 'off',
     'no-negated-condition': 'off',
     'no-nested-ternary': 'off',
