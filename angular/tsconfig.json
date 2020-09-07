@@ -1,17 +1,25 @@
-/*
-  This is a "Solution Style" tsconfig.json file, and is used by editors and TypeScript’s language server to improve development experience.
-  It is not intended to be used to perform a compilation.
-
-  To learn more about this file see: https://angular.io/config/solution-tsconfig.
-*/
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./projects/tstdl-angular/tsconfig.lib.json"
-    },
-    {
-      "path": "./projects/tstdl-angular/tsconfig.spec.json"
+  "extends": "@tstdl/base",
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "./src",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "es2020",
+    "paths": {
+      "tstdl-angular": [
+        "dist/tstdl-angular/tstdl-angular",
+        "dist/tstdl-angular"
+      ]
     }
-  ]
+  },
+  "angularCompilerOptions": {
+    "strictInjectionParameters": true,
+    "strictTemplates": true
+  }
 }
