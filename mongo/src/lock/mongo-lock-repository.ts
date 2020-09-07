@@ -1,10 +1,11 @@
+import type { Logger } from '@tstdl/base/logger';
 import { now } from '@tstdl/base/utils';
-import { EntityRepository } from '@tstdl/database';
+import type { EntityRepository } from '@tstdl/database';
 import { MongoError } from 'mongodb';
 import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import { getNewDocumentId } from '../id';
-import { Collection, FilterQuery, TypedIndexSpecification } from '../types';
-import { LockEntity } from './model';
+import type { Collection, FilterQuery, TypedIndexSpecification } from '../types';
+import type { LockEntity } from './model';
 
 const indexes: TypedIndexSpecification<LockEntity>[] = [
   { key: { ressource: 1 }, unique: true },
@@ -12,8 +13,8 @@ const indexes: TypedIndexSpecification<LockEntity>[] = [
 ];
 
 export class MongoLockRepository extends MongoEntityRepository<LockEntity> implements EntityRepository<LockEntity> {
-  constructor(collection: Collection<LockEntity>) {
-    super(collection, noopTransformer, { indexes });
+  constructor(collection: Collection<LockEntity>, logger: Logger) {
+    super(collection, noopTransformer, { logger, indexes });
   }
 
   async tryInsertOrRefresh(ressource: string, key: string, newExpirationDate: Date): Promise<false | Date> {

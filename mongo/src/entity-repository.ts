@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/semi */
-import { Entity, EntityRepository, EntityWithPartialId, UpdateOptions } from '@tstdl/database';
+import type { Logger } from '@tstdl/base/logger';
+import { equals } from '@tstdl/base/utils';
+import type { Entity, EntityRepository, EntityWithPartialId, UpdateOptions } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
-import { Collection, TypedIndexSpecification } from './types';
+import type { Collection, TypedIndexSpecification } from './types';
 
-type MongoEntityRepositoryOptions<T> = {
+type MongoEntityRepositoryOptions<T extends Entity> = {
+  logger: Logger,
   entityName?: string,
   indexes?: TypedIndexSpecification<T>[]
 }
@@ -27,22 +30,37 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 
   /* eslint-disable @typescript-eslint/member-ordering */
   protected readonly collection: Collection<TDb>;
-  protected readonly indexes?: TypedIndexSpecification<TDb>[];
+  protected readonly logger: Logger;
+  protected readonly indexes: TypedIndexSpecification<TDb>[];
   protected readonly baseRepository: MongoBaseRepository<TDb>;
   protected readonly transformer: EntityTransformer<T, TDb>;
   /* eslint-enable @typescript-eslint/member-ordering */
 
-  constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { indexes, entityName }: MongoEntityRepositoryOptions<TDb> = {}) {
+  constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { logger, indexes, entityName }: MongoEntityRepositoryOptions<TDb>) {
     this.collection = collection;
+    this.logger = logger.prefix(collection.collectionName);
+    this.indexes = indexes ?? [];
     this.transformer = transformer;
-    this.indexes = indexes;
 
     this.baseRepository = new MongoBaseRepository(collection, { entityName });
   }
 
   async initialize(): Promise<void> {
-    if (this.indexes != undefined && this.indexes.length > 0) {
-      await this.baseRepository.createIndexes(this.indexes);
+    const existingRawIndexes = await this.collection.indexes() as (TypedIndexSpecification<any> & { v: number })[];
+    const existingIndexes = existingRawIndexes.map(normalizeIndex).filter((index) => index.name != '_id_');
+
+    const unwantedIndexes = existingIndexes.filter((existingIndex) => !this.indexes.some((index) => equals(existingIndex, normalizeIndex(index), { deep: true, sortArray: false })));
+    const requiredIndexes = this.indexes.filter((wantedIndex) => !existingIndexes.some((index) => equals(normalizeIndex(wantedIndex), index, { deep: true, sortArray: false })));
+
+    for (const unwantedIndex of unwantedIndexes) {
+      this.logger.warn(`dropping index ${unwantedIndex.name as string}`);
+      await this.collection.dropIndex(unwantedIndex.name as string);
+    }
+
+    if (requiredIndexes.length > 0) {
+      const indexNames = requiredIndexes.map((index, i) => index.name ?? `unnamed${i}`);
+      this.logger.warn(`creating indexes ${indexNames.join(', ')}`);
+      await this.baseRepository.createIndexes(requiredIndexes);
     }
   }
 
@@ -146,4 +164,9 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   async deleteManyById(ids: string[]): Promise<number> {
     return this.baseRepository.deleteManyById(ids);
   }
+}
+
+function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any }): TypedIndexSpecification<any> {
+  const { v, background, ...indexRest } = index;
+  return indexRest;
 }
