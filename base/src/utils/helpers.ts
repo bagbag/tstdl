@@ -237,6 +237,29 @@ export function compareByValueSelectionOrdered<T>(...selectors: [(item: T) => un
   };
 }
 
+export function compareByValueToOrder<T>(order: T[]): (a: T, b: T) => number {
+  return compareByValueSelectionToOrder(order, (item) => item);
+}
+
+export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], selector: (item: T) => TSelect): (a: T, b: T) => number {
+  const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as [TSelect, number]);
+  const indexMap = new Map(indexMapEntries);
+
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  return function compareByValueSelectionToOrder(a: T, b: T): number {
+    const selectedA = selector(a);
+    const selectedB = selector(b);
+    const indexA = indexMap.get(selectedA);
+    const indexB = indexMap.get(selectedB);
+
+    if (indexA == undefined || indexB == undefined) {
+      throw new Error('value not defined in order');
+    }
+
+    return compareByValue(indexA, indexB);
+  };
+}
+
 export function compareByValue<T>(a: T, b: T): number {
   return (a > b) ? 1 : ((b > a) ? -1 : 0);
 }
