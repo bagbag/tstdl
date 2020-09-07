@@ -38,7 +38,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 
   constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { logger, indexes, entityName }: MongoEntityRepositoryOptions<TDb>) {
     this.collection = collection;
-    this.logger = logger.prefix(collection.collectionName);
+    this.logger = logger.prefix(`${collection.collectionName}: `);
     this.indexes = indexes ?? [];
     this.transformer = transformer;
 
