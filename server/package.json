@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.31.8",
+  "version": "0.32.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"

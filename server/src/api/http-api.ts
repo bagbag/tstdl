@@ -97,21 +97,20 @@ export function route<Method extends RequestMethod, RouteParameters, B extends B
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
 export function getDefaultRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
-  async function defaultRouteHandler(
+  return getSimpleRouteHandler((result) => ({ json: result }));
+}
+
+export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Result) => HttpResponse): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+  async function routeHandler(
     request: HttpRequest,
     parameters: Parameters,
     endpoint: ApiEndpoint<Parameters, Result, HttpRequest>
   ): Promise<HttpResponse> {
     const result = await endpoint(parameters, request);
-
-    const response: HttpResponse = {
-      json: result
-    };
-
-    return response;
+    return handler(result);
   }
 
-  return defaultRouteHandler;
+  return routeHandler;
 }
 
 type DefaultParametersTransformerReturnType<B extends BodyType> = B extends BodyType.None ? StringMap : StringMap & { body: BodyValueType<B> };
