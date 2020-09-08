@@ -1,7 +1,7 @@
-import { Logger } from '@tstdl/base/logger';
+import type { Logger } from '@tstdl/base/logger';
 import { cancelableTimeout, Timer } from '@tstdl/base/utils';
 import * as Http from 'http';
-import { Socket } from 'net';
+import type { Socket } from 'net';
 
 export class HttpServer {
   private readonly logger: Logger;

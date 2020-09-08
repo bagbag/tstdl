@@ -1,16 +1,18 @@
 import * as KoaRouter from '@koa/router';
-import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
-import { Logger } from '@tstdl/base/logger';
-import { Json, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
+import type { ErrorResponse } from '@tstdl/base/api';
+import type { Logger } from '@tstdl/base/logger';
+import type { Json, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer, toArray } from '@tstdl/base/utils';
-import { IncomingMessage, ServerResponse } from 'http';
-import { Http2ServerRequest, Http2ServerResponse } from 'http2';
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
-import { Readable } from 'stream';
-import { HttpServer } from '../http';
-import { NonObjectBufferMode, readStream } from '../utils';
-import { TypedReadable } from '../utils/typed-readable';
-import { ApiEndpoint } from './endpoint';
+import type { Readable } from 'stream';
+import type { HttpServer } from '../http';
+import { readStream } from '../utils';
+import type { NonObjectBufferMode } from '../utils';
+import type { TypedReadable } from '../utils/typed-readable';
+import type { ApiEndpoint } from './endpoint';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
@@ -32,11 +34,11 @@ export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
 };
 
 export enum BodyType {
-  None,
-  String,
-  Json, // eslint-disable-line no-shadow
-  Stream,
-  Binary
+  None = 0,
+  String = 1,
+  Json = 2, // eslint-disable-line no-shadow
+  Stream = 3,
+  Binary = 4
 }
 
 export enum RequestMethod {
@@ -79,7 +81,11 @@ export function route<Method extends RequestMethod, RouteParameters, B extends B
 
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export const defaultRouteHandler: RouteHandler<any, any, any, HttpRequest> = async (request, parameters, endpoint) => {
+export async function defaultRouteHandler<Parameters, EndpointResult extends UndefinableJson>(
+  request: HttpRequest,
+  parameters: Parameters,
+  endpoint: ApiEndpoint<Parameters, EndpointResult, HttpRequest>
+): Promise<HttpResponse> {
   const result = await endpoint(parameters, request);
 
   const response: HttpResponse = {
@@ -87,7 +93,10 @@ export const defaultRouteHandler: RouteHandler<any, any, any, HttpRequest> = asy
   };
 
   return response;
-};
+}
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const _typeTest: RouteHandler<any, any, any, HttpRequest> = defaultRouteHandler;
 
 type DefaultParametersTransformerReturnType<B extends BodyType> = B extends BodyType.None ? StringMap : StringMap & { body: BodyValueType<B> };
 
@@ -187,7 +196,7 @@ export class HttpApi {
     try {
       body = await getBody(request, bodyType);
     }
-    catch (error) {
+    catch (error: unknown) {
       response.status = getErrorStatusCode(error as Error, 400);
       response.body = createErrorResponse(error as Error);
       return;
@@ -277,13 +286,13 @@ async function readBody(request: Koa.Request, maxBytes: number = 10e6): Promise<
 }
 
 function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
-  // eslint-disable-next-line no-shadow
+  // eslint-disable-next-line @typescript-eslint/no-shadow
   return async function errorCatchMiddleware({ response }: Context, next: () => Promise<any>): Promise<any> {
     try {
       // eslint-disable-next-line callback-return
       await next();
     }
-    catch (error) {
+    catch (error: unknown) {
       const errorConstructor = (error as Error).constructor as Type<Error>;
       const supressed = supressedErrors.has(errorConstructor);
 
