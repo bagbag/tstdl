@@ -2,7 +2,7 @@ import * as KoaRouter from '@koa/router';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { ErrorResponse } from '@tstdl/base/api';
 import type { Logger } from '@tstdl/base/logger';
-import type { Json, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
+import type { Json, StringMap, Type, UndefinableJson, JsonObject } from '@tstdl/base/types';
 import { precisionRound, Timer, toArray } from '@tstdl/base/utils';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
@@ -74,6 +74,21 @@ export type Route<Method extends RequestMethod, RouteParameters, B extends BodyT
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
+export function simpleRoute<Method extends RequestMethod, B extends BodyType, EndpointResult extends UndefinableJson>(
+  { method, path, bodyType, endpoint }: Omit<Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'parametersTransformer'>
+): Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest> {
+  return route(
+    {
+      method,
+      path,
+      bodyType,
+      handler: getDefaultRouteHandler(),
+      parametersTransformer: getDefaultParametersTransformer(),
+      endpoint
+    }
+  );
+}
+
 // eslint-disable-next-line no-shadow
 export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext>): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
   return route;
@@ -81,36 +96,41 @@ export function route<Method extends RequestMethod, RouteParameters, B extends B
 
 export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export async function defaultRouteHandler<Parameters, EndpointResult extends UndefinableJson>(
-  request: HttpRequest,
-  parameters: Parameters,
-  endpoint: ApiEndpoint<Parameters, EndpointResult, HttpRequest>
-): Promise<HttpResponse> {
-  const result = await endpoint(parameters, request);
+export function getDefaultRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+  async function defaultRouteHandler(
+    request: HttpRequest,
+    parameters: Parameters,
+    endpoint: ApiEndpoint<Parameters, Result, HttpRequest>
+  ): Promise<HttpResponse> {
+    const result = await endpoint(parameters, request);
 
-  const response: HttpResponse = {
-    json: result
-  };
+    const response: HttpResponse = {
+      json: result
+    };
 
-  return response;
+    return response;
+  }
+
+  return defaultRouteHandler;
 }
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const _typeTest: RouteHandler<any, any, any, HttpRequest> = defaultRouteHandler;
 
 type DefaultParametersTransformerReturnType<B extends BodyType> = B extends BodyType.None ? StringMap : StringMap & { body: BodyValueType<B> };
 
-export function defaultParametersTransformer<B extends BodyType>(data: RequestData<B>, bodyType: B): DefaultParametersTransformerReturnType<B> {
-  let transformed: StringMap = { ...data.parameters };
+export function getDefaultParametersTransformer<B extends BodyType>(): RouteParametersTransformer<RequestData<B>, DefaultParametersTransformerReturnType<B>> {
+  function defaultParametersTransformer(data: RequestData<B>, bodyType: B): DefaultParametersTransformerReturnType<B> {
+    let transformed: StringMap = { ...data.parameters };
 
-  if (bodyType == BodyType.Json && typeof data.body == 'object' && !Array.isArray(data.body)) {
-    transformed = { ...transformed, ...(data.body as StringMap) };
-  }
-  else if (bodyType != BodyType.None) {
-    transformed = { ...transformed, body: data.body };
+    if (bodyType == BodyType.Json && typeof data.body == 'object' && !Array.isArray(data.body)) {
+      transformed = { ...transformed, ...(data as RequestData<BodyType.Json>).body as JsonObject };
+    }
+    else if (bodyType != BodyType.None) {
+      transformed = { ...transformed, body: data.body };
+    }
+
+    return transformed as DefaultParametersTransformerReturnType<B>;
   }
 
-  return transformed as DefaultParametersTransformerReturnType<B>;
+  return defaultParametersTransformer as RouteParametersTransformer<RequestData<B>, DefaultParametersTransformerReturnType<B>>;
 }
 
 export class HttpApi {
