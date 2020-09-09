@@ -1,8 +1,10 @@
 import { DeferredPromise } from '@tstdl/base/promise';
-import { Json, StringMap } from '@tstdl/base/types';
-import Got, { Options as GotOptions, Response } from 'got';
+import type { Json, StringMap } from '@tstdl/base/types';
+import Got from 'got';
+import type { Options as GotOptions, Response } from 'got';
+import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
-import { pipeline, Readable, Transform } from 'stream';
+import type { Readable } from 'stream';
 
 export type HttpRequestOptions = {
   headers?: StringMap<string | string[]>,
@@ -106,32 +108,24 @@ export class HttpClient {
   static async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
     const gotOptions = getGotOptions(method, options);
 
+    const responsePromise = new DeferredPromise<IncomingMessage>();
     const request = Got.stream(url, { ...gotOptions, isStream: true });
-    const dataAwaitable = new DeferredPromise();
+    const originalOnResponse = request._onResponse; // eslint-disable-line @typescript-eslint/unbound-method
 
-    const stream = new Transform({
-      transform(chunk, _encoding, callback) {
-        if (dataAwaitable.pending) {
-          dataAwaitable.resolve();
-        }
-
-        callback(null, chunk);
-      }
-    });
-
-    pipeline(request, stream, () => undefined);
-
-    await dataAwaitable;
-
-    if (request._response == undefined) {
-      throw new Error('response not set');
+    async function onResponseWrapper(response: IncomingMessage): Promise<void> {
+      responsePromise.resolve(response);
+      return originalOnResponse(response);
     }
 
+    request._onResponse = onResponseWrapper;
+
+    const response = await responsePromise;
+
     const result: HttpResponse<HttpResponseType.Stream> = {
-      statusCode: request._response.statusCode,
-      statusMessage: request._response.statusMessage ?? '',
-      header: request._response.headers as StringMap<string | string[]>,
-      body: stream
+      statusCode: response.statusCode as number,
+      statusMessage: response.statusMessage ?? '',
+      header: response.headers as StringMap<string | string[]>,
+      body: request
     };
 
     return result;
@@ -176,4 +170,14 @@ function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpReque
   }
 
   return options;
+}
+
+function getResponseSymbol(obj: object): symbol {
+  const symbol = Object.getOwnPropertySymbols(obj).find((symbol) => symbol.description == 'response');
+
+  if (symbol == undefined) {
+    throw new Error('response symbol not found');
+  }
+
+  return symbol;
 }
