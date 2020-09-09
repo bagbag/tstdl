@@ -78,7 +78,10 @@ export class HttpServer {
   }
 
   registerRequestHandler(handler: (request: Http.IncomingMessage, response: Http.ServerResponse) => void): void {
-    this.server.on('request', handler);
+    this.server.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => {
+      this.logger.debug(`request from "${request.socket.remoteAddress as string}" to "${request.url as string}"`);
+      handler(request, response);
+    });
   }
 }
 

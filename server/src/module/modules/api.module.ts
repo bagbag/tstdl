@@ -1,11 +1,12 @@
 import { Enumerable } from '@tstdl/base/enumerable';
-import { Logger } from '@tstdl/base/logger';
+import type { Logger } from '@tstdl/base/logger';
 import { cancelableTimeout, Timer } from '@tstdl/base/utils';
-import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
+import type { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import * as Http from 'http';
-import * as Net from 'net';
-import { AnyRoute, HttpApi } from '../../api';
-import { Module, ModuleMetricType } from '../module';
+import type * as Net from 'net';
+import type { AnyRoute, HttpApi } from '../../api';
+import { ModuleMetricType } from '../module';
+import type { Module } from '../module';
 import { ModuleBase } from '../module-base';
 
 export class ApiModule extends ModuleBase implements Module {
