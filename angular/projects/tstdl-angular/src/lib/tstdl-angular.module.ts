@@ -1,16 +1,13 @@
 import { NgModule } from '@angular/core';
-import { CenterComponent } from './components/center/center.component';
-import { DurationPipe } from './pipes/duration.pipe';
-import { LocalizePipe } from './pipes/localize.pipe';
-import { NumericDatePipe } from './pipes/numeric-date.pipe';
-import { PadPipe } from './pipes/pad.pipe';
-import { SafeUrlPipe } from './pipes/safe-url.pipe';
+import { CenterComponent } from './components';
+import { DateTimeToDatePipe, DurationPipe, LocalizePipe, NumericDateToDatePipe, PadPipe, SafeUrlPipe } from './pipes';
 
 const declarations = [
   CenterComponent,
   DurationPipe,
   LocalizePipe,
-  NumericDatePipe,
+  NumericDateToDatePipe,
+  DateTimeToDatePipe,
   PadPipe,
   SafeUrlPipe
 ];

@@ -5,10 +5,13 @@ import { Duration, DurationObject, DurationOptions, DurationToFormatOptions } fr
   name: 'duration'
 })
 export class DurationPipe implements PipeTransform {
-  transform(millisecondsOrObject: number | DurationObject, format: string, options?: DurationOptions, formatOptions?: DurationToFormatOptions): string {
+  transform(millisecondsOrObject: number | Duration | DurationObject, format: string, options?: DurationOptions, formatOptions?: DurationToFormatOptions): string {
     const duration = typeof millisecondsOrObject == 'number'
       ? Duration.fromMillis(millisecondsOrObject, options)
-      : Duration.fromObject({ ...millisecondsOrObject, ...options });
+      : millisecondsOrObject instanceof Duration
+        ? millisecondsOrObject
+        : Duration.fromObject({ ...millisecondsOrObject, ...options })
+
 
     return duration.toFormat(format, formatOptions);
   }
