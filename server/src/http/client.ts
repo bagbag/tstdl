@@ -110,10 +110,13 @@ export class HttpClient {
 
     const responsePromise = new DeferredPromise<IncomingMessage>();
     const request = Got.stream(url, { ...gotOptions, isStream: true });
-    const originalOnResponse = request._onResponse; // eslint-disable-line @typescript-eslint/unbound-method
+    const originalOnResponse = request._onResponse.bind(request);
 
     async function onResponseWrapper(response: IncomingMessage): Promise<void> {
-      responsePromise.resolve(response);
+      if (!responsePromise.resolved) {
+        responsePromise.resolve(response);
+      }
+
       return originalOnResponse(response);
     }
 
