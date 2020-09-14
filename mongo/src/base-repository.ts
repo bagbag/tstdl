@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { AsyncEnumerable } from '@tstdl/base/enumerable';
+import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
 import type { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { toEntity, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import type { MongoDocument } from './model';
+import { toEntity, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export enum ProjectionMode {
@@ -86,6 +86,45 @@ export class MongoBaseRepository<T extends Entity> {
     await this.collection.insertOne(document as any);
 
     return toEntity(document);
+  }
+
+  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+    if (entities.length == 0) {
+      return [];
+    }
+
+    const documents = entities.map(toMongoDocumentWithId);
+    const operations = documents.map(toInsertOneOperation);
+    await this.collection.bulkWrite(operations as any);
+
+    const savedEntities = documents.map(toEntity);
+    return savedEntities;
+  }
+
+  async insertIfNotExists<U extends T>(filter: FilterQuery<T>, entity: EntityWithPartialId<U>): Promise<U | undefined> {
+    const document = toMongoDocumentWithId(entity);
+
+    const result = await this.collection.updateOne(filter, { $setOnInsert: document }, { upsert: true });
+
+    if (result.upsertedCount == 0) {
+      return undefined;
+    }
+
+    return toEntity(document);
+  }
+
+  async insertManyIfNotExists<U extends T>(items: { filter: FilterQuery<T>, entity: EntityWithPartialId<U> }[]): Promise<U[]> {
+    const mapped = Enumerable.from(items)
+      .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
+      .map(({ filter, document }) => ({ document, operation: toUpdateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
+      .toArray();
+
+    const operations = mapped.map((o) => o.operation);
+
+    const result = await this.collection.bulkWrite(operations, { ordered: false });
+    const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as any as number].document));
+
+    return entities;
   }
 
   async load<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
@@ -198,7 +237,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async *loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
+  async * loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
     const filter: FilterQuery<U> = {
       _id: { $in: ids }
     } as FilterQuery<U>;
@@ -206,7 +245,7 @@ export class MongoBaseRepository<T extends Entity> {
     yield* this.loadManyByFilterWithCursor(filter);
   }
 
-  async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
+  async * loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
     const cursor = this.collection.find<MongoDocument<U>>(filter, options as object);
 
     for await (const document of cursor) {
@@ -220,7 +259,7 @@ export class MongoBaseRepository<T extends Entity> {
     return AsyncEnumerable.from(iterator).toArray();
   }
 
-  async *loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
+  async * loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
     const cursor = this.collection.find<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     for await (const document of cursor) {
@@ -259,8 +298,8 @@ export class MongoBaseRepository<T extends Entity> {
     return deletedCount as number;
   }
 
-  async replace<U extends T>(entity: EntityWithPartialId<U>, options?: ReplaceOptions): Promise<U> {
-    const document = toMongoDocumentWithId(entity);
+  async replace<U extends T>(entity: U, options?: ReplaceOptions): Promise<U> {
+    const document = toMongoDocument(entity);
     const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, options);
     const result = await this.collection.replaceOne(filter, replacement, options);
 
@@ -271,8 +310,8 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: EntityWithPartialId<U>, options?: ReplaceOptions): Promise<U> {
-    const document = toMongoDocumentWithId(entity);
+  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: U, options?: ReplaceOptions): Promise<U> {
+    const document = toMongoDocument(entity);
     const result = await this.collection.replaceOne(filter, document, options);
 
     if (result.matchedCount == 0 && result.upsertedCount == 0) {
@@ -282,25 +321,12 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async insertMany<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+  async replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): Promise<U[]> {
     if (entities.length == 0) {
       return [];
     }
 
-    const documents = entities.map(toMongoDocumentWithId);
-    const operations = documents.map(toInsertOneOperation);
-    await this.collection.bulkWrite(operations as any);
-
-    const savedEntities = documents.map(toEntity);
-    return savedEntities;
-  }
-
-  async replaceMany<U extends T>(entities: EntityWithPartialId<U>[], options?: ReplaceOptions): Promise<U[]> {
-    if (entities.length == 0) {
-      return [];
-    }
-
-    const documents = entities.map(toMongoDocumentWithId);
+    const documents = entities.map(toMongoDocument);
     const operations = documents.map((document) => toReplaceOneOperation(document, options));
     const result = await this.collection.bulkWrite(operations);
 
@@ -358,7 +384,9 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async hasAll(ids: string[]): Promise<boolean> {
-    const filter: FilterQuery<T> = { _id: { $in: ids } } as FilterQuery<T>;
+    const filter: FilterQuery<T> = {
+      _id: { $in: ids }
+    } as FilterQuery<T>;
     const count = await this.countByFilter(filter);
     return count == ids.length;
   }
@@ -397,7 +425,20 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, opt
     replaceOne: {
       filter,
       replacement: document,
-      upsert: options?.upsert ?? false
+      ...options
+    }
+  };
+
+  return operation;
+}
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function toUpdateOneOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: UpdateOptions) {
+  const operation = {
+    updateOne: {
+      filter,
+      update,
+      ...options
     }
   };
 

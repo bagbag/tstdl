@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/mongo",
-  "version": "0.27.0",
+  "version": "0.27.1",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -12,14 +12,14 @@
   "dependencies": {
     "@tstdl/base": "^0.59.17",
     "@tstdl/database": "^0.11.5",
-    "@tstdl/server": "^0.31.6",
-    "mongodb": "^3.6.1"
+    "@tstdl/server": "^0.33.1",
+    "mongodb": "^3.6.2"
   },
   "devDependencies": {
     "@types/mongodb": "^3.5.27",
-    "@typescript-eslint/eslint-plugin": "^4.0.1",
-    "@typescript-eslint/parser": "^4.0.1",
-    "eslint": "^7.8.1",
+    "@typescript-eslint/eslint-plugin": "^4.1.0",
+    "@typescript-eslint/parser": "^4.1.0",
+    "eslint": "^7.9.0",
     "typescript": "~4.0.2"
   }
 }
