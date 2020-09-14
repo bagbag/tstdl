@@ -3,7 +3,7 @@
 import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
-import type { BulkWriteInsertOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
+import type { BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
 import type { MongoDocument } from './model';
 import { toEntity, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
@@ -68,9 +68,9 @@ export type MongoBaseRepositoryOptions = {
   entityName?: string
 };
 
-export type InsertIfNotExistsItem<T extends Entity, U extends T> = {
+export type InsertIfNotExistsItem<T extends Entity> = {
   filter: FilterQuery<T>,
-  entity: EntityWithPartialId<U>
+  entity: EntityWithPartialId<T>
 };
 
 export class MongoBaseRepository<T extends Entity> {
@@ -118,14 +118,13 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async insertManyIfNotExists<U extends T>(items: InsertIfNotExistsItem<T, U>[]): Promise<U[]> {
+  async insertManyIfNotExists<U extends T>(items: InsertIfNotExistsItem<U>[]): Promise<U[]> {
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
       .map(({ filter, document }) => ({ document, operation: toUpdateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
       .toArray();
 
-    const operations = mapped.map((o) => o.operation);
-
+    const operations = mapped.map((o) => o.operation as BulkWriteUpdateOneOperation<MongoDocument<T>>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
     const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as any as number].document));
 
@@ -421,7 +420,7 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>): Bul
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, options?: ReplaceOptions) {
+function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, options?: ReplaceOptions): BulkWriteReplaceOneOperation<MongoDocument<T>> {
   const filter: FilterQuery<T> = {
     _id: document._id
   } as FilterQuery<T>;
@@ -438,8 +437,8 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, opt
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toUpdateOneOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: UpdateOptions) {
-  const operation = {
+function toUpdateOneOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: UpdateOptions): BulkWriteUpdateOneOperation<MongoDocument<T>> {
+  const operation: BulkWriteUpdateOneOperation<MongoDocument<T>> = {
     updateOne: {
       filter,
       update,
