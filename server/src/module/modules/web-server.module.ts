@@ -30,7 +30,7 @@ export class WebServerModule extends ModuleBase implements Module {
   };
 
   constructor(httpApi: HttpApi, port: number, logger: Logger) {
-    super('Api');
+    super('WebServer');
 
     this.port = port;
     this.httpApi = httpApi;
