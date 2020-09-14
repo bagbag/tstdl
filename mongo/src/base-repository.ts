@@ -68,6 +68,11 @@ export type MongoBaseRepositoryOptions = {
   entityName?: string
 };
 
+export type InsertIfNotExistsItem<T extends Entity, U extends T> = {
+  filter: FilterQuery<T>,
+  entity: EntityWithPartialId<U>
+};
+
 export class MongoBaseRepository<T extends Entity> {
   readonly collection: Collection<T>;
   readonly entityName: string;
@@ -113,7 +118,7 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async insertManyIfNotExists<U extends T>(items: { filter: FilterQuery<T>, entity: EntityWithPartialId<U> }[]): Promise<U[]> {
+  async insertManyIfNotExists<U extends T>(items: InsertIfNotExistsItem<T, U>[]): Promise<U[]> {
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
       .map(({ filter, document }) => ({ document, operation: toUpdateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
