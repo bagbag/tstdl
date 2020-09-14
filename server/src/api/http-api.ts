@@ -1,16 +1,16 @@
 import * as KoaRouter from '@koa/router';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { ErrorResponse } from '@tstdl/base/api';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { Logger } from '@tstdl/base/logger';
-import type { Json, StringMap, Type, UndefinableJson, JsonObject } from '@tstdl/base/types';
+import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { precisionRound, Timer, toArray } from '@tstdl/base/utils';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import type { Readable } from 'stream';
 import type { HttpServer } from '../http';
-import { readStream } from '../utils';
 import type { NonObjectBufferMode } from '../utils';
+import { readStream } from '../utils';
 import type { TypedReadable } from '../utils/typed-readable';
 import type { ApiEndpoint } from './endpoint';
 
@@ -67,7 +67,7 @@ export type RouteHandler<RouteParameters, EndpointParameters, EndpointResult, En
 export type AnyRoute = Route<RequestMethod, any, BodyType, any, any, any>;
 export type Route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext> = {
   method: Method | Method[],
-  path: string,
+  path: string | RegExp,
   bodyType?: B,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
   handler: RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext>,
@@ -197,7 +197,7 @@ export class HttpApi {
   }
 
 
-  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
+  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
     this.router.register(path, [method], async (context: Context, next) => {
       await this.handle(context, bodyType, parametersTransformer, endpoint, handler);
       return next();

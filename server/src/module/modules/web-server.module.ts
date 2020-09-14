@@ -5,11 +5,11 @@ import type { CancellationToken } from '@tstdl/base/utils/cancellation-token';
 import * as Http from 'http';
 import type * as Net from 'net';
 import type { AnyRoute, HttpApi } from '../../api';
-import { ModuleMetricType } from '../module';
 import type { Module } from '../module';
+import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
 
-export class ApiModule extends ModuleBase implements Module {
+export class WebServerModule extends ModuleBase implements Module {
   private readonly port: number;
   private readonly logger: Logger;
   private readonly socketsSets: Set<Set<Net.Socket>>;
