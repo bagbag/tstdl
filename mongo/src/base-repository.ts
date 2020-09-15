@@ -4,8 +4,7 @@ import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
 import type { BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import type { MongoDocument } from './model';
-import { toEntity, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
+import { MongoDocument, toEntity, toEntityWithoutId, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export enum ProjectionMode {
@@ -68,7 +67,7 @@ export type MongoBaseRepositoryOptions = {
   entityName?: string
 };
 
-export type InsertIfNotExistsItem<T extends Entity> = {
+export type InsertIfNotExistsByFilterItem<T extends Entity> = {
   filter: FilterQuery<T>,
   entity: EntityWithPartialId<T>
 };
@@ -106,7 +105,17 @@ export class MongoBaseRepository<T extends Entity> {
     return savedEntities;
   }
 
-  async insertIfNotExists<U extends T>(filter: FilterQuery<T>, entity: EntityWithPartialId<U>): Promise<U | undefined> {
+  async insertIfNotExists<U extends T>(entity: EntityWithPartialId<U>): Promise<U | undefined> {
+    const filter: FilterQuery<U> = toEntityWithoutId(entity) as FilterQuery<U>;
+    return this.insertIfNotExistsByFilter(filter, entity);
+  }
+
+  async insertManyIfNotExists<U extends T>(entities: EntityWithPartialId<U>[]): Promise<U[]> {
+    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toEntityWithoutId(entity) as FilterQuery<U>, entity }));
+    return this.insertManyIfNotExistsByFilter(items);
+  }
+
+  async insertIfNotExistsByFilter<U extends T>(filter: FilterQuery<T>, entity: EntityWithPartialId<U>): Promise<U | undefined> {
     const document = toMongoDocumentWithId(entity);
 
     const result = await this.collection.updateOne(filter, { $setOnInsert: document }, { upsert: true });
@@ -118,7 +127,7 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async insertManyIfNotExists<U extends T>(items: InsertIfNotExistsItem<U>[]): Promise<U[]> {
+  async insertManyIfNotExistsByFilter<U extends T>(items: InsertIfNotExistsByFilterItem<U>[]): Promise<U[]> {
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
       .map(({ filter, document }) => ({ document, operation: toUpdateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))

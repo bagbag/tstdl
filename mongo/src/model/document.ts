@@ -1,5 +1,6 @@
-import { Entity, EntityWithPartialId } from '@tstdl/database';
-import { Projection, ProjectionMode, ProjectedEntity } from '../base-repository';
+import type { Entity, EntityWithoutId, EntityWithPartialId } from '@tstdl/database';
+import type { ProjectedEntity, Projection } from '../base-repository';
+import { ProjectionMode } from '../base-repository';
 import { getNewDocumentId } from '../id';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
@@ -19,6 +20,11 @@ export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
   } as any as T;
 
   return entity;
+}
+
+export function toEntityWithoutId<T extends EntityWithPartialId>(entity: T): EntityWithoutId<T> {
+  const { id, ...rest } = entity;
+  return rest;
 }
 
 export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(document: MongoDocumentWitPartialId<T>): ProjectedEntity<T, M, P> {
