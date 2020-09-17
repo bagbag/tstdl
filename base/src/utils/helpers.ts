@@ -286,6 +286,34 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
 
 type NN<T> = NonNullable<T>;
 
+export interface DotNotator<T> {
+  (key: keyof T): DotNotator<T[typeof key]>;
+  notate(): string;
+}
+
+export function dotNotator<T>(): <K extends keyof T>(key: K) => DotNotator<T[K]> {
+  return getDotNotatorWrapper;
+}
+
+function getDotNotatorWrapper<T, K extends keyof T>(key: K): DotNotator<T[K]> {
+  return getDotNotator(key as string);
+}
+
+function getDotNotator<T, K extends keyof T>(...keys: (string | number)[]): DotNotator<T[K]> {
+  const dotNotatorChild: DotNotator<T[K]> = (key: keyof T[K]) => getDotNotator(...keys, key as string);
+  dotNotatorChild.notate = () => {
+    for (const key of keys) {
+      if (typeof key == 'symbol') {
+        throw new Error('symbol not supported');
+      }
+    }
+
+    return keys.join('.');
+  };
+
+  return dotNotatorChild;
+}
+
 export function dotNotation<T>(
   k1: keyof T,
   k2?: keyof T[typeof k1],
