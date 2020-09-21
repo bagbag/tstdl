@@ -75,6 +75,10 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
     return index;
   }
 
+  get(index: number): T {
+    return this.backingArray[index];
+  }
+
   add(...values: T[]): void {
     for (const value of values) {
       const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
@@ -85,7 +89,7 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
   }
 
   remove(...values: T[]): number {
-    let count = 0;
+    const removed: T[] = [];
 
     for (const value of values) {
       const index = binarySearch(this.backingArray, value, this.comparator);
@@ -94,10 +98,12 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
         continue;
       }
 
-      this.backingArray.splice(index, 1);
-      count++;
+      const removedItem = this.backingArray.splice(index, 1);
+      removed.push(...removedItem);
     }
 
-    return count;
+    this.removeSubject.next(removed);
+
+    return removed.length;
   }
 }
