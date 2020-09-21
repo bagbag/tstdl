@@ -1,3 +1,6 @@
+export const millisecondsPerDay = 1000 * 60 * 60 * 24;
+export const secondsPerDay = 60 * 60 * 24;
+
 export type NumericDateTime = {
   date: number,
   time: number
