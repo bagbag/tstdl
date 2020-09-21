@@ -41,7 +41,7 @@ export class DistributedLoop {
         while (!stopToken.isSet) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
           timer.restart();
 
-          await lock.acquire(0, async () => {
+          await lock.using(0, false, async () => {
             await func(controller);
 
             const timeLeft = interval - timer.milliseconds;

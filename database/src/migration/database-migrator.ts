@@ -32,7 +32,7 @@ export class DatabaseMigrator {
     }
 
     const lock = this.lockProvider.get(`database-migrator-${name}`);
-    const lockResult = await lock.acquire(30000);
+    const lockResult = await lock.acquire(30000, false);
 
     if (lockResult == false) {
       throw new Error('failed to acquire lock for database-migration');

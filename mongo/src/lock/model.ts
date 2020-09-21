@@ -1,4 +1,4 @@
-import { Entity } from '@tstdl/database';
+import type { Entity } from '@tstdl/database';
 
 export type LockEntity = Entity & {
   ressource: string,
