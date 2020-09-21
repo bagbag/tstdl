@@ -49,6 +49,12 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     const existingRawIndexes = await this.collection.indexes() as (TypedIndexSpecification<any> & { v: number })[];
     const existingIndexes = existingRawIndexes.map(normalizeIndex).filter((index) => index.name != '_id_');
 
+    const hasIndexWithoutName = this.indexes.some((index) => index.name == undefined);
+
+    if (hasIndexWithoutName) {
+      throw new Error('indexes are required to have names');
+    }
+
     const unwantedIndexes = existingIndexes.filter((existingIndex) => !this.indexes.some((index) => equals(existingIndex, normalizeIndex(index), { deep: true, sortArray: false })));
     const requiredIndexes = this.indexes.filter((wantedIndex) => !existingIndexes.some((index) => equals(normalizeIndex(wantedIndex), index, { deep: true, sortArray: false })));
 

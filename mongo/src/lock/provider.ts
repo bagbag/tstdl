@@ -18,7 +18,7 @@ export class MongoLockProvider implements LockProvider {
     return new MongoLockProvider(this.lockRepository, this.logger, this._prefix + prefix);
   }
 
-  get(ressource: string): Lock {
-    return new MongoLock(this.lockRepository, this.logger, ressource);
+  get(resource: string): Lock {
+    return new MongoLock(this.lockRepository, this.logger, resource);
   }
 }

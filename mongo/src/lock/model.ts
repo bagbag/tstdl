@@ -1,7 +1,7 @@
 import type { Entity } from '@tstdl/database';
 
 export type MongoLockEntity = Entity & {
-  ressource: string,
+  resource: string,
   key: string,
-  expire: Date
+  expiration: Date
 };
