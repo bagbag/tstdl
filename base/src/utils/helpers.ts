@@ -1,6 +1,7 @@
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
 import type { DeepArray, StringMap } from '../types';
+import { measureTimerOverhead, timedBenchmark } from './benchmark';
 import { random } from './math';
 import type { Comparator } from './sort';
 
@@ -261,11 +262,31 @@ export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], sel
 }
 
 export function compareByValue<T>(a: T, b: T): number {
-  return (a > b) ? 1 : ((b > a) ? -1 : 0);
+  if (a === b) {
+    return 0;
+  }
+  else if (a > b) {
+    return 1;
+  }
+  else if (b > a) {
+    return -1;
+  }
+
+  throw new Error('objects not comparable');
 }
 
 export function compareByValueDescending<T>(a: T, b: T): number {
-  return (a > b) ? -1 : ((b > a) ? 1 : 0);
+  if (a === b) {
+    return 0;
+  }
+  else if (a > b) {
+    return -1;
+  }
+  else if (b > a) {
+    return 1;
+  }
+
+  throw new Error('objects not comparable');
 }
 
 export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
@@ -353,7 +374,7 @@ export function randomElement<T>(array: T[], { min, max }: { min?: number, max?:
   return array[index];
 }
 
-const defaultComparator = (a: unknown, b: unknown): boolean => a == b;
+const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a == b;
 
 type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
 
@@ -364,7 +385,7 @@ type ArrayEqualsOptions<A, B> = {
 
 export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A, B>): boolean {
   const sort = options?.sort ?? false;
-  const comparator = options?.comparator ?? defaultComparator;
+  const comparator = options?.comparator ?? defaultArrayEqualsComparator;
 
   if (a.length != b.length) {
     return false;
@@ -456,4 +477,47 @@ function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, op
   }
 
   return true;
+}
+
+export function binarySearch<T>(values: ArrayLike<T>, searchValue: T, comparator: Comparator<T> = compareByValue): number | undefined {
+  const index = binarySearchInsertionIndex(values, searchValue, comparator);
+  const value = values[index];
+
+  if (index > values.length - 1) {
+    return undefined;
+  }
+
+  return (comparator(value, searchValue) == 0)
+    ? index
+    : undefined;
+}
+
+export function binarySearchInsertionIndex<T>(values: ArrayLike<T>, searchValue: T, comparator: Comparator<T> = compareByValue): number {
+  let min = 0;
+  let max = values.length - 1;
+  let middle = 0;
+  let value: T;
+  let comparison!: number;
+
+  if (values.length == 0) {
+    return 0;
+  }
+
+  while (min <= max) {
+    middle = Math.floor(min + ((max - min) / 2));
+    value = values[middle];
+    comparison = comparator(value, searchValue);
+
+    if (comparison == 0) {
+      return middle;
+    }
+    else if (comparison < 0) {
+      min = middle + 1;
+    }
+    else {
+      max = middle - 1;
+    }
+  }
+
+  return middle + ((comparison <= 0) as unknown as number);
 }

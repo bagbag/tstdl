@@ -1,25 +1,28 @@
 import { getGetter } from './helpers';
 import { Timer } from './timer';
 
-let millisecondsPerTimerRead: number = 0;
+let millisecondsPerTimerRead = 0;
 
 export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPerOperation: number };
 
 export function measureTimerOverhead(): void {
-  const timer = new Timer(true);
+  const timer = new Timer(false);
   const millisecondsGetter = getGetter(timer, 'milliseconds', true);
 
   let operations = 0;
 
-  while (timer.milliseconds < 500) {
+  timer.start();
+  do {
     for (let i = 0; i < 1000; i++) {
       millisecondsGetter();
     }
 
-    operations += 1001;
+    operations += 1000;
   }
+  while (timer.milliseconds < 500);
+  timer.stop();
 
-  millisecondsPerTimerRead = 500 / operations;
+  millisecondsPerTimerRead = timer.milliseconds / operations;
 }
 
 export function benchmark<F extends (...args: any[]) => any>(runs: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
