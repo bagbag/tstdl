@@ -5,20 +5,20 @@ import { MongoError } from 'mongodb';
 import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import { getNewDocumentId } from '../id';
 import type { Collection, FilterQuery, TypedIndexSpecification } from '../types';
-import type { LockEntity } from './model';
+import type { MongoLockEntity } from './model';
 
-const indexes: TypedIndexSpecification<LockEntity>[] = [
+const indexes: TypedIndexSpecification<MongoLockEntity>[] = [
   { key: { ressource: 1 }, unique: true },
   { key: { expire: 1 }, expireAfterSeconds: 1 }
 ];
 
-export class MongoLockRepository extends MongoEntityRepository<LockEntity> implements EntityRepository<LockEntity> {
-  constructor(collection: Collection<LockEntity>, logger: Logger) {
+export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements EntityRepository<MongoLockEntity> {
+  constructor(collection: Collection<MongoLockEntity>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 
   async tryInsertOrRefresh(ressource: string, key: string, newExpirationDate: Date): Promise<false | Date> {
-    const filter: FilterQuery<LockEntity> = {
+    const filter: FilterQuery<MongoLockEntity> = {
       $and: [
         { ressource },
         {
@@ -48,7 +48,7 @@ export class MongoLockRepository extends MongoEntityRepository<LockEntity> imple
   }
 
   async tryUpdateExpiration(ressource: string, key: string, expirationDate: Date): Promise<false | Date> {
-    const filter: FilterQuery<LockEntity> = { ressource, key };
+    const filter: FilterQuery<MongoLockEntity> = { ressource, key };
     const result = await this.baseRepository.update(filter, { $set: { expire: expirationDate } });
     return result.modifiedCount > 0 ? expirationDate : false;
   }
