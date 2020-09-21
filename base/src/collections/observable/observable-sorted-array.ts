@@ -1,9 +1,12 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
 import { map, shareReplay, take } from 'rxjs/operators';
+import type { Comparator } from '../../utils';
+import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
 import type { ObservableCollection } from './observable-collection';
 
-export class ObservableArray<T> implements ObservableCollection<T> {
+export class ObservableSortedArray<T> implements ObservableCollection<T> {
+  private readonly comparator: Comparator<T>;
   private readonly backingArray: T[];
   private readonly addSubject: Subject<T[]>;
   private readonly removeSubject: Subject<T[]>;
@@ -24,9 +27,12 @@ export class ObservableArray<T> implements ObservableCollection<T> {
     return this.remove$.pipe(take(1)).toPromise();
   }
 
-  constructor() {
+  constructor(comparator: Comparator<T> = compareByValue) {
+    this.comparator = comparator;
+
     this.backingArray = [];
     this.addSubject = new Subject();
+    this.removeSubject = new Subject();
 
     this.add$ = this.addSubject.asObservable();
     this.remove$ = this.removeSubject.asObservable();
@@ -42,7 +48,11 @@ export class ObservableArray<T> implements ObservableCollection<T> {
   }
 
   add(...values: T[]): void {
-    this.backingArray.push(...values);
+    for (const value of values) {
+      const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+      this.backingArray.splice(insertionIndex, 0, value);
+    }
+
     this.addSubject.next(values);
   }
 
@@ -50,9 +60,9 @@ export class ObservableArray<T> implements ObservableCollection<T> {
     let count = 0;
 
     for (const value of values) {
-      const index = this.backingArray.indexOf(value);
+      const index = binarySearch(this.backingArray, value, this.comparator);
 
-      if (index == -1) {
+      if (index == undefined) {
         continue;
       }
 
