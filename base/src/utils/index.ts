@@ -24,6 +24,7 @@ export * from './random';
 export * from './set';
 export * from './singleton';
 export * from './sort';
+export * from './time';
 export * from './timer';
 export * from './timing';
 export * from './z-base32';

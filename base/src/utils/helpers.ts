@@ -1,9 +1,9 @@
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
 import type { DeepArray, StringMap } from '../types';
-import { measureTimerOverhead, timedBenchmark } from './benchmark';
 import { random } from './math';
 import type { Comparator } from './sort';
+import { currentTimestamp } from './time';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -36,47 +36,6 @@ export function toArray<T>(value: T | T[]): T[] {
   return Array.isArray(value)
     ? value
     : [value];
-}
-
-export function now(): Date {
-  return new Date();
-}
-
-export function currentTimestampSeconds(): number {
-  return Math.floor(Date.now() / 1000);
-}
-
-export function currentTimestamp(): number {
-  return Date.now();
-}
-
-export function numericDateToTimestamp(numericDate: number): number {
-  return numericDate * 86400000;
-}
-
-export function numericDateToDate(numericDate: number): { year: number, month: number, day: number } {
-  const timestamp = numericDateToTimestamp(numericDate);
-  const date = new Date(timestamp);
-
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate()
-  };
-}
-
-export function timestampToNumericDate(timestamp: number): number {
-  return Math.floor(timestamp / 86400000);
-}
-
-export function dateToNumericDate(date: Date): number {
-  const timestamp = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-  return timestampToNumericDate(timestamp);
-}
-
-export function currentDate(): number {
-  const timestamp = currentTimestamp();
-  return timestampToNumericDate(timestamp);
 }
 
 export function clone<T>(object: T, deep: boolean): T {
