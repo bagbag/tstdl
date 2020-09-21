@@ -47,6 +47,34 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
     return this.backingArray[Symbol.iterator]();
   }
 
+  findFirstIndexEqualOrLargerThan(value: T): number | undefined {
+    let index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+
+    while ((index > 0) && (this.comparator(this.backingArray[index - 1], value) == 0)) {
+      index--;
+    }
+
+    if (index > this.backingArray.length - 1) {
+      return undefined;
+    }
+
+    return index;
+  }
+
+  findLastIndexEqualOrSmallerThan(value: T): number | undefined {
+    let index = binarySearchInsertionIndex(this.backingArray, value, this.comparator) - 1;
+
+    while ((index < this.backingArray.length - 1) && (this.comparator(this.backingArray[index + 1], value) == 0)) {
+      index++;
+    }
+
+    if (index < 0) {
+      return undefined;
+    }
+
+    return index;
+  }
+
   add(...values: T[]): void {
     for (const value of values) {
       const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
