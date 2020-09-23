@@ -3,11 +3,11 @@ export function* take<T>(iterable: Iterable<T>, count: number): IterableIterator
     return;
   }
 
-  let index = 0;
+  let counter = 0;
   for (const item of iterable) {
     yield item;
 
-    if (++index >= count) {
+    if (++counter >= count) {
       break;
     }
   }

@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
-import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupToMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, skipWhileAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import type { AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils';
+import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupToMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
@@ -153,11 +153,6 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
 
   skip(count: number): AsyncEnumerable<T> {
     const skipped = skipAsync(this.source, count);
-    return new AsyncEnumerable(skipped);
-  }
-
-  skipWhile(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
-    const skipped = skipWhileAsync(this.source, predicate);
     return new AsyncEnumerable(skipped);
   }
 

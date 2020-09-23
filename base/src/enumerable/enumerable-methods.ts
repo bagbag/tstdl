@@ -18,7 +18,6 @@ export interface EnumerableMethods {
   reduce(...args: any[]): any;
   single(...args: any[]): any;
   skip(...args: any[]): any;
-  skipWhile(...args: any[]): any;
   sort(...args: any[]): any;
   take(...args: any[]): any;
   takeWhile(...args: any[]): any;

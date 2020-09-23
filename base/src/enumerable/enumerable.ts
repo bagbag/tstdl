@@ -1,5 +1,5 @@
-import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, range, reduce, single, skip, skipWhile, sort, take, takeWhile, whileSync } from '../utils';
 import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
+import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -131,11 +131,6 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   skip(count: number): Enumerable<T> {
     const skipped = skip(this.source, count);
-    return new Enumerable(skipped);
-  }
-
-  skipWhile(predicate: Predicate<T>): Enumerable<T> {
-    const skipped = skipWhile(this.source, predicate);
     return new Enumerable(skipped);
   }
 

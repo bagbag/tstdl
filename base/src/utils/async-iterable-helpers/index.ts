@@ -20,7 +20,6 @@ export * from './reduce';
 export * from './retry';
 export * from './single';
 export * from './skip';
-export * from './skip-while';
 export * from './sort';
 export * from './take';
 export * from './take-while';

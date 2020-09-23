@@ -1,6 +1,16 @@
-import { AnyIterable } from '../any-iterable-iterator';
-import { takeWhileAsync } from './take-while';
+import type { AnyIterable } from '../any-iterable-iterator';
 
-export function takeAsync<T>(iterable: AnyIterable<T>, count: number): AsyncIterableIterator<T> {
-  return takeWhileAsync(iterable, true, (_item, index) => index < count);
+export async function* takeAsync<T>(iterable: AnyIterable<T>, count: number): AsyncIterableIterator<T> {
+  if (count <= 0) {
+    return;
+  }
+
+  let counter = 0;
+  for await (const item of iterable) {
+    yield item;
+
+    if (++counter >= count) {
+      break;
+    }
+  }
 }
