@@ -1,44 +1,44 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
-import { AsyncPredicate } from './types';
+import type { AsyncPredicate } from './types';
 
-export function takeWhileAsync<T>(iterable: AnyIterable<T>, breakWhenFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+export function takeWhileAsync<T>(iterable: AnyIterable<T>, yieldLastOnFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
   return isAsyncIterable(iterable)
-    ? async(iterable, breakWhenFalse, predicate)
-    : sync(iterable, breakWhenFalse, predicate);
+    ? async(iterable, yieldLastOnFalse, predicate)
+    : sync(iterable, yieldLastOnFalse, predicate);
 }
 
-async function* sync<T>(iterable: Iterable<T>, breakWhenFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+async function* sync<T>(iterable: Iterable<T>, yieldLastOnFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
   let index = 0;
   for (const item of iterable) {
     const returnValue = predicate(item, index++);
-
     const take = (returnValue instanceof Promise)
       ? await returnValue
       : returnValue;
 
-    if (take) {
+    if (take || yieldLastOnFalse) {
       yield item;
     }
-    else if (breakWhenFalse) {
+
+    if (!take) {
       break;
     }
   }
 }
 
-async function* async<T>(iterable: AsyncIterable<T>, breakWhenFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
+async function* async<T>(iterable: AsyncIterable<T>, yieldLastOnFalse: boolean, predicate: AsyncPredicate<T>): AsyncIterableIterator<T> {
   let index = 0;
   for await (const item of iterable) {
     const returnValue = predicate(item, index++);
-
     const take = (returnValue instanceof Promise)
       ? await returnValue
       : returnValue;
 
-    if (take) {
+    if (take || yieldLastOnFalse) {
       yield item;
     }
-    else if (breakWhenFalse) {
+
+    if (!take) {
       break;
     }
   }

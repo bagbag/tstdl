@@ -165,8 +165,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(taken);
   }
 
-  takeWhile(breakWhenFalse: boolean, predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
-    const taken = takeWhileAsync(this.source, breakWhenFalse, predicate);
+  takeWhile(yieldLastOnFalse: boolean, predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
+    const taken = takeWhileAsync(this.source, yieldLastOnFalse, predicate);
     return new AsyncEnumerable(taken);
   }
 

@@ -144,8 +144,8 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(taken);
   }
 
-  takeWhile(breakWhenFalse: boolean, predicate: Predicate<T>): Enumerable<T> {
-    const skipped = takeWhile(this.source, breakWhenFalse, predicate);
+  takeWhile(yieldLastOnFalse: boolean, predicate: Predicate<T>): Enumerable<T> {
+    const skipped = takeWhile(this.source, yieldLastOnFalse, predicate);
     return new Enumerable(skipped);
   }
 
