@@ -3,28 +3,33 @@ import { merge, Subject } from 'rxjs';
 import { map, share, shareReplay, take } from 'rxjs/operators';
 import type { Comparator } from '../../utils';
 import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
-import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
+import type { ObservableCollectionChangeEvent } from './observable-collection';
+import type { ObservableSortedList, ObservableSortedListRemoveAtEvent } from './observable-sorted-list';
 
-export class ObservableSortedArray<T> implements ObservableCollection<T> {
+export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
   private readonly comparator: Comparator<T>;
-  private readonly backingArray: T[];
-  private readonly addSubject: Subject<T[]>;
-  private readonly removeSubject: Subject<T[]>;
+  private readonly addSubject: Subject<T>;
+  private readonly removeAtSubject: Subject<ObservableSortedListRemoveAtEvent<T>>;
+  private readonly clearSubject: Subject<void>;
+
+  private backingArray: T[];
 
   size$: Observable<number>;
-  add$: Observable<T[]>;
-  remove$: Observable<T[]>;
+  add$: Observable<T>;
+  remove$: Observable<T>;
   change$: Observable<ObservableCollectionChangeEvent<T>>;
+  removeAt$: Observable<ObservableSortedListRemoveAtEvent<T>>;
+  clear$: Observable<void>;
 
   get size(): number {
     return this.backingArray.length;
   }
 
-  get $add(): Promise<T[]> {
+  get $add(): Promise<T> {
     return this.add$.pipe(take(1)).toPromise();
   }
 
-  get $remove(): Promise<T[]> {
+  get $remove(): Promise<T> {
     return this.remove$.pipe(take(1)).toPromise();
   }
 
@@ -32,15 +37,25 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
     return this.change$.pipe(take(1)).toPromise();
   }
 
+  get $removeAt(): Promise<ObservableSortedListRemoveAtEvent<T>> {
+    return this.removeAt$.pipe(take(1)).toPromise();
+  }
+
+  get $clear(): Promise<void> {
+    return this.clear$.pipe(take(1)).toPromise();
+  }
+
   constructor(comparator: Comparator<T> = compareByValue) {
     this.comparator = comparator;
 
     this.backingArray = [];
     this.addSubject = new Subject();
-    this.removeSubject = new Subject();
+    this.removeAtSubject = new Subject();
 
     this.add$ = this.addSubject.asObservable();
-    this.remove$ = this.removeSubject.asObservable();
+    this.remove$ = this.removeAtSubject.pipe(map((event) => event.value));
+    this.removeAt$ = this.removeAtSubject.asObservable();
+    this.clear$ = this.clearSubject.asObservable();
 
     this.size$ = merge(this.add$, this.remove$).pipe(
       map(() => this.backingArray.length),
@@ -56,6 +71,11 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
 
   [Symbol.iterator](): IterableIterator<T> {
     return this.backingArray[Symbol.iterator]();
+  }
+
+  clear(): void {
+    this.backingArray = [];
+    this.clearSubject.next();
   }
 
   findFirstIndexEqualOrLargerThan(value: T): number | undefined {
@@ -90,31 +110,35 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
     return this.backingArray[index];
   }
 
-  add(...values: T[]): void {
-    for (const value of values) {
-      const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
-      this.backingArray.splice(insertionIndex, 0, value);
-    }
+  add(value: T): void {
+    const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+    this.backingArray.splice(insertionIndex, 0, value);
 
-    this.addSubject.next(values);
+    this.addSubject.next(value);
   }
 
-  remove(...values: T[]): number {
-    const removed: T[] = [];
+  remove(value: T): boolean {
+    const index = binarySearch(this.backingArray, value, this.comparator);
 
-    for (const value of values) {
-      const index = binarySearch(this.backingArray, value, this.comparator);
-
-      if (index == undefined) {
-        continue;
-      }
-
-      const removedItem = this.backingArray.splice(index, 1);
-      removed.push(...removedItem);
+    if (index == undefined) {
+      return false;
     }
 
-    this.removeSubject.next(removed);
+    this.backingArray.splice(index, 1);
+    this.removeAtSubject.next({ index, value });
 
-    return removed.length;
+    return true;
+  }
+
+  removeAt(index: number): T {
+    if (index < this.backingArray.length - 1) {
+      throw new Error('out of bounds');
+    }
+
+    const [value] = this.backingArray.splice(index, 1);
+
+    this.removeAtSubject.next({ index, value });
+
+    return value;
   }
 }

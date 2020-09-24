@@ -1,27 +1,36 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
 import { map, share, shareReplay, take } from 'rxjs/operators';
-import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
+import type { ObservableCollectionChangeEvent } from './observable-collection';
+import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
 
-export class ObservableArray<T> implements ObservableCollection<T> {
-  private readonly backingArray: T[];
-  private readonly addSubject: Subject<T[]>;
-  private readonly removeSubject: Subject<T[]>;
+export class ObservableArray<T> implements ObservableList<T> {
+  private readonly addAtSubject: Subject<ObservableListIndexedEvent<T>>;
+  private readonly removeAtSubject: Subject<ObservableListIndexedEvent<T>>;
+  private readonly clearSubject: Subject<void>;
+
+  private backingArray: T[];
 
   size$: Observable<number>;
-  add$: Observable<T[]>;
-  remove$: Observable<T[]>;
+
+  add$: Observable<T>;
+  remove$: Observable<T>;
   change$: Observable<ObservableCollectionChangeEvent<T>>;
+  clear$: Observable<void>;
+
+  addAt$: Observable<ObservableListIndexedEvent<T>>;
+  removeAt$: Observable<ObservableListIndexedEvent<T>>;
+  changeAt$: Observable<ObservableListIndexedChangeEvent<T>>;
 
   get size(): number {
     return this.backingArray.length;
   }
 
-  get $add(): Promise<T[]> {
+  get $add(): Promise<T> {
     return this.add$.pipe(take(1)).toPromise();
   }
 
-  get $remove(): Promise<T[]> {
+  get $remove(): Promise<T> {
     return this.remove$.pipe(take(1)).toPromise();
   }
 
@@ -29,12 +38,31 @@ export class ObservableArray<T> implements ObservableCollection<T> {
     return this.change$.pipe(take(1)).toPromise();
   }
 
+  get $clear(): Promise<void> {
+    return this.clear$.pipe(take(1)).toPromise();
+  }
+
+  get $addAt(): Promise<ObservableListIndexedEvent<T>> {
+    return this.addAt$.pipe(take(1)).toPromise();
+  }
+
+  get $removeAt(): Promise<ObservableListIndexedEvent<T>> {
+    return this.removeAt$.pipe(take(1)).toPromise();
+  }
+
+  get $changeAt(): Promise<ObservableListIndexedChangeEvent<T>> {
+    return this.changeAt$.pipe(take(1)).toPromise();
+  }
+
   constructor() {
     this.backingArray = [];
-    this.addSubject = new Subject();
+    this.addAtSubject = new Subject();
+    this.removeAtSubject = new Subject();
 
-    this.add$ = this.addSubject.asObservable();
-    this.remove$ = this.removeSubject.asObservable();
+    this.add$ = this.addAtSubject.pipe(map((event) => event.value));
+    this.addAt$ = this.addAtSubject.asObservable();
+    this.remove$ = this.removeAtSubject.pipe(map((event) => event.value));
+    this.removeAt$ = this.removeAtSubject.asObservable();
 
     this.size$ = merge(this.add$, this.remove$).pipe(
       map(() => this.backingArray.length),
@@ -46,31 +74,38 @@ export class ObservableArray<T> implements ObservableCollection<T> {
       this.remove$.pipe(map((values) => ({ remove: values }))),
       share()
     );
+
+    this.changeAt$ = merge(
+      this.addAt$.pipe(map((event) => ({ add: event }))),
+      this.removeAt$.pipe(map((event) => ({ remove: event }))),
+      share()
+    );
   }
 
   [Symbol.iterator](): IterableIterator<T> {
     return this.backingArray[Symbol.iterator]();
   }
 
-  add(...values: T[]): void {
-    this.backingArray.push(...values);
-    this.addSubject.next(values);
+  clear(): void {
+    this.backingArray = [];
+    this.clearSubject.next();
   }
 
-  remove(...values: T[]): number {
-    let count = 0;
+  add(value: T): void {
+    this.backingArray.push(value);
+    this.addAtSubject.next({ index: this.backingArray.length - 1, value });
+  }
 
-    for (const value of values) {
-      const index = this.backingArray.indexOf(value);
+  remove(value: T): boolean {
+    const index = this.backingArray.indexOf(value);
 
-      if (index == -1) {
-        continue;
-      }
-
-      this.backingArray.splice(index, 1);
-      count++;
+    if (index == -1) {
+      return false;
     }
 
-    return count;
+    this.backingArray.splice(index, 1);
+    this.removeAtSubject.next({ index, value });
+
+    return true;
   }
 }
