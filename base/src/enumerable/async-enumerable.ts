@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs';
-import type { AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils';
+import { AsyncComparator, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, pairwiseAsync, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils';
 import { anyAsync, batchAsync, bufferAsync, concatAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupToMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, isIterable, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, range, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
@@ -134,6 +134,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     const enumerables = iterables.map((iterable) => new AsyncEnumerable(iterable));
 
     return enumerables;
+  }
+
+  pairwise(): AsyncEnumerable<[T, T]> {
+    const pairwised = pairwiseAsync(this.source);
+    return new AsyncEnumerable(pairwised);
   }
 
   async reduce(reducer: AsyncReducer<T, T>): Promise<T>;

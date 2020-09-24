@@ -16,6 +16,7 @@ export * from './map';
 export * from './map-many';
 export * from './materialize';
 export * from './multiplex';
+export * from './pairwise';
 export * from './reduce';
 export * from './retry';
 export * from './single';

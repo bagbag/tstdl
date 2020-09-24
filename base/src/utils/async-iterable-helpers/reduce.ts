@@ -1,6 +1,6 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
-import { AsyncReducer } from './types';
+import type { AsyncReducer } from './types';
 
 export function reduceAsync<T>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, T>): Promise<T>;
 export function reduceAsync<T, U>(iterable: AnyIterable<T>, reducer: AsyncReducer<T, U>, initialValue?: U): Promise<U>;

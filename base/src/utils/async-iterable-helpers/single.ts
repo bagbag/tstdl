@@ -1,5 +1,5 @@
-import { AnyIterable } from '../any-iterable-iterator';
-import { AsyncPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator';
+import type { AsyncPredicate } from './types';
 
 export async function singleAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> = (() => true)): Promise<T> {
   let matched = false;

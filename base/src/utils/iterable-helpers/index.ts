@@ -13,6 +13,7 @@ export * from './last';
 export * from './map';
 export * from './map-many';
 export * from './materialize';
+export * from './pairwise';
 export * from './range';
 export * from './reduce';
 export * from './single';

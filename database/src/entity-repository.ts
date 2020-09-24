@@ -12,16 +12,12 @@ export interface EntityRepository<T extends Entity> {
 
   load<U extends T = T>(id: string): Promise<U>;
   tryLoad<U extends T = T>(id: string): Promise<U | undefined>;
-
   loadByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<U>;
   tryLoadByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<U | undefined>;
-
   loadMany<U extends T = T>(ids: string[]): Promise<U[]>;
   loadManyCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U>;
-
   loadManyByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<U[]>;
   loadManyByFilterCursor<U extends T = T>(filter: EntityFilter<U>): AsyncIterableIterator<U>;
-
   loadAll<U extends T = T>(): Promise<U[]>;
   loadAllCursor<U extends T = T>(): AsyncIterableIterator<U>;
 
@@ -44,12 +40,12 @@ export interface EntityRepository<T extends Entity> {
 
   patch<U extends T = T>(entity: U, patch: EntityPatch<U>): Promise<boolean>;
   patchMany<U extends T = T>(entities: U[], patch: EntityPatch<U>): Promise<number>;
-
   patchByFilter<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>): Promise<boolean>;
   patchManyByFilter<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>): Promise<number>;
 
   delete<U extends T>(entity: U): Promise<boolean>;
   deleteMany<U extends T>(entities: U[]): Promise<number>;
   deleteById(id: string): Promise<boolean>;
-  deleteManyById(ids: string[]): Promise<number>;
+  deleteByFilter(filter: EntityFilter<T>): Promise<number>;
+  deleteManyByFilter(filter: EntityFilter<T>): Promise<number>;
 }

@@ -1,4 +1,4 @@
-import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
+import { Comparator, IteratorFunction, pairwise, Predicate, Reducer } from '../utils';
 import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
@@ -109,12 +109,9 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(materialized);
   }
 
-  toAsync(): AsyncEnumerable<T> {
-    return AsyncEnumerable.from(this.source);
-  }
-
-  toSync(): Enumerable<T> {
-    return this;
+  pairwise(): Enumerable<[T, T]> {
+    const pairwised = pairwise(this.source);
+    return new Enumerable(pairwised);
   }
 
   reduce(reducer: Reducer<T, T>): T;
@@ -154,9 +151,17 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return array;
   }
 
+  toAsync(): AsyncEnumerable<T> {
+    return AsyncEnumerable.from(this.source);
+  }
+
   toIterator(): Iterator<T> {
     const iterator = this.source[Symbol.iterator]();
     return iterator;
+  }
+
+  toSync(): Enumerable<T> {
+    return this;
   }
 
   while(predicate: Predicate<T>): IterableIterator<T> {
