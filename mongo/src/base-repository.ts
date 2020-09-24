@@ -311,32 +311,24 @@ export class MongoBaseRepository<T extends Entity> {
     return deletedCount as number;
   }
 
-  async replace<U extends T>(entity: U, options?: ReplaceOptions): Promise<U> {
+  async replace<U extends T>(entity: U, options?: ReplaceOptions): Promise<boolean> {
     const document = toMongoDocument(entity);
     const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, options);
     const result = await this.collection.replaceOne(filter, replacement, options);
 
-    if (result.matchedCount == 0 && result.upsertedCount == 0) {
-      throw new NotFoundError(`${this.entityName} not found`);
-    }
-
-    return toEntity(document);
+    return (result.matchedCount + result.upsertedCount) > 0;
   }
 
-  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: U, options?: ReplaceOptions): Promise<U> {
+  async replaceByFilter<U extends T>(filter: FilterQuery<U>, entity: U, options?: ReplaceOptions): Promise<boolean> {
     const document = toMongoDocument(entity);
     const result = await this.collection.replaceOne(filter, document, options);
 
-    if (result.matchedCount == 0 && result.upsertedCount == 0) {
-      throw new NotFoundError(`${this.entityName} not found`);
-    }
-
-    return toEntity(document);
+    return (result.matchedCount + result.upsertedCount) > 0;
   }
 
-  async replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): Promise<U[]> {
+  async replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): Promise<number> {
     if (entities.length == 0) {
-      return [];
+      return 0;
     }
 
     const documents = entities.map(toMongoDocument);
@@ -351,8 +343,7 @@ export class MongoBaseRepository<T extends Entity> {
       throw new NotFoundError(`${entities.length - (result.matchedCount + result.upsertedCount)} ${this.entityName} entities not found`);
     }
 
-    const savedEntities = documents.map(toEntity);
-    return savedEntities;
+    return (result.matchedCount + result.upsertedCount);
   }
 
   async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {

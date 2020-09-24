@@ -7,9 +7,11 @@ export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id: string
 };
 
-export type MongoDocumentWitPartialId<T extends EntityWithPartialId> = Omit<T, 'id'> & {
+export type MongoDocumentWithPartialId<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id?: string
 };
+
+export type MongoDocumentWithoutId<T extends EntityWithPartialId> = Omit<T, 'id'>;
 
 export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
   const { _id, ...entityRest } = document;
@@ -27,7 +29,7 @@ export function toEntityWithoutId<T extends EntityWithPartialId>(entity: T): Ent
   return rest;
 }
 
-export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(document: MongoDocumentWitPartialId<T>): ProjectedEntity<T, M, P> {
+export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(document: MongoDocumentWithPartialId<T>): ProjectedEntity<T, M, P> {
   const { _id, ...documentRest } = document;
 
   const partialIdObject = (_id != undefined) ? { id: _id } : {};
@@ -64,7 +66,7 @@ export function toMongoDocument<T extends Entity>(entity: T): MongoDocument<T> {
   return document;
 }
 
-export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(entity: T): MongoDocumentWitPartialId<T> {
+export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(entity: T): MongoDocumentWithPartialId<T> {
   const { id, ...entityRest } = entity;
 
   const partialIdObject = (id != undefined) ? { _id: id } : {};
@@ -73,6 +75,16 @@ export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(enti
     ...partialIdObject,
     ...entityRest
   };
+
+  return document;
+}
+
+export function toMongoDocumentWithoutId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocumentWithoutId<T> {
+  const { id, ...entityRest } = entity; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  const document: MongoDocumentWithoutId<T> = {
+    ...entityRest
+  } as MongoDocumentWithoutId<T>;
 
   return document;
 }
