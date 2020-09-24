@@ -1,7 +1,7 @@
-import { LockProvider } from '@tstdl/base/lock';
+import type { LockProvider } from '@tstdl/base/lock';
 import { DeferredPromise } from '@tstdl/base/promise';
 import { cancelableTimeout, CancellationToken, Timer } from '@tstdl/base/utils';
-import { LoopController } from './controller';
+import type { LoopController } from './controller';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;
 
@@ -14,7 +14,7 @@ export class DistributedLoop {
     this.lockProvider = lockProvider;
   }
 
-  run(func: LoopFunction, interval: number, accuracy: number): LoopController {
+  run(interval: number, accuracy: number, func: LoopFunction): LoopController {
     const stopped = new DeferredPromise();
     const stopToken = new CancellationToken();
 
