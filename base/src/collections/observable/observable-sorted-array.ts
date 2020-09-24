@@ -1,9 +1,9 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
-import { map, shareReplay, take } from 'rxjs/operators';
+import { map, share, shareReplay, take } from 'rxjs/operators';
 import type { Comparator } from '../../utils';
 import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
-import type { ObservableCollection } from './observable-collection';
+import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
 
 export class ObservableSortedArray<T> implements ObservableCollection<T> {
   private readonly comparator: Comparator<T>;
@@ -14,6 +14,7 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
   size$: Observable<number>;
   add$: Observable<T[]>;
   remove$: Observable<T[]>;
+  change$: Observable<ObservableCollectionChangeEvent<T>>;
 
   get size(): number {
     return this.backingArray.length;
@@ -25,6 +26,10 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
 
   get $remove(): Promise<T[]> {
     return this.remove$.pipe(take(1)).toPromise();
+  }
+
+  get $change(): Promise<ObservableCollectionChangeEvent<T>> {
+    return this.change$.pipe(take(1)).toPromise();
   }
 
   constructor(comparator: Comparator<T> = compareByValue) {
@@ -40,6 +45,12 @@ export class ObservableSortedArray<T> implements ObservableCollection<T> {
     this.size$ = merge(this.add$, this.remove$).pipe(
       map(() => this.backingArray.length),
       shareReplay({ bufferSize: 1, refCount: true })
+    );
+
+    this.change$ = merge(
+      this.add$.pipe(map((values) => ({ add: values }))),
+      this.remove$.pipe(map((values) => ({ remove: values }))),
+      share()
     );
   }
 
