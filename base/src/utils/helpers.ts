@@ -438,6 +438,23 @@ function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, op
   return true;
 }
 
+export function stripPropertyWhen<T extends object, S>(obj: T, predicate: (value: unknown) => value is S): { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] } {
+  const filtered = Object.entries(obj).filter(([, value]) => !predicate(value));
+  return Object.fromEntries(filtered) as { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] };
+}
+
+export function stripPropertyWhenUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined ? T[P] | undefined : T[P] } {
+  return stripPropertyWhen(obj, (value): value is undefined => value === undefined);
+}
+
+export function stripPropertyWhenNull<T extends object>(obj: T): { [P in keyof T]: T[P] extends null ? T[P] | undefined : T[P] } {
+  return stripPropertyWhen(obj, (value): value is null => value === null);
+}
+
+export function stripPropertyWhenNullOrUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined | null ? T[P] | undefined : T[P] } {
+  return stripPropertyWhen(obj, (value): value is undefined | null => value == undefined);
+}
+
 export function binarySearch<T>(values: ArrayLike<T>, searchValue: T, comparator: Comparator<T> = compareByValue): number | undefined {
   const index = binarySearchInsertionIndex(values, searchValue, comparator);
   const value = values[index];
