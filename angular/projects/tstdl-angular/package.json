@@ -5,9 +5,9 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@angular/common": "^10.1.0",
-    "@angular/core": "^10.1.0",
-    "@tstdl/base": "^0.59.17",
+    "@angular/common": "^10.1.3",
+    "@angular/core": "^10.1.3",
+    "@tstdl/base": "^0.60.2",
     "luxon": "^1.25.0"
   },
   "dependencies": {
