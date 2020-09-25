@@ -5,7 +5,7 @@ import { getNewDocumentId } from '../id';
 import type { Collection, TypedIndexSpecification } from '../types';
 
 const indexes: TypedIndexSpecification<MigrationState>[] = [
-  { key: { name: 1 }, unique: true }
+  { name: 'name', key: { name: 1 }, unique: true }
 ];
 
 export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository {
