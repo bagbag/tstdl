@@ -455,7 +455,7 @@ export function stripPropertyWhenNullOrUndefined<T extends object>(obj: T): { [P
   return stripPropertyWhen(obj, (value): value is undefined | null => value == undefined);
 }
 
-export function binarySearch<T>(values: ArrayLike<T>, searchValue: T, comparator: Comparator<T> = compareByValue): number | undefined {
+export function binarySearch<T extends TComparator, TComparator>(values: ArrayLike<T>, searchValue: TComparator, comparator: Comparator<TComparator> = compareByValue): number | undefined {
   const index = binarySearchInsertionIndex(values, searchValue, comparator);
   const value = values[index];
 
@@ -468,7 +468,7 @@ export function binarySearch<T>(values: ArrayLike<T>, searchValue: T, comparator
     : undefined;
 }
 
-export function binarySearchInsertionIndex<T>(values: ArrayLike<T>, searchValue: T, comparator: Comparator<T> = compareByValue): number {
+export function binarySearchInsertionIndex<T extends TComparator, TComparator>(values: ArrayLike<T>, searchValue: TComparator, comparator: Comparator<TComparator> = compareByValue): number {
   let min = 0;
   let max = values.length - 1;
   let middle = 0;

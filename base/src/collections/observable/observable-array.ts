@@ -9,7 +9,7 @@ export class ObservableArray<T> implements ObservableList<T> {
   private readonly removeAtSubject: Subject<ObservableListIndexedEvent<T>>;
   private readonly clearSubject: Subject<void>;
 
-  private backingArray: T[];
+  backingArray: T[];
 
   size$: Observable<number>;
 

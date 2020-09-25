@@ -2,8 +2,8 @@ import type { Observable } from 'rxjs';
 import type { ObservableCollection } from './observable-collection';
 
 export type ObservableListIndexedEvent<T> = {
-  index: number,
-  value: T
+  value: T,
+  index: number
 };
 
 export type ObservableListIndexedChangeEvent<T> = {

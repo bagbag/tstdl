@@ -4,22 +4,26 @@ import { map, share, shareReplay, take } from 'rxjs/operators';
 import type { Comparator } from '../../utils';
 import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
 import type { ObservableCollectionChangeEvent } from './observable-collection';
-import type { ObservableSortedList, ObservableSortedListRemoveAtEvent } from './observable-sorted-list';
+import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
 
-export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
+export class ObservableSortedArrayList<T> implements ObservableList<T> {
   private readonly comparator: Comparator<T>;
-  private readonly addSubject: Subject<T>;
-  private readonly removeAtSubject: Subject<ObservableSortedListRemoveAtEvent<T>>;
+  private readonly addAtSubject: Subject<ObservableListIndexedEvent<T>>;
+  private readonly removeAtSubject: Subject<ObservableListIndexedEvent<T>>;
   private readonly clearSubject: Subject<void>;
 
-  private backingArray: T[];
+  backingArray: T[];
 
   size$: Observable<number>;
+  clear$: Observable<void>;
+
   add$: Observable<T>;
   remove$: Observable<T>;
   change$: Observable<ObservableCollectionChangeEvent<T>>;
-  removeAt$: Observable<ObservableSortedListRemoveAtEvent<T>>;
-  clear$: Observable<void>;
+
+  addAt$: Observable<ObservableListIndexedEvent<T>>;
+  removeAt$: Observable<ObservableListIndexedEvent<T>>;
+  changeAt$: Observable<ObservableListIndexedChangeEvent<T>>;
 
   get size(): number {
     return this.backingArray.length;
@@ -37,8 +41,16 @@ export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
     return this.change$.pipe(take(1)).toPromise();
   }
 
-  get $removeAt(): Promise<ObservableSortedListRemoveAtEvent<T>> {
+  get $addAt(): Promise<ObservableListIndexedEvent<T>> {
+    return this.addAt$.pipe(take(1)).toPromise();
+  }
+
+  get $removeAt(): Promise<ObservableListIndexedEvent<T>> {
     return this.removeAt$.pipe(take(1)).toPromise();
+  }
+
+  get $changeAt(): Promise<ObservableListIndexedChangeEvent<T>> {
+    return this.changeAt$.pipe(take(1)).toPromise();
   }
 
   get $clear(): Promise<void> {
@@ -49,22 +61,28 @@ export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
     this.comparator = comparator;
 
     this.backingArray = [];
-    this.addSubject = new Subject();
+    this.addAtSubject = new Subject();
     this.removeAtSubject = new Subject();
 
-    this.add$ = this.addSubject.asObservable();
-    this.remove$ = this.removeAtSubject.pipe(map((event) => event.value));
-    this.removeAt$ = this.removeAtSubject.asObservable();
     this.clear$ = this.clearSubject.asObservable();
-
     this.size$ = merge(this.add$, this.remove$).pipe(
       map(() => this.backingArray.length),
       shareReplay({ bufferSize: 1, refCount: true })
     );
 
+    this.add$ = this.addAtSubject.pipe(map((event) => event.value));
+    this.remove$ = this.removeAtSubject.pipe(map((event) => event.value));
     this.change$ = merge(
       this.add$.pipe(map((values) => ({ add: values }))),
       this.remove$.pipe(map((values) => ({ remove: values }))),
+      share()
+    );
+
+    this.addAt$ = this.addAtSubject.asObservable();
+    this.removeAt$ = this.removeAtSubject.asObservable();
+    this.changeAt$ = merge(
+      this.addAt$.pipe(map((event) => ({ add: event }))),
+      this.removeAt$.pipe(map((event) => ({ remove: event }))),
       share()
     );
   }
@@ -111,10 +129,10 @@ export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
   }
 
   add(value: T): void {
-    const insertionIndex = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
-    this.backingArray.splice(insertionIndex, 0, value);
+    const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+    this.backingArray.splice(index, 0, value);
 
-    this.addSubject.next(value);
+    this.addAtSubject.next({ value, index });
   }
 
   remove(value: T): boolean {
@@ -125,7 +143,7 @@ export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
     }
 
     this.backingArray.splice(index, 1);
-    this.removeAtSubject.next({ index, value });
+    this.removeAtSubject.next({ value, index });
 
     return true;
   }
@@ -137,7 +155,7 @@ export class ObservableSortedArrayList<T> implements ObservableSortedList<T> {
 
     const [value] = this.backingArray.splice(index, 1);
 
-    this.removeAtSubject.next({ index, value });
+    this.removeAtSubject.next({ value, index });
 
     return value;
   }

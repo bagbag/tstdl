@@ -1,5 +1,5 @@
-import { Comparator, IteratorFunction, pairwise, Predicate, Reducer } from '../utils';
-import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils';
+import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
+import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
