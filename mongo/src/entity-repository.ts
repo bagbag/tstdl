@@ -244,6 +244,16 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.deleteManyById(ids);
   }
 
+  async deleteByFilter(filter: Partial<T>): Promise<boolean> {
+    const transformedFilter = this.transformFilter(filter);
+    return this.baseRepository.deleteByFilter(transformedFilter);
+  }
+
+  async deleteManyByFilter(filter: Partial<T>): Promise<number> {
+    const transformedFilter = this.transformFilter(filter);
+    return this.baseRepository.deleteManyByFilter(transformedFilter);
+  }
+
   private transformFilter<U extends T = T>(filter: EntityFilter<U>): FilterQuery<TDb> {
     return toMongoDocumentWithPartialId(this.transformer.filterTransform(filter));
   }

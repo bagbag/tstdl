@@ -46,6 +46,6 @@ export interface EntityRepository<T extends Entity> {
   delete<U extends T>(entity: U): Promise<boolean>;
   deleteMany<U extends T>(entities: U[]): Promise<number>;
   deleteById(id: string): Promise<boolean>;
-  deleteByFilter(filter: EntityFilter<T>): Promise<number>;
+  deleteByFilter(filter: EntityFilter<T>): Promise<boolean>;
   deleteManyByFilter(filter: EntityFilter<T>): Promise<number>;
 }

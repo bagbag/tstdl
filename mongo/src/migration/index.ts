@@ -1,1 +1,1 @@
-export * from './database-migration-state-repository';
+export * from './migration-state-repository';

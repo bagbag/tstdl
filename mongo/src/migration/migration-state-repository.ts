@@ -1,19 +1,19 @@
 import type { Logger } from '@tstdl/base/logger';
-import type { DatabaseMigrationState, DatabaseMigrationStateRepository } from '@tstdl/database/migration/';
+import type { MigrationState, MigrationStateRepository } from '@tstdl/server/migration/';
 import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import { getNewDocumentId } from '../id';
 import type { Collection, TypedIndexSpecification } from '../types';
 
-const indexes: TypedIndexSpecification<DatabaseMigrationState>[] = [
+const indexes: TypedIndexSpecification<MigrationState>[] = [
   { key: { name: 1 }, unique: true }
 ];
 
-export class MongoDatabaseMigrationStateRepository extends MongoEntityRepository<DatabaseMigrationState> implements DatabaseMigrationStateRepository {
-  constructor(collection: Collection<DatabaseMigrationState>, logger: Logger) {
+export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository {
+  constructor(collection: Collection<MigrationState>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 
-  async loadByName(name: string): Promise<DatabaseMigrationState | undefined> {
+  async loadByName(name: string): Promise<MigrationState | undefined> {
     return this.baseRepository.tryLoadByFilter({ name });
   }
 
