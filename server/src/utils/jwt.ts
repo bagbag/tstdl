@@ -1,10 +1,12 @@
 import { UnauthorizedError } from '@tstdl/base/error';
-import { StringMap } from '@tstdl/base/types';
+import type { StringMap } from '@tstdl/base/types';
 import { encodeBase64Url } from '@tstdl/base/utils';
-import { JwtToken, JwtTokenAlgorithm, JwtTokenHeader, parseJwtTokenString } from '@tstdl/base/utils/jwt';
-import { BinaryLike, createHmac } from 'crypto';
+import type { JwtToken, JwtTokenAlgorithm, JwtTokenHeader } from '@tstdl/base/utils/jwt';
+import { parseJwtTokenString } from '@tstdl/base/utils/jwt';
+import type { BinaryLike } from 'crypto';
+import { createHmac } from 'crypto';
 
-export function createJwtTokenString({ header, payload }: JwtToken, secret: BinaryLike): string {
+export function createJwtTokenString<THeader extends JwtTokenHeader, TPayload extends StringMap>({ header, payload }: JwtToken<THeader, TPayload>, secret: BinaryLike): string {
   const headerBuffer = Buffer.from(JSON.stringify(header), 'utf8');
   const payloadBuffer = Buffer.from(JSON.stringify(payload), 'utf8');
 
@@ -34,7 +36,7 @@ export function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = 
 
     return token;
   }
-  catch (error) {
+  catch (error: unknown) {
     if (error instanceof UnauthorizedError) {
       throw error;
     }
