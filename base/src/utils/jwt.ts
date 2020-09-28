@@ -1,4 +1,4 @@
-import { StringMap } from '../types';
+import type { StringMap } from '../types';
 import { decodeBase64Url } from './base64';
 
 export enum JwtTokenAlgorithm {
@@ -17,7 +17,9 @@ export type JwtToken<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload =
   readonly payload: TPayload
 };
 
-type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = unknown> = {
+type JwtTokenParseResult<T extends JwtToken> = {
+  raw: string,
+  token: T,
   encoded: {
     header: string,
     payload: string,
@@ -31,44 +33,44 @@ type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader, TPaylo
   string: {
     header: string,
     payload: string
-  },
-  token: JwtToken<THeader, TPayload>
+  }
 };
 
-export function parseJwtTokenString<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap>(tokenString: string): JwtTokenParseResult<THeader, TPayload> {
+export function parseJwtTokenString<T extends JwtToken>(tokenString: string): JwtTokenParseResult<T> {
   const [encodedHeader, encodedPayload, encodedSignature] = tokenString.split('.');
 
   const textDecoder = new TextDecoder();
 
-  const encoded: JwtTokenParseResult['encoded'] = {
+  const encoded: JwtTokenParseResult<T>['encoded'] = {
     header: encodedHeader,
     payload: encodedPayload,
     signature: encodedSignature
   };
 
-  const bytes: JwtTokenParseResult['bytes'] = {
+  const bytes: JwtTokenParseResult<T>['bytes'] = {
     header: decodeBase64Url(encodedHeader),
     payload: decodeBase64Url(encodedPayload),
     signature: decodeBase64Url(encodedSignature)
   };
 
-  const string: JwtTokenParseResult['string'] = {
+  const string: JwtTokenParseResult<T>['string'] = {
     header: textDecoder.decode(bytes.header),
     payload: textDecoder.decode(bytes.payload)
   };
 
-  const header = JSON.parse(string.header) as THeader;
-  const payload = JSON.parse(string.payload) as TPayload;
+  const header = JSON.parse(string.header) as T['header'];
+  const payload = JSON.parse(string.payload) as T['payload'];
 
-  const token: JwtToken<THeader, TPayload> = {
+  const token: T = {
     header,
     payload
   };
 
   return {
+    raw: tokenString,
+    token,
     encoded,
     bytes,
-    string,
-    token
+    string
   };
 }
