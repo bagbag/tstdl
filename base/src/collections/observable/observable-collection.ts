@@ -7,6 +7,7 @@ export type ObservableCollectionChangeEvent<T> = {
 };
 
 export interface ObservableCollection<T> extends Collection<T> {
+  readonly observe$: Observable<ObservableCollection<T>>;
   readonly size$: Observable<number>;
   readonly add$: Observable<T>;
   readonly remove$: Observable<T>;

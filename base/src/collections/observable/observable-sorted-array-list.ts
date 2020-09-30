@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
-import { map, share, shareReplay, take } from 'rxjs/operators';
+import { map, mapTo, share, shareReplay, startWith, take } from 'rxjs/operators';
 import type { Comparator } from '../../utils';
 import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
 import type { ObservableCollectionChangeEvent } from './observable-collection';
@@ -14,6 +14,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
 
   backingArray: T[];
 
+  observe$: Observable<ObservableSortedArrayList<T>>;
   size$: Observable<number>;
   clear$: Observable<void>;
 
@@ -63,6 +64,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     this.backingArray = [];
     this.addAtSubject = new Subject();
     this.removeAtSubject = new Subject();
+    this.clearSubject = new Subject();
 
     this.clear$ = this.clearSubject.asObservable();
     this.size$ = merge(this.add$, this.remove$).pipe(
@@ -85,6 +87,8 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
       this.removeAt$.pipe(map((event) => ({ remove: event }))),
       share()
     );
+
+    this.observe$ = merge(this.change$, this.clear$).pipe(startWith(undefined), mapTo(this));
   }
 
   [Symbol.iterator](): IterableIterator<T> {

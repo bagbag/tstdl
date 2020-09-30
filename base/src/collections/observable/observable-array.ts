@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
-import { map, share, shareReplay, take } from 'rxjs/operators';
+import { map, mapTo, share, shareReplay, startWith, take } from 'rxjs/operators';
 import type { ObservableCollectionChangeEvent } from './observable-collection';
 import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
 
@@ -11,6 +11,7 @@ export class ObservableArray<T> implements ObservableList<T> {
 
   backingArray: T[];
 
+  observe$: Observable<ObservableArray<T>>;
   size$: Observable<number>;
 
   add$: Observable<T>;
@@ -58,7 +59,9 @@ export class ObservableArray<T> implements ObservableList<T> {
     this.backingArray = [];
     this.addAtSubject = new Subject();
     this.removeAtSubject = new Subject();
+    this.clearSubject = new Subject();
 
+    this.clear$ = this.clearSubject.asObservable();
     this.add$ = this.addAtSubject.pipe(map((event) => event.value));
     this.addAt$ = this.addAtSubject.asObservable();
     this.remove$ = this.removeAtSubject.pipe(map((event) => event.value));
@@ -71,15 +74,15 @@ export class ObservableArray<T> implements ObservableList<T> {
 
     this.change$ = merge(
       this.add$.pipe(map((values) => ({ add: values }))),
-      this.remove$.pipe(map((values) => ({ remove: values }))),
-      share()
-    );
+      this.remove$.pipe(map((values) => ({ remove: values })))
+    ).pipe(share());
 
     this.changeAt$ = merge(
       this.addAt$.pipe(map((event) => ({ add: event }))),
-      this.removeAt$.pipe(map((event) => ({ remove: event }))),
-      share()
-    );
+      this.removeAt$.pipe(map((event) => ({ remove: event })))
+    ).pipe(share());
+
+    this.observe$ = merge(this.change$, this.clear$).pipe(startWith(undefined), mapTo(this));
   }
 
   [Symbol.iterator](): IterableIterator<T> {
