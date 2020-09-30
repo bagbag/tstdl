@@ -4,8 +4,8 @@ set -euo pipefail
 projects=(
   "base"
   "client"
-  "server"
   "database"
+  "server"
   "mongo"
 )
 

@@ -1,8 +1,10 @@
 export interface EnumerableMethods {
   any(...args: any[]): any;
+  assert(...args: any[]): any;
   batch(...args: any[]): any;
   cast(...args: any[]): any;
   concat(...args: any[]): any;
+  defaultIfEmpty(...args: any[]): any;
   distinct(...args: any[]): any;
   drain(...args: any[]): any;
   filter(...args: any[]): any;

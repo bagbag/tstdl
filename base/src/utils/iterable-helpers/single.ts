@@ -1,6 +1,6 @@
-import { Predicate } from './types';
+import type { Predicate, TypePredicate } from './types';
 
-export function single<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() => true)): T {
+export function single<T, TPredicate extends T = T>(iterable: Iterable<T>, predicate: TypePredicate<T, TPredicate> | Predicate<T> = (() => true)): TPredicate {
   let matched = false;
   let result: T | undefined;
   let index = 0;
@@ -22,5 +22,5 @@ export function single<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() =
     throw new Error('no item matched predicate');
   }
 
-  return result as T;
+  return result as TPredicate;
 }

@@ -7,7 +7,7 @@ export function pairwiseAsync<T>(iterable: AnyIterable<T>): AsyncIterableIterato
     : sync<T>(iterable);
 }
 
-export async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<[T, T]> {
+async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<[T, T]> {
   let hasPrevious = false;
   let previous: T;
 
@@ -23,7 +23,7 @@ export async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<[T,
   }
 }
 
-export async function* async<T>(iterable: AsyncIterable<T>): AsyncIterableIterator<[T, T]> {
+async function* async<T>(iterable: AsyncIterable<T>): AsyncIterableIterator<[T, T]> {
   let hasPrevious = false;
   let previous: T;
 

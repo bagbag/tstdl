@@ -3,8 +3,8 @@ import { CustomError } from './custom-error';
 export class ValidationError extends CustomError {
   readonly details: any;
 
-  constructor(name: string, message: string, details?: any) {
-    super({ name, message });
+  constructor(message: string, details?: any) {
+    super({ name: ValidationError.name, message });
 
     this.details = details;
   }

@@ -28,7 +28,6 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const getter = bind ? descriptor.get.bind(obj) : descriptor.get;
-
   return getter;
 }
 

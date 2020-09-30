@@ -1,6 +1,6 @@
 export * from './alphabet';
 export * from './any-iterable-iterator';
-export * from './async-iterable-helpers';
+export * from './assert';
 export * from './async-iterator-iterable-iterator';
 export * from './backoff';
 export * from './base64';
@@ -12,7 +12,6 @@ export * from './event-loop';
 export * from './factory-map';
 export * from './feedable-async-iterable';
 export * from './helpers';
-export * from './iterable-helpers';
 export * from './map';
 export * from './math';
 export * from './moving-metric';

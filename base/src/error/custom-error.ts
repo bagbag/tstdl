@@ -1,6 +1,4 @@
 export class CustomError extends Error {
-  readonly name: string;
-
   constructor({ name, message }: { name?: string, message?: string }) {
     const prototype = new.target.prototype;
     super(message);

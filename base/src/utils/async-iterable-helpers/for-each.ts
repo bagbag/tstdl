@@ -1,6 +1,6 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
-import { AsyncIteratorFunction } from './types';
+import type { AsyncIteratorFunction } from './types';
 
 // eslint-disable-next-line @typescript-eslint/promise-function-async
 export function forEachAsync<T>(iterable: AnyIterable<T>, func: AsyncIteratorFunction<T, any>): Promise<void> {

@@ -1,7 +1,8 @@
 import type { AnyIterable } from '../any-iterable-iterator';
+import type { TypePredicate } from '../iterable-helpers';
 import type { AsyncPredicate } from './types';
 
-export async function singleAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> = (() => true)): Promise<T> {
+export async function singleAsync<T, TPredicate extends T = T>(iterable: AnyIterable<T>, predicate: TypePredicate<T, TPredicate> | AsyncPredicate<T> = (() => true)): Promise<TPredicate> {
   let matched = false;
   let result: T | undefined;
 
@@ -27,5 +28,5 @@ export async function singleAsync<T>(iterable: AnyIterable<T>, predicate: AsyncP
     throw new Error('no item matched predicate');
   }
 
-  return result as T;
+  return result as TPredicate;
 }

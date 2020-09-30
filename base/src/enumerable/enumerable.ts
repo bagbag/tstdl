@@ -1,5 +1,6 @@
-import type { Comparator, IteratorFunction, Predicate, Reducer } from '../utils';
-import { any, batch, concat, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils';
+import type { Comparator } from '../utils';
+import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
+import { any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -22,6 +23,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(rangeIterable);
   }
 
+  assert<TPredicate extends T>(predicate: Predicate<T> | TypePredicate<T, TPredicate>): Enumerable<TPredicate> {
+    const asserted = assert(this.source, predicate);
+    return new Enumerable(asserted);
+  }
+
   any(predicate?: Predicate<T>): boolean {
     const result = any(this.source, predicate);
     return result;
@@ -41,6 +47,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(concatted);
   }
 
+  defaultIfEmpty<TDefault>(defaultValue: T): Enumerable<T | TDefault> {
+    const result = defaultIfEmpty(this.source, defaultValue);
+    return new Enumerable(result);
+  }
+
   distinct(selector?: IteratorFunction<T, any>): Enumerable<T> {
     const result = distinct(this.source, selector);
     return new Enumerable(result);
@@ -50,12 +61,12 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     drain(this.source);
   }
 
-  filter<TNew extends T = T>(predicate: Predicate<T>): Enumerable<TNew> {
-    const filtered = filter<T, TNew>(this.source, predicate);
+  filter<TPredicate extends T = T>(predicate: Predicate<T> | TypePredicate<T, TPredicate>): Enumerable<TPredicate> {
+    const filtered = filter(this.source, predicate);
     return new Enumerable(filtered);
   }
 
-  first(predicate?: Predicate<T>): T {
+  first<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     const result = first(this.source, predicate);
     return result;
   }
@@ -90,7 +101,7 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(iterator);
   }
 
-  last(predicate?: Predicate<T>): T {
+  last<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     return last(this.source, predicate);
   }
 
@@ -121,7 +132,7 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return result;
   }
 
-  single(predicate?: Predicate<T>): T {
+  single<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     const result = single(this.source, predicate);
     return result;
   }
