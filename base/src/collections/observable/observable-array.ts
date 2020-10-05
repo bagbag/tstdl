@@ -23,7 +23,7 @@ export class ObservableArray<T> implements ObservableList<T> {
   removeAt$: Observable<ObservableListIndexedEvent<T>>;
   changeAt$: Observable<ObservableListIndexedChangeEvent<T>>;
 
-  get size(): number {
+  get length(): number {
     return this.backingArray.length;
   }
 
@@ -110,5 +110,10 @@ export class ObservableArray<T> implements ObservableList<T> {
     this.removeAtSubject.next({ index, value });
 
     return true;
+  }
+
+  has(value: T): boolean {
+    const index = this.backingArray.indexOf(value);
+    return index != -1;
   }
 }

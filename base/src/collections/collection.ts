@@ -1,7 +1,8 @@
 export interface Collection<T> extends Iterable<T> {
-  readonly size: number;
+  readonly length: number;
 
   add(value: T): void;
   remove(value: T): boolean;
+  has(value: T): boolean;
   clear(): void;
 }

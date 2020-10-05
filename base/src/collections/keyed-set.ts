@@ -1,8 +1,8 @@
 import { Enumerable } from '../enumerable';
 
 export enum KeyedSetMode {
-  Keep,
-  Overwrite
+  Keep = 0,
+  Overwrite = 1
 }
 
 type Selector<T> = (value: T) => any;

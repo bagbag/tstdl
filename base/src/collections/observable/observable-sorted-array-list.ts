@@ -26,7 +26,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
   removeAt$: Observable<ObservableListIndexedEvent<T>>;
   changeAt$: Observable<ObservableListIndexedChangeEvent<T>>;
 
-  get size(): number {
+  get length(): number {
     return this.backingArray.length;
   }
 
@@ -100,6 +100,47 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     this.clearSubject.next();
   }
 
+  get(index: number): T {
+    return this.backingArray[index];
+  }
+
+  add(value: T): void {
+    const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+    this.backingArray.splice(index, 0, value);
+
+    this.addAtSubject.next({ value, index });
+  }
+
+  has(value: T): boolean {
+    const index = binarySearch(this.backingArray, value, this.comparator);
+    return index != undefined;
+  }
+
+  remove(value: T): boolean {
+    const index = binarySearch(this.backingArray, value, this.comparator);
+
+    if (index == undefined) {
+      return false;
+    }
+
+    this.backingArray.splice(index, 1);
+    this.removeAtSubject.next({ value, index });
+
+    return true;
+  }
+
+  removeAt(index: number): T {
+    if (index < this.backingArray.length - 1) {
+      throw new Error('out of bounds');
+    }
+
+    const [value] = this.backingArray.splice(index, 1);
+
+    this.removeAtSubject.next({ value, index });
+
+    return value;
+  }
+
   findFirstIndexEqualOrLargerThan(value: T): number | undefined {
     let index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
 
@@ -126,41 +167,5 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     }
 
     return index;
-  }
-
-  get(index: number): T {
-    return this.backingArray[index];
-  }
-
-  add(value: T): void {
-    const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
-    this.backingArray.splice(index, 0, value);
-
-    this.addAtSubject.next({ value, index });
-  }
-
-  remove(value: T): boolean {
-    const index = binarySearch(this.backingArray, value, this.comparator);
-
-    if (index == undefined) {
-      return false;
-    }
-
-    this.backingArray.splice(index, 1);
-    this.removeAtSubject.next({ value, index });
-
-    return true;
-  }
-
-  removeAt(index: number): T {
-    if (index < this.backingArray.length - 1) {
-      throw new Error('out of bounds');
-    }
-
-    const [value] = this.backingArray.splice(index, 1);
-
-    this.removeAtSubject.next({ value, index });
-
-    return value;
   }
 }
