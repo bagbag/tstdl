@@ -50,9 +50,8 @@ export function clone<T>(object: T, deep: boolean): T {
 
   const result: StringMap = {};
 
-  const properties = Object.getOwnPropertyNames(object);
-  for (const property of properties) {
-    result[property] = clone((object as StringMap)[property] as unknown, true);
+  for (const [property, value] of Object.entries(object)) {
+    result[property] = clone(value, true);
   }
 
   return result as T;

@@ -4,7 +4,8 @@ import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
 import type { BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, toEntity, toEntityWithoutId, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
+import type { MongoDocument } from './model';
+import { toEntity, toEntityWithoutId, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export enum ProjectionMode {
@@ -374,7 +375,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async hasByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
-    const count = await this.countByFilter(filter);
+    const count = await this.countByFilter(filter, { limit: 1 });
     return count > 0;
   }
 
@@ -391,11 +392,12 @@ export class MongoBaseRepository<T extends Entity> {
     const filter: FilterQuery<T> = {
       _id: { $in: ids }
     } as FilterQuery<T>;
+
     const count = await this.countByFilter(filter);
     return count == ids.length;
   }
 
-  async countByFilter<U extends T = T>(filter: FilterQuery<U>, { estimate, limit, skip }: CountOptions = { estimate: false }): Promise<number> {
+  async countByFilter<U extends T = T>(filter: FilterQuery<U>, { estimate, limit, skip }: CountOptions = {}): Promise<number> {
     if (estimate == true) {
       return this.collection.estimatedDocumentCount(filter, { limit, skip });
     }

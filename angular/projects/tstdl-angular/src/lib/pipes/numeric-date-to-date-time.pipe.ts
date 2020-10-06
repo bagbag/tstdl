@@ -3,7 +3,7 @@ import { numericDateToDate } from '@tstdl/base/utils';
 import { DateObject, DateTime } from 'luxon';
 
 @Pipe({
-  name: 'numericDateToDate'
+  name: 'numericDateToDateTime'
 })
 export class NumericDateToDateTimePipe implements PipeTransform {
   transform(value: number, options?: DateObject): DateTime {
