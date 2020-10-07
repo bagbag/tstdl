@@ -20,7 +20,7 @@
     "@tstdl/base": "^0.60.27",
     "luxon": "^1.25.0",
     "rxjs": "~6.6.3",
-    "tslib": "^2.0.1",
+    "tslib": "^2.0.2",
     "zone.js": "~0.10.3"
   },
   "devDependencies": {

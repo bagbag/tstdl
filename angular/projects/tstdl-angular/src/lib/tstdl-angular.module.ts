@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CenterComponent } from './components';
-import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumericDateToDateTimePipe, PadPipe, SafeUrlPipe } from './pipes';
+import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumericDateToDateTimePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
 
 const declarations = [
   CenterComponent,
@@ -11,7 +11,8 @@ const declarations = [
   LocalizePipe,
   NumericDateToDateTimePipe,
   PadPipe,
-  SafeUrlPipe
+  SafeUrlPipe,
+  TimestampToDateTimePipe
 ];
 
 @NgModule({

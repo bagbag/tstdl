@@ -14,7 +14,7 @@ type MongoEntityRepositoryOptions<T extends Entity> = {
 }
 
 export type EntityTransformer<T extends Entity, TDb extends Entity> = {
-  transform: (item: T) => TDb,
+  transform: (item: EntityWithPartialId<T>) => EntityWithPartialId<TDb>,
   untransform: (item: TDb) => T,
   filterTransform: (item: EntityFilter<T>) => EntityFilter<TDb>,
   patchTransform: (item: EntityPatch<T>) => EntityPatch<TDb>
@@ -218,12 +218,12 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   async update<U extends T>(entity: U, options?: UpdateOptions): Promise<boolean> {
-    const transformed = this.transformer.transform(entity as any as T);
+    const transformed = this.transformer.transform(entity as any as T) as TDb;
     return this.baseRepository.replace(transformed, options);
   }
 
   async updateMany<U extends T>(entities: U[], options?: UpdateOptions): Promise<number> {
-    const transformed = entities.map((entity) => this.transformer.transform(entity as any as T));
+    const transformed = entities.map((entity) => this.transformer.transform(entity as any as T) as TDb);
     return this.baseRepository.replaceMany(transformed, options);
   }
 
