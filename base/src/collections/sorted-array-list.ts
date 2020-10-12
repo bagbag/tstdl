@@ -72,7 +72,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     const right = this.findLastIndexEqualOrSmallerThan(to);
 
     if (left != undefined && right != undefined) {
-      return this.backingArray.splice(left, right - left);
+      return this.backingArray.splice(left, (right - left) + 1);
     }
 
     return [];

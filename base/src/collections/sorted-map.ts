@@ -93,7 +93,7 @@ export class SortedMap<K extends KComparator, V, KComparator = K> {
     const right = this.backingSortedArray.findLastIndexEqualOrSmallerThan([to, undefined]);
 
     if (left != undefined && right != undefined) {
-      const items = this.backingSortedArray.removeRange(left, right);
+      const items = this.backingSortedArray.removeRange(left, (right - left) + 1);
 
       for (const [key] of items) {
         this.backingMap.delete(key);
