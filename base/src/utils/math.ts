@@ -8,7 +8,20 @@ export function average(...values: number[]): number {
   return total / values.length;
 }
 
-export function precisionRound(value: number, precision: number): number {
-  const factor = 10 ** precision;
+export function round(value: number, decimals: number): number {
+  const factor = 10 ** decimals;
   return Math.round((value + Number.EPSILON) * factor) / factor;
+}
+
+export function linearInterpolate(value: number, fromLow: number, fromHigh: number, toLow: number, toHigh: number): number {
+  const dX0 = value - fromLow;
+  const dX = fromHigh - fromLow;
+  const dY = toHigh - toLow;
+  const y = toLow + (dX0 * (dY / dX));
+
+  return y;
+}
+
+export function minmax(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
 }
