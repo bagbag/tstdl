@@ -5,7 +5,7 @@ export class ObservableSet<T> implements Set<T> {
   private readonly backingSet: Set<T>;
   private readonly subject: BehaviorSubject<ObservableSet<T>>;
 
-  [Symbol.toStringTag]: 'Set' = 'Set';
+  readonly [Symbol.toStringTag] = ObservableSet.name;
 
   get observe$(): Observable<ObservableSet<T>> {
     return this.subject.asObservable();
