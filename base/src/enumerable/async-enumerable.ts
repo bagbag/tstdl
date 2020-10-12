@@ -60,7 +60,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(concatted);
   }
 
-  defaultIfEmpty<TDefault>(defaultValue: T): AsyncEnumerable<T | TDefault> {
+  defaultIfEmpty<TDefault>(defaultValue: TDefault): AsyncEnumerable<T | TDefault> {
     const result = defaultIfEmptyAsync(this.source, defaultValue);
     return new AsyncEnumerable(result);
   }

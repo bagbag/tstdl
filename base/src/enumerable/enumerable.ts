@@ -47,7 +47,7 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(concatted);
   }
 
-  defaultIfEmpty<TDefault>(defaultValue: T): Enumerable<T | TDefault> {
+  defaultIfEmpty<TDefault>(defaultValue: TDefault): Enumerable<T | TDefault> {
     const result = defaultIfEmpty(this.source, defaultValue);
     return new Enumerable(result);
   }
