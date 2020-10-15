@@ -1,6 +1,6 @@
 import type { LockProvider } from '@tstdl/base/lock';
 import type { Logger } from '@tstdl/base/logger';
-import { compareByValueSelectionDescending, precisionRound, Timer, toArray } from '@tstdl/base/utils';
+import { compareByValueSelectionDescending, round, Timer, toArray } from '@tstdl/base/utils';
 import type { MigrationStateRepository } from './migration-state-repository';
 
 export type MigrationDefinition = {
@@ -60,7 +60,7 @@ export class Migrator {
       const time = await Timer.measureAsync(async () => largestMigration.migrator());
       await this.migrationStateRepository.setRevision(name, largestMigration.to);
 
-      this.logger.warn(`finished migration in ${precisionRound(time / 1000, 2)} seconds`);
+      this.logger.warn(`finished migration in ${round(time / 1000, 2)} seconds`);
     }
     finally {
       await lockResult.release();

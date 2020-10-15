@@ -3,7 +3,7 @@ import type { ErrorResponse } from '@tstdl/base/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { Logger } from '@tstdl/base/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
-import { precisionRound, Timer, toArray } from '@tstdl/base/utils';
+import { round, Timer, toArray } from '@tstdl/base/utils';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
@@ -36,7 +36,7 @@ export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
 export enum BodyType {
   None = 0,
   String = 1,
-  Json = 2, // eslint-disable-line no-shadow
+  Json = 2, // eslint-disable-line @typescript-eslint/no-shadow
   Stream = 3,
   Binary = 4
 }
@@ -346,7 +346,7 @@ async function corsMiddleware(context: Context, next: () => Promise<any>): Promi
 
 async function responseTimeMiddleware(context: Context, next: () => Promise<any>): Promise<void> {
   const milliseconds = await Timer.measureAsync(next);
-  const roundedMilliseconds = precisionRound(milliseconds, 2);
+  const roundedMilliseconds = round(milliseconds, 2);
 
   context.response.set('X-Response-Time', `${roundedMilliseconds}ms`);
 }
