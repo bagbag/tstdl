@@ -264,7 +264,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 }
 
-function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any }): TypedIndexSpecification<any> {
-  const { v, background, ...indexRest } = index;
+function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any, ns?: any }): TypedIndexSpecification<any> {
+  const { v, background, ns, ...indexRest } = index;
   return indexRest;
 }
