@@ -60,6 +60,14 @@ export class MongoBulk<T extends Entity> {
     return this;
   }
 
+  insertMany<U extends T>(entities: EntityWithPartialId<U>[]): MongoBulk<T> {
+    const documents = entities.map(toMongoDocumentWithId);
+    const operations = documents.map(insertOneOperation);
+    this.operations.push(...operations);
+
+    return this;
+  }
+
   update<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: UpdateOptions): MongoBulk<T> {
     const operation = updateOneOperation(filter, update, options);
     this.operations.push(operation);
