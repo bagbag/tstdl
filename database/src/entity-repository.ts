@@ -8,7 +8,7 @@ export type EntityFilter<T extends Entity> = Partial<T>;
 export type EntityPatch<T extends Entity> = Partial<EntityWithoutId<T>>;
 
 export interface EntityRepository<T extends Entity> {
-  _type: T;
+  readonly _type: T;
 
   load<U extends T = T>(id: string): Promise<U>;
   tryLoad<U extends T = T>(id: string): Promise<U | undefined>;

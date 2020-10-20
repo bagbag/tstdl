@@ -34,14 +34,14 @@ export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<
 }
 
 export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> implements EntityRepository<T> {
-  _type: T;
+  readonly _type: T;
 
   /* eslint-disable @typescript-eslint/member-ordering */
-  protected readonly collection: Collection<TDb>;
-  protected readonly logger: Logger;
-  protected readonly indexes: TypedIndexSpecification<TDb>[];
-  protected readonly baseRepository: MongoBaseRepository<TDb>;
-  protected readonly transformer: EntityTransformer<T, TDb>;
+  readonly collection: Collection<TDb>;
+  readonly logger: Logger;
+  readonly indexes: TypedIndexSpecification<TDb>[];
+  readonly baseRepository: MongoBaseRepository<TDb>;
+  readonly transformer: EntityTransformer<T, TDb>;
   /* eslint-enable @typescript-eslint/member-ordering */
 
   constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { logger, indexes, entityName }: MongoEntityRepositoryOptions<TDb>) {

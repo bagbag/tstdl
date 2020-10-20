@@ -3,9 +3,10 @@
 import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
-import type { BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
+import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
 import type { MongoDocument } from './model';
 import { toEntity, toEntityWithoutId, toMongoDocument, toMongoDocumentWithId, toMongoProjection, toProjectedEntity } from './model';
+import { MongoBulk } from './mongo-bulk';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 export enum ProjectionMode {
@@ -86,6 +87,10 @@ export class MongoBaseRepository<T extends Entity> {
     await this.collection.createIndexes(indexes);
   }
 
+  bulk(): MongoBulk<T> {
+    return new MongoBulk(this.collection);
+  }
+
   async insert<U extends T>(entity: EntityWithPartialId<U>): Promise<U> {
     const document = toMongoDocumentWithId(entity);
     await this.collection.insertOne(document as any);
@@ -99,7 +104,7 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     const documents = entities.map(toMongoDocumentWithId);
-    const operations = documents.map(toInsertOneOperation);
+    const operations = documents.map(insertOneOperation);
     await this.collection.bulkWrite(operations as any);
 
     const savedEntities = documents.map(toEntity);
@@ -131,7 +136,7 @@ export class MongoBaseRepository<T extends Entity> {
   async insertManyIfNotExistsByFilter<U extends T>(items: InsertIfNotExistsByFilterItem<U>[]): Promise<U[]> {
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
-      .map(({ filter, document }) => ({ document, operation: toUpdateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
+      .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
       .toArray();
 
     const operations = mapped.map((o) => o.operation as BulkWriteUpdateOneOperation<MongoDocument<T>>);
@@ -314,7 +319,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async replace<U extends T>(entity: U, options?: ReplaceOptions): Promise<boolean> {
     const document = toMongoDocument(entity);
-    const { replaceOne: { filter, replacement } } = toReplaceOneOperation(document, options);
+    const { replaceOne: { filter, replacement } } = replaceOneOperation(document, options);
     const result = await this.collection.replaceOne(filter, replacement, options);
 
     return (result.matchedCount + result.upsertedCount) > 0;
@@ -333,7 +338,7 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     const documents = entities.map(toMongoDocument);
-    const operations = documents.map((document) => toReplaceOneOperation(document, options));
+    const operations = documents.map((document) => replaceOneOperation(document, options));
     const result = await this.collection.bulkWrite(operations);
 
     if (result.matchedCount == undefined || result.upsertedCount == undefined) {
@@ -347,7 +352,7 @@ export class MongoBaseRepository<T extends Entity> {
     return (result.matchedCount + result.upsertedCount);
   }
 
-  async update<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
+  async update<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
     const { matchedCount, modifiedCount } = await this.collection.updateOne(filter, update as UpdateQuery<T>, options);
 
     const updateResult: UpdateResult = {
@@ -358,7 +363,7 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
-  async updateMany<U extends T>(filter: FilterQuery<U>, update: Partial<MongoDocument<U>> | UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
+  async updateMany<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: UpdateOptions): Promise<UpdateResult> {
     const { matchedCount, modifiedCount } = await this.collection.updateMany(filter, update as UpdateQuery<T>, options);
 
     const updateResult: UpdateResult = {
@@ -410,8 +415,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>): BulkWriteInsertOneOperation<MongoDocument<T>> {
+export function insertOneOperation<T extends Entity>(document: MongoDocument<T>): BulkWriteInsertOneOperation<MongoDocument<T>> {
   const operation: BulkWriteInsertOneOperation<MongoDocument<T>> = {
     insertOne: {
       document: document as any
@@ -421,8 +425,7 @@ function toInsertOneOperation<T extends Entity>(document: MongoDocument<T>): Bul
   return operation;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, options?: ReplaceOptions): BulkWriteReplaceOneOperation<MongoDocument<T>> {
+export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, options: ReplaceOptions = {}): BulkWriteReplaceOneOperation<MongoDocument<T>> {
   const filter: FilterQuery<T> = {
     _id: document._id
   } as FilterQuery<T>;
@@ -431,20 +434,51 @@ function toReplaceOneOperation<T extends Entity>(document: MongoDocument<T>, opt
     replaceOne: {
       filter,
       replacement: document,
-      ...options
+      upsert: options.upsert
     }
   };
 
   return operation;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function toUpdateOneOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options?: UpdateOptions): BulkWriteUpdateOneOperation<MongoDocument<T>> {
+export function updateOneOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options: UpdateOptions = {}): BulkWriteUpdateOneOperation<MongoDocument<T>> {
   const operation: BulkWriteUpdateOneOperation<MongoDocument<T>> = {
     updateOne: {
       filter,
       update,
-      ...options
+      upsert: options.upsert
+    }
+  };
+
+  return operation;
+}
+
+export function updateManyOperation<T extends Entity>(filter: FilterQuery<T>, update: UpdateQuery<T>, options: UpdateOptions = {}): BulkWriteUpdateManyOperation<MongoDocument<T>> {
+  const operation: BulkWriteUpdateManyOperation<MongoDocument<T>> = {
+    updateMany: {
+      filter,
+      update,
+      upsert: options.upsert
+    }
+  };
+
+  return operation;
+}
+
+export function deleteOneOperation<T extends Entity>(filter: FilterQuery<T>): BulkWriteDeleteOneOperation<MongoDocument<T>> {
+  const operation: BulkWriteDeleteOneOperation<MongoDocument<T>> = {
+    deleteOne: {
+      filter
+    }
+  };
+
+  return operation;
+}
+
+export function deleteManyOperation<T extends Entity>(filter: FilterQuery<T>): BulkWriteDeleteManyOperation<MongoDocument<T>> {
+  const operation: BulkWriteDeleteManyOperation<MongoDocument<T>> = {
+    deleteMany: {
+      filter
     }
   };
 

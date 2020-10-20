@@ -11,6 +11,10 @@ export function setDefaultYupValidationOptions(options: yup.ValidateOptions): vo
   defaultOptions = options;
 }
 
+export function stripNullFromSchema<T>(schema: yup.MixedSchema<T>): yup.MixedSchema<Exclude<T, null>> {
+  return schema as yup.MixedSchema<Exclude<T, null>>;
+}
+
 export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'value did not match any of the allowed schemas'): yup.Schema<T> {
   return yup.mixed<T>().test({
     name: 'one-of-schemas',
@@ -28,7 +32,9 @@ export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'val
         }
       }
 
-      const error = new yup.ValidationError('none of the provided schemas validated successfully', value, this.path);
+      const innerMessages = errors.map((error) => error.message).join(', ');
+
+      const error = new yup.ValidationError(`none of the provided schemas validated successfully (${innerMessages})`, value, this.path);
       error.inner = errors;
 
       return error;

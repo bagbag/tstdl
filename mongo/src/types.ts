@@ -12,3 +12,4 @@ export type FilterQuery<T extends Entity> = Mongo.FilterQuery<MongoDocument<T>>;
 export type UpdateQuery<T extends Entity> = Mongo.UpdateQuery<MongoDocument<T>>;
 export type RootQuerySelector<T extends Entity> = Mongo.RootQuerySelector<MongoDocument<T>>;
 export type SortOptionObject<T extends Entity> = Mongo.SortOptionObject<MongoDocument<T>>;
+export type BulkWriteOperation<T extends Entity> = Mongo.BulkWriteOperation<MongoDocument<T>>;
