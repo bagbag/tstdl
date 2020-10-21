@@ -1,8 +1,8 @@
-import { AnyIterable } from '../../any-iterable-iterator';
+import type { AnyIterable } from '../../any-iterable-iterator';
 import { FeedableAsyncIterable } from '../../feedable-async-iterable';
 import { OrderedFeedableAsyncIterable } from '../../ordered-feedable-async-iterable';
 import { parallelForEach } from './for-each';
-import { FeedFunction, ParallelFeedIteratorFunction } from './types';
+import type { FeedFunction, ParallelFeedIteratorFunction } from './types';
 
 export function parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency: number, keepOrder: boolean, func: ParallelFeedIteratorFunction<TIn, TOut>): AsyncIterable<TOut> {
   let out: FeedableAsyncIterable<TOut> | OrderedFeedableAsyncIterable<TOut>;

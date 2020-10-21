@@ -1,10 +1,10 @@
-import { AwaitableSet } from '../../../collections/awaitable';
+import { ObservableSet } from '../../../collections/observable';
 import { MultiError } from '../../../error/multi-error';
-import { AnyIterable } from '../../any-iterable-iterator';
-import { ParallelizableIteratorFunction } from '../types';
+import type { AnyIterable } from '../../any-iterable-iterator';
+import type { ParallelizableIteratorFunction } from '../types';
 
 export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: number, func: ParallelizableIteratorFunction<T, any>): Promise<void> {
-  const running = new AwaitableSet<Promise<void>>();
+  const running = new ObservableSet<Promise<void>>();
   const errors: Error[] = [];
 
   let index = 0;
@@ -18,12 +18,12 @@ export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: 
     run.finally(() => running.delete(run)).catch((error) => errors.push(error as Error));
 
     if (running.size >= concurrency) {
-      await running.deleted;
+      await running.$observe;
     }
   }
 
   while (running.size > 0) {
-    await running.deleted;
+    await running.$empty;
   }
 
   if (errors.length > 0) {

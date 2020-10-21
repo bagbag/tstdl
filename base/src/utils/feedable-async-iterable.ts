@@ -1,23 +1,23 @@
+import { BehaviorSubject, merge, Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { AwaitableList } from '../collections/awaitable';
-import { DeferredPromise } from '../promise/deferred-promise';
-import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
-  private readonly _read: DeferredPromise;
-  private readonly _empty: DeferredPromise;
-  private readonly _closed: CancellationToken;
+  private readonly readSubject: Subject<void>;
+  private readonly emptySubject: Subject<void>;
+  private readonly closedSubject: BehaviorSubject<boolean>;
   private buffer: AwaitableList<{ item: T, error: undefined } | { item: undefined, error: Error }>;
 
-  get read(): Promise<void> {
-    return this._read;
+  get $read(): Promise<void> {
+    return this.readSubject.pipe(take(1)).toPromise();
   }
 
-  get empty(): Promise<void> {
-    return this._empty;
+  get $empty(): Promise<void> {
+    return this.emptySubject.pipe(take(1)).toPromise();
   }
 
   get closed(): boolean {
-    return this._closed.isSet;
+    return this.closedSubject.value;
   }
 
   get bufferSize(): number {
@@ -25,10 +25,10 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   constructor() {
-    this._closed = new CancellationToken();
+    this.readSubject = new Subject();
+    this.emptySubject = new Subject();
+    this.closedSubject = new BehaviorSubject<boolean>(false);
     this.buffer = new AwaitableList();
-    this._read = new DeferredPromise();
-    this._empty = new DeferredPromise();
   }
 
   feed(item: T): void {
@@ -40,7 +40,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   end(): void {
-    this._closed.set();
+    this.closedSubject.next(true);
   }
 
   throw(error: Error): void {
@@ -55,7 +55,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
     while (!this.closed || this.buffer.size > 0) {
       if (this.buffer.size == 0) {
-        await Promise.race([this._closed, this.buffer.added]);
+        await merge(this.closedSubject, this.buffer.added).pipe(take(1)).toPromise();
       }
 
       const out = this.buffer;
@@ -67,10 +67,10 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
         }
 
         yield entry.item;
-        this._read.resolveAndReset();
+        this.readSubject.next();
 
         if (this.buffer.size == 0) {
-          this._empty.resolveAndReset();
+          this.emptySubject.next();
         }
       }
     }

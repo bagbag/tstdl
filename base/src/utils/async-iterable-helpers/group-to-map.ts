@@ -18,7 +18,7 @@ async function async<TIn, TGroup>(iterable: AsyncIterable<TIn>, selector: AsyncI
     map.get(groupKey).push(item);
   }
 
-  return map;
+  return map.backingMap;
 }
 
 async function sync<TIn, TGroup>(iterable: Iterable<TIn>, selector: AsyncIteratorFunction<TIn, TGroup>): Promise<Map<TGroup, TIn[]>> {
@@ -30,5 +30,5 @@ async function sync<TIn, TGroup>(iterable: Iterable<TIn>, selector: AsyncIterato
     map.get(groupKey).push(item);
   }
 
-  return map;
+  return map.backingMap;
 }

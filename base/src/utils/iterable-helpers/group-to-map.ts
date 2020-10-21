@@ -10,5 +10,5 @@ export function groupToMap<TIn, TGroup>(iterable: Iterable<TIn>, selector: Itera
     map.get(groupKey).push(item);
   }
 
-  return map;
+  return map.backingMap;
 }

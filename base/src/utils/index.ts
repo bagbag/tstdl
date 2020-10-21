@@ -26,4 +26,5 @@ export * from './sort';
 export * from './time';
 export * from './timer';
 export * from './timing';
+export * from './type-guards';
 export * from './z-base32';

@@ -8,6 +8,7 @@ export interface EnumerableMethods {
   distinct(...args: any[]): any;
   drain(...args: any[]): any;
   filter(...args: any[]): any;
+  filterUndefined(...args: any[]): any;
   first(...args: any[]): any;
   forceCast(...args: any[]): any;
   forEach(...args: any[]): any;

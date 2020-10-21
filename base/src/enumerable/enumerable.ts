@@ -66,6 +66,10 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(filtered);
   }
 
+  filterUndefined(): Enumerable<NonNullable<T>> {
+    return this.filter((item): item is NonNullable<T> => item != undefined);
+  }
+
   first<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     const result = first(this.source, predicate);
     return result;

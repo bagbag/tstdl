@@ -1,5 +1,6 @@
-import { BehaviorSubject } from 'rxjs';
 import type { Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { filter, mapTo, take } from 'rxjs/operators';
 
 export class ObservableSet<T> implements Set<T> {
   private readonly backingSet: Set<T>;
@@ -13,6 +14,18 @@ export class ObservableSet<T> implements Set<T> {
 
   get size(): number {
     return this.backingSet.size;
+  }
+
+  get $observe(): Promise<void> {
+    return this.subject.pipe(take(1), mapTo(undefined)).toPromise();
+  }
+
+  get $empty(): Promise<void> {
+    return this.observe$.pipe(
+      filter(() => this.size == 0),
+      take(1),
+      mapTo(undefined)
+    ).toPromise();
   }
 
   constructor() {

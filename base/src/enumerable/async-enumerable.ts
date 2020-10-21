@@ -79,6 +79,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(filtered);
   }
 
+  filterUndefined(): AsyncEnumerable<NonNullable<T>> {
+    return this.filter((item): item is NonNullable<T> => item != undefined);
+  }
+
   async first<TPredicate extends T = T>(predicate?: TypePredicate<T, TPredicate> | AsyncPredicate<T>): Promise<TPredicate> {
     return firstAsync(this.source, predicate);
   }

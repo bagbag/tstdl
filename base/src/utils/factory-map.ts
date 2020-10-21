@@ -2,30 +2,30 @@ type Factory<Key, Value> = (key: Key) => Value;
 
 export class FactoryMap<K, V> implements Map<K, V> {
   private readonly factory: Factory<K, V>;
-  private readonly map: Map<K, V>;
 
   readonly [Symbol.toStringTag]: string = 'FactoryMap';
+  readonly backingMap: Map<K, V>;
 
   get size(): number {
-    return this.map.size;
+    return this.backingMap.size;
   }
 
   constructor(factory: Factory<K, V>) {
     this.factory = factory;
 
-    this.map = new Map();
+    this.backingMap = new Map();
   }
 
   clear(): void {
-    this.map.clear();
+    this.backingMap.clear();
   }
 
   has(key: K): boolean {
-    return this.map.has(key);
+    return this.backingMap.has(key);
   }
 
   get(key: K): V {
-    const value = this.map.get(key);
+    const value = this.backingMap.get(key);
 
     if (value != undefined) {
       return value;
@@ -37,31 +37,31 @@ export class FactoryMap<K, V> implements Map<K, V> {
   }
 
   set(key: K, value: V): this {
-    this.map.set(key, value);
+    this.backingMap.set(key, value);
     return this;
   }
 
   delete(key: K): boolean {
-    return this.map.delete(key);
+    return this.backingMap.delete(key);
   }
 
   forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-    this.map.forEach(callbackfn, thisArg);
+    this.backingMap.forEach(callbackfn, thisArg);
   }
 
   [Symbol.iterator](): IterableIterator<[K, V]> {
-    return this.map[Symbol.iterator]();
+    return this.backingMap[Symbol.iterator]();
   }
 
   entries(): IterableIterator<[K, V]> {
-    return this.map.entries();
+    return this.backingMap.entries();
   }
 
   keys(): IterableIterator<K> {
-    return this.map.keys();
+    return this.backingMap.keys();
   }
 
   values(): IterableIterator<V> {
-    return this.map.values();
+    return this.backingMap.values();
   }
 }

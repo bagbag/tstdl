@@ -1,5 +1,5 @@
-import { AnyIterable } from '../../any-iterable-iterator';
-import { ParallelizableIteratorFunction } from '../types';
+import type { AnyIterable } from '../../any-iterable-iterator';
+import type { ParallelizableIteratorFunction } from '../types';
 import { parallelFeed } from './feed';
 
 export function parallelIntercept<T>(iterable: AnyIterable<T>, concurrency: number, keepOrder: boolean, interceptor: ParallelizableIteratorFunction<T, void>): AsyncIterable<T> {
