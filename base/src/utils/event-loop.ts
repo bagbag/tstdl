@@ -1,5 +1,5 @@
-import { Logger } from '../logger';
-import { CancellationToken } from './cancellation-token';
+import type { Logger } from '../logger';
+import type { CancellationToken } from './cancellation-token';
 import { formatDuration } from './helpers';
 import { AggregationMode, PeriodicSampler } from './periodic-sampler';
 import { Timer } from './timer';

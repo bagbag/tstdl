@@ -1,11 +1,12 @@
-import { BehaviorSubject, merge, Subject } from 'rxjs';
+import { merge, Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { ObservableArray } from '../collections/observable';
+import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   private readonly readSubject: Subject<void>;
   private readonly emptySubject: Subject<void>;
-  private readonly closedSubject: BehaviorSubject<boolean>;
+  private readonly closedToken: CancellationToken;
   private readonly buffer: ObservableArray<{ item: T, error: undefined } | { item: undefined, error: Error }>;
 
   get $read(): Promise<void> {
@@ -17,7 +18,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   get closed(): boolean {
-    return this.closedSubject.value;
+    return this.closedToken.isSet;
   }
 
   get bufferSize(): number {
@@ -27,7 +28,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   constructor() {
     this.readSubject = new Subject();
     this.emptySubject = new Subject();
-    this.closedSubject = new BehaviorSubject<boolean>(false);
+    this.closedToken = new CancellationToken();
     this.buffer = new ObservableArray();
   }
 
@@ -40,7 +41,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   end(): void {
-    this.closedSubject.next(true);
+    this.closedToken.set();
   }
 
   throw(error: Error): void {
@@ -55,7 +56,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
     while (!this.closed || this.buffer.length > 0) {
       if (this.buffer.length == 0) {
-        await merge(this.closedSubject, this.buffer.add$).pipe(take(1)).toPromise();
+        await merge(this.closedToken.set$, this.buffer.add$).pipe(take(1)).toPromise();
       }
 
       while (this.buffer.length > 0) {
