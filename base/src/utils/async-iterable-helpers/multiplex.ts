@@ -28,7 +28,7 @@ async function multiplexTo<T>(input: AnyIterable<T>, outputs: FeedableAsyncItera
 
     outputs.forEach((feedableIterable) => feedableIterable.end());
   }
-  catch (error) {
+  catch (error: unknown) {
     outputs.forEach((feedableIterable) => feedableIterable.throw(error as Error));
   }
 }
@@ -36,7 +36,7 @@ async function multiplexTo<T>(input: AnyIterable<T>, outputs: FeedableAsyncItera
 async function waitForDrain(feedableIterables: FeedableAsyncIterable<any>[], bufferSize: number): Promise<void> {
   for (const feedableIterable of feedableIterables) {
     while (feedableIterable.bufferSize >= bufferSize) {
-      await feedableIterable.read;
+      await feedableIterable.$read;
     }
   }
 }

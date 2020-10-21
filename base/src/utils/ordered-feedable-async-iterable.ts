@@ -7,12 +7,12 @@ export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterab
 
   private currentIndex: number = 0;
 
-  get read(): Promise<void> {
-    return this.out.read;
+  get $read(): Promise<void> {
+    return this.out.$read;
   }
 
-  get empty(): Promise<void> {
-    return this.out.empty;
+  get $empty(): Promise<void> {
+    return this.out.$empty;
   }
 
   get closed(): boolean {
