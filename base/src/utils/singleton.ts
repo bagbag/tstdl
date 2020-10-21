@@ -1,30 +1,37 @@
-export type Builder<T> = () => T;
+import { FactoryMap } from './factory-map';
 
-const globalScope = Symbol('default global scope');
-const scopes: Map<any, Map<any, any>> = new Map();
+export type Builder<T> = () => T;
+export type AsyncBuilder<T> = () => Promise<T>;
+
+const globalScope = Symbol('global singleton scope');
+const scopes: FactoryMap<any, Map<any, any>> = new FactoryMap(() => new Map());
 
 export function singleton<T>(type: any, builder: Builder<T>): T;
+export function singleton<T>(type: any, builder: AsyncBuilder<T>): Promise<T>;
 export function singleton<T>(scope: any, type: any, builder: Builder<T>): T;
-export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | any, _builder?: Builder<T>): T { // eslint-disable-line @typescript-eslint/explicit-module-boundary-types
-  const builder = _builder != undefined ? _builder : typeOrBuilder as Builder<T>;
+export function singleton<T>(scope: any, type: any, builder: AsyncBuilder<T>): Promise<T>;
+export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | AsyncBuilder<T> | any, _builder?: Builder<T>): T | Promise<T> {
+  const builder = _builder != undefined ? _builder : typeOrBuilder as Builder<T> | AsyncBuilder<T>;
   const scope = _builder != undefined ? scopeOrType : globalScope;
   const type = _builder != undefined ? typeOrBuilder : scopeOrType;
 
-  const instances = getScopeInstances(scope);
+  const instances = scopes.get(scope);
 
   if (!instances.has(type)) {
-    const instance = builder();
-    instances.set(type, instance);
+    const instanceOrPromise = builder();
+
+    if (instanceOrPromise instanceof Promise) {
+      return asyncSingleton(instances, type, instanceOrPromise);
+    }
+
+    instances.set(type, instanceOrPromise);
   }
 
   return instances.get(type) as T;
 }
 
-function getScopeInstances(scope: any): Map<any, any> {
-  if (!scopes.has(scope)) {
-    const instances = new Map();
-    scopes.set(scope, instances);
-  }
-
-  return scopes.get(scope) as Map<any, any>;
+export async function asyncSingleton<T>(instances: Map<any, any>, type: any, promise: Promise<T>): Promise<T> {
+  const instance = await promise;
+  instances.set(type, instance);
+  return instance;
 }
