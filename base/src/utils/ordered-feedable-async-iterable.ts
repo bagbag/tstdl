@@ -1,8 +1,7 @@
-import { AwaitableMap } from '../collections/awaitable';
 import { FeedableAsyncIterable } from './feedable-async-iterable';
 
 export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterable<T>, 'feed'> {
-  private readonly inBuffer: AwaitableMap<number, T>;
+  private readonly inBuffer: Map<number, T>;
   private readonly out: FeedableAsyncIterable<T>;
 
   private currentIndex: number = 0;
@@ -24,7 +23,7 @@ export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterab
   }
 
   constructor() {
-    this.inBuffer = new AwaitableMap<number, T>();
+    this.inBuffer = new Map<number, T>();
     this.out = new FeedableAsyncIterable<T>();
   }
 

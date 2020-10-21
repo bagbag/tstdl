@@ -1,22 +1,36 @@
-import { DeferredPromise } from '../../promise';
+import type { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 export class AwaitableList<T> implements Iterable<T> {
-  private readonly _added: DeferredPromise<T | T[]>;
-  private readonly _removed: DeferredPromise<T | T[]>;
-  private readonly _cleared: DeferredPromise;
+  private readonly _added: Subject<T | T[]>;
+  private readonly _removed: Subject<T | T[]>;
+  private readonly _cleared: Subject<void>;
 
   private backingArray: T[];
 
-  get added(): Promise<T | T[]> {
-    return this._added;
+  get added$(): Observable<T | T[]> {
+    return this._added.asObservable();
   }
 
-  get removed(): Promise<T | T[]> {
-    return this._removed;
+  get removed$(): Observable<T | T[]> {
+    return this._removed.asObservable();
   }
 
-  get cleared(): Promise<void> {
-    return this._cleared;
+  get cleared$(): Observable<void> {
+    return this._cleared.asObservable();
+  }
+
+  get $added(): Promise<T | T[]> {
+    return this._added.pipe(take(1)).toPromise();
+  }
+
+  get $removed(): Promise<T | T[]> {
+    return this._removed.pipe(take(1)).toPromise();
+  }
+
+  get $cleared(): Promise<void> {
+    return this._cleared.pipe(take(1)).toPromise();
   }
 
   get size(): number {
@@ -26,9 +40,9 @@ export class AwaitableList<T> implements Iterable<T> {
   constructor() {
     this.backingArray = [];
 
-    this._added = new DeferredPromise();
-    this._removed = new DeferredPromise();
-    this._cleared = new DeferredPromise();
+    this._added = new Subject();
+    this._removed = new Subject();
+    this._cleared = new Subject();
   }
 
   get(index: number): T {
@@ -41,14 +55,14 @@ export class AwaitableList<T> implements Iterable<T> {
 
   append(...items: T[]): number {
     const result = this.backingArray.push(...items);
-    this._added.resolveAndReset(items);
+    this._added.next(items);
 
     return result;
   }
 
   prepend(...items: T[]): number {
     const result = this.backingArray.unshift(...items);
-    this._added.resolveAndReset(items);
+    this._added.next(items);
 
     return result;
   }
@@ -59,7 +73,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     this.backingArray.splice(index, 0, ...items);
-    this._added.resolveAndReset(items);
+    this._added.next(items);
   }
 
   remove(index: number, count: number = 1): T[] {
@@ -72,7 +86,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const removedItems = this.backingArray.splice(index, count);
-    this._removed.resolveAndReset(removedItems);
+    this._removed.next(removedItems);
 
     return removedItems;
   }
@@ -83,7 +97,7 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const result = this.backingArray.pop() as T;
-    this._removed.resolveAndReset(result);
+    this._removed.next(result);
 
     return result;
   }
@@ -94,15 +108,14 @@ export class AwaitableList<T> implements Iterable<T> {
     }
 
     const result = this.backingArray.shift() as T;
-    this._removed.resolveAndReset(result);
+    this._removed.next(result);
 
     return result;
   }
 
   clear(): void {
     this.backingArray = [];
-    this._cleared.resolveAndReset();
-    this._removed.resolveAndReset();
+    this._cleared.next();
   }
 
   *[Symbol.iterator](): IterableIterator<T> {

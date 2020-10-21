@@ -1,15 +1,17 @@
 import type { Observable } from 'rxjs';
-import { AwaitableList } from '../../collections/awaitable';
+import { merge } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { ObservableArray } from '../../collections/observable';
 import { CancellationToken } from '../cancellation-token';
 
 export async function* observableAsyncIterable<T>(observable: Observable<T>): AsyncIterableIterator<T> {
-  const buffer = new AwaitableList<T>();
+  let buffer = new ObservableArray<T>();
   const completeToken = new CancellationToken();
   const errorToken = new CancellationToken();
   let error: any;
 
   const subscription = observable.subscribe({
-    next: (value) => buffer.append(value),
+    next: (value) => buffer.add(value),
     complete: () => completeToken.set(),
     error: (_error) => {
       error = _error;
@@ -18,14 +20,15 @@ export async function* observableAsyncIterable<T>(observable: Observable<T>): As
   });
 
   try {
-    while (buffer.size > 0 || !completeToken.isSet) {
-      if (buffer.size == 0) {
-        await Promise.race([buffer.added, completeToken, errorToken]);
+    while (buffer.length > 0 || !completeToken.isSet) {
+      if (buffer.length == 0) {
+        await merge(buffer.add$, completeToken.set$, errorToken.set$).pipe(take(1)).toPromise();
       }
 
-      while (buffer.size > 0) {
-        yield buffer.shift();
-      }
+      const out = buffer;
+      buffer = new ObservableArray(); // eslint-disable-line require-atomic-updates
+
+      yield* out;
 
       if (errorToken.isSet) {
         throw error;

@@ -1,4 +1,5 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, filter, map, skip, take } from 'rxjs/operators';
 
 type InheritanceMode = 'set' | 'reset' | 'both';

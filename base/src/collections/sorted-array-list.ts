@@ -26,12 +26,36 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
   }
 
   get(index: number): T {
+    if ((index < 0) || (index > (this.backingArray.length - 1))) {
+      throw new Error('index out of bounds');
+    }
+
     return this.backingArray[index];
+  }
+
+  getFirst(): T {
+    return this.get(0);
+  }
+
+  getLast(): T {
+    return this.get(this.length - 1);
   }
 
   add(value: T): void {
     const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
     this.backingArray.splice(index, 0, value);
+  }
+
+  addAt(index: number, ...values: T[]): void {
+    this.backingArray.splice(index, 0, ...values);
+  }
+
+  removeFirst(): T {
+    return this.removeAt(0);
+  }
+
+  removeLast(): T {
+    return this.removeAt(this.length - 1);
   }
 
   has(value: T): boolean {

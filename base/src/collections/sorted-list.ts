@@ -1,10 +1,5 @@
-import type { Collection } from './collection';
+import type { List } from './list';
 
-export interface SortedList<T> extends Collection<T> {
-  readonly length: number;
-
-  indexOf(value: T): number | undefined;
-  removeAt(index: number): T;
-  removeRange(index: number, count: number): Iterable<T>;
+export interface SortedList<T> extends List<T> {
   removeRangeByComparison(from: T, to: T): Iterable<T>;
 }

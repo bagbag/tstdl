@@ -1,5 +1,5 @@
-import { AwaitableList } from '../../collections/awaitable';
-import { AnyIterable } from '../any-iterable-iterator';
+import { ObservableArray } from '../../collections/observable';
+import type { AnyIterable } from '../any-iterable-iterator';
 
 type BufferItem<T> =
   | { end: false, value: T }
@@ -7,7 +7,7 @@ type BufferItem<T> =
 
 // eslint-disable-next-line max-lines-per-function, max-statements
 export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIterableIterator<T> {
-  const buffer = new AwaitableList<BufferItem<T>>();
+  const buffer = new ObservableArray<BufferItem<T>>();
 
   let end = false;
   let consumerError: Error | undefined;
@@ -16,10 +16,10 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   (async () => {
     try {
       for await (const item of iterable) {
-        buffer.append({ end: false, value: item });
+        buffer.add({ end: false, value: item });
 
-        if (buffer.size >= size) {
-          await buffer.removed;
+        if (buffer.length >= size) {
+          await buffer.$remove;
         }
 
         if (consumerError != undefined) {
@@ -32,21 +32,21 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
         }
       }
 
-      buffer.append({ end: true });
+      buffer.add({ end: true });
     }
-    catch (error) {
-      buffer.append({ end: true, error: error as Error });
+    catch (error: unknown) {
+      buffer.add({ end: true, error: error as Error });
     }
   })();
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
-      if (buffer.size == 0) {
-        await buffer.added;
+      if (buffer.length == 0) {
+        await buffer.$add;
       }
 
-      const item = buffer.shift();
+      const item = buffer.removeFirst();
 
       if (item.end) {
         if (item.error != undefined) {
@@ -59,7 +59,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
       yield item.value;
     }
   }
-  catch (error) {
+  catch (error: unknown) {
     consumerError = error as Error;
     throw error;
   }
