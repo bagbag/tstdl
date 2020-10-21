@@ -6,7 +6,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   private readonly readSubject: Subject<void>;
   private readonly emptySubject: Subject<void>;
   private readonly closedSubject: BehaviorSubject<boolean>;
-  private buffer: ObservableArray<{ item: T, error: undefined } | { item: undefined, error: Error }>;
+  private readonly buffer: ObservableArray<{ item: T, error: undefined } | { item: undefined, error: Error }>;
 
   get $read(): Promise<void> {
     return this.readSubject.pipe(take(1)).toPromise();
@@ -58,10 +58,9 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
         await merge(this.closedSubject, this.buffer.add$).pipe(take(1)).toPromise();
       }
 
-      const out = this.buffer;
-      this.buffer = new ObservableArray();
+      while (this.buffer.length > 0) {
+        const entry = this.buffer.removeFirst();
 
-      for (const entry of out) {
         if (entry.error != undefined) {
           throw entry.error;
         }

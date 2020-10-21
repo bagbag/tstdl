@@ -1,17 +1,13 @@
 import type { AnyIterable } from '../any-iterable-iterator';
 import { FeedableAsyncIterable } from '../feedable-async-iterable';
+import { createArray } from '../helpers';
 
 export function multiplexAsync<T>(iterable: AnyIterable<T>, count: number, bufferSize: number): AsyncIterable<T>[] {
   if (bufferSize <= 0) {
     throw new Error('bufferSize must be greater than 0');
   }
 
-  const feedableIterables: FeedableAsyncIterable<T>[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const feedableIterable = new FeedableAsyncIterable<T>();
-    feedableIterables.push(feedableIterable);
-  }
+  const feedableIterables: FeedableAsyncIterable<T>[] = createArray(count, () => new FeedableAsyncIterable());
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   multiplexTo(iterable, feedableIterables, bufferSize);

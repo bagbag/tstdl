@@ -314,10 +314,10 @@ export function dotNotation(...keys: any[]): string {
 }
 
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
-  const array = new Array<T>(length);
+  const array = [];
 
   for (let i = 0; i < length; i++) {
-    array[i] = valueProvider(i);
+    array.push(valueProvider(i));
   }
 
   return array;

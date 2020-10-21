@@ -5,7 +5,7 @@ import { ObservableArray } from '../../collections/observable';
 import { CancellationToken } from '../cancellation-token';
 
 export async function* observableAsyncIterable<T>(observable: Observable<T>): AsyncIterableIterator<T> {
-  let buffer = new ObservableArray<T>();
+  const buffer = new ObservableArray<T>();
   const completeToken = new CancellationToken();
   const errorToken = new CancellationToken();
   let error: any;
@@ -25,10 +25,10 @@ export async function* observableAsyncIterable<T>(observable: Observable<T>): As
         await merge(buffer.add$, completeToken.set$, errorToken.set$).pipe(take(1)).toPromise();
       }
 
-      const out = buffer;
-      buffer = new ObservableArray(); // eslint-disable-line require-atomic-updates
-
-      yield* out;
+      while (buffer.length > 0) {
+        const item = buffer.removeFirst();
+        yield item;
+      }
 
       if (errorToken.isSet) {
         throw error;
