@@ -1,19 +1,13 @@
+import { FactoryMap } from '../factory-map';
 import type { IteratorFunction } from './types';
 
 export function groupToMap<TIn, TGroup>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, TGroup>): Map<TGroup, TIn[]> {
-  const map = new Map<TGroup, TIn[]>();
+  const map = new FactoryMap<TGroup, TIn[]>(() => []);
 
   let index = 0;
   for (const item of iterable) {
-    const value = selector(item, index++);
-
-    const has = map.has(value);
-    if (!has) {
-      map.set(value, []);
-    }
-
-    const array = map.get(value) as TIn[];
-    array.push(item);
+    const groupKey = selector(item, index++);
+    map.get(groupKey).push(item);
   }
 
   return map;

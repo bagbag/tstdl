@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, groupToMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
+import { any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -80,19 +80,22 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   }
 
   group<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T[]]> {
-    const source = this.source;
+    const grouped = group(this.source, selector);
+    return new Enumerable(grouped);
+  }
 
-    const iterable: Iterable<[TGroup, T[]]> = {
-      [Symbol.iterator](): Iterator<[TGroup, T[]]> {
-        return groupToMap(source, selector)[Symbol.iterator]();
-      }
-    };
-
-    return new Enumerable(iterable);
+  groupSingle<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T]> {
+    const grouped = groupSingle(this.source, selector);
+    return new Enumerable(grouped);
   }
 
   groupToMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T[]> {
     const grouped = groupToMap<T, TGroup>(this.source, selector);
+    return grouped;
+  }
+
+  groupToSingleMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T> {
+    const grouped = groupToSingleMap<T, TGroup>(this.source, selector);
     return grouped;
   }
 

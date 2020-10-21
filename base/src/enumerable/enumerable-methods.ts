@@ -12,6 +12,9 @@ export interface EnumerableMethods {
   forceCast(...args: any[]): any;
   forEach(...args: any[]): any;
   group(...args: any[]): any;
+  groupSingle(...args: any[]): any;
+  groupToMap(...args: any[]): any;
+  groupToSingleMap(...args: any[]): any;
   intercept(...args: any[]): any;
   last(...args: any[]): any;
   map(...args: any[]): any;
