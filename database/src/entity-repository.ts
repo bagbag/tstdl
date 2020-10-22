@@ -23,6 +23,13 @@ export interface EntityRepository<T extends Entity> {
 
   loadAndDelete<U extends T = T>(id: string): Promise<U>;
   tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined>;
+  loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U>;
+  tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U | undefined>;
+
+  loadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U>;
+  tryLoadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined>;
+  loadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U>;
+  tryLoadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined>;
 
   count(allowEstimation?: boolean): Promise<number>;
   countByFilter<U extends T>(filter: EntityFilter<U>): Promise<number>;

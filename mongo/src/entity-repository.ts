@@ -143,12 +143,46 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   async loadAndDelete<U extends T = T>(id: string): Promise<U> {
-    const entity = await this.baseRepository.loadAndDelete(id);
-    return this.transformer.untransform(entity) as U;
+    return this.loadByFilterAndDelete({ id } as EntityFilter<U>);
   }
 
   async tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined> {
-    const entity = await this.baseRepository.tryLoadAndDelete(id);
+    return this.tryLoadByFilterAndDelete({ id } as EntityFilter<U>);
+  }
+
+  async loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U> {
+    const transformedFilter = this.transformFilter(filter);
+    const entity = await this.baseRepository.loadByFilterAndDelete(transformedFilter);
+    return this.transformer.untransform(entity) as U;
+  }
+
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: Partial<T>): Promise<U | undefined> {
+    const transformedFilter = this.transformFilter(filter);
+    const entity = await this.baseRepository.tryLoadByFilterAndDelete(transformedFilter);
+    return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
+  }
+
+  async loadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
+    return this.loadByFilterAndPatch({ id } as EntityFilter<U>, patch, includePatch);
+  }
+
+  async tryLoadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
+    return this.tryLoadByFilterAndPatch({ id } as EntityFilter<U>, patch, includePatch);
+  }
+
+  async loadByFilterAndPatch<U extends T = T>(filter: Partial<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
+    const transformedFilter = this.transformFilter(filter);
+    const update = this.transformPatch(patch);
+    const entity = await this.baseRepository.loadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
+
+    return this.transformer.untransform(entity) as U;
+  }
+
+  async tryLoadByFilterAndPatch<U extends T = T>(filter: Partial<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
+    const transformedFilter = this.transformFilter(filter);
+    const update = this.transformPatch(patch);
+    const entity = await this.baseRepository.tryLoadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
+
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
   }
 
