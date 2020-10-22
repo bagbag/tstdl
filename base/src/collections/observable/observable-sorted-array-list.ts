@@ -1,94 +1,27 @@
-import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { map, mapTo, share, shareReplay, startWith, take } from 'rxjs/operators';
 import type { Comparator } from '../../utils';
 import { binarySearch, binarySearchInsertionIndex, compareByValue } from '../../utils';
-import type { ObservableCollectionChangeEvent } from './observable-collection';
-import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
+import type { ObservableList, ObservableListIndexedEvent } from './observable-list';
+import { ObservableListBase } from './observable-list-base';
 
-export class ObservableSortedArrayList<T> implements ObservableList<T> {
+export class ObservableSortedArrayList<T> extends ObservableListBase<T, ObservableSortedArrayList<T>> implements ObservableList<T> {
   private readonly comparator: Comparator<T>;
-  private readonly addAtSubject: Subject<ObservableListIndexedEvent<T>[]>;
-  private readonly removeAtSubject: Subject<ObservableListIndexedEvent<T>[]>;
-  private readonly clearSubject: Subject<void>;
 
   backingArray: T[];
 
-  observe$: Observable<ObservableSortedArrayList<T>>;
-  size$: Observable<number>;
-  clear$: Observable<void>;
-
-  add$: Observable<T[]>;
-  remove$: Observable<T[]>;
-  change$: Observable<ObservableCollectionChangeEvent<T>>;
-
-  addAt$: Observable<ObservableListIndexedEvent<T>[]>;
-  removeAt$: Observable<ObservableListIndexedEvent<T>[]>;
-  changeAt$: Observable<ObservableListIndexedChangeEvent<T>[]>;
+  get self(): ObservableSortedArrayList<T> {
+    return this;
+  }
 
   get length(): number {
     return this.backingArray.length;
   }
 
-  get $add(): Promise<T[]> {
-    return this.add$.pipe(take(1)).toPromise();
-  }
-
-  get $remove(): Promise<T[]> {
-    return this.remove$.pipe(take(1)).toPromise();
-  }
-
-  get $change(): Promise<ObservableCollectionChangeEvent<T>> {
-    return this.change$.pipe(take(1)).toPromise();
-  }
-
-  get $addAt(): Promise<ObservableListIndexedEvent<T>[]> {
-    return this.addAt$.pipe(take(1)).toPromise();
-  }
-
-  get $removeAt(): Promise<ObservableListIndexedEvent<T>[]> {
-    return this.removeAt$.pipe(take(1)).toPromise();
-  }
-
-  get $changeAt(): Promise<ObservableListIndexedChangeEvent<T>[]> {
-    return this.changeAt$.pipe(take(1)).toPromise();
-  }
-
-  get $clear(): Promise<void> {
-    return this.clear$.pipe(take(1)).toPromise();
-  }
-
   constructor(comparator: Comparator<T> = compareByValue) {
+    super();
+
     this.comparator = comparator;
 
     this.backingArray = [];
-    this.addAtSubject = new Subject();
-    this.removeAtSubject = new Subject();
-    this.clearSubject = new Subject();
-
-    this.clear$ = this.clearSubject.asObservable();
-    this.size$ = merge(this.add$, this.remove$).pipe(
-      map(() => this.backingArray.length),
-      shareReplay({ bufferSize: 1, refCount: true })
-    );
-
-    this.add$ = this.addAtSubject.pipe(map((events) => events.map((event) => event.value)));
-    this.remove$ = this.removeAtSubject.pipe(map((events) => events.map((event) => event.value)));
-    this.change$ = merge(
-      this.add$.pipe(map((values) => ({ add: values }))),
-      this.remove$.pipe(map((values) => ({ remove: values }))),
-      share()
-    );
-
-    this.addAt$ = this.addAtSubject.asObservable();
-    this.removeAt$ = this.removeAtSubject.asObservable();
-    this.changeAt$ = merge(
-      this.addAt$.pipe(map((event) => ({ add: event }))),
-      this.removeAt$.pipe(map((event) => ({ remove: event }))),
-      share()
-    );
-
-    this.observe$ = merge(this.change$, this.clear$).pipe(startWith(undefined), mapTo(this));
   }
 
   get(index: number): T {
@@ -97,14 +30,6 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     }
 
     return this.backingArray[index];
-  }
-
-  getFirst(): T {
-    return this.get(0);
-  }
-
-  getLast(): T {
-    return this.get(this.length - 1);
   }
 
   indexOf(value: T): number | undefined {
@@ -116,15 +41,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     this.backingArray.splice(index, 0, ...values);
 
     const events: ObservableListIndexedEvent<T>[] = values.map((value, i) => ({ index: index + i, value }));
-    this.addAtSubject.next(events);
-  }
-
-  removeFirst(): T {
-    return this.removeAt(0);
-  }
-
-  removeLast(): T {
-    return this.removeAt(this.length - 1);
+    this.onAddAt(events);
   }
 
   removeAt(index: number): T {
@@ -133,7 +50,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     }
 
     const value = this.backingArray.splice(index, 1)[0];
-    this.removeAtSubject.next([{ index, value }]);
+    this.onRemoveAt([{ index, value }]);
 
     return value;
   }
@@ -146,25 +63,21 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     const values = this.backingArray.splice(index, count);
 
     const events: ObservableListIndexedEvent<T>[] = values.map((value, i) => ({ index: index + i, value }));
-    this.removeAtSubject.next(events);
+    this.onRemoveAt(events);
 
     return values;
   }
 
-  [Symbol.iterator](): IterableIterator<T> {
-    return this.backingArray[Symbol.iterator]();
-  }
-
   clear(): void {
     this.backingArray = [];
-    this.clearSubject.next();
+    this.onClear();
   }
 
   add(value: T): void {
     const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
     this.backingArray.splice(index, 0, value);
 
-    this.addAtSubject.next([{ value, index }]);
+    this.onAddAt([{ value, index }]);
   }
 
   has(value: T): boolean {
@@ -180,7 +93,7 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     }
 
     this.backingArray.splice(index, 1);
-    this.removeAtSubject.next([{ value, index }]);
+    this.onRemoveAt([{ value, index }]);
 
     return true;
   }
@@ -211,5 +124,9 @@ export class ObservableSortedArrayList<T> implements ObservableList<T> {
     }
 
     return index;
+  }
+
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.backingArray[Symbol.iterator]();
   }
 }

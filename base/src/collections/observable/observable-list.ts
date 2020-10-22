@@ -8,16 +8,16 @@ export type ObservableListIndexedEvent<T> = {
 };
 
 export type ObservableListIndexedChangeEvent<T> = {
-  add?: ObservableListIndexedEvent<T>,
-  remove?: ObservableListIndexedEvent<T>
+  add?: ObservableListIndexedEvent<T>[],
+  remove?: ObservableListIndexedEvent<T>[]
 };
 
 export interface ObservableList<T> extends List<T>, ObservableCollection<T> {
   readonly addAt$: Observable<ObservableListIndexedEvent<T>[]>;
   readonly removeAt$: Observable<ObservableListIndexedEvent<T>[]>;
-  readonly changeAt$: Observable<ObservableListIndexedChangeEvent<T>[]>;
+  readonly changeAt$: Observable<ObservableListIndexedChangeEvent<T>>;
 
   readonly $addAt: Promise<ObservableListIndexedEvent<T>[]>;
   readonly $removeAt: Promise<ObservableListIndexedEvent<T>[]>;
-  readonly $changeAt: Promise<ObservableListIndexedChangeEvent<T>[]>;
+  readonly $changeAt: Promise<ObservableListIndexedChangeEvent<T>>;
 }

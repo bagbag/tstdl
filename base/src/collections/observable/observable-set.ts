@@ -1,58 +1,53 @@
-import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
-import { filter, mapTo, take } from 'rxjs/operators';
+import type { ObservableCollection } from './observable-collection';
+import { ObservableCollectionBase } from './observable-collection-base';
 
-export class ObservableSet<T> implements Set<T> {
+export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<T>> implements Set<T>, ObservableCollection<T> {
   private readonly backingSet: Set<T>;
-  private readonly subject: BehaviorSubject<ObservableSet<T>>;
 
   readonly [Symbol.toStringTag] = ObservableSet.name;
 
-  get observe$(): Observable<ObservableSet<T>> {
-    return this.subject.asObservable();
+  get self(): ObservableSet<T> {
+    return this;
+  }
+
+  get length(): number {
+    return this.backingSet.size;
   }
 
   get size(): number {
     return this.backingSet.size;
   }
 
-  get $observe(): Promise<void> {
-    return this.subject.pipe(take(1), mapTo(undefined)).toPromise();
-  }
-
-  get $empty(): Promise<void> {
-    return this.observe$.pipe(
-      filter(() => this.size == 0),
-      take(1),
-      mapTo(undefined)
-    ).toPromise();
-  }
-
   constructor() {
+    super();
+
     this.backingSet = new Set();
-    this.subject = new BehaviorSubject(this as ObservableSet<T>);
   }
 
   add(value: T): this {
     this.backingSet.add(value);
-    this.next();
+    this.onAdd([value]);
 
     return this;
   }
 
   clear(): void {
     this.backingSet.clear();
-    this.next();
+    this.onClear();
   }
 
-  delete(value: T): boolean {
+  remove(value: T): boolean {
     const success = this.backingSet.delete(value);
 
     if (success) {
-      this.next();
+      this.onRemove([value]);
     }
 
     return success;
+  }
+
+  delete(value: T): boolean {
+    return this.remove(value);
   }
 
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
@@ -77,9 +72,5 @@ export class ObservableSet<T> implements Set<T> {
 
   [Symbol.iterator](): IterableIterator<T> {
     return this.backingSet[Symbol.iterator]();
-  }
-
-  private next(): void {
-    this.subject.next(this);
   }
 }
