@@ -495,3 +495,20 @@ export function binarySearchInsertionIndex<T extends TComparator, TComparator>(v
 
   return middle + ((comparison <= 0) as unknown as number);
 }
+
+
+export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {
+  if (name.includes(',')) {
+    const [familyName, firstName] = name.split(',').map((part) => part.trim());
+    return { firstName, familyName };
+  }
+
+  const parts = name.split(' ');
+  const familyName = (parts.length > 1) ? (parts.pop() as string).trim() : '';
+  const firstName = parts.map((part) => part.trim()).join(' ');
+
+  return {
+    firstName: firstName.length > 0 ? firstName : undefined,
+    familyName: familyName.length > 0 ? familyName : undefined
+  };
+}
