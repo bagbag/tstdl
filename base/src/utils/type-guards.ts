@@ -2,7 +2,7 @@ export function isUndefined(item: any): item is undefined {
   return item == undefined;
 }
 
-export function isNotUndefined<T>(item: T): item is NonNullable<T> {
+export function isDefined<T>(item: T): item is NonNullable<T> {
   return item != undefined;
 }
 
