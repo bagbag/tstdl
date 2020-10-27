@@ -156,7 +156,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: Partial<T>): Promise<U | undefined> {
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.tryLoadByFilterAndDelete(transformedFilter);
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
@@ -170,7 +170,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.tryLoadByFilterAndPatch({ id } as EntityFilter<U>, patch, includePatch);
   }
 
-  async loadByFilterAndPatch<U extends T = T>(filter: Partial<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
+  async loadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
     const entity = await this.baseRepository.loadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
@@ -178,7 +178,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilterAndPatch<U extends T = T>(filter: Partial<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
+  async tryLoadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
     const entity = await this.baseRepository.tryLoadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
@@ -282,18 +282,18 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.deleteManyById(ids);
   }
 
-  async deleteByFilter(filter: Partial<T>): Promise<boolean> {
+  async deleteByFilter(filter: EntityFilter<T>): Promise<boolean> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteByFilter(transformedFilter);
   }
 
-  async deleteManyByFilter(filter: Partial<T>): Promise<number> {
+  async deleteManyByFilter(filter: EntityFilter<T>): Promise<number> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteManyByFilter(transformedFilter);
   }
 
   private transformFilter<U extends T = T>(filter: EntityFilter<U>): FilterQuery<TDb> {
-    return toMongoDocumentWithPartialId(this.transformer.filterTransform(filter));
+    return entityFilterToFilterQuery(this.transformer.filterTransform(filter));
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateQuery<TDb> {
@@ -305,4 +305,14 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any, ns?: any }): TypedIndexSpecification<any> {
   const { v, background, ns, ...indexRest } = index;
   return indexRest;
+}
+
+export function entityFilterToFilterQuery<T extends Entity>(filter: EntityFilter<T>): FilterQuery<T> {
+  const filterQuery: FilterQuery<T> = {};
+
+  Object.entries(filter).forEach(([property, value]) => {
+    filterQuery[property as keyof typeof filterQuery] = Array.isArray(value) ? { $in: value } : { $eq: value };
+  });
+
+  return filterQuery;
 }

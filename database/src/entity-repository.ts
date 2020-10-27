@@ -4,7 +4,7 @@ export type UpdateOptions = {
   upsert?: boolean
 };
 
-export type EntityFilter<T extends Entity> = Partial<T>;
+export type EntityFilter<T extends Entity> = { [P in keyof T]?: T[P] | T[P][] };
 export type EntityPatch<T extends Entity> = Partial<EntityWithoutId<T>>;
 
 export interface EntityRepository<T extends Entity> {
