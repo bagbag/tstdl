@@ -4,7 +4,7 @@ import { equals } from '@tstdl/base/utils';
 import type { Entity, EntityFilter, EntityPatch, EntityRepository, EntityWithPartialId, UpdateOptions } from '@tstdl/database';
 import { MongoBaseRepository } from './base-repository';
 import type { MongoDocument } from './model';
-import { toMongoDocumentWithPartialId } from './model';
+import { renameIdPropertyToUnderscoreId, toMongoDocumentWithPartialId } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 type MongoEntityRepositoryOptions<T extends Entity> = {
@@ -293,7 +293,8 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   private transformFilter<U extends T = T>(filter: EntityFilter<U>): FilterQuery<TDb> {
-    return entityFilterToFilterQuery(this.transformer.filterTransform(filter));
+    const transformedFilter = this.transformer.filterTransform(filter);
+    return entityFilterToFilterQuery(transformedFilter);
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateQuery<TDb> {
@@ -310,8 +311,9 @@ function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any, ns?: an
 export function entityFilterToFilterQuery<T extends Entity>(filter: EntityFilter<T>): FilterQuery<T> {
   const filterQuery: FilterQuery<T> = {};
 
-  Object.entries(filter).forEach(([property, value]) => {
-    filterQuery[property as keyof typeof filterQuery] = Array.isArray(value) ? { $in: value } : { $eq: value };
+  Object.entries(renameIdPropertyToUnderscoreId(filter)).forEach(([property, value]) => {
+    const property2 = property == 'id' ? '_id' : property;
+    filterQuery[property2 as keyof typeof filterQuery] = Array.isArray(value) ? { $in: value } : { $eq: value };
   });
 
   return filterQuery;

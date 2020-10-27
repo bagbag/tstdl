@@ -56,27 +56,11 @@ export function toMongoProjection<T extends Entity, M extends ProjectionMode, P 
 }
 
 export function toMongoDocument<T extends Entity>(entity: T): MongoDocument<T> {
-  const { id, ...entityRest } = entity; // eslint-disable-line @typescript-eslint/no-unused-vars
-
-  const document: MongoDocument<T> = {
-    _id: entity.id,
-    ...entityRest
-  };
-
-  return document;
+  return renameIdPropertyToUnderscoreId(entity);
 }
 
 export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(entity: T): MongoDocumentWithPartialId<T> {
-  const { id, ...entityRest } = entity;
-
-  const partialIdObject = (id != undefined) ? { _id: id } : {};
-
-  const document = {
-    ...partialIdObject,
-    ...entityRest
-  };
-
-  return document;
+  return renameIdPropertyToUnderscoreId(entity);
 }
 
 export function toMongoDocumentWithoutId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocumentWithoutId<T> {
@@ -96,6 +80,21 @@ export function toMongoDocumentWithId<T extends Entity>(entity: EntityWithPartia
     _id: id ?? getNewDocumentId(),
     ...entityRest
   } as MongoDocument<T>;
+
+  return document;
+}
+
+export function renameIdPropertyToUnderscoreId<T extends { id: any }>(object: T): Omit<T, 'id'> & { _id: T['id'] };
+export function renameIdPropertyToUnderscoreId<T extends { id?: any }>(object: T): Omit<T, 'id'> & { _id?: T['id'] };
+export function renameIdPropertyToUnderscoreId<T extends { id?: any }>(object: T): Omit<T, 'id'> & { _id?: T['id'] } {
+  const { id, ...rest } = object;
+
+  const partialIdObject = (id != undefined) ? { _id: id } : {};
+
+  const document = {
+    ...partialIdObject,
+    ...rest
+  };
 
   return document;
 }
