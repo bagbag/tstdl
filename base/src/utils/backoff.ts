@@ -10,7 +10,7 @@ export type BackoffOptions = {
   strategy: BackoffStrategy,
   initialDelay: number,
   increase: number,
-  maximumDelay: number
+  maximumDelay?: number
 };
 
 export class BackoffHelper {
@@ -25,7 +25,7 @@ export class BackoffHelper {
     this.strategy = strategy;
     this.initialDelay = initialDelay;
     this.increase = increase;
-    this.maximumDelay = maximumDelay;
+    this.maximumDelay = maximumDelay ?? Number.MAX_SAFE_INTEGER;
 
     this.reset();
   }
