@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/client",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,13 +10,13 @@
     "pub": "npm run build && cp package.json dist/ && cp package-lock.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@tstdl/base": "^0.60.33",
+    "@tstdl/base": "^0.60.44",
     "rxjs": "^6.6.3"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.4.1",
-    "@typescript-eslint/parser": "^4.4.1",
-    "eslint": "^7.11.0",
-    "typescript": "^4.0.3"
+    "@typescript-eslint/eslint-plugin": "^4.6.0",
+    "@typescript-eslint/parser": "^4.6.0",
+    "eslint": "^7.12.1",
+    "typescript": "^4.0.5"
   }
 }

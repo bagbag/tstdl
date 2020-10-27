@@ -1,9 +1,9 @@
-import { CancellationToken } from './cancellation-token';
-import { cancelableTimeout, timeout } from './timing';
+import type { CancellationToken } from './cancellation-token';
+import { cancelableTimeout } from './timing';
 
 export enum BackoffStrategy {
-  Linear,
-  Exponential
+  Linear = 0,
+  Exponential = 1
 }
 
 export type BackoffOptions = {
@@ -26,15 +26,17 @@ export class BackoffHelper {
     this.initialDelay = initialDelay;
     this.increase = increase;
     this.maximumDelay = maximumDelay;
+
+    this.reset();
   }
 
   reset(): void {
     this.delay = this.initialDelay;
   }
 
-  async backoff(cancellationToken?: CancellationToken): Promise<void> {
-    await ((cancellationToken == undefined) ? timeout(this.delay) : cancelableTimeout(this.delay, cancellationToken));
+  backoff(): number {
     this.delay = getNewDelay(this.strategy, this.delay, this.increase, this.maximumDelay);
+    return this.delay;
   }
 }
 
@@ -49,7 +51,8 @@ export async function backoffLoop(options: BackoffOptions, cancellationToken: Ca
     const backoff = (returnValue instanceof Promise ? await returnValue : returnValue) == true;
 
     if (backoff) {
-      await backoffHelper.backoff(loopCancellationToken);
+      const milliseconds = backoffHelper.backoff();
+      await cancelableTimeout(milliseconds, loopCancellationToken);
     }
     else {
       backoffHelper.reset();
@@ -59,14 +62,14 @@ export async function backoffLoop(options: BackoffOptions, cancellationToken: Ca
 
 export async function* backoffGenerator(options: BackoffOptions, cancellationToken: CancellationToken): AsyncIterableIterator<() => void> {
   const backoffHelper = new BackoffHelper(options);
-  const loopCancellationToken = cancellationToken.createChild('set');
 
   while (!cancellationToken.isSet) {
     let backoff = false;
     yield () => (backoff = true);
 
     if (backoff) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-      await backoffHelper.backoff(loopCancellationToken);
+      const milliseconds = backoffHelper.backoff();
+      await cancelableTimeout(milliseconds, cancellationToken);
     }
     else {
       backoffHelper.reset();

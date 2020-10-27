@@ -1,36 +1,37 @@
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
-import { distinctUntilChanged, filter, map, skip, take } from 'rxjs/operators';
+import { distinctUntilChanged, filter, mapTo, skip, take } from 'rxjs/operators';
 
 type InheritanceMode = 'set' | 'reset' | 'both';
 
 export class CancellationToken implements PromiseLike<void> {
   private readonly stateSubject: BehaviorSubject<boolean>;
-  private readonly value$: Observable<boolean>;
+
+  readonly state$: Observable<boolean>;
 
   get isSet(): boolean {
     return this.stateSubject.value;
   }
 
   get set$(): Observable<void> {
-    return this.value$.pipe(filter((state) => state), map(() => undefined));
+    return this.state$.pipe(filter((state) => state), mapTo(undefined));
   }
 
   get reset$(): Observable<void> {
-    return this.value$.pipe(filter((state) => !state), map(() => undefined));
+    return this.state$.pipe(filter((state) => !state), mapTo(undefined));
   }
 
-  get setAwaitable(): Promise<void> {
+  get $set(): Promise<void> {
     return this.set$.pipe(take(1)).toPromise();
   }
 
-  get resetAwaitable(): Promise<void> {
+  get $reset(): Promise<void> {
     return this.reset$.pipe(take(1)).toPromise();
   }
 
   constructor() {
     this.stateSubject = new BehaviorSubject<boolean>(false);
-    this.value$ = this.stateSubject.pipe(distinctUntilChanged());
+    this.state$ = this.stateSubject.pipe(distinctUntilChanged());
   }
 
   createChild(mode: InheritanceMode): CancellationToken {
@@ -54,12 +55,12 @@ export class CancellationToken implements PromiseLike<void> {
 
   // eslint-disable-next-line @typescript-eslint/promise-function-async
   then<TResult1, TResult2 = never>(onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
-    return this.setAwaitable.then(onfulfilled, onrejected);
+    return this.$set.then(onfulfilled, onrejected);
   }
 
   // eslint-disable-next-line class-methods-use-this
   private connect(mode: string, source: CancellationToken, target: CancellationToken): void {
-    const sourceValue$ = source.value$.pipe(skip(1));
+    const sourceValue$ = source.state$.pipe(skip(1));
 
     switch (mode) {
       case 'set':

@@ -9,28 +9,28 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "~10.1.4",
-    "@angular/common": "~10.1.4",
-    "@angular/compiler": "~10.1.4",
-    "@angular/core": "~10.1.4",
-    "@angular/forms": "~10.1.4",
-    "@angular/platform-browser": "~10.1.4",
-    "@angular/platform-browser-dynamic": "~10.1.4",
-    "@angular/router": "~10.1.4",
-    "@tstdl/base": "^0.60.27",
+    "@angular/animations": "~10.2.0",
+    "@angular/common": "~10.2.0",
+    "@angular/compiler": "~10.2.0",
+    "@angular/core": "~10.2.0",
+    "@angular/forms": "~10.2.0",
+    "@angular/platform-browser": "~10.2.0",
+    "@angular/platform-browser-dynamic": "~10.2.0",
+    "@angular/router": "~10.2.0",
+    "@tstdl/base": "^0.60.46",
     "luxon": "^1.25.0",
     "rxjs": "~6.6.3",
-    "tslib": "^2.0.2",
-    "zone.js": "~0.10.3"
+    "tslib": "^2.0.3",
+    "zone.js": "~0.11.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.1001.4",
-    "@angular-devkit/build-ng-packagr": "~0.1001.4",
-    "@angular/cli": "~10.1.4",
-    "@angular/compiler-cli": "~10.1.4",
+    "@angular-devkit/build-angular": "~0.1002.0",
+    "@angular-devkit/build-ng-packagr": "~0.1002.0",
+    "@angular/cli": "~10.2.0",
+    "@angular/compiler-cli": "~10.2.0",
     "@types/luxon": "^1.25.0",
-    "@types/node": "^14.11.5",
+    "@types/node": "^14.14.5",
     "ng-packagr": "^10.1.2",
-    "typescript": "~3.9.7"
+    "typescript": "~4.0.5"
   }
 }
