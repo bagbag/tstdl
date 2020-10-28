@@ -1,2 +1,2 @@
 export * from './message-bus';
-export * from './provider';
+export * from './message-bus-provider';
