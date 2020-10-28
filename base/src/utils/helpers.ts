@@ -200,7 +200,7 @@ export function compareByValueToOrder<T>(order: T[]): (a: T, b: T) => number {
 }
 
 export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], selector: (item: T) => TSelect): (a: T, b: T) => number {
-  const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as [TSelect, number]);
+  const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as const);
   const indexMap = new Map(indexMapEntries);
 
   // eslint-disable-next-line @typescript-eslint/no-shadow

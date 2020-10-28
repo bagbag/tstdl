@@ -33,7 +33,7 @@ export class ObservableSortedArrayList<T> extends ObservableListBase<T, Observab
   }
 
   indexOf(value: T): number | undefined {
-    const index = binarySearch(this.backingArray, value);
+    const index = binarySearch(this.backingArray, value, this.comparator);
     return (index == -1) ? undefined : index;
   }
 

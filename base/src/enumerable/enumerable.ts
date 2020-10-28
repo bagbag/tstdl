@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -26,6 +26,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   assert<TPredicate extends T>(predicate: Predicate<T> | TypePredicate<T, TPredicate>): Enumerable<TPredicate> {
     const asserted = assert(this.source, predicate);
     return new Enumerable(asserted);
+  }
+
+  all(predicate?: Predicate<T>): boolean {
+    const result = all(this.source, predicate);
+    return result;
   }
 
   any(predicate?: Predicate<T>): boolean {

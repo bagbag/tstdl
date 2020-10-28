@@ -2,7 +2,7 @@ import type { AnyIterable } from '../any-iterable-iterator';
 import { isAsyncIterable } from './is-async-iterable';
 import type { AsyncPredicate } from './types';
 
-export async function anyAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> = () => true): Promise<boolean> {
+export async function allAsync<T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T> = () => true): Promise<boolean> {
   return isAsyncIterable(iterable)
     ? async(iterable, predicate)
     : sync(iterable, predicate);
@@ -18,12 +18,12 @@ async function sync<T>(iterable: Iterable<T>, predicate: AsyncPredicate<T>): Pro
       matches = await matches;
     }
 
-    if (matches) {
-      return true;
+    if (!matches) {
+      return false;
     }
   }
 
-  return false;
+  return true;
 }
 
 async function async<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>): Promise<boolean> {
@@ -36,10 +36,10 @@ async function async<T>(iterable: AsyncIterable<T>, predicate: AsyncPredicate<T>
       matches = await matches;
     }
 
-    if (matches) {
-      return true;
+    if (!matches) {
+      return false;
     }
   }
 
-  return false;
+  return true;
 }

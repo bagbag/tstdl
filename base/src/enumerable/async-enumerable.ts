@@ -2,7 +2,7 @@ import type { Observable } from 'rxjs';
 import type { AsyncComparator } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
 import type { TypePredicate } from '../utils/iterable-helpers';
@@ -35,6 +35,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   assert<TPredicate extends T>(predicate: TypePredicate<T, TPredicate> | AsyncPredicate<T>): AsyncEnumerable<TPredicate> {
     const asserted = assertAsync<T, TPredicate>(this.source, predicate);
     return new AsyncEnumerable(asserted);
+  }
+
+  async all(predicate?: AsyncPredicate<T>): Promise<boolean> {
+    return allAsync(this.source, predicate);
   }
 
   async any(predicate?: AsyncPredicate<T>): Promise<boolean> {

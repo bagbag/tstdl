@@ -1,15 +1,15 @@
 import type { Predicate } from './types';
 
-export function any<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() => true)): boolean {
+export function all<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() => true)): boolean {
   let index = 0;
 
   for (const item of iterable) {
     const matches = predicate(item, index++);
 
-    if (matches) {
-      return true;
+    if (!matches) {
+      return false;
     }
   }
 
-  return false;
+  return true;
 }

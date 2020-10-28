@@ -1,4 +1,5 @@
 export interface EnumerableMethods {
+  all(...args: any[]): any;
   any(...args: any[]): any;
   assert(...args: any[]): any;
   batch(...args: any[]): any;
