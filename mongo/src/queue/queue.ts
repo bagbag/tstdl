@@ -16,8 +16,8 @@ const backoffOptions: BackoffOptions = {
 };
 
 const indexes: TypedIndexSpecification<MongoJob<any>>[] = [
-  { key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
-  { key: { batch: 1 } }
+  { name: 'enqueueTimestamp_lastDequeueTimestamp_tries', key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
+  { name: 'batch', key: { batch: 1 } }
 ];
 
 export class MongoQueue<T> implements Queue<T> {
