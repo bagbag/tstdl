@@ -19,10 +19,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
   }
 
   get(index: number): T {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
-
+    this.verifyIndexIsInBounds(index);
     return this.backingArray[index];
   }
 
@@ -31,7 +28,18 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
     return (index == -1) ? undefined : index;
   }
 
+  set(index: number, value: T): void {
+    this.verifyIndexIsInBounds(index);
+
+    const oldValue = this.backingArray[index];
+    this.backingArray[index] = value;
+
+    this.onRemoveAt([{ index, value: oldValue }]);
+    this.onAddAt([{ index, value }]);
+  }
+
   addAt(index: number, ...values: T[]): void {
+    this.verifyIndexIsInBounds(index);
     this.backingArray.splice(index, 0, ...values);
 
     const events: ObservableListIndexedEvent<T>[] = values.map((value, i) => ({ index: index + i, value }));
@@ -39,9 +47,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
   }
 
   removeAt(index: number): T {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
+    this.verifyIndexIsInBounds(index);
 
     const value = this.backingArray.splice(index, 1)[0];
     this.onRemoveAt([{ index, value }]);
@@ -50,9 +56,8 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
   }
 
   removeRange(index: number, count: number): Iterable<T> {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
+    this.verifyIndexIsInBounds(index);
+    this.verifyIndexIsInBounds(index + count - 1);
 
     const values = this.backingArray.splice(index, count);
 
@@ -89,5 +94,11 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
 
   has(value: T): boolean {
     return this.indexOf(value) != undefined;
+  }
+
+  private verifyIndexIsInBounds(index: number): void {
+    if ((index < 0) || (index > (this.backingArray.length - 1))) {
+      throw new Error('index out of bounds');
+    }
   }
 }

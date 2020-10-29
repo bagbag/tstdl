@@ -32,12 +32,23 @@ export class ObservableSortedArrayList<T> extends ObservableListBase<T, Observab
     return this.backingArray[index];
   }
 
+  set(index: number, value: T): void {
+    this.verifyIndexIsInBounds(index);
+
+    const oldValue = this.backingArray[index];
+    this.backingArray[index] = value;
+
+    this.onRemoveAt([{ index, value: oldValue }]);
+    this.onAddAt([{ index, value }]);
+  }
+
   indexOf(value: T): number | undefined {
     const index = binarySearch(this.backingArray, value, this.comparator);
     return (index == -1) ? undefined : index;
   }
 
   addAt(index: number, ...values: T[]): void {
+    this.verifyIndexIsInBounds(index);
     this.backingArray.splice(index, 0, ...values);
 
     const events: ObservableListIndexedEvent<T>[] = values.map((value, i) => ({ index: index + i, value }));
@@ -45,9 +56,7 @@ export class ObservableSortedArrayList<T> extends ObservableListBase<T, Observab
   }
 
   removeAt(index: number): T {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
+    this.verifyIndexIsInBounds(index);
 
     const value = this.backingArray.splice(index, 1)[0];
     this.onRemoveAt([{ index, value }]);
@@ -56,9 +65,8 @@ export class ObservableSortedArrayList<T> extends ObservableListBase<T, Observab
   }
 
   removeRange(index: number, count: number): Iterable<T> {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
+    this.verifyIndexIsInBounds(index);
+    this.verifyIndexIsInBounds(index + count - 1);
 
     const values = this.backingArray.splice(index, count);
 
@@ -128,5 +136,11 @@ export class ObservableSortedArrayList<T> extends ObservableListBase<T, Observab
 
   [Symbol.iterator](): IterableIterator<T> {
     return this.backingArray[Symbol.iterator]();
+  }
+
+  private verifyIndexIsInBounds(index: number): void {
+    if ((index < 0) || (index > (this.backingArray.length - 1))) {
+      throw new Error('index out of bounds');
+    }
   }
 }

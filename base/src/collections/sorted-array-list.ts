@@ -26,10 +26,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
   }
 
   get(index: number): T {
-    if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
-    }
-
+    this.verifyIndexIsInBounds(index);
     return this.backingArray[index];
   }
 
@@ -41,12 +38,18 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     return this.get(this.length - 1);
   }
 
+  set(index: number, value: T): void {
+    this.verifyIndexIsInBounds(index);
+    this.backingArray[index] = value;
+  }
+
   add(value: T): void {
     const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
     this.backingArray.splice(index, 0, value);
   }
 
   addAt(index: number, ...values: T[]): void {
+    this.verifyIndexIsInBounds(index);
     this.backingArray.splice(index, 0, ...values);
   }
 
@@ -76,22 +79,17 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
   }
 
   removeAt(index: number): T {
-    if (index < this.backingArray.length - 1) {
-      throw new Error('out of bounds');
-    }
-
+    this.verifyIndexIsInBounds(index);
     return this.backingArray.splice(index, 1)[0];
   }
 
   removeRange(index: number, count: number): T[] {
-    if (index < 0 || (index + count) > (this.backingArray.length - 1)) {
-      throw new Error('out of bounds');
-    }
-
+    this.verifyIndexIsInBounds(index);
+    this.verifyIndexIsInBounds(index + count - 1);
     return this.backingArray.splice(index, count);
   }
 
-  removeRangeByComparison(from: TComparator, to: TComparator): Iterable<T> {
+  removeRangeByComparison(from: TComparator, to: TComparator): T[] {
     const left = this.findFirstIndexEqualOrLargerThan(from);
     const right = this.findLastIndexEqualOrSmallerThan(to);
 
@@ -152,5 +150,11 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     }
 
     return index;
+  }
+
+  private verifyIndexIsInBounds(index: number): void {
+    if ((index < 0) || (index > (this.backingArray.length - 1))) {
+      throw new Error('index out of bounds');
+    }
   }
 }

@@ -5,9 +5,10 @@ export interface List<T> extends Collection<T> {
   getFirst(): T;
   getLast(): T;
 
-  indexOf(value: T): number | undefined;
-
+  set(index: number, value: T): void;
   addAt(index: number, ...values: T[]): void;
+
+  indexOf(value: T): number | undefined;
 
   removeFirst(): T;
   removeLast(): T;

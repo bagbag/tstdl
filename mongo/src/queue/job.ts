@@ -1,4 +1,4 @@
-import { Entity, EntityWithoutId } from '@tstdl/database';
+import type { Entity, EntityWithoutId } from '@tstdl/database';
 
 export type MongoJob<T> = Entity & {
   data: T,

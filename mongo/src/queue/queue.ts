@@ -1,10 +1,11 @@
-import { Job, Queue } from '@tstdl/base/queue';
-import { Alphabet, backoffGenerator, BackoffOptions, BackoffStrategy, CancellationToken, createArray, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
-import { FilterQuery, UpdateQuery } from 'mongodb';
+import type { Job, Queue } from '@tstdl/base/queue';
+import type { BackoffOptions, CancellationToken } from '@tstdl/base/utils';
+import { Alphabet, backoffGenerator, BackoffStrategy, createArray, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
+import type { BulkWriteUpdateOneOperation, FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoBaseRepository } from '../base-repository';
-import { MongoDocument } from '../model';
-import { Collection, TypedIndexSpecification } from '../types';
-import { MongoJob, MongoJobWithoutId } from './job';
+import type { MongoDocument } from '../model';
+import type { Collection, TypedIndexSpecification } from '../types';
+import type { MongoJob, MongoJobWithoutId } from './job';
 
 const backoffOptions: BackoffOptions = {
   strategy: BackoffStrategy.Exponential,
@@ -49,17 +50,13 @@ export class MongoQueue<T> implements Queue<T> {
   async enqueueMany(data: T[]): Promise<Job<T>[]> {
     const now = currentTimestamp();
 
-    const newJobs: MongoJobWithoutId<T>[] = data.map((item) => {
-      const newJob: MongoJobWithoutId<T> = {
-        data: item,
-        enqueueTimestamp: now,
-        tries: 0,
-        lastDequeueTimestamp: 0,
-        batch: null
-      };
-
-      return newJob;
-    });
+    const newJobs: MongoJobWithoutId<T>[] = data.map((item): MongoJobWithoutId<T> => ({
+      data: item,
+      enqueueTimestamp: now,
+      tries: 0,
+      lastDequeueTimestamp: 0,
+      batch: null
+    }));
 
     const jobs = await this.baseRepository.insertMany(newJobs);
     return jobs.map(toModelJob);
@@ -74,10 +71,10 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
-    const batch = getRandomString(15, Alphabet.LowerUpperCaseNumbers);
+    const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
     const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout, batch);
 
-    const operations = createArray(count, () => ({ updateOne: { filter, update } }));
+    const operations = createArray(count, (): BulkWriteUpdateOneOperation<MongoDocument<MongoJob<T>>> => ({ updateOne: { filter, update } }));
     await this.baseRepository.collection.bulkWrite(operations);
     const jobs = await this.baseRepository.loadManyByFilter({ batch });
 
@@ -127,7 +124,8 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function getDequeueFindParameters(maxTries: number, processTimeout: number, batch: null | string = null) {
-  const maximumLastDequeueTimestamp = currentTimestamp() - processTimeout;
+  const now = currentTimestamp();
+  const maximumLastDequeueTimestamp = now - processTimeout;
 
   const filter: FilterQuery<MongoDocument<MongoJob<any>>> = {
     tries: { $lt: maxTries },
@@ -137,7 +135,7 @@ function getDequeueFindParameters(maxTries: number, processTimeout: number, batc
   const update: UpdateQuery<MongoDocument<MongoJob<any>>> = {
     $inc: { tries: 1 },
     $set: {
-      lastDequeueTimestamp: currentTimestamp(),
+      lastDequeueTimestamp: now,
       batch
     }
   };

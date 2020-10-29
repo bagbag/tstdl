@@ -2,6 +2,7 @@
 
 import { AsyncEnumerable, Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
+import { assertDefined } from '@tstdl/base/utils';
 import type { Entity, EntityWithPartialId } from '@tstdl/database';
 import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
 import type { MongoDocument } from './model';
@@ -134,6 +135,10 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertManyIfNotExistsByFilter<U extends T>(items: InsertIfNotExistsByFilterItem<U>[]): Promise<U[]> {
+    if (items.length == 0) {
+      return [];
+    }
+
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: toMongoDocumentWithId(entity) }))
       .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
@@ -141,6 +146,7 @@ export class MongoBaseRepository<T extends Entity> {
 
     const operations = mapped.map((o) => o.operation as BulkWriteUpdateOneOperation<MongoDocument<T>>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
+    assertDefined(result.upsertedIds);
     const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as any as number].document));
 
     return entities;
