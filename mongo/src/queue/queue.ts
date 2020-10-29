@@ -1,15 +1,16 @@
+import type { Logger } from '@tstdl/base/logger';
 import type { Job, Queue } from '@tstdl/base/queue';
 import type { BackoffOptions, CancellationToken } from '@tstdl/base/utils';
-import { Alphabet, backoffGenerator, BackoffStrategy, createArray, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
-import type { BulkWriteUpdateOneOperation, FilterQuery, UpdateQuery } from 'mongodb';
-import { MongoBaseRepository } from '../base-repository';
+import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
+import type { FilterQuery, UpdateQuery } from 'mongodb';
+import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import type { MongoDocument } from '../model';
 import type { Collection, TypedIndexSpecification } from '../types';
 import type { MongoJob, MongoJobWithoutId } from './job';
 
 const backoffOptions: BackoffOptions = {
   strategy: BackoffStrategy.Exponential,
-  initialDelay: 10,
+  initialDelay: 100,
   increase: 2,
   maximumDelay: 5000
 };
@@ -20,18 +21,18 @@ const indexes: TypedIndexSpecification<MongoJob<any>>[] = [
 ];
 
 export class MongoQueue<T> implements Queue<T> {
-  private readonly baseRepository: MongoBaseRepository<MongoJob<T>>;
+  private readonly repository: MongoEntityRepository<MongoJob<T>>;
   private readonly processTimeout: number;
   private readonly maxTries: number;
 
-  constructor(collection: Collection<MongoJob<T>>, processTimeout: number, maxTries: number) {
-    this.baseRepository = new MongoBaseRepository(collection);
+  constructor(collection: Collection<MongoJob<T>>, processTimeout: number, maxTries: number, logger: Logger) {
+    this.repository = new MongoEntityRepository<MongoJob<T>>(collection, noopTransformer, { logger, indexes, entityName: 'mongo-job' });
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;
   }
 
   async initialize(): Promise<void> {
-    return this.baseRepository.createIndexes(indexes);
+    return this.repository.initialize();
   }
 
   async enqueue(data: T): Promise<Job<T>> {
@@ -43,7 +44,7 @@ export class MongoQueue<T> implements Queue<T> {
       batch: null
     };
 
-    const job = await this.baseRepository.insert(newJob);
+    const job = await this.repository.insert(newJob);
     return toModelJob(job);
   }
 
@@ -58,32 +59,45 @@ export class MongoQueue<T> implements Queue<T> {
       batch: null
     }));
 
-    const jobs = await this.baseRepository.insertMany(newJobs);
+    const jobs = await this.repository.insertMany(newJobs);
     return jobs.map(toModelJob);
   }
 
   async dequeue(): Promise<Job<T> | undefined> {
     const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout);
 
-    const job = await this.baseRepository.tryLoadByFilterAndUpdate(filter, update, { returnOriginal: false, sort: [['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]] });
+    const job = await this.repository.baseRepository.tryLoadByFilterAndUpdate(
+      filter,
+      update,
+      {
+        returnOriginal: false,
+        sort: [['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]]
+      }
+    );
 
-    return job == undefined ? undefined : toModelJob(job);
+    return (job == undefined) ? undefined : toModelJob(job);
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
     const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
     const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout, batch);
 
-    const operations = createArray(count, (): BulkWriteUpdateOneOperation<MongoDocument<MongoJob<T>>> => ({ updateOne: { filter, update } }));
-    await this.baseRepository.collection.bulkWrite(operations);
-    const jobs = await this.baseRepository.loadManyByFilter({ batch });
+    const bulk = this.repository.baseRepository.bulk();
+
+    for (let i = 0; i < count; i++) {
+      bulk.update(filter, update);
+    }
+
+    await bulk.execute();
+
+    const jobs = await this.repository.loadManyByFilter({ batch });
 
     return jobs.map(toModelJob);
   }
 
   async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
     const jobIds = toArray(jobOrJobs).map((job) => job.id);
-    await this.baseRepository.deleteManyById(jobIds);
+    await this.repository.deleteManyById(jobIds);
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {
