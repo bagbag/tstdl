@@ -1,5 +1,6 @@
 import type { Observable } from 'rxjs';
 import type { List } from '../list';
+import type { SortedList } from '../sorted-list';
 import type { ObservableCollection } from './observable-collection';
 
 export type ObservableListIndexedEvent<T> = {
@@ -21,3 +22,5 @@ export interface ObservableList<T> extends List<T>, ObservableCollection<T> {
   readonly $removeAt: Promise<ObservableListIndexedEvent<T>[]>;
   readonly $changeAt: Promise<ObservableListIndexedChangeEvent<T>>;
 }
+
+export interface ObservableSortedList<T extends TCompare, TCompare = T> extends SortedList<T>, ObservableList<T> { }

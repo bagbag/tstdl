@@ -9,9 +9,10 @@ export interface List<T> extends Collection<T> {
   addAt(index: number, ...values: T[]): void;
 
   indexOf(value: T): number | undefined;
+  lastIndexOf(value: T): number | undefined;
 
   removeFirst(): T;
   removeLast(): T;
   removeAt(index: number): T;
-  removeRange(index: number, count: number): Iterable<T>;
+  removeRange(index: number, count: number): T[];
 }

@@ -28,6 +28,11 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
     return (index == -1) ? undefined : index;
   }
 
+  lastIndexOf(value: T): number | undefined {
+    const index = this.backingArray.lastIndexOf(value);
+    return (index == -1) ? undefined : index;
+  }
+
   set(index: number, value: T): void {
     this.verifyIndexIsInBounds(index);
 
@@ -55,7 +60,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
     return value;
   }
 
-  removeRange(index: number, count: number): Iterable<T> {
+  removeRange(index: number, count: number): T[] {
     this.verifyIndexIsInBounds(index);
     this.verifyIndexIsInBounds(index + count - 1);
 

@@ -453,50 +453,6 @@ export function stripPropertyWhenNullOrUndefined<T extends object>(obj: T): { [P
   return stripPropertyWhen(obj, (value): value is undefined | null => value == undefined);
 }
 
-export function binarySearch<T extends TComparator, TComparator>(values: ArrayLike<T>, searchValue: TComparator, comparator: Comparator<TComparator> = compareByValue): number | undefined {
-  const index = binarySearchInsertionIndex(values, searchValue, comparator);
-  const value = values[index];
-
-  if (index > values.length - 1) {
-    return undefined;
-  }
-
-  return (comparator(value, searchValue) == 0)
-    ? index
-    : undefined;
-}
-
-export function binarySearchInsertionIndex<T extends TComparator, TComparator>(values: ArrayLike<T>, searchValue: TComparator, comparator: Comparator<TComparator> = compareByValue): number {
-  let min = 0;
-  let max = values.length - 1;
-  let middle = 0;
-  let value: T;
-  let comparison!: number;
-
-  if (values.length == 0) {
-    return 0;
-  }
-
-  while (min <= max) {
-    middle = Math.floor(min + ((max - min) / 2));
-    value = values[middle];
-    comparison = comparator(value, searchValue);
-
-    if (comparison == 0) {
-      return middle;
-    }
-    else if (comparison < 0) {
-      min = middle + 1;
-    }
-    else {
-      max = middle - 1;
-    }
-  }
-
-  return middle + ((comparison <= 0) as unknown as number);
-}
-
-
 export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {
   if (name.includes(',')) {
     const [familyName, firstName] = name.split(',').map((part) => part.trim());

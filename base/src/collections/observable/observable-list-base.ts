@@ -88,8 +88,9 @@ export abstract class ObservableListBase<T, TThis extends ObservableCollection<T
 
   abstract get(index: number): T;
   abstract indexOf(value: T): number | undefined;
+  abstract lastIndexOf(value: T): number | undefined;
   abstract set(index: number, value: T): void;
   abstract addAt(index: number, ...values: T[]): void;
   abstract removeAt(index: number): T;
-  abstract removeRange(index: number, count: number): Iterable<T>;
+  abstract removeRange(index: number, count: number): T[];
 }

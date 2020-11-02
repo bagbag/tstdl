@@ -1,5 +1,5 @@
 import type { Comparator } from '../utils';
-import { binarySearchInsertionIndex, compareByValue } from '../utils';
+import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller, compareByValue, isDefined, isUndefined } from '../utils';
 import type { SortedList } from './sorted-list';
 
 export class SortedArrayList<T extends TComparator, TComparator = T> implements SortedList<T> {
@@ -15,6 +15,13 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     this.comparator = comparator;
 
     this.backingArray = [];
+  }
+
+  static from<T extends TComparator, TComparator = T>(iterable: Iterable<T>, comparator: Comparator<TComparator> = compareByValue): SortedArrayList<T, TComparator> {
+    const list = new SortedArrayList<T, TComparator>(comparator);
+    list.backingArray = [...iterable].sort(comparator);
+
+    return list;
   }
 
   [Symbol.iterator](): IterableIterator<T> {
@@ -38,9 +45,24 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     return this.get(this.length - 1);
   }
 
-  set(index: number, value: T): void {
-    this.verifyIndexIsInBounds(index);
-    this.backingArray[index] = value;
+  getByComparison(value: T): T | undefined {
+    const index = this.indexOfByComparison(value);
+    return isDefined(index) ? this.get(index) : undefined;
+  }
+
+  getRangeByComparison(from: T, to: T): T[] {
+    const left = this.findFirstIndexEqualOrLargerThan(from);
+    const right = this.findLastIndexEqualOrSmallerThan(to);
+
+    if (isUndefined(left) || isUndefined(right)) {
+      return [];
+    }
+
+    return this.backingArray.slice(left, right + 1);
+  }
+
+  set(_index: number, _value: T): void {
+    throw new Error('assignment by index not allowed in sorted collections');
   }
 
   add(value: T): void {
@@ -48,9 +70,8 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     this.backingArray.splice(index, 0, value);
   }
 
-  addAt(index: number, ...values: T[]): void {
-    this.verifyIndexIsInBounds(index);
-    this.backingArray.splice(index, 0, ...values);
+  addAt(_index: number, ..._values: T[]): void {
+    throw new Error('adding at index not allowed in sorted collections');
   }
 
   removeFirst(): T {
@@ -66,10 +87,15 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     return index != undefined;
   }
 
+  hasByComparison(value: TComparator): boolean {
+    const index = this.indexOfByComparison(value);
+    return index != undefined;
+  }
+
   remove(value: T): boolean {
     const index = this.indexOf(value);
 
-    if (index == undefined) {
+    if ((index == undefined) || (this.backingArray[index] != value)) {
       return false;
     }
 
@@ -93,63 +119,65 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     const left = this.findFirstIndexEqualOrLargerThan(from);
     const right = this.findLastIndexEqualOrSmallerThan(to);
 
-    if (left != undefined && right != undefined) {
-      return this.backingArray.splice(left, (right - left) + 1);
+    if (isUndefined(left) || isUndefined(right)) {
+      return [];
     }
 
-    return [];
+    return this.removeRange(left, (right - left) + 1);
   }
 
   indexOf(value: T): number | undefined {
-    const index = this.findFirstIndexEqualOrLargerThan(value);
+    const left = this.findFirstIndexEqualOrLargerThan(value);
+    const right = this.findLastIndexEqualOrSmallerThan(value);
 
-    if (index == undefined) {
+    if (isUndefined(left) || isUndefined(right)) {
       return undefined;
     }
 
-    for (let i = index; i < this.backingArray.length; i++) {
-      const compareValue = this.backingArray[i];
-
-      if (compareValue == value) {
+    for (let i = left; i <= right; i++) {
+      if (this.backingArray[i] == value) {
         return i;
-      }
-
-      const comparison = this.comparator(value, compareValue);
-
-      if (comparison != 0) {
-        break;
       }
     }
 
     return undefined;
   }
 
-  findFirstIndexEqualOrLargerThan(value: TComparator): number | undefined {
-    let index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+  lastIndexOf(value: T): number | undefined {
+    const left = this.findFirstIndexEqualOrLargerThan(value);
+    const right = this.findLastIndexEqualOrSmallerThan(value);
 
-    while ((index > 0) && (this.comparator(this.backingArray[index - 1], value) == 0)) {
-      index--;
-    }
-
-    if (index > this.backingArray.length - 1) {
+    if (isUndefined(left) || isUndefined(right)) {
       return undefined;
     }
 
-    return index;
+    for (let i = right; i >= left; i--) {
+      if (this.backingArray[i] == value) {
+        return i;
+      }
+    }
+
+    return undefined;
+  }
+
+  indexOfByComparison(value: TComparator): number | undefined {
+    return binarySearch(this.backingArray, value, this.comparator);
+  }
+
+  firstIndexOfByComparison(value: T): number | undefined {
+    return binarySearchFirst(this.backingArray, value, this.comparator);
+  }
+
+  lastIndexOfByComparison(value: T): number | undefined {
+    return binarySearchLast(this.backingArray, value, this.comparator);
+  }
+
+  findFirstIndexEqualOrLargerThan(value: TComparator): number | undefined {
+    return binarySearchFirstIndexEqualOrLarger(this.backingArray, value, this.comparator);
   }
 
   findLastIndexEqualOrSmallerThan(value: TComparator): number | undefined {
-    let index = binarySearchInsertionIndex(this.backingArray, value, this.comparator) - 1;
-
-    while ((index < this.backingArray.length - 1) && (this.comparator(this.backingArray[index + 1], value) == 0)) {
-      index++;
-    }
-
-    if (index < 0) {
-      return undefined;
-    }
-
-    return index;
+    return binarySearchLastIndexEqualOrSmaller(this.backingArray, value, this.comparator);
   }
 
   private verifyIndexIsInBounds(index: number): void {
