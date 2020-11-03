@@ -1,6 +1,6 @@
 import { ApplicationRef, Injectable, NgZone } from '@angular/core';
-import { Observable } from 'rxjs';
-import { first } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { first, mapTo } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -9,21 +9,33 @@ export class AppStabilizationService {
   private readonly applicationRef: ApplicationRef;
   private readonly ngZone: NgZone;
 
+  private readonly stateSubject: BehaviorSubject<boolean>;
+
+  readonly state$: Observable<boolean>;
+
   constructor(applicationRef: ApplicationRef, ngZone: NgZone) {
     this.applicationRef = applicationRef;
     this.ngZone = ngZone;
 
-    ngZone.onError.subscribe((error: any) => console.log(error));
+    this.stateSubject = new BehaviorSubject<boolean>(false);
+    this.state$ = this.stateSubject.asObservable();
+
+    this.subscribeState();
+  }
+
+  private subscribeState() {
+    this.applicationRef.isStable.subscribe({
+      next: (state) => this.ngZone.run(() => this.stateSubject.next(state)),
+      complete: () => this.ngZone.run(() => this.stateSubject.complete()),
+      error: (error) => this.ngZone.run(() => this.stateSubject.error(error))
+    });
   }
 
   wait$(state: boolean = true): Observable<void> {
-    return new Observable((subscriber) => {
-      this.applicationRef.isStable.pipe(first((isStable) => isStable == state)).subscribe({
-        next: () => this.ngZone.run(() => subscriber.next()),
-        complete: () => this.ngZone.run(() => subscriber.complete()),
-        error: (error) => this.ngZone.run(() => subscriber.error(error))
-      });
-    });
+    return this.stateSubject.pipe(
+      first((isStable) => isStable == state),
+      mapTo(undefined)
+    );
   }
 
   async wait(state: boolean = true): Promise<void> {
