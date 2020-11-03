@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.33.22",
+  "version": "0.33.23",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,9 +10,9 @@
     "pub": "npm run build && cp package.json package-lock.json tsconfig.json dist/ && npm publish dist"
   },
   "dependencies": {
-    "@koa/router": "^9.4.0",
-    "@tstdl/base": "^0.60.56",
-    "@tstdl/database": "^0.13.18",
+    "@koa/router": "^10.0.0",
+    "@tstdl/base": "^0.60.60",
+    "@tstdl/database": "^0.13.20",
     "got": "^11.8.0",
     "koa": "^2.13.0",
     "yup": "^0.29.3"
@@ -22,8 +22,8 @@
     "@types/koa__router": "^8.0.3",
     "@types/node": "^14.14.6",
     "@types/yup": "^0.29.9",
-    "@typescript-eslint/eslint-plugin": "^4.6.0",
-    "@typescript-eslint/parser": "^4.6.0",
+    "@typescript-eslint/eslint-plugin": "^4.6.1",
+    "@typescript-eslint/parser": "^4.6.1",
     "eslint": "^7.12.1",
     "typescript": "~4.0.5"
   }

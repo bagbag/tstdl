@@ -1,7 +1,9 @@
 import { MultiError } from '../error/multi-error';
 import { DeferredPromise } from '../promise';
+import { CancellationToken } from '../utils';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
-import { AsyncDisposable, Disposable, dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
+import type { AsyncDisposable, Disposable } from './disposable';
+import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
 
 const deferrerPromiseSymbol: unique symbol = Symbol('DeferrerPromise');
 
@@ -13,34 +15,25 @@ export type Deferrer = {
 };
 
 export class AsyncDisposer implements AsyncDisposable {
-  private readonly _disposingPromise: DeferredPromise;
-  private readonly disposedPromise: DeferredPromise;
   private readonly deferrers: Set<Deferrer>;
   private readonly tasks: Set<Task>;
 
-  private _disposing: boolean;
-  private _disposed: boolean;
-
-  get disposingPromise(): Promise<void> {
-    return this._disposingPromise;
-  }
+  readonly disposingToken: CancellationToken;
+  readonly disposedToken: CancellationToken;
 
   get disposing(): boolean {
-    return this._disposing;
+    return this.disposingToken.isSet;
   }
 
   get disposed(): boolean {
-    return this._disposed;
+    return this.disposedToken.isSet;
   }
 
   constructor() {
-    this.disposedPromise = new DeferredPromise();
     this.deferrers = new Set();
     this.tasks = new Set();
-
-    this._disposingPromise = new DeferredPromise();
-    this._disposing = false;
-    this._disposed = false;
+    this.disposingToken = new CancellationToken();
+    this.disposedToken = new CancellationToken();
   }
 
   getDeferrer(): Deferrer {
@@ -62,7 +55,8 @@ export class AsyncDisposer implements AsyncDisposable {
     const deferrer = this.getDeferrer();
 
     try {
-      return await func();
+      const result = await func();
+      return result;
     }
     finally {
       deferrer.yield();
@@ -86,12 +80,10 @@ export class AsyncDisposer implements AsyncDisposable {
   // eslint-disable-next-line max-statements
   async [disposeAsync](): Promise<void> {
     if (this.disposing) {
-      await this.disposedPromise;
-      return;
+      return this.disposingToken;
     }
 
-    this._disposing = true;
-    this._disposingPromise.resolve();
+    this.disposingToken.set();
 
     const errors: Error[] = [];
 
@@ -99,7 +91,7 @@ export class AsyncDisposer implements AsyncDisposable {
       try {
         await deferrer[deferrerPromiseSymbol];
       }
-      catch (error) {
+      catch (error: unknown) {
         errors.push(error as Error);
       }
     }
@@ -108,13 +100,12 @@ export class AsyncDisposer implements AsyncDisposable {
       try {
         await task();
       }
-      catch (error) {
+      catch (error: unknown) {
         errors.push(error as Error);
       }
     });
 
-    this._disposed = true;
-    this.disposedPromise.resolve();
+    this.disposedToken.set();
 
     if (errors.length == 1) {
       throw errors[0];
