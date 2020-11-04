@@ -1,7 +1,8 @@
 import type { MonoTypeOperatorFunction, Observable, ObservableInput } from 'rxjs';
 import { defer, from, of, timer } from 'rxjs';
 import { delayWhen, retryWhen, scan, tap } from 'rxjs/operators';
-import { BackoffHelper, BackoffOptions, isDefined } from '../utils';
+import type { BackoffOptions } from '../utils';
+import { BackoffHelper } from '../utils';
 
 export function retryBackoff<T>(count: number, options: BackoffOptions): MonoTypeOperatorFunction<T> {
   const helper = new BackoffHelper(options);

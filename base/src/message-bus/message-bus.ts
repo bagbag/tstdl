@@ -26,7 +26,7 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
     this.disposeToken = new CancellationToken();
 
     this.message$ = defer(() => this._message$).pipe(takeUntil(this.disposeToken.set$), share());
-    this.allMessage$ = merge(this.message$, this.publishSubject).pipe(takeUntil(this.disposeToken.set$));
+    this.allMessage$ = merge(this.message$, this.publishSubject);
   }
 
   async publish(message: T): Promise<void> {
@@ -39,7 +39,13 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
   }
 
   async [disposeAsync](): Promise<void> {
+    if (this.disposeToken.isSet) {
+      throw new Error('message-bus is disposed');
+    }
+
     this.disposeToken.set();
+    this.publishSubject.complete();
+
     return this._disposeAsync();
   }
 

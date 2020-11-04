@@ -1,37 +1,46 @@
 import type { MessageBus } from '@tstdl/base/message-bus';
 import { MessageBusBase } from '@tstdl/base/message-bus';
+import { isUndefined } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { fromEvent } from 'rxjs';
-import { map, mapTo, shareReplay, switchMap, take, takeUntil, tap } from 'rxjs/operators';
-import { broadcastChannel$ } from './broadcast-channel-observable';
+import { defer, fromEvent, of } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
 
 export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
-  private readonly channel$: Observable<BroadcastChannel>;
+  private readonly channelProvider: () => BroadcastChannel;
+
+  private _channel: BroadcastChannel | undefined;
 
   protected readonly _message$: Observable<T>;
+
+  get channel(): BroadcastChannel {
+    if (isUndefined(this._channel)) {
+      if (this.disposeToken.isSet) {
+        throw new Error('message-bus is disposed');
+      }
+
+      this._channel = this.channelProvider();
+    }
+
+    return this._channel;
+  }
 
   constructor(channelProvider: () => BroadcastChannel) {
     super();
 
-    this.channel$ = broadcastChannel$(channelProvider).pipe(
-      takeUntil(this.disposeToken.set$),
-      shareReplay({ bufferSize: 1, refCount: true })
-    );
+    this.channelProvider = channelProvider;
 
-    this._message$ = this.channel$.pipe(
+    this._message$ = defer(() => of(this.channel)).pipe(
       switchMap((channel) => fromEvent<MessageEvent<T>>(channel, 'message')),
-      takeUntil(this.disposeToken.set$),
       map((event) => event.data)
     );
   }
 
   protected async _publish(message: T): Promise<void> {
-    return this.channel$.pipe(
-      tap((channel) => channel.postMessage(message)),
-      take(1),
-      mapTo(undefined)
-    ).toPromise();
+    this.channel.postMessage(message);
   }
 
-  protected async _disposeAsync(): Promise<void> { }
+  protected async _disposeAsync(): Promise<void> {
+    this._channel?.close();
+    this._channel = undefined;
+  }
 }
