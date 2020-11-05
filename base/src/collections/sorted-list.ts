@@ -1,14 +1,14 @@
 import type { List } from './list';
 
-export interface SortedList<T extends TCompare, TCompare = T> extends List<T> {
-  getByComparison(value: TCompare): T | undefined;
-  getRangeByComparison(from: TCompare, to: TCompare): T[];
+export interface SortedList<T extends TComparator, TComparator = T> extends List<T> {
+  getByComparison(value: TComparator): T | undefined;
+  getRangeByComparison(from: TComparator, to: TComparator): T[];
 
-  hasByComparison(value: TCompare): boolean;
+  hasByComparison(value: TComparator): boolean;
 
-  indexOfByComparison(value: TCompare): number | undefined;
-  firstIndexOfByComparison(value: TCompare): number | undefined;
-  lastIndexOfByComparison(value: TCompare): number | undefined;
+  indexOfByComparison(value: TComparator): number | undefined;
+  firstIndexOfByComparison(value: TComparator): number | undefined;
+  lastIndexOfByComparison(value: TComparator): number | undefined;
 
-  removeRangeByComparison(from: TCompare, to: TCompare): T[];
+  removeRangeByComparison(from: TComparator, to: TComparator): T[];
 }

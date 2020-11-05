@@ -45,12 +45,12 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     return this.get(this.length - 1);
   }
 
-  getByComparison(value: T): T | undefined {
+  getByComparison(value: TComparator): T | undefined {
     const index = this.indexOfByComparison(value);
     return isDefined(index) ? this.get(index) : undefined;
   }
 
-  getRangeByComparison(from: T, to: T): T[] {
+  getRangeByComparison(from: TComparator, to: TComparator): T[] {
     const left = this.findFirstIndexEqualOrLargerThan(from);
     const right = this.findLastIndexEqualOrSmallerThan(to);
 
@@ -184,11 +184,11 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     return binarySearch(this.backingArray, value, this.comparator);
   }
 
-  firstIndexOfByComparison(value: T): number | undefined {
+  firstIndexOfByComparison(value: TComparator): number | undefined {
     return binarySearchFirst(this.backingArray, value, this.comparator);
   }
 
-  lastIndexOfByComparison(value: T): number | undefined {
+  lastIndexOfByComparison(value: TComparator): number | undefined {
     return binarySearchLast(this.backingArray, value, this.comparator);
   }
 
