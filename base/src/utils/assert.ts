@@ -26,3 +26,33 @@ export function assertNumber(value: any, message: string = `Expected value to be
 export function assertBoolean(value: any, message: string = `Expected value to be boolean, but it is ${value}`): asserts value is boolean {
   return assert(typeof value == 'boolean', message);
 }
+
+export function assertPass<T, TPass extends T>(value: T, condition: (value: T) => value is TPass, message?: string): TPass {
+  assert(condition(value), message);
+  return value;
+}
+
+export function assertUndefinedPass<T>(value: T | undefined, message?: string): undefined {
+  assertUndefined(value, message);
+  return value;
+}
+
+export function assertDefinedPass<T>(value: T, message?: string): NonNullable<T> {
+  assertDefined(value, message);
+  return value;
+}
+
+export function assertStringPass(value: any, message?: string): string {
+  assertString(value, message);
+  return value;
+}
+
+export function assertNumberPass(value: any, message?: string): number {
+  assertNumber(value, message);
+  return value;
+}
+
+export function assertBooleanPass(value: any, message?: string): boolean {
+  assertBoolean(value, message);
+  return value;
+}
