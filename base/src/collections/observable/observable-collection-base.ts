@@ -107,7 +107,11 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
 
   abstract add(value: T): void;
 
+  abstract addMany(values: T[]): void;
+
   abstract remove(value: T): boolean;
+
+  abstract removeMany(values: T[]): number;
 
   abstract has(value: T): boolean;
 

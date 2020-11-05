@@ -70,6 +70,12 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     this.backingArray.splice(index, 0, value);
   }
 
+  addMany(values: T[]): void {
+    for (const value of values) {
+      this.add(value);
+    }
+  }
+
   addAt(_index: number, ..._values: T[]): void {
     throw new Error('adding at index not allowed in sorted collections');
   }
@@ -102,6 +108,20 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
     this.backingArray.splice(index, 1);
 
     return true;
+  }
+
+  removeMany(values: T[]): number {
+    let counter = 0;
+
+    for (const value of values) {
+      const removed = this.remove(value);
+
+      if (removed) {
+        counter++;
+      }
+    }
+
+    return counter;
   }
 
   removeAt(index: number): T {

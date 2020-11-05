@@ -94,6 +94,18 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
     this.onAddAt([{ value, index }]);
   }
 
+  addMany(values: T[]): void {
+    const events: ObservableListIndexedEvent<T>[] = [];
+
+    for (const value of values) {
+      const index = binarySearchInsertionIndex(this.backingArray, value, this.comparator);
+      this.backingArray.splice(index, 0, value);
+      events.push({ value, index });
+    }
+
+    this.onAddAt(events);
+  }
+
   has(value: T): boolean {
     const index = binarySearch(this.backingArray, value, this.comparator);
     return index != undefined;
@@ -115,6 +127,25 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
     this.onRemoveAt([{ value, index }]);
 
     return true;
+  }
+
+  removeMany(values: T[]): number {
+    const events: ObservableListIndexedEvent<T>[] = [];
+
+    for (const value of values) {
+      const index = binarySearch(this.backingArray, value, this.comparator);
+
+      if ((index == undefined) || (this.backingArray[index] != value)) {
+        continue;
+      }
+
+      this.backingArray.splice(index, 1);
+      events.push({ value, index });
+    }
+
+    this.onRemoveAt(events);
+
+    return events.length;
   }
 
   removeRangeByComparison(from: T, to: T): T[] {

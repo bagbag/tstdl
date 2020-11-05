@@ -86,6 +86,15 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
     this.onAddAt([{ index: this.backingArray.length - 1, value }]);
   }
 
+  addMany(values: T[]): void {
+    const initialIndex = this.backingArray.length;
+
+    this.backingArray.push(...values);
+
+    const events = values.map((value, index): ObservableListIndexedEvent<T> => ({ index: initialIndex + index, value }));
+    this.onAddAt(events);
+  }
+
   remove(value: T): boolean {
     const index = this.indexOf(value);
 
@@ -95,6 +104,20 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
 
     this.removeAt(index);
     return true;
+  }
+
+  removeMany(values: T[]): number {
+    let counter = 0;
+
+    for (const value of values) {
+      const removed = this.remove(value);
+
+      if (removed) {
+        counter++;
+      }
+    }
+
+    return counter;
   }
 
   has(value: T): boolean {

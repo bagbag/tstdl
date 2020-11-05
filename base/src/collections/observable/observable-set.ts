@@ -31,6 +31,17 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
     return this;
   }
 
+  addMany(values: T[]): this {
+    const newValues = values.filter((value) => !this.backingSet.has(value));
+
+    for (const newValue of newValues) {
+      this.backingSet.add(newValue);
+    }
+
+    this.onAdd(newValues);
+    return this;
+  }
+
   clear(): void {
     this.backingSet.clear();
     this.onClear();
@@ -44,6 +55,21 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
     }
 
     return success;
+  }
+
+  removeMany(values: T[]): number {
+    const deletedValues: T[] = [];
+
+    for (const value of values) {
+      const deleted = this.backingSet.delete(value);
+      if (deleted) {
+        deletedValues.push(value);
+      }
+    }
+
+    this.onRemove(deletedValues);
+
+    return deletedValues.length;
   }
 
   delete(value: T): boolean {
