@@ -39,7 +39,7 @@ export function binarySearchFirstIndexEqualOrLarger<T extends TComparator, TComp
     return undefined;
   }
 
-  return index;
+  return index + ((comparison < 0) as unknown as number);
 }
 
 export function binarySearchLastIndexEqualOrSmaller<T extends TComparator, TComparator>(values: ArrayLike<T>, searchValue: TComparator, comparator: Comparator<TComparator> = compareByValue): number | undefined {
