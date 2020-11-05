@@ -16,10 +16,10 @@ export class AppStabilizationService {
     this.applicationRef = applicationRef;
     this.ngZone = ngZone;
 
-    this.state$ = this.subscribeState();
+    this.state$ = this.getStateObservable();
   }
 
-  private subscribeState(): Observable<boolean> {
+  private getStateObservable(): Observable<boolean> {
     return this.applicationRef.isStable.pipe(
       runInZone(this.ngZone),
       distinctUntilChanged(),

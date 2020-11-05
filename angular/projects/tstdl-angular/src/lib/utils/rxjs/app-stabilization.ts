@@ -1,4 +1,3 @@
-import { NgZone } from '@angular/core';
 import { MonoTypeOperatorFunction, Observable } from 'rxjs';
 import { switchMapTo } from 'rxjs/operators';
 import { AppStabilizationService } from '../../services';
@@ -8,5 +7,5 @@ export function waitForAppStabilization<T>(appStabilizationService: AppStabiliza
     return appStabilizationService.wait$().pipe(
       switchMapTo(source)
     );
-  }
+  };
 }
