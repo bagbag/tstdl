@@ -3,8 +3,8 @@ import type { PartialProperty } from '@tstdl/base/types';
 export type Entity = {
   id: string,
   created: number,
-  updated: number | undefined,
-  deleted: number | undefined
+  updated: false | number,
+  deleted: false | number
 };
 
 export type MaybeNewEntity<T extends Entity = Entity> = PartialProperty<T, 'id' | 'created' | 'updated' | 'deleted'>;

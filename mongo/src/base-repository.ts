@@ -335,12 +335,12 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async undeleteByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
-    const { modifiedCount } = await this.update(filter, { $set: { deleted: undefined } } as UpdateQuery<U>);
+    const { modifiedCount } = await this.update(filter, { $set: { deleted: false as Entity['deleted'] } } as UpdateQuery<U>);
     return modifiedCount == 1;
   }
 
   async undeleteManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
-    const { modifiedCount } = await this.updateMany(filter, { $set: { deleted: undefined } } as UpdateQuery<U>);
+    const { modifiedCount } = await this.updateMany(filter, { $set: { deleted: false as Entity['deleted'] } } as UpdateQuery<U>);
     return modifiedCount;
   }
 
@@ -446,7 +446,7 @@ export function getBasicFilterQuery<T extends Entity>({ ids, includeDeleted }: {
   }
 
   if (!includeDeleted) {
-    filter.deleted = { $eq: undefined };
+    filter.deleted = false as Entity['deleted'];
   }
 
   return filter;
@@ -462,7 +462,7 @@ export function insertOneOperation<T extends Entity>(document: MongoDocument<T>)
   return operation;
 }
 
-export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, includeDeleted: boolean, updatedTimestamp: NonNullable<Entity['updated']>, options: ReplaceOptions = {}): BulkWriteReplaceOneOperation<MongoDocument<T>> {
+export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, includeDeleted: boolean, updatedTimestamp: Entity['updated'], options: ReplaceOptions = {}): BulkWriteReplaceOneOperation<MongoDocument<T>> {
   const filter = getBasicFilterQuery({ ids: document._id, includeDeleted });
 
   const operation = {

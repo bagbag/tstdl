@@ -91,8 +91,8 @@ export function mongoDocumentFromMaybeNewEntity<T extends Entity>(entity: MaybeN
   const document = {
     _id: id ?? getNewDocumentId(),
     created: created ?? currentTimestamp(),
-    updated: updated ?? undefined,
-    deleted: deleted ?? undefined,
+    updated: updated ?? false,
+    deleted: deleted ?? false,
     ...entityRest
   } as MongoDocument<T>;
 

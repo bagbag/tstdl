@@ -4,8 +4,8 @@ export type UpdateOptions = {
   upsert?: boolean
 };
 
-export type EntityFilter<T extends Entity> = { [P in keyof Omit<T, 'created' | 'updated' | 'deleted'>]?: T[P] | T[P][] };
-export type EntityPatch<T extends Entity> = Partial<Omit<T, 'id' | 'created' | 'updated' | 'deleted'>>;
+export type EntityFilter<T extends Entity> = { [P in keyof T]?: T[P] | T[P][] };
+export type EntityPatch<T extends Entity> = Partial<Omit<T, 'id'>>;
 
 export interface EntityRepository<T extends Entity> {
   readonly _type: T;

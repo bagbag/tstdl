@@ -350,7 +350,7 @@ export function entityFilterToFilterQuery<T extends Entity>(filter: EntityFilter
   });
 
   if (!includeDeleted) {
-    filterQuery.deleted = { $eq: undefined };
+    (filterQuery as FilterQuery<Entity>).deleted = false as Entity['deleted'];
   }
 
   return filterQuery;
