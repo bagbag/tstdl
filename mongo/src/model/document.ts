@@ -1,5 +1,5 @@
 import { currentTimestamp } from '@tstdl/base/utils';
-import type { Entity, EntityWithoutId, EntityWithPartialId, MaybeNewEntity, NewEntity } from '@tstdl/database';
+import type { Entity, EntityWithoutId, EntityWithPartialId, MaybeNewEntity, MaybeNewEntityWithoutId, NewEntity } from '@tstdl/database';
 import type { ProjectedEntity, Projection } from '../base-repository';
 import { ProjectionMode } from '../base-repository';
 import { getNewDocumentId } from '../id';
@@ -25,14 +25,9 @@ export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
   return entity;
 }
 
-export function toEntityWithoutId<T extends MaybeNewEntity>(entity: T): EntityWithoutId<T> {
+export function toMaybeNewEntityWithoutId<T extends MaybeNewEntity | EntityWithPartialId>(entity: T): MaybeNewEntityWithoutId<T> {
   const { id, ...rest } = entity;
-  return rest;
-}
-
-export function toNewEntity<T extends MaybeNewEntity>(entity: T): NewEntity<T> {
-  const { id, created, updated, deleted, ...rest } = entity;
-  return rest;
+  return rest as MaybeNewEntityWithoutId<T>;
 }
 
 export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(document: MongoDocumentWithPartialId<T>): ProjectedEntity<T, M, P> {
