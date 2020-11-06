@@ -34,12 +34,15 @@ export class Migrator {
 
     const lock = this.lockProvider.get(`migrator-${name}`);
 
+    let hasLatest = false;
+
     await lock.using(30000, true, async () => {
       const currentState = await this.migrationStateRepository.tryLoadByFilter({ name });
       const currentRevision = currentState?.revision ?? 'init';
       const latestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
 
       if (currentRevision == latestRevision) {
+        hasLatest = true;
         return;
       }
 
@@ -69,6 +72,10 @@ export class Migrator {
 
       this.logger.warn(`finished migration in ${round(time / 1000, 2)} seconds`);
     });
+
+    if (hasLatest) {
+      return;
+    }
 
     await this.migrate({ name, migrations });
   }
