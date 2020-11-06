@@ -215,7 +215,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, physically: boolean, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
     if (!physically) {
-      return this.tryLoadByFilterAndUpdate(filter, { deleted: (currentTimestamp() as Entity['deleted']) } as UpdateQuery<U>, { ...options, returnOriginal: false });
+      return this.tryLoadByFilterAndUpdate(filter, { $set: { deleted: (currentTimestamp() as Entity['deleted']) } } as UpdateQuery<U>, { ...options, returnOriginal: false });
     }
 
     const result = await this.collection.findOneAndDelete(filter, options as object);
