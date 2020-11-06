@@ -17,7 +17,7 @@ export interface EnumerableMethods {
   groupSingle(...args: any[]): any;
   groupToMap(...args: any[]): any;
   groupToSingleMap(...args: any[]): any;
-  intercept(...args: any[]): any;
+  tap(...args: any[]): any;
   last(...args: any[]): any;
   map(...args: any[]): any;
   mapMany(...args: any[]): any;

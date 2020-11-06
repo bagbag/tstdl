@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, intercept, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -108,8 +108,8 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return grouped;
   }
 
-  intercept(func: IteratorFunction<T, void>): Enumerable<T> {
-    const iterator = intercept(this.source, func);
+  tap(tapper: IteratorFunction<T, any>): Enumerable<T> {
+    const iterator = tap(this.source, tapper);
     return new Enumerable(iterator);
   }
 

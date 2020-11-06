@@ -2,9 +2,9 @@ import type { Observable } from 'rxjs';
 import type { AsyncComparator } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interceptAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
-import { parallelFilter, parallelForEach, parallelGroup, parallelIntercept, parallelMap } from '../utils/async-iterable-helpers/parallel';
+import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { TypePredicate } from '../utils/iterable-helpers';
 import { isIterable, range } from '../utils/iterable-helpers';
 import { Enumerable } from './enumerable';
@@ -117,8 +117,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return groupToSingleMapAsync<T, TGroup>(this.source, selector);
   }
 
-  intercept(func: AsyncIteratorFunction<T, void>): AsyncEnumerable<T> {
-    const iterator = interceptAsync(this.source, func);
+  tap(tapper: AsyncIteratorFunction<T, any>): AsyncEnumerable<T> {
+    const iterator = tapAsync(this.source, tapper);
     return new AsyncEnumerable(iterator);
   }
 
@@ -238,8 +238,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return parallelGroup(this.source, concurrency, selector);
   }
 
-  parallelIntercept(concurrency: number, keepOrder: boolean, func: ParallelizableIteratorFunction<T, void>): AsyncEnumerable<T> {
-    const result = parallelIntercept(this.source, concurrency, keepOrder, func);
+  parallelTap(concurrency: number, keepOrder: boolean, tapper: ParallelizableIteratorFunction<T, any>): AsyncEnumerable<T> {
+    const result = parallelTap(this.source, concurrency, keepOrder, tapper);
     return new AsyncEnumerable(result);
   }
 
