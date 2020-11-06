@@ -6,7 +6,7 @@ import type { FilterQuery, UpdateQuery } from 'mongodb';
 import { MongoEntityRepository, noopTransformer } from '../entity-repository';
 import type { MongoDocument } from '../model';
 import type { Collection, TypedIndexSpecification } from '../types';
-import type { MongoJob, MongoJobWithoutId } from './job';
+import type { MongoJob, NewMongoJob } from './job';
 
 const backoffOptions: BackoffOptions = {
   strategy: BackoffStrategy.Exponential,
@@ -36,7 +36,7 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async enqueue(data: T): Promise<Job<T>> {
-    const newJob: MongoJobWithoutId<T> = {
+    const newJob: NewMongoJob<T> = {
       data,
       enqueueTimestamp: currentTimestamp(),
       tries: 0,
@@ -51,7 +51,7 @@ export class MongoQueue<T> implements Queue<T> {
   async enqueueMany(data: T[]): Promise<Job<T>[]> {
     const now = currentTimestamp();
 
-    const newJobs: MongoJobWithoutId<T>[] = data.map((item): MongoJobWithoutId<T> => ({
+    const newJobs: NewMongoJob<T>[] = data.map((item): NewMongoJob<T> => ({
       data: item,
       enqueueTimestamp: now,
       tries: 0,
@@ -97,7 +97,7 @@ export class MongoQueue<T> implements Queue<T> {
 
   async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
     const jobIds = toArray(jobOrJobs).map((job) => job.id);
-    await this.repository.deleteManyById(jobIds);
+    await this.repository.deleteManyById(jobIds, true);
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {

@@ -1,6 +1,6 @@
 import { Alphabet, getRandomString } from '@tstdl/base/utils';
 
-let idsLength: number = 15;
+let idsLength = 15;
 let idsAlphabet: string = Alphabet.LowerUpperCaseNumbers;
 
 export function getNewDocumentId(): string {

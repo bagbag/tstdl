@@ -54,6 +54,6 @@ export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> 
   }
 
   async deleteByResource(resource: string, key: string): Promise<boolean> {
-    return this.baseRepository.deleteByFilter({ resource, key });
+    return this.baseRepository.deleteByFilter({ resource, key }, true);
   }
 }

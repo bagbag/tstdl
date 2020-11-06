@@ -43,6 +43,6 @@ export class MongoKeyValueRepository<Module extends string, KV extends StringMap
   }
 
   async delete<K extends keyof KV>(key: K): Promise<boolean> {
-    return this.repository.deleteByFilter({ module: this.module, key: key as string });
+    return this.repository.deleteByFilter({ module: this.module, key: key as string }, true);
   }
 }

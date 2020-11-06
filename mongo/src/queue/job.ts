@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutId } from '@tstdl/database';
+import type { Entity, NewEntity } from '@tstdl/database';
 
 export type MongoJob<T> = Entity & {
   data: T,
@@ -8,4 +8,4 @@ export type MongoJob<T> = Entity & {
   batch: null | string
 };
 
-export type MongoJobWithoutId<T> = EntityWithoutId<MongoJob<T>>;
+export type NewMongoJob<T> = NewEntity<MongoJob<T>>;

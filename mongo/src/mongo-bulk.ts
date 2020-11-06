@@ -1,7 +1,9 @@
-import type { Entity, EntityWithPartialId } from '@tstdl/database';
+import { currentTimestamp } from '@tstdl/base/utils';
+import type { Entity, MaybeNewEntity } from '@tstdl/database';
+import type { BulkWriteOpResultObject } from 'mongodb';
 import type { ReplaceOptions, UpdateOptions } from './base-repository';
 import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './base-repository';
-import { toMongoDocument, toMongoDocumentWithId } from './model';
+import { mongoDocumentFromMaybeNewEntity, toMongoDocument } from './model';
 import type { BulkWriteOperation, Collection, FilterQuery, UpdateQuery } from './types';
 
 export type BulkResult = {
@@ -9,7 +11,8 @@ export type BulkResult = {
   matchedCount: number,
   modifiedCount: number,
   deletedCount: number,
-  upsertedCount: number
+  upsertedCount: number,
+  raw: BulkWriteOpResultObject
 };
 
 export class MongoBulk<T extends Entity> {
@@ -32,36 +35,31 @@ export class MongoBulk<T extends Entity> {
     this.executed = true;
 
     if (this.operations.length == 0) {
-      return {
-        insertedCount: 0,
-        matchedCount: 0,
-        modifiedCount: 0,
-        deletedCount: 0,
-        upsertedCount: 0
-      };
+      throw new Error('no operations specified');
     }
 
-    const { insertedCount, matchedCount, modifiedCount, deletedCount, upsertedCount } = await this.collection.bulkWrite(this.operations, { ordered });
+    const result = await this.collection.bulkWrite(this.operations, { ordered });
 
     return {
-      insertedCount: insertedCount ?? 0,
-      matchedCount: matchedCount ?? 0,
-      modifiedCount: modifiedCount ?? 0,
-      deletedCount: deletedCount ?? 0,
-      upsertedCount: upsertedCount ?? 0
+      insertedCount: result.insertedCount ?? 0,
+      matchedCount: result.matchedCount ?? 0,
+      modifiedCount: result.modifiedCount ?? 0,
+      deletedCount: result.deletedCount ?? 0,
+      upsertedCount: result.upsertedCount ?? 0,
+      raw: result
     };
   }
 
-  insert<U extends T>(entity: EntityWithPartialId<U>): MongoBulk<T> {
-    const document = toMongoDocumentWithId(entity);
+  insert<U extends T>(entity: MaybeNewEntity<U>): MongoBulk<T> {
+    const document = mongoDocumentFromMaybeNewEntity(entity);
     const operation = insertOneOperation(document);
     this.operations.push(operation);
 
     return this;
   }
 
-  insertMany<U extends T>(entities: EntityWithPartialId<U>[]): MongoBulk<T> {
-    const documents = entities.map(toMongoDocumentWithId);
+  insertMany<U extends T>(entities: MaybeNewEntity<U>[]): MongoBulk<T> {
+    const documents = entities.map(mongoDocumentFromMaybeNewEntity);
     const operations = documents.map(insertOneOperation);
     this.operations.push(...operations);
 
@@ -82,10 +80,19 @@ export class MongoBulk<T extends Entity> {
     return this;
   }
 
-  replace<U extends T>(entity: U, options?: ReplaceOptions): MongoBulk<T> {
+  replace<U extends T>(entity: U, includeDeleted: boolean, options?: ReplaceOptions): MongoBulk<T> {
     const document = toMongoDocument(entity);
-    const operation = replaceOneOperation(document, options);
+    const operation = replaceOneOperation(document, includeDeleted, currentTimestamp(), options);
     this.operations.push(operation);
+
+    return this;
+  }
+
+  replaceMany<U extends T>(entities: U[], includeDeleted: boolean, options?: ReplaceOptions): MongoBulk<T> {
+    const timestamp = currentTimestamp();
+    const documents = entities.map(toMongoDocument);
+    const operations = documents.map((document) => replaceOneOperation(document, includeDeleted, timestamp, options));
+    this.operations.push(...operations);
 
     return this;
   }
