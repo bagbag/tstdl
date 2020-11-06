@@ -5,7 +5,7 @@ import { NotFoundError } from '@tstdl/base/error';
 import { assertDefined, currentTimestamp } from '@tstdl/base/utils';
 import type { Entity, MaybeNewEntity } from '@tstdl/database';
 import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
+import { MongoDocument, mongoDocumentFromMaybeNewEntity, toEntity, toEntityWithoutId, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
@@ -109,12 +109,12 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertIfNotExists<U extends T>(entity: MaybeNewEntity<U>): Promise<U | undefined> {
-    const filter: FilterQuery<U> = toNewEntity(entity) as FilterQuery<U>;
+    const filter: FilterQuery<U> = toEntityWithoutId(entity) as FilterQuery<U>;
     return this.insertIfNotExistsByFilter(filter, entity);
   }
 
   async insertManyIfNotExists<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
-    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toNewEntity(entity) as FilterQuery<U>, entity }));
+    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toEntityWithoutId(entity) as FilterQuery<U>, entity }));
     return this.insertManyIfNotExistsByFilter(items);
   }
 
