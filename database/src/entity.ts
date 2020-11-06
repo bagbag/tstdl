@@ -11,6 +11,6 @@ export type EntityWithPartialId<T extends Entity = Entity> = PartialProperty<T, 
 export type EntityWithoutId<T extends Entity | EntityWithPartialId = Entity> = Omit<T, 'id'>;
 
 export type MaybeNewEntity<T extends EntityWithPartialId = Entity> = PartialProperty<T, 'id' | 'created' | 'updated' | 'deleted'>;
-export type NewEntity<T extends EntityWithPartialId = Entity> = Omit<T, 'id' | 'created' | 'updated' | 'deleted'>;
+export type NewEntity<T extends MaybeNewEntity | EntityWithPartialId = Entity> = Omit<T, 'id' | 'created' | 'updated' | 'deleted'>;
 
 export type MaybeNewEntityWithoutId<T extends MaybeNewEntity | EntityWithPartialId> = Omit<PartialProperty<T, 'created' | 'updated' | 'deleted'>, 'id'>;
