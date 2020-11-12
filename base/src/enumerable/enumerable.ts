@@ -1,12 +1,11 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
 export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   private readonly source: Iterable<T>;
-
   private iterator: Iterator<T> | undefined;
 
   constructor(iterable: Iterable<T>) {
@@ -14,8 +13,13 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     this.iterator = undefined;
   }
 
-  static from<T>(iterable: Iterable<T>): Enumerable<T> {
-    return new Enumerable(iterable);
+  static from<T>(source: Iterable<T>): Enumerable<T> {
+    return new Enumerable(source);
+  }
+
+  static fromDeferred<T>(source: () => Iterable<T>): Enumerable<T> {
+    const deferred = deferredIterable(source);
+    return new Enumerable(deferred);
   }
 
   static fromRange(fromInclusive: number, toInclusive: number): Enumerable<number> {
@@ -155,8 +159,7 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   }
 
   sort(comparator?: Comparator<T>): Enumerable<T> {
-    const sorted = sort(this.source, comparator);
-    return new Enumerable(sorted);
+    return Enumerable.fromDeferred(() => sort(this.source, comparator));
   }
 
   take(count: number): Enumerable<T> {

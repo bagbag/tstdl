@@ -1,6 +1,6 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 
-export function isIterable<T>(anyIterable: AnyIterable<T>): anyIterable is Iterable<T> {
+export function isIterable<T>(anyIterable: unknown): anyIterable is Iterable<T> {
   if (anyIterable == undefined) {
     return false;
   }

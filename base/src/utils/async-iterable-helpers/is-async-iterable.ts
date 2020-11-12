@@ -1,6 +1,6 @@
-import { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 
-export function isAsyncIterable<T>(anyIterable: AnyIterable<T>): anyIterable is AsyncIterable<T> {
+export function isAsyncIterable<T>(anyIterable: unknown): anyIterable is AsyncIterable<T> {
   if (anyIterable == undefined) {
     return false;
   }
@@ -11,7 +11,7 @@ export function isAsyncIterable<T>(anyIterable: AnyIterable<T>): anyIterable is 
 export function isAsyncIterableIterator<T>(anyIterable: AnyIterable<T>): anyIterable is AsyncIterableIterator<T>;
 export function isAsyncIterableIterator<T = any>(obj: any): obj is AsyncIterableIterator<T> {
   const isIterable = isAsyncIterable(obj);
-  const isIterator = isIterable && typeof (obj as Partial<AsyncIterableIterator<any>>).next == 'function';
+  const isIterator = typeof (obj as Partial<AsyncIterableIterator<any>>).next == 'function';
 
-  return isIterator;
+  return isIterable && isIterator;
 }

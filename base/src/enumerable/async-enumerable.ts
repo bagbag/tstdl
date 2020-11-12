@@ -2,7 +2,7 @@ import type { Observable } from 'rxjs';
 import type { AsyncComparator } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { TypePredicate } from '../utils/iterable-helpers';
@@ -14,12 +14,17 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   private readonly source: AnyIterable<T>;
   private asyncIterator?: AsyncIterator<T>;
 
-  constructor(iterable: AnyIterable<T>) {
-    this.source = iterable;
+  constructor(source: AnyIterable<T>) {
+    this.source = source;
   }
 
-  static from<T>(iterable: AnyIterable<T>): AsyncEnumerable<T> {
-    return new AsyncEnumerable(iterable);
+  static from<T>(source: AnyIterable<T>): AsyncEnumerable<T> {
+    return new AsyncEnumerable(source);
+  }
+
+  static fromDeferred<T>(source: () => AnyIterable<T> | Promise<AnyIterable<T>>): AsyncEnumerable<T> {
+    const deferred = deferredAsyncIterable(source);
+    return new AsyncEnumerable(deferred);
   }
 
   static fromObservable<T, O extends Observable<T>>(observable: O): AsyncEnumerable<T> {
@@ -183,8 +188,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(skipped);
   }
 
-  async sort(comparator?: AsyncComparator<T>): Promise<T[]> {
-    return sortAsync(this.source, comparator);
+  sort(comparator?: AsyncComparator<T>): AsyncEnumerable<T> {
+    return AsyncEnumerable.fromDeferred(async () => sortAsync(this.source, comparator));
   }
 
   take(count: number): AsyncEnumerable<T> {

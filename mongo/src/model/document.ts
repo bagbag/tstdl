@@ -1,5 +1,5 @@
 import { currentTimestamp } from '@tstdl/base/utils';
-import type { Entity, EntityWithoutId, EntityWithPartialId, MaybeNewEntity, MaybeNewEntityWithoutId, NewEntity } from '@tstdl/database';
+import type { Entity, EntityWithPartialId, MaybeNewEntity, MaybeNewEntityWithoutId } from '@tstdl/database';
 import type { ProjectedEntity, Projection } from '../base-repository';
 import { ProjectionMode } from '../base-repository';
 import { getNewDocumentId } from '../id';

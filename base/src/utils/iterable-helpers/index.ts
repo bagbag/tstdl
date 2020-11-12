@@ -4,6 +4,7 @@ export * from './assert';
 export * from './batch';
 export * from './concat';
 export * from './default-if-empty';
+export * from './deferred';
 export * from './distinct';
 export * from './drain';
 export * from './filter';

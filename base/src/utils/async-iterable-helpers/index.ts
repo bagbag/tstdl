@@ -5,6 +5,7 @@ export * from './batch';
 export * from './buffer';
 export * from './concat';
 export * from './default-if-empty';
+export * from './deferred';
 export * from './distinct';
 export * from './drain';
 export * from './filter';
