@@ -162,6 +162,10 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return Enumerable.fromDeferred(() => sort(this.source, comparator));
   }
 
+  sortToArray(comparator?: Comparator<T>): T[] {
+    return sort(this.source, comparator);
+  }
+
   take(count: number): Enumerable<T> {
     const taken = take(this.source, count);
     return new Enumerable(taken);

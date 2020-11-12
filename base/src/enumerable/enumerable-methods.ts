@@ -27,6 +27,7 @@ export interface EnumerableMethods {
   single(...args: any[]): any;
   skip(...args: any[]): any;
   sort(...args: any[]): any;
+  sortToArray(...args: any[]): any;
   take(...args: any[]): any;
   takeWhile(...args: any[]): any;
   toArray(...args: any[]): any;

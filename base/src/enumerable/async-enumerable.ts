@@ -192,6 +192,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return AsyncEnumerable.fromDeferred(async () => sortAsync(this.source, comparator));
   }
 
+  async sortToArray(comparator?: AsyncComparator<T>): Promise<T[]> {
+    return sortAsync(this.source, comparator);
+  }
+
   take(count: number): AsyncEnumerable<T> {
     const taken = takeAsync(this.source, count);
     return new AsyncEnumerable(taken);
