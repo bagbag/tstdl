@@ -25,6 +25,7 @@ export interface EnumerableMethods {
   pairwise(...args: any[]): any;
   reduce(...args: any[]): any;
   single(...args: any[]): any;
+  singleOrDefault(...args: any[]): any;
   skip(...args: any[]): any;
   sort(...args: any[]): any;
   sortToArray(...args: any[]): any;

@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -150,6 +150,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   single<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     const result = single(this.source, predicate);
+    return result;
+  }
+
+  singleOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate | D {
+    const result = singleOrDefault(this.source, defaultValue, predicate);
     return result;
   }
 

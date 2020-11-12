@@ -26,6 +26,7 @@ export * from './pairwise';
 export * from './reduce';
 export * from './retry';
 export * from './single';
+export * from './single-or-default';
 export * from './skip';
 export * from './sort';
 export * from './take';

@@ -23,6 +23,7 @@ export * from './pairwise';
 export * from './range';
 export * from './reduce';
 export * from './single';
+export * from './single-or-default';
 export * from './skip';
 export * from './sort';
 export * from './take';
