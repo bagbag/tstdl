@@ -2,7 +2,7 @@ import type { Observable } from 'rxjs';
 import type { AsyncComparator } from '../utils';
 import type { AnyIterable } from '../utils/any-iterable-iterator';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { TypePredicate } from '../utils/iterable-helpers';
@@ -96,6 +96,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return firstAsync(this.source, predicate);
   }
 
+  async firstOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: TypePredicate<T, TPredicate> | AsyncPredicate<T>): Promise<TPredicate | D> {
+    return firstOrDefaultAsync(this.source, defaultValue, predicate);
+  }
+
   forceCast<TNew>(): AsyncEnumerable<TNew> {
     return this as AsyncEnumerable<any> as AsyncEnumerable<TNew>;
   }
@@ -139,6 +143,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
 
   async last<TPredicate extends T = T>(predicate?: TypePredicate<T, TPredicate> | AsyncPredicate<T>): Promise<TPredicate> {
     return lastAsync(this.source, predicate);
+  }
+
+  async lastOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: TypePredicate<T, TPredicate> | AsyncPredicate<T>): Promise<TPredicate | D> {
+    return lastOrDefaultAsync(this.source, defaultValue, predicate);
   }
 
   map<TOut>(mapper: AsyncIteratorFunction<T, TOut>): AsyncEnumerable<TOut> {

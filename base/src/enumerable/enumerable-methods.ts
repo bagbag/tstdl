@@ -11,6 +11,7 @@ export interface EnumerableMethods {
   filter(...args: any[]): any;
   filterUndefined(...args: any[]): any;
   first(...args: any[]): any;
+  firstOrDefault(...args: any[]): any;
   forceCast(...args: any[]): any;
   forEach(...args: any[]): any;
   group(...args: any[]): any;
@@ -19,6 +20,7 @@ export interface EnumerableMethods {
   groupToSingleMap(...args: any[]): any;
   tap(...args: any[]): any;
   last(...args: any[]): any;
+  lastOrDefault(...args: any[]): any;
   map(...args: any[]): any;
   mapMany(...args: any[]): any;
   materialize(...args: any[]): any;

@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
 import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, map, mapMany, materialize, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -80,8 +80,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   }
 
   first<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
-    const result = first(this.source, predicate);
-    return result;
+    return first(this.source, predicate);
+  }
+
+  firstOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate | D {
+    return firstOrDefault(this.source, defaultValue, predicate);
   }
 
   forEach(func: IteratorFunction<T, void>): void {
@@ -119,6 +122,10 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   last<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
     return last(this.source, predicate);
+  }
+
+  lastOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate | D {
+    return lastOrDefault(this.source, defaultValue, predicate);
   }
 
   map<TOut>(mapper: IteratorFunction<T, TOut>): Enumerable<TOut> {
