@@ -1,5 +1,8 @@
-export const millisecondsPerDay = 1000 * 60 * 60 * 24;
-export const secondsPerDay = 60 * 60 * 24;
+export const millisecondsPerSecond = 1000;
+export const millisecondsPerMinute = millisecondsPerSecond * 60;
+export const millisecondsPerHour = millisecondsPerMinute * 60;
+export const millisecondsPerDay = millisecondsPerHour * 24;
+export const millisecondsPerWeek = millisecondsPerDay * 7;
 
 export type NumericDateTime = {
   date: number,
@@ -29,7 +32,7 @@ export function currentTime(): number {
 }
 
 export function timestampToNumericDate(timestamp: number): number {
-  return Math.floor(timestamp / 86400000);
+  return Math.floor(timestamp / millisecondsPerDay);
 }
 
 export function dateToNumericDate(date: Date): number {
@@ -38,7 +41,7 @@ export function dateToNumericDate(date: Date): number {
 }
 
 export function timestampToTime(timestamp: number): number {
-  return timestamp % 86400;
+  return timestamp % millisecondsPerDay;
 }
 
 export function timestampToNumericDateAndTime(timestamp: number): NumericDateTime {
@@ -49,7 +52,7 @@ export function timestampToNumericDateAndTime(timestamp: number): NumericDateTim
 }
 
 export function numericDateToTimestamp(numericDate: number): number {
-  return numericDate * 86400000;
+  return numericDate * millisecondsPerDay;
 }
 
 export function numericDateToDate(numericDate: number): { year: number, month: number, day: number } {
