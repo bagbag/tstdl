@@ -24,6 +24,7 @@ export class MongoBulk<T extends Entity> {
   constructor(collection: Collection<T>) {
     this.collection = collection;
 
+    this.operations = [];
     this.executed = false;
   }
 
