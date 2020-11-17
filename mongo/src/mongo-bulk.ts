@@ -3,7 +3,7 @@ import type { Entity, MaybeNewEntity } from '@tstdl/database';
 import type { BulkWriteOpResultObject } from 'mongodb';
 import type { ReplaceOptions, UpdateOptions } from './base-repository';
 import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './base-repository';
-import { mongoDocumentFromMaybeNewEntity, toMongoDocument } from './model';
+import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model';
 import type { BulkWriteOperation, Collection, FilterQuery, UpdateQuery } from './types';
 
 export type BulkResult = {
@@ -50,20 +50,20 @@ export class MongoBulk<T extends Entity> {
     };
   }
 
-  insert<U extends T>(entity: MaybeNewEntity<U>): MongoBulk<T> {
+  insert<U extends T>(entity: MaybeNewEntity<U>): U {
     const document = mongoDocumentFromMaybeNewEntity(entity);
     const operation = insertOneOperation(document);
     this.operations.push(operation);
 
-    return this;
+    return toEntity(document);
   }
 
-  insertMany<U extends T>(entities: MaybeNewEntity<U>[]): MongoBulk<T> {
+  insertMany<U extends T>(entities: MaybeNewEntity<U>[]): U[] {
     const documents = entities.map(mongoDocumentFromMaybeNewEntity);
     const operations = documents.map(insertOneOperation);
     this.operations.push(...operations);
 
-    return this;
+    return documents.map(toEntity);
   }
 
   update<U extends T>(filter: FilterQuery<U>, update: UpdateQuery<U>, options?: UpdateOptions): MongoBulk<T> {
