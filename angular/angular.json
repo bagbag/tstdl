@@ -41,7 +41,7 @@
       "prefix": "tsl",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-ng-packagr:build",
+          "builder": "@angular-devkit/build-angular:ng-packagr",
           "options": {
             "tsConfig": "projects/tstdl-angular/tsconfig.lib.json",
             "project": "projects/tstdl-angular/ng-package.json"
