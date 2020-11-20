@@ -1,16 +1,20 @@
 /* eslint-disable max-statements */
 
 export function intersectMaps<K, V>(...maps: Map<K, V>[]): Map<K, V> {
+  if (maps.length == 0) {
+    return new Map<K, V>();
+  }
+
   const intersection = new Map<K, V>();
 
-  const sortedMaps = [...maps].sort((a, b) => a.size - b.size);
-  const smallestMap = sortedMaps[0];
+  const sortedMaps = maps.sort((a, b) => a.size - b.size);
+  const smallestMap = sortedMaps[0]!;
 
   for (const [key, value] of smallestMap) {
     let intersects = true;
 
     for (let i = 1; i < sortedMaps.length; i++) {
-      const map = sortedMaps[i];
+      const map = sortedMaps[i]!;
 
       const has = map.has(key);
       if (!has) {

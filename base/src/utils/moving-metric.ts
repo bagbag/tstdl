@@ -1,15 +1,15 @@
 import { Timer } from './timer';
 
 export enum MetricAggregation {
-  Sum,
-  Mean,
-  Median,
-  Minimum,
-  Maximum,
-  Count,
-  Quantile,
-  Rate,
-  RateBySum
+  Sum = 0,
+  Mean = 1,
+  Median = 2,
+  Minimum = 3,
+  Maximum = 4,
+  Count = 5,
+  Quantile = 6,
+  Rate = 7,
+  RateBySum = 8
 }
 
 export type MetricAggregationOptions<T extends MetricAggregation> = T extends MetricAggregation.Quantile
@@ -86,19 +86,19 @@ export class MovingMetric {
     }
 
     if (this.samples.length == 1) {
-      return this.samples[0][0];
+      return this.samples[0]![0];
     }
 
     const sortedSamples = this.sortedByValue();
 
     if (sortedSamples.length % 2 == 1) {
       const index = (sortedSamples.length - 1) / 2;
-      return sortedSamples[index][0];
+      return sortedSamples[index]![0];
     }
 
     const upperIndex = sortedSamples.length / 2;
-    const [lower] = sortedSamples[upperIndex - 1];
-    const [upper] = sortedSamples[upperIndex];
+    const [lower] = sortedSamples[upperIndex - 1]!;
+    const [upper] = sortedSamples[upperIndex]!;
 
     return (lower + upper) / 2;
   }
@@ -140,13 +140,13 @@ export class MovingMetric {
     const index = Math.round((sortedSamples.length - 1) * scalar);
 
     if (Number.isInteger(index)) {
-      const [value] = sortedSamples[index];
+      const [value] = sortedSamples[index]!;
       return value;
     }
 
     const flooredIndex = Math.floor(index);
-    const [lower] = sortedSamples[flooredIndex];
-    const [upper] = sortedSamples[flooredIndex + 1];
+    const [lower] = sortedSamples[flooredIndex]!;
+    const [upper] = sortedSamples[flooredIndex + 1]!;
     const difference = upper - lower;
     const ratio = index % 1;
 
@@ -162,11 +162,11 @@ export class MovingMetric {
     }
 
     if (this.samples.length == 1) {
-      return this.samples[0][0];
+      return this.samples[0]![0];
     }
 
-    const [oldestValue, oldestTimer] = this.samples[0];
-    const [newestValue, newestTimer] = this.samples[this.samples.length - 1];
+    const [oldestValue, oldestTimer] = this.samples[0]!;
+    const [newestValue, newestTimer] = this.samples[this.samples.length - 1]!;
 
     const delta = newestValue - oldestValue;
     const seconds = (oldestTimer.milliseconds - newestTimer.milliseconds) / 1000;
@@ -183,7 +183,7 @@ export class MovingMetric {
     }
 
     if (this.samples.length == 1) {
-      return this.samples[0][0];
+      return this.samples[0]![0];
     }
 
     const sum = this.sum(true);
@@ -203,8 +203,8 @@ export class MovingMetric {
       return NaN;
     }
 
-    const [, oldestTimer] = this.samples[0];
-    const [, newestTimer] = this.samples[this.samples.length - 1];
+    const [, oldestTimer] = this.samples[0]!;
+    const [, newestTimer] = this.samples[this.samples.length - 1]!;
     return oldestTimer.milliseconds - newestTimer.milliseconds;
   }
 

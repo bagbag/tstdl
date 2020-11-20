@@ -1,16 +1,20 @@
 /* eslint-disable max-statements */
 
 export function intersectSets<T>(...sets: Set<T>[]): Set<T> {
+  if (sets.length == 0) {
+    return new Set();
+  }
+
   const intersection = new Set<T>();
 
-  const sortedSets = [...sets].sort((a, b) => a.size - b.size);
-  const smallestSet = sortedSets[0];
+  const sortedSets = sets.sort((a, b) => a.size - b.size);
+  const smallestSet = sortedSets[0]!;
 
   for (const value of smallestSet) {
     let intersects = true;
 
     for (let i = 1; i < sortedSets.length; i++) {
-      const set = sortedSets[i];
+      const set = sortedSets[i]!;
 
       const has = set.has(value);
       if (!has) {

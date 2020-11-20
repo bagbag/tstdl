@@ -44,11 +44,11 @@ export async function quickSortInPlaceAsync<T>(array: T[], comparator: AsyncComp
 }
 
 function partition<T>(array: T[], comparator: Comparator<T>, pivot: number, left: number, right: number): number {
-  const pivotValue = array[pivot];
+  const pivotValue = array[pivot]!;
   let partitionIndex = left;
 
   for (let i = left; i < right; i++) {
-    const comparison = comparator(array[i], pivotValue);
+    const comparison = comparator(array[i]!, pivotValue);
 
     if (comparison < 0) {
       swap(array, i, partitionIndex);
@@ -62,11 +62,11 @@ function partition<T>(array: T[], comparator: Comparator<T>, pivot: number, left
 }
 
 async function partitionAsync<T>(array: T[], comparator: AsyncComparator<T>, pivot: number, left: number, right: number): Promise<number> {
-  const pivotValue = array[pivot];
+  const pivotValue = array[pivot]!;
   let partitionIndex = left;
 
   for (let i = left; i < right; i++) {
-    const comparisonReturnValue = comparator(array[i], pivotValue);
+    const comparisonReturnValue = comparator(array[i]!, pivotValue);
 
     const comparison = (typeof comparisonReturnValue == 'number')
       ? comparisonReturnValue

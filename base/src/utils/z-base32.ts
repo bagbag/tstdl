@@ -15,7 +15,7 @@ export function zBase32Encode(buffer: ArrayBufferLike): string {
   let value = 0;
 
   for (let i = 0; i < byteView.byteLength; i++) {
-    value = (value << 8) | byteView[i];
+    value = (value << 8) | byteView[i]!;
     bits += 8;
 
     while (bits >= 5) {
@@ -41,7 +41,7 @@ export function zBase32Decode(input: string): ArrayBuffer {
   let byteIndex = 0;
 
   for (let i = 0; i < input.length; i++) {
-    const char = input[i];
+    const char = input[i]!;
     const charValue = charValueMap.get(char);
 
     if (charValue == undefined) {

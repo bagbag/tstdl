@@ -50,7 +50,7 @@ export class AwaitableList<T> implements Iterable<T> {
       throw new Error('index out of range');
     }
 
-    return this.backingArray[index];
+    return this.backingArray[index]!;
   }
 
   append(...items: T[]): number {

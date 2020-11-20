@@ -26,7 +26,7 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
 
   get(index: number): T {
     this.verifyIndexIsInBounds(index);
-    return this.backingArray[index];
+    return this.backingArray[index]!;
   }
 
   getFirst(): T {
@@ -64,7 +64,7 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
   removeAt(index: number): T {
     this.verifyIndexIsInBounds(index);
 
-    const value = this.backingArray.splice(index, 1)[0];
+    const value = this.backingArray.splice(index, 1)[0]!;
     this.onRemoveAt([{ index, value }]);
 
     return value;

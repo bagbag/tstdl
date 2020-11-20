@@ -34,7 +34,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
 
   get(index: number): T {
     this.verifyIndexIsInBounds(index);
-    return this.backingArray[index];
+    return this.backingArray[index]!;
   }
 
   getFirst(): T {
@@ -126,7 +126,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
 
   removeAt(index: number): T {
     this.verifyIndexIsInBounds(index);
-    return this.backingArray.splice(index, 1)[0];
+    return this.backingArray.splice(index, 1)[0]!;
   }
 
   removeRange(index: number, count: number): T[] {

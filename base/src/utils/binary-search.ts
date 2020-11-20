@@ -81,7 +81,7 @@ function _binarySearchRawIndex<T extends TComparator, TComparator>(values: Array
 
   while (min <= max) {
     middle = integer((min + max) / 2);
-    value = values[middle];
+    value = values[middle]!;
     comparison = comparator(value, searchValue);
 
     if (comparison < 0) {

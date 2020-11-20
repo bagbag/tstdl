@@ -39,7 +39,7 @@ export class Migrator {
     await lock.using(30000, true, async () => {
       const currentState = await this.migrationStateRepository.tryLoadByFilter({ name });
       const currentRevision = currentState?.revision ?? 'init';
-      const latestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0].to;
+      const latestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0]!.to;
 
       if (currentRevision == latestRevision) {
         hasLatest = true;
@@ -52,7 +52,7 @@ export class Migrator {
         throw new Error(`no suitable migration path from current revision ${currentRevision} to latest revision ${latestRevision} found`);
       }
 
-      const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0];
+      const largestMigration = suitableMigrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0]!;
 
       this.logger.warn(`starting migration for "${name}" from revision ${currentRevision} to ${largestMigration.to}`);
 

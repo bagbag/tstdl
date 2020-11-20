@@ -1,17 +1,21 @@
-type NodeCrypto = typeof import('crypto');
+import type * as NodeCrypto from 'crypto';
+import { assertFunction } from './assert';
 
-let nodeCrypto: NodeCrypto | undefined;
+type NodeCryptoType = typeof NodeCrypto;
+
+let nodeCrypto: NodeCryptoType | undefined;
 
 try {
-  // eslint-disable-next-line global-require, @typescript-eslint/no-require-imports
-  nodeCrypto = require('crypto') as NodeCrypto;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+  nodeCrypto = require(['crypto'][0]!) as NodeCryptoType;
+  assertFunction(nodeCrypto.randomBytes);
 }
 catch {
   // ignore
 }
 
 function getNodeCryptoRandomBytes(size: number): Uint8Array {
-  const buffer = (nodeCrypto as NodeCrypto).randomBytes(size);
+  const buffer = (nodeCrypto as NodeCryptoType).randomBytes(size);
   const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
 
   return uint8Array;
@@ -19,9 +23,7 @@ function getNodeCryptoRandomBytes(size: number): Uint8Array {
 
 function getBrowserCryptoRandomBytes(size: number): Uint8Array {
   const uint8Array = new Uint8Array(size);
-  globalThis.crypto.getRandomValues(uint8Array);
-
-  return uint8Array;
+  return globalThis.crypto.getRandomValues(uint8Array);
 }
 
 const randomBytes: (size: number) => Uint8Array
@@ -56,7 +58,7 @@ export function getRandomString(length: number, alphabet: string): string {
   const uint16Array = new Uint16Array(bytes.buffer);
 
   for (let i = 0; i < length; i++) {
-    const value = uint16Array[i];
+    const value = uint16Array[i]!;
     const index = Math.floor((value / 65535) * alphabet.length);
     result += alphabet[index];
   }

@@ -79,20 +79,20 @@ function aggregate(aggregation: AggregationMode, values: number[]): number {
 
     case AggregationMode.Median:
       values.sort(compareByValue);
-      const median = Math.round(values.length / 2);
-      return values[median];
+      const median = Math.floor(values.length / 2);
+      return values[median]!;
 
     case AggregationMode.FirstQuartile:
       values.sort(compareByValue);
-      const firstQuartile = Math.round(values.length / 4 * 1);
-      return values[firstQuartile];
+      const firstQuartile = Math.floor(values.length / 4 * 1);
+      return values[firstQuartile]!;
 
     case AggregationMode.ThirdQuartile:
       values.sort(compareByValue);
-      const thirdQuartile = Math.round(values.length / 4 * 3);
-      return values[thirdQuartile];
+      const thirdQuartile = Math.floor(values.length / 4 * 3);
+      return values[thirdQuartile]!;
 
     default:
-      throw new Error(`aggregation mode ${aggregation as number} (${AggregationMode[aggregation]}) not implemented`);
+      throw new Error(`aggregation mode ${aggregation as number} not implemented`);
   }
 }

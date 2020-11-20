@@ -1,3 +1,4 @@
+import { assert } from 'console';
 import type { StringMap } from '../types';
 import { decodeBase64Url } from './base64';
 
@@ -37,20 +38,24 @@ export type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader,
 };
 
 export function parseJwtTokenString<THeader extends JwtTokenHeader, TPayload = StringMap>(tokenString: string): JwtTokenParseResult<THeader, TPayload> {
-  const [encodedHeader, encodedPayload, encodedSignature] = tokenString.split('.');
+  const splits = tokenString.split('.');
+
+  assert(splits.length == 3, 'invalid token');
+
+  const [encodedHeader, encodedPayload, encodedSignature] = splits;
 
   const textDecoder = new TextDecoder();
 
   const encoded: JwtTokenParseResult['encoded'] = {
-    header: encodedHeader,
-    payload: encodedPayload,
-    signature: encodedSignature
+    header: encodedHeader!,
+    payload: encodedPayload!,
+    signature: encodedSignature!
   };
 
   const bytes: JwtTokenParseResult['bytes'] = {
-    header: decodeBase64Url(encodedHeader),
-    payload: decodeBase64Url(encodedPayload),
-    signature: decodeBase64Url(encodedSignature)
+    header: decodeBase64Url(encodedHeader!),
+    payload: decodeBase64Url(encodedPayload!),
+    signature: decodeBase64Url(encodedSignature!)
   };
 
   const string: JwtTokenParseResult['string'] = {

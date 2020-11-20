@@ -328,7 +328,7 @@ export function randomElement<T>(array: T[], { min, max }: { min?: number, max?:
   const _max = max != undefined ? Math.min(max, array.length - 1) : array.length - 1;
   const index = random(_min, _max, true);
 
-  return array[index];
+  return array[index]!;
 }
 
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a == b;
@@ -352,9 +352,9 @@ export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A
   const d = sort != false ? Enumerable.from(b).sort(sort).toArray() : b;
 
   for (let i = 0; i < c.length; i++) {
-    const equals = comparator(c[i], d[i]);
+    const itemEquals = comparator(c[i]!, d[i]!);
 
-    if (!equals) {
+    if (!itemEquals) {
       return false;
     }
   }

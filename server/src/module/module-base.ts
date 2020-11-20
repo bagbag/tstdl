@@ -17,7 +17,7 @@ export abstract class ModuleBase implements Module {
   }
 
   private get stateString(): string {
-    return ModuleState[this.state].toLowerCase();
+    return ModuleState[this.state]!.toLowerCase();
   }
 
   constructor(name: string) {

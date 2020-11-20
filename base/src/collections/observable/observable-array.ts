@@ -20,7 +20,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
 
   get(index: number): T {
     this.verifyIndexIsInBounds(index);
-    return this.backingArray[index];
+    return this.backingArray[index]!;
   }
 
   indexOf(value: T): number | undefined {
@@ -36,7 +36,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
   set(index: number, value: T): void {
     this.verifyIndexIsInBounds(index);
 
-    const oldValue = this.backingArray[index];
+    const oldValue = this.backingArray[index]!;
     this.backingArray[index] = value;
 
     this.onRemoveAt([{ index, value: oldValue }]);
@@ -54,7 +54,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
   removeAt(index: number): T {
     this.verifyIndexIsInBounds(index);
 
-    const value = this.backingArray.splice(index, 1)[0];
+    const value = this.backingArray.splice(index, 1)[0]!;
     this.onRemoveAt([{ index, value }]);
 
     return value;

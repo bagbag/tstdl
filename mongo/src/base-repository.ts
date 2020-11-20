@@ -143,7 +143,7 @@ export class MongoBaseRepository<T extends Entity> {
     const operations = mapped.map((o) => o.operation as BulkWriteUpdateOneOperation<MongoDocument<T>>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
     assertDefined(result.upsertedIds);
-    const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number].document));
+    const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number]!.document));
 
     return entities;
   }

@@ -1,9 +1,9 @@
 const promiseConstructor = Promise;
 
 const enum PromiseState {
-  Pending,
-  Resolved,
-  Rejected
+  Pending = 0,
+  Resolved = 1,
+  Rejected = 2
 }
 
 export class DeferredPromise<T = void> implements Promise<T> {
@@ -14,7 +14,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
   static [Symbol.species] = promiseConstructor;
 
   private backingPromise: Promise<T>;
-  private resolvePromise: (value?: T | PromiseLike<T>) => void;
+  private resolvePromise: (value: T | PromiseLike<T>) => void;
   private rejectPromise: (reason?: any) => void;
 
   private state: PromiseState;
@@ -37,7 +37,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
     return this.state != PromiseState.Pending;
   }
 
-  constructor(executor?: (resolve: (value?: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+  constructor(executor?: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
     this.reset();
 
     if (executor != undefined) {
@@ -60,14 +60,14 @@ export class DeferredPromise<T = void> implements Promise<T> {
     return this.backingPromise.finally(onfinally);
   }
 
-  resolve(value?: T | PromiseLike<T>): void {
+  resolve(value: T | PromiseLike<T>): void {
     this.ensurePendingState();
 
     this.resolvePromise(value);
     this.state = PromiseState.Resolved;
   }
 
-  resolveAndReset(value?: T | PromiseLike<T>): void {
+  resolveAndReset(value: T | PromiseLike<T>): void {
     this.resolve(value);
     this.reset();
   }
