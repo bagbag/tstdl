@@ -96,6 +96,30 @@ export class HttpClient {
     return response.body;
   }
 
+  static async put<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('put', url, responseType, options);
+  }
+
+  static async putString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('put', url, HttpResponseType.Text, options);
+    return response.body;
+  }
+
+  static async putJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('put', url, HttpResponseType.Json, options);
+    return response.body;
+  }
+
+  static async putBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+    const response = await HttpClient.call('put', url, HttpResponseType.Buffer, options);
+    return response.body;
+  }
+
+  static async putStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+    const response = await HttpClient.callStream('put', url, options);
+    return response.body;
+  }
+
   static async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const baseHeaders: StringMap<string | string[]> = {};
 
