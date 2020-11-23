@@ -1,5 +1,5 @@
-import { NonObjectBufferMode } from './stream-helper-types';
-import { TypedReadable } from './typed-readable';
+import type { NonObjectBufferMode } from './stream-helper-types';
+import type { TypedReadable } from './typed-readable';
 
 export async function readStream(readable: TypedReadable<NonObjectBufferMode>, maxBytes?: number): Promise<Buffer> {
   let totalLength = 0;

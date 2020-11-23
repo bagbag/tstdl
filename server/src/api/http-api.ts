@@ -69,19 +69,21 @@ export type Route<Method extends RequestMethod, RouteParameters, B extends BodyT
   method: Method | Method[],
   path: string | RegExp,
   bodyType?: B,
+  maxRequestBodyBytes?: number,
   parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
   handler: RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext>,
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
 export function simpleRoute<Method extends RequestMethod, B extends BodyType, EndpointResult extends UndefinableJson>(
-  { method, path, bodyType, endpoint }: Omit<Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'parametersTransformer'>
+  { method, path, bodyType, maxRequestBodyBytes, endpoint }: Omit<Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'parametersTransformer'>
 ): Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest> {
   return route(
     {
       method,
       path,
       bodyType,
+      maxRequestBodyBytes,
       handler: getDefaultRouteHandler(),
       parametersTransformer: getDefaultParametersTransformer(),
       endpoint
@@ -89,7 +91,7 @@ export function simpleRoute<Method extends RequestMethod, B extends BodyType, En
   );
 }
 
-// eslint-disable-next-line no-shadow
+// eslint-disable-next-line @typescript-eslint/no-shadow
 export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext>): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
   return route;
 }
@@ -175,18 +177,18 @@ export class HttpApi {
   }
 
   registerRoutes(...routes: AnyRoute[]): void {
-    // eslint-disable-next-line no-shadow
+    // eslint-disable-next-line @typescript-eslint/no-shadow
     for (const route of routes) {
       const methods = toArray(route.method);
 
       for (const method of methods) {
         switch (method) {
           case RequestMethod.Get:
-            this.registerRoute(method, route.path, BodyType.None, route.parametersTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.parametersTransformer, route.endpoint, route.handler);
             break;
 
           case RequestMethod.Post:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.parametersTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.parametersTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -197,15 +199,15 @@ export class HttpApi {
   }
 
 
-  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
+  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, maxBytes: number, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
     this.router.register(path, [method], async (context: Context, next) => {
-      await this.handle(context, bodyType, parametersTransformer, endpoint, handler);
+      await this.handle(context, bodyType, maxBytes, parametersTransformer, endpoint, handler);
       return next();
     });
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
-  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
+  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, maxBytes: number, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
     const { request, response, params } = context;
     const { query: { ...query } } = request;
 
@@ -213,7 +215,7 @@ export class HttpApi {
 
     let body: BodyValueType<B>;
     try {
-      body = await getBody(request, bodyType);
+      body = await getBody(request, bodyType, maxBytes);
     }
     catch (error: unknown) {
       response.status = getErrorStatusCode(error as Error, 400);
@@ -266,19 +268,19 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   }
 }
 
-async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B): Promise<BodyValueType<B>> {
+async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, maxBytes: number = 10e6): Promise<BodyValueType<B>> {
   switch (bodyType) {
     case BodyType.String:
-      return readBody(request) as unknown as Promise<BodyValueType<B>>;
+      return readBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Json:
-      return readJsonBody(request) as unknown as Promise<BodyValueType<B>>;
+      return readJsonBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Stream:
       return request.req as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Binary:
-      return readStream(request.req as TypedReadable<NonObjectBufferMode>) as unknown as Promise<BodyValueType<B>>;
+      return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.None:
       return undefined as unknown as Promise<BodyValueType<B>>;
@@ -288,13 +290,13 @@ async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B): P
   }
 }
 
-async function readJsonBody(request: Koa.Request, maxLength: number = 10e6): Promise<Json> {
-  const body = await readBody(request, maxLength);
+async function readJsonBody(request: Koa.Request, maxBytes: number): Promise<Json> {
+  const body = await readBody(request, maxBytes);
   const json = JSON.parse(body) as Json;
   return json;
 }
 
-async function readBody(request: Koa.Request, maxBytes: number = 10e6): Promise<string> {
+async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {
   const { req, charset } = request;
 
   const rawBody = await readStream(req as TypedReadable<NonObjectBufferMode>, maxBytes);
