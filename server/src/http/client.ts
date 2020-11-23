@@ -51,13 +51,15 @@ export class HttpClient {
     return HttpClient.call('get', url, responseType, options);
   }
 
-  static async getString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await HttpClient.call('get', url, HttpResponseType.Text, options);
+  static async getString(url: string, options: HttpRequestOptions = {}): Promise<string> {
+    const headers = { Accept: 'text/plain', ...options.headers };
+    const response = await HttpClient.call('get', url, HttpResponseType.Text, { ...options, headers });
     return response.body;
   }
 
-  static async getJson(url: string, options?: HttpRequestOptions): Promise<Json> {
-    const response = await HttpClient.call('get', url, HttpResponseType.Json, options);
+  static async getJson(url: string, options: HttpRequestOptions = {}): Promise<Json> {
+    const headers = { Accept: 'application/json', ...options.headers };
+    const response = await HttpClient.call('get', url, HttpResponseType.Json, { ...options, headers });
     return response.body;
   }
 
@@ -75,13 +77,15 @@ export class HttpClient {
     return HttpClient.call('post', url, responseType, options);
   }
 
-  static async postString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await HttpClient.call('post', url, HttpResponseType.Text, options);
+  static async postString(url: string, options: HttpRequestOptions = {}): Promise<string> {
+    const headers = { Accept: 'text/plain', ...options.headers };
+    const response = await HttpClient.call('post', url, HttpResponseType.Text, { ...options, headers });
     return response.body;
   }
 
-  static async postJson(url: string, options?: HttpRequestOptions): Promise<Json> {
-    const response = await HttpClient.call('post', url, HttpResponseType.Json, options);
+  static async postJson(url: string, options: HttpRequestOptions = {}): Promise<Json> {
+    const headers = { Accept: 'application/json', ...options.headers };
+    const response = await HttpClient.call('post', url, HttpResponseType.Json, { ...options, headers });
     return response.body;
   }
 
