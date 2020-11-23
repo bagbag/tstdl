@@ -1,5 +1,5 @@
-import { assert } from 'console';
 import type { StringMap } from '../types';
+import { assert } from './assert';
 import { decodeBase64Url } from './base64';
 
 export enum JwtTokenAlgorithm {
