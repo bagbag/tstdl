@@ -5,6 +5,7 @@ import type { Options as GotOptions, Response } from 'got';
 import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
 import type { Readable } from 'stream';
+import { isDefined } from '@tstdl/base/utils';
 
 export type HttpRequestOptions = {
   headers?: StringMap<string | string[]>,
@@ -51,15 +52,13 @@ export class HttpClient {
     return HttpClient.call('get', url, responseType, options);
   }
 
-  static async getString(url: string, options: HttpRequestOptions = {}): Promise<string> {
-    const headers = { Accept: 'text/plain', ...options.headers };
-    const response = await HttpClient.call('get', url, HttpResponseType.Text, { ...options, headers });
+  static async getString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('get', url, HttpResponseType.Text, options);
     return response.body;
   }
 
-  static async getJson(url: string, options: HttpRequestOptions = {}): Promise<Json> {
-    const headers = { Accept: 'application/json', ...options.headers };
-    const response = await HttpClient.call('get', url, HttpResponseType.Json, { ...options, headers });
+  static async getJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('get', url, HttpResponseType.Json, options);
     return response.body;
   }
 
@@ -77,15 +76,13 @@ export class HttpClient {
     return HttpClient.call('post', url, responseType, options);
   }
 
-  static async postString(url: string, options: HttpRequestOptions = {}): Promise<string> {
-    const headers = { Accept: 'text/plain', ...options.headers };
-    const response = await HttpClient.call('post', url, HttpResponseType.Text, { ...options, headers });
+  static async postString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('post', url, HttpResponseType.Text, options);
     return response.body;
   }
 
-  static async postJson(url: string, options: HttpRequestOptions = {}): Promise<Json> {
-    const headers = { Accept: 'application/json', ...options.headers };
-    const response = await HttpClient.call('post', url, HttpResponseType.Json, { ...options, headers });
+  static async postJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('post', url, HttpResponseType.Json, options);
     return response.body;
   }
 
@@ -99,13 +96,37 @@ export class HttpClient {
     return response.body;
   }
 
-  static async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  static async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+    const baseHeaders: StringMap<string | string[]> = {};
+
+    if (responseType == HttpResponseType.Text) {
+      baseHeaders.Accept = 'text/plain';
+    }
+    else if (responseType == HttpResponseType.Json) {
+      baseHeaders.Accept = 'application/json';
+    }
+
+    if (isDefined(options.body?.text)) {
+      baseHeaders['Content-Type'] = 'text/plain';
+    }
+    else if (isDefined(options.body?.json)) {
+      baseHeaders['Content-Type'] = 'application/json';
+    }
+    else if (isDefined(options.body?.form)) {
+      baseHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
+    }
+    else if (isDefined(options.body?.readable) || isDefined(options.body?.buffer)) {
+      baseHeaders['Content-Type'] = 'application/octet-stream';
+    }
+
+    const headers = { ...baseHeaders, ...options.headers };
+
     switch (responseType) {
       case HttpResponseType.Stream:
-        return this.callStream(method, url, options) as Promise<HttpResponse<T>>;
+        return this.callStream(method, url, { ...options, headers }) as Promise<HttpResponse<T>>;
 
       default:
-        return this._call(method, url, responseType, options);
+        return this._call(method, url, responseType, { ...options, headers });
     }
   }
 
@@ -177,14 +198,4 @@ function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpReque
   }
 
   return options;
-}
-
-function getResponseSymbol(obj: object): symbol {
-  const symbol = Object.getOwnPropertySymbols(obj).find((symbol) => symbol.description == 'response');
-
-  if (symbol == undefined) {
-    throw new Error('response symbol not found');
-  }
-
-  return symbol;
 }
