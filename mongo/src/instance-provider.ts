@@ -1,7 +1,7 @@
 import { disposer, getLogger } from '@tstdl/base/instance-provider';
 import type { Logger } from '@tstdl/base/logger';
 import type { Type } from '@tstdl/base/types';
-import { isDefined, singleton } from '@tstdl/base/utils';
+import { assertDefined, FactoryMap, isDefined, singleton } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { connect } from '@tstdl/server/instance-provider';
 import * as Mongo from 'mongodb';
@@ -28,8 +28,11 @@ let mongoLogPrefix = 'MONGO';
 
 let repositoryLogPrefix = 'REPO';
 
-let mongoLockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity>;
+let mongoLockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity> | undefined;
 let mongoLockProviderLog = 'LOCK';
+
+const databaseKeys = new FactoryMap<string, symbol>(() => Symbol('database'));
+const collectionKeys = new FactoryMap<string, FactoryMap<string, symbol>>(() => new FactoryMap(() => Symbol('collection')));
 
 export function configureMongoInstanceProvider(
   options: {
@@ -79,14 +82,18 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
 }
 
 export async function getMongoDatabase(databaseName: string = defaultDatabase): Promise<Mongo.Db> {
-  return singleton(`mongo-database:${databaseName}`, async () => {
+  const key = databaseKeys.get(databaseName);
+
+  return singleton(key, async () => {
     const mongo = await getMongo();
     return mongo.db(defaultDatabase);
   });
 }
 
 export async function getMongoCollection<T extends Entity, TDb extends T>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
-  return singleton(`mongo-collection:${databaseName}:${collectionName}`, async () => {
+  const key = collectionKeys.get(databaseName).get(collectionName);
+
+  return singleton(key, async () => {
     const database = await getMongoDatabase(databaseName);
     const existingCollections = await database.collections();
 
@@ -114,6 +121,8 @@ export async function getMongoRepository<T extends Entity, TDb extends T = T, C 
 
 export async function getMongoLockProvider(): Promise<MongoLockProvider> {
   return singleton(MongoLockProvider, async () => {
+    assertDefined(mongoLockRepositoryConfig, 'mongoLockRepositoryConfig must be configured');
+
     const repository = await getMongoRepository(MongoLockRepository, mongoLockRepositoryConfig);
     const logger = getLogger(mongoLockProviderLog);
 
