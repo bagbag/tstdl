@@ -1,43 +1,54 @@
 import { disposer, getLogger } from '@tstdl/base/instance-provider';
 import type { Logger } from '@tstdl/base/logger';
 import type { Type } from '@tstdl/base/types';
-import { singleton } from '@tstdl/base/utils';
+import { isDefined, singleton } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { connect } from '@tstdl/server/instance-provider';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
+import type { MongoLockEntity } from './lock';
+import { MongoLockProvider, MongoLockRepository } from './lock';
 import type { MongoDocument } from './model';
 import type { Collection } from './types';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends T> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
-export type MongoRepositoryConfig<T extends Entity, TDb extends T> = {
-  name: string,
+export type MongoRepositoryConfig<T extends Entity, TDb extends T = T> = {
+  databaseName: string,
+  collectionName: string,
   type: T,
   databaseType?: TDb
 };
 
-let mongoConnectionString = '';
-let mongoDatabase = '';
-let mongoClientOptions: Mongo.MongoClientOptions = { useUnifiedTopology: true, useNewUrlParser: true };
+let connectionString = '';
+let defaultDatabase = '';
+let clientOptions: Mongo.MongoClientOptions = { useUnifiedTopology: true, useNewUrlParser: true };
+
 let mongoLogPrefix = 'MONGO';
 
 let repositoryLogPrefix = 'REPO';
 
+let mongoLockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity>;
+let mongoLockProviderLog = 'LOCK';
+
 export function configureMongoInstanceProvider(
   options: {
-    mongoConnectionString?: string,
-    mongoDatabase?: string,
-    mongoClientOptions?: Mongo.MongoClientOptions,
+    connectionString?: string,
+    defaultDatabase?: string,
+    clientOptions?: Mongo.MongoClientOptions,
     mongoLogPrefix?: string,
-    repositoryLogPrefix?: string
+    repositoryLogPrefix?: string,
+    mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
+    mongoLockProviderLog?: string
   }
 ): void {
-  mongoConnectionString = options.mongoConnectionString ?? mongoConnectionString;
-  mongoDatabase = options.mongoDatabase ?? mongoDatabase;
-  mongoClientOptions = options.mongoClientOptions ?? mongoClientOptions;
+  connectionString = options.connectionString ?? connectionString;
+  defaultDatabase = options.defaultDatabase ?? defaultDatabase;
+  clientOptions = options.clientOptions ?? clientOptions;
   mongoLogPrefix = options.mongoLogPrefix ?? mongoLogPrefix;
   repositoryLogPrefix = options.repositoryLogPrefix ?? repositoryLogPrefix;
+  mongoLockRepositoryConfig = options.mongoLockRepositoryConfig ?? mongoLockRepositoryConfig;
+  mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
@@ -51,7 +62,7 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
 
     Mongo.Logger.setCurrentLogger(logFunction);
 
-    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(mongoConnectionString, mongoClientOptions);
+    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(connectionString, clientOptions);
 
     mongoClient
       .on('fullsetup', () => logger.verbose('connection setup'))
@@ -67,25 +78,25 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
   });
 }
 
-export async function getMongoDatabase(): Promise<Mongo.Db> {
-  return singleton(Mongo.Db, async () => {
+export async function getMongoDatabase(databaseName: string = defaultDatabase): Promise<Mongo.Db> {
+  return singleton(`mongo-database:${databaseName}`, async () => {
     const mongo = await getMongo();
-    return mongo.db(mongoDatabase);
+    return mongo.db(defaultDatabase);
   });
 }
 
-export async function getMongoCollection<T extends Entity, TDb extends T>({ name }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
-  return singleton(`mongo-collection-${name}`, async () => {
-    const database = await getMongoDatabase();
+export async function getMongoCollection<T extends Entity, TDb extends T>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
+  return singleton(`mongo-collection:${databaseName}:${collectionName}`, async () => {
+    const database = await getMongoDatabase(databaseName);
     const existingCollections = await database.collections();
 
     for (const collection of existingCollections) {
-      if (collection.collectionName == name) {
+      if (collection.collectionName == collectionName) {
         return collection;
       }
     }
 
-    return database.createCollection<MongoDocument<TDb>>(name);
+    return database.createCollection<MongoDocument<TDb>>(collectionName);
   });
 }
 
@@ -101,6 +112,21 @@ export async function getMongoRepository<T extends Entity, TDb extends T = T, C 
   });
 }
 
-export function getMongoCollectionConfig<T extends Entity, TDb extends T = T>(name: string): MongoRepositoryConfig<T, TDb> {
-  return { name, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
+export async function getMongoLockProvider(): Promise<MongoLockProvider> {
+  return singleton(MongoLockProvider, async () => {
+    const repository = await getMongoRepository(MongoLockRepository, mongoLockRepositoryConfig);
+    const logger = getLogger(mongoLockProviderLog);
+
+    return new MongoLockProvider(repository, logger);
+  });
+}
+
+// eslint-disable-next-line @typescript-eslint/unified-signatures
+export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(database: string, collection: string): MongoRepositoryConfig<T, TDb>;
+export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(collection: string): MongoRepositoryConfig<T, TDb>;
+export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(databaseOrCollection: string, collection?: string): MongoRepositoryConfig<T, TDb> {
+  const databaseName = isDefined(collection) ? databaseOrCollection : defaultDatabase;
+  const collectionName = isDefined(collection) ? collection : databaseOrCollection;
+
+  return { databaseName, collectionName, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
 }
