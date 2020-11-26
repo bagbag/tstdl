@@ -468,3 +468,14 @@ export function parseFirstAndFamilyName(name: string): { firstName: string | und
     familyName: familyName.length > 0 ? familyName : undefined
   };
 }
+
+export function _throw(value: any): never {
+  throw value;
+}
+
+export function deferThrow(value: any): () => never {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  return function deferThrow() {
+    throw value;
+  };
+}

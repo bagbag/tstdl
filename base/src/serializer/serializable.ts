@@ -1,4 +1,4 @@
-import { Json } from '../types';
+import type { Json } from '../types';
 
 export const serializeSymbol: unique symbol = Symbol('Symbol for serialization function');
 export const deserializeSymbol: unique symbol = Symbol('Symbol for deserialization function');

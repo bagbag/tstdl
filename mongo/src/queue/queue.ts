@@ -1,12 +1,11 @@
-import type { Logger } from '@tstdl/base/logger';
 import type { Job, Queue } from '@tstdl/base/queue';
 import type { BackoffOptions, CancellationToken } from '@tstdl/base/utils';
 import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
 import type { FilterQuery, UpdateQuery } from 'mongodb';
-import { MongoEntityRepository, noopTransformer } from '../entity-repository';
+import type { MongoEntityRepository } from '../entity-repository';
 import type { MongoDocument } from '../model';
-import type { Collection, TypedIndexSpecification } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
+import type { MongoJobRepository } from './mongo-job.repository';
 
 const backoffOptions: BackoffOptions = {
   strategy: BackoffStrategy.Exponential,
@@ -15,18 +14,13 @@ const backoffOptions: BackoffOptions = {
   maximumDelay: 5000
 };
 
-const indexes: TypedIndexSpecification<MongoJob<any>>[] = [
-  { name: 'enqueueTimestamp_lastDequeueTimestamp_tries', key: { enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
-  { name: 'batch', key: { batch: 1 } }
-];
-
 export class MongoQueue<T> implements Queue<T> {
   private readonly repository: MongoEntityRepository<MongoJob<T>>;
   private readonly processTimeout: number;
   private readonly maxTries: number;
 
-  constructor(collection: Collection<MongoJob<T>>, processTimeout: number, maxTries: number, logger: Logger) {
-    this.repository = new MongoEntityRepository<MongoJob<T>>(collection, noopTransformer, { logger, indexes, entityName: 'mongo-job' });
+  constructor(repository: MongoJobRepository<T>, processTimeout: number, maxTries: number) {
+    this.repository = repository;
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;
   }
