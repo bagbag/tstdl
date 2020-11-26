@@ -1,4 +1,5 @@
-import { Type, UndefinableJson } from '../types';
+import type { Type, UndefinableJson } from '../types';
+import { isDefined } from '../utils';
 import { ApiError } from './error';
 
 type ErrorHandlerData = undefined | UndefinableJson;
@@ -118,12 +119,12 @@ export function parseErrorResponse(response: ErrorResponse): Error {
 }
 
 export function isResultResponse<T = any>(response: Response<T> | unknown): response is ResultResponse<T> {
-  const hasResult = (response as ResultResponse<T>).result != undefined;
+  const hasResult = isDefined((response as ResultResponse<T>).result);
   return hasResult;
 }
 
 export function isErrorResponse(response: Response<any> | unknown): response is ErrorResponse {
-  const hasError = (response as ErrorResponse).error != undefined;
+  const hasError = isDefined((response as ErrorResponse).error);
   return hasError;
 }
 

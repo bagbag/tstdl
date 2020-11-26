@@ -2,7 +2,7 @@
 
 import { formatError } from '../../utils';
 import { LogLevel } from '../level';
-import { LogEntry, Logger } from '../logger';
+import type { LogEntry, Logger } from '../logger';
 
 export class ConsoleLogger implements Logger {
   private readonly level: LogLevel;
@@ -52,18 +52,8 @@ export class ConsoleLogger implements Logger {
       return;
     }
 
-    /* eslint-disable newline-per-chained-call */
     const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const date = now.getDate().toString().padStart(2, '0');
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const milliseconds = now.getMilliseconds().toString().padStart(3, '0');
-    const dateTimeString = `[${year}-${month}-${date} ${hours}:${minutes}:${seconds}.${milliseconds}]`;
-    /* eslint-enable newline-per-chained-call */
 
-    func(`${dateTimeString} - ${this.logPrefix}${entry}`);
+    func(`[${now.toISOString()}] - ${this.logPrefix}${entry}`);
   }
 }

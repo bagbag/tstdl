@@ -1,4 +1,4 @@
-import { LogLevel } from './level';
+import type { LogLevel } from './level';
 
 export type LogEntry = string;
 export type LoggerStatic = new (level: LogLevel) => Logger;

@@ -1,4 +1,5 @@
-import { AsyncDisposable, Disposable, dispose, disposeAsync } from './disposable';
+import type { AsyncDisposable, Disposable } from './disposable';
+import { dispose, disposeAsync } from './disposable';
 
 export function using<T extends Disposable, U>(disposable: T, user: (disposable: T) => U): U {
   try {

@@ -30,8 +30,9 @@ export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | Async
   return instances.get(type) as T;
 }
 
-export async function asyncSingleton<T>(instances: Map<any, any>, type: any, promise: Promise<T>): Promise<T> {
+async function asyncSingleton<T>(instances: Map<any, any>, type: any, promise: Promise<T>): Promise<T> {
   const instance = await promise;
   instances.set(type, instance);
+
   return instance;
 }

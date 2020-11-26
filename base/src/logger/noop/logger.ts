@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this, @typescript-eslint/no-empty-function */
 
-import { Logger } from '../logger';
+import type { Logger } from '../logger';
 
 export class NoopLogger implements Logger {
   prefix(): Logger {
