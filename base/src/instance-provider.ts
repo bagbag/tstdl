@@ -8,7 +8,7 @@ import { deferThrow, singleton } from './utils';
 const coreLoggerToken = Symbol('core-logger');
 const lockProviderToken = Symbol('lock-provider');
 
-let coreLogPrefix = '[CORE]';
+let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
 let loggerProvider: () => Logger = () => new ConsoleLogger(logLevel);
 
