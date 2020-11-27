@@ -3,7 +3,7 @@ import { DetailsError } from '../error';
 import type { DeepArray, StringMap } from '../types';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { currentTimestamp } from './time';
+import { currentTimestamp } from './date-time';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
