@@ -70,14 +70,14 @@ export type Route<Method extends RequestMethod, RouteParameters, B extends BodyT
   path: string | RegExp,
   bodyType?: B,
   maxRequestBodyBytes?: number,
-  parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>,
+  requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>,
   handler: RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext>,
   endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
 };
 
 export function simpleRoute<Method extends RequestMethod, B extends BodyType, EndpointResult extends UndefinableJson>(
-  { method, path, bodyType, maxRequestBodyBytes, endpoint }: Omit<Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'parametersTransformer'>
-): Route<Method, DefaultParametersTransformerReturnType<B>, B, DefaultParametersTransformerReturnType<B>, EndpointResult, HttpRequest> {
+  { method, path, bodyType, maxRequestBodyBytes, endpoint }: Omit<Route<Method, DefaultRequestDataTransformerReturnType<B>, B, DefaultRequestDataTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'requestDataTransformer'>
+): Route<Method, DefaultRequestDataTransformerReturnType<B>, B, DefaultRequestDataTransformerReturnType<B>, EndpointResult, HttpRequest> {
   return route(
     {
       method,
@@ -85,7 +85,7 @@ export function simpleRoute<Method extends RequestMethod, B extends BodyType, En
       bodyType,
       maxRequestBodyBytes,
       handler: getDefaultRouteHandler(),
-      parametersTransformer: getDefaultParametersTransformer(),
+      requestDataTransformer: getDefaultRequestDataTransformer(),
       endpoint
     }
   );
@@ -96,7 +96,7 @@ export function route<Method extends RequestMethod, RouteParameters, B extends B
   return route;
 }
 
-export type RouteParametersTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
+export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
 export function getDefaultRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
   return getSimpleRouteHandler((result) => ({ json: result }));
@@ -115,10 +115,13 @@ export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Resu
   return routeHandler;
 }
 
-type DefaultParametersTransformerReturnType<B extends BodyType> = B extends BodyType.None ? StringMap : StringMap & { body: BodyValueType<B> };
+type DefaultRequestDataTransformerReturnType<B extends BodyType> = undefined extends null ? void
+  : B extends BodyType.None ? StringMap
+  : B extends BodyType.Json ? JsonObject
+  : StringMap & { body: BodyValueType<B> };
 
-export function getDefaultParametersTransformer<B extends BodyType>(): RouteParametersTransformer<RequestData<B>, DefaultParametersTransformerReturnType<B>> {
-  function defaultParametersTransformer(data: RequestData<B>, bodyType: B): DefaultParametersTransformerReturnType<B> {
+export function getDefaultRequestDataTransformer<B extends BodyType>(): RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>> {
+  function defaultRequestDataTransformer(data: RequestData<B>, bodyType: B): DefaultRequestDataTransformerReturnType<B> {
     let transformed: StringMap = { ...data.parameters };
 
     if (bodyType == BodyType.Json && typeof data.body == 'object' && !Array.isArray(data.body)) {
@@ -128,10 +131,14 @@ export function getDefaultParametersTransformer<B extends BodyType>(): RoutePara
       transformed = { ...transformed, body: data.body };
     }
 
-    return transformed as DefaultParametersTransformerReturnType<B>;
+    return transformed as DefaultRequestDataTransformerReturnType<B>;
   }
 
-  return defaultParametersTransformer as RouteParametersTransformer<RequestData<B>, DefaultParametersTransformerReturnType<B>>;
+  return defaultRequestDataTransformer as RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>>;
+}
+
+export function noopRequestDataTransformer<B extends BodyType>(data: RequestData<B>): RequestData<B> {
+  return data;
 }
 
 export class HttpApi {
@@ -184,11 +191,11 @@ export class HttpApi {
       for (const method of methods) {
         switch (method) {
           case RequestMethod.Get:
-            this.registerRoute(method, route.path, BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.parametersTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           case RequestMethod.Post:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.parametersTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -199,15 +206,15 @@ export class HttpApi {
   }
 
 
-  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, maxBytes: number, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
+  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
     this.router.register(path, [method], async (context: Context, next) => {
-      await this.handle(context, bodyType, maxBytes, parametersTransformer, endpoint, handler);
+      await this.handle(context, bodyType, maxBytes, requestDataTransformer, endpoint, handler);
       return next();
     });
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
-  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, maxBytes: number, parametersTransformer: RouteParametersTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
+  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
     const { request, response, params } = context;
     const { query: { ...query } } = request;
 
@@ -225,7 +232,7 @@ export class HttpApi {
 
     const requestData: RequestData<B> = { parameters: requestParameters, body };
 
-    const handlerParameters = parametersTransformer(requestData, bodyType);
+    const handlerParameters = requestDataTransformer(requestData, bodyType);
     const httpRequest: HttpRequest = {
       url: context.URL,
       method: context.request.method,
