@@ -25,10 +25,6 @@ export class MongoQueue<T> implements Queue<T> {
     this.maxTries = maxTries;
   }
 
-  async initialize(): Promise<void> {
-    return this.repository.initialize();
-  }
-
   async enqueue(data: T): Promise<Job<T>> {
     const newJob: NewMongoJob<T> = {
       data,

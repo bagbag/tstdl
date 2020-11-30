@@ -9,6 +9,9 @@ import type { MongoEntityRepository } from './entity-repository';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import type { MongoDocument } from './model';
+import { MongoQueue } from './queue';
+import type { MongoJob } from './queue/job';
+import { MongoJobRepository } from './queue/mongo-job.repository';
 import type { Collection } from './types';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends T> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
@@ -18,6 +21,12 @@ export type MongoRepositoryConfig<T extends Entity, TDb extends T = T> = {
   collectionName: string,
   type: T,
   databaseType?: TDb
+};
+
+export type MongoQueueConfig<T> = {
+  repositoryConfig: MongoRepositoryConfig<MongoJob<T>>,
+  processTimeout: number,
+  maxTries: number
 };
 
 let connectionString = '';
@@ -130,6 +139,11 @@ export async function getMongoLockProvider(): Promise<MongoLockProvider> {
   });
 }
 
+export async function getMongoQueue<T>(config: MongoQueueConfig<T>): Promise<MongoQueue<T>> {
+  const repository = await getMongoRepository(MongoJobRepository as Type<MongoJobRepository<T>>, config.repositoryConfig);
+  return new MongoQueue(repository, config.processTimeout, config.maxTries);
+}
+
 // eslint-disable-next-line @typescript-eslint/unified-signatures
 export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(database: string, collection: string): MongoRepositoryConfig<T, TDb>;
 export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(collection: string): MongoRepositoryConfig<T, TDb>;
@@ -138,4 +152,8 @@ export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(da
   const collectionName = isDefined(collection) ? collection : databaseOrCollection;
 
   return { databaseName, collectionName, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
+}
+
+export function getMongoQueueConfig<T>(repositoryConfig: MongoRepositoryConfig<MongoJob<T>>, processTimeout: number, maxTries: number): MongoQueueConfig<T> {
+  return { repositoryConfig, processTimeout, maxTries };
 }
