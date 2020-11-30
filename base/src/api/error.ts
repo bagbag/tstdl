@@ -1,5 +1,5 @@
 import { CustomError } from '../error/custom-error';
-import { ErrorResponse } from './response';
+import type { ErrorResponse } from './response';
 
 export class ApiError extends CustomError {
   readonly details: any;

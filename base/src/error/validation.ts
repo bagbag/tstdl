@@ -1,11 +1,18 @@
 import { CustomError } from './custom-error';
 
 export class ValidationError extends CustomError {
-  readonly details: any;
+  readonly details?: any;
+  readonly inner?: ValidationError[];
 
-  constructor(message: string, details?: any) {
+  constructor(message: string, { details, inner }: { details?: any, inner?: ValidationError[] } = {}) {
     super({ name: ValidationError.name, message });
 
-    this.details = details;
+    if (details != undefined) {
+      this.details = details;
+    }
+
+    if (inner != undefined) {
+      this.inner = inner;
+    }
   }
 }
