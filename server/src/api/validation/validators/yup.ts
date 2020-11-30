@@ -32,9 +32,7 @@ export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'val
         }
       }
 
-      const innerMessages = errors.map((error) => error.message).join(', ');
-
-      const error = new yup.ValidationError(`none of the provided schemas validated successfully (${innerMessages})`, value, this.path);
+      const error = new yup.ValidationError('none of the provided schemas validated successfully', value, this.path);
       error.inner = errors;
 
       return error;
@@ -52,6 +50,16 @@ export function validate<T, U>(schema: yup.Schema<T>, value: U, options: yup.Val
     return { valid: true, value: parsed };
   }
   catch (error: unknown) {
-    return { valid: false, error: new ValidationError((error as yup.ValidationError).name, (error as yup.ValidationError).message) };
+    return { valid: false, error: convertError(error as yup.ValidationError) };
   }
+}
+
+function convertError(error: yup.ValidationError): ValidationError {
+  const details = {
+    name: error.name,
+    path: error.path,
+    inner: (error.inner.length > 0) ? error.inner.map(convertError) : undefined
+  };
+
+  return new ValidationError(error.message, details);
 }
