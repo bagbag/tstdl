@@ -56,10 +56,10 @@ export function validate<T, U>(schema: yup.Schema<T>, value: U, options: yup.Val
 
 function convertError(error: yup.ValidationError): ValidationError {
   const details = {
-    name: error.name,
-    path: error.path,
-    inner: (error.inner.length > 0) ? error.inner.map(convertError) : undefined
+    path: error.path
   };
 
-  return new ValidationError(error.message, details);
+  const inner = (error.inner.length > 0) ? error.inner.map(convertError) : undefined;
+
+  return new ValidationError(error.message, { details, inner });
 }
