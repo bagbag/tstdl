@@ -9,7 +9,7 @@ type SerializedValidationError = {
 };
 
 export function registerDefaultErrorHandlers(): void {
-  registerErrorHandler(ValidationError, 400, ({ message, details }) => ({ message, details }), ({ message, details }) => new ValidationError(message, details));
+  registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
   registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
   registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
 }
