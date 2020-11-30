@@ -89,11 +89,12 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
     }
     catch (error: unknown) {
       logger.verbose(`error connecting to ${name} (${(error as Error).message})${triesLeft > 0 ? ', trying again...' : ''}`);
+
+      if (triesLeft == 0) {
+        throw new Error(`failed to connect to ${name} - no tries left`);
+      }
+
       await timeout(2000);
     }
-  }
-
-  if (!success && triesLeft == 0) {
-    throw new Error(`failed to connect to ${name} - no tries left`);
   }
 }

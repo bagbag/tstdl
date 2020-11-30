@@ -18,10 +18,10 @@ export function createValidatedApiEndpoint<Parameters, ValidatedParameters, Resu
 }
 
 export function createTransformedApiEndpoint<Parameters, TransformedParameters, Result, Context>(transformer: ParametersTransformer<Parameters, TransformedParameters>, handler: ApiEndpoint<TransformedParameters, Result, Context>): ApiEndpoint<Parameters, Result, Context> {
-  async function transformApiEndpoint(parameters: Parameters, context: Context): Promise<Result> {
+  async function transformedApiEndpoint(parameters: Parameters, context: Context): Promise<Result> {
     const transformedParameters = await transformer(parameters);
     return handler(transformedParameters, context);
   }
 
-  return transformApiEndpoint;
+  return transformedApiEndpoint;
 }
