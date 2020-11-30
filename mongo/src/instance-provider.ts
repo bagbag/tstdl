@@ -4,10 +4,12 @@ import type { Type } from '@tstdl/base/types';
 import { assertDefined, FactoryMap, isDefined, singleton } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { connect } from '@tstdl/server/instance-provider';
+import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
+import { MongoMigrationStateRepository } from './migration';
 import type { MongoDocument } from './model';
 import { MongoQueue } from './queue';
 import type { MongoJob } from './queue/job';
@@ -40,6 +42,8 @@ let repositoryLogPrefix = 'REPO';
 let mongoLockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity> | undefined;
 let mongoLockProviderLog = 'LOCK';
 
+let mongoMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined;
+
 const databaseKeys = new FactoryMap<string, symbol>(() => Symbol('database'));
 const collectionKeys = new FactoryMap<string, FactoryMap<string, symbol>>(() => new FactoryMap(() => Symbol('collection')));
 
@@ -51,7 +55,8 @@ export function configureMongoInstanceProvider(
     mongoLogPrefix?: string,
     repositoryLogPrefix?: string,
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
-    mongoLockProviderLog?: string
+    mongoLockProviderLog?: string,
+    mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>
   }
 ): void {
   connectionString = options.connectionString ?? connectionString;
@@ -61,6 +66,7 @@ export function configureMongoInstanceProvider(
   repositoryLogPrefix = options.repositoryLogPrefix ?? repositoryLogPrefix;
   mongoLockRepositoryConfig = options.mongoLockRepositoryConfig ?? mongoLockRepositoryConfig;
   mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
+  mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
@@ -136,6 +142,13 @@ export async function getMongoLockProvider(): Promise<MongoLockProvider> {
     const logger = getLogger(mongoLockProviderLog);
 
     return new MongoLockProvider(repository, logger);
+  });
+}
+
+export async function getMongoMigrationStateRepository(): Promise<MongoMigrationStateRepository> {
+  return singleton(MongoMigrationStateRepository, async () => {
+    assertDefined(mongoMigrationStateRepositoryConfig, 'mongoMigrationStateRepositoryConfig must be configured');
+    return getMongoRepository(MongoMigrationStateRepository, mongoMigrationStateRepositoryConfig);
   });
 }
 
