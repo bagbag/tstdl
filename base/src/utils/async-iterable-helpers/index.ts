@@ -23,6 +23,7 @@ export * from './last-or-default';
 export * from './map';
 export * from './map-many';
 export * from './materialize';
+export * from './metadata';
 export * from './multiplex';
 export * from './pairwise';
 export * from './reduce';

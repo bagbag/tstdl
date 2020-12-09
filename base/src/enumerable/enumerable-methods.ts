@@ -24,6 +24,7 @@ export interface EnumerableMethods {
   map(...args: any[]): any;
   mapMany(...args: any[]): any;
   materialize(...args: any[]): any;
+  metadata(...args: any[]): any;
   pairwise(...args: any[]): any;
   reduce(...args: any[]): any;
   single(...args: any[]): any;

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.62.9",
+  "version": "0.62.10",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -16,10 +16,10 @@
   },
   "devDependencies": {
     "@types/luxon": "^1.25.0",
-    "@types/node": "^14.14.10",
-    "@typescript-eslint/eslint-plugin": "^4.8.2",
-    "@typescript-eslint/parser": "^4.8.2",
-    "eslint": "^7.14.0",
+    "@types/node": "^14.14.11",
+    "@typescript-eslint/eslint-plugin": "^4.9.1",
+    "@typescript-eslint/parser": "^4.9.1",
+    "eslint": "^7.15.0",
     "typescript": "^4.1.2"
   }
 }

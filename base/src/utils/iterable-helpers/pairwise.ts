@@ -1,4 +1,4 @@
-export function* pairwise<T>(iterable: Iterable<T>): IterableIterator<[T, T]> {
+export function* pairwise<T>(iterable: Iterable<T>): IterableIterator<[left: T, right: T]> {
   let hasPrevious = false;
   let previous: T;
 

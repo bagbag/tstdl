@@ -1,6 +1,6 @@
 import type { Comparator } from '../utils';
-import type { IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -141,6 +141,11 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
   materialize(): Enumerable<T> {
     const materialized = materialize(this.source);
     return new Enumerable(materialized);
+  }
+
+  metadata(): Enumerable<IterableItemMetadata<T>> {
+    const metadated = metadata(this.source);
+    return new Enumerable(metadated);
   }
 
   pairwise(): Enumerable<[T, T]> {

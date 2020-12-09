@@ -21,6 +21,7 @@ export * from './last-or-default';
 export * from './map';
 export * from './map-many';
 export * from './materialize';
+export * from './metadata';
 export * from './pairwise';
 export * from './range';
 export * from './reduce';
