@@ -10,8 +10,8 @@ export class DistributedLoop {
   private readonly lockProvider: LockProvider;
 
   constructor(key: string, lockProvider: LockProvider) {
-    this.key = `loop:${key}`;
-    this.lockProvider = lockProvider;
+    this.key = key;
+    this.lockProvider = lockProvider.prefix('loop:');
   }
 
   run(interval: number, accuracy: number, func: LoopFunction): LoopController {
