@@ -16,9 +16,9 @@ import type { MongoJob } from './queue/job';
 import { MongoJobRepository } from './queue/mongo-job.repository';
 import type { Collection } from './types';
 
-type MongoRepositoryStatic<T extends Entity, TDb extends T> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
+type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
-export type MongoRepositoryConfig<T extends Entity, TDb extends T = T> = {
+export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
   databaseName: string,
   collectionName: string,
   type: T,
@@ -105,7 +105,7 @@ export async function getMongoDatabase(databaseName: string = defaultDatabase): 
   });
 }
 
-export async function getMongoCollection<T extends Entity, TDb extends T>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
+export async function getMongoCollection<T extends Entity, TDb extends Entity>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
   const key = collectionKeys.get(databaseName).get(collectionName);
 
   return singleton(key, async () => {
@@ -122,7 +122,7 @@ export async function getMongoCollection<T extends Entity, TDb extends T>({ data
   });
 }
 
-export async function getMongoRepository<T extends Entity, TDb extends T = T, C extends MongoRepositoryStatic<T, TDb> = MongoRepositoryStatic<T, TDb>>(ctor: C, collectionConfig: MongoRepositoryConfig<T, TDb>): Promise<InstanceType<C>> {
+export async function getMongoRepository<T extends Entity, TDb extends Entity = T, C extends MongoRepositoryStatic<T, TDb> = MongoRepositoryStatic<T, TDb>>(ctor: C, collectionConfig: MongoRepositoryConfig<T, TDb>): Promise<InstanceType<C>> {
   return singleton(ctor, async () => {
     const logger = getLogger(repositoryLogPrefix);
     const collection = await getMongoCollection(collectionConfig);
@@ -158,9 +158,9 @@ export async function getMongoQueue<T>(config: MongoQueueConfig<T>): Promise<Mon
 }
 
 // eslint-disable-next-line @typescript-eslint/unified-signatures
-export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(database: string, collection: string): MongoRepositoryConfig<T, TDb>;
-export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(collection: string): MongoRepositoryConfig<T, TDb>;
-export function getMongoRepositoryConfig<T extends Entity, TDb extends T = T>(databaseOrCollection: string, collection?: string): MongoRepositoryConfig<T, TDb> {
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(database: string, collection: string): MongoRepositoryConfig<T, TDb>;
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(collection: string): MongoRepositoryConfig<T, TDb>;
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(databaseOrCollection: string, collection?: string): MongoRepositoryConfig<T, TDb> {
   const databaseName = isDefined(collection) ? databaseOrCollection : defaultDatabase;
   const collectionName = isDefined(collection) ? collection : databaseOrCollection;
 
