@@ -1,4 +1,4 @@
-import { zBase32Encode } from '@tstdl/base/utils';
+import { isDefined, zBase32Encode } from '@tstdl/base/utils';
 import * as Crypto from 'crypto';
 
 export type CryptionOptions = {
@@ -19,7 +19,6 @@ export interface CryptionResult {
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
   toZBase32(): Promise<string>;
-  toLatin1(): Promise<string>;
   toString(encoding: BufferEncoding): Promise<string>;
 }
 
@@ -32,8 +31,7 @@ export interface HashResult {
   toHex(): string;
   toBase64(): string;
   toZBase32(): string;
-  toLatin1(): string;
-  toString(encoding: Crypto.HexBase64Latin1Encoding): string;
+  toString(encoding: Crypto.BinaryToTextEncoding): string;
 }
 
 export function encryptString(input: string, options: CryptionOptions): CryptionResult {
@@ -49,7 +47,6 @@ export function encrypt(input: Buffer | Uint8Array, options: CryptionOptions): C
     toHex: async () => encryptedBuffer.then((buffer) => buffer.toString('hex')),
     toBase64: async () => encryptedBuffer.then((buffer) => buffer.toString('base64')),
     toZBase32: async () => encryptedBuffer.then(zBase32Encode),
-    toLatin1: async () => encryptedBuffer.then((buffer) => buffer.toString('latin1')),
     toString: async (encoding: BufferEncoding) => encryptedBuffer.then((buffer) => buffer.toString(encoding))
   };
 }
@@ -66,11 +63,11 @@ async function _encrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
         do {
           chunk = cipher.read() as Buffer;
 
-          if (chunk != undefined) {
+          if (isDefined(chunk)) {
             chunks.push(chunk);
           }
         }
-        while (chunk != undefined);
+        while (isDefined(chunk));
       });
 
       cipher.on('end', () => {
@@ -88,7 +85,7 @@ async function _encrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
         }
       });
     }
-    catch (error) {
+    catch (error: unknown) {
       reject(error);
     }
   });
@@ -107,7 +104,6 @@ export function decrypt(input: Buffer | Uint8Array, options: CryptionOptions): D
     toHex: async () => decryptedBuffer.then((buffer) => buffer.toString('hex')),
     toBase64: async () => decryptedBuffer.then((buffer) => buffer.toString('base64')),
     toZBase32: async () => decryptedBuffer.then(zBase32Encode),
-    toLatin1: async () => decryptedBuffer.then((buffer) => buffer.toString('latin1')),
     toUtf8: async () => decryptedBuffer.then((buffer) => buffer.toString('utf8')),
     toString: async (encoding: BufferEncoding) => decryptedBuffer.then((buffer) => buffer.toString(encoding))
   };
@@ -125,11 +121,11 @@ async function _decrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
         do {
           chunk = decipher.read() as Buffer;
 
-          if (chunk != undefined) {
+          if (isDefined(chunk)) {
             chunks.push(chunk);
           }
         }
-        while (chunk != undefined);
+        while (isDefined(chunk));
       });
 
       decipher.on('end', () => {
@@ -147,7 +143,7 @@ async function _decrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
         }
       });
     }
-    catch (error) {
+    catch (error: unknown) {
       reject(error);
     }
   });
@@ -181,12 +177,12 @@ export async function scrypt(secret: Crypto.BinaryLike, salt: Crypto.BinaryLike,
 }
 
 export function createHash(algorithm: string, data: Crypto.BinaryLike): HashResult;
-export function createHash(algorithm: string, data: string, encoding: Crypto.Utf8AsciiLatin1Encoding): HashResult;
-export function createHash(algorithm: string, data: string | Crypto.BinaryLike, encoding?: Crypto.Utf8AsciiLatin1Encoding): HashResult {
+export function createHash(algorithm: string, data: string, encoding: Crypto.Encoding): HashResult;
+export function createHash(algorithm: string, data: string | Crypto.BinaryLike, encoding?: Crypto.Encoding): HashResult {
   const hasher = Crypto.createHash(algorithm);
 
   if (typeof data == 'string') {
-    hasher.update(data, encoding as Crypto.Utf8AsciiLatin1Encoding);
+    hasher.update(data, encoding as Crypto.Encoding);
   }
   else {
     hasher.update(data);
@@ -197,8 +193,7 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
     toHex: () => hasher.digest('hex'),
     toBase64: () => hasher.digest('base64'),
     toZBase32: () => zBase32Encode(hasher.digest()),
-    toLatin1: () => hasher.digest('latin1'),
-    toString: (encoding: Crypto.HexBase64Latin1Encoding) => hasher.digest(encoding) // eslint-disable-line no-shadow
+    toString: (encoding: Crypto.BinaryToTextEncoding) => hasher.digest(encoding) // eslint-disable-line @typescript-eslint/no-shadow
   };
 
   return result;

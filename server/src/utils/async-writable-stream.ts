@@ -1,6 +1,6 @@
 import { DeferredPromise } from '@tstdl/base/promise';
-import { Writable } from 'stream';
-import { NonObjectMode, Data } from './stream-helper-types';
+import type { Writable } from 'stream';
+import type { Data, NonObjectMode } from './stream-helper-types';
 
 export class AsyncWritableStream<T = NonObjectMode> {
   private readonly writable: Writable;
