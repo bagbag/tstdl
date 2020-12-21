@@ -27,7 +27,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
     return new AsyncEnumerable(deferred);
   }
 
-  static fromObservable<T, O extends Observable<T>>(observable: O): AsyncEnumerable<T> {
+  static fromObservable<T>(observable: Observable<T>): AsyncEnumerable<T> {
     const iterable = observableAsyncIterable(observable);
     return new AsyncEnumerable(iterable);
   }
