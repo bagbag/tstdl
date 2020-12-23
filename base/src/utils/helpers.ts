@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/ban-types */
+
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
-import type { DeepArray, StringMap } from '../types';
+import type { DeepArray, ExtractPropertiesOfType, StringMap } from '../types';
+import { currentTimestamp } from './date-time';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { currentTimestamp } from './date-time';
+import { isDefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -119,7 +122,7 @@ export function formatDuration(milliseconds: number, precision: number): string 
 }
 
 export function flatten<T>(array: DeepArray<T>): T[] {
-  return array.reduce((acc, item) => (Array.isArray(item) ? [...(acc as T[]), ...flatten(item)] : [...(acc as T[]), item]), [] as T[]) as T[];
+  return array.reduce<T[]>((acc, item) => (Array.isArray(item) ? [...(acc), ...flatten(item)] : [...(acc), item]), []);
 }
 
 export function toError(obj: any): Error {
@@ -266,20 +269,28 @@ type NN<T> = NonNullable<T>;
 
 export interface DotNotator<T> {
   (key: keyof T): DotNotator<T[typeof key]>;
+  array(key: keyof ExtractPropertiesOfType<T, ArrayLike<any>>): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[typeof key] extends (infer U)[] ? U : never>;
   notate(): string;
 }
 
-export function dotNotator<T>(): <K extends keyof T>(key: K) => DotNotator<T[K]> {
-  return getDotNotatorWrapper;
-}
+export function dotNotator<T>(): DotNotator<T>;
+export function dotNotator<T>(key: keyof T): DotNotator<T[typeof key]>;
+export function dotNotator<T>(key?: keyof T): DotNotator<T> | DotNotator<T[NN<typeof key>]> {
+  if (isDefined(key)) {
+    return getDotNotator(key as string);
+  }
 
-function getDotNotatorWrapper<T, K extends keyof T>(key: K): DotNotator<T[K]> {
-  return getDotNotator(key as string);
+  return getDotNotator();
 }
 
 function getDotNotator<T, K extends keyof T>(...keys: (string | number)[]): DotNotator<T[K]> {
   const dotNotatorChild: DotNotator<T[K]> = (key: keyof T[K]) => getDotNotator(...keys, key as string);
-  dotNotatorChild.notate = () => {
+
+  dotNotatorChild.array = function array(key: keyof ExtractPropertiesOfType<T[K], ArrayLike<any>>): ReturnType<DotNotator<T[K]>['array']> {
+    return getDotNotator(...keys, key as string);
+  };
+
+  dotNotatorChild.notate = function notate() {
     for (const key of keys) {
       if (typeof key == 'symbol') {
         throw new Error('symbol not supported');
@@ -460,7 +471,7 @@ export function parseFirstAndFamilyName(name: string): { firstName: string | und
   }
 
   const parts = name.split(' ');
-  const familyName = (parts.length > 1) ? (parts.pop() as string).trim() : '';
+  const familyName = (parts.length > 1) ? (parts.pop()!).trim() : '';
   const firstName = parts.map((part) => part.trim()).join(' ');
 
   return {

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
+
 export type Primitive = string | number | boolean | undefined | null;
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
@@ -32,8 +34,8 @@ export type TypeOf<T extends object, P extends keyof T> = T[P];
 export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
 export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
-export type PropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? P : never }[keyof T];
-export type ExtractPropertiesOfType<T, U> = { [P in PropertiesOfType<T, U>]: T[P] };
+export type ExtractPropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? T[P] : never };
+export type PropertiesOfType<T, U> = keyof ExtractPropertiesOfType<T, U>;
 
 export type DeepArray<T> = (T | DeepArray<T>)[];
 
