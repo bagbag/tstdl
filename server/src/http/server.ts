@@ -1,5 +1,5 @@
 import type { Logger } from '@tstdl/base/logger';
-import { cancelableTimeout, Timer } from '@tstdl/base/utils';
+import { cancelableTimeout, isDefined, Timer } from '@tstdl/base/utils';
 import * as Http from 'http';
 import type { Socket } from 'net';
 
@@ -13,6 +13,10 @@ export class HttpServer {
 
   get connectedSockets(): Iterable<Socket> {
     return this.sockets.values();
+  }
+
+  get connectedSocketsCount(): number {
+    return this.sockets.size;
   }
 
   constructor(logger: Logger) {
@@ -52,9 +56,17 @@ export class HttpServer {
   async close(timeout: number): Promise<void> {
     const timer = new Timer(true);
 
-    const closePromise = new Promise<void>((resolve, reject) => this.server.close((error) => (error != undefined ? reject(error) : resolve(undefined))));
+    const closePromise = new Promise<void>((resolve, reject) => {
+      this.server.close((error) => {
+        if (isDefined(error)) {
+          reject(error);
+          return;
+        }
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        resolve();
+      });
+    });
+
     while (true) {
       const connections = await getConnectionsCount(this.server);
 
@@ -70,7 +82,7 @@ export class HttpServer {
 
       if (connections > 0) {
         this.logger.info(`waiting for ${connections} connections to end`);
-        await cancelableTimeout(1000, closePromise);
+        await cancelableTimeout(250, closePromise);
       }
     }
 
@@ -79,7 +91,7 @@ export class HttpServer {
 
   registerRequestHandler(handler: (request: Http.IncomingMessage, response: Http.ServerResponse) => void): void {
     this.server.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => {
-      this.logger.debug(`request from "${request.socket.remoteAddress as string}" to "${request.url as string}"`);
+      this.logger.debug(`request from "${request.socket.remoteAddress!}" to "${request.url!}"`);
       handler(request, response);
     });
   }
@@ -103,7 +115,16 @@ function trackConnectedSockets(server: Http.Server, sockets: Set<Socket>): () =>
 }
 
 async function getConnectionsCount(server: Http.Server): Promise<number> {
-  return new Promise<number>((resolve, reject) => server.getConnections((error, count) => (error != undefined ? reject(error) : resolve(count))));
+  return new Promise<number>((resolve, reject) => {
+    server.getConnections((error, count) => {
+      if (error != undefined) {
+        reject(error);
+        return;
+      }
+
+      resolve(count);
+    });
+  });
 }
 
 function destroySockets(sockets: Iterable<Socket>): void {
