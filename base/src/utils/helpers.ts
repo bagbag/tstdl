@@ -268,25 +268,19 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
 type NN<T> = NonNullable<T>;
 
 export interface DotNotator<T> {
-  (key: keyof T): DotNotator<T[typeof key]>;
-  array(key: keyof ExtractPropertiesOfType<T, ArrayLike<any>>): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[typeof key] extends (infer U)[] ? U : never>;
+  <K extends keyof T>(key: K): DotNotator<T[K]>;
+  array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never>;
   notate(): string;
 }
 
-export function dotNotator<T>(): DotNotator<T>;
-export function dotNotator<T>(key: keyof T): DotNotator<T[typeof key]>;
-export function dotNotator<T>(key?: keyof T): DotNotator<T> | DotNotator<T[NN<typeof key>]> {
-  if (isDefined(key)) {
-    return getDotNotator(key as string);
-  }
-
+export function dotNotator<T>(): DotNotator<T> {
   return getDotNotator();
 }
 
-function getDotNotator<T, K extends keyof T>(...keys: (string | number)[]): DotNotator<T[K]> {
-  const dotNotatorChild: DotNotator<T[K]> = (key: keyof T[K]) => getDotNotator(...keys, key as string);
+function getDotNotator<T>(...keys: (string | number)[]): DotNotator<T> {
+  const dotNotatorChild = <K extends keyof T>(key: K): DotNotator<T[K]> => getDotNotator<T[K]>(...keys, key as string);
 
-  dotNotatorChild.array = function array(key: keyof ExtractPropertiesOfType<T[K], ArrayLike<any>>): ReturnType<DotNotator<T[K]>['array']> {
+  dotNotatorChild.array = function array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never> {
     return getDotNotator(...keys, key as string);
   };
 
