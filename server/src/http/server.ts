@@ -7,7 +7,7 @@ export class HttpServer {
   private readonly logger: Logger;
   private readonly sockets: Set<Socket>;
 
-  private untrackConnectedSockets: () => void;
+  private untrackConnectedSockets?: () => void;
 
   readonly server: Http.Server;
 
@@ -86,7 +86,8 @@ export class HttpServer {
       }
     }
 
-    this.untrackConnectedSockets();
+    this.untrackConnectedSockets?.();
+    this.untrackConnectedSockets = undefined;
   }
 
   registerRequestHandler(handler: (request: Http.IncomingMessage, response: Http.ServerResponse) => void): void {
