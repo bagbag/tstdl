@@ -35,11 +35,11 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
   }
 
   get $observe(): Promise<TThis> {
-    return this.observe$.pipe(skip(1)).toPromise();
+    return this.observe$.pipe(skip(1), take(1)).toPromise();
   }
 
   get $length(): Promise<number> {
-    return this.length$.pipe(skip(1)).toPromise();
+    return this.length$.pipe(skip(1), take(1)).toPromise();
   }
 
   get $add(): Promise<T[]> {
