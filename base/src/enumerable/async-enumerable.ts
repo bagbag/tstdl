@@ -1,12 +1,12 @@
 import type { Observable } from 'rxjs';
-import type { AsyncComparator } from '../utils';
-import type { AnyIterable } from '../utils/any-iterable-iterator';
+import type { AnyIterable, AsyncComparator } from '../utils';
+import { isAnyIterable } from '../utils';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
 import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
-import { isIterable, range } from '../utils/iterable-helpers';
+import { range } from '../utils/iterable-helpers';
 import { Enumerable } from './enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -288,7 +288,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
       return this.source[Symbol.asyncIterator]();
     }
 
-    if (isIterable(this.source)) {
+    if (isAnyIterable(this.source)) {
       return toAsyncIterableIterator(this.source);
     }
 
