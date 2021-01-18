@@ -16,6 +16,7 @@ export interface ObservableCollection<T> extends Collection<T> {
   readonly empty$: Observable<void>;
 
   readonly $observe: Promise<ObservableCollection<T>>;
+  readonly $length: Promise<number>;
   readonly $add: Promise<T[]>;
   readonly $remove: Promise<T[]>;
   readonly $change: Promise<ObservableCollectionChangeEvent<T>>;

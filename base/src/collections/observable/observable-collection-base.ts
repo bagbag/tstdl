@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
-import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, startWith, take } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith, take } from 'rxjs/operators';
 import type { ObservableCollection } from './observable-collection';
 
 export type ObservableCollectionChangeEvent<T> = {
@@ -35,7 +35,11 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
   }
 
   get $observe(): Promise<TThis> {
-    return this.observe$.pipe(take(1)).toPromise();
+    return this.observe$.pipe(skip(1)).toPromise();
+  }
+
+  get $length(): Promise<number> {
+    return this.length$.pipe(skip(1)).toPromise();
   }
 
   get $add(): Promise<T[]> {
@@ -75,9 +79,9 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
     );
 
     this.length$ = this.observe$.pipe(
-      startWith(undefined),
-      map(() => this.length),
-      distinctUntilChanged()
+      map((collection) => collection.length),
+      distinctUntilChanged(),
+      shareReplay({ bufferSize: 1, refCount: true })
     );
 
     this.empty$ = this.length$.pipe(

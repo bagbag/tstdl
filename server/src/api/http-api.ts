@@ -3,7 +3,7 @@ import type { ErrorResponse } from '@tstdl/base/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { Logger } from '@tstdl/base/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
-import { round, Timer, toArray } from '@tstdl/base/utils';
+import { isObject, round, Timer, toArray } from '@tstdl/base/utils';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
@@ -124,7 +124,7 @@ export function getDefaultRequestDataTransformer<B extends BodyType>(): RouteReq
   function defaultRequestDataTransformer(data: RequestData<B>, bodyType: B): DefaultRequestDataTransformerReturnType<B> {
     let transformed: StringMap = { ...data.parameters };
 
-    if (bodyType == BodyType.Json && typeof data.body == 'object' && !Array.isArray(data.body)) {
+    if (bodyType == BodyType.Json && isObject(data.body) && !Array.isArray(data.body)) {
       transformed = { ...transformed, ...(data as RequestData<BodyType.Json>).body as JsonObject };
     }
     else if (bodyType != BodyType.None) {

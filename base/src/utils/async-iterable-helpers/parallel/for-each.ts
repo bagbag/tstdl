@@ -17,18 +17,16 @@ export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: 
     running.add(run);
     run.finally(() => running.delete(run)).catch((error) => errors.push(error as Error));
 
-    if (running.size >= concurrency) {
-      await running.$observe;
+    if (running.length >= concurrency) {
+      await running.$length;
     }
   }
 
-  while (running.size > 0) {
+  while (running.length > 0) {
     await running.$empty;
   }
 
   if (errors.length > 0) {
-    throw (errors.length > 1)
-      ? new MultiError(errors)
-      : errors[0];
+    throw (errors.length > 1) ? new MultiError(errors) : errors[0]!;
   }
 }
