@@ -27,4 +27,5 @@ export * from './sort';
 export * from './timer';
 export * from './timing';
 export * from './type-guards';
+export * from './url-builder';
 export * from './z-base32';
