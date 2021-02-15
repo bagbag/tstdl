@@ -20,7 +20,7 @@ const builderScope = Symbol('url-builder cache');
 const urlParseRegex = /([^:]+|:\/+)|:([\w-]+)/ug;
 const isFullUrlRegex = /^\w+:\/\//u;
 
-export function compileUrlBuilder(url: string): (parameters: UrlBuilderParameters) => UrlBuilderReturnType {
+export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters) => UrlBuilderReturnType {
   const parts: UrlBuilderPart[] = [];
 
   const isFullUrl = isFullUrlRegex.test(url);
@@ -48,7 +48,7 @@ export function compileUrlBuilder(url: string): (parameters: UrlBuilderParameter
     }
   }
 
-  return function buildUrl(parameters: StringMap<string | number | boolean | undefined>): UrlBuilderReturnType {
+  return function buildUrl(parameters: StringMap<string | number | boolean | undefined> = {}): UrlBuilderReturnType {
     let parsedUrl = '';
     let parametersRest = parameters;
 
@@ -71,7 +71,7 @@ export function compileUrlBuilder(url: string): (parameters: UrlBuilderParameter
   };
 }
 
-export function buildUrl(url: string, parameters: UrlBuilderParameters): UrlBuilderReturnType {
+export function buildUrl(url: string, parameters: UrlBuilderParameters = {}): UrlBuilderReturnType {
   const builder = singleton(builderScope, url, () => compileUrlBuilder(url));
   return builder(parameters);
 }
