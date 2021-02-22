@@ -1,4 +1,4 @@
-import { registerSerializationType } from '../serializer';
+import type { registerSerializationType } from '../serializer';
 
 export function registerFunctionType(register: typeof registerSerializationType): void {
   // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-return

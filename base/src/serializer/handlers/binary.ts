@@ -1,6 +1,6 @@
 
-import { decodeBase64, encodeBase64 } from '../../utils';
-import { registerSerializationType } from '../serializer';
+import { decodeBase64, encodeBase64, isDefined } from '../../utils';
+import type { registerSerializationType } from '../serializer';
 
 type TypedArray =
   | Int8Array
@@ -15,7 +15,6 @@ type TypedArray =
 
 type TypedArrayConstructor = new (arrayOrArrayBuffer: ArrayLike<number> | ArrayBufferLike) => TypedArray;
 
-/* eslint-disable no-undef */
 const typedArrays: TypedArrayConstructor[] = [
   globalThis.Int8Array,
   globalThis.Uint8Array,
@@ -25,8 +24,7 @@ const typedArrays: TypedArrayConstructor[] = [
   globalThis.Uint32Array,
   globalThis.Float32Array,
   globalThis.Float64Array
-].filter((type) => type != undefined);
-/* eslint-enable no-undef */
+].filter(isDefined);
 
 export function registerBinaryTypes(register: typeof registerSerializationType): void {
   if (typeof ArrayBuffer != 'undefined') {

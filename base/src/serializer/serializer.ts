@@ -1,6 +1,8 @@
-import { Json, JsonPrimitive, StringMap, Type } from '../types';
+import type { Json, JsonPrimitive, StringMap, Type } from '../types';
+import { isDefined, isUndefined } from '../utils';
 import { registerBinaryTypes, registerDateType, registerRegExpType } from './handlers';
-import { deserializeSymbol, Serializable, SerializableStatic, serializeSymbol } from './serializable';
+import type { Serializable, SerializableStatic } from './serializable';
+import { deserializeSymbol, serializeSymbol } from './serializable';
 
 declare const serializedSymbol: unique symbol; // eslint-disable-line init-declarations
 declare const stringSerializedSymbol: unique symbol; // eslint-disable-line init-declarations
@@ -34,6 +36,13 @@ export function registerSerializationType<T, D extends Json>(type: SerializableS
   else {
     customTypes.set(type.name, { type: type as SerializableStatic });
   }
+}
+
+export function hasSerializationType(object: any): boolean {
+  const objectConstructorName = object.constructor.name as string; // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+  const customType = customTypes.get(objectConstructorName);
+
+  return isDefined(customType);
 }
 
 export function rawSerialize<T>(object: T): Serialized<T> {
@@ -86,7 +95,7 @@ function _rawSerialize(object: any): any {
 
   if (object.constructor == Array) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return (object as any[]).map((item) => _rawSerialize(item));
+    return object.map((item) => _rawSerialize(item));
   }
 
   const objectConstructorName = object.constructor.name as string;
@@ -137,7 +146,7 @@ function _rawDeserialize(object: any): any {
 
         const deserializer = customType.deserializer ?? customType.type[deserializeSymbol];
 
-        if (deserializer == undefined) {
+        if (isUndefined(deserializer)) {
           throw new Error(`neither SerializableStatic implemented nor deserialize method provided for ${(object as object).constructor.name}`);
         }
 
@@ -161,7 +170,7 @@ function _rawDeserialize(object: any): any {
 
   if (object.constructor == Array) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return (object as any[]).map((item) => _rawDeserialize(item));
+    return object.map((item) => _rawDeserialize(item));
   }
 
   throw new Error('no suitable handler available');

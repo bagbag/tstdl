@@ -12,8 +12,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   let end = false;
   let consumerError: Error | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  (async () => {
+  void (async () => {
     try {
       for await (const item of iterable) {
         buffer.add({ end: false, value: item });
@@ -40,7 +39,6 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   })();
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       if (buffer.length == 0) {
         await buffer.$add;
