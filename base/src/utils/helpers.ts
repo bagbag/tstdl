@@ -269,6 +269,7 @@ type NN<T> = NonNullable<T>;
 
 export interface DotNotator<T> {
   <K extends keyof T>(key: K): DotNotator<T[K]>;
+  cast<U extends T>(): DotNotator<U>;
   array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never>;
   notate(): string;
 }
@@ -282,6 +283,10 @@ function getDotNotator<T>(...keys: (string | number)[]): DotNotator<T> {
 
   dotNotatorChild.array = function array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never> {
     return getDotNotator(...keys, key as string);
+  };
+
+  dotNotatorChild.cast = function cast<U extends T>(): DotNotator<U> {
+    return getDotNotator(...keys);
   };
 
   dotNotatorChild.notate = function notate() {
