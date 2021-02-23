@@ -1,7 +1,7 @@
 import type { Entity } from '@tstdl/database';
 
 export type KeyValue<T = unknown> = Entity & {
-  module: string,
+  scope: string,
   key: string,
   value: T
 };
