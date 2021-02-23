@@ -230,7 +230,7 @@ export class HttpApi {
       return;
     }
 
-    const requestData: RequestData<B> = { parameters: requestParameters, body };
+    const requestData: RequestData<B> = { parameters: requestParameters as StringMap<string>, body };
 
     const handlerParameters = requestDataTransformer(requestData, bodyType);
     const httpRequest: HttpRequest = {
