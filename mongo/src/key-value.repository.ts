@@ -4,23 +4,23 @@ import { isUndefined } from '@tstdl/base/utils';
 import type { KeyValueRepository } from '@tstdl/database';
 import { MongoEntityRepository, noopTransformer } from './entity-repository';
 import { getNewDocumentId } from './id';
-import type { KeyValue } from './model';
+import type { MongoKeyValue } from './model';
 import type { Collection, TypedIndexSpecification } from './types';
 
-const indexes: TypedIndexSpecification<KeyValue>[] = [
+const indexes: TypedIndexSpecification<MongoKeyValue>[] = [
   { name: 'scope_key', key: { scope: 1, key: 1 }, unique: true }
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MongoKeyValueRepository<Scope extends string, KV extends StringMap> implements KeyValueRepository<KV> {
-  private readonly repository: MongoEntityRepository<KeyValue>;
+  private readonly repository: MongoEntityRepository<MongoKeyValue>;
 
   readonly scope: Scope;
 
-  constructor(scope: Scope, collection: Collection<KeyValue>, { logger }: { logger: Logger }) {
+  constructor(scope: Scope, collection: Collection<MongoKeyValue>, { logger }: { logger: Logger }) {
     this.scope = scope;
 
-    this.repository = new MongoEntityRepository<KeyValue>(collection, noopTransformer, { indexes, logger, entityName: 'key-value' });
+    this.repository = new MongoEntityRepository<MongoKeyValue>(collection, noopTransformer, { indexes, logger, entityName: 'key-value' });
   }
 
   async initialize(): Promise<void> {
@@ -30,7 +30,7 @@ export class MongoKeyValueRepository<Scope extends string, KV extends StringMap>
   async get<K extends keyof KV>(key: K): Promise<KV[K] | undefined>;
   async get<K extends keyof KV, D>(key: K, defaultValue: D): Promise<D | KV[K]>;
   async get<K extends keyof KV, D>(key: K, defaultValue?: D): Promise<KV[K] | D | undefined> {
-    const item = await this.repository.tryLoadByFilter<KeyValue<KV[K]>>({ scope: this.scope, key: key as string });
+    const item = await this.repository.tryLoadByFilter<MongoKeyValue<KV[K]>>({ scope: this.scope, key: key as string });
 
     if (isUndefined(item)) {
       return defaultValue;

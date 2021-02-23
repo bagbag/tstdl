@@ -7,6 +7,7 @@ import { connect } from '@tstdl/server/instance-provider';
 import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
+import { MongoKeyValueRepository } from './key-value.repository';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
