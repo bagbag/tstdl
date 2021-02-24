@@ -9,6 +9,8 @@ import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
 
+const singletonScope = Symbol('singletons');
+
 let migrationLogPrefix = 'MIGRATION';
 let migrationStateRepositoryProvider: () => MigrationStateRepository | Promise<MigrationStateRepository> = deferThrow(new Error('migrationStateRepository not configured'));
 
@@ -40,7 +42,7 @@ export function configureServerInstanceProvider(
 }
 
 export async function getMigrator(): Promise<Migrator> {
-  return singleton(Migrator, async () => {
+  return singleton(singletonScope, Migrator, async () => {
     const migrationStateRepository = await migrationStateRepositoryProvider();
     const lockProvider = await getLockProvider();
     const logger = getLogger(migrationLogPrefix);
@@ -51,14 +53,14 @@ export async function getMigrator(): Promise<Migrator> {
 
 
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {
-  return singleton(DistributedLoopProvider, async () => {
+  return singleton(singletonScope, DistributedLoopProvider, async () => {
     const lockProvider = await getLockProvider();
     return new DistributedLoopProvider(lockProvider);
   });
 }
 
 export function getHttpApi(): HttpApi {
-  return singleton(HttpApi, () => {
+  return singleton(singletonScope, HttpApi, () => {
     const logger = getLogger(httpApiLogPrefix);
     const httpApi = new HttpApi({ logger, behindProxy: true });
 
@@ -69,7 +71,7 @@ export function getHttpApi(): HttpApi {
 }
 
 export function getWebServerModule(): WebServerModule {
-  return singleton(WebServerModule, () => {
+  return singleton(singletonScope, WebServerModule, () => {
     const httpApi = getHttpApi();
     const logger = getLogger(webServerLogPrefix);
 

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.34.23",
+  "version": "0.34.24",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@koa/router": "^10.0.0",
-    "@tstdl/base": "^0.62.28",
+    "@tstdl/base": "^0.62.29",
     "@tstdl/database": "^0.15.4",
     "got": "^11.8.1",
     "koa": "^2.13.1",

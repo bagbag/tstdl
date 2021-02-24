@@ -7,12 +7,12 @@ import { connect } from '@tstdl/server/instance-provider';
 import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
-import { MongoKeyValueStore } from './key-value.store';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
 import type { MongoDocument, MongoKeyValue } from './model';
 import { MongoKeyValueRepository } from './mongo-key-value.repository';
+import { MongoKeyValueStore } from './mongo-key-value.store';
 import type { MongoJob } from './queue';
 import { MongoJobRepository, MongoQueue } from './queue';
 import type { Collection } from './types';
@@ -32,6 +32,10 @@ export type MongoQueueConfig<T> = {
   maxTries: number
 };
 
+const singletonScope = Symbol('singletons');
+const databaseSingletonScope = Symbol('database-singletons');
+const databaseCollectionSingletonScopes = new FactoryMap<string, symbol>(() => Symbol('database-collection-singletons'));
+
 let connectionString = '';
 let defaultDatabase = '';
 let clientOptions: Mongo.MongoClientOptions = { useUnifiedTopology: true, useNewUrlParser: true };
@@ -46,9 +50,6 @@ let mongoLockProviderLog = 'LOCK';
 let mongoMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined;
 
 let mongoKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined;
-
-const databaseKeys = new FactoryMap<string, symbol>(() => Symbol('database'));
-const collectionKeys = new FactoryMap<string, FactoryMap<string, symbol>>(() => new FactoryMap(() => Symbol('collection')));
 
 export function configureMongoInstanceProvider(
   options: {
@@ -74,7 +75,7 @@ export function configureMongoInstanceProvider(
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
-  return singleton(Mongo.MongoClient, async () => {
+  return singleton(singletonScope, Mongo.MongoClient, async () => {
     const logger = getLogger(mongoLogPrefix);
 
     const logFunction: Mongo.log = (message?: string, state?: Mongo.LoggerState) => {
@@ -101,18 +102,16 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
 }
 
 export async function getMongoDatabase(databaseName: string = defaultDatabase): Promise<Mongo.Db> {
-  const key = databaseKeys.get(databaseName);
-
-  return singleton(key, async () => {
+  return singleton(databaseSingletonScope, databaseName, async () => {
     const mongo = await getMongo();
     return mongo.db(defaultDatabase);
   });
 }
 
 export async function getMongoCollection<T extends Entity, TDb extends Entity>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
-  const key = collectionKeys.get(databaseName).get(collectionName);
+  const scope = databaseCollectionSingletonScopes.get(databaseName);
 
-  return singleton(key, async () => {
+  return singleton(scope, collectionName, async () => {
     const database = await getMongoDatabase(databaseName);
     const existingCollections = await database.collections();
 
@@ -127,7 +126,7 @@ export async function getMongoCollection<T extends Entity, TDb extends Entity>({
 }
 
 export async function getMongoRepository<T extends Entity, TDb extends Entity = T, C extends MongoRepositoryStatic<T, TDb> = MongoRepositoryStatic<T, TDb>>(ctor: C, collectionConfig: MongoRepositoryConfig<T, TDb>): Promise<InstanceType<C>> {
-  return singleton(ctor, async () => {
+  return singleton(singletonScope, ctor, async () => {
     const logger = getLogger(repositoryLogPrefix);
     const collection = await getMongoCollection(collectionConfig);
     const repository = new ctor(collection, logger) as InstanceType<C>;
@@ -139,7 +138,7 @@ export async function getMongoRepository<T extends Entity, TDb extends Entity = 
 }
 
 export async function getMongoLockProvider(): Promise<MongoLockProvider> {
-  return singleton(MongoLockProvider, async () => {
+  return singleton(singletonScope, MongoLockProvider, async () => {
     assertDefined(mongoLockRepositoryConfig, 'mongoLockRepositoryConfig must be configured');
 
     const repository = await getMongoRepository(MongoLockRepository, mongoLockRepositoryConfig);
@@ -150,21 +149,21 @@ export async function getMongoLockProvider(): Promise<MongoLockProvider> {
 }
 
 export async function getMongoMigrationStateRepository(): Promise<MongoMigrationStateRepository> {
-  return singleton(MongoMigrationStateRepository, async () => {
+  return singleton(singletonScope, MongoMigrationStateRepository, async () => {
     assertDefined(mongoMigrationStateRepositoryConfig, 'mongoMigrationStateRepositoryConfig must be configured');
     return getMongoRepository(MongoMigrationStateRepository, mongoMigrationStateRepositoryConfig);
   });
 }
 
 export async function getMongoKeyValueRepository(): Promise<MongoKeyValueRepository> {
-  return singleton(MongoKeyValueRepository, async () => {
+  return singleton(singletonScope, MongoKeyValueRepository, async () => {
     assertDefined(mongoKeyValueRepositoryConfig, 'mongoKeyValueRepositoryConfig must be configured');
     return getMongoRepository(MongoKeyValueRepository, mongoKeyValueRepositoryConfig);
   });
 }
 
 export async function getMongoKeyValueStore<KV extends StringMap>(scope: string): Promise<MongoKeyValueStore<KV>> {
-  return singleton(MongoKeyValueStore, async () => {
+  return singleton(singletonScope, MongoKeyValueStore, async () => {
     const repository = await getMongoKeyValueRepository();
     return new MongoKeyValueStore(repository, scope);
   });
