@@ -1,8 +1,8 @@
 import { currentTimestamp } from '@tstdl/base/utils';
 import type { Entity, MaybeNewEntity } from '@tstdl/database';
 import type { BulkWriteOpResultObject } from 'mongodb';
-import type { ReplaceOptions, UpdateOptions } from './base-repository';
-import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './base-repository';
+import type { ReplaceOptions, UpdateOptions } from './mongo-base.repository';
+import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './mongo-base.repository';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model';
 import type { BulkWriteOperation, Collection, FilterQuery, UpdateQuery } from './types';
 

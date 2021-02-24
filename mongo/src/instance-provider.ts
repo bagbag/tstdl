@@ -1,20 +1,20 @@
 import { disposer, getLogger } from '@tstdl/base/instance-provider';
 import type { Logger } from '@tstdl/base/logger';
-import type { Type } from '@tstdl/base/types';
+import type { StringMap, Type } from '@tstdl/base/types';
 import { assertDefined, FactoryMap, isDefined, singleton } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { connect } from '@tstdl/server/instance-provider';
 import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
-import { MongoKeyValueRepository } from './key-value.repository';
+import { MongoKeyValueStore } from './key-value.store';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
-import type { MongoDocument } from './model';
-import { MongoQueue } from './queue';
-import type { MongoJob } from './queue/job';
-import { MongoJobRepository } from './queue/mongo-job.repository';
+import type { MongoDocument, MongoKeyValue } from './model';
+import { MongoKeyValueRepository } from './mongo-key-value.repository';
+import type { MongoJob } from './queue';
+import { MongoJobRepository, MongoQueue } from './queue';
 import type { Collection } from './types';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
@@ -45,6 +45,8 @@ let mongoLockProviderLog = 'LOCK';
 
 let mongoMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined;
 
+let mongoKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined;
+
 const databaseKeys = new FactoryMap<string, symbol>(() => Symbol('database'));
 const collectionKeys = new FactoryMap<string, FactoryMap<string, symbol>>(() => new FactoryMap(() => Symbol('collection')));
 
@@ -57,7 +59,8 @@ export function configureMongoInstanceProvider(
     repositoryLogPrefix?: string,
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
     mongoLockProviderLog?: string,
-    mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>
+    mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
+    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>
   }
 ): void {
   connectionString = options.connectionString ?? connectionString;
@@ -150,6 +153,20 @@ export async function getMongoMigrationStateRepository(): Promise<MongoMigration
   return singleton(MongoMigrationStateRepository, async () => {
     assertDefined(mongoMigrationStateRepositoryConfig, 'mongoMigrationStateRepositoryConfig must be configured');
     return getMongoRepository(MongoMigrationStateRepository, mongoMigrationStateRepositoryConfig);
+  });
+}
+
+export async function getMongoKeyValueRepository(): Promise<MongoKeyValueRepository> {
+  return singleton(MongoKeyValueRepository, async () => {
+    assertDefined(mongoKeyValueRepositoryConfig, 'mongoKeyValueRepositoryConfig must be configured');
+    return getMongoRepository(MongoKeyValueRepository, mongoKeyValueRepositoryConfig);
+  });
+}
+
+export async function getMongoKeyValueStore<KV extends StringMap>(scope: string): Promise<MongoKeyValueStore<KV>> {
+  return singleton(MongoKeyValueStore, async () => {
+    const repository = await getMongoKeyValueRepository();
+    return new MongoKeyValueStore(repository, scope);
   });
 }
 

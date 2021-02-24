@@ -1,8 +1,8 @@
 import { currentTimestamp } from '@tstdl/base/utils';
 import type { Entity, EntityWithPartialId, MaybeNewEntity, MaybeNewEntityWithoutId } from '@tstdl/database';
-import type { ProjectedEntity, Projection } from '../base-repository';
-import { ProjectionMode } from '../base-repository';
 import { getNewDocumentId } from '../id';
+import type { ProjectedEntity, Projection } from '../mongo-base.repository';
+import { ProjectionMode } from '../mongo-base.repository';
 
 export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
   _id: string

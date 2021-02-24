@@ -1,6 +1,6 @@
-import type { StringMap } from '@tstdl/base/types';
+import type { StringMap } from '../types';
 
-export interface KeyValueRepository<KV extends StringMap> {
+export interface KeyValueStore<KV extends StringMap> {
   get<K extends keyof KV>(key: K): Promise<KV[K] | undefined>;
   get<K extends keyof KV, D>(key: K, defaultValue: D): Promise<KV[K] | D>;
 

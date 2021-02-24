@@ -2,7 +2,7 @@
 import type { Logger } from '@tstdl/base/logger';
 import { currentTimestamp, equals } from '@tstdl/base/utils';
 import type { Entity, EntityFilter, EntityPatch, EntityRepository, MaybeNewEntity, UpdateOptions } from '@tstdl/database';
-import { getBasicFilterQuery, MongoBaseRepository } from './base-repository';
+import { getBasicFilterQuery, MongoBaseRepository } from './mongo-base.repository';
 import { renameIdPropertyToUnderscoreId } from './model';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 

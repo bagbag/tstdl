@@ -1,2 +1,2 @@
 export * from './document';
-export * from './key-value.model';
+export * from './mongo-key-value.model';
