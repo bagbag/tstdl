@@ -73,6 +73,7 @@ export function configureMongoInstanceProvider(
   mongoLockRepositoryConfig = options.mongoLockRepositoryConfig ?? mongoLockRepositoryConfig;
   mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
   mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
+  mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
