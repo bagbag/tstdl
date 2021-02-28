@@ -11,6 +11,7 @@ import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
 import type { MongoDocument, MongoKeyValue } from './model';
+import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider';
 import { MongoKeyValueRepository } from './mongo-key-value.repository';
 import { MongoKeyValueStore } from './mongo-key-value.store';
 import type { MongoJob } from './queue';
@@ -162,10 +163,10 @@ export async function getMongoKeyValueRepository(): Promise<MongoKeyValueReposit
   });
 }
 
-export async function getMongoKeyValueStore<KV extends StringMap>(scope: string): Promise<MongoKeyValueStore<KV>> {
-  return singleton(singletonScope, MongoKeyValueStore, async () => {
+export async function getMongoKeyValueStoreProvider(): Promise<MongoKeyValueStoreProvider> {
+  return singleton(singletonScope, MongoKeyValueStoreProvider, async () => {
     const repository = await getMongoKeyValueRepository();
-    return new MongoKeyValueStore(repository, scope);
+    return new MongoKeyValueStoreProvider(repository);
   });
 }
 

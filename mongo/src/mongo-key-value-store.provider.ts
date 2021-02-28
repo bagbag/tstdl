@@ -9,11 +9,8 @@ import { MongoKeyValueStore } from './mongo-key-value.store';
 export class MongoKeyValueStoreProvider implements KeyValueStoreProvider {
   private readonly keyValueRepository: MongoEntityRepository<MongoKeyValue>;
 
-  readonly scope: string;
-
-  constructor(keyValueRepository: MongoKeyValueRepository, scope: string) {
+  constructor(keyValueRepository: MongoKeyValueRepository) {
     this.keyValueRepository = keyValueRepository;
-    this.scope = scope;
   }
 
   get<KV extends StringMap>(scope: string): KeyValueStore<KV> {
