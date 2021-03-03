@@ -1,19 +1,19 @@
 {
   "name": "@tstdl/server",
-  "version": "0.34.24",
+  "version": "0.34.25",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "pub": "npm run build && cp package.json package-lock.json tsconfig.json dist/ && npm publish dist"
+    "pub": "npm run build && cp package.json package-lock.json tsconfig.json dist/ && npm publish dist/"
   },
   "dependencies": {
     "@koa/router": "^10.0.0",
-    "@tstdl/base": "^0.62.29",
+    "@tstdl/base": "^0.62.33",
     "@tstdl/database": "^0.15.4",
-    "got": "^11.8.1",
+    "got": "^11.8.2",
     "koa": "^2.13.1",
     "luxon": "^1.26.0",
     "yup": "^0.31.1"
@@ -21,12 +21,12 @@
   "devDependencies": {
     "@types/koa": "^2.13.0",
     "@types/koa__router": "^8.0.4",
-    "@types/luxon": "^1.26.0",
+    "@types/luxon": "^1.26.1",
     "@types/node": "^14.14.31",
     "@types/yup": "^0.29.11",
-    "@typescript-eslint/eslint-plugin": "^4.15.2",
-    "@typescript-eslint/parser": "^4.15.2",
-    "eslint": "^7.20.0",
+    "@typescript-eslint/eslint-plugin": "^4.16.1",
+    "@typescript-eslint/parser": "^4.16.1",
+    "eslint": "^7.21.0",
     "typescript": "~4.2.2"
   }
 }

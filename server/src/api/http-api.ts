@@ -42,8 +42,11 @@ export enum BodyType {
 }
 
 export enum RequestMethod {
+  Delete = 'delete',
   Get = 'get',
-  Post = 'post'
+  Patch = 'patch',
+  Post = 'post',
+  Put = 'put'
 }
 
 export type Query = StringMap<string>;
