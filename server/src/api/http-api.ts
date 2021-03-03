@@ -198,7 +198,13 @@ export class HttpApi {
             break;
 
           case RequestMethod.Post:
+          case RequestMethod.Patch:
+          case RequestMethod.Put:
             this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            break;
+
+          case RequestMethod.Delete:
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
