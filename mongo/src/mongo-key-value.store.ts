@@ -1,10 +1,11 @@
 import type { KeyValueStore } from '@tstdl/base/key-value';
 import type { StringMap } from '@tstdl/base/types';
-import { isUndefined } from '@tstdl/base/utils';
+import { currentTimestamp, isUndefined } from '@tstdl/base/utils';
 import type { MongoEntityRepository } from './entity-repository';
 import { getNewDocumentId } from './id';
-import type { MongoKeyValueRepository } from './mongo-key-value.repository';
 import type { MongoKeyValue } from './model';
+import type { MongoKeyValueRepository } from './mongo-key-value.repository';
+import type { UpdateQuery } from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class MongoKeyValueStore<KV extends StringMap> implements KeyValueStore<KV> {
@@ -30,7 +31,14 @@ export class MongoKeyValueStore<KV extends StringMap> implements KeyValueStore<K
   }
 
   async set<K extends keyof KV>(key: K, value: KV[K]): Promise<void> {
-    await this.keyValueRepository.baseRepository.update({ scope: this.scope, key: key as string }, { $set: { value }, $setOnInsert: { _id: getNewDocumentId() } }, { upsert: true });
+    const timestamp = currentTimestamp();
+
+    const update: UpdateQuery<MongoKeyValue> = {
+      $set: { value, updated: timestamp },
+      $setOnInsert: { _id: getNewDocumentId(), created: timestamp, deleted: false }
+    };
+
+    await this.keyValueRepository.baseRepository.update({ scope: this.scope, key: key as string }, update, { upsert: true });
   }
 
   async delete<K extends keyof KV>(key: K): Promise<boolean> {

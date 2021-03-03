@@ -1,3 +1,5 @@
+import { assertDefined } from './assert';
+
 interface FullyTypedAsyncIterableIterator<T, TReturn = any, TNext = undefined> extends AsyncIterator<T, TReturn, TNext> {
   [Symbol.asyncIterator](): AsyncIterableIterator<T>;
 }
@@ -16,18 +18,12 @@ export class AsyncIteratorIterableIterator<T, TReturn = any, TNext = undefined> 
   }
 
   async return(value?: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T, TReturn>> {
-    if (this.iterator.return == undefined) {
-      throw new Error('underlying iterator has no return function defined');
-    }
-
+    assertDefined(this.iterator.return, 'underlying iterator has no return function defined'); // eslint-disable-line @typescript-eslint/unbound-method
     return this.iterator.return(value);
   }
 
   async throw(error?: any): Promise<IteratorResult<T, TReturn>> {
-    if (this.iterator.throw == undefined) {
-      throw new Error('underlying iterator has no throw function defined');
-    }
-
+    assertDefined(this.iterator.throw, 'underlying iterator has no throw function defined'); // eslint-disable-line @typescript-eslint/unbound-method
     return this.iterator.throw(error);
   }
 
@@ -46,7 +42,7 @@ export class AsyncIteratorIterableIterator<T, TReturn = any, TNext = undefined> 
         try {
           yield result.value;
         }
-        catch (error) {
+        catch (error: unknown) {
           if (this.iterator.throw != undefined) {
             await this.iterator.throw(error);
           }
