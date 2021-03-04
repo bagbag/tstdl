@@ -1,4 +1,4 @@
-import { NotFoundError, UnauthorizedError } from '../error';
+import { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError } from '../error';
 import { ValidationError } from '../error/validation';
 import { registerErrorHandler } from './response';
 
@@ -10,8 +10,10 @@ type SerializedValidationError = {
 
 export function registerDefaultErrorHandlers(): void {
   registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
-  registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
+  registerErrorHandler(BadRequestError, 400, () => undefined, (_, error) => new BadRequestError(error.message));
   registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
+  registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new ForbiddenError(error.message));
+  registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
 }
 
 export function serializeValidationError(error: ValidationError): SerializedValidationError {
