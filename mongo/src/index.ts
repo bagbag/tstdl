@@ -6,4 +6,5 @@ export * from './mongo-bulk';
 export * from './mongo-key-value-store.provider';
 export * from './mongo-key-value.repository';
 export * from './mongo-key-value.store';
+export * from './simple-entity-repository';
 export * from './types';

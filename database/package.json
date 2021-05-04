@@ -1,21 +1,21 @@
 {
   "name": "@tstdl/database",
-  "version": "0.15.4",
+  "version": "0.15.5",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist"
+    "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist/"
   },
   "dependencies": {
-    "@tstdl/base": "^0.62.28"
+    "@tstdl/base": "^0.62.35"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^4.15.2",
-    "@typescript-eslint/parser": "^4.15.2",
-    "eslint": "^7.20.0",
-    "typescript": "~4.2.2"
+    "@typescript-eslint/eslint-plugin": "^4.22.1",
+    "@typescript-eslint/parser": "^4.22.1",
+    "eslint": "^7.25.0",
+    "typescript": "~4.2.4"
   }
 }
