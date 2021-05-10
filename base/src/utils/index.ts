@@ -28,4 +28,5 @@ export * from './timer';
 export * from './timing';
 export * from './type-guards';
 export * from './url-builder';
+export * from './validators';
 export * from './z-base32';
