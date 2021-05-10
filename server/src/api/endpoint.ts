@@ -5,13 +5,8 @@ export type ParametersTransformer<Parameters, UpdatedParameters> = (parameters: 
 
 export function createValidatedApiEndpoint<Parameters, ValidatedParameters, Result, Context>(validator: EndpointParametersValidator<Parameters, ValidatedParameters>, handler: ApiEndpoint<ValidatedParameters, Result, Context>): ApiEndpoint<Parameters, Result, Context> {
   async function validationApiEndpoint(parameters: Parameters, context: Context): Promise<Result> {
-    const validationResult = await validator(parameters);
-
-    if (!validationResult.valid) {
-      throw validationResult.error;
-    }
-
-    return handler(validationResult.value, context);
+    const validatedValue = await validator(parameters);
+    return handler(validatedValue, context);
   }
 
   return validationApiEndpoint;

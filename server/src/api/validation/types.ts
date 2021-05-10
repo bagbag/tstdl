@@ -1,8 +1,8 @@
 import { ValidationError } from '@tstdl/base/error';
 export { ValidationError };
 
-export type EndpointParametersValidator<Input, Output> = (object: Input) => ValidationResult<Output> | Promise<ValidationResult<Output>>;
+export type SyncEndpointParametersValidator<Input, Output> = (object: Input) => ValidationResult<Output>;
+export type AsyncEndpointParametersValidator<Input, Output> = (object: Input) => Promise<ValidationResult<Output>>;
+export type EndpointParametersValidator<Input, Output> = SyncEndpointParametersValidator<Input, Output> | AsyncEndpointParametersValidator<Input, Output>;
 
-export type ValidationResult<Output> =
-  | { valid: true, value: Output, error?: undefined }
-  | { valid: false, value?: undefined, error: ValidationError };
+export type ValidationResult<Output> = Output;

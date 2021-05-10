@@ -46,11 +46,10 @@ export function validator<T>(schema: yup.Schema<T>, options?: yup.ValidateOption
 
 export function validate<T, U>(schema: yup.Schema<T>, value: U, options: yup.ValidateOptions = defaultOptions): ValidationResult<T> {
   try {
-    const parsed = schema.validateSync(value, options);
-    return { valid: true, value: parsed };
+    return schema.validateSync(value, options);
   }
   catch (error: unknown) {
-    return { valid: false, error: convertError(error as yup.ValidationError) };
+    throw convertError(error as yup.ValidationError);
   }
 }
 

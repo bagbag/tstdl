@@ -1,15 +1,17 @@
-import { isDefined, emailRegex } from '@tstdl/base/utils';
+import { emailRegex, isDefined } from '@tstdl/base/utils';
 import type { Failure, Struct, StructError } from 'superstruct';
-import { pattern, string } from 'superstruct';
-import type { EndpointParametersValidator, ValidationResult } from '../types';
+import { coerce, number, pattern, string } from 'superstruct';
+import type { SyncEndpointParametersValidator, ValidationResult } from '../types';
 import { ValidationError } from '../types';
 
 export type SuperstructOptions = {
-  coerce?: boolean
+  coerce?: boolean,
+  mask?: boolean
 };
 
 let defaultOptions: SuperstructOptions = {
-  coerce: true
+  coerce: true,
+  mask: false
 };
 
 export function setDefaultYupValidationOptions(options: SuperstructOptions): void {
@@ -17,19 +19,33 @@ export function setDefaultYupValidationOptions(options: SuperstructOptions): voi
 }
 
 export const email = (): Struct<string, null> => pattern(string(), emailRegex);
+export const coerceNumber = (): Struct<number, null> => coerce(number(), string(), (value) => parseFloat(value));
 
-export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): EndpointParametersValidator<unknown, T> {
+export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): SyncEndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
 }
 
 export function validate<T, U>(struct: Struct<T>, value: U, options: SuperstructOptions = defaultOptions): ValidationResult<T> {
-  const [error, result] = struct.validate(value, options);
+  let result: T | undefined;
+  let error: StructError | undefined;
 
-  if (isDefined(error)) {
-    return { valid: false, error: convertError(error) };
+  if (options.mask == true) {
+    try {
+      result = struct.mask(value);
+    }
+    catch (_error: unknown) {
+      error = _error as StructError;
+    }
+  }
+  else {
+    [error, result] = struct.validate(value, { coerce: options.coerce });
   }
 
-  return { valid: true, value: result! };
+  if (isDefined(error)) {
+    throw convertError(error);
+  }
+
+  return result!;
 }
 
 function convertError(error: StructError): ValidationError {
