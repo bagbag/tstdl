@@ -5,7 +5,7 @@ export class ValidationError extends CustomError {
   readonly inner?: ValidationError[];
 
   constructor(message: string, { details, inner }: { details?: any, inner?: ValidationError[] } = {}) {
-    super({ name: ValidationError.name, message });
+    super({ name: 'ValidationError', message });
 
     if (details != undefined) {
       this.details = details;

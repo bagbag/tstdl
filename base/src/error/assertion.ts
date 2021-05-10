@@ -2,6 +2,6 @@ import { CustomError } from './custom-error';
 
 export class AssertionError extends CustomError {
   constructor(message: string) {
-    super({ name: AssertionError.name, message });
+    super({ name: 'AssertionError', message });
   }
 }

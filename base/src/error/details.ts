@@ -4,7 +4,7 @@ export class DetailsError<T = any> extends CustomError {
   details: T;
 
   constructor(message: string, details: T) {
-    super({ message });
+    super({ name: 'DetailsError', message });
 
     this.details = details;
   }
