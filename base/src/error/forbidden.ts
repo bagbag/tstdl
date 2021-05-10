@@ -1,7 +1,9 @@
 import { CustomError } from './custom-error';
 
 export class ForbiddenError extends CustomError {
+  static readonly errorName = 'ForbiddenError';
+
   constructor(message: string = 'forbidden') {
-    super({ name: 'ForbiddenError', message });
+    super({ message });
   }
 }

@@ -1,3 +1,4 @@
+import type { CustomErrorStatic } from '../error';
 import type { Type, UndefinableJson } from '../types';
 import { isDefined } from '../utils';
 import { ApiError } from './error';
@@ -31,16 +32,16 @@ export type ResponseError = {
 
 const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
 
-export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
-  errorHandlers.set(constructor.name, { statusCode, serializer, deserializer });
+export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T> & CustomErrorStatic, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+  errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
 }
 
-export function hasErrorHandler(constructor: Type<Error>): boolean {
-  return errorHandlers.has(constructor.name);
+export function hasErrorHandler(constructor: Type<Error> & CustomErrorStatic): boolean {
+  return errorHandlers.has(constructor.errorName);
 }
 
 export function getErrorStatusCode(error: Error, defaultStatusCode: number = 500): number {
-  const handler = errorHandlers.get(error.constructor.name);
+  const handler = errorHandlers.get(error.name);
   return (handler != undefined) ? handler.statusCode : defaultStatusCode;
 }
 
@@ -58,14 +59,14 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   let response: ErrorResponse;
 
   if (errorOrName instanceof Error) {
-    const handler = errorHandlers.get(errorOrName.constructor.name);
+    const handler = errorHandlers.get(errorOrName.name);
 
     if (handler != undefined) {
       const errorData = handler.serializer(errorOrName) as ErrorHandlerData;
 
       response = {
         error: {
-          name: errorOrName.constructor.name,
+          name: errorOrName.name,
           message: errorOrName.message,
           details,
           errorData

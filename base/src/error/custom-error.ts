@@ -5,8 +5,10 @@ export class CustomError extends Error {
 
     Object.setPrototypeOf(this, prototype);
 
-    this.name = (name == undefined)
-      ? new.target.name
-      : name;
+    this.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? new.target.name;
   }
+}
+
+export interface CustomErrorStatic {
+  errorName: string;
 }
