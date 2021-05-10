@@ -1,10 +1,10 @@
-import { isDefined, isMail, isString } from '@tstdl/base/utils';
+import { isDefined, mailRegex } from '@tstdl/base/utils';
 import type { Failure, Struct, StructError } from 'superstruct';
-import { define } from 'superstruct';
+import { pattern, string } from 'superstruct';
 import type { EndpointParametersValidator, ValidationResult } from '../types';
 import { ValidationError } from '../types';
 
-export const email = (): Struct<string, null> => define('email', (value) => ((isString(value) && isMail(value)) ? true : 'asd'));
+export const mail = (): Struct<string, null> => pattern(string(), mailRegex);
 
 export function validator<T>(struct: Struct<T>, options?: { coerce?: boolean }): EndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
