@@ -1,6 +1,7 @@
 import { NotFoundError, UnauthorizedError, ValidationError } from '@tstdl/base/error';
 import { disposer, getLockProvider, getLogger } from '@tstdl/base/instance-provider';
 import type { Logger } from '@tstdl/base/logger';
+import type { Type } from '@tstdl/base/types';
 import { singleton, timeout } from '@tstdl/base/utils';
 import { deferThrow } from '@tstdl/base/utils/helpers';
 import { HttpApi } from './api';
@@ -12,6 +13,7 @@ import { WebServerModule } from './module/modules';
 const singletonScope = Symbol('singletons');
 
 let migrationLogPrefix = 'MIGRATION';
+let supressErrorLog: Type<Error>[] = [];
 let migrationStateRepositoryProvider: () => MigrationStateRepository | Promise<MigrationStateRepository> = deferThrow(new Error('migrationStateRepository not configured'));
 
 let httpApiUrlPrefix = '';
@@ -29,6 +31,7 @@ export function configureServerInstanceProvider(
     httpApiLogPrefix?: string,
     webServerLogPrefix?: string,
     migrationLogPrefix?: string,
+    supressErrorLog?: Type<Error>[],
     migrationStateRepositoryProvider?: () => MigrationStateRepository | Promise<MigrationStateRepository>
   }
 ): void {
@@ -38,6 +41,7 @@ export function configureServerInstanceProvider(
   httpApiLogPrefix = options.httpApiLogPrefix ?? httpApiLogPrefix;
   webServerLogPrefix = options.webServerLogPrefix ?? webServerLogPrefix;
   migrationLogPrefix = options.migrationLogPrefix ?? migrationLogPrefix;
+  supressErrorLog = options.supressErrorLog ?? supressErrorLog;
   migrationStateRepositoryProvider = options.migrationStateRepositoryProvider ?? migrationStateRepositoryProvider;
 }
 
@@ -62,9 +66,9 @@ export async function getDistributedLoopProvider(): Promise<DistributedLoopProvi
 export function getHttpApi(): HttpApi {
   return singleton(singletonScope, HttpApi, () => {
     const logger = getLogger(httpApiLogPrefix);
-    const httpApi = new HttpApi({ logger, behindProxy: true });
+    const httpApi = new HttpApi({ logger, behindProxy: httpApiBehindProxy });
 
-    httpApi.supressErrorLog(UnauthorizedError, NotFoundError, ValidationError);
+    httpApi.supressErrorLog(UnauthorizedError, NotFoundError, ValidationError, ...supressErrorLog);
 
     return httpApi;
   });
