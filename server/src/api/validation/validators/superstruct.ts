@@ -1,16 +1,28 @@
-import { isDefined, mailRegex } from '@tstdl/base/utils';
+import { isDefined, emailRegex } from '@tstdl/base/utils';
 import type { Failure, Struct, StructError } from 'superstruct';
 import { pattern, string } from 'superstruct';
 import type { EndpointParametersValidator, ValidationResult } from '../types';
 import { ValidationError } from '../types';
 
-export const mail = (): Struct<string, null> => pattern(string(), mailRegex);
+export type SuperstructOptions = {
+  coerce?: boolean
+};
 
-export function validator<T>(struct: Struct<T>, options?: { coerce?: boolean }): EndpointParametersValidator<unknown, T> {
+let defaultOptions: SuperstructOptions = {
+  coerce: true
+};
+
+export function setDefaultYupValidationOptions(options: SuperstructOptions): void {
+  defaultOptions = options;
+}
+
+export const email = (): Struct<string, null> => pattern(string(), emailRegex);
+
+export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): EndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
 }
 
-export function validate<T, U>(struct: Struct<T>, value: U, options?: { coerce?: boolean }): ValidationResult<T> {
+export function validate<T, U>(struct: Struct<T>, value: U, options: SuperstructOptions = defaultOptions): ValidationResult<T> {
   const [error, result] = struct.validate(value, options);
 
   if (isDefined(error)) {
