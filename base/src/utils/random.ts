@@ -15,7 +15,7 @@ catch {
 }
 
 function getNodeCryptoRandomBytes(size: number): Uint8Array {
-  const buffer = (nodeCrypto as NodeCryptoType).randomBytes(size);
+  const buffer = nodeCrypto!.randomBytes(size);
   const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
 
   return uint8Array;
@@ -55,11 +55,13 @@ export function getRandomString(length: number, alphabet: string): string {
   }
 
   const bytes = getRandomBytes(length * 2);
-  const uint16Array = new Uint16Array(bytes.buffer);
+  const array = new Uint16Array(bytes.buffer);
+  const maxValue = (2 ** (array.BYTES_PER_ELEMENT * 8)) - 1;
+  const factor = alphabet.length / (maxValue + 1);
 
   for (let i = 0; i < length; i++) {
-    const value = uint16Array[i]!;
-    const index = Math.floor((value / 65535) * alphabet.length);
+    const value = array[i]!;
+    const index = Math.floor(value * factor);
     result += alphabet[index];
   }
 
