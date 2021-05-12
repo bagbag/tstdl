@@ -1,14 +1,16 @@
 import { DeferredPromise } from '@tstdl/base/promise';
 import type { Json, StringMap } from '@tstdl/base/types';
-import Got from 'got';
+import { isDefined } from '@tstdl/base/utils';
 import type { Options as GotOptions, Response } from 'got';
+import Got from 'got';
 import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
 import type { Readable } from 'stream';
-import { isDefined } from '@tstdl/base/utils';
 
 export type HttpRequestOptions = {
   headers?: StringMap<string | string[]>,
+  parameters?: StringMap<string | string[]>,
+  hash?: string,
   body?: {
     form?: StringMap<string>,
     json?: Json,
@@ -34,7 +36,7 @@ export type HttpResponseTypeValueType<T extends HttpResponseType> =
 
 export type HttpResponse<T extends HttpResponseType> = {
   statusCode: number,
-  statusMessage: string,
+  statusMessage?: string,
   header: StringMap<string | string[]>,
   body: HttpResponseTypeValueType<T>
 };
@@ -120,6 +122,7 @@ export class HttpClient {
     return response.body;
   }
 
+  // eslint-disable-next-line max-lines-per-function
   static async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const baseHeaders: StringMap<string | string[]> = {};
 
@@ -144,21 +147,23 @@ export class HttpClient {
     }
 
     const headers = { ...baseHeaders, ...options.headers };
+    const uri = getUri(url, options);
 
     switch (responseType) {
       case HttpResponseType.Stream:
-        return this.callStream(method, url, { ...options, headers }) as Promise<HttpResponse<T>>;
+        return this.callStream(method, uri, { ...options, headers }) as Promise<HttpResponse<T>>;
 
       default:
-        return this._call(method, url, responseType, { ...options, headers });
+        return this._call(method, uri, responseType, { ...options, headers });
     }
   }
 
   static async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
+    const uri = getUri(url, options);
     const gotOptions = getGotOptions(method, options);
 
     const responsePromise = new DeferredPromise<IncomingMessage>();
-    const request = Got.stream(url, { ...gotOptions, isStream: true });
+    const request = Got.stream(uri, { ...gotOptions, isStream: true });
     const originalOnResponse = request._onResponse.bind(request);
 
     async function onResponseWrapper(response: IncomingMessage): Promise<void> {
@@ -174,8 +179,8 @@ export class HttpClient {
     const response = await responsePromise;
 
     const result: HttpResponse<HttpResponseType.Stream> = {
-      statusCode: response.statusCode as number,
-      statusMessage: response.statusMessage ?? '',
+      statusCode: response.statusCode ?? -1,
+      statusMessage: response.statusMessage,
       header: response.headers as StringMap<string | string[]>,
       body: request
     };
@@ -189,13 +194,36 @@ export class HttpClient {
     const response = await request as Response;
     const result: HttpResponse<T> = {
       statusCode: response.statusCode,
-      statusMessage: response.statusMessage ?? '',
+      statusMessage: response.statusMessage,
       header: response.headers as StringMap<string | string[]>,
       body: response.body as HttpResponseTypeValueType<T>
     };
 
     return result;
   }
+}
+
+function getUri(url: string, options: HttpRequestOptions = {}): string {
+  const uri = new URL(url);
+
+  if (isDefined(options.parameters)) {
+    for (const [key, valueOrValues] of Object.entries(options.parameters)) {
+      if (Array.isArray(valueOrValues)) {
+        for (const value of valueOrValues) {
+          uri.searchParams.append(key, value);
+        }
+      }
+      else {
+        uri.searchParams.append(key, valueOrValues);
+      }
+    }
+  }
+
+  if (isDefined(options.hash)) {
+    uri.hash = options.hash;
+  }
+
+  return uri.href;
 }
 
 function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpRequestOptions = {}): GotOptions {

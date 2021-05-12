@@ -1,6 +1,6 @@
 import * as KoaRouter from '@koa/router';
-import type { ErrorResponse } from '@tstdl/base/api';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
+import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
+import type { CustomErrorStatic } from '@tstdl/base/error';
 import type { Logger } from '@tstdl/base/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { isObject, round, Timer, toArray } from '@tstdl/base/utils';
@@ -330,7 +330,7 @@ function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>)
       await next();
     }
     catch (error: unknown) {
-      const errorConstructor = (error as Error).constructor as Type<Error>;
+      const errorConstructor = (error as Error).constructor as Type<Error> & CustomErrorStatic;
       const supressed = supressedErrors.has(errorConstructor);
 
       if (!supressed) {

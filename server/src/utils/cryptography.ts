@@ -182,7 +182,7 @@ export function createHash(algorithm: string, data: string | Crypto.BinaryLike, 
   const hasher = Crypto.createHash(algorithm);
 
   if (typeof data == 'string') {
-    hasher.update(data, encoding as Crypto.Encoding);
+    hasher.update(data, encoding!);
   }
   else {
     hasher.update(data);
