@@ -19,9 +19,8 @@ export function teardown<T>(teardownFn: (lastValue: T | undefined, lastError: an
         complete: () => subscriber.complete()
       });
 
-      subscriber
-        .add(subscription)
-        .add(() => teardownFn(lastValue, lastError));
+      subscriber.add(subscription);
+      subscriber.add(() => teardownFn(lastValue, lastError));
     });
   };
 }

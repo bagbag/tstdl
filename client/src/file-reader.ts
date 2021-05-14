@@ -1,3 +1,5 @@
+import { DetailsError } from '@tstdl/base/error';
+
 export async function readAsText(blob: Blob, encoding?: string): Promise<string> {
   return setup((reader) => reader.readAsText(blob, encoding));
 }
@@ -18,7 +20,7 @@ async function setup<T extends FileReader['result']>(dispatcher: (reader: FileRe
   return new Promise<T>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as T);
-    reader.onerror = () => reject(new Error((reader.error as DOMException).message));
+    reader.onerror = () => reject(new DetailsError(reader.error!.message, reader.error));
 
     dispatcher(reader);
   });

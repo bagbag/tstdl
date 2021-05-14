@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith, take } from 'rxjs/operators';
+import { firstValueFrom, merge, Subject } from 'rxjs';
+import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith } from 'rxjs/operators';
 import type { ObservableCollection } from './observable-collection';
 
 export type ObservableCollectionChangeEvent<T> = {
@@ -35,31 +35,31 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
   }
 
   get $observe(): Promise<TThis> {
-    return this.observe$.pipe(skip(1), take(1)).toPromise();
+    return firstValueFrom(this.observe$.pipe(skip(1)));
   }
 
   get $length(): Promise<number> {
-    return this.length$.pipe(skip(1), take(1)).toPromise();
+    return firstValueFrom(this.length$.pipe(skip(1)));
   }
 
   get $add(): Promise<T[]> {
-    return this.add$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.add$);
   }
 
   get $remove(): Promise<T[]> {
-    return this.remove$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.remove$);
   }
 
   get $change(): Promise<ObservableCollectionChangeEvent<T>> {
-    return this.change$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.change$);
   }
 
   get $clear(): Promise<void> {
-    return this.clear$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.clear$);
   }
 
   get $empty(): Promise<void> {
-    return this.empty$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.empty$);
   }
 
   constructor() {

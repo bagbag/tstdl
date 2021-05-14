@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { map, share, take } from 'rxjs/operators';
+import { firstValueFrom, merge, Subject } from 'rxjs';
+import { map, share } from 'rxjs/operators';
 import type { ObservableCollection } from './observable-collection';
 import { ObservableCollectionBase } from './observable-collection-base';
 import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
@@ -25,15 +25,15 @@ export abstract class ObservableListBase<T, TThis extends ObservableCollection<T
   }
 
   get $addAt(): Promise<ObservableListIndexedEvent<T>[]> {
-    return this.addAtSubject.pipe(take(1)).toPromise();
+    return firstValueFrom(this.addAtSubject);
   }
 
   get $removeAt(): Promise<ObservableListIndexedEvent<T>[]> {
-    return this.removeAtSubject.pipe(take(1)).toPromise();
+    return firstValueFrom(this.removeAtSubject);
   }
 
   get $changeAt(): Promise<ObservableListIndexedChangeEvent<T>> {
-    return this.changeAt$.pipe(take(1)).toPromise();
+    return firstValueFrom(this.changeAt$);
   }
 
   constructor() {

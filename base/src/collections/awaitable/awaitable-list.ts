@@ -1,6 +1,5 @@
 import type { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { firstValueFrom, Subject } from 'rxjs';
 
 export class AwaitableList<T> implements Iterable<T> {
   private readonly _added: Subject<T | T[]>;
@@ -22,15 +21,15 @@ export class AwaitableList<T> implements Iterable<T> {
   }
 
   get $added(): Promise<T | T[]> {
-    return this._added.pipe(take(1)).toPromise();
+    return firstValueFrom(this._added);
   }
 
   get $removed(): Promise<T | T[]> {
-    return this._removed.pipe(take(1)).toPromise();
+    return firstValueFrom(this._removed);
   }
 
   get $cleared(): Promise<void> {
-    return this._cleared.pipe(take(1)).toPromise();
+    return firstValueFrom(this._cleared);
   }
 
   get size(): number {
@@ -96,7 +95,7 @@ export class AwaitableList<T> implements Iterable<T> {
       throw new Error('list contains no items');
     }
 
-    const result = this.backingArray.pop() as T;
+    const result = this.backingArray.pop()!;
     this._removed.next(result);
 
     return result;
@@ -107,7 +106,7 @@ export class AwaitableList<T> implements Iterable<T> {
       throw new Error('list contains no items');
     }
 
-    const result = this.backingArray.shift() as T;
+    const result = this.backingArray.shift()!;
     this._removed.next(result);
 
     return result;
