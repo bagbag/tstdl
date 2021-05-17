@@ -92,7 +92,7 @@ export function simpleRoute<Method extends RequestMethod, B extends BodyType, En
       path,
       bodyType,
       maxRequestBodyBytes,
-      handler: getDefaultRouteHandler(),
+      handler: getJsonRouteHandler(),
       requestDataTransformer: getDefaultRequestDataTransformer(),
       endpoint
     }
@@ -106,8 +106,20 @@ export function route<Method extends RequestMethod, RouteParameters, B extends B
 
 export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
 
-export function getDefaultRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+export function getTextRouteHandler<Parameters, Result extends string>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+  return getSimpleRouteHandler((result) => ({ text: result }));
+}
+
+export function getJsonRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
   return getSimpleRouteHandler((result) => ({ json: result }));
+}
+
+export function getBinaryRouteHandler<Parameters, Result extends Buffer>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+  return getSimpleRouteHandler((result) => ({ binary: result }));
+}
+
+export function getStreamRouteHandler<Parameters, Result extends Readable>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+  return getSimpleRouteHandler((result) => ({ stream: result }));
 }
 
 export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Result) => HttpResponse): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
