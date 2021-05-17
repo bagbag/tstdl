@@ -124,7 +124,7 @@ export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Resu
 }
 
 type DefaultRequestDataTransformerReturnType<B extends BodyType> = undefined extends null ? void
-  : B extends BodyType.Auto ? StringMap
+  : B extends BodyType.None ? StringMap
   : B extends BodyType.Json ? JsonObject
   : StringMap & { body: BodyValueType<B> };
 
@@ -135,7 +135,7 @@ export function getDefaultRequestDataTransformer<B extends BodyType>(): RouteReq
     if (bodyType == BodyType.Json && isObject(data.body) && !Array.isArray(data.body)) {
       transformed = { ...transformed, ...(data as RequestData<BodyType.Json>).body as JsonObject };
     }
-    else if (bodyType != BodyType.Auto) {
+    else if (bodyType != BodyType.None) {
       transformed = { ...transformed, body: data.body };
     }
 
