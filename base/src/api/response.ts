@@ -1,7 +1,7 @@
 import type { CustomErrorStatic } from '../error';
 import type { Type, UndefinableJson } from '../types';
 import { isDefined } from '../utils';
-import { ApiError } from './error';
+import { ApiError } from '../error/api';
 
 type ErrorHandlerData = undefined | UndefinableJson;
 

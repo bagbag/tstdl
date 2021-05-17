@@ -1,6 +1,8 @@
 import * as KoaRouter from '@koa/router';
-import { createErrorResponse, ErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
+import type { ErrorResponse } from '@tstdl/base/api';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '@tstdl/base/api';
 import type { CustomErrorStatic } from '@tstdl/base/error';
+import { UnsupportedMediaTypeError } from '@tstdl/base/error';
 import type { Logger } from '@tstdl/base/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '@tstdl/base/types';
 import { isObject, round, Timer, toArray } from '@tstdl/base/utils';
@@ -35,10 +37,11 @@ export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
 
 export enum BodyType {
   None = 0,
-  String = 1,
-  Json = 2, // eslint-disable-line @typescript-eslint/no-shadow
-  Stream = 3,
-  Binary = 4
+  Auto = 1,
+  Text = 2,
+  Json = 3, // eslint-disable-line @typescript-eslint/no-shadow
+  Stream = 4,
+  Binary = 5
 }
 
 export enum RequestMethod {
@@ -52,13 +55,15 @@ export enum RequestMethod {
 export type Query = StringMap<string>;
 
 export type BodyValueType<B extends BodyType>
-  = B extends BodyType.Json ? Json
-  : B extends BodyType.String ? string
+  = B extends BodyType.None ? undefined
+  : B extends BodyType.Auto ? Json | string | Buffer | undefined
+  : B extends BodyType.Json ? Json
+  : B extends BodyType.Text ? string
   : B extends BodyType.Stream ? Readable
   : B extends BodyType.Binary ? Buffer
   : undefined;
 
-export type RequestData<B extends BodyType = BodyType.None> = {
+export type RequestData<B extends BodyType = BodyType.Auto> = {
   parameters: Query,
   body: BodyValueType<B>
 };
@@ -119,7 +124,7 @@ export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Resu
 }
 
 type DefaultRequestDataTransformerReturnType<B extends BodyType> = undefined extends null ? void
-  : B extends BodyType.None ? StringMap
+  : B extends BodyType.Auto ? StringMap
   : B extends BodyType.Json ? JsonObject
   : StringMap & { body: BodyValueType<B> };
 
@@ -130,7 +135,7 @@ export function getDefaultRequestDataTransformer<B extends BodyType>(): RouteReq
     if (bodyType == BodyType.Json && isObject(data.body) && !Array.isArray(data.body)) {
       transformed = { ...transformed, ...(data as RequestData<BodyType.Json>).body as JsonObject };
     }
-    else if (bodyType != BodyType.None) {
+    else if (bodyType != BodyType.Auto) {
       transformed = { ...transformed, body: data.body };
     }
 
@@ -200,11 +205,11 @@ export class HttpApi {
           case RequestMethod.Post:
           case RequestMethod.Patch:
           case RequestMethod.Put:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Auto, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           case RequestMethod.Delete:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Auto, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -286,20 +291,35 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
 
 async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, maxBytes: number = 10e6): Promise<BodyValueType<B>> {
   switch (bodyType) {
-    case BodyType.String:
+    case BodyType.None:
+      return undefined as BodyValueType<B>;
+
+    case BodyType.Text:
       return readBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Json:
       return readJsonBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Stream:
-      return request.req as unknown as Promise<BodyValueType<B>>;
+      return request.req as unknown as BodyValueType<B>;
 
     case BodyType.Binary:
       return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
-    case BodyType.None:
-      return undefined as unknown as Promise<BodyValueType<B>>;
+    case BodyType.Auto:
+      const contentType = request.headers['content-type']?.toLowerCase();
+
+      switch (contentType) {
+        case 'text/plain':
+          return getBody(request, BodyType.Text, maxBytes) as unknown as Promise<BodyValueType<B>>;
+
+        case 'application/json':
+          return getBody(request, BodyType.Json, maxBytes) as unknown as Promise<BodyValueType<B>>;
+
+        case 'application/octet-stream':
+        default:
+          return getBody(request, BodyType.Binary, maxBytes) as unknown as Promise<BodyValueType<B>>;
+      }
 
     default:
       throw new Error('unknown BodyType');
@@ -308,8 +328,13 @@ async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, ma
 
 async function readJsonBody(request: Koa.Request, maxBytes: number): Promise<Json> {
   const body = await readBody(request, maxBytes);
-  const json = JSON.parse(body) as Json;
-  return json;
+  try {
+    const json = JSON.parse(body) as Json;
+    return json;
+  }
+  catch (error: unknown) {
+    throw new UnsupportedMediaTypeError('expected application/json');
+  }
 }
 
 async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {

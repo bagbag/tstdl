@@ -1,3 +1,4 @@
+import { MaxBytesExceededError } from '@tstdl/base/error';
 import type { NonObjectBufferMode } from './stream-helper-types';
 import type { TypedReadable } from './typed-readable';
 
@@ -10,7 +11,7 @@ export async function readStream(readable: TypedReadable<NonObjectBufferMode>, m
     totalLength += chunk.length;
 
     if (maxBytes != undefined && totalLength > maxBytes) {
-      readable.destroy(new Error(`maximum size of ${maxBytes} bytes exceeded`));
+      readable.destroy(new MaxBytesExceededError(`maximum size of ${maxBytes} bytes exceeded`));
     }
   }
 
