@@ -261,7 +261,7 @@ export class HttpApi {
 
 function applyResponse(response: Koa.Response, responseResult: HttpResponse): void {
   if (responseResult.json != undefined) {
-    response.set('Content-Type', 'application/json');
+    response.set('Content-Type', 'application/json; charset=utf-8');
     response.body = JSON.stringify(responseResult.json);
   }
   else if (responseResult.text != undefined) {
@@ -307,7 +307,7 @@ async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, ma
       return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<BodyValueType<B>>;
 
     case BodyType.Auto:
-      const contentType = request.headers['content-type']?.toLowerCase();
+      const contentType = request.type;
 
       switch (contentType) {
         case 'text/plain':
