@@ -50,6 +50,10 @@ type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
+  static async head<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('head', url, responseType, options);
+  }
+
   static async get<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return HttpClient.call('get', url, responseType, options);
   }
@@ -119,6 +123,54 @@ export class HttpClient {
 
   static async putStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
     const response = await HttpClient.callStream('put', url, options);
+    return response.body;
+  }
+
+  static async patch<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('patch', url, responseType, options);
+  }
+
+  static async patchString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('patch', url, HttpResponseType.Text, options);
+    return response.body;
+  }
+
+  static async patchJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('patch', url, HttpResponseType.Json, options);
+    return response.body;
+  }
+
+  static async patchBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+    const response = await HttpClient.call('patch', url, HttpResponseType.Buffer, options);
+    return response.body;
+  }
+
+  static async patchStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+    const response = await HttpClient.callStream('patch', url, options);
+    return response.body;
+  }
+
+  static async delete<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+    return HttpClient.call('delete', url, responseType, options);
+  }
+
+  static async deleteString(url: string, options?: HttpRequestOptions): Promise<string> {
+    const response = await HttpClient.call('delete', url, HttpResponseType.Text, options);
+    return response.body;
+  }
+
+  static async deleteJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+    const response = await HttpClient.call('delete', url, HttpResponseType.Json, options);
+    return response.body;
+  }
+
+  static async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+    const response = await HttpClient.call('delete', url, HttpResponseType.Buffer, options);
+    return response.body;
+  }
+
+  static async deleteStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+    const response = await HttpClient.callStream('delete', url, options);
     return response.body;
   }
 
