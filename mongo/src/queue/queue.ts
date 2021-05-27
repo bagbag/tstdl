@@ -60,7 +60,7 @@ export class MongoQueue<T> implements Queue<T> {
       filter,
       update,
       {
-        returnOriginal: false,
+        returnDocument: 'after',
         sort: [['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]]
       }
     );

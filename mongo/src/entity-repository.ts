@@ -171,7 +171,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   async loadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
-    const entity = await this.baseRepository.loadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
+    const entity = await this.baseRepository.loadByFilterAndUpdate(transformedFilter, update, { returnDocument: includePatch ? 'after' : 'before' });
 
     return this.transformer.untransform(entity) as U;
   }
@@ -179,7 +179,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   async tryLoadByFilterAndPatch<U extends T = T>(filter: EntityFilter<U>, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
-    const entity = await this.baseRepository.tryLoadByFilterAndUpdate(transformedFilter, update, { returnOriginal: !includePatch });
+    const entity = await this.baseRepository.tryLoadByFilterAndUpdate(transformedFilter, update, { returnDocument: includePatch ? 'after' : 'before' });
 
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
   }

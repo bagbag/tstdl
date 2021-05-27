@@ -4,10 +4,10 @@ import { Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { assertDefined, assertDefinedPass, currentTimestamp, isUndefined } from '@tstdl/base/utils';
 import type { Entity, MaybeNewEntity } from '@tstdl/database';
-import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
+import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject, FindOneAndUpdateOption } from 'mongodb';
 import { getNewDocumentId } from './id';
-import { MongoDocument, toNewEntity } from './model';
-import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toProjectedEntity } from './model';
+import type { MongoDocument } from './model';
+import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
@@ -54,7 +54,7 @@ export type LoadManyOptions<T extends Entity> = LoadOptions<T>;
 
 export type LoadAndUpdateOptions<T extends Entity> = LoadOptions<T> & {
   upsert?: boolean,
-  returnOriginal?: boolean,
+  returnDocument?: FindOneAndUpdateOption<any>['returnDocument'],
   sort?: Sort<T>
 };
 
