@@ -64,11 +64,11 @@ export abstract class ObservableListBase<T, TThis extends ObservableCollection<T
     return this.removeAt(this.length - 1);
   }
 
-  protected onAdd(): never {
+  protected override onAdd(): never {
     throw new Error(`use ${this.onAddAt.name}`);
   }
 
-  protected onRemove(): never {
+  protected override onRemove(): never {
     throw new Error(`use ${this.onRemoveAt.name}`);
   }
 

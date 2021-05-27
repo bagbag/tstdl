@@ -29,11 +29,11 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
     return this.backingArray[index]!;
   }
 
-  getFirst(): T {
+  override getFirst(): T {
     return this.get(0);
   }
 
-  getLast(): T {
+  override getLast(): T {
     return this.get(this.length - 1);
   }
 

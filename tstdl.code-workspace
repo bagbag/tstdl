@@ -24,5 +24,8 @@
       "name": "root",
       "path": "."
     }
-  ]
+  ],
+  "settings": {
+    "typescript.tsdk": "base/node_modules/typescript/lib"
+  }
 }

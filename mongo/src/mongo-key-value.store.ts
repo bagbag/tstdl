@@ -35,13 +35,13 @@ export class MongoKeyValueStore<KV extends StringMap> implements KeyValueStore<K
 
     const update: UpdateQuery<MongoKeyValue> = {
       $set: { value, updated: timestamp },
-      $setOnInsert: { _id: getNewDocumentId(), created: timestamp, deleted: false }
+      $setOnInsert: { _id: getNewDocumentId() }
     };
 
     await this.keyValueRepository.baseRepository.update({ scope: this.scope, key: key as string }, update, { upsert: true });
   }
 
   async delete<K extends keyof KV>(key: K): Promise<boolean> {
-    return this.keyValueRepository.baseRepository.deleteByFilter({ scope: this.scope, key: key as string }, true);
+    return this.keyValueRepository.baseRepository.deleteByFilter({ scope: this.scope, key: key as string });
   }
 }

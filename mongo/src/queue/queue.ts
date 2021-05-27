@@ -87,7 +87,7 @@ export class MongoQueue<T> implements Queue<T> {
 
   async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
     const jobIds = toArray(jobOrJobs).map((job) => job.id);
-    await this.repository.deleteManyById(jobIds, true);
+    await this.repository.deleteManyById(jobIds);
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {

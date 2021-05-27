@@ -81,18 +81,17 @@ export class MongoBulk<T extends Entity> {
     return this;
   }
 
-  replace<U extends T>(entity: U, includeDeleted: boolean, options?: ReplaceOptions): MongoBulk<T> {
+  replace<U extends T>(entity: U, options?: ReplaceOptions): MongoBulk<T> {
     const document = toMongoDocument(entity);
-    const operation = replaceOneOperation(document, includeDeleted, currentTimestamp(), options);
+    const operation = replaceOneOperation(document, options);
     this.operations.push(operation);
 
     return this;
   }
 
-  replaceMany<U extends T>(entities: U[], includeDeleted: boolean, options?: ReplaceOptions): MongoBulk<T> {
-    const timestamp = currentTimestamp();
+  replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): MongoBulk<T> {
     const documents = entities.map(toMongoDocument);
-    const operations = documents.map((document) => replaceOneOperation(document, includeDeleted, timestamp, options));
+    const operations = documents.map((document) => replaceOneOperation(document, options));
     this.operations.push(...operations);
 
     return this;

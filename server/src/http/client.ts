@@ -179,10 +179,10 @@ export class HttpClient {
     const baseHeaders: StringMap<string | string[]> = {};
 
     if (responseType == HttpResponseType.Text) {
-      baseHeaders.Accept = 'text/plain';
+      baseHeaders['Accept'] = 'text/plain';
     }
     else if (responseType == HttpResponseType.Json) {
-      baseHeaders.Accept = 'application/json';
+      baseHeaders['Accept'] = 'application/json';
     }
 
     if (isDefined(options.body?.text)) {

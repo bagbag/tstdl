@@ -1,18 +1,17 @@
-import { currentTimestamp } from '@tstdl/base/utils';
-import type { Entity, EntityWithPartialId, MaybeNewEntity, MaybeNewEntityWithoutId } from '@tstdl/database';
+import type { Entity, MaybeNewEntity, NewEntity } from '@tstdl/database';
 import { getNewDocumentId } from '../id';
 import type { ProjectedEntity, Projection } from '../mongo-base.repository';
 import { ProjectionMode } from '../mongo-base.repository';
 
-export type MongoDocument<T extends EntityWithPartialId> = Omit<T, 'id'> & {
+export type MongoDocument<T extends MaybeNewEntity> = Omit<T, 'id'> & {
   _id: string
 };
 
-export type MongoDocumentWithPartialId<T extends EntityWithPartialId> = Omit<T, 'id'> & {
+export type MongoDocumentWithPartialId<T extends MaybeNewEntity> = Omit<T, 'id'> & {
   _id?: string
 };
 
-export type MongoDocumentWithoutId<T extends EntityWithPartialId> = Omit<T, 'id'>;
+export type MongoDocumentWithoutId<T extends MaybeNewEntity> = Omit<T, 'id'>;
 
 export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
   const { _id, ...entityRest } = document;
@@ -25,9 +24,9 @@ export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
   return entity;
 }
 
-export function toMaybeNewEntityWithoutId<T extends MaybeNewEntity | EntityWithPartialId>(entity: T): MaybeNewEntityWithoutId<T> {
+export function toNewEntity<T extends MaybeNewEntity>(entity: T): NewEntity<T> {
   const { id, ...rest } = entity;
-  return rest as MaybeNewEntityWithoutId<T>;
+  return rest as NewEntity<T>;
 }
 
 export function toProjectedEntity<T extends Entity, M extends ProjectionMode, P extends Projection<T, M>>(document: MongoDocumentWithPartialId<T>): ProjectedEntity<T, M, P> {
@@ -60,11 +59,11 @@ export function toMongoDocument<T extends Entity>(entity: T): MongoDocument<T> {
   return renameIdPropertyToUnderscoreId(entity);
 }
 
-export function toMongoDocumentWithPartialId<T extends EntityWithPartialId>(entity: T): MongoDocumentWithPartialId<T> {
+export function toMongoDocumentWithPartialId<T extends MaybeNewEntity>(entity: T): MongoDocumentWithPartialId<T> {
   return renameIdPropertyToUnderscoreId(entity);
 }
 
-export function toMongoDocumentWithoutId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocumentWithoutId<T> {
+export function toMongoDocumentWithoutId<T extends Entity>(entity: MaybeNewEntity<T>): MongoDocumentWithoutId<T> {
   const { id, ...entityRest } = entity; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const document: MongoDocumentWithoutId<T> = {
@@ -74,7 +73,7 @@ export function toMongoDocumentWithoutId<T extends Entity>(entity: EntityWithPar
   return document;
 }
 
-export function toMongoDocumentWithId<T extends Entity>(entity: EntityWithPartialId<T>): MongoDocument<T> {
+export function toMongoDocumentWithId<T extends Entity>(entity: MaybeNewEntity<T>): MongoDocument<T> {
   const { id, ...entityRest } = entity;
 
   const document = {
@@ -86,13 +85,10 @@ export function toMongoDocumentWithId<T extends Entity>(entity: EntityWithPartia
 }
 
 export function mongoDocumentFromMaybeNewEntity<T extends Entity>(entity: MaybeNewEntity<T>): MongoDocument<T> {
-  const { id, created, updated, deleted, ...entityRest } = entity;
+  const { id, ...entityRest } = entity;
 
   const document = {
     _id: id ?? getNewDocumentId(),
-    created: created ?? currentTimestamp(),
-    updated: updated ?? false,
-    deleted: deleted ?? false,
     ...entityRest
   } as MongoDocument<T>;
 

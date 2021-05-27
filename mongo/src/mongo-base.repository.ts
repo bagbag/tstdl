@@ -2,10 +2,12 @@
 
 import { Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
-import { assertDefined, currentTimestamp } from '@tstdl/base/utils';
+import { assertDefined, assertDefinedPass, currentTimestamp, isUndefined } from '@tstdl/base/utils';
 import type { Entity, MaybeNewEntity } from '@tstdl/database';
 import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongoDocument, mongoDocumentFromMaybeNewEntity, toEntity, toMaybeNewEntityWithoutId, toMongoDocument, toMongoProjection, toProjectedEntity } from './model';
+import { getNewDocumentId } from './id';
+import { MongoDocument, toNewEntity } from './model';
+import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
@@ -109,12 +111,12 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertIfNotExists<U extends T>(entity: MaybeNewEntity<U>): Promise<U | undefined> {
-    const filter: FilterQuery<U> = toMaybeNewEntityWithoutId(entity) as FilterQuery<U>;
+    const filter: FilterQuery<U> = toNewEntity(entity) as FilterQuery<U>;
     return this.insertIfNotExistsByFilter(filter, entity);
   }
 
   async insertManyIfNotExists<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
-    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toMaybeNewEntityWithoutId(entity) as FilterQuery<U>, entity }));
+    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toNewEntity(entity) as FilterQuery<U>, entity }));
     return this.insertManyIfNotExistsByFilter(items);
   }
 
@@ -148,28 +150,28 @@ export class MongoBaseRepository<T extends Entity> {
     return entities;
   }
 
-  async load<U extends T = T>(id: string, includeDeleted: boolean, options?: LoadOptions<U>): Promise<U> {
-    const entity = await this.tryLoad<U>(id, includeDeleted, options);
+  async load<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
+    const entity = await this.tryLoad<U>(id, options);
     return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
-  async tryLoad<U extends T = T>(id: string, includeDeleted: boolean, options?: LoadOptions<U>): Promise<U | undefined> {
-    const filter = getBasicFilterQuery<U>({ ids: id, includeDeleted });
+  async tryLoad<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U | undefined> {
+    const filter = getBasicFilterQuery<U>(id);
     return this.tryLoadByFilter(filter, options);
   }
 
-  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, includeDeleted: boolean, options?: LoadAndUpdateOptions<U>): Promise<U> {
-    const entity = await this.tryLoadAndUpdate(id, update, includeDeleted, options);
+  async loadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
+    const entity = await this.tryLoadAndUpdate(id, update, options);
     return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
-  async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, includeDeleted: boolean, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
-    const filter = getBasicFilterQuery<U>({ ids: id, includeDeleted });
+  async tryLoadAndUpdate<U extends T = T>(id: string, update: UpdateQuery<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
+    const filter = getBasicFilterQuery<U>(id);
     return this.tryLoadByFilterAndUpdate(filter, update, options);
   }
 
-  async loadAndDelete<U extends T = T>(id: string, includeDeleted: boolean, physically: boolean, options?: LoadAndDeleteOptions<U>): Promise<U> {
-    const entity = await this.tryLoadAndDelete<U>(id, includeDeleted, physically, options);
+  async loadAndDelete<U extends T = T>(id: string, options?: LoadAndDeleteOptions<U>): Promise<U> {
+    const entity = await this.tryLoadAndDelete<U>(id, options);
     return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
@@ -203,21 +205,17 @@ export class MongoBaseRepository<T extends Entity> {
     return toProjectedEntity<U, M, P>(document);
   }
 
-  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, physically: boolean, options?: LoadAndDeleteOptions<U>): Promise<U> {
-    const entity = await this.tryLoadByFilterAndDelete(filter, physically, options);
+  async loadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U> {
+    const entity = await this.tryLoadByFilterAndDelete(filter, options);
     return throwIfUndefinedElsePass(entity, this.entityName);
   }
 
-  async tryLoadAndDelete<U extends T = T>(id: string, includeDeleted: boolean, physically: boolean, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
-    const filter = getBasicFilterQuery<U>({ ids: id, includeDeleted });
-    return this.tryLoadByFilterAndDelete(filter, physically, options);
+  async tryLoadAndDelete<U extends T = T>(id: string, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
+    const filter = getBasicFilterQuery<U>(id);
+    return this.tryLoadByFilterAndDelete(filter, options);
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, physically: boolean, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
-    if (!physically) {
-      return this.tryLoadByFilterAndUpdate(filter, { $set: { deleted: (currentTimestamp() as Entity['deleted']) } } as UpdateQuery<U>, { ...options, returnOriginal: false });
-    }
-
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: FilterQuery<U>, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
     const result = await this.collection.findOneAndDelete(filter, options as object);
 
     if (result.value == undefined) {
@@ -242,8 +240,8 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async loadManyById<U extends T = T>(ids: string[], includeDeleted: boolean, options?: LoadManyOptions<U>): Promise<U[]> {
-    const filter = getBasicFilterQuery<U>({ ids, includeDeleted });
+  async loadManyById<U extends T = T>(ids: string[], options?: LoadManyOptions<U>): Promise<U[]> {
+    const filter = getBasicFilterQuery<U>(ids);
     return this.loadManyByFilter(filter, options);
   }
 
@@ -253,8 +251,8 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  loadManyByIdWithCursor<U extends T = T>(ids: string[], includeDeleted: boolean): AsyncIterableIterator<U> {
-    const filter = getBasicFilterQuery<U>({ ids, includeDeleted });
+  loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
+    const filter = getBasicFilterQuery<U>(ids);
     return this.loadManyByFilterWithCursor(filter);
   }
 
@@ -267,8 +265,8 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async loadManyProjectedById<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(ids: string, includeDeleted: boolean, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
-    const filter = getBasicFilterQuery<U>({ ids, includeDeleted });
+  async loadManyProjectedById<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(ids: string, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
+    const filter = getBasicFilterQuery<U>(ids);
     return this.loadManyProjectedByFilter(filter, mode, projection, options);
   }
 
@@ -277,7 +275,7 @@ export class MongoBaseRepository<T extends Entity> {
     return documents.map(toProjectedEntity) as ProjectedEntity<U, M, P>[];
   }
 
-  async *loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
+  async * loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: FilterQuery<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
     const cursor = this.collection.find<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     for await (const document of cursor) {
@@ -286,67 +284,33 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async deleteById(id: string, physically: boolean): Promise<boolean> {
-    const filter = getBasicFilterQuery({ ids: id, includeDeleted: true });
-    return this.deleteByFilter(filter, physically);
+  async deleteById(id: string): Promise<boolean> {
+    const filter = getBasicFilterQuery(id);
+    return this.deleteByFilter(filter);
   }
 
-  async deleteManyById(ids: string[], physically: boolean): Promise<number> {
+  async deleteManyById(ids: string[]): Promise<number> {
     if (ids.length == 0) {
       return 0;
     }
 
-    const filter = getBasicFilterQuery({ ids, includeDeleted: true });
-    return this.deleteManyByFilter(filter, physically);
+    const filter = getBasicFilterQuery(ids);
+    return this.deleteManyByFilter(filter);
   }
 
-  async deleteByFilter<U extends T = T>(filter: FilterQuery<U>, physically: boolean): Promise<boolean> {
-    if (!physically) {
-      const { modifiedCount } = await this.update(filter, { $set: { deleted: currentTimestamp() } } as UpdateQuery<U>);
-      return modifiedCount == 1;
-    }
-
+  async deleteByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
     const { deletedCount } = await this.collection.deleteOne(filter);
     return deletedCount == 1;
   }
 
-  async deleteManyByFilter<U extends T = T>(filter: FilterQuery<U>, physically: boolean): Promise<number> {
-    if (!physically) {
-      const { modifiedCount } = await this.updateMany(filter, { $set: { deleted: currentTimestamp() } } as UpdateQuery<U>);
-      return modifiedCount;
-    }
-
+  async deleteManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
     const { deletedCount } = await this.collection.deleteMany(filter);
-    return deletedCount as number;
+    return deletedCount!;
   }
 
-  async undeleteById(id: string): Promise<boolean> {
-    const filter = getBasicFilterQuery({ ids: id, includeDeleted: true });
-    return this.undeleteByFilter(filter);
-  }
-
-  async undeleteManyById(ids: string[]): Promise<number> {
-    if (ids.length == 0) {
-      return 0;
-    }
-
-    const filter = getBasicFilterQuery({ ids, includeDeleted: true });
-    return this.undeleteManyByFilter(filter);
-  }
-
-  async undeleteByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<boolean> {
-    const { modifiedCount } = await this.update(filter, { $set: { deleted: false as Entity['deleted'] } } as UpdateQuery<U>);
-    return modifiedCount == 1;
-  }
-
-  async undeleteManyByFilter<U extends T = T>(filter: FilterQuery<U>): Promise<number> {
-    const { modifiedCount } = await this.updateMany(filter, { $set: { deleted: false as Entity['deleted'] } } as UpdateQuery<U>);
-    return modifiedCount;
-  }
-
-  async replace<U extends T>(entity: U, includeDeleted: boolean, options?: ReplaceOptions): Promise<boolean> {
+  async replace<U extends T>(entity: U, options?: ReplaceOptions): Promise<boolean> {
     const document = toMongoDocument(entity);
-    const { replaceOne: { filter, replacement } } = replaceOneOperation(document, includeDeleted, currentTimestamp(), options);
+    const { replaceOne: { filter, replacement } } = replaceOneOperation(document, options);
     const result = await this.collection.replaceOne(filter, replacement, options);
 
     return (result.matchedCount + result.upsertedCount) > 0;
@@ -359,14 +323,14 @@ export class MongoBaseRepository<T extends Entity> {
     return (result.matchedCount + result.upsertedCount) > 0;
   }
 
-  async replaceMany<U extends T>(entities: U[], includeDeleted: boolean, options?: ReplaceOptions): Promise<number> {
+  async replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): Promise<number> {
     if (entities.length == 0) {
       return 0;
     }
 
     const timestamp = currentTimestamp();
     const documents = entities.map(toMongoDocument);
-    const operations = documents.map((document) => replaceOneOperation(document, includeDeleted, timestamp, options));
+    const operations = documents.map((document) => replaceOneOperation(document, options));
     const result = await this.collection.bulkWrite(operations);
 
     if (result.matchedCount == undefined || result.upsertedCount == undefined) {
@@ -402,8 +366,20 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
-  async has(id: string, includeDeleted: boolean): Promise<boolean> {
-    const filter = getBasicFilterQuery({ ids: id, includeDeleted });
+  async replaceByFilterOrInsert<U extends T>(filter: FilterQuery<U>, entity: MaybeNewEntity<U>): Promise<U> {
+    const document = mongoDocumentFromMaybeNewEntity(entity);
+    const update: UpdateQuery<U> = { $set: document };
+
+    if (isUndefined(entity.id)) {
+      update.$setOnInsert = { _id: getNewDocumentId() } as MongoDocument<U>;
+    }
+
+    const result = await this.collection.findOneAndReplace(filter, update, { upsert: true, returnDocument: 'after' });
+    return toEntity<U>(assertDefinedPass(result.value as MongoDocument<U>));
+  }
+
+  async has(id: string): Promise<boolean> {
+    const filter = getBasicFilterQuery(id);
     return this.hasByFilter(filter);
   }
 
@@ -412,15 +388,15 @@ export class MongoBaseRepository<T extends Entity> {
     return count > 0;
   }
 
-  async hasMany(ids: string[], includeDeleted: boolean): Promise<string[]> {
-    const filter = getBasicFilterQuery({ ids, includeDeleted });
+  async hasMany(ids: string[]): Promise<string[]> {
+    const filter = getBasicFilterQuery(ids);
 
     const result = await this.collection.distinct('_id', filter) as string[];
     return result;
   }
 
-  async hasAll(ids: string[], includeDeleted: boolean): Promise<boolean> {
-    const filter = getBasicFilterQuery({ ids, includeDeleted });
+  async hasAll(ids: string[]): Promise<boolean> {
+    const filter = getBasicFilterQuery(ids);
     const count = await this.countByFilter(filter);
     return count == ids.length;
   }
@@ -438,15 +414,11 @@ export class MongoBaseRepository<T extends Entity> {
   }
 }
 
-export function getBasicFilterQuery<T extends Entity>({ ids, includeDeleted }: { ids?: string | string[], includeDeleted: boolean }): FilterQuery<T> {
+export function getBasicFilterQuery<T extends Entity>(ids: string | string[]): FilterQuery<T> {
   const filter: FilterQuery<Entity> = {};
 
   if (ids != undefined) {
     filter._id = Array.isArray(ids) ? { $in: ids } : ids;
-  }
-
-  if (!includeDeleted) {
-    filter.deleted = false as Entity['deleted'];
   }
 
   return filter;
@@ -462,13 +434,13 @@ export function insertOneOperation<T extends Entity>(document: MongoDocument<T>)
   return operation;
 }
 
-export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, includeDeleted: boolean, updatedTimestamp: Entity['updated'], options: ReplaceOptions = {}): BulkWriteReplaceOneOperation<MongoDocument<T>> {
-  const filter = getBasicFilterQuery({ ids: document._id, includeDeleted });
+export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, options: ReplaceOptions = {}): BulkWriteReplaceOneOperation<MongoDocument<T>> {
+  const filter = getBasicFilterQuery(document._id);
 
   const operation = {
     replaceOne: {
       filter,
-      replacement: { ...document, updated: updatedTimestamp },
+      replacement: { ...document },
       upsert: options.upsert
     }
   };

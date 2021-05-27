@@ -3,11 +3,13 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "target": "es2018",
     "rootDir": "src",
     "outDir": "dist",
-
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "newLine": "lf",
@@ -15,26 +17,25 @@
     "removeComments": true,
     "resolveJsonModule": true,
     "sourceMap": false,
-
     "downlevelIteration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-
     "alwaysStrict": true,
     "strict": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
-
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
+    "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
-    "noUnusedLocals": false,
+    "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true
   }
 }
