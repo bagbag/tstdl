@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/server",
-  "version": "0.34.48",
+  "version": "0.34.49",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -12,7 +12,7 @@
   "dependencies": {
     "@koa/router": "^10.0.0",
     "@tstdl/base": "^0.62.45",
-    "@tstdl/database": "^0.16.1",
+    "@tstdl/database": "^0.16.4",
     "got": "^11.8.2",
     "koa": "^2.13.1",
     "luxon": "^1.27.0",
@@ -20,7 +20,7 @@
     "yup": "^0.31.1"
   },
   "devDependencies": {
-    "@types/koa": "^2.13.1",
+    "@types/koa": "^2.13.3",
     "@types/koa__router": "^8.0.4",
     "@types/luxon": "^1.26.5",
     "@types/node": "^15.6.1",

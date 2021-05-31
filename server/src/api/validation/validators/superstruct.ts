@@ -21,6 +21,7 @@ export function setDefaultYupValidationOptions(options: SuperstructOptions): voi
 export const email = (): Struct<string, null> => pattern(string(), emailRegex);
 export const coerceNumber = (): Struct<number, null> => coerce(number(), string(), (value) => parseFloat(value));
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());
+export const nulledStructSchema = <T>(struct: Struct<T, any>): Struct<T, null> => struct as any as Struct<T, null>;
 
 export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): SyncEndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
