@@ -1,6 +1,6 @@
-import { emailRegex, isDefined } from '@tstdl/base/utils';
-import type { Failure, Struct, StructError } from 'superstruct';
-import { coerce, number, pattern, string } from 'superstruct';
+import { emailRegex, isDefined, isUndefined } from '@tstdl/base/utils';
+import type { Failure, StructError } from 'superstruct';
+import { coerce, number, pattern, string, Struct } from 'superstruct';
 import type { SyncEndpointParametersValidator, ValidationResult } from '../types';
 import { ValidationError } from '../types';
 
@@ -22,6 +22,13 @@ export const email = (): Struct<string, null> => pattern(string(), emailRegex);
 export const coerceNumber = (): Struct<number, null> => coerce(number(), string(), (value) => parseFloat(value));
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());
 export const nulledStructSchema = <T>(struct: Struct<T, any>): Struct<T, null> => struct as any as Struct<T, null>;
+
+export const looseOptional = <T, S>(struct: Struct<T, S>): Struct<T | undefined, S> => new Struct<T | undefined, S>({
+  ...struct,
+  validator: (value, ctx) => isUndefined(value) || struct.validator(value, ctx),
+  refiner: (value, ctx) => value === undefined || struct.refiner(value, ctx)
+});
+
 
 export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): SyncEndpointParametersValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
