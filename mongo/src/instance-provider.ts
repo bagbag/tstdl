@@ -1,19 +1,19 @@
 import { disposer, getLogger } from '@tstdl/base/instance-provider';
 import type { Logger } from '@tstdl/base/logger';
-import type { StringMap, Type } from '@tstdl/base/types';
+import type { Type } from '@tstdl/base/types';
 import { assertDefined, FactoryMap, isDefined, singleton } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { connect } from '@tstdl/server/instance-provider';
 import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
+import { setIdsAlphabet, setIdsLength } from './id';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
 import type { MongoDocument, MongoKeyValue } from './model';
 import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider';
 import { MongoKeyValueRepository } from './mongo-key-value.repository';
-import { MongoKeyValueStore } from './mongo-key-value.store';
 import type { MongoJob } from './queue';
 import { MongoJobRepository, MongoQueue } from './queue';
 import type { Collection } from './types';
@@ -62,7 +62,9 @@ export function configureMongoInstanceProvider(
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
     mongoLockProviderLog?: string,
     mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
-    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>
+    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>,
+    idsLength?: number,
+    idsAlphabet?: string
   }
 ): void {
   connectionString = options.connectionString ?? connectionString;
@@ -74,6 +76,14 @@ export function configureMongoInstanceProvider(
   mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
   mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
   mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
+
+  if (isDefined(options.idsLength)) {
+    setIdsLength(options.idsLength);
+  }
+
+  if (isDefined(options.idsAlphabet)) {
+    setIdsAlphabet(options.idsAlphabet);
+  }
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
