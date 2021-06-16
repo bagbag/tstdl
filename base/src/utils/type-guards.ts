@@ -1,9 +1,9 @@
 export function isUndefined(item: any): item is undefined {
-  return item == undefined;
+  return item === undefined;
 }
 
-export function isDefined<T>(item: T): item is NonNullable<T> {
-  return item != undefined;
+export function isDefined<T>(item: T): item is (T extends undefined ? never : T) {
+  return item !== undefined;
 }
 
 export function isNull(item: any): item is null {
@@ -12,6 +12,14 @@ export function isNull(item: any): item is null {
 
 export function isNotNull<T>(item: T): item is (T extends null ? never : T) {
   return item !== null;
+}
+
+export function isNullOrUndefined(item: any): item is (null | undefined) {
+  return item === null || item === undefined;
+}
+
+export function isNotNullOrUndefined<T>(item: T): item is (T extends (null | undefined) ? never : T) {
+  return item !== null && item !== undefined;
 }
 
 export function isNumber(item: any): item is number {
