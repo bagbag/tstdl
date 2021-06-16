@@ -1,8 +1,8 @@
 import type { KeyValueStore } from '@tstdl/base/key-value';
 import type { StringMap } from '@tstdl/base/types';
 import { currentTimestamp, isUndefined } from '@tstdl/base/utils';
+import { getNewId } from '@tstdl/database';
 import type { MongoEntityRepository } from './entity-repository';
-import { getNewDocumentId } from './id';
 import type { MongoKeyValue } from './model';
 import type { MongoKeyValueRepository } from './mongo-key-value.repository';
 import type { UpdateQuery } from './types';
@@ -35,7 +35,7 @@ export class MongoKeyValueStore<KV extends StringMap> implements KeyValueStore<K
 
     const update: UpdateQuery<MongoKeyValue> = {
       $set: { value, updated: timestamp },
-      $setOnInsert: { _id: getNewDocumentId() }
+      $setOnInsert: { _id: getNewId() }
     };
 
     await this.keyValueRepository.baseRepository.update({ scope: this.scope, key: key as string }, update, { upsert: true });

@@ -1,5 +1,5 @@
 import type { Entity, MaybeNewEntity, NewEntity } from '@tstdl/database';
-import { getNewDocumentId } from '../id';
+import { getNewId } from '@tstdl/database';
 import type { ProjectedEntity, Projection } from '../mongo-base.repository';
 import { ProjectionMode } from '../mongo-base.repository';
 
@@ -77,7 +77,7 @@ export function toMongoDocumentWithId<T extends Entity>(entity: MaybeNewEntity<T
   const { id, ...entityRest } = entity;
 
   const document = {
-    _id: id ?? getNewDocumentId(),
+    _id: id ?? getNewId(),
     ...entityRest
   } as MongoDocument<T>;
 
@@ -88,7 +88,7 @@ export function mongoDocumentFromMaybeNewEntity<T extends Entity>(entity: MaybeN
   const { id, ...entityRest } = entity;
 
   const document = {
-    _id: id ?? getNewDocumentId(),
+    _id: id ?? getNewId(),
     ...entityRest
   } as MongoDocument<T>;
 

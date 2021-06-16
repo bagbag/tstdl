@@ -1,5 +1,4 @@
 export * from './entity-repository';
-export * from './id';
 export * from './model';
 export * from './mongo-base.repository';
 export * from './mongo-bulk';

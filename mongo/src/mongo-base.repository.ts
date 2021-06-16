@@ -4,8 +4,8 @@ import { Enumerable } from '@tstdl/base/enumerable';
 import { NotFoundError } from '@tstdl/base/error';
 import { assertDefined, assertDefinedPass, currentTimestamp, isUndefined } from '@tstdl/base/utils';
 import type { Entity, MaybeNewEntity } from '@tstdl/database';
+import { getNewId } from '@tstdl/database';
 import type { BulkWriteDeleteManyOperation, BulkWriteDeleteOneOperation, BulkWriteInsertOneOperation, BulkWriteReplaceOneOperation, BulkWriteUpdateManyOperation, BulkWriteUpdateOneOperation, FindAndModifyWriteOpResultObject, FindOneAndUpdateOption } from 'mongodb';
-import { getNewDocumentId } from './id';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
@@ -371,7 +371,7 @@ export class MongoBaseRepository<T extends Entity> {
     const update: UpdateQuery<U> = { $set: document };
 
     if (isUndefined(entity.id)) {
-      update.$setOnInsert = { _id: getNewDocumentId() } as MongoDocument<U>;
+      update.$setOnInsert = { _id: getNewId() } as MongoDocument<U>;
     }
 
     const result = await this.collection.findOneAndReplace(filter, update, { upsert: true, returnDocument: 'after' });

@@ -341,7 +341,7 @@ export function randomElement<T>(array: T[], { min, max }: { min?: number, max?:
   return array[index]!;
 }
 
-const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a == b;
+const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
 
 type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
 
@@ -372,11 +372,14 @@ export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A
   return true;
 }
 
-type EqualsOptions = {
+export type EqualsOptions = {
   deep?: boolean,
   arrayDeep?: boolean,
-  sortArray?: boolean
+  sortArray?: boolean,
+  coerceStrings?: boolean
 };
+
+const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];
 
 // eslint-disable-next-line max-statements, max-lines-per-function
 export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
@@ -388,6 +391,10 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
   const bType = typeof b;
 
   if (aType != bType) {
+    if (options.coerceStrings && allowedEqualsCoerceStringsTypes.includes(aType) && allowedEqualsCoerceStringsTypes.includes(bType)) {
+      return (a as object).toString() == (b as object).toString();
+    }
+
     return false;
   }
 
@@ -405,7 +412,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
       const aPrototype = Object.getPrototypeOf(a);
       const bPrototype = Object.getPrototypeOf(b);
 
-      if (aPrototype != bPrototype) {
+      if (aPrototype !== bPrototype) {
         return false;
       }
 
@@ -415,7 +422,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
           : a === b;
       }
 
-      if (aPrototype != Object.prototype && aPrototype !== null) {
+      if (aPrototype != Object.prototype && aPrototype !== null) { // checking a is enough, because b must have equal prototype (checked above)
         throw new Error('equals only supports plain objects, arrays and primitives');
       }
 

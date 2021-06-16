@@ -1,7 +1,7 @@
 {
   "extends": "@tstdl/base",
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": "source",
     "outDir": "dist",
     "target": "es2021"
   }

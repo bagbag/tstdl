@@ -1,9 +1,9 @@
 import type { Logger } from '@tstdl/base/logger';
 import { now } from '@tstdl/base/utils';
 import type { EntityRepository } from '@tstdl/database';
+import { getNewId } from '@tstdl/database';
 import { MongoError } from 'mongodb';
 import { MongoEntityRepository, noopTransformer } from '../entity-repository';
-import { getNewDocumentId } from '../id';
 import type { Collection, FilterQuery, TypedIndexSpecification } from '../types';
 import type { MongoLockEntity } from './model';
 
@@ -31,7 +31,7 @@ export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> 
     };
 
     try {
-      const { upsertedCount, modifiedCount } = await this.baseRepository.collection.updateOne(filter, { $set: { expiration: newExpirationDate }, $setOnInsert: { _id: getNewDocumentId(), key } }, { upsert: true });
+      const { upsertedCount, modifiedCount } = await this.baseRepository.collection.updateOne(filter, { $set: { expiration: newExpirationDate }, $setOnInsert: { _id: getNewId(), key } }, { upsert: true });
       return (upsertedCount > 0 || modifiedCount > 0) ? newExpirationDate : false;
     }
     catch (error: unknown) {

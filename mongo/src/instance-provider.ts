@@ -7,7 +7,6 @@ import { connect } from '@tstdl/server/instance-provider';
 import type { MigrationState } from '@tstdl/server/migration';
 import * as Mongo from 'mongodb';
 import type { MongoEntityRepository } from './entity-repository';
-import { setIdsAlphabet, setIdsLength } from './id';
 import type { MongoLockEntity } from './lock';
 import { MongoLockProvider, MongoLockRepository } from './lock';
 import { MongoMigrationStateRepository } from './migration';
@@ -62,9 +61,7 @@ export function configureMongoInstanceProvider(
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
     mongoLockProviderLog?: string,
     mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
-    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>,
-    idsLength?: number,
-    idsAlphabet?: string
+    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>
   }
 ): void {
   connectionString = options.connectionString ?? connectionString;
@@ -76,14 +73,6 @@ export function configureMongoInstanceProvider(
   mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
   mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
   mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
-
-  if (isDefined(options.idsLength)) {
-    setIdsLength(options.idsLength);
-  }
-
-  if (isDefined(options.idsAlphabet)) {
-    setIdsAlphabet(options.idsAlphabet);
-  }
 }
 
 export async function getMongo(): Promise<Mongo.MongoClient> {
