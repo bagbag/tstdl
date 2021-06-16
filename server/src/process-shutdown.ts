@@ -1,8 +1,9 @@
-/* eslint-disable no-process-exit */
 /* eslint-disable no-console */
 
+import { getCoreLogger } from '@tstdl/base/instance-provider';
+import type { Logger } from '@tstdl/base/logger';
+import { isDefined } from '@tstdl/base/utils';
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
-import { Logger } from '@tstdl/base/logger';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';
@@ -12,24 +13,20 @@ const QUIT_EVENTS: QuitEvent[] = ['uncaughtException' /* , 'multipleResolves' */
 
 export const shutdownToken = new CancellationToken();
 
-let logger: Logger;
-
-function setLogger(_logger: Logger): void {
-  logger = _logger;
-}
+let logger: Logger = getCoreLogger();
 
 // eslint-disable-next-line no-shadow
-export function setProcessShutdownLogger(logger: Logger): void {
-  setLogger(logger);
+export function setProcessShutdownLogger(shutdownLogger: Logger): void {
+  logger = shutdownLogger;
 }
 
 let requested = false;
 
-let quitReason: any[];
+let quitReason: any[] | undefined;
 
 process.on('beforeExit', () => {
-  if (quitReason != undefined) {
-    console.info('quit reason:', ...(Array.isArray(quitReason) ? quitReason : [quitReason]));
+  if (isDefined(quitReason)) {
+    console.info('quit reason:', ...quitReason);
   }
 });
 
@@ -55,24 +52,20 @@ export function forceShutdown(): void {
 }
 
 export function initializeSignals(): void {
-  if (logger == undefined) {
-    throw new Error('logger must be set');
-  }
-
   let signalCounter = 0;
 
   for (const event of QUIT_EVENTS) {
-    // eslint-disable-next-line no-loop-func
-    process.on(event as any, (...args: any[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
+    process.on(event, (...args: any[]) => {
       console.error(event, ...args);
       quitReason = args;
       requestShutdown();
     });
   }
 
-  for (const signal of QUIT_SIGNALS) {
-    // eslint-disable-next-line no-loop-func, no-shadow
-    process.on(signal, (signal) => {
+  for (const quitSignal of QUIT_SIGNALS) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
+    process.on(quitSignal, (signal) => {
       logger.info(`${signal} received, quitting.`);
       requestShutdown();
 
