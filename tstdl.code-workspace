@@ -1,5 +1,6 @@
 {
-  "folders": [{
+  "folders": [
+    {
       "path": "base"
     },
     {
@@ -15,7 +16,13 @@
       "path": "database"
     },
     {
+      "path": "search-index"
+    },
+    {
       "path": "mongo"
+    },
+    {
+      "path": "elasticsearch"
     },
     {
       "path": "redis"

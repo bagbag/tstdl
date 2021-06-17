@@ -1,6 +1,6 @@
 {
-  "name": "@tstdl/database",
-  "version": "0.16.8",
+  "name": "@tstdl/elasticsearch",
+  "version": "0.1.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,10 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist/"
   },
   "dependencies": {
-    "@tstdl/base": "^0.63.1"
+    "@elastic/elasticsearch": "^7.13.0",
+    "@tstdl/base": "^0.63.1",
+    "@tstdl/search-index": "^0.3.0",
+    "@tstdl/server": "^0.35.0"
   },
   "devDependencies": {
     "@types/luxon": "^1.27.0",

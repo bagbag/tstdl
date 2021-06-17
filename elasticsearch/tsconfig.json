@@ -1,0 +1,7 @@
+{
+  "extends": "@tstdl/server",
+  "compilerOptions": {
+    "rootDir": "source",
+    "outDir": "dist"
+  }
+}
