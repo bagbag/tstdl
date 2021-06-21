@@ -2,8 +2,8 @@
 import type { Logger } from '@tstdl/base/logger';
 import { equals } from '@tstdl/base/utils';
 import type { Entity, EntityFilter, EntityPatch, EntityRepository, MaybeNewEntity, UpdateOptions } from '@tstdl/database';
-import { renameIdPropertyToUnderscoreId } from './model';
 import { getBasicFilterQuery, MongoBaseRepository } from './mongo-base.repository';
+import { convertQuery } from './query-converter';
 import type { Collection, FilterQuery, TypedIndexSpecification, UpdateQuery } from './types';
 
 type MongoEntityRepositoryOptions<T extends Entity> = {
@@ -148,13 +148,13 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.tryLoadByFilterAndDelete({ id } as EntityFilter<U>);
   }
 
-  async loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U> {
+  async loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<U>): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.loadByFilterAndDelete(transformedFilter);
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U | undefined> {
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<U>): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.tryLoadByFilterAndDelete(transformedFilter);
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
@@ -282,19 +282,18 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.deleteManyById(ids);
   }
 
-  async deleteByFilter(filter: EntityFilter<T>): Promise<boolean> {
+  async deleteByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<boolean> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteByFilter(transformedFilter);
   }
 
-  async deleteManyByFilter(filter: EntityFilter<T>): Promise<number> {
+  async deleteManyByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<number> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteManyByFilter(transformedFilter);
   }
 
   private transformFilter<U extends T = T>(filter: EntityFilter<U>): FilterQuery<TDb> {
-    const transformedFilter = this.transformer.filterTransform(filter);
-    return entityFilterToFilterQuery(transformedFilter);
+    return convertQuery(this.transformer.filterTransform(filter as EntityFilter<T>));
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateQuery<TDb> {
@@ -306,15 +305,4 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 function normalizeIndex(index: TypedIndexSpecification<any> & { v?: any, ns?: any }): TypedIndexSpecification<any> {
   const { v, background, ns, ...indexRest } = index;
   return indexRest;
-}
-
-export function entityFilterToFilterQuery<T extends Entity>(filter: EntityFilter<T>): FilterQuery<T> {
-  const filterQuery: FilterQuery<T> = {};
-
-  Object.entries(renameIdPropertyToUnderscoreId(filter)).forEach(([property, value]) => {
-    const property2 = property == 'id' ? '_id' : property;
-    filterQuery[property2 as keyof typeof filterQuery] = Array.isArray(value) ? { $in: value } : { $eq: value };
-  });
-
-  return filterQuery;
 }

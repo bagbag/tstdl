@@ -1,6 +1,6 @@
 import type { Logger } from '@tstdl/base/logger';
-import { MongoEntityRepository, noopTransformer } from './entity-repository';
 import type { MongoKeyValue } from './model';
+import { MongoEntityRepository, noopTransformer } from './mongo-entity-repository';
 import type { Collection, TypedIndexSpecification } from './types';
 
 const indexes: TypedIndexSpecification<MongoKeyValue>[] = [

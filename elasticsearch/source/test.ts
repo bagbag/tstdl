@@ -1,9 +1,11 @@
 import { Client } from '@elastic/elasticsearch';
 import { getCoreLogger } from '@tstdl/base/instance-provider';
+import { isDefined } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import type { ElasticsearchIndexMapping, ElasticsearchIndexSettings } from './model';
 import { ElasticsearchSearchIndex } from './search-index';
-import { MatchAllQueryBuilder, TextQueryBuilder } from '@tstdl/search-index/query/builder';
+
+const logger = getCoreLogger();
 
 type EntityType = Entity & {
   tag: string,
@@ -30,28 +32,50 @@ export const elasticsearchMapping: ElasticsearchIndexMapping<any> = {
     },
     channel: {
       type: 'text',
-      index: true
+      index: true,
+      fields: {
+        keyword: {
+          type: 'keyword'
+        }
+      }
     }
   }
 };
 
+// eslint-disable-next-line max-statements
 async function test(): Promise<void> {
   const searchIndex = new ElasticsearchSearchIndex<EntityType>(client, 'testindex', elasticsearchSettings, elasticsearchMapping, getCoreLogger());
-  await searchIndex.drop();
+
+  const exists = await searchIndex.exists();
+
+  if (exists) {
+    await searchIndex.drop();
+  }
+
   await searchIndex.initialize();
 
-  await searchIndex.index([
-    { id: 'id1', tag: 'foobar1', channel: 'Hello World from here1' },
-    { id: 'id2', tag: 'foobar2', channel: 'Hello World from here2' },
-    { id: 'id3', tag: 'foobar3', channel: 'Hello World from here3' }
-  ]);
+  for (let i = 0; i < 50; i++) {
+    const entities: EntityType[] = [];
+
+    for (let j = i * 5000; j < (i * 5000) + 5000; j++) {
+      entities.push({ id: `id${j}`, tag: `foobar${j}`, channel: `Hello World from here${j}` });
+    }
+
+    await searchIndex.index(entities);
+    logger.info('indexed ' + 5000);
+  }
 
   await searchIndex.refresh();
 
-  const queryBuilder = new MatchAllQueryBuilder();
-  // queryBuilder.fields('channel').text('Hello');
+  const result = await searchIndex.search({ channel: { $text: 'Hello world' } }, { sort: [{ field: 'channel.keyword' as any, order: 'ascending' }, { field: 'id', order: 'ascending' }], limit: 5000 });
 
-  await searchIndex.search({ body: queryBuilder.build() });
+  let entities = result.entities;
+  let cursor = result.cursor;
+
+  while (isDefined(cursor)) {
+    ({ entities, cursor } = await searchIndex.search(cursor));
+    logger.info(entities.length.toString());
+  }
 }
 
 void test().catch((error: Error) => console.error(error));

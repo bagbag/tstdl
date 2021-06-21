@@ -1,11 +1,12 @@
 import type { Entity } from '@tstdl/database';
-import type { SearchQuery } from './query';
+import type { Query, QueryOptions } from '@tstdl/database/query';
 import type { SearchResult } from './search-result';
 
 export interface SearchIndex<T extends Entity> {
   readonly _type: T;
 
   index(entities: T[]): Promise<void>;
-  search(query: SearchQuery): Promise<SearchResult<T>>;
+  search(cursor: string): Promise<SearchResult<T>>;
+  search(query: Query<T>, options?: QueryOptions<T>): Promise<SearchResult<T>>;
   drop(): Promise<void>;
 }

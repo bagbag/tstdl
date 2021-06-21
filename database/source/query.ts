@@ -1,43 +1,107 @@
-export type Query<T> = {
+import type { StringMap } from '@tstdl/base/types';
 
+export type QueryOptions<T = any> = {
+  sort?: Sort<T>[],
+  skip?: number,
+  limit?: number
 };
 
-export type NotQuery<T> = {
-  $not: Query<T>
+export type Query<T = any> = SimpleQuery<T> | LogicalQuery<T> | ComparisonQueryBody<T> | ComplexQuery;
+
+export type SimpleQuery<T = any> = { [P in keyof T]?: T[P] } & StringMap;
+
+export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
+export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
+export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
+
+export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQuery<T[P]> } & StringMap<ComparisonQuery>;
+
+export type ComparisonQuery<Value = any> = Partial<
+  ComparisonEqualsQuery<Value>
+  & ComparisonNotEqualsQuery<Value>
+  & ComparisonInQuery<Value>
+  & ComparisonNotInQuery<Value>
+  & ComparisonGreaterThanQuery<Value>
+  & ComparisonGreaterThanOrEqualsQuery<Value>
+  & ComparisonLessThanQuery<Value>
+  & ComparisonLessThanOrEqualsQuery<Value>
+  & ComparisonRegexQuery
+  & ComparisonTextQuery
+>;
+export type ComparisonQueryTypes = keyof ComparisonQuery;
+export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
+
+export type ComplexQuery<T = any> = Partial<ComplexTextSpanQuery<T>>;
+export type ComplexQueryTypes = keyof ComplexQuery;
+export const allComplexQueryTypes: ComplexQueryTypes[] = ['$textSpan'];
+
+export type Order = 'ascending' | 'descending';
+export const allOrders: Order[] = ['ascending', 'descending'];
+
+export type Operator = 'and' | 'or';
+export const allOperators: Operator[] = ['and', 'or'];
+
+export type Sort<T = any> = {
+  field: keyof T,
+  order: Order
 };
 
-export type AndQuery<T> = {
+export type LogicalAndQuery<T = any> = {
   $and: Query<T>[]
 };
 
-export type OrQuery<T> = {
+export type LogicalOrQuery<T = any> = {
   $or: Query<T>[]
 };
 
-export type EqualsQuery<T> = {
+export type LogicalNorQuery<T = any> = {
+  $nor: Query<T>[]
+};
+
+export type ComparisonEqualsQuery<T = any> = {
   $eq: T
 };
 
-export type NotEqualsQuery<T> = {
+export type ComparisonNotEqualsQuery<T = any> = {
   $neq: T
 };
 
-export type OneOfQuery<T> = {
-  $oneOf: {}
-}
-
-type A = {
-  value: number,
-  foo: {
-    bar: {
-      value: string,
-      baz: {
-        value: boolean
-      }
-    }
-  }
+export type ComparisonInQuery<T = any> = {
+  $in: T[]
 };
 
-type Keys<T, K extends keyof T = keyof T> = T extends Record<any, any> ? (K | `${K}.${Keys<T[K], keyof T[K]>}`) : K;
+export type ComparisonNotInQuery<T = any> = {
+  $nin: T[]
+};
 
-const k: Keys<A, keyof A> = '';
+export type ComparisonGreaterThanQuery<T = any> = {
+  $gt: T
+};
+
+export type ComparisonGreaterThanOrEqualsQuery<T = any> = {
+  $gte: T
+};
+
+export type ComparisonLessThanQuery<T = any> = {
+  $lt: T
+};
+
+export type ComparisonLessThanOrEqualsQuery<T = any> = {
+  $lte: T
+};
+
+export type ComparisonRegexQuery = {
+  $regex: string | RegExp
+};
+
+export type ComparisonTextQuery = {
+  $text: string | { text: string, operator?: Operator }
+};
+
+export type ComplexTextSpanQuery<T = any> = {
+  $textSpan: {
+    fields: (Extract<keyof T, string>)[],
+    text: string,
+    operator?: Operator
+  }
+};

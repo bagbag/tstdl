@@ -1,6 +1,6 @@
 import type { Logger } from '@tstdl/base/logger';
 import type { MigrationState, MigrationStateRepository } from '@tstdl/server/migration/';
-import { MongoEntityRepository, noopTransformer } from '../entity-repository';
+import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
 import type { Collection, TypedIndexSpecification } from '../types';
 
 const indexes: TypedIndexSpecification<MigrationState>[] = [

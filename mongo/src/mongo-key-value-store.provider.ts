@@ -1,7 +1,7 @@
 import type { KeyValueStore, KeyValueStoreProvider } from '@tstdl/base/key-value';
 import type { StringMap } from '@tstdl/base/types';
-import type { MongoEntityRepository } from './entity-repository';
 import type { MongoKeyValue } from './model';
+import type { MongoEntityRepository } from './mongo-entity-repository';
 import type { MongoKeyValueRepository } from './mongo-key-value.repository';
 import { MongoKeyValueStore } from './mongo-key-value.store';
 

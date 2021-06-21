@@ -2,7 +2,6 @@ import type { Job, Queue } from '@tstdl/base/queue';
 import type { BackoffOptions, CancellationToken } from '@tstdl/base/utils';
 import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
 import type { FilterQuery, UpdateQuery } from 'mongodb';
-import type { MongoEntityRepository } from '../entity-repository';
 import type { MongoDocument } from '../model';
 import type { MongoJob, NewMongoJob } from './job';
 import type { MongoJobRepository } from './mongo-job.repository';
@@ -15,7 +14,7 @@ const backoffOptions: BackoffOptions = {
 };
 
 export class MongoQueue<T> implements Queue<T> {
-  private readonly repository: MongoEntityRepository<MongoJob<T>>;
+  private readonly repository: MongoJobRepository<T>;
   private readonly processTimeout: number;
   private readonly maxTries: number;
 

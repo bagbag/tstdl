@@ -77,3 +77,13 @@ export function isObject(item: any): item is object { // eslint-disable-line @ty
 export function isNotObject<T>(item: T): item is (T extends object ? never : T) { // eslint-disable-line @typescript-eslint/ban-types
   return typeof item != 'object';
 }
+
+export function isPrimitive(item: any): item is string | number | boolean | bigint | symbol | null | undefined {
+  const type = typeof item;
+  return type == 'string' || type == 'number' || type == 'boolean' || type == 'bigint' || type == 'undefined' || type == 'symbol' || isNull(item);
+}
+
+export function isNotPrimitive(item: any): item is string | number | boolean | bigint | symbol | null | undefined {
+  const type = typeof item;
+  return type != 'string' && type != 'number' && type != 'boolean' && type != 'bigint' && type != 'undefined' && type != 'symbol' && isNotNull(item);
+}

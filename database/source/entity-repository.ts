@@ -1,13 +1,14 @@
 import type { Entity, MaybeNewEntity } from './entity';
+import type { Query } from './query';
 
 export type UpdateOptions = {
   upsert?: boolean
 };
 
-export type EntityFilter<T extends Entity> = { [P in keyof T]?: T[P] | T[P][] };
-export type EntityPatch<T extends Entity> = Partial<Omit<T, 'id'>>;
+export type EntityFilter<T extends Entity = Entity> = Query<T>;
+export type EntityPatch<T extends Entity = Entity> = Partial<Omit<T, 'id'>>;
 
-export interface EntityRepository<T extends Entity> {
+export interface EntityRepository<T extends Entity = Entity> {
   readonly _type: T;
 
   load<U extends T = T>(id: string): Promise<U>;
@@ -23,8 +24,8 @@ export interface EntityRepository<T extends Entity> {
 
   loadAndDelete<U extends T = T>(id: string): Promise<U>;
   tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined>;
-  loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U>;
-  tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<T>): Promise<U | undefined>;
+  loadByFilterAndDelete<U extends T = T>(filter: EntityFilter<U>): Promise<U>;
+  tryLoadByFilterAndDelete<U extends T = T>(filter: EntityFilter<U>): Promise<U | undefined>;
 
   loadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U>;
   tryLoadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined>;
@@ -53,6 +54,6 @@ export interface EntityRepository<T extends Entity> {
   delete<U extends T>(entity: U): Promise<boolean>;
   deleteMany<U extends T>(entities: U[]): Promise<number>;
   deleteById(id: string): Promise<boolean>;
-  deleteByFilter(filter: EntityFilter<T>): Promise<boolean>;
-  deleteManyByFilter(filter: EntityFilter<T>): Promise<number>;
+  deleteByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<boolean>;
+  deleteManyByFilter<U extends T = T>(filter: EntityFilter<U>): Promise<number>;
 }

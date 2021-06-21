@@ -3,7 +3,7 @@ import { now } from '@tstdl/base/utils';
 import type { EntityRepository } from '@tstdl/database';
 import { getNewId } from '@tstdl/database';
 import { MongoError } from 'mongodb';
-import { MongoEntityRepository, noopTransformer } from '../entity-repository';
+import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
 import type { Collection, FilterQuery, TypedIndexSpecification } from '../types';
 import type { MongoLockEntity } from './model';
 
