@@ -100,7 +100,7 @@ export class ElasticsearchSearchIndex<T extends Entity> implements SearchIndex<T
   async search(searchQueryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
-    const search: Search<{ query: QueryContainer, search_after: any }> = { index: this.indexName, body: { query: queryBody } };
+    const search: Search<{ query: QueryContainer, search_after?: any }> = { index: this.indexName, body: { query: queryBody } };
 
     if (isDefined(cursorData) && isDefined(options?.skip)) {
       throw new Error('cursor and skip cannot be used at the same time');
@@ -135,7 +135,7 @@ export class ElasticsearchSearchIndex<T extends Entity> implements SearchIndex<T
   }
 }
 
-function serializeCursor<T extends Entity>(query: Query<T>, sort: ElasticsearchSort | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
+function serializeCursor<T extends Entity>(query: QueryContainer, sort: ElasticsearchSort | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
   return Buffer.from((JSON.stringify(data))).toString('base64');
 }
