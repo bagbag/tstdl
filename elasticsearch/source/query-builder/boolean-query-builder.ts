@@ -1,10 +1,10 @@
-import type { ElasticsearchBooleanQuery, ElasticsearchQuery } from '../model';
+import type { ElasticBooleanQuery, ElasticQuery } from '../model';
 
 export class BoolQueryBuilder {
-  private readonly _must: ElasticsearchQuery[];
-  private readonly _should: ElasticsearchQuery[];
-  private readonly _mustNot: ElasticsearchQuery[];
-  private readonly _filter: ElasticsearchQuery[];
+  private readonly _must: ElasticQuery[];
+  private readonly _should: ElasticQuery[];
+  private readonly _mustNot: ElasticQuery[];
+  private readonly _filter: ElasticQuery[];
 
   get totalQueries(): number {
     return this._must.length + this._should.length + this._mustNot.length + this._filter.length;
@@ -17,8 +17,8 @@ export class BoolQueryBuilder {
     this._filter = [];
   }
 
-  build(): ElasticsearchQuery {
-    const queryObj: ElasticsearchBooleanQuery = {
+  build(): ElasticQuery {
+    const queryObj: ElasticBooleanQuery = {
       bool: {}
     };
 
@@ -45,22 +45,22 @@ export class BoolQueryBuilder {
     return queryObj;
   }
 
-  must(...queries: ElasticsearchQuery[]): this {
+  must(...queries: ElasticQuery[]): this {
     this._must.push(...queries);
     return this;
   }
 
-  should(...queries: ElasticsearchQuery[]): this {
+  should(...queries: ElasticQuery[]): this {
     this._should.push(...queries);
     return this;
   }
 
-  mustNot(...queries: ElasticsearchQuery[]): this {
+  mustNot(...queries: ElasticQuery[]): this {
     this._mustNot.push(...queries);
     return this;
   }
 
-  filter(...queries: ElasticsearchQuery[]): this {
+  filter(...queries: ElasticQuery[]): this {
     this._filter.push(...queries);
     return this;
   }

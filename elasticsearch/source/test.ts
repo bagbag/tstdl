@@ -1,9 +1,11 @@
 import { Client } from '@elastic/elasticsearch';
 import { getCoreLogger } from '@tstdl/base/instance-provider';
+import { Logger } from '@tstdl/base/logger';
 import { isDefined } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
-import type { ElasticsearchIndexMapping, ElasticsearchIndexSettings } from './model';
-import { ElasticsearchSearchIndex } from './search-index';
+import { configureElasticInstanceProvider, getElasticSearchIndex, getElasticSearchIndexConfig } from './instance-provider';
+import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
+import { ElasticSearchIndex } from './search-index';
 
 const logger = getCoreLogger();
 
@@ -12,15 +14,13 @@ type EntityType = Entity & {
   channel: string
 };
 
-const client = new Client({
-  node: 'http://localhost:9200'
+configureElasticInstanceProvider({
+  clientOptions: {
+    node: 'http://localhost:9200'
+  }
 });
 
-export const elasticsearchSettings: ElasticsearchIndexSettings = {
-  refresh_interval: '3s'
-};
-
-export const elasticsearchMapping: ElasticsearchIndexMapping<any> = {
+export const elasticMapping: ElasticIndexMapping<any> = {
   properties: {
     id: {
       type: 'keyword',
@@ -42,16 +42,17 @@ export const elasticsearchMapping: ElasticsearchIndexMapping<any> = {
   }
 };
 
+class EntityTypeElasticSearchIndex extends ElasticSearchIndex<EntityType> {
+  constructor(client: Client, indexName: string, logger: Logger) {
+    super(client, indexName, {}, elasticMapping, logger);
+  }
+}
+
 // eslint-disable-next-line max-statements
 async function test(): Promise<void> {
-  const searchIndex = new ElasticsearchSearchIndex<EntityType>(client, 'testindex', elasticsearchSettings, elasticsearchMapping, getCoreLogger());
+  const searchIndex = await getElasticSearchIndex(EntityTypeElasticSearchIndex, getElasticSearchIndexConfig('testindex'));
 
-  const exists = await searchIndex.exists();
-
-  if (exists) {
-    await searchIndex.drop();
-  }
-
+  await searchIndex.drop();
   await searchIndex.initialize();
 
   for (let i = 0; i < 50; i++) {

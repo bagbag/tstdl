@@ -3,28 +3,28 @@
 import type { StringMap, TypedOmit } from '@tstdl/base/types';
 import type { Entity } from '@tstdl/database';
 
-export type ElasticsearchIndexMapping<T extends Entity = Entity> = {
-  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticsearchIndexMappingItem<T[P]> }
+export type ElasticIndexMapping<T extends Entity = Entity> = {
+  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticIndexMappingItem<T[P]> }
 };
 
-export type ElasticsearchIndexMappingItemBase<Type extends string = string> = {
+export type ElasticIndexMappingItemBase<Type extends string = string> = {
   type: Type,
   meta?: any
 };
 
-export type ElasticsearchKeywordIndexMappingItem = ElasticsearchIndexMappingItemBase<'keyword'> & {
+export type ElasticKeywordIndexMappingItem = ElasticIndexMappingItemBase<'keyword'> & {
   index?: boolean,
   ignore_above?: number
 };
 
-export type ElasticsearchTextIndexMappingItem = ElasticsearchIndexMappingItemBase<'text'> & {
+export type ElasticTextIndexMappingItem = ElasticIndexMappingItemBase<'text'> & {
   index?: boolean,
   analyzer?: string,
   search_analyzer?: string,
-  fields?: StringMap<ElasticsearchIndexMappingItem>
+  fields?: StringMap<ElasticIndexMappingItem>
 };
 
-export type ElasticsearchNumberIndexMappingItem = ElasticsearchIndexMappingItemBase<'long' | 'integer' | 'short' | 'byte' | 'double' | 'float' | 'half_float' | 'unsigned_long'> & {
+export type ElasticNumberIndexMappingItem = ElasticIndexMappingItemBase<'long' | 'integer' | 'short' | 'byte' | 'double' | 'float' | 'half_float' | 'unsigned_long'> & {
   index?: boolean,
   coerce?: boolean,
   boost?: number,
@@ -35,7 +35,7 @@ export type ElasticsearchNumberIndexMappingItem = ElasticsearchIndexMappingItemB
   store?: boolean
 };
 
-export type ElasticsearchDateIndexMappingItem = ElasticsearchIndexMappingItemBase<'date'> & {
+export type ElasticDateIndexMappingItem = ElasticIndexMappingItemBase<'date'> & {
   index?: boolean,
   boost?: number,
   doc_values?: boolean,
@@ -44,11 +44,11 @@ export type ElasticsearchDateIndexMappingItem = ElasticsearchIndexMappingItemBas
   store?: boolean
 };
 
-export type ElasticsearchObjectIndexMappingItem<T> = ElasticsearchIndexMappingItemBase<'object'> & {
+export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase<'object'> & {
   index?: boolean,
   dynamic?: boolean | 'strict',
   enabled?: boolean,
-  properties: { [P in keyof T]: ElasticsearchIndexMappingItem }
+  properties: { [P in keyof T]: ElasticIndexMappingItem }
 };
 
-export type ElasticsearchIndexMappingItem<T = any> = ElasticsearchKeywordIndexMappingItem | ElasticsearchTextIndexMappingItem | ElasticsearchNumberIndexMappingItem | ElasticsearchDateIndexMappingItem | ElasticsearchObjectIndexMappingItem<T>;
+export type ElasticIndexMappingItem<T = any> = ElasticKeywordIndexMappingItem | ElasticTextIndexMappingItem | ElasticNumberIndexMappingItem | ElasticDateIndexMappingItem | ElasticObjectIndexMappingItem<T>;

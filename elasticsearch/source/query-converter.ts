@@ -2,11 +2,11 @@ import type { RangeQuery } from '@elastic/elasticsearch/api/types';
 import { isPrimitive } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComplexTextSpanQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '@tstdl/database/query';
-import type { ElasticsearchMatchQuery, ElasticsearchMultiMatchQuery, ElasticsearchQuery, ElasticsearchRangeQuery, ElasticsearchRegexQuery, ElasticsearchTermQuery, ElasticsearchTermsQuery } from './model';
+import type { ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
-export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQuery {
+export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
   const defaultBoolQueryBuilder = new BoolQueryBuilder();
 
   const queryEntries = Object.entries(query);
@@ -44,7 +44,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (isPrimitiveValue || Object.prototype.hasOwnProperty.call(value, '$eq')) {
-      const termQuery: ElasticsearchTermQuery = {
+      const termQuery: ElasticTermQuery = {
         term: { [property]: isPrimitiveValue ? value : (value as ComparisonEqualsQuery).$eq }
       };
 
@@ -53,7 +53,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$neq')) {
-      const termQuery: ElasticsearchTermQuery = {
+      const termQuery: ElasticTermQuery = {
         term: { [property]: (value as ComparisonNotEqualsQuery).$neq }
       };
 
@@ -62,7 +62,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$in')) {
-      const termQuery: ElasticsearchTermsQuery = {
+      const termQuery: ElasticTermsQuery = {
         terms: { [property]: (value as ComparisonInQuery).$in }
       };
 
@@ -71,7 +71,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$nin')) {
-      const termQuery: ElasticsearchTermsQuery = {
+      const termQuery: ElasticTermsQuery = {
         terms: { [property]: (value as ComparisonNotInQuery).$nin }
       };
 
@@ -100,12 +100,12 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (Object.values(range).length > 0) {
-      const rangeQuery: ElasticsearchRangeQuery = { range: { [property]: range } };
+      const rangeQuery: ElasticRangeQuery = { range: { [property]: range } };
       defaultBoolQueryBuilder.must(rangeQuery);
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$regex')) {
-      const termQuery: ElasticsearchRegexQuery = {
+      const termQuery: ElasticRegexQuery = {
         regexp: { [property]: (value as ComparisonRegexQuery).$regex }
       };
 
@@ -114,7 +114,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$text')) {
-      let matchQuery: ElasticsearchMatchQuery;
+      let matchQuery: ElasticMatchQuery;
       const textQueryValue = (value as ComparisonTextQuery).$text;
 
       if (typeof textQueryValue == 'string') {
@@ -130,7 +130,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticsearchQu
 
     if (Object.prototype.hasOwnProperty.call(value, '$textSpan')) {
       const { fields, text, operator } = value as ComplexTextSpanQuery['$textSpan'];
-      const matchQuery: ElasticsearchMultiMatchQuery = { multi_match: { fields, query: text, operator } };
+      const matchQuery: ElasticMultiMatchQuery = { multi_match: { fields, query: text, operator } };
 
       defaultBoolQueryBuilder.must(matchQuery);
       canHandleProperty = true;
@@ -152,14 +152,14 @@ function getPropertyName(property: string): string {
   return property == 'id' ? '_id' : property;
 }
 
-export function convertLogicalAndQuery<T extends Entity>(andQuery: LogicalAndQuery<T>['$and']): ElasticsearchQuery {
+export function convertLogicalAndQuery<T extends Entity>(andQuery: LogicalAndQuery<T>['$and']): ElasticQuery {
   return new BoolQueryBuilder().must(...andQuery.map(convertQuery)).build();
 }
 
-export function convertLogicalOrQuery<T extends Entity>(orQuery: LogicalOrQuery<T>['$or']): ElasticsearchQuery {
+export function convertLogicalOrQuery<T extends Entity>(orQuery: LogicalOrQuery<T>['$or']): ElasticQuery {
   return new BoolQueryBuilder().should(...orQuery.map(convertQuery)).build();
 }
 
-export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQuery<T>['$nor']): ElasticsearchQuery {
+export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQuery<T>['$nor']): ElasticQuery {
   return new BoolQueryBuilder().mustNot(...norQuery.map(convertQuery)).build();
 }

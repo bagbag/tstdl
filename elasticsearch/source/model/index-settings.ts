@@ -1,40 +1,39 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { StringMap } from '@tstdl/base/types';
-import { equals } from '@tstdl/base/utils';
 
-export type ElasticsearchIndexSettings = {
+export type ElasticIndexSettings = {
   refresh_interval?: string | number,
   number_of_shards?: number,
   number_of_replicas?: number,
   analysis?: {
-    analyzer?: StringMap<ElasticsearchAnalyzer>,
-    filter?: StringMap<ElasticsearchFilter>
+    analyzer?: StringMap<ElasticAnalyzer>,
+    filter?: StringMap<ElasticFilter>
   }
 };
 
-export type ElasticsearchCustomAnalyzerBase<Type extends string = string> = {
+export type ElasticCustomAnalyzerBase<Type extends string = string> = {
   type: Type
 };
 
-export type ElasticsearchCustomAnalyzer = ElasticsearchCustomAnalyzerBase<'custom'> & {
+export type ElasticCustomAnalyzer = ElasticCustomAnalyzerBase<'custom'> & {
   tokenizer?: string,
   filter?: string[]
 };
 
-export type ElasticsearchAnalyzer = ElasticsearchCustomAnalyzer;
+export type ElasticAnalyzer = ElasticCustomAnalyzer;
 
-export type ElasticsearchFilterBase<Type extends string = string> = {
+export type ElasticFilterBase<Type extends string = string> = {
   type: Type
 };
 
-export type ElasticsearchStemmerFilter = ElasticsearchFilterBase<'stemmer'> & {
+export type ElasticStemmerFilter = ElasticFilterBase<'stemmer'> & {
   language: string
 };
 
-export type ElasticsearchEdgeNGramFilter = ElasticsearchFilterBase<'edge_ngram'> & {
+export type ElasticEdgeNGramFilter = ElasticFilterBase<'edge_ngram'> & {
   min_gram?: number,
   max_gram?: number
 };
 
-export type ElasticsearchFilter = ElasticsearchStemmerFilter | ElasticsearchEdgeNGramFilter;
+export type ElasticFilter = ElasticStemmerFilter | ElasticEdgeNGramFilter;
