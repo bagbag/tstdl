@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { StringMap } from '@tstdl/base/types';
+import type { StringMap, TypedOmit } from '@tstdl/base/types';
 import type { Entity } from '@tstdl/database';
 
 export type ElasticsearchIndexMapping<T extends Entity = Entity> = {
-  properties: { [P in keyof T]: ElasticsearchIndexMappingItem<T[P]> }
+  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticsearchIndexMappingItem<T[P]> }
 };
 
 export type ElasticsearchIndexMappingItemBase<Type extends string = string> = {
