@@ -37,7 +37,7 @@ export class ElasticsearchSearchIndex<T extends Entity> implements SearchIndex<T
   }
 
   async initialize(): Promise<void> {
-    const { body: exists } = await this.client.indices.exists({ index: this.indexName });
+    const exists = await this.exists();
 
     if (!exists) {
       await this.client.indices.create({ index: this.indexName, body: { mappings: this.indexMapping, settings: this.indexSettings } });
@@ -126,6 +126,12 @@ export class ElasticsearchSearchIndex<T extends Entity> implements SearchIndex<T
   }
 
   async drop(): Promise<void> {
+    const exists = await this.exists();
+
+    if (!exists) {
+      return;
+    }
+
     await this.client.indices.delete({ index: this.indexName });
   }
 
@@ -141,5 +147,5 @@ function serializeCursor<T extends Entity>(query: QueryContainer, sort: Elastics
 }
 
 function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
-  return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8'));
+  return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8')) as CursorData<T>;
 }
