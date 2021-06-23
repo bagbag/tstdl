@@ -92,7 +92,7 @@ export type ComparisonLessThanOrEqualsQuery<T = any> = {
 };
 
 export type ComparisonRegexQuery = {
-  $regex: string | RegExp
+  $regex: string | RegExp | { pattern: string, flags: string }
 };
 
 export type ComparisonTextQuery = {

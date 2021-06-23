@@ -1,6 +1,6 @@
-import { isDefined, isObject, isPrimitive } from '@tstdl/base/utils';
+import { isDefined, isObject, isPrimitive, isString } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
-import type { LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '@tstdl/database/query';
+import type { ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '@tstdl/database/query';
 import { allComparisonQueryTypes } from '@tstdl/database/query';
 import type { SortArrayItem } from './mongo-base.repository';
 import type { TransformerMappingMap } from './mongo-entity-repository';
@@ -29,6 +29,15 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
     }
     else if (property == '$nor') {
       filterQuery.$nor = convertLogicalNorQuery(value, mappingMap);
+    }
+    else if (property == '$regex') {
+      if (isString(value) || (value instanceof RegExp)) {
+        filterQuery['$regex'] = value;
+      }
+      else {
+        filterQuery['$regex'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).pattern;
+        filterQuery['$options'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).flags;
+      }
     }
     else if ((allComparisonQueryTypes as string[]).includes(property)) {
       filterQuery[newProperty] = value;
