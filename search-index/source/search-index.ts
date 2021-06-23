@@ -6,7 +6,7 @@ export interface SearchIndex<T extends Entity> {
   readonly _type: T;
 
   index(entities: T[]): Promise<void>;
-  search(cursor: string): Promise<SearchResult<T>>;
+  search(cursor: string, options?: QueryOptions<T>): Promise<SearchResult<T>>;
   search(query: Query<T>, options?: QueryOptions<T>): Promise<SearchResult<T>>;
   drop(): Promise<void>;
 }

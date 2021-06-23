@@ -96,7 +96,11 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       throw new Error('cursor and skip cannot be used at the same time');
     }
 
-    const sort: ElasticSort | undefined = cursorData?.sort ?? options?.sort?.map((sort) => convertSort(sort, this.sortKeywordRewrites));
+    if (isDefined(cursorData) && isDefined(options?.sort)) {
+      throw new Error('cursor and sort cannot be used at the same time');
+    }
+
+    const sort: ElasticSort | undefined = cursorData?.sort ?? options?.sort?.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
     (search.sort as ElasticSort | undefined) = sort;
     search.from = options?.skip;
