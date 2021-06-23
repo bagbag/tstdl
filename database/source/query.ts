@@ -6,6 +6,7 @@ export type QueryOptions<T = any> = {
   limit?: number
 };
 
+
 export type Query<T = any> = SimpleQuery<T> | LogicalQuery<T> | ComparisonQueryBody<T> | ComplexQuery;
 
 export type SimpleQuery<T = any> = { [P in keyof T]?: T[P] } & StringMap;
@@ -35,15 +36,15 @@ export type ComplexQuery<T = any> = Partial<ComplexTextSpanQuery<T>>;
 export type ComplexQueryTypes = keyof ComplexQuery;
 export const allComplexQueryTypes: ComplexQueryTypes[] = ['$textSpan'];
 
-export type Order = 'ascending' | 'descending';
-export const allOrders: Order[] = ['ascending', 'descending'];
+export type Order = 'asc' | 'desc';
+export const allOrders: Order[] = ['asc', 'desc'];
 
 export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
 export type Sort<T = any> = {
-  field: keyof T,
-  order: Order
+  field: (keyof T | '$score'),
+  order?: Order
 };
 
 export type LogicalAndQuery<T = any> = {
@@ -98,10 +99,14 @@ export type ComparisonTextQuery = {
   $text: string | { text: string, operator?: Operator }
 };
 
+export type ComplexTextSpanQueryMode = 'best' | 'most' | 'cross';
+export const allComplexTextSpanQueryModes: ComplexTextSpanQueryMode[] = ['best', 'most', 'cross'];
+
 export type ComplexTextSpanQuery<T = any> = {
   $textSpan: {
     fields: (Extract<keyof T, string>)[],
     text: string,
+    mode?: ComplexTextSpanQueryMode,
     operator?: Operator
   }
 };

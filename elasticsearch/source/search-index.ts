@@ -6,7 +6,7 @@ import type { Logger } from '@tstdl/base/logger';
 import type { TypedOmit } from '@tstdl/base/types';
 import { isDefined, isString } from '@tstdl/base/utils';
 import type { Entity, Query, QueryOptions } from '@tstdl/database';
-import type { SearchIndex, SearchResult } from '@tstdl/search-index';
+import type { SearchIndex, SearchResult, SearchResultItem } from '@tstdl/search-index';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -27,12 +27,14 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
   readonly indexName: string;
   readonly indexSettings: ElasticIndexSettings;
   readonly indexMapping: ElasticIndexMapping<T>;
+  readonly sortKeywordRewrites: Set<string>;
 
-  constructor(client: Client, indexName: string, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, logger: Logger) {
+  constructor(client: Client, indexName: string, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
     this.client = client;
     this.indexName = indexName;
     this.indexSettings = indexSettings;
     this.indexMapping = indexMapping;
+    this.sortKeywordRewrites = sortKeywordRewrites;
     this.logger = logger;
   }
 
@@ -94,22 +96,21 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       throw new Error('cursor and skip cannot be used at the same time');
     }
 
-    const sort: ElasticSort | undefined = cursorData?.sort ?? options?.sort?.map(convertSort);
+    const sort: ElasticSort | undefined = cursorData?.sort ?? options?.sort?.map((sort) => convertSort(sort, this.sortKeywordRewrites));
 
     (search.sort as ElasticSort | undefined) = sort;
     search.from = options?.skip;
     search.size = options?.limit ?? cursorData?.options?.limit;
     search.body!.search_after = cursorData?.searchAfter;
 
-    const response = await this.client.search(search) as { body: { hits: { hits: { _id: string, _source: TypedOmit<T, 'id'>, sort: any }[], total: { value: number, relation: 'eq' | 'gte' } }, took: number } };
+    const response = await this.client.search(search) as { body: { hits: { hits: { _id: string, _score: number, _source: TypedOmit<T, 'id'>, sort: any }[], total: { value: number, relation: 'eq' | 'gte' } }, took: number } };
     const hits = response.body.hits.hits;
 
-    const entities = hits.map(({ _id, _source }): T => ({ id: _id, ..._source }) as T);
+    const resultItems = hits.map(({ _id, _score, _source }): SearchResultItem<T> => ({ score: _score, entity: { id: _id, ..._source } as T }));
     const totalIsLowerBound = response.body.hits.total.relation == 'gte';
     const cursor = (hits.length > 0) && (isDefined(hits[hits.length - 1]?.sort)) ? serializeCursor(queryBody, sort, { limit: search.size }, hits[hits.length - 1]!.sort) : undefined;
 
-    const result: SearchResult<T> = { total: response.body.hits.total.value, milliseconds: response.body.took, totalIsLowerBound, entities, cursor };
-
+    const result: SearchResult<T> = { total: response.body.hits.total.value, milliseconds: response.body.took, totalIsLowerBound, items: resultItems, cursor };
     return result;
   }
 

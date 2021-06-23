@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/elasticsearch",
-  "version": "0.2.2",
+  "version": "0.2.5",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.13.0",
-    "@tstdl/base": "^0.63.3",
-    "@tstdl/search-index": "^0.4.4",
-    "@tstdl/server": "^0.35.1"
+    "@tstdl/base": "^0.64.4",
+    "@tstdl/search-index": "^0.4.8",
+    "@tstdl/server": "^0.35.2"
   },
   "devDependencies": {
     "@types/luxon": "^1.27.0",

@@ -1,7 +1,9 @@
+import type { Job } from '@tstdl/base/queue';
+import type { TypedOmit } from '@tstdl/base/types';
 import type { Entity, NewEntity } from '@tstdl/database';
 
-export type MongoJob<T> = Entity & {
-  data: T,
+export type MongoJob<T> = Entity & TypedOmit<Job<T>, 'id'> & {
+  jobId: string,
   enqueueTimestamp: number,
   tries: number,
   lastDequeueTimestamp: number,

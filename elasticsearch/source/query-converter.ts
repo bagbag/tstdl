@@ -1,7 +1,7 @@
-import type { RangeQuery } from '@elastic/elasticsearch/api/types';
+import type { RangeQuery, TextQueryType } from '@elastic/elasticsearch/api/types';
 import { isPrimitive } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
-import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComplexTextSpanQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '@tstdl/database/query';
+import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, ComplexTextSpanQuery, ComplexTextSpanQueryMode, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '@tstdl/database/query';
 import type { ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
 
@@ -41,6 +41,15 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       }
 
       return convertLogicalNorQuery((value as LogicalNorQuery['$nor']));
+    }
+
+    if (rawProperty == '$textSpan') {
+      const { fields, text, mode, operator } = value as ComplexTextSpanQuery['$textSpan'];
+      const type = convertComplexTextSpanQueryMode(mode);
+      const matchQuery: ElasticMultiMatchQuery = { multi_match: { fields, query: text, type, operator } };
+
+      defaultBoolQueryBuilder.must(matchQuery);
+      canHandleProperty = true;
     }
 
     if (isPrimitiveValue || Object.prototype.hasOwnProperty.call(value, '$eq')) {
@@ -128,14 +137,6 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$textSpan')) {
-      const { fields, text, operator } = value as ComplexTextSpanQuery['$textSpan'];
-      const matchQuery: ElasticMultiMatchQuery = { multi_match: { fields, query: text, operator } };
-
-      defaultBoolQueryBuilder.must(matchQuery);
-      canHandleProperty = true;
-    }
-
     if (!canHandleProperty) {
       throw new Error(`unsupported query type "${rawProperty}"`);
     }
@@ -162,4 +163,23 @@ export function convertLogicalOrQuery<T extends Entity>(orQuery: LogicalOrQuery<
 
 export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQuery<T>['$nor']): ElasticQuery {
   return new BoolQueryBuilder().mustNot(...norQuery.map(convertQuery)).build();
+}
+
+export function convertComplexTextSpanQueryMode(mode: ComplexTextSpanQueryMode | undefined): TextQueryType | undefined {
+  switch (mode) {
+    case undefined:
+      return undefined;
+
+    case 'best':
+      return 'best_fields';
+
+    case 'most':
+      return 'most_fields';
+
+    case 'cross':
+      return 'cross_fields';
+
+    default:
+      throw new Error('unknown ComplexTextSpanQueryMode');
+  }
 }

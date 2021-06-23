@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/search-index",
-  "version": "0.4.4",
+  "version": "0.4.8",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,8 +10,8 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist/"
   },
   "dependencies": {
-    "@tstdl/base": "^0.63.3",
-    "@tstdl/database": "^0.17.18"
+    "@tstdl/base": "^0.64.4",
+    "@tstdl/database": "^0.17.21"
   },
   "devDependencies": {
     "@types/luxon": "^1.27.0",

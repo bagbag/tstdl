@@ -1,10 +1,10 @@
-import { Client } from '@elastic/elasticsearch';
+import type { Client } from '@elastic/elasticsearch';
 import { getCoreLogger } from '@tstdl/base/instance-provider';
-import { Logger } from '@tstdl/base/logger';
+import type { Logger } from '@tstdl/base/logger';
 import { isDefined } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import { configureElasticInstanceProvider, getElasticSearchIndex, getElasticSearchIndexConfig } from './instance-provider';
-import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
+import type { ElasticIndexMapping } from './model';
 import { ElasticSearchIndex } from './search-index';
 
 const logger = getCoreLogger();
@@ -44,13 +44,13 @@ export const elasticMapping: ElasticIndexMapping<any> = {
 
 class EntityTypeElasticSearchIndex extends ElasticSearchIndex<EntityType> {
   constructor(client: Client, indexName: string, logger: Logger) {
-    super(client, indexName, {}, elasticMapping, logger);
+    super(client, indexName, {}, elasticMapping, new Set(), logger);
   }
 }
 
 // eslint-disable-next-line max-statements
 async function test(): Promise<void> {
-  const searchIndex = await getElasticSearchIndex(EntityTypeElasticSearchIndex, getElasticSearchIndexConfig('testindex'));
+  const searchIndex = await getElasticSearchIndex(EntityTypeElasticSearchIndex, getElasticSearchIndexConfig('vehicles'));
 
   await searchIndex.drop();
   await searchIndex.initialize();
@@ -68,14 +68,14 @@ async function test(): Promise<void> {
 
   await searchIndex.refresh();
 
-  const result = await searchIndex.search({ channel: { $text: 'Hello world' } }, { sort: [{ field: 'channel.keyword' as any, order: 'ascending' }, { field: 'id', order: 'ascending' }], limit: 5000 });
+  const result = await searchIndex.search({ channel: { $text: 'Hello world' } }, { sort: [{ field: 'channel.keyword' as any }, { field: 'id' }], limit: 5000 });
 
-  let entities = result.entities;
+  let items = result.items;
   let cursor = result.cursor;
 
   while (isDefined(cursor)) {
-    ({ entities, cursor } = await searchIndex.search(cursor));
-    logger.info(entities.length.toString());
+    ({ items, cursor } = await searchIndex.search(cursor));
+    logger.info(items.length.toString());
   }
 }
 

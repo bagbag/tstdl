@@ -1,4 +1,4 @@
-import { isPrimitive } from '@tstdl/base/utils';
+import { isObject, isPrimitive } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
 import type { LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '@tstdl/database/query';
 import { allComparisonQueryTypes } from '@tstdl/database/query';
@@ -25,6 +25,9 @@ export function convertQuery<T extends Entity>(query: Query<T>): FilterQuery<T> 
     }
     else if ((allComparisonQueryTypes as string[]).includes(property)) {
       filterQuery[newProperty] = value;
+    }
+    else if (isObject(value)) {
+      filterQuery[newProperty] = convertQuery(value);
     }
     else {
       throw new Error(`unsupported query property ${property}`);

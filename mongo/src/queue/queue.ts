@@ -1,6 +1,8 @@
-import type { Job, Queue } from '@tstdl/base/queue';
+import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, Queue } from '@tstdl/base/queue';
+import { UniqueTagStrategy } from '@tstdl/base/queue';
 import type { BackoffOptions, CancellationToken } from '@tstdl/base/utils';
-import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString, toArray } from '@tstdl/base/utils';
+import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString } from '@tstdl/base/utils';
+import { getNewId } from '@tstdl/database';
 import type { FilterQuery, UpdateQuery } from 'mongodb';
 import type { MongoDocument } from '../model';
 import type { MongoJob, NewMongoJob } from './job';
@@ -24,8 +26,13 @@ export class MongoQueue<T> implements Queue<T> {
     this.maxTries = maxTries;
   }
 
-  async enqueue(data: T): Promise<Job<T>> {
+  async enqueue(data: T, options: EnqueueOptions = {}): Promise<Job<T>> {
+    const { tag = null, uniqueTag, priority = 0 } = options;
+
     const newJob: NewMongoJob<T> = {
+      jobId: getNewId(),
+      tag,
+      priority,
       data,
       enqueueTimestamp: currentTimestamp(),
       tries: 0,
@@ -33,23 +40,96 @@ export class MongoQueue<T> implements Queue<T> {
       batch: null
     };
 
-    const job = await this.repository.insert(newJob);
+    const job = (uniqueTag == undefined)
+      ? await this.repository.insert(newJob)
+      : await this.repository.insertWithUniqueTagStrategy(newJob, uniqueTag);
+
     return toModelJob(job);
   }
 
-  async enqueueMany(data: T[]): Promise<Job<T>[]> {
+  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
+  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
+  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: boolean): Promise<void | Job<T>[]> { // eslint-disable-line max-lines-per-function
     const now = currentTimestamp();
 
-    const newJobs: NewMongoJob<T>[] = data.map((item): NewMongoJob<T> => ({
-      data: item,
-      enqueueTimestamp: now,
-      tries: 0,
-      lastDequeueTimestamp: 0,
-      batch: null
-    }));
+    const nonUnique: NewMongoJob<T>[] = [];
+    const keepOld: NewMongoJob<T>[] = [];
+    const takeNew: NewMongoJob<T>[] = [];
 
-    const jobs = await this.repository.insertMany(newJobs);
-    return jobs.map(toModelJob);
+    for (const { data, tag = null, uniqueTag, priority = 0 } of items) {
+      const newMongoJob: NewMongoJob<T> = {
+        jobId: getNewId(),
+        tag,
+        priority,
+        data,
+        enqueueTimestamp: now,
+        tries: 0,
+        lastDequeueTimestamp: 0,
+        batch: null
+      };
+
+      switch (uniqueTag) {
+        case undefined:
+          nonUnique.push(newMongoJob);
+          break;
+
+        case UniqueTagStrategy.KeepOld:
+          keepOld.push(newMongoJob);
+          break;
+
+        case UniqueTagStrategy.TakeNew:
+          takeNew.push(newMongoJob);
+          break;
+
+        default:
+          throw new Error('unsupported UniqueTagStrategy');
+      }
+    }
+
+    const [nonUniqueJobs] = await Promise.all([
+      (nonUnique.length > 0) ? this.repository.insertMany(nonUnique) : [],
+      (keepOld.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(keepOld, UniqueTagStrategy.KeepOld) : undefined,
+      (takeNew.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(takeNew, UniqueTagStrategy.TakeNew) : undefined
+    ]);
+
+    if (returnJobs == true) {
+      const keepOldTags = keepOld.map((job) => job.tag);
+      const takeNewTags = takeNew.map((job) => job.tag);
+
+      const uniqueTagJobs = await this.repository.loadManyByFilter({ tag: { $in: [...keepOldTags, ...takeNewTags] } });
+
+      return [...nonUniqueJobs, ...uniqueTagJobs].map(toModelJob);
+    }
+
+    return undefined;
+  }
+
+  async has(id: string): Promise<boolean> {
+    return this.repository.has(id);
+  }
+
+  async countByTag(tag: JobTag): Promise<number> {
+    return this.repository.countByFilter({ tag });
+  }
+
+  async get(id: string): Promise<Job<T> | undefined> {
+    return this.repository.tryLoad(id);
+  }
+
+  async getByTag(tag: JobTag): Promise<Job<T>[]> {
+    return this.repository.loadManyByFilter({ tag });
+  }
+
+  async cancel(id: string): Promise<void> {
+    await this.repository.deleteByFilter({ jobId: id });
+  }
+
+  async cancelMany(ids: string[]): Promise<void> {
+    await this.repository.deleteManyByFilter({ jobId: { $in: ids } });
+  }
+
+  async cancelByTag(tag: JobTag): Promise<void> {
+    await this.repository.deleteManyByFilter({ tag });
   }
 
   async dequeue(): Promise<Job<T> | undefined> {
@@ -60,7 +140,7 @@ export class MongoQueue<T> implements Queue<T> {
       update,
       {
         returnDocument: 'after',
-        sort: [['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]]
+        sort: [['priority', 1], ['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]]
       }
     );
 
@@ -84,9 +164,13 @@ export class MongoQueue<T> implements Queue<T> {
     return jobs.map(toModelJob);
   }
 
-  async acknowledge(jobOrJobs: Job<T> | Job<T>[]): Promise<void> {
-    const jobIds = toArray(jobOrJobs).map((job) => job.id);
-    await this.repository.deleteManyById(jobIds);
+  async acknowledge(job: Job<T>): Promise<void> {
+    return this.cancel(job.id);
+  }
+
+  async acknowledgeMany(jobs: Job<T>[]): Promise<void> {
+    const jobIds = jobs.map((job) => job.id);
+    return this.cancelMany(jobIds);
   }
 
   async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {
@@ -118,7 +202,9 @@ export class MongoQueue<T> implements Queue<T> {
 
 function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
   const job: Job<T> = {
-    id: mongoJob.id,
+    id: mongoJob.jobId,
+    priority: mongoJob.priority,
+    tag: mongoJob.tag,
     data: mongoJob.data
   };
 
