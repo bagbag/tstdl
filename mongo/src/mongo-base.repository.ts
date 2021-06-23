@@ -25,7 +25,9 @@ export type ProjectedEntity<T, M extends ProjectionMode, P extends Projection<T,
 
 export type SortObject<T extends Entity> = { [P in keyof MongoDocument<T>]?: 1 | -1 };
 
-export type SortArray<T extends Entity> = [keyof MongoDocument<T> & string, 1 | -1][];
+export type SortArrayItem<T extends Entity> = [keyof MongoDocument<T> & string, 1 | -1];
+
+export type SortArray<T extends Entity> = SortArrayItem<T>[];
 
 export type Sort<T extends Entity> = SortArray<T> | SortObject<T>;
 
@@ -251,9 +253,9 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  loadManyByIdWithCursor<U extends T = T>(ids: string[]): AsyncIterableIterator<U> {
+  loadManyByIdWithCursor<U extends T = T>(ids: string[], options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
     const filter = getBasicFilterQuery<U>(ids);
-    return this.loadManyByFilterWithCursor(filter);
+    return this.loadManyByFilterWithCursor(filter, options);
   }
 
   async *loadManyByFilterWithCursor<U extends T = T>(filter: FilterQuery<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
