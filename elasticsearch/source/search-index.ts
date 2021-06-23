@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/semi */
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
-import type { QueryContainer, Sort as ElasticSort } from '@elastic/elasticsearch/api/types';
+import type { QueryContainer, Sort as ElasticSort, SortCombinations } from '@elastic/elasticsearch/api/types';
 import type { Logger } from '@tstdl/base/logger';
 import type { TypedOmit } from '@tstdl/base/types';
 import { isDefined, isString } from '@tstdl/base/utils';
@@ -13,7 +13,7 @@ import { convertSort } from './sort-converter';
 
 type CursorData<T> = {
   query: QueryContainer,
-  sort: ElasticSort | undefined,
+  sort: SortCombinations[] | undefined,
   options?: QueryOptions<T>,
   searchAfter: any
 };
@@ -100,7 +100,17 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       throw new Error('cursor and sort cannot be used at the same time');
     }
 
-    const sort: ElasticSort | undefined = cursorData?.sort ?? options?.sort?.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const querySort = [...(options?.sort ?? [])];
+
+    if (!querySort.some((item) => item.field == '$score')) {
+      querySort.push({ field: '$score', order: 'desc' });
+    }
+
+    if (!querySort.some((item) => item.field == 'id')) {
+      querySort.push({ field: 'id', order: 'asc' });
+    }
+
+    const sort: SortCombinations[] = cursorData?.sort ?? options?.sort?.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites)) ?? [];
 
     (search.sort as ElasticSort | undefined) = sort;
     search.from = options?.skip;

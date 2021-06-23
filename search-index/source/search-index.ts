@@ -8,5 +8,6 @@ export interface SearchIndex<T extends Entity> {
   index(entities: T[]): Promise<void>;
   search(cursor: string, options?: QueryOptions<T>): Promise<SearchResult<T>>;
   search(query: Query<T>, options?: QueryOptions<T>): Promise<SearchResult<T>>;
+  search(queryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>>;
   drop(): Promise<void>;
 }

@@ -14,7 +14,7 @@ let defaultOptions: SuperstructOptions = {
   mask: false
 };
 
-export function setDefaultYupValidationOptions(options: SuperstructOptions): void {
+export function setDefaultSuperstructOptions(options: SuperstructOptions): void {
   defaultOptions = options;
 }
 
