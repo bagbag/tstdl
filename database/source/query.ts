@@ -7,9 +7,7 @@ export type QueryOptions<T = any> = {
 };
 
 
-export type Query<T = any> = SimpleQuery<T> | LogicalQuery<T> | ComparisonQueryBody<T> | ComplexQuery;
-
-export type SimpleQuery<T = any> = { [P in keyof T]?: T[P] } & StringMap;
+export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery);
 
 export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
@@ -17,7 +15,7 @@ export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor']
 
 export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQuery<T[P]> } & StringMap<ComparisonQuery>;
 
-export type ComparisonQuery<Value = any> = Partial<
+export type ComparisonQuery<Value = any> = Value | Partial<
   ComparisonEqualsQuery<Value>
   & ComparisonNotEqualsQuery<Value>
   & ComparisonInQuery<Value>
