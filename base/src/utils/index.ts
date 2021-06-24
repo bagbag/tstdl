@@ -1,6 +1,5 @@
 export * from './alphabet';
 export * from './any-iterable-iterator';
-export * from './assert';
 export * from './async-iterator-iterable-iterator';
 export * from './backoff';
 export * from './base64';
