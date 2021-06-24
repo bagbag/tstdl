@@ -1,11 +1,12 @@
 import { DeferredPromise } from '@tstdl/base/promise';
 import type { Json, StringMap } from '@tstdl/base/types';
 import { isDefined } from '@tstdl/base/utils';
-import type { Options as GotOptions, Response } from 'got';
+import { HTTPError, Options as GotOptions, Response } from 'got';
 import Got from 'got';
 import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
 import type { Readable } from 'stream';
+import { HttpError } from './http.error';
 
 export type HttpRequestOptions = {
   headers?: StringMap<string | string[]>,
@@ -46,7 +47,7 @@ const defaultGotOptions: GotOptions = {
   followRedirect: true
 };
 
-type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
+export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
@@ -228,30 +229,62 @@ export class HttpClient {
 
     request._onResponse = onResponseWrapper;
 
-    const response = await responsePromise;
+    try {
+      const response = await responsePromise;
 
-    const result: HttpResponse<HttpResponseType.Stream> = {
-      statusCode: response.statusCode ?? -1,
-      statusMessage: response.statusMessage,
-      header: response.headers as StringMap<string | string[]>,
-      body: request
-    };
+      const result: HttpResponse<HttpResponseType.Stream> = {
+        statusCode: response.statusCode ?? -1,
+        statusMessage: response.statusMessage,
+        header: response.headers as StringMap<string | string[]>,
+        body: request
+      };
 
-    return result;
+      return result;
+    }
+    catch (error: unknown) {
+      if (error instanceof HTTPError) {
+        const response: HttpResponse<any> = {
+          statusCode: error.response.statusCode,
+          statusMessage: error.response.statusMessage,
+          header: error.response.headers as StringMap<string | string[]>,
+          body: error.response.body as HttpResponseTypeValueType<any>
+        };
+
+        throw new HttpError(url, method, options ?? {}, response);
+      }
+
+      throw error;
+    }
   }
 
   private static async _call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    const gotOptions = getGotOptions(method, options);
-    const request = Got(url, { ...gotOptions, responseType: responseType as any });
-    const response = await request as Response;
-    const result: HttpResponse<T> = {
-      statusCode: response.statusCode,
-      statusMessage: response.statusMessage,
-      header: response.headers as StringMap<string | string[]>,
-      body: response.body as HttpResponseTypeValueType<T>
-    };
+    try {
+      const gotOptions = getGotOptions(method, options);
+      const request = Got(url, { ...gotOptions, responseType: responseType as any });
+      const response = await request as Response;
+      const result: HttpResponse<T> = {
+        statusCode: response.statusCode,
+        statusMessage: response.statusMessage,
+        header: response.headers as StringMap<string | string[]>,
+        body: response.body as HttpResponseTypeValueType<T>
+      };
 
-    return result;
+      return result;
+    }
+    catch (error: unknown) {
+      if (error instanceof HTTPError) {
+        const response: HttpResponse<any> = {
+          statusCode: error.response.statusCode,
+          statusMessage: error.response.statusMessage,
+          header: error.response.headers as StringMap<string | string[]>,
+          body: error.response.body as HttpResponseTypeValueType<any>
+        };
+
+        throw new HttpError(url, method, options ?? {}, response);
+      }
+
+      throw error;
+    }
   }
 }
 
