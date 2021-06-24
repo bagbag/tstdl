@@ -1,19 +1,20 @@
 import type { StringMap } from '@tstdl/base/types';
+import { Entity } from './entity';
 
-export type QueryOptions<T = any> = {
+export type QueryOptions<T extends Entity = Entity> = {
   sort?: Sort<T>[],
   skip?: number,
   limit?: number
 };
 
 
-export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery);
+export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery);
 
-export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
+export type LogicalQuery<T extends Entity = Entity> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
-export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQuery<T[P]> } & StringMap<ComparisonQuery>;
+export type ComparisonQueryBody<T extends Entity = Entity> = { [P in keyof T]?: ComparisonQuery<T[P]> } & StringMap<ComparisonQuery>;
 
 export type ComparisonQuery<Value = any> = Value | Partial<
   ComparisonEqualsQuery<Value>
@@ -30,7 +31,7 @@ export type ComparisonQuery<Value = any> = Value | Partial<
 export type ComparisonQueryTypes = keyof ComparisonQuery;
 export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
 
-export type ComplexQuery<T = any> = Partial<ComplexTextSpanQuery<T>>;
+export type ComplexQuery<T extends Entity = Entity> = Partial<ComplexTextSpanQuery<T>>;
 export type ComplexQueryTypes = keyof ComplexQuery;
 export const allComplexQueryTypes: ComplexQueryTypes[] = ['$textSpan'];
 
@@ -40,20 +41,20 @@ export const allOrders: Order[] = ['asc', 'desc'];
 export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
-export type Sort<T = any> = {
+export type Sort<T extends Entity = Entity> = {
   field: (Extract<keyof T, string> | '$score'),
   order?: Order
 };
 
-export type LogicalAndQuery<T = any> = {
+export type LogicalAndQuery<T extends Entity = Entity> = {
   $and: Query<T>[]
 };
 
-export type LogicalOrQuery<T = any> = {
+export type LogicalOrQuery<T extends Entity = Entity> = {
   $or: Query<T>[]
 };
 
-export type LogicalNorQuery<T = any> = {
+export type LogicalNorQuery<T extends Entity = Entity> = {
   $nor: Query<T>[]
 };
 
@@ -100,7 +101,7 @@ export type ComparisonTextQuery = {
 export type ComplexTextSpanQueryMode = 'best' | 'most' | 'cross';
 export const allComplexTextSpanQueryModes: ComplexTextSpanQueryMode[] = ['best', 'most', 'cross'];
 
-export type ComplexTextSpanQuery<T = any> = {
+export type ComplexTextSpanQuery<T extends Entity = Entity> = {
   $textSpan: {
     fields: (Extract<keyof T, string>)[],
     text: string,

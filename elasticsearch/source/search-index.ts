@@ -11,7 +11,7 @@ import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
 
-type CursorData<T> = {
+type CursorData<T extends Entity = Entity> = {
   query: QueryContainer,
   sort: SortCombinations[] | undefined,
   options?: QueryOptions<T>,
@@ -107,7 +107,7 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
     }
 
     if (!querySort.some((item) => item.field == 'id')) {
-      querySort.push({ field: 'id', order: 'asc' });
+      querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
     }
 
     const sort: SortCombinations[] = cursorData?.sort ?? options?.sort?.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites)) ?? [];

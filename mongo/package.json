@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tstdl/base": "^0.64.5",
-    "@tstdl/database": "^0.17.32",
+    "@tstdl/database": "^0.17.33",
     "@tstdl/server": "^0.35.4",
     "mongodb": "3.6"
   },
