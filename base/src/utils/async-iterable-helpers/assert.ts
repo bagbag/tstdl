@@ -1,5 +1,5 @@
 import type { AnyIterable } from '../any-iterable-iterator';
-import { assert as assertHelper } from '../assert';
+import { assert as assertHelper } from '../type-guards';
 import { isAsyncIterable } from './is-async-iterable';
 import type { AsyncPredicate } from './types';
 

@@ -1,5 +1,5 @@
 import type * as NodeCrypto from 'crypto';
-import { assertFunction } from './assert';
+import { assertFunction } from './type-guards';
 
 type NodeCryptoType = typeof NodeCrypto;
 

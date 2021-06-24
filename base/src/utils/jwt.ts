@@ -1,6 +1,6 @@
 import type { StringMap } from '../types';
-import { assert } from './assert';
 import { decodeBase64Url } from './base64';
+import { assert } from './type-guards';
 
 export enum JwtTokenAlgorithm {
   SHA256 = 'HS256',
