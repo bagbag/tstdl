@@ -1,10 +1,12 @@
 import { isDefined, isObject, isPrimitive, isString } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
-import type { ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '@tstdl/database/query';
+import type { ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '@tstdl/database/query';
 import { allComparisonQueryTypes } from '@tstdl/database/query';
 import type { SortArrayItem } from './mongo-base.repository';
 import type { TransformerMappingMap } from './mongo-entity-repository';
 import type { FilterQuery } from './types';
+
+const arrayTransformationsKeys: ComparisonQueryTypes[] = ['$in', '$nin'];
 
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>): FilterQuery<TDb> {
   const filterQuery: FilterQuery<any> = {};
@@ -13,7 +15,9 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
     const mapping = mappingMap.get(rawProperty as keyof T);
 
     const property = isDefined(mapping) ? getPropertyName(mapping.key as string) : getPropertyName(rawProperty);
-    const value = isDefined(mapping) ? mapping.transform(rawValue) : rawValue;
+    const value = isDefined(mapping)
+      ? arrayTransformationsKeys.includes(property as ComparisonQueryTypes) ? (rawValue as any[]).map(mapping.transform) : mapping.transform(rawValue)
+      : rawValue;
 
     const newProperty = getPropertyName(property);
     const isPrimitiveValue = isPrimitive(value);
@@ -21,16 +25,25 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
     if (isPrimitiveValue) {
       filterQuery[newProperty] = value;
     }
-    else if (property == '$and') {
+    else if (property as LogicalQueryTypes == '$and') {
       filterQuery.$and = convertLogicalAndQuery(value, mappingMap);
     }
-    else if (property == '$or') {
+    else if (property as LogicalQueryTypes == '$or') {
       filterQuery.$or = convertLogicalOrQuery(value, mappingMap);
     }
-    else if (property == '$nor') {
+    else if (property as LogicalQueryTypes == '$nor') {
       filterQuery.$nor = convertLogicalNorQuery(value, mappingMap);
     }
-    else if (property == '$regex') {
+    else if (property as ComparisonQueryTypes == '$regex') {
+      if (isString(value) || (value instanceof RegExp)) {
+        filterQuery['$regex'] = value;
+      }
+      else {
+        filterQuery['$regex'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).pattern;
+        filterQuery['$options'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).flags;
+      }
+    }
+    else if (property as ComparisonQueryTypes == '$in') {
       if (isString(value) || (value instanceof RegExp)) {
         filterQuery['$regex'] = value;
       }
