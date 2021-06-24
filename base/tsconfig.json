@@ -7,7 +7,7 @@
       "esnext",
       "dom"
     ],
-    "target": "es2021",
+    "target": "es2020",
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,

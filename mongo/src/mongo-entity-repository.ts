@@ -105,37 +105,37 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
   }
 
-  async loadMany<U extends T = T>(ids: string[], options?: QueryOptions<T | U>): Promise<U[]> {
+  async loadMany<U extends T = T>(ids: string[], options?: QueryOptions<U>): Promise<U[]> {
     const entities = await this.baseRepository.loadManyById(ids, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return entities.map((entity) => this.transformer.untransform(entity) as U);
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async *loadManyCursor<U extends T = T>(ids: string[], options?: QueryOptions<T | U>): AsyncIterableIterator<U> {
+  async *loadManyCursor<U extends T = T>(ids: string[], options?: QueryOptions<U>): AsyncIterableIterator<U> {
     for await (const entity of this.baseRepository.loadManyByIdWithCursor(ids, convertOptions(options as QueryOptions<T>, this.transformerMappingMap))) {
       yield this.transformer.untransform(entity) as U;
     }
   }
 
-  async loadByFilter<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): Promise<U> {
+  async loadByFilter<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.loadByFilter(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilter<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): Promise<U | undefined> {
+  async tryLoadByFilter<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.tryLoadByFilter(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
   }
 
-  async loadManyByFilter<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): Promise<U[]> {
+  async loadManyByFilter<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U[]> {
     const transformedFilter = this.transformFilter(filter);
     const entities = await this.baseRepository.loadManyByFilter(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return entities.map(this.transformer.untransform) as U[];
   }
 
-  async *loadManyByFilterCursor<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): AsyncIterableIterator<U> {
+  async *loadManyByFilterCursor<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): AsyncIterableIterator<U> {
     const transformedFilter = this.transformFilter(filter);
 
     for await (const entity of this.baseRepository.loadManyByFilterWithCursor(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap))) {
@@ -143,46 +143,46 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     }
   }
 
-  async loadAll<U extends T = T>(options?: QueryOptions<T | U>): Promise<U[]> {
+  async loadAll<U extends T = T>(options?: QueryOptions<U>): Promise<U[]> {
     const entities = await this.baseRepository.loadManyByFilter({}, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return entities.map((entity) => this.transformer.untransform(entity) as U);
   }
 
-  async *loadAllCursor<U extends T = T>(options?: QueryOptions<T | U>): AsyncIterableIterator<U> {
+  async *loadAllCursor<U extends T = T>(options?: QueryOptions<U>): AsyncIterableIterator<U> {
     for await (const entity of this.baseRepository.loadManyByFilterWithCursor({}, convertOptions(options as QueryOptions<T>, this.transformerMappingMap))) {
       yield this.transformer.untransform(entity) as U;
     }
   }
 
   async loadAndDelete<U extends T = T>(id: string): Promise<U> {
-    return this.loadByFilterAndDelete({ id } as Query<T | U>);
+    return this.loadByFilterAndDelete({ id } as Query<U>);
   }
 
   async tryLoadAndDelete<U extends T = T>(id: string): Promise<U | undefined> {
-    return this.tryLoadByFilterAndDelete({ id } as Query<T | U>);
+    return this.tryLoadByFilterAndDelete({ id } as Query<U>);
   }
 
-  async loadByFilterAndDelete<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): Promise<U> {
+  async loadByFilterAndDelete<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.loadByFilterAndDelete(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilterAndDelete<U extends T = T>(filter: Query<T | U>, options?: QueryOptions<T | U>): Promise<U | undefined> {
+  async tryLoadByFilterAndDelete<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const entity = await this.baseRepository.tryLoadByFilterAndDelete(transformedFilter, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
     return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
   }
 
   async loadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U> {
-    return this.loadByFilterAndPatch({ id } as Query<T | U>, patch, includePatch);
+    return this.loadByFilterAndPatch({ id } as Query<U>, patch, includePatch);
   }
 
   async tryLoadAndPatch<U extends T = T>(id: string, patch: EntityPatch<U>, includePatch: boolean): Promise<U | undefined> {
-    return this.tryLoadByFilterAndPatch({ id } as Query<T | U>, patch, includePatch);
+    return this.tryLoadByFilterAndPatch({ id } as Query<U>, patch, includePatch);
   }
 
-  async loadByFilterAndPatch<U extends T = T>(filter: Query<T | U>, patch: EntityPatch<U>, includePatch: boolean, options?: QueryOptions<T | U>): Promise<U> {
+  async loadByFilterAndPatch<U extends T = T>(filter: Query<U>, patch: EntityPatch<U>, includePatch: boolean, options?: QueryOptions<U>): Promise<U> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
     const loadOptions = convertOptions(options as QueryOptions<T>, this.transformerMappingMap) ?? {};
@@ -191,7 +191,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.transformer.untransform(entity) as U;
   }
 
-  async tryLoadByFilterAndPatch<U extends T = T>(filter: Query<T | U>, patch: EntityPatch<U>, includePatch: boolean, options?: QueryOptions<T | U>): Promise<U | undefined> {
+  async tryLoadByFilterAndPatch<U extends T = T>(filter: Query<U>, patch: EntityPatch<U>, includePatch: boolean, options?: QueryOptions<U>): Promise<U | undefined> {
     const transformedFilter = this.transformFilter(filter);
     const update = this.transformPatch(patch);
     const loadOptions = convertOptions(options as QueryOptions<T>, this.transformerMappingMap) ?? {};
@@ -204,7 +204,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.has(id);
   }
 
-  async hasByFilter<U extends T>(filter: Query<T | U>): Promise<boolean> {
+  async hasByFilter<U extends T>(filter: Query<U>): Promise<boolean> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.hasByFilter(transformedFilter);
   }
@@ -221,7 +221,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.countByFilter({}, { estimate: allowEstimation });
   }
 
-  async countByFilter<U extends T>(filter: Query<T | U>, allowEstimation: boolean = false): Promise<number> {
+  async countByFilter<U extends T>(filter: Query<U>, allowEstimation: boolean = false): Promise<number> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.countByFilter(transformedFilter, { estimate: allowEstimation });
   }
@@ -243,7 +243,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return matchedCount;
   }
 
-  async patchByFilter<U extends T = T>(filter: Query<T | U>, patch: EntityPatch<U>): Promise<boolean> {
+  async patchByFilter<U extends T = T>(filter: Query<U>, patch: EntityPatch<U>): Promise<boolean> {
     const transformedFilter = this.transformFilter(filter);
     const transformedPatch = this.transformPatch(patch);
 
@@ -251,7 +251,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return matchedCount > 0;
   }
 
-  async patchManyByFilter<U extends T = T>(filter: Query<T | U>, patch: EntityPatch<U>): Promise<number> {
+  async patchManyByFilter<U extends T = T>(filter: Query<U>, patch: EntityPatch<U>): Promise<number> {
     const transformedFilter = this.transformFilter(filter);
     const transformedPatch = this.transformPatch(patch);
 
@@ -298,17 +298,17 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
     return this.baseRepository.deleteManyById(ids);
   }
 
-  async deleteByFilter<U extends T = T>(filter: Query<T | U>): Promise<boolean> {
+  async deleteByFilter<U extends T = T>(filter: Query<U>): Promise<boolean> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteByFilter(transformedFilter);
   }
 
-  async deleteManyByFilter<U extends T = T>(filter: Query<T | U>): Promise<number> {
+  async deleteManyByFilter<U extends T = T>(filter: Query<U>): Promise<number> {
     const transformedFilter = this.transformFilter(filter);
     return this.baseRepository.deleteManyByFilter(transformedFilter);
   }
 
-  private transformFilter<U extends T = T>(filter: Query<T | U>): FilterQuery<TDb> {
+  private transformFilter<U extends T = T>(filter: Query<U>): FilterQuery<TDb> {
     return convertQuery(filter, this.transformerMappingMap);
   }
 
