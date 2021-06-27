@@ -110,7 +110,7 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
     }
 
-    const sort: SortCombinations[] = cursorData?.sort ?? options?.sort?.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites)) ?? [];
+    const sort: SortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites)) ?? [];
 
     (search.sort as ElasticSort | undefined) = sort;
     search.from = options?.skip;
@@ -124,7 +124,7 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
     const totalIsLowerBound = response.body.hits.total.relation == 'gte';
     const cursor = (hits.length > 0) && (isDefined(hits[hits.length - 1]?.sort)) ? serializeCursor(queryBody, sort, { limit: search.size }, hits[hits.length - 1]!.sort) : undefined;
 
-    const result: SearchResult<T> = { total: response.body.hits.total.value, milliseconds: response.body.took, totalIsLowerBound, items: resultItems, cursor };
+    const result: SearchResult<T> = { total: response.body.hits.total.value, milliseconds: response.body.took, totalIsLowerBound, cursor, items: resultItems };
     return result;
   }
 
