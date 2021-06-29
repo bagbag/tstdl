@@ -19,15 +19,14 @@ export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | Async
 
   if (!instances.has(type)) {
     const instanceOrPromise = builder();
+    instances.set(type, instanceOrPromise);
 
     if (instanceOrPromise instanceof Promise) {
       return asyncSingleton(instances, type, instanceOrPromise);
     }
-
-    instances.set(type, instanceOrPromise);
   }
 
-  return instances.get(type) as T;
+  return instances.get(type) as T | Promise<T>;
 }
 
 async function asyncSingleton<T>(instances: Map<any, any>, type: any, promise: Promise<T>): Promise<T> {
