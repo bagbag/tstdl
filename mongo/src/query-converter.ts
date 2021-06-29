@@ -8,6 +8,7 @@ import type { FilterQuery } from './types';
 
 const arrayTransformationsKeys: ComparisonQueryTypes[] = ['$in', '$nin'];
 
+// eslint-disable-next-line max-lines-per-function, max-statements
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>): FilterQuery<TDb> {
   const filterQuery: FilterQuery<any> = {};
 

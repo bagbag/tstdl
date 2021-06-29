@@ -1,6 +1,7 @@
-import { StringMap } from '@tstdl/base/types';
+import type { StringMap } from '@tstdl/base/types';
 import { CancellationToken } from '@tstdl/base/utils/cancellation-token';
-import { Module, ModuleMetric, ModuleState } from './module';
+import type { Module, ModuleMetric } from './module';
+import { ModuleState } from './module';
 
 export abstract class ModuleBase implements Module {
   private readonly _cancellationToken: CancellationToken;
@@ -40,7 +41,7 @@ export abstract class ModuleBase implements Module {
       await this.runPromise;
       this.state = ModuleState.Stopped;
     }
-    catch (error) {
+    catch (error: unknown) {
       this.state = ModuleState.Erroneous;
       throw error;
     }

@@ -1,5 +1,5 @@
 import type { StringMap } from '@tstdl/base/types';
-import { Entity } from './entity';
+import type { Entity } from './entity';
 
 export type QueryOptions<T extends Entity = Entity> = {
   sort?: Sort<T>[],
@@ -7,8 +7,7 @@ export type QueryOptions<T extends Entity = Entity> = {
   limit?: number
 };
 
-
-export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery);
+export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery<T>);
 
 export type LogicalQuery<T extends Entity = Entity> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
