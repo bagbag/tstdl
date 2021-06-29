@@ -214,8 +214,8 @@ export class HttpClient {
       modifiedOptions = { ...options, parameters: parametersRest as HttpRequestOptions['parameters'] };
     }
 
-    if (isDefined(options.parameters)) {
-      for (const [key, valueOrValues] of Object.entries(options.parameters)) {
+    if (isDefined(modifiedOptions.parameters)) {
+      for (const [key, valueOrValues] of Object.entries(modifiedOptions.parameters)) {
         if (Array.isArray(valueOrValues)) {
           for (const value of valueOrValues) {
             uri.searchParams.append(key, value);
