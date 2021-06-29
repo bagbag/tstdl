@@ -46,16 +46,16 @@ export interface HttpClientAdapter {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
-  private static instance?: HttpClient;
+  private static _instance?: HttpClient;
 
   private readonly adapter: HttpClientAdapter;
 
-  static get global(): HttpClient {
-    if (isUndefined(this.instance)) {
+  static get instance(): HttpClient {
+    if (isUndefined(this._instance)) {
       throw new Error('global instance not configured');
     }
 
-    return this.instance;
+    return this._instance;
   }
 
   constructor(adapter: HttpClientAdapter) {
@@ -63,7 +63,7 @@ export class HttpClient {
   }
 
   static configureGlobalInstance(adapter: HttpClientAdapter): void {
-    this.instance = new HttpClient(adapter);
+    this._instance = new HttpClient(adapter);
   }
 
   async head<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
