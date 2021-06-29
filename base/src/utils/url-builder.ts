@@ -13,7 +13,8 @@ type UrlBuilderPart = {
   value: string
 };
 
-type UrlBuilderParameters = StringMap<string | number | boolean | undefined>;
+type ParameterValue = string | number | boolean | undefined;
+type UrlBuilderParameters = StringMap<ParameterValue | ParameterValue[]>;
 type UrlBuilderReturnType = { parsedUrl: string, parametersRest: UrlBuilderParameters };
 
 const builderScope = Symbol('url-builder cache');
@@ -22,14 +23,12 @@ const isFullUrlRegex = /^\w+:\/\//u;
 
 export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters) => UrlBuilderReturnType {
   const parts: UrlBuilderPart[] = [];
-
   const isFullUrl = isFullUrlRegex.test(url);
 
   let parseUrl = url;
 
   if (isFullUrl) {
     const { origin, pathname } = new URL(url);
-
     parts.push({ type: UrlBuilderPartType.Literal, value: origin });
     parseUrl = pathname;
   }
@@ -48,7 +47,8 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
     }
   }
 
-  return function buildUrl(parameters: StringMap<string | number | boolean | undefined> = {}): UrlBuilderReturnType {
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  return function buildUrl(parameters: UrlBuilderParameters = {}): UrlBuilderReturnType {
     let parsedUrl = '';
     let parametersRest = parameters;
 
@@ -63,7 +63,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
 
         const { [part.value]: value, ...rest } = parametersRest;
         parametersRest = rest;
-        parsedUrl += value;
+        parsedUrl += Array.isArray(value) ? value.join(',') : value;
       }
     }
 

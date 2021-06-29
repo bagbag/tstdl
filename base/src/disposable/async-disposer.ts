@@ -1,4 +1,4 @@
-import { MultiError } from '../error/multi-error';
+import { MultiError } from '../error/multi.error';
 import { DeferredPromise } from '../promise';
 import { CancellationToken } from '../utils';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';

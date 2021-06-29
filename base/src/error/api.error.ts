@@ -1,4 +1,4 @@
-import { CustomError } from './custom-error';
+import { CustomError } from './custom.error';
 import type { ErrorResponse } from '../api/response';
 
 export class ApiError extends CustomError {

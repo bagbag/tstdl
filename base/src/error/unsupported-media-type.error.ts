@@ -1,4 +1,4 @@
-import { CustomError } from './custom-error';
+import { CustomError } from './custom.error';
 
 export class UnsupportedMediaTypeError extends CustomError {
   static readonly errorName = 'UnsupportedMediaTypeError';

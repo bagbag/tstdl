@@ -1,6 +1,6 @@
 import { BadRequestError, ForbiddenError, MaxBytesExceededError, NotFoundError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
-import { ApiError } from '../error/api';
-import { ValidationError } from '../error/validation';
+import { ApiError } from '../error/api.error';
+import { ValidationError } from '../error/validation.error';
 import { registerErrorHandler } from './response';
 
 type SerializedValidationError = {
