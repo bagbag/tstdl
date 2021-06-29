@@ -309,7 +309,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   private transformFilter<U extends T = T>(filter: Query<U>): FilterQuery<TDb> {
-    return convertQuery(filter, this.transformerMappingMap);
+    return convertQuery(filter, this.transformerMappingMap as TransformerMappingMap<U, TDb>);
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateQuery<TDb> {
