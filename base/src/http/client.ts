@@ -1,5 +1,5 @@
 import type { Readable } from 'stream';
-import type { Json, StringMap } from '../types';
+import type { Json, StringMap, UndefinableJson } from '../types';
 import { buildUrl, isDefined, isUndefined } from '../utils';
 
 export type HttpRequestOptions = {
@@ -79,9 +79,9 @@ export class HttpClient {
     return response.body;
   }
 
-  async getJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+  async getJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
     const response = await this.call('get', url, HttpResponseType.Json, options);
-    return response.body;
+    return response.body as T;
   }
 
   async getBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
@@ -103,9 +103,9 @@ export class HttpClient {
     return response.body;
   }
 
-  async postJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+  async postJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
     const response = await this.call('post', url, HttpResponseType.Json, options);
-    return response.body;
+    return response.body as T;
   }
 
   async postBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
@@ -127,9 +127,9 @@ export class HttpClient {
     return response.body;
   }
 
-  async putJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+  async putJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
     const response = await this.call('put', url, HttpResponseType.Json, options);
-    return response.body;
+    return response.body as T;
   }
 
   async putBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
@@ -151,9 +151,9 @@ export class HttpClient {
     return response.body;
   }
 
-  async patchJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+  async patchJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
     const response = await this.call('patch', url, HttpResponseType.Json, options);
-    return response.body;
+    return response.body as T;
   }
 
   async patchBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
@@ -175,9 +175,9 @@ export class HttpClient {
     return response.body;
   }
 
-  async deleteJson(url: string, options?: HttpRequestOptions): Promise<Json> {
+  async deleteJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
     const response = await this.call('delete', url, HttpResponseType.Json, options);
-    return response.body;
+    return response.body as T;
   }
 
   async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
