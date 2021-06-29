@@ -1,24 +1,20 @@
-import { isDefined, isObject, isPrimitive, isString } from '@tstdl/base/utils';
+import { isDefined, isObject, isPrimitive, isString, isUndefined } from '@tstdl/base/utils';
 import type { Entity } from '@tstdl/database';
-import type { ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '@tstdl/database/query';
+import type { ComparisonInQuery, ComparisonNotInQuery, ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '@tstdl/database/query';
 import { allComparisonQueryTypes } from '@tstdl/database/query';
 import type { SortArrayItem } from './mongo-base.repository';
 import type { TransformerMappingMap } from './mongo-entity-repository';
 import type { FilterQuery } from './types';
 
-const arrayTransformationsKeys: ComparisonQueryTypes[] = ['$in', '$nin'];
-
 // eslint-disable-next-line max-lines-per-function, max-statements
-export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>): FilterQuery<TDb> {
+export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>, parentRawProperty?: string): FilterQuery<TDb> {
   const filterQuery: FilterQuery<any> = {};
 
   for (const [rawProperty, rawValue] of Object.entries(query)) {
     const mapping = mappingMap.get(rawProperty as keyof T);
 
     const property = isDefined(mapping) ? getPropertyName(mapping.key as string) : getPropertyName(rawProperty);
-    const value = isDefined(mapping)
-      ? arrayTransformationsKeys.includes(property as ComparisonQueryTypes) ? (rawValue as any[]).map(mapping.transform) : mapping.transform(rawValue)
-      : rawValue;
+    const value = isDefined(mapping) ? mapping.transform(rawValue) : rawValue;
 
     const newProperty = getPropertyName(property);
     const isPrimitiveValue = isPrimitive(value);
@@ -45,19 +41,18 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
       }
     }
     else if (property as ComparisonQueryTypes == '$in') {
-      if (isString(value) || (value instanceof RegExp)) {
-        filterQuery['$regex'] = value;
-      }
-      else {
-        filterQuery['$regex'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).pattern;
-        filterQuery['$options'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).flags;
-      }
+      const innerMapping = mappingMap.get(parentRawProperty as keyof T);
+      filterQuery['$in'] = isUndefined(innerMapping) ? value : (value as ComparisonInQuery).$in.map(innerMapping.transform);
+    }
+    else if (property as ComparisonQueryTypes == '$nin') {
+      const innerMapping = mappingMap.get(parentRawProperty as keyof T);
+      filterQuery['$nin'] = isUndefined(innerMapping) ? value : (value as ComparisonNotInQuery).$nin.map(innerMapping.transform);
     }
     else if ((allComparisonQueryTypes as string[]).includes(property)) {
       filterQuery[newProperty] = value;
     }
     else if (isObject(value)) {
-      filterQuery[newProperty] = convertQuery(value, mappingMap);
+      filterQuery[newProperty] = convertQuery(value, mappingMap, rawProperty);
     }
     else {
       throw new Error(`unsupported query property ${property}`);
