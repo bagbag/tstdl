@@ -1,67 +1,57 @@
 /* eslint-disable max-statements */
 
-export function intersectSets<T>(...sets: Set<T>[]): Set<T> {
+import { compareByValueSelectionDescending } from './helpers';
+
+export function intersectSets<T>(...sets: Set<T>[]): T[] {
+  if (intersectSets.length == 0) {
+    return [];
+  }
+
+  const sortedSets = sets.sort(compareByValueSelectionDescending((set) => set.size));
+  const [smallestSet, ...otherSets] = sortedSets;
+
+  return [...smallestSet!].filter((value) => !otherSets.some((set) => !set.has(value)));
+}
+
+export function differenceSets<T>(base: Set<T>, ...sets: Set<T>[]): T[] {
+  return [...base].filter((value) => !sets.some((set) => set.has(value)));
+}
+
+export function symmetricDifferenceSets<T>(...sets: Set<T>[]): Set<T> {
   if (sets.length == 0) {
     return new Set();
   }
 
-  const intersection = new Set<T>();
-
-  const sortedSets = sets.sort((a, b) => a.size - b.size);
-  const smallestSet = sortedSets[0]!;
-
-  for (const value of smallestSet) {
-    let intersects = true;
-
-    for (let i = 1; i < sortedSets.length; i++) {
-      const set = sortedSets[i]!;
-
-      const has = set.has(value);
-      if (!has) {
-        intersects = false;
-        break;
-      }
-    }
-
-    if (intersects) {
-      intersection.add(value);
-    }
+  if (sets.length == 1) {
+    return sets[0]!;
   }
 
-  return intersection;
+  const [first, second, ...others] = sets;
+
+
+  return symmetricDifferenceSets(simpleSymmetricDifference(first!, second!), ...others);
 }
 
-export function differenceSets<T>(base: Set<T>, ...sets: Set<T>[]): Set<T> {
-  const difference = new Set<T>();
-
-  for (const value of base) {
-    let unique = true;
-
-    for (const set of sets) {
-      const has = set.has(value);
-
-      if (has) {
-        unique = false;
-        break;
-      }
-    }
-
-    if (unique) {
-      difference.add(value);
-    }
-  }
-
-  return difference;
-}
-
-export function unionSets<T>(...sets: Set<T>[]): Set<T> {
-  const union = new Set<T>();
+export function uniquesSets<T>(...sets: Set<T>[]): Set<T> {
+  const result = new Set<T>();
 
   for (const set of sets) {
     for (const value of set) {
-      union.add(value);
+      const unique = sets.every((otherSet) => (set == otherSet) || !otherSet.has(value));
+
+      if (unique) {
+        result.add(value);
+      }
     }
   }
 
-  return union;
+  return result;
+}
+
+export function unionSets<T>(...sets: Iterable<T>[]): Set<T> {
+  return new Set(sets.flatMap((set) => [...set]));
+}
+
+function simpleSymmetricDifference<T>(a: Set<T>, b: Set<T>): Set<T> {
+  return unionSets(differenceSets(a, b), differenceSets(b, a));
 }
