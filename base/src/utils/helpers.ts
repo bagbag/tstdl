@@ -3,7 +3,7 @@
 import type { O } from 'ts-toolbelt';
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
-import type { DeepArray, ExtractPropertiesOfType, StringMap } from '../types';
+import type { DeepArray, DeepFlatten, ExtractPropertiesOfType, StringMap } from '../types';
 import { currentTimestamp } from './date-time';
 import { random } from './math';
 import type { Comparator } from './sort';
@@ -301,6 +301,10 @@ function getDotNotator<T>(...keys: (string | number)[]): DotNotator<T> {
 }
 
 export function dotNotate<T>(...keys: O.Paths<T>): string {
+  return keys.join('.');
+}
+
+export function dotNotateFlat<T>(...keys: O.Paths<DeepFlatten<T>>): string {
   return keys.join('.');
 }
 
