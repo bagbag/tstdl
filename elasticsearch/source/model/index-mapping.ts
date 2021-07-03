@@ -48,7 +48,7 @@ export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase<'obje
   index?: boolean,
   dynamic?: boolean | 'strict',
   enabled?: boolean,
-  properties: { [P in keyof T]: ElasticIndexMappingItem }
+  properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
 };
 
 export type ElasticIndexMappingItem<T = any> = ElasticKeywordIndexMappingItem | ElasticTextIndexMappingItem | ElasticNumberIndexMappingItem | ElasticDateIndexMappingItem | ElasticObjectIndexMappingItem<T>;
