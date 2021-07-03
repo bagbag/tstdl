@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import type { O } from 'ts-toolbelt';
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
 import type { DeepArray, ExtractPropertiesOfType, StringMap } from '../types';
 import { currentTimestamp } from './date-time';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { isDefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -265,8 +265,6 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
   return matches;
 }
 
-type NN<T> = NonNullable<T>;
-
 export interface DotNotator<T> {
   <K extends keyof T>(key: K): DotNotator<T[K]>;
   cast<U extends T>(): DotNotator<U>;
@@ -302,25 +300,8 @@ function getDotNotator<T>(...keys: (string | number)[]): DotNotator<T> {
   return dotNotatorChild;
 }
 
-export function dotNotation<T>(
-  k1: keyof T,
-  k2?: keyof T[typeof k1],
-  k3?: keyof T[NN<typeof k1>][NN<typeof k2>],
-  k4?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>],
-  k5?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>],
-  k6?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>],
-  k7?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>],
-  k8?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>][NN<typeof k7>],
-  k9?: keyof T[NN<typeof k1>][NN<typeof k2>][NN<typeof k3>][NN<typeof k4>][NN<typeof k5>][NN<typeof k6>][NN<typeof k7>][NN<typeof k8>]
-): string;
-export function dotNotation(...keys: any[]): string {
-  for (const key of keys) {
-    if (typeof key == 'symbol') {
-      throw new Error('symbol not supported');
-    }
-  }
-
-  return keys.filter((key) => key != undefined).join('.');
+export function dotNotate<T>(...keys: O.Paths<T>): string {
+  return keys.join('.');
 }
 
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {

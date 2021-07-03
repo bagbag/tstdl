@@ -1,4 +1,4 @@
-import type { StringMap } from '@tstdl/base/types';
+import type { Flatten, StringMap } from '@tstdl/base/types';
 import type { Entity } from './entity';
 
 export type QueryOptions<T extends Entity = Entity> = {
@@ -57,36 +57,38 @@ export type LogicalNorQuery<T extends Entity = Entity> = {
   $nor: Query<T>[]
 };
 
+export type ComparisonValue<T> = T | Flatten<T>;
+
 export type ComparisonEqualsQuery<T = any> = {
-  $eq: T
+  $eq: ComparisonValue<T>
 };
 
 export type ComparisonNotEqualsQuery<T = any> = {
-  $neq: T
+  $neq: ComparisonValue<T>
 };
 
 export type ComparisonInQuery<T = any> = {
-  $in: T[]
+  $in: ComparisonValue<T>[]
 };
 
 export type ComparisonNotInQuery<T = any> = {
-  $nin: T[]
+  $nin: ComparisonValue<T>[]
 };
 
 export type ComparisonGreaterThanQuery<T = any> = {
-  $gt: T
+  $gt: ComparisonValue<T>
 };
 
 export type ComparisonGreaterThanOrEqualsQuery<T = any> = {
-  $gte: T
+  $gte: ComparisonValue<T>
 };
 
 export type ComparisonLessThanQuery<T = any> = {
-  $lt: T
+  $lt: ComparisonValue<T>
 };
 
 export type ComparisonLessThanOrEqualsQuery<T = any> = {
-  $lte: T
+  $lte: ComparisonValue<T>
 };
 
 export type ComparisonRegexQuery = {

@@ -38,6 +38,12 @@ export type Of<T> = T;
 export type ExtractPropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? T[P] : never };
 export type PropertiesOfType<T, U> = keyof ExtractPropertiesOfType<T, U>;
 
+export type Flatten<T> = T extends readonly (infer R)[] ? R : T;
+export type DeepFlatten<T> = T extends readonly (infer R)[]
+  ? R
+  : T extends Record<any, any> ? { [P in keyof T]: DeepFlatten<T[P]> }
+  : T;
+
 export type DeepArray<T> = (T | DeepArray<T>)[];
 
 export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;

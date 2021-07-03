@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { StringMap, TypedOmit } from '@tstdl/base/types';
+import type { DeepFlatten, StringMap, TypedOmit } from '@tstdl/base/types';
 import type { Entity } from '@tstdl/database';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = {
-  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticIndexMappingItem<T[P]> }
+  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticIndexMappingItem<DeepFlatten<T[P]>> }
 };
 
 export type ElasticIndexMappingItemBase<Type extends string = string> = {

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.64.15",
+  "version": "0.64.16",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -12,11 +12,12 @@
   },
   "dependencies": {
     "luxon": "1.27",
-    "rxjs": "7.1"
+    "rxjs": "7.1",
+    "ts-toolbelt": "^9.6.0"
   },
   "devDependencies": {
     "@types/luxon": "1",
-    "@types/node": "15",
+    "@types/node": "16",
     "@typescript-eslint/eslint-plugin": "4",
     "@typescript-eslint/parser": "4",
     "eslint": "7",
