@@ -68,6 +68,7 @@ module.exports = {
     'init-declarations': 'off',
     'line-comment-position': 'off',
     'linebreak-style': ['error', 'unix'],
+    'lines-around-comment': 'off',
     'lines-between-class-members': 'off',
     'max-len': ['off', { code: 150 }],
     'max-lines': 'off',

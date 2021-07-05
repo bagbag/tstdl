@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/unified-signatures */
 /* eslint-disable @typescript-eslint/adjacent-overload-signatures */
 
-import { Readable, ReadableOptions } from 'stream';
-import { Data, NonObjectMode, NonObjectModeTypes } from './stream-helper-types';
+import type { ReadableOptions } from 'stream';
+import { Readable } from 'stream';
+import type { Data, NonObjectMode, NonObjectModeTypes } from './stream-helper-types';
 
 interface TypedReadableOverrides<T> {
   read(size?: T extends NonObjectMode ? number : undefined): Data<T> | null;
