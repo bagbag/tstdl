@@ -1,4 +1,4 @@
-import { isDefined, zBase32Encode } from '@tstdl/base/utils';
+import { isNotNull, zBase32Encode } from '@tstdl/base/utils';
 import * as Crypto from 'crypto';
 
 export type CryptionOptions = {
@@ -58,16 +58,16 @@ async function _encrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
       const chunks: Buffer[] = [];
 
       cipher.on('readable', () => {
-        let chunk: Buffer;
+        let chunk: Buffer | null;
 
         do {
-          chunk = cipher.read() as Buffer;
+          chunk = cipher.read() as Buffer | null;
 
-          if (isDefined(chunk)) {
+          if (isNotNull(chunk)) {
             chunks.push(chunk);
           }
         }
-        while (isDefined(chunk));
+        while (isNotNull(chunk));
       });
 
       cipher.on('end', () => {
@@ -116,16 +116,16 @@ async function _decrypt(input: Buffer | Uint8Array, options: CryptionOptions): P
       const chunks: Buffer[] = [];
 
       decipher.on('readable', () => {
-        let chunk: Buffer;
+        let chunk: Buffer | null;
 
         do {
-          chunk = decipher.read() as Buffer;
+          chunk = decipher.read() as Buffer | null;
 
-          if (isDefined(chunk)) {
+          if (isNotNull(chunk)) {
             chunks.push(chunk);
           }
         }
-        while (isDefined(chunk));
+        while (isNotNull(chunk));
       });
 
       decipher.on('end', () => {
