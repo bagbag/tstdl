@@ -6,6 +6,7 @@ export type ElasticIndexSettings = {
   refresh_interval?: string | number,
   number_of_shards?: number,
   number_of_replicas?: number,
+  max_ngram_diff?: number,
   analysis?: {
     analyzer?: StringMap<ElasticAnalyzer>,
     tokenizer?: StringMap<ElasticTokenizer>,
