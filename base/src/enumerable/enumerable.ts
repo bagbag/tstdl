@@ -1,4 +1,5 @@
 import type { Comparator } from '../utils';
+import { isNotNullOrUndefined } from '../utils';
 import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
 import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
@@ -75,8 +76,8 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(filtered);
   }
 
-  filterUndefined(): Enumerable<NonNullable<T>> {
-    return this.filter((item): item is NonNullable<T> => item != undefined);
+  filterNullOrUndefined(): Enumerable<NonNullable<T>> {
+    return this.filter((item): item is NonNullable<T> => isNotNullOrUndefined(item));
   }
 
   first<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
