@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { O } from 'ts-toolbelt';
 import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
-import type { DeepArray, DeepFlatten, ExtractPropertiesOfType, StringMap } from '../types';
+import type { DeepArray, StringMap } from '../types';
 import { currentTimestamp } from './date-time';
 import { random } from './math';
 import type { Comparator } from './sort';
+import { assertString, assertStringPass, isUndefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -265,47 +265,34 @@ export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
   return matches;
 }
 
-export interface DotNotator<T> {
-  <K extends keyof T>(key: K): DotNotator<T[K]>;
-  cast<U extends T>(): DotNotator<U>;
-  array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never>;
-  notate(): string;
-}
+export function propertyNameOf<T extends object>(expression: (instance: T) => any, { deep = true, flattenArray = false }: { deep?: boolean, flattenArray?: boolean } = {}): string {
+  let name: string | undefined;
 
-export function dotNotator<T>(): DotNotator<T> {
-  return getDotNotator();
-}
+  const { proxy, revoke } = Proxy.revocable<T>({} as T, {
+    get: (_target, property): any => {
+      assertString(property, `property must be a string, but was ${property.toString()}`);
 
-function getDotNotator<T>(...keys: (string | number)[]): DotNotator<T> {
-  const dotNotatorChild = <K extends keyof T>(key: K): DotNotator<T[K]> => getDotNotator<T[K]>(...keys, key as string);
+      const ignore = (flattenArray && (/\d+/u).test(property));
 
-  dotNotatorChild.array = function array<K extends keyof ExtractPropertiesOfType<T, ArrayLike<any>>>(key: K): DotNotator<ExtractPropertiesOfType<T, ArrayLike<any>>[K] extends (infer U)[] ? U : never> {
-    return getDotNotator(...keys, key as string);
-  };
-
-  dotNotatorChild.cast = function cast<U extends T>(): DotNotator<U> {
-    return getDotNotator(...keys);
-  };
-
-  dotNotatorChild.notate = function notate() {
-    for (const key of keys) {
-      if (typeof key == 'symbol') {
-        throw new Error('symbol not supported');
+      if (ignore) {
+        return proxy;
       }
+
+      if (deep) {
+        name = isUndefined(name) ? property : `${name}.${property}`;
+      }
+      else {
+        name = property;
+      }
+
+      return proxy;
     }
+  });
 
-    return keys.join('.');
-  };
+  expression(proxy);
+  revoke();
 
-  return dotNotatorChild;
-}
-
-export function dotNotate<T>(...keys: O.Paths<T>): string {
-  return keys.join('.');
-}
-
-export function dotNotateFlat<T>(...keys: O.Paths<DeepFlatten<T>>): string {
-  return keys.join('.');
+  return assertStringPass(name, 'invalid expression');
 }
 
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {

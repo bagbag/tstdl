@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.64.22",
+  "version": "0.64.23",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -12,8 +12,7 @@
   },
   "dependencies": {
     "luxon": "1.27",
-    "rxjs": "7.2",
-    "ts-toolbelt": "^9.6.0"
+    "rxjs": "7.2"
   },
   "devDependencies": {
     "@types/luxon": "1",
