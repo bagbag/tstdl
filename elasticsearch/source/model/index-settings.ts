@@ -8,6 +8,7 @@ export type ElasticIndexSettings = {
   number_of_replicas?: number,
   analysis?: {
     analyzer?: StringMap<ElasticAnalyzer>,
+    tokenizer?: StringMap<ElasticTokenizer>,
     filter?: StringMap<ElasticFilter>
   }
 };
@@ -33,7 +34,26 @@ export type ElasticStemmerFilter = ElasticFilterBase<'stemmer'> & {
 
 export type ElasticEdgeNGramFilter = ElasticFilterBase<'edge_ngram'> & {
   min_gram?: number,
-  max_gram?: number
+  max_gram?: number,
+  preserve_original?: boolean
 };
 
-export type ElasticFilter = ElasticStemmerFilter | ElasticEdgeNGramFilter;
+export type ElasticLengthFilter = ElasticFilterBase<'length'> & {
+  min?: number,
+  max?: number
+};
+
+export type ElasticFilter = ElasticStemmerFilter | ElasticEdgeNGramFilter | ElasticLengthFilter;
+
+export type ElasticTokenizerBase<Type extends string> = {
+  type: Type
+};
+
+export type ElasticNGramTokenizer = ElasticTokenizerBase<'ngram'> & {
+  min_gram?: number,
+  max_gram?: number,
+  token_chars?: ('letter' | 'digit' | 'whitespace' | 'punctuation' | 'symbol' | 'custom')[],
+  custom_token_chars?: string
+};
+
+export type ElasticTokenizer = ElasticNGramTokenizer;
