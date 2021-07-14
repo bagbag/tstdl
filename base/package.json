@@ -1,39 +1,40 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.5",
+  "version": "0.65.9",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "rm -rf dist && ttsc",
+    "build:prod": "npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm publish dist/"
+    "pub": "npm run build:prod && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "1.27",
+    "luxon": "1",
     "rxjs": "^7.2.0"
   },
   "devDependencies": {
-    "@types/koa__router": "^8.0.7",
+    "@types/koa__router": "8.0",
     "@types/luxon": "1",
-    "@types/minio": "^7.0.8",
+    "@types/minio": "7.0",
     "@types/node": "16",
-    "@types/yup": "^0.29.13",
+    "@types/yup": "0.29",
     "@typescript-eslint/eslint-plugin": "4",
     "@typescript-eslint/parser": "4",
     "eslint": "7",
-    "ttypescript": "^1.5.12",
+    "ttypescript": "1.5",
     "typescript": "4.3",
-    "typescript-transform-paths": "^3.1.0"
+    "typescript-transform-paths": "3.1"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "7.13",
-    "@koa/router": "^10.0.0",
+    "@koa/router": "10.0",
     "got": "11.8",
     "koa": "2.13",
     "minio": "7.0",
     "mongodb": "4.0",
-    "superstruct": "^0.15.2"
+    "superstruct": "0.15"
   }
 }

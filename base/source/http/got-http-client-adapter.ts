@@ -117,7 +117,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
           body: error.response.body as HttpResponseTypeValueType<any>
         };
 
-        throw new HttpError(url, method, options ?? {}, response);
+        throw new HttpError(url, method, options, response, error);
       }
 
       throw error;
@@ -133,17 +133,16 @@ function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpReque
     timeout
   };
 
-
-  if (body != undefined) {
+  if (isDefined(body)) {
     const binary = body.buffer ?? body.readable ?? body.text;
 
-    if (binary != undefined) {
+    if (isDefined(binary)) {
       options.body = binary;
     }
-    else if (body.json != undefined) {
+    else if (isDefined(body.json)) {
       options.body = JSON.stringify(body.json);
     }
-    else if (body.form != undefined) {
+    else if (isDefined(body.form)) {
       options.body = QueryString.stringify(body.form);
     }
   }

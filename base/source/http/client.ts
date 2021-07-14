@@ -26,7 +26,7 @@ export enum HttpResponseType {
 
 export type HttpResponseTypeValueType<T extends HttpResponseType> =
   T extends HttpResponseType.Text ? string
-  : T extends HttpResponseType.Buffer ? Buffer
+  : T extends HttpResponseType.Buffer ? ArrayBuffer
   : T extends HttpResponseType.Json ? Json
   : Readable;
 
@@ -84,7 +84,7 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async getBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+  async getBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
     const response = await this.call('get', url, HttpResponseType.Buffer, options);
     return response.body;
   }
@@ -108,7 +108,7 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async postBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+  async postBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
     const response = await this.call('post', url, HttpResponseType.Buffer, options);
     return response.body;
   }
@@ -132,7 +132,7 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async putBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+  async putBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
     const response = await this.call('put', url, HttpResponseType.Buffer, options);
     return response.body;
   }
@@ -156,7 +156,7 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async patchBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+  async patchBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
     const response = await this.call('patch', url, HttpResponseType.Buffer, options);
     return response.body;
   }
@@ -180,7 +180,7 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<Buffer> {
+  async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
     const response = await this.call('delete', url, HttpResponseType.Buffer, options);
     return response.body;
   }
