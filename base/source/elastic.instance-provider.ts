@@ -5,7 +5,7 @@ import type { Type } from '#/types';
 import { assert, isDefined, singleton } from '#/utils';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
-import type { ElasticSearchIndex } from './search-index';
+import type { ElasticSearchIndex } from './search-index/elastic/search-index';
 
 type ElasticSearchIndexStatic<T extends Entity> = Type<ElasticSearchIndex<T>, [Client, string, Logger]>;
 
