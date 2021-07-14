@@ -10,7 +10,6 @@
     "pub": "npm run build && cp package.json package-lock.json dist/ && npm publish dist/"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "7.13",
     "@tstdl/base": "^0.64.22",
     "@tstdl/search-index": "^0.4.13",
     "@tstdl/server": "^0.35.9"

@@ -62,6 +62,7 @@ module.exports = {
     'eqeqeq': 'off',
     'func-style': ['error', 'declaration', { allowArrowFunctions: true }],
     'function-call-argument-newline': ['warn', 'consistent'],
+    'function-paren-newline': ['warn', 'consistent'],
     'generator-star-spacing': ['off', { before: false, after: true }],
     'id-length': 'off',
     'indent': 'off',
@@ -86,6 +87,7 @@ module.exports = {
     'no-negated-condition': 'off',
     'no-nested-ternary': 'off',
     'no-plusplus': ['off', { allowForLoopAfterthoughts: true }],
+    'no-promise-executor-return': 'off',
     'no-ternary': 'off',
     'no-undefined': 'off',
     'no-underscore-dangle': 'off',
@@ -96,6 +98,7 @@ module.exports = {
     'operator-linebreak': ['warn', 'before'],
     'padded-blocks': ['error', 'never'],
     'prefer-destructuring': 'off',
+    'prefer-named-capture-group': 'off',
     'quote-props': ['error', 'as-needed'],
     'sort-imports': ['off', { ignoreCase: true }],
     'sort-keys': 'off',
@@ -104,11 +107,7 @@ module.exports = {
       {
         selector: 'default',
         format: ['camelCase'],
-        leadingUnderscore: 'allow'
-      },
-      {
-        selector: 'variable',
-        format: ['camelCase', 'UPPER_CASE']
+        leadingUnderscore: 'allowSingleOrDouble'
       },
       {
         selector: 'enumMember',

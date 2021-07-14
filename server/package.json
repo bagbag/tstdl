@@ -13,8 +13,6 @@
     "@koa/router": "^10.0.0",
     "@tstdl/base": "^0.64.22",
     "@tstdl/database": "^0.17.35",
-    "got": "11.8",
-    "koa": "2.13",
     "luxon": "1",
     "superstruct": "^0.15.2",
     "yup": "0.31"
@@ -32,6 +30,8 @@
     "typescript": "4.3"
   },
   "peerDependencies": {
-    "minio": "7.0"
+    "minio": "7.0",
+    "got": "11.8",
+    "koa": "2.13"
   }
 }

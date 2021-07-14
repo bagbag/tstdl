@@ -4,28 +4,7 @@
       "path": "base"
     },
     {
-      "path": "client"
-    },
-    {
       "path": "angular"
-    },
-    {
-      "path": "server"
-    },
-    {
-      "path": "database"
-    },
-    {
-      "path": "search-index"
-    },
-    {
-      "path": "mongo"
-    },
-    {
-      "path": "elasticsearch"
-    },
-    {
-      "path": "redis"
     },
     {
       "name": "root",
