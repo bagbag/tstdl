@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.1",
+  "version": "0.65.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rm -rf dist && ttsc",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.json dist/ && npm publish dist/"
+    "pub": "npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.json tsconfig.base.json tsconfig.server.json dist/ && npm publish dist/"
   },
   "dependencies": {
     "luxon": "1.27",
