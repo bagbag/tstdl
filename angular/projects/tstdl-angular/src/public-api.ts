@@ -1,4 +1,5 @@
 export * from './lib/components';
+export * from './lib/http';
 export * from './lib/pipes';
 export * from './lib/services';
 export * from './lib/tstdl-angular.module';

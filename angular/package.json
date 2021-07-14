@@ -4,9 +4,10 @@
   "scripts": {
     "ng": "ng",
     "prepare": "sed -i '/noImplicitOverride/d' node_modules/@tstdl/base/tsconfig.json",
-    "start": "npm run prepare && ng serve",
-    "build": "npm run prepare && ng build",
-    "pub": "npm run prepare && ng build --configuration production && npm publish dist/tstdl-angular/"
+    "start": "ng serve",
+    "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "pub": "npm run build:prod && npm publish dist/tstdl-angular/"
   },
   "private": true,
   "dependencies": {
