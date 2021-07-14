@@ -1,7 +1,0 @@
-{
-  "extends": "@tstdl/base",
-  "compilerOptions": {
-    "rootDir": "source",
-    "outDir": "dist"
-  }
-}
