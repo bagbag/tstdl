@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.4",
+  "version": "0.65.5",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -15,7 +15,6 @@
     "rxjs": "^7.2.0"
   },
   "devDependencies": {
-    "@koa/router": "^10.0.0",
     "@types/koa__router": "^8.0.7",
     "@types/luxon": "1",
     "@types/minio": "^7.0.8",
@@ -30,6 +29,7 @@
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "7.13",
+    "@koa/router": "^10.0.0",
     "got": "11.8",
     "koa": "2.13",
     "minio": "7.0",
