@@ -18,8 +18,10 @@ import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
+const defaultMongoUrl = 'mongodb://localhost:27017';
+
 export type MongoConnection = {
-  url: string
+  url?: string
 } & Mongo.MongoClientOptions;
 
 export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
@@ -42,7 +44,7 @@ const databaseSingletonScope = Symbol('database singletons');
 const databaseCollectionSingletonScopes = new FactoryMap<string, symbol>(() => Symbol('database-collection-singletons'));
 
 let defaultDatabase = '';
-let defaultConnection: MongoConnection = { url: 'mongodb://localhost:27017' };
+let defaultConnection: MongoConnection = {};
 
 let mongoLogPrefix = 'MONGO';
 
@@ -91,7 +93,7 @@ export async function getMongoClient(connection?: MongoConnection): Promise<Mong
 
     Mongo.Logger.setCurrentLogger(logFunction);
 
-    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(combinedConnection.url, combinedConnection);
+    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(combinedConnection.url ?? defaultMongoUrl, combinedConnection);
 
     mongoClient
       .on('fullsetup', () => logger.verbose('connection setup'))

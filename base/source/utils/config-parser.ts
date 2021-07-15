@@ -1,40 +1,37 @@
+import { isUndefined } from './type-guards';
+
 export const configValidators = {
   integer: /^-?\d+$/u,
   positiveInteger: /^[1-9]\d*$/u,
   boolean: /true|false|yes|no|0|1/ui
 };
 
-export function boolean(variable: string, defaultValue: boolean): boolean {
-  const stringValue = string(variable, defaultValue ? 'true' : 'false', configValidators.boolean);
-  const lowerCased = stringValue.toLowerCase();
-  const value = ['true', 'yes', '1'].includes(lowerCased);
-
-  return value;
+export function boolean<T>(variable: string, defaultValue: T): boolean | T {
+  return string(variable, defaultValue, configValidators.boolean, (value) => ['true', 'yes', '1'].includes(value.toLowerCase()));
 }
 
-export function integer(variable: string, defaultValue: number): number {
-  const stringValue = string(variable, defaultValue.toString(), configValidators.integer);
-  const value = parseInt(stringValue, 10);
-
-  return value;
+export function integer<T>(variable: string, defaultValue: T): number | T {
+  return string(variable, defaultValue, configValidators.integer, (value) => parseInt(value, 10));
 }
 
-export function positiveInteger(variable: string, defaultValue: number): number {
-  const stringValue = string(variable, defaultValue.toString(), configValidators.positiveInteger);
-  const value = parseInt(stringValue, 10);
-
-  return value;
+export function positiveInteger<T>(variable: string, defaultValue: T): number | T {
+  return string(variable, defaultValue, configValidators.positiveInteger, (value) => parseInt(value, 10));
 }
 
-export function string(variable: string, defaultValue: string, validator?: RegExp): string {
-  // eslint-disable-next-line no-process-env
+export function string<T>(variable: string, defaultValue: T, validator?: RegExp): string | T;
+export function string<T, U>(variable: string, defaultValue: T, validator: RegExp, transformer: (value: string) => U): T | U;
+export function string<T, U>(variable: string, defaultValue: T, validator?: RegExp, transformer: (value: string) => U = (value) => value as any as U): string | T | U {
   const environmentValue = process.env[variable];
-  const value = environmentValue != undefined ? environmentValue : defaultValue;
-  const valid = validator == undefined ? true : validator.test(value);
+
+  if (isUndefined(environmentValue)) {
+    return defaultValue;
+  }
+
+  const valid = isUndefined(validator) ? true : validator.test(environmentValue);
 
   if (!valid) {
     throw new Error(`invalid value for ${variable}`);
   }
 
-  return value;
+  return transformer(environmentValue);
 }
