@@ -124,7 +124,7 @@ export async function getMongoCollection<T extends Entity, TDb extends Entity>({
   const scope = databaseCollectionSingletonScopes.get(JSON.stringify({ connection, databaseName }));
 
   return singleton(scope, collectionName, async () => {
-    const database = await getMongoDatabase(databaseName);
+    const database = await getMongoDatabase(databaseName, connection);
     const existingCollections = await database.collections();
 
     for (const collection of existingCollections) {
