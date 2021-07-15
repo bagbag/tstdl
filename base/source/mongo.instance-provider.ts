@@ -3,10 +3,8 @@ import { connect, disposer, getLogger } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
-import { assertDefined, FactoryMap, isDefined, singleton } from '#/utils';
+import { assertDefined, FactoryMap, singleton } from '#/utils';
 import * as Mongo from 'mongodb';
-import type { MongoLockEntity } from './lock/mongo';
-import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
 import { MongoMigrationStateRepository } from './database/mongo/migration';
 import type { MongoDocument, MongoKeyValue } from './database/mongo/model';
 import type { MongoEntityRepository } from './database/mongo/mongo-entity-repository';
@@ -15,12 +13,19 @@ import { MongoKeyValueRepository } from './database/mongo/mongo-key-value.reposi
 import type { MongoJob } from './database/mongo/queue';
 import { MongoJobRepository, MongoQueue } from './database/mongo/queue';
 import type { Collection } from './database/mongo/types';
+import type { MongoLockEntity } from './lock/mongo';
+import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
+export type MongoConnection = {
+  url: string
+} & Mongo.MongoClientOptions;
+
 export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
-  databaseName: string,
-  collectionName: string,
+  connection: MongoConnection,
+  database: string,
+  collection: string,
   type: T,
   databaseType?: TDb
 };
@@ -32,12 +37,12 @@ export type MongoQueueConfig<T> = {
 };
 
 const singletonScope = Symbol('singletons');
-const databaseSingletonScope = Symbol('database-singletons');
+const clientSingletonScope = Symbol('client singletons');
+const databaseSingletonScope = Symbol('database singletons');
 const databaseCollectionSingletonScopes = new FactoryMap<string, symbol>(() => Symbol('database-collection-singletons'));
 
-let connectionString = '';
 let defaultDatabase = '';
-let clientOptions: Mongo.MongoClientOptions = { readConcern: 'majority' };
+let defaultConnection: MongoConnection = { url: 'mongodb://localhost:27017' };
 
 let mongoLogPrefix = 'MONGO';
 
@@ -54,7 +59,7 @@ export function configureMongoInstanceProvider(
   options: {
     connectionString?: string,
     defaultDatabase?: string,
-    clientOptions?: Mongo.MongoClientOptions,
+    defaultConnection?: MongoConnection,
     mongoLogPrefix?: string,
     repositoryLogPrefix?: string,
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
@@ -63,9 +68,8 @@ export function configureMongoInstanceProvider(
     mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>
   }
 ): void {
-  connectionString = options.connectionString ?? connectionString;
   defaultDatabase = options.defaultDatabase ?? defaultDatabase;
-  clientOptions = options.clientOptions ?? clientOptions;
+  defaultConnection = options.defaultConnection ?? defaultConnection;
   mongoLogPrefix = options.mongoLogPrefix ?? mongoLogPrefix;
   repositoryLogPrefix = options.repositoryLogPrefix ?? repositoryLogPrefix;
   mongoLockRepositoryConfig = options.mongoLockRepositoryConfig ?? mongoLockRepositoryConfig;
@@ -74,8 +78,11 @@ export function configureMongoInstanceProvider(
   mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
 }
 
-export async function getMongo(): Promise<Mongo.MongoClient> {
-  return singleton(singletonScope, Mongo.MongoClient, async () => {
+export async function getMongoClient(connection?: MongoConnection): Promise<Mongo.MongoClient> {
+  const combinedConnection = { ...defaultConnection, ...connection };
+  const key = JSON.stringify(combinedConnection);
+
+  return singleton(clientSingletonScope, key, async () => {
     const logger = getLogger(mongoLogPrefix);
 
     const logFunction: Mongo.LoggerFunction = (message: any, ...parameters: any) => {
@@ -85,7 +92,7 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
 
     Mongo.Logger.setCurrentLogger(logFunction);
 
-    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(connectionString, clientOptions);
+    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(combinedConnection.url, combinedConnection);
 
     mongoClient
       .on('fullsetup', () => logger.verbose('connection setup'))
@@ -101,15 +108,17 @@ export async function getMongo(): Promise<Mongo.MongoClient> {
   });
 }
 
-export async function getMongoDatabase(databaseName: string = defaultDatabase): Promise<Mongo.Db> {
-  return singleton(databaseSingletonScope, databaseName, async () => {
-    const mongo = await getMongo();
+export async function getMongoDatabase(databaseName: string = defaultDatabase, connection?: MongoConnection): Promise<Mongo.Db> {
+  const key = JSON.stringify({ databaseName, connection });
+
+  return singleton(databaseSingletonScope, key, async () => {
+    const mongo = await getMongoClient(connection);
     return mongo.db(defaultDatabase);
   });
 }
 
-export async function getMongoCollection<T extends Entity, TDb extends Entity>({ databaseName, collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
-  const scope = databaseCollectionSingletonScopes.get(databaseName);
+export async function getMongoCollection<T extends Entity, TDb extends Entity>({ connection, database: databaseName, collection: collectionName }: MongoRepositoryConfig<T, TDb>): Promise<Collection<TDb>> {
+  const scope = databaseCollectionSingletonScopes.get(JSON.stringify({ connection, databaseName }));
 
   return singleton(scope, collectionName, async () => {
     const database = await getMongoDatabase(databaseName);
@@ -175,13 +184,8 @@ export async function getMongoQueue<T>(config: MongoQueueConfig<T>): Promise<Mon
 }
 
 // eslint-disable-next-line @typescript-eslint/unified-signatures
-export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(database: string, collection: string): MongoRepositoryConfig<T, TDb>;
-export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(collection: string): MongoRepositoryConfig<T, TDb>;
-export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(databaseOrCollection: string, collection?: string): MongoRepositoryConfig<T, TDb> {
-  const databaseName = isDefined(collection) ? databaseOrCollection : defaultDatabase;
-  const collectionName = isDefined(collection) ? collection : databaseOrCollection;
-
-  return { databaseName, collectionName, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>({ connection = defaultConnection, database = defaultDatabase, collection }: { connection?: MongoConnection, database?: string, collection: string }): MongoRepositoryConfig<T, TDb> {
+  return { connection, database, collection, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
 }
 
 export function getMongoQueueConfig<T>(repositoryConfig: MongoRepositoryConfig<MongoJob<T>>, processTimeout: number, maxTries: number): MongoQueueConfig<T> {
