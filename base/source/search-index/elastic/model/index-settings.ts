@@ -7,6 +7,7 @@ export type ElasticIndexSettings = {
   number_of_shards?: number,
   number_of_replicas?: number,
   max_ngram_diff?: number,
+  max_result_window?: number,
   analysis?: {
     analyzer?: StringMap<ElasticAnalyzer>,
     tokenizer?: StringMap<ElasticTokenizer>,

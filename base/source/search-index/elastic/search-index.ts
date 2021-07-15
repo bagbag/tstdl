@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/semi */
+import type { Entity, Query, QueryOptions } from '#/database';
+import { BadRequestError } from '#/error';
+import type { Logger } from '#/logger';
+import type { SearchIndex, SearchResult, SearchResultItem } from '#/search-index';
+import type { TypedOmit } from '#/types';
+import { isDefined, isString } from '#/utils';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
 import type { QueryContainer, Sort as ElasticSort, SortCombinations } from '@elastic/elasticsearch/api/types';
-import type { Logger } from '#/logger';
-import type { TypedOmit } from '#/types';
-import { isDefined, isString } from '#/utils';
-import type { Entity, Query, QueryOptions } from '#/database';
-import type { SearchIndex, SearchResult, SearchResultItem } from '#/search-index';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -92,6 +93,10 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const search: Search<{ query: QueryContainer, search_after?: any }> = { index: this.indexName, body: { query: queryBody } };
+
+    if ((options?.skip ?? 0) + (options?.limit ?? 0) > 10000) {
+      throw new BadRequestError(`Result window is too large, skip + limit must be less than or equal to ${this.indexSettings.max_result_window ?? 10000}. Use cursor for more results`);
+    }
 
     if (isDefined(cursorData) && isDefined(options?.skip)) {
       throw new Error('cursor and skip cannot be used at the same time');
