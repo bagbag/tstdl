@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/semi */
 import type { Entity, EntityPatch, EntityRepository, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
 import type { Logger } from '#/logger';
-import { equals, isDefined } from '#/utils';
+import { equals, isDefined, isUndefined } from '#/utils';
 import type { LoadOptions } from './mongo-base.repository';
 import { MongoBaseRepository } from './mongo-base.repository';
 import { convertQuery, convertSort } from './query-converter';
@@ -49,7 +49,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   /* eslint-disable @typescript-eslint/member-ordering */
   readonly collection: Collection<TDb>;
   readonly logger: Logger;
-  readonly indexes: TypedIndexDescription<TDb>[];
+  readonly indexes?: TypedIndexDescription<TDb>[];
   readonly baseRepository: MongoBaseRepository<TDb>;
   readonly transformer: EntityTransformer<T, TDb>;
   readonly transformerMappingMap: TransformerMappingMap<T, TDb>;
@@ -58,7 +58,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { logger, indexes, entityName }: MongoEntityRepositoryOptions<TDb>) {
     this.collection = collection;
     this.logger = logger.prefix(`${collection.collectionName}: `);
-    this.indexes = indexes ?? [];
+    this.indexes = indexes;
     this.transformer = transformer;
 
     this.baseRepository = new MongoBaseRepository(collection, { entityName });
@@ -67,10 +67,16 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   async initialize(): Promise<void> {
+    const indexes = this.indexes;
+
+    if (isUndefined(indexes)) {
+      return;
+    }
+
     const existingRawIndexes = await this.collection.indexes() as (TypedIndexDescription<any> & { v: number })[];
     const existingIndexes = existingRawIndexes.map(normalizeIndex).filter((index) => index.name != '_id_');
 
-    const indexesWithoutName = this.indexes.filter((index) => index.name == undefined);
+    const indexesWithoutName = indexes.filter((index) => index.name == undefined);
 
     if (indexesWithoutName.length > 0) {
       for (const index of indexesWithoutName) {
@@ -80,8 +86,8 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
       throw new Error(`indexes are required to have names (collection: ${this.collection.collectionName}, entity-name: ${this.baseRepository.entityName})`);
     }
 
-    const unwantedIndexes = existingIndexes.filter((existingIndex) => !this.indexes.some((index) => equals(existingIndex, normalizeIndex(index), { deep: true, sortArray: false })));
-    const requiredIndexes = this.indexes.filter((wantedIndex) => !existingIndexes.some((index) => equals(normalizeIndex(wantedIndex), index, { deep: true, sortArray: false })));
+    const unwantedIndexes = existingIndexes.filter((existingIndex) => !indexes.some((index) => equals(existingIndex, normalizeIndex(index), { deep: true, sortArray: false })));
+    const requiredIndexes = indexes.filter((wantedIndex) => !existingIndexes.some((index) => equals(normalizeIndex(wantedIndex), index, { deep: true, sortArray: false })));
 
     for (const unwantedIndex of unwantedIndexes) {
       this.logger.warn(`dropping index ${unwantedIndex.name!}`);
