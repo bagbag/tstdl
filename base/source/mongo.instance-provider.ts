@@ -116,7 +116,7 @@ export async function getMongoDatabase(databaseName: string = defaultDatabase, c
 
   return singleton(databaseSingletonScope, key, async () => {
     const mongo = await getMongoClient(connection);
-    return mongo.db(defaultDatabase);
+    return mongo.db(databaseName);
   });
 }
 
