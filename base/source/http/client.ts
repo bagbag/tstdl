@@ -3,12 +3,12 @@ import type { Json, StringMap, UndefinableJson } from '../types';
 import { buildUrl, isDefined, isUndefined } from '../utils';
 
 export type HttpRequestOptions = {
-  headers?: StringMap<string | string[]>,
-  parameters?: StringMap<string | string[]>,
+  headers?: HttpHeaders,
+  parameters?: HttpParameters,
   mapUrlParameters?: boolean,
   hash?: string,
   body?: {
-    form?: StringMap<string>,
+    form?: HttpForm,
     json?: Json,
     text?: string,
     buffer?: Buffer,
@@ -16,6 +16,12 @@ export type HttpRequestOptions = {
   },
   timeout?: number
 };
+
+export type HttpHeaders = StringMap<string | string[]>;
+
+export type HttpParameters = StringMap<string | string[]>;
+
+export type HttpForm = StringMap<string | string[]>;
 
 export enum HttpResponseType {
   Text = 'text',
@@ -33,7 +39,7 @@ export type HttpResponseTypeValueType<T extends HttpResponseType> =
 export type HttpResponse<T extends HttpResponseType> = {
   statusCode: number,
   statusMessage?: string,
-  header: StringMap<string | string[]>,
+  header: HttpHeaders,
   body: HttpResponseTypeValueType<T>
 };
 
@@ -49,6 +55,7 @@ export class HttpClient {
   private static _instance?: HttpClient;
 
   private readonly adapter: HttpClientAdapter;
+  private readonly headers: Map<string, string | string[]>;
 
   static get instance(): HttpClient {
     if (isUndefined(this._instance)) {
@@ -60,10 +67,20 @@ export class HttpClient {
 
   constructor(adapter: HttpClientAdapter) {
     this.adapter = adapter;
+
+    this.headers = new Map();
   }
 
   static configureGlobalInstance(adapter: HttpClientAdapter): void {
     this._instance = new HttpClient(adapter);
+  }
+
+  setDefaultHeader(name: string, value: string | string[]): void {
+    this.headers.set(name, value);
+  }
+
+  deleteDefaultHeader(name: string): void {
+    this.headers.delete(name);
   }
 
   async head<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
@@ -190,14 +207,24 @@ export class HttpClient {
     return response.body;
   }
 
-  private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
-    const { uri, newOptions } = this.getUri(url, options);
+  private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+    const { uri, newOptions } = this.prepareRequest(url, options);
     return this.adapter.call(method, uri, responseType, newOptions);
   }
 
-  private async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
-    const { uri, newOptions } = this.getUri(url, options);
+  private async callStream(method: HttpMethod, url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<HttpResponseType.Stream>> {
+    const { uri, newOptions } = this.prepareRequest(url, options);
     return this.adapter.callStream(method, uri, newOptions);
+  }
+
+  private prepareRequest(url: string, options: HttpRequestOptions): { uri: string, newOptions: HttpRequestOptions } {
+    const optionsWithHeaders = this.addHeaders(options, Object.fromEntries(this.headers));
+    return this.getUri(url, optionsWithHeaders);
+  }
+
+  private addHeaders(options: HttpRequestOptions, headers: HttpHeaders): HttpRequestOptions {
+    const newOptions = { ...options, headers: { ...headers, ...options.headers } };
+    return newOptions;
   }
 
   private getUri(url: string, options: HttpRequestOptions = {}): { uri: string, newOptions: HttpRequestOptions } {
