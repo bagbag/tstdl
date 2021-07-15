@@ -57,7 +57,6 @@ let mongoKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefi
 
 export function configureMongoInstanceProvider(
   options: {
-    connectionString?: string,
     defaultDatabase?: string,
     defaultConnection?: MongoConnection,
     mongoLogPrefix?: string,
