@@ -93,7 +93,8 @@ export async function getMongoClient(connection?: MongoConnection): Promise<Mong
 
     Mongo.Logger.setCurrentLogger(logFunction);
 
-    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(combinedConnection.url ?? defaultMongoUrl, combinedConnection);
+    const { url, ...options } = combinedConnection;
+    const mongoClient: Mongo.MongoClient = new Mongo.MongoClient(url ?? defaultMongoUrl, options);
 
     mongoClient
       .on('fullsetup', () => logger.verbose('connection setup'))
