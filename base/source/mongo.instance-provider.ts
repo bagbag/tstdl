@@ -42,6 +42,7 @@ const singletonScope = Symbol('singletons');
 const clientSingletonScope = Symbol('client singletons');
 const databaseSingletonScope = Symbol('database singletons');
 const databaseCollectionSingletonScopes = new FactoryMap<string, symbol>(() => Symbol('database-collection-singletons'));
+const databaseRepositorySingletonScopes = new FactoryMap<string, symbol>(() => Symbol('database-repository-singletons'));
 
 let defaultDatabase = '';
 let defaultConnection: MongoConnection = {};
@@ -111,7 +112,7 @@ export async function getMongoClient(connection?: MongoConnection): Promise<Mong
 }
 
 export async function getMongoDatabase(databaseName: string = defaultDatabase, connection?: MongoConnection): Promise<Mongo.Db> {
-  const key = JSON.stringify({ databaseName, connection });
+  const key = JSON.stringify({ connection, databaseName });
 
   return singleton(databaseSingletonScope, key, async () => {
     const mongo = await getMongoClient(connection);
@@ -137,7 +138,10 @@ export async function getMongoCollection<T extends Entity, TDb extends Entity>({
 }
 
 export async function getMongoRepository<T extends Entity, TDb extends Entity = T, C extends MongoRepositoryStatic<T, TDb> = MongoRepositoryStatic<T, TDb>>(ctor: C, collectionConfig: MongoRepositoryConfig<T, TDb>): Promise<InstanceType<C>> {
-  return singleton(singletonScope, ctor, async () => {
+  const key = JSON.stringify(collectionConfig);
+  const scope = databaseRepositorySingletonScopes.get(key);
+
+  return singleton(scope, ctor, async () => {
     const logger = getLogger(repositoryLogPrefix);
     const collection = await getMongoCollection(collectionConfig);
     const repository = new ctor(collection, logger) as InstanceType<C>;
