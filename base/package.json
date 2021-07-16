@@ -1,14 +1,18 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.27",
+  "version": "0.65.29",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "typings": "esm/index.d.ts",
   "scripts": {
-    "build": "rm -rf dist && ttsc",
-    "build:watch": "rm -rf dist && ttsc --watch",
-    "build:prod": "npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
+    "build": "ttsc --project tsconfig.json",
+    "build:esm": "ttsc --project tsconfig-esm.json",
+    "build:watch": "ttsc --watch",
+    "build:prod": "rm -rf dist && npm run build && npm run build:esm && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
     "pub": "npm run build:prod && npm publish dist/"
   },
