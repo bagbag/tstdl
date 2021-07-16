@@ -48,7 +48,7 @@ module.exports = {
     '@typescript-eslint/no-use-before-define': ['error', { functions: false }],
     '@typescript-eslint/prefer-readonly-parameter-types': ['off', { checkParameterProperties: false }],
     '@typescript-eslint/quotes': ['warn', 'single'],
-    '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+    '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true, allowNullish: true }],
     '@typescript-eslint/sort-type-union-intersection-members': 'off',
     '@typescript-eslint/space-before-function-paren': ['warn', { anonymous: 'never', named: 'never', asyncArrow: 'always' }],
     '@typescript-eslint/typedef': 'off',

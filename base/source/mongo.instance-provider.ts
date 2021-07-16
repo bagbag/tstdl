@@ -1,20 +1,22 @@
 import type { Entity } from '#/database';
+import { MongoMigrationStateRepository } from '#/database/mongo/migration';
+import type { MongoDocument, MongoKeyValue } from '#/database/mongo/model';
+import type { MongoEntityRepository } from '#/database/mongo/mongo-entity-repository';
+import { MongoKeyValueStoreProvider } from '#/database/mongo/mongo-key-value-store.provider';
+import { MongoKeyValueRepository } from '#/database/mongo/mongo-key-value.repository';
+import type { MongoJob } from '#/database/mongo/queue';
+import { MongoJobRepository, MongoQueue } from '#/database/mongo/queue';
+import type { Collection } from '#/database/mongo/types';
 import { connect, disposer, getLogger } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
 import { assertDefined, FactoryMap, singleton } from '#/utils';
 import * as Mongo from 'mongodb';
-import { MongoMigrationStateRepository } from './database/mongo/migration';
-import type { MongoDocument, MongoKeyValue } from './database/mongo/model';
-import type { MongoEntityRepository } from './database/mongo/mongo-entity-repository';
-import { MongoKeyValueStoreProvider } from './database/mongo/mongo-key-value-store.provider';
-import { MongoKeyValueRepository } from './database/mongo/mongo-key-value.repository';
-import type { MongoJob } from './database/mongo/queue';
-import { MongoJobRepository, MongoQueue } from './database/mongo/queue';
-import type { Collection } from './database/mongo/types';
 import type { MongoLockEntity } from './lock/mongo';
 import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
+import type { MongoOidcState, OidcState } from './openid-connect';
+import { MongoOidcStateRepository } from './openid-connect';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
@@ -57,6 +59,7 @@ let mongoLockProviderLog = 'LOCK';
 let mongoMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined;
 
 let mongoKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined;
+let mongoOidcStateRepositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcState> | undefined;
 
 export function configureMongoInstanceProvider(
   options: {
@@ -67,7 +70,8 @@ export function configureMongoInstanceProvider(
     mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
     mongoLockProviderLog?: string,
     mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
-    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>
+    mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>,
+    mongoOidcStateRepositoryConfig?: MongoRepositoryConfig<OidcState, MongoOidcState>
   }
 ): void {
   defaultDatabase = options.defaultDatabase ?? defaultDatabase;
@@ -78,6 +82,7 @@ export function configureMongoInstanceProvider(
   mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
   mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
   mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
+  mongoOidcStateRepositoryConfig = options.mongoOidcStateRepositoryConfig ?? mongoOidcStateRepositoryConfig;
 }
 
 export async function getMongoClient(connection?: MongoConnection): Promise<Mongo.MongoClient> {
@@ -174,6 +179,13 @@ export async function getMongoKeyValueRepository(): Promise<MongoKeyValueReposit
   return singleton(singletonScope, MongoKeyValueRepository, async () => {
     assertDefined(mongoKeyValueRepositoryConfig, 'mongoKeyValueRepositoryConfig must be configured');
     return getMongoRepository(MongoKeyValueRepository, mongoKeyValueRepositoryConfig);
+  });
+}
+
+export async function getMongoOidcStateRepository(): Promise<MongoOidcStateRepository> {
+  return singleton(singletonScope, MongoOidcStateRepository, async () => {
+    assertDefined(mongoOidcStateRepositoryConfig, 'mongoOidcStateRepositoryConfig must be configured');
+    return getMongoRepository(MongoOidcStateRepository, mongoOidcStateRepositoryConfig);
   });
 }
 

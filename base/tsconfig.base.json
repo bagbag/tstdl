@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "lib": ["esnext", "dom"],
     "target": "es2017",
-    "baseUrl": "source/",
+    "baseUrl": "./",
     "rootDir": "source/",
     "outDir": "dist",
     "declaration": true,

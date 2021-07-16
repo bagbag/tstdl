@@ -10,8 +10,10 @@ import { ConsoleLogger } from './logger/console';
 import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
+import type { OidcStateRepository } from './openid-connect';
+import { CachedOidcConfigurationService, OidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
-import { deferThrow, singleton, timeout } from './utils';
+import { deferThrow, millisecondsPerMinute, singleton, timeout } from './utils';
 
 const singletonScope = Symbol('singletons');
 const coreLoggerToken = Symbol('core-logger');
@@ -30,7 +32,8 @@ let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValu
 
 let migrationLogPrefix = 'MIGRATION';
 let supressErrorLog: Type<Error>[] = [];
-let migrationStateRepositoryProvider: () => MigrationStateRepository | Promise<MigrationStateRepository> = deferThrow(new Error('migrationStateRepository not configured'));
+let migrationStateRepositoryProvider: () => MigrationStateRepository | Promise<MigrationStateRepository> = deferThrow(new Error('MigrationStateRepository not configured'));
+let oidcStateRepositoryProvider: () => OidcStateRepository | Promise<OidcStateRepository> = deferThrow(new Error('OidcStateRepository not configured'));
 
 let httpApiUrlPrefix = '';
 let httpApiBehindProxy = true;
@@ -55,7 +58,8 @@ export function configureBaseInstanceProvider(
     webServerLogPrefix?: string,
     migrationLogPrefix?: string,
     supressErrorLog?: Type<Error>[],
-    migrationStateRepositoryProvider?: () => MigrationStateRepository | Promise<MigrationStateRepository>
+    migrationStateRepositoryProvider?: () => MigrationStateRepository | Promise<MigrationStateRepository>,
+    oidcStateRepositoryProvider?: () => OidcStateRepository | Promise<OidcStateRepository>
   }
 ): void {
   coreLogPrefix = options.coreLoggerPrefix ?? coreLogPrefix;
@@ -71,6 +75,7 @@ export function configureBaseInstanceProvider(
   migrationLogPrefix = options.migrationLogPrefix ?? migrationLogPrefix;
   supressErrorLog = options.supressErrorLog ?? supressErrorLog;
   migrationStateRepositoryProvider = options.migrationStateRepositoryProvider ?? migrationStateRepositoryProvider;
+  oidcStateRepositoryProvider = options.oidcStateRepositoryProvider ?? oidcStateRepositoryProvider;
 }
 
 export async function disposeInstances(): Promise<void> {
@@ -124,7 +129,6 @@ export async function getMigrator(): Promise<Migrator> {
   });
 }
 
-
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {
   return singleton(singletonScope, DistributedLoopProvider, async () => {
     const lockProvider = await getLockProvider();
@@ -140,6 +144,16 @@ export function getHttpApi(): HttpApi {
     httpApi.supressErrorLog(UnauthorizedError, NotFoundError, ValidationError, ...supressErrorLog);
 
     return httpApi;
+  });
+}
+
+export async function getOidcService(): Promise<OidcService> {
+  return singleton(singletonScope, OidcService, async () => {
+    const oidcStateRepository = await oidcStateRepositoryProvider();
+    const oidcConfigurationService = new OidcConfigurationService();
+    const cachedOidcConfigurationService = new CachedOidcConfigurationService(oidcConfigurationService, millisecondsPerMinute);
+
+    return new OidcService(cachedOidcConfigurationService, oidcStateRepository);
   });
 }
 
