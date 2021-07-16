@@ -1,9 +1,11 @@
-import type { StringMap } from '../types';
-import { decodeBase64Url, encodeBase64Url } from './base64';
-import { assert } from './type-guards';
-import type { BinaryLike } from 'crypto';
-import { createHmac } from 'crypto';
 import { UnauthorizedError } from '../error';
+import type { BinaryData, StringMap } from '../types';
+import { decodeBase64Url, encodeBase64Url } from './base64';
+import type { HashAlgorithm, Key } from './cryptography';
+import { importHmacKey, sign } from './cryptography';
+import { encodeUtf8 } from './encoding';
+import { binaryEquals } from './helpers';
+import { assert } from './type-guards';
 
 export enum JwtTokenAlgorithm {
   SHA256 = 'HS256',
@@ -83,29 +85,29 @@ export function parseJwtTokenString<THeader extends JwtTokenHeader, TPayload = S
   };
 }
 
-export function createJwtTokenString<THeader extends JwtTokenHeader, TPayload extends StringMap>({ header, payload }: JwtToken<THeader, TPayload>, secret: BinaryLike): string {
-  const headerBuffer = Buffer.from(JSON.stringify(header), 'utf8');
-  const payloadBuffer = Buffer.from(JSON.stringify(payload), 'utf8');
+export async function createJwtTokenString<THeader extends JwtTokenHeader, TPayload extends StringMap>(jwtToken: JwtToken<THeader, TPayload>, key: Key | string): Promise<string> {
+  const headerBuffer = encodeUtf8(JSON.stringify(jwtToken.header));
+  const payloadBuffer = encodeUtf8(JSON.stringify(jwtToken.payload));
 
   const encodedHeader = encodeBase64Url(headerBuffer, 0, headerBuffer.byteLength);
   const encodedPayload = encodeBase64Url(payloadBuffer, 0, payloadBuffer.byteLength);
 
   const headerPayloadDataString = `${encodedHeader}.${encodedPayload}`;
-  const headerPayloadData = Buffer.from(headerPayloadDataString, 'utf8');
+  const headerPayloadData = encodeUtf8(headerPayloadDataString);
 
-  const signature = getSignature(headerPayloadData, header.alg, secret);
+  const signature = await getSignature(headerPayloadData, jwtToken.header.alg, key);
   const encodedSignature = encodeBase64Url(signature);
 
-  const token = `${headerPayloadDataString}.${encodedSignature}`;
-  return token;
+  const tokenString = `${headerPayloadDataString}.${encodedSignature}`;
+  return tokenString;
 }
 
-export function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap>(tokenString: string, secret: BinaryLike): JwtToken<THeader, TPayload> {
+export async function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap>(tokenString: string, key: Key | string): Promise<JwtToken<THeader, TPayload>> {
   try {
     const { encoded, bytes, token } = parseJwtTokenString<THeader, TPayload>(tokenString);
 
-    const calculatedSignature = getSignature(`${encoded.header}.${encoded.payload}`, token.header.alg, secret);
-    const validSignature = calculatedSignature.equals(Buffer.from(bytes.signature));
+    const calculatedSignature = await getSignature(encodeUtf8(`${encoded.header}.${encoded.payload}`), token.header.alg, key);
+    const validSignature = binaryEquals(calculatedSignature, bytes.signature);
 
     if (!validSignature) {
       throw new UnauthorizedError('invalid token signature');
@@ -122,11 +124,13 @@ export function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = 
   }
 }
 
-function getSignature(data: BinaryLike, algorithm: JwtTokenAlgorithm, secret: BinaryLike): Buffer {
-  const hmac = createHmac(getCryptoAlgorithm(algorithm), secret);
-  return hmac.update(data).digest();
+async function getSignature(data: BinaryData, algorithm: JwtTokenAlgorithm, key: Key | string): Promise<ArrayBuffer> {
+  const hashAlgorithm = getHmacHashAlgorithm(algorithm);
+  const hmacKey = await importHmacKey(hashAlgorithm, key, false);
+  const hmacSignature = sign('HMAC', hmacKey, data);
+  return hmacSignature.toBuffer();
 }
 
-function getCryptoAlgorithm(algorithm: JwtTokenAlgorithm): string {
-  return algorithm.replace('HS', 'sha');
+function getHmacHashAlgorithm(algorithm: JwtTokenAlgorithm): HashAlgorithm {
+  return algorithm.replace('HS', 'SHA-') as HashAlgorithm;
 }

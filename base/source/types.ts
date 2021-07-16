@@ -30,6 +30,7 @@ export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+export type TypedExtract<T, U extends T> = T extends U ? T : never;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
@@ -63,3 +64,5 @@ export type TypedArray =
   | Float64Array
   | BigInt64Array
   | BigUint64Array;
+
+export type BinaryData = TypedArray | ArrayBuffer | DataView;

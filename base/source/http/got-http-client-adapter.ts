@@ -4,7 +4,7 @@ import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
 import { DeferredPromise } from '../promise';
 import type { StringMap } from '../types';
-import { isDefined } from '../utils';
+import { isArrayBuffer, isDefined } from '../utils';
 import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from './client';
 import { HttpResponseType } from './client';
 import { HttpError } from './http.error';
@@ -137,7 +137,7 @@ function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpReque
     const binary = body.buffer ?? body.readable ?? body.text;
 
     if (isDefined(binary)) {
-      options.body = binary;
+      options.body = isArrayBuffer(binary) ? Buffer.from(binary) : binary;
     }
     else if (isDefined(body.json)) {
       options.body = JSON.stringify(body.json);

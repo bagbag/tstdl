@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { Enumerable } from '../enumerable';
 import { DetailsError } from '../error';
-import type { DeepArray, StringMap } from '../types';
+import type { BinaryData, DeepArray, StringMap, TypedArray } from '../types';
 import { currentTimestamp } from './date-time';
+import { sort } from './iterable-helpers';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { assertString, assertStringPass, isDefined, isUndefined } from './type-guards';
+import { assertString, assertStringPass, isArrayBuffer, isDefined, isUndefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -323,15 +323,15 @@ type ArrayEqualsOptions<A, B> = {
 };
 
 export function arrayEquals<A, B>(a: A[], b: B[], options?: ArrayEqualsOptions<A, B>): boolean {
-  const sort = options?.sort ?? false;
+  const _sort = options?.sort ?? false;
   const comparator = options?.comparator ?? defaultArrayEqualsComparator;
 
   if (a.length != b.length) {
     return false;
   }
 
-  const c = sort != false ? Enumerable.from(a).sort(sort).toArray() : a;
-  const d = sort != false ? Enumerable.from(b).sort(sort).toArray() : b;
+  const c = _sort != false ? toArray(sort(a, _sort)) : a;
+  const d = _sort != false ? toArray(sort(b, _sort)) : b;
 
   for (let i = 0; i < c.length; i++) {
     const itemEquals = comparator(c[i]!, d[i]!);
@@ -424,6 +424,43 @@ function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, op
   }
 
   return true;
+}
+
+/**
+ * compares to binary types for equal content
+ */
+export function binaryEquals(bufferA: BinaryData, bufferB: BinaryData): boolean {
+  const a = toUint8Array(bufferA, false);
+  const b = toUint8Array(bufferB, false);
+
+  if (a.length != b.length) {
+    return false;
+  }
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * eslint-disable-next-line @typescript-eslint/no-shadow
+ * convert to Uint8Array
+ * @param data binary data
+ * @param clone whether to clone buffer or not
+ */
+export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Array { // eslint-disable-line @typescript-eslint/no-shadow
+  if (isArrayBuffer(data)) {
+    return clone ? new Uint8Array(data.slice(0)) : new Uint8Array(data);
+  }
+  const { buffer, byteOffset, byteLength } = (data as TypedArray | DataView);
+
+  return clone
+    ? new Uint8Array(buffer.slice(byteOffset, byteLength))
+    : new Uint8Array(buffer, byteOffset, byteLength);
 }
 
 export function stripPropertyWhen<T extends object, S>(obj: T, predicate: (value: unknown) => value is S): { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] } {

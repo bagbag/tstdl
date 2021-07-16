@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line */
 
+import type { TypedArray } from '#/types';
 import { AssertionError } from '../error';
 
 type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
@@ -81,6 +82,20 @@ export function assertPrimitive(value: any, message: string = `expected value to
 export function assertNotPrimitive<T>(value: T, message: string = `expected value to not be primitive, but it is ${value}`): asserts value is InferIsNotType<T, typeof isPrimitive> { assert(isNotPrimitive(value), message); }
 export function assertPrimitivePass(value: any, message?: string): InferIsType<typeof isPrimitive> { assertPrimitive(value, message); return value; }
 export function assertNotPrimitivePass<T>(value: T, message?: string): InferIsNotType<T, typeof isPrimitive> { assertNotPrimitive(value, message); return value; }
+
+export function isTypedArray(value: any): value is TypedArray { return (value instanceof Int8Array) || (value instanceof Uint8Array) || (value instanceof Uint8ClampedArray) || (value instanceof Int16Array) || (value instanceof Uint16Array) || (value instanceof Int32Array) || (value instanceof Uint32Array) || (value instanceof Float32Array) || (value instanceof Float64Array) || (value instanceof BigInt64Array) || (value instanceof BigUint64Array); }
+export function isNotTypedArray<T>(value: T): value is InferIsNotType<T, typeof isTypedArray> { return !isTypedArray(value); }
+export function assertTypedArray(value: any, message: string = `expected value to be TypedArray, but it is ${value}`): asserts value is InferIsType<typeof isTypedArray> { assert(isTypedArray(value), message); }
+export function assertNotTypedArray<T>(value: T, message: string = `expected value to not be TypedArray, but it is ${value}`): asserts value is InferIsNotType<T, typeof isTypedArray> { assert(isNotTypedArray(value), message); }
+export function assertTypedArrayPass(value: any, message?: string): InferIsType<typeof isTypedArray> { assertTypedArray(value, message); return value; }
+export function assertNotTypedArrayPass<T>(value: T, message?: string): InferIsNotType<T, typeof isTypedArray> { assertNotTypedArray(value, message); return value; }
+
+export function isArrayBuffer(value: any): value is ArrayBuffer { return (value instanceof ArrayBuffer); }
+export function isNotArrayBuffer<T>(value: T): value is InferIsNotType<T, typeof isArrayBuffer> { return !isArrayBuffer(value); }
+export function assertArrayBuffer(value: any, message: string = `expected value to be ArrayBuffer, but it is ${value}`): asserts value is InferIsType<typeof isArrayBuffer> { assert(isArrayBuffer(value), message); }
+export function assertNotArrayBuffer<T>(value: T, message: string = `expected value to not be ArrayBuffer, but it is ${value}`): asserts value is InferIsNotType<T, typeof isArrayBuffer> { assert(isNotArrayBuffer(value), message); }
+export function assertArrayBufferPass(value: any, message?: string): InferIsType<typeof isArrayBuffer> { assertArrayBuffer(value, message); return value; }
+export function assertNotArrayBufferPass<T>(value: T, message?: string): InferIsNotType<T, typeof isArrayBuffer> { assertNotArrayBuffer(value, message); return value; }
 
 export function assert(condition: boolean, message: string = 'assertion failed'): asserts condition {
   if (!condition) {

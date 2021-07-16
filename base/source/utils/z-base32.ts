@@ -1,14 +1,16 @@
 /* eslint-disable no-bitwise, @typescript-eslint/no-magic-numbers */
 
+import type { BinaryData } from '#/types';
 import { Alphabet } from './alphabet';
+import { toUint8Array } from './helpers';
 
 const alphabet = Alphabet.ZBase32;
 
 const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index]));
 
 // eslint-disable-next-line max-statements
-export function zBase32Encode(buffer: ArrayBufferLike): string {
-  const byteView = new Uint8Array(buffer);
+export function zBase32Encode(buffer: BinaryData): string {
+  const byteView = toUint8Array(buffer);
 
   let result = '';
   let bits = 0;

@@ -1,6 +1,7 @@
 /* eslint-disable no-bitwise */
 
 import type { TypedArray } from '../types';
+import { toUint8Array } from './helpers';
 import { isDefined } from './type-guards';
 
 export function encodeBase64(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
@@ -42,8 +43,8 @@ export function base64UrlToBase64(input: string): string {
     .replace(/_/ug, '/');
 }
 
-function encodeBase64Fallback(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+function encodeBase64Fallback(data: TypedArray | ArrayBuffer): string {
+  const bytes = toUint8Array(data);
 
   let nMod3 = 2;
   let base64 = '';
@@ -51,11 +52,6 @@ function encodeBase64Fallback(buffer: ArrayBuffer): string {
 
   for (let index = 0; index < bytes.length; index++) {
     nMod3 = index % 3;
-
-    if (index > 0 && (index * 4 / 3) % 76 === 0) {
-      base64 += '\r\n';
-    }
-
     nUint24 |= bytes[index]! << ((16 >>> nMod3) & 24);
 
     if (nMod3 === 2 || bytes.length - index === 1) {

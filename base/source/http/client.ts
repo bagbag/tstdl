@@ -11,7 +11,7 @@ export type HttpRequestOptions = {
     form?: HttpForm,
     json?: Json,
     text?: string,
-    buffer?: Buffer,
+    buffer?: ArrayBuffer,
     readable?: Readable
   },
   timeout?: number

@@ -1,7 +1,7 @@
 import { ForbiddenError } from '#/error';
 import { HttpClient } from '#/http';
 import type { Json } from '#/types';
-import { Alphabet, assertNumberPass, createHash, getRandomString, isUndefined } from '#/utils';
+import { Alphabet, assertNumberPass, digest, getRandomString, isUndefined } from '#/utils';
 import type { JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { DateTime } from 'luxon';
@@ -48,12 +48,14 @@ export class OidcService {
 
     await this.oidcStateRepository.insert(state);
 
+    const codeChallenge = await digest('SHA-256', state.codeVerifier).toBase64Url();
+
     const result: OidcInitResult = {
       authorizationEndpoint: oidcConfiguration.authorizationEndpoint,
       state: state.value,
       clientId,
       scope,
-      codeChallenge: createHash('sha256', state.codeVerifier, 'utf8').toBuffer().toString('base64url'),
+      codeChallenge,
       codeChallengeMethod: 'S256'
     };
 

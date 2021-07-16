@@ -1,13 +1,14 @@
 import { zBase32Encode } from '#/utils';
 import * as Zlib from 'zlib';
+import { encodeBase64, encodeBase64Url } from './base64';
+import { decodeText, encodeHex } from './encoding';
 
 export interface CompressionResult {
-  toBuffer(): Promise<Buffer>;
+  toBuffer(): Promise<ArrayBuffer>;
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
+  toBase64Url(): Promise<string>;
   toZBase32(): Promise<string>;
-  toLatin1(): Promise<string>;
-  toString(encoding: BufferEncoding): Promise<string>;
 }
 
 export interface DecompressionResult extends CompressionResult {
@@ -32,16 +33,15 @@ export function compress(buffer: Zlib.InputType, algorithm: Algorithms, options?
 
   return {
     toBuffer: async () => compressedBuffer,
-    toHex: async () => compressedBuffer.then((value) => value.toString('hex')),
-    toBase64: async () => compressedBuffer.then((value) => value.toString('base64')),
-    toZBase32: async () => compressedBuffer.then(zBase32Encode),
-    toLatin1: async () => compressedBuffer.then((value) => value.toString('latin1')),
-    toString: async (encoding: BufferEncoding) => compressedBuffer.then((value) => value.toString(encoding))
+    toHex: async () => encodeHex(await compressedBuffer),
+    toBase64: async () => encodeBase64(await compressedBuffer),
+    toBase64Url: async () => encodeBase64Url(await compressedBuffer),
+    toZBase32: async () => zBase32Encode(await compressedBuffer)
   };
 }
 
-async function _compress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
-  return new Promise<Buffer>((resolve, reject) => {
+async function _compress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Uint8Array> {
+  return new Promise<Uint8Array>((resolve, reject) => {
     const compressor: ((buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void) | ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined
       = algorithm == 'gzip' ? Zlib.gzip
         : algorithm == 'brotli' ? Zlib.brotliDecompress
@@ -87,17 +87,16 @@ export function decompress(buffer: Zlib.InputType, algorithm: Algorithms, option
 
   return {
     toBuffer: async () => decompressedBuffer,
-    toHex: async () => decompressedBuffer.then((value) => value.toString('hex')),
-    toBase64: async () => decompressedBuffer.then((value) => value.toString('base64')),
-    toZBase32: async () => decompressedBuffer.then(zBase32Encode),
-    toLatin1: async () => decompressedBuffer.then((value) => value.toString('latin1')),
-    toUtf8: async () => decompressedBuffer.then((value) => value.toString('utf8')),
-    toString: async (encoding: BufferEncoding) => decompressedBuffer.then((value) => value.toString(encoding))
+    toHex: async () => encodeHex(await decompressedBuffer),
+    toBase64: async () => encodeBase64(await decompressedBuffer),
+    toBase64Url: async () => encodeBase64Url(await decompressedBuffer),
+    toZBase32: async () => zBase32Encode(await decompressedBuffer),
+    toUtf8: async () => decodeText(await decompressedBuffer)
   };
 }
 
-async function _decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Buffer> {
-  return new Promise<Buffer>((resolve, reject) => {
+async function _decompress(buffer: Zlib.InputType, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): Promise<Uint8Array> {
+  return new Promise<Uint8Array>((resolve, reject) => {
     const decompressor: ((buffer: Zlib.InputType, callback: Zlib.CompressCallback) => void) | ((buffer: Zlib.InputType, options: Zlib.ZlibOptions | Zlib.BrotliOptions, callback: Zlib.CompressCallback) => void) | undefined
       = algorithm == 'gzip' ? Zlib.gunzip
         : algorithm == 'brotli' ? Zlib.brotliDecompress

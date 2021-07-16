@@ -1,4 +1,3 @@
-import * as KoaRouter from '@koa/router';
 import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
 import type { CustomErrorStatic } from '#/error';
@@ -6,6 +5,7 @@ import { UnsupportedMediaTypeError } from '#/error';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
 import { isObject, round, Timer, toArray } from '#/utils';
+import * as KoaRouter from '@koa/router';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
@@ -32,7 +32,7 @@ export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
   text?: string,
   json?: JsonType,
   stream?: Readable,
-  binary?: Buffer
+  binary?: ArrayBuffer
 };
 
 export enum BodyType {
@@ -56,11 +56,11 @@ export type Query = StringMap<string>;
 
 export type BodyValueType<B extends BodyType>
   = B extends BodyType.None ? undefined
-  : B extends BodyType.Auto ? Json | string | Buffer | undefined
+  : B extends BodyType.Auto ? Json | string | ArrayBuffer | undefined
   : B extends BodyType.Json ? Json
   : B extends BodyType.Text ? string
   : B extends BodyType.Stream ? Readable
-  : B extends BodyType.Binary ? Buffer
+  : B extends BodyType.Binary ? ArrayBuffer
   : undefined;
 
 export type RequestData<B extends BodyType = BodyType.Auto> = {
@@ -114,7 +114,7 @@ export function getJsonRouteHandler<Parameters, Result extends UndefinableJson>(
   return getSimpleRouteHandler((result) => ({ json: result }));
 }
 
-export function getBinaryRouteHandler<Parameters, Result extends Buffer>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
+export function getBinaryRouteHandler<Parameters, Result extends ArrayBuffer>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
   return getSimpleRouteHandler((result) => ({ binary: result }));
 }
 
