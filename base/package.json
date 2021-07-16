@@ -7,7 +7,7 @@
   },
   "main": "cjs/index.js",
   "module": "esm/index.js",
-  "typings": "esm/index.d.ts",
+  "types": "esm/index.d.ts",
   "scripts": {
     "build": "ttsc --project tsconfig.json",
     "build:esm": "ttsc --project tsconfig-esm.json",

@@ -78,7 +78,14 @@ function getAngularBody(body: HttpRequestOptions['body']): any {
     const formData = new FormData();
 
     for (const [key, value] of Object.entries(body.form)) {
-      formData.set(key, value);
+      if (Array.isArray(value)) {
+        for (const _value of value) {
+          formData.append(key, _value);
+        }
+      }
+      else {
+        formData.set(key, value);
+      }
     }
 
     return formData;
