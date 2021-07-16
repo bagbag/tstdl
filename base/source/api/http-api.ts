@@ -10,7 +10,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import type { Readable } from 'stream';
-import type { HttpServer } from '../http';
+import type { HttpServer } from '../http/server';
 import type { NonObjectBufferMode } from '../utils';
 import { readStream } from '../utils';
 import type { TypedReadable } from '../utils/typed-readable';

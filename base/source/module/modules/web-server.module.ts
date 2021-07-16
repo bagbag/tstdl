@@ -2,7 +2,7 @@ import type { Logger } from '#/logger';
 import type { CancellationToken } from '#/utils/cancellation-token';
 import type * as Http from 'http';
 import type { AnyRoute, HttpApi } from '../../api';
-import { HttpServer } from '../../http';
+import { HttpServer } from '../../http/server';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
