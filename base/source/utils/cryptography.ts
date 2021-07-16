@@ -1,6 +1,6 @@
 import type { BinaryData, TypedExtract } from '#/types';
 import { zBase32Encode } from '#/utils';
-import type * as NodeCrypto from 'node:crypto';
+import type * as NodeCrypto from 'crypto';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { getRandomBytes } from './random';
@@ -55,7 +55,7 @@ export interface SignResult {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const subtle = (globalThis.crypto?.subtle as SubtleCrypto | undefined) ?? ((require('node:crypto') as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+const subtle = (globalThis.crypto?.subtle as SubtleCrypto | undefined) ?? ((require('crypto') as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
 
 /* eslint-disable @typescript-eslint/unbound-method */
 export const deriveBits = subtle.deriveBits;
