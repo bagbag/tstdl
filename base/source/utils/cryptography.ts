@@ -54,8 +54,15 @@ export interface SignResult {
   toZBase32(): Promise<string>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-const subtle = (globalThis.crypto?.subtle as SubtleCrypto | undefined) ?? ((require('crypto') as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+let subtle: SubtleCrypto;
+
+if (isDefined(globalThis.crypto.subtle)) {
+  subtle = globalThis.crypto.subtle;
+}
+else {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+  subtle = ((require(['crypto'][0]!) as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+}
 
 /* eslint-disable @typescript-eslint/unbound-method */
 export const deriveBits = subtle.deriveBits;
