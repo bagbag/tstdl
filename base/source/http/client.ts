@@ -57,6 +57,8 @@ export class HttpClient {
   private readonly adapter: HttpClientAdapter;
   private readonly headers: Map<string, string | string[]>;
 
+  readonly baseUrl?: string;
+
   static get instance(): HttpClient {
     if (isUndefined(this._instance)) {
       throw new Error('global instance not configured');
@@ -65,14 +67,15 @@ export class HttpClient {
     return this._instance;
   }
 
-  constructor(adapter: HttpClientAdapter) {
+  constructor(adapter: HttpClientAdapter, baseUrl?: string) {
     this.adapter = adapter;
+    this.baseUrl = baseUrl;
 
     this.headers = new Map();
   }
 
-  static configureGlobalInstance(adapter: HttpClientAdapter): void {
-    this._instance = new HttpClient(adapter);
+  static configureGlobalInstance(adapter: HttpClientAdapter, baseUrl?: string): void {
+    this._instance = new HttpClient(adapter, baseUrl);
   }
 
   setDefaultHeader(name: string, value: string | string[]): void {
@@ -232,12 +235,12 @@ export class HttpClient {
     let modifiedOptions: HttpRequestOptions = options;
 
     if (options.mapUrlParameters == false || isUndefined(options.parameters)) {
-      uri = new URL(url);
+      uri = new URL(url, this.baseUrl);
     }
     else {
       const { parsedUrl, parametersRest } = buildUrl(url, options.parameters);
 
-      uri = new URL(parsedUrl);
+      uri = new URL(parsedUrl, this.baseUrl);
       modifiedOptions = { ...options, parameters: parametersRest as HttpRequestOptions['parameters'] };
     }
 

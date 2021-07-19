@@ -56,7 +56,8 @@ export interface SignResult {
 
 let subtle: SubtleCrypto;
 
-if (isDefined(globalThis.crypto.subtle)) {
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+if (isDefined(globalThis?.crypto?.subtle)) {
   subtle = globalThis.crypto.subtle;
 }
 else {

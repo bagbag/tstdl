@@ -27,6 +27,8 @@ export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 
+export type OneOrMany<T> = T | T[];
+
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;

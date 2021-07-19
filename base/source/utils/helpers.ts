@@ -144,8 +144,12 @@ export function toError(obj: any): Error {
 }
 
 export function formatError(error: Error, includeStack: boolean): string {
-  const stackMessage = (includeStack && (error.stack != undefined)) ? `\n${error.stack}` : '';
-  return `${error.name}: ${error.message}${stackMessage}`;
+  const { name, stack, message, ...rest } = error;
+
+  const stackMessage = (includeStack && (stack != undefined)) ? `\n${stack}` : '';
+  const restString = Object.keys(rest).length > 0 ? `\n${JSON.stringify(rest, null, 2)}` : '';
+
+  return `${name}: ${message}${stackMessage}${restString}`;
 }
 
 export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
