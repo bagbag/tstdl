@@ -19,7 +19,7 @@ export type OidcToken<Raw = unknown> = {
   tokenType: string,
   expiration: number,
   accessToken: string,
-  refreshToken: string,
+  refreshToken?: string,
   raw: Raw
 };
 

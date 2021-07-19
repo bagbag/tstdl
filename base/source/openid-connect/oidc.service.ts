@@ -5,7 +5,7 @@ import { Alphabet, assertNumberPass, digest, getRandomString, isUndefined } from
 import type { JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { DateTime } from 'luxon';
-import { object, string } from 'superstruct';
+import { object, optional, string } from 'superstruct';
 import type { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
 import type { OidcStateRepository } from './oidc-state.repository';
@@ -20,7 +20,7 @@ const tokenResponseStruct = object({
   access_token: string(),
   id_token: string(),
   token_type: string(),
-  refresh_token: string()
+  refresh_token: optional(string())
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
