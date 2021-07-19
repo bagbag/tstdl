@@ -1,7 +1,8 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectorRef, OnDestroy, Pipe, PipeTransform } from '@angular/core';
-import { StringMap } from '@tstdl/base/types';
-import { Observable, ReplaySubject } from 'rxjs';
+import type { StringMap } from '@tstdl/base/types';
+import type { Observable } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { LocalizationService } from '../services/localization.service';
 
@@ -25,7 +26,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
 
   ngOnDestroy(): void {
     this.asyncPipe.ngOnDestroy();
-    this.transform$.unsubscribe();
+    this.transform$.complete();
   }
 
   transform(key: string, parameters: StringMap<string | number> = {}): any {

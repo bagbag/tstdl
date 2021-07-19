@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
-import { StringMap } from '@tstdl/base/types';
-import { Observable, ReplaySubject } from 'rxjs';
+import { isFunction, isUndefined } from '@tstdl/base/esm/utils';
+import type { StringMap } from '@tstdl/base/types';
+import type { Observable } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export type Language = {
@@ -9,14 +11,16 @@ export type Language = {
   name: string
 };
 
-export type Localization<T extends StringMap<string> = StringMap<string>> = {
+export type LocalizeFunction = (parameters: StringMap) => string;
+
+export type Localization<T extends StringMap<string | LocalizeFunction> = StringMap<string | LocalizeFunction>> = {
   language: Language,
   keys: T
 };
 
 type MappedLocalization = {
   language: Language,
-  keys: Map<string, string>
+  keys: Map<string, string | LocalizeFunction>
 };
 
 @Injectable({
@@ -53,7 +57,7 @@ export class LocalizationService {
     const mappedLocalization = buildMappedLocalization(localization);
     this.localizations.set(localization.language.code, mappedLocalization);
 
-    if (this.activeLanguage == undefined) {
+    if (isUndefined(this.activeLanguage)) {
       this.setLocalization(localization);
     }
   }
@@ -62,7 +66,7 @@ export class LocalizationService {
     const has = this.localizations.has(language.code);
 
     if (!has) {
-      throw new Error(`language ${language.code} (${language.name}) not available`);
+      throw new Error(`language ${language.code} (${language.name}) not registered`);
     }
 
     this.language = language;
@@ -73,7 +77,7 @@ export class LocalizationService {
     this.setLanguage(localization.language);
   }
 
-  localize(key: string, parameters: StringMap<string | number> = {}): string {
+  localize(key: string, parameters: StringMap = {}): string {
     if (this.language == undefined) {
       throw new Error('language not set');
     }
@@ -84,18 +88,22 @@ export class LocalizationService {
       return `__${key}__`;
     }
 
-    let text = localization.keys.get(key);
+    let textOrFunction = localization.keys.get(key);
 
-    if (text == undefined) {
+    if (textOrFunction == undefined) {
       return `__${key}__`;
+    }
+
+    if (isFunction(textOrFunction)) {
+      return textOrFunction(parameters);
     }
 
     for (const [parameter, value] of Object.entries(parameters)) {
       const regex = new RegExp(`\\{\\{\\s*${parameter}\\s*\\}\\}`, 'gui');
-      text = text.replace(regex, value.toString());
+      textOrFunction = textOrFunction.replace(regex, value as string);
     }
 
-    return text;
+    return textOrFunction;
   }
 
   localize$(key: string, parameters: StringMap<string | number> = {}): Observable<string> {
