@@ -2,6 +2,8 @@ import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
 import type { CustomErrorStatic } from '#/error';
 import { UnsupportedMediaTypeError } from '#/error';
+import type { HttpBody, HttpHeaders, HttpParameters, HttpQuery } from '#/http';
+import { HttpBodyType } from '#/http';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
 import { isObject, round, Timer, toArray } from '#/utils';
@@ -14,37 +16,31 @@ import type { HttpServer } from '../http/server';
 import type { NonObjectBufferMode } from '../utils';
 import { readStream } from '../utils';
 import type { TypedReadable } from '../utils/typed-readable';
-import type { ApiEndpoint } from './endpoint';
+import type { EndpointHandler } from './endpoint';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
-export type HttpRequest = {
+export type HttpRequest<B extends HttpBodyType = HttpBodyType> = {
   url: URL,
-  method: string,
+  method: HttpMethod,
+  parameters: HttpParameters,
+  query: HttpQuery,
   ip: string,
-  headers: StringMap<string | string[]>
+  headers: HttpHeaders,
+  body: HttpBody<B>
 };
 
 export type HttpResponse<JsonType extends UndefinableJson = UndefinableJson> = {
-  headers?: StringMap<string | string[]>,
   statusCode?: number,
   statusMessage?: string,
+  headers?: HttpHeaders,
   text?: string,
   json?: JsonType,
-  stream?: Readable,
-  binary?: ArrayBuffer
+  stream?: AsyncIterable<ArrayBuffer>,
+  buffer?: ArrayBuffer
 };
 
-export enum BodyType {
-  None = 0,
-  Auto = 1,
-  Text = 2,
-  Json = 3, // eslint-disable-line @typescript-eslint/no-shadow
-  Stream = 4,
-  Binary = 5
-}
-
-export enum RequestMethod {
+export enum HttpMethod {
   Delete = 'delete',
   Get = 'get',
   Patch = 'patch',
@@ -54,36 +50,27 @@ export enum RequestMethod {
 
 export type Query = StringMap<string>;
 
-export type BodyValueType<B extends BodyType>
-  = B extends BodyType.None ? undefined
-  : B extends BodyType.Auto ? Json | string | ArrayBuffer | undefined
-  : B extends BodyType.Json ? Json
-  : B extends BodyType.Text ? string
-  : B extends BodyType.Stream ? Readable
-  : B extends BodyType.Binary ? ArrayBuffer
-  : undefined;
-
-export type RequestData<B extends BodyType = BodyType.Auto> = {
+export type RequestData<B extends HttpBodyType = HttpBodyType.Auto> = {
   parameters: Query,
-  body: BodyValueType<B>
+  body: HttpBody<B>
 };
 
 export type RequestHandler = (request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse) => void;
 
-export type RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext> = (request: HttpRequest, parameters: RouteParameters, endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
+export type RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext> = (request: HttpRequest, parameters: RouteParameters, endpoint: EndpointHandler<EndpointParameters, EndpointResult, EndpointContext>) => HttpResponse | Promise<HttpResponse>;
 
-export type AnyRoute = Route<RequestMethod, any, BodyType, any, any, any>;
-export type Route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext> = {
+export type AnyRoute = Route<HttpMethod, any, HttpBodyType, any, any, any>;
+export type Route<Method extends HttpMethod, RouteParameters, B extends HttpBodyType, EndpointParameters, EndpointResult, EndpointContext> = {
   method: Method | Method[],
   path: string | RegExp,
   bodyType?: B,
   maxRequestBodyBytes?: number,
   requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>,
   handler: RouteHandler<RouteParameters, EndpointParameters, EndpointResult, EndpointContext>,
-  endpoint: ApiEndpoint<EndpointParameters, EndpointResult, EndpointContext>
+  endpoint: EndpointHandler<EndpointParameters, EndpointResult, EndpointContext>
 };
 
-export function simpleRoute<Method extends RequestMethod, B extends BodyType, EndpointResult extends UndefinableJson>(
+export function simpleRoute<Method extends HttpMethod, B extends HttpBodyType, EndpointResult extends UndefinableJson>(
   { method, path, bodyType, maxRequestBodyBytes, endpoint }: Omit<Route<Method, DefaultRequestDataTransformerReturnType<B>, B, DefaultRequestDataTransformerReturnType<B>, EndpointResult, HttpRequest>, 'handler' | 'requestDataTransformer'>
 ): Route<Method, DefaultRequestDataTransformerReturnType<B>, B, DefaultRequestDataTransformerReturnType<B>, EndpointResult, HttpRequest> {
   return route(
@@ -100,11 +87,11 @@ export function simpleRoute<Method extends RequestMethod, B extends BodyType, En
 }
 
 // eslint-disable-next-line @typescript-eslint/no-shadow
-export function route<Method extends RequestMethod, RouteParameters, B extends BodyType, EndpointParameters, EndpointResult, EndpointContext>(route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext>): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
+export function route<Method extends HttpMethod, RouteParameters, B extends HttpBodyType, EndpointParameters, EndpointResult, EndpointContext>(route: Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext>): Route<Method, RouteParameters, B, EndpointParameters, EndpointResult, EndpointContext> {
   return route;
 }
 
-export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: BodyType) => Out;
+export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: HttpBodyType) => Out;
 
 export function getTextRouteHandler<Parameters, Result extends string>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
   return getSimpleRouteHandler((result) => ({ text: result }));
@@ -115,7 +102,7 @@ export function getJsonRouteHandler<Parameters, Result extends UndefinableJson>(
 }
 
 export function getBinaryRouteHandler<Parameters, Result extends ArrayBuffer>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
-  return getSimpleRouteHandler((result) => ({ binary: result }));
+  return getSimpleRouteHandler((result) => ({ buffer: result }));
 }
 
 export function getStreamRouteHandler<Parameters, Result extends Readable>(): RouteHandler<Parameters, Parameters, Result, HttpRequest> {
@@ -126,7 +113,7 @@ export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Resu
   async function routeHandler(
     request: HttpRequest,
     parameters: Parameters,
-    endpoint: ApiEndpoint<Parameters, Result, HttpRequest>
+    endpoint: EndpointHandler<Parameters, Result, HttpRequest>
   ): Promise<HttpResponse> {
     const result = await endpoint(parameters, request);
     return handler(result);
@@ -135,29 +122,32 @@ export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Resu
   return routeHandler;
 }
 
-type DefaultRequestDataTransformerReturnType<B extends BodyType> = undefined extends null ? void
-  : B extends BodyType.None ? StringMap
-  : B extends BodyType.Json ? JsonObject
-  : StringMap & { body: BodyValueType<B> };
+type DefaultRequestDataTransformerReturnType<B extends HttpBodyType> = undefined extends null ? void
+  : B extends HttpBodyType.None ? StringMap
+  : B extends HttpBodyType.Json ? JsonObject
+  : StringMap & { body: HttpBody<B> };
 
-export function getDefaultRequestDataTransformer<B extends BodyType>(): RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>> {
-  function defaultRequestDataTransformer(data: RequestData<B>, bodyType: B): DefaultRequestDataTransformerReturnType<B> {
-    let transformed: StringMap = { ...data.parameters };
+export function defaultRequestDataTransformer<B extends HttpBodyType>(data: RequestData<B>, bodyType: B): DefaultRequestDataTransformerReturnType<B> {
+  let transformed: StringMap;
 
-    if (bodyType == BodyType.Json && isObject(data.body) && !Array.isArray(data.body)) {
-      transformed = { ...transformed, ...(data as RequestData<BodyType.Json>).body as JsonObject };
-    }
-    else if (bodyType != BodyType.None) {
-      transformed = { ...transformed, body: data.body };
-    }
-
-    return transformed as DefaultRequestDataTransformerReturnType<B>;
+  if (bodyType == HttpBodyType.Json && isObject(data.body) && !Array.isArray(data.body)) {
+    transformed = { ...data.parameters, ...(data as RequestData<HttpBodyType.Json>).body as JsonObject };
+  }
+  else if (bodyType != HttpBodyType.None) {
+    transformed = { ...data.parameters, body: data.body };
+  }
+  else {
+    transformed = { ...data.parameters };
   }
 
+  return transformed as DefaultRequestDataTransformerReturnType<B>;
+}
+
+export function getDefaultRequestDataTransformer<B extends HttpBodyType>(): RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>> {
   return defaultRequestDataTransformer as RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>>;
 }
 
-export function noopRequestDataTransformer<B extends BodyType>(data: RequestData<B>): RequestData<B> {
+export function noopRequestDataTransformer<B extends HttpBodyType>(data: RequestData<B>): RequestData<B> {
   return data;
 }
 
@@ -210,18 +200,18 @@ export class HttpApi {
 
       for (const method of methods) {
         switch (method) {
-          case RequestMethod.Get:
-            this.registerRoute(method, route.path, BodyType.None, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+          case HttpMethod.Get:
+            this.registerRoute(method, route.path, HttpBodyType.None, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
-          case RequestMethod.Post:
-          case RequestMethod.Patch:
-          case RequestMethod.Put:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+          case HttpMethod.Post:
+          case HttpMethod.Patch:
+          case HttpMethod.Put:
+            this.registerRoute(method, route.path, route.bodyType ?? HttpBodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
-          case RequestMethod.Delete:
-            this.registerRoute(method, route.path, route.bodyType ?? BodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+          case HttpMethod.Delete:
+            this.registerRoute(method, route.path, route.bodyType ?? HttpBodyType.Json, route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -232,7 +222,7 @@ export class HttpApi {
   }
 
 
-  private registerRoute<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(method: RequestMethod, path: string | RegExp, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
+  private registerRoute<RouteParameters, B extends HttpBodyType, EndpointParameters, EndpointContext, Result>(method: HttpMethod, path: string | RegExp, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: EndpointHandler<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): void {
     this.router.register(path, [method], async (context: Context, next) => {
       await this.handle(context, bodyType, maxBytes, requestDataTransformer, endpoint, handler);
       return next();
@@ -240,13 +230,13 @@ export class HttpApi {
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements, class-methods-use-this
-  private async handle<RouteParameters, B extends BodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: ApiEndpoint<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
+  private async handle<RouteParameters, B extends HttpBodyType, EndpointParameters, EndpointContext, Result>(context: Context, bodyType: B, maxBytes: number, requestDataTransformer: RouteRequestDataTransformer<RequestData<B>, RouteParameters>, endpoint: EndpointHandler<EndpointParameters, Result, EndpointContext>, handler: RouteHandler<RouteParameters, EndpointParameters, Result, EndpointContext>): Promise<void> {
     const { request, response, params } = context;
     const { query: { ...query } } = request;
 
     const requestParameters = { ...params, ...query };
 
-    let body: BodyValueType<B>;
+    let body: HttpBody<B>;
     try {
       body = await getBody(request, bodyType, maxBytes);
     }
@@ -261,7 +251,7 @@ export class HttpApi {
     const handlerParameters = requestDataTransformer(requestData, bodyType);
     const httpRequest: HttpRequest = {
       url: context.URL,
-      method: context.request.method,
+      method: context.request.method as HttpMethod,
       headers: context.req.headers as StringMap<string | string[]>,
       ip: context.request.ip
     };
@@ -282,8 +272,8 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   else if (responseResult.stream != undefined) {
     response.body = responseResult.stream;
   }
-  else if (responseResult.binary != undefined) {
-    response.body = responseResult.binary;
+  else if (responseResult.buffer != undefined) {
+    response.body = responseResult.buffer;
   }
 
   if (responseResult.headers != undefined) {
@@ -301,36 +291,36 @@ function applyResponse(response: Koa.Response, responseResult: HttpResponse): vo
   }
 }
 
-async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, maxBytes: number = 10e6): Promise<BodyValueType<B>> {
+async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B, maxBytes: number = 10e6): Promise<HttpBody<B>> {
   switch (bodyType) {
-    case BodyType.None:
-      return undefined as BodyValueType<B>;
+    case HttpBodyType.None:
+      return undefined as HttpBody<B>;
 
-    case BodyType.Text:
-      return readBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
+    case HttpBodyType.Text:
+      return readBody(request, maxBytes) as unknown as Promise<HttpBody<B>>;
 
-    case BodyType.Json:
-      return readJsonBody(request, maxBytes) as unknown as Promise<BodyValueType<B>>;
+    case HttpBodyType.Json:
+      return readJsonBody(request, maxBytes) as unknown as Promise<HttpBody<B>>;
 
-    case BodyType.Stream:
-      return request.req as unknown as BodyValueType<B>;
+    case HttpBodyType.Stream:
+      return request.req as unknown as HttpBody<B>;
 
-    case BodyType.Binary:
-      return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<BodyValueType<B>>;
+    case HttpBodyType.Buffer:
+      return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<HttpBody<B>>;
 
-    case BodyType.Auto:
+    case HttpBodyType.Auto:
       const contentType = request.type;
 
       switch (contentType) {
         case 'text/plain':
-          return getBody(request, BodyType.Text, maxBytes) as unknown as Promise<BodyValueType<B>>;
+          return getBody(request, HttpBodyType.Text, maxBytes) as unknown as Promise<HttpBody<B>>;
 
         case 'application/json':
-          return getBody(request, BodyType.Json, maxBytes) as unknown as Promise<BodyValueType<B>>;
+          return getBody(request, HttpBodyType.Json, maxBytes) as unknown as Promise<HttpBody<B>>;
 
         case 'application/octet-stream':
         default:
-          return getBody(request, BodyType.Binary, maxBytes) as unknown as Promise<BodyValueType<B>>;
+          return getBody(request, HttpBodyType.Buffer, maxBytes) as unknown as Promise<HttpBody<B>>;
       }
 
     default:

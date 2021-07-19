@@ -1,6 +1,6 @@
+import { ValidationError } from '#/error';
 import * as yup from 'yup';
-import type { EndpointParametersValidator, ValidationResult } from '../types';
-import { ValidationError } from '../types';
+import type { ValidationResult, Validator } from '../types';
 
 let defaultOptions: yup.ValidateOptions = {
   abortEarly: false,
@@ -40,7 +40,7 @@ export function oneOfSchemas<T>(schemas: yup.Schema<T>[], message: string = 'val
   });
 }
 
-export function validator<T>(schema: yup.Schema<T>, options?: yup.ValidateOptions): EndpointParametersValidator<unknown, T> {
+export function validator<T>(schema: yup.Schema<T>, options?: yup.ValidateOptions): Validator<unknown, T> {
   return (value: unknown) => validate(schema, value, options);
 }
 

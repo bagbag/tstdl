@@ -1,3 +1,3 @@
-import type { ApiEndpoint } from '../endpoint';
+import type { EndpointHandler } from '../endpoint';
 
-export const echoEndpoint: ApiEndpoint<any, any> = (parameters) => parameters;
+export const echoEndpoint: EndpointHandler<unknown, unknown, unknown> = (parameters) => parameters;

@@ -1,6 +1,7 @@
-import type { Readable } from 'stream';
-import type { Json, StringMap, UndefinableJson } from '../types';
+import type { Json, UndefinableJson } from '../types';
 import { buildUrl, isDefined, isUndefined } from '../utils';
+import type { HttpBody, HttpForm, HttpHeaders, HttpParameters } from './types';
+import { HttpBodyType } from './types';
 
 export type HttpRequestOptions = {
   headers?: HttpHeaders,
@@ -12,42 +13,23 @@ export type HttpRequestOptions = {
     json?: Json,
     text?: string,
     buffer?: ArrayBuffer,
-    readable?: Readable
+    stream?: AsyncIterable<ArrayBuffer>
   },
   timeout?: number
 };
 
-export type HttpHeaders = StringMap<string | string[]>;
-
-export type HttpParameters = StringMap<string | string[]>;
-
-export type HttpForm = StringMap<string | string[]>;
-
-export enum HttpResponseType {
-  Text = 'text',
-  Buffer = 'buffer',
-  Json = 'json', // eslint-disable-line @typescript-eslint/no-shadow
-  Stream = 'stream'
-}
-
-export type HttpResponseTypeValueType<T extends HttpResponseType> =
-  T extends HttpResponseType.Text ? string
-  : T extends HttpResponseType.Buffer ? ArrayBuffer
-  : T extends HttpResponseType.Json ? Json
-  : Readable;
-
-export type HttpResponse<T extends HttpResponseType> = {
+export type HttpResponse<T extends HttpBodyType> = {
   statusCode: number,
   statusMessage?: string,
   header: HttpHeaders,
-  body: HttpResponseTypeValueType<T>
+  body: HttpBody<T>
 };
 
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
 
 export interface HttpClientAdapter {
-  call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-  callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>>;
+  call<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
+  callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpBodyType.Stream>>;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -86,136 +68,136 @@ export class HttpClient {
     this.headers.delete(name);
   }
 
-  async head<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async head<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('head', url, responseType, options);
   }
 
-  async get<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async get<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('get', url, responseType, options);
   }
 
   async getString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('get', url, HttpResponseType.Text, options);
+    const response = await this.call('get', url, HttpBodyType.Text, options);
     return response.body;
   }
 
   async getJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('get', url, HttpResponseType.Json, options);
+    const response = await this.call('get', url, HttpBodyType.Json, options);
     return response.body as T;
   }
 
   async getBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('get', url, HttpResponseType.Buffer, options);
+    const response = await this.call('get', url, HttpBodyType.Buffer, options);
     return response.body;
   }
 
-  async getStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async getStream(url: string, options?: HttpRequestOptions): Promise<AsyncIterable<ArrayBuffer>> {
     const response = await this.callStream('get', url, options);
     return response.body;
   }
 
-  async post<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async post<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('post', url, responseType, options);
   }
 
   async postString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('post', url, HttpResponseType.Text, options);
+    const response = await this.call('post', url, HttpBodyType.Text, options);
     return response.body;
   }
 
   async postJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('post', url, HttpResponseType.Json, options);
+    const response = await this.call('post', url, HttpBodyType.Json, options);
     return response.body as T;
   }
 
   async postBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('post', url, HttpResponseType.Buffer, options);
+    const response = await this.call('post', url, HttpBodyType.Buffer, options);
     return response.body;
   }
 
-  async postStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async postStream(url: string, options?: HttpRequestOptions): Promise<AsyncIterable<ArrayBuffer>> {
     const response = await this.callStream('post', url, options);
     return response.body;
   }
 
-  async put<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async put<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('put', url, responseType, options);
   }
 
   async putString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('put', url, HttpResponseType.Text, options);
+    const response = await this.call('put', url, HttpBodyType.Text, options);
     return response.body;
   }
 
   async putJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('put', url, HttpResponseType.Json, options);
+    const response = await this.call('put', url, HttpBodyType.Json, options);
     return response.body as T;
   }
 
   async putBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('put', url, HttpResponseType.Buffer, options);
+    const response = await this.call('put', url, HttpBodyType.Buffer, options);
     return response.body;
   }
 
-  async putStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async putStream(url: string, options?: HttpRequestOptions): Promise<AsyncIterable<ArrayBuffer>> {
     const response = await this.callStream('put', url, options);
     return response.body;
   }
 
-  async patch<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async patch<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('patch', url, responseType, options);
   }
 
   async patchString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('patch', url, HttpResponseType.Text, options);
+    const response = await this.call('patch', url, HttpBodyType.Text, options);
     return response.body;
   }
 
   async patchJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('patch', url, HttpResponseType.Json, options);
+    const response = await this.call('patch', url, HttpBodyType.Json, options);
     return response.body as T;
   }
 
   async patchBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('patch', url, HttpResponseType.Buffer, options);
+    const response = await this.call('patch', url, HttpBodyType.Buffer, options);
     return response.body;
   }
 
-  async patchStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async patchStream(url: string, options?: HttpRequestOptions): Promise<AsyncIterable<ArrayBuffer>> {
     const response = await this.callStream('patch', url, options);
     return response.body;
   }
 
-  async delete<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async delete<T extends HttpBodyType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     return this.call('delete', url, responseType, options);
   }
 
   async deleteString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('delete', url, HttpResponseType.Text, options);
+    const response = await this.call('delete', url, HttpBodyType.Text, options);
     return response.body;
   }
 
   async deleteJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('delete', url, HttpResponseType.Json, options);
+    const response = await this.call('delete', url, HttpBodyType.Json, options);
     return response.body as T;
   }
 
   async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('delete', url, HttpResponseType.Buffer, options);
+    const response = await this.call('delete', url, HttpBodyType.Buffer, options);
     return response.body;
   }
 
-  async deleteStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async deleteStream(url: string, options?: HttpRequestOptions): Promise<AsyncIterable<ArrayBuffer>> {
     const response = await this.callStream('delete', url, options);
     return response.body;
   }
 
-  private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  private async call<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const { uri, newOptions } = this.prepareRequest(url, options);
     return this.adapter.call(method, uri, responseType, newOptions);
   }
 
-  private async callStream(method: HttpMethod, url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<HttpResponseType.Stream>> {
+  private async callStream(method: HttpMethod, url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<HttpBodyType.Stream>> {
     const { uri, newOptions } = this.prepareRequest(url, options);
     return this.adapter.callStream(method, uri, newOptions);
   }

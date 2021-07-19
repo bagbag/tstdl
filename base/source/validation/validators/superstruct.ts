@@ -1,8 +1,8 @@
+import { ValidationError } from '#/error';
 import { emailRegex, isDefined } from '#/utils';
 import type { Failure, Struct, StructError } from 'superstruct';
 import { coerce, number, pattern, string } from 'superstruct';
-import type { SyncEndpointParametersValidator, ValidationResult } from '../types';
-import { ValidationError } from '../types';
+import type { SyncValidator, ValidationResult } from '../types';
 
 export type SuperstructOptions = {
   coerce?: boolean,
@@ -23,7 +23,7 @@ export const coerceNumber = (): Struct<number, null> => coerce(number(), string(
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());
 export const nulledStructSchema = <T>(struct: Struct<T, any>): Struct<T, null> => struct as any as Struct<T, null>;
 
-export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): SyncEndpointParametersValidator<unknown, T> {
+export function validator<T>(struct: Struct<T>, options: SuperstructOptions = defaultOptions): SyncValidator<unknown, T> {
   return (value: unknown) => validate(struct, value, options);
 }
 

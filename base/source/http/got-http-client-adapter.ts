@@ -2,12 +2,14 @@ import type { Options as GotOptions, Response } from 'got';
 import Got, { HTTPError } from 'got';
 import type { IncomingMessage } from 'http';
 import * as QueryString from 'querystring';
+import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
 import type { StringMap } from '../types';
 import { isArrayBuffer, isDefined } from '../utils';
-import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from './client';
-import { HttpResponseType } from './client';
+import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse } from './client';
 import { HttpError } from './http.error';
+import type { HttpBody } from './types';
+import { HttpBodyType } from './types';
 
 const defaultGotOptions: GotOptions = {
   retry: 0,
@@ -15,13 +17,13 @@ const defaultGotOptions: GotOptions = {
 };
 
 export class GotHttpClientAdapter implements HttpClientAdapter {
-  async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  async call<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
     const baseHeaders: StringMap<string | string[]> = {};
 
-    if (responseType == HttpResponseType.Text) {
+    if (responseType == HttpBodyType.Text) {
       baseHeaders['Accept'] = 'text/plain';
     }
-    else if (responseType == HttpResponseType.Json) {
+    else if (responseType == HttpBodyType.Json) {
       baseHeaders['Accept'] = 'application/json';
     }
 
@@ -34,14 +36,14 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     else if (isDefined(options.body?.form)) {
       baseHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
     }
-    else if (isDefined(options.body?.readable) || isDefined(options.body?.buffer)) {
+    else if (isDefined(options.body?.stream) || isDefined(options.body?.buffer)) {
       baseHeaders['Content-Type'] = 'application/octet-stream';
     }
 
     const headers = { ...baseHeaders, ...options.headers };
 
     switch (responseType) {
-      case HttpResponseType.Stream:
+      case HttpBodyType.Stream:
         return this.callStream(method, url, { ...options, headers }) as Promise<HttpResponse<T>>;
 
       default:
@@ -49,7 +51,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     }
   }
 
-  async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
+  async callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpBodyType.Stream>> {
     const gotOptions = getGotOptions(method, options);
 
     const responsePromise = new DeferredPromise<IncomingMessage>();
@@ -69,7 +71,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     try {
       const response = await responsePromise;
 
-      const result: HttpResponse<HttpResponseType.Stream> = {
+      const result: HttpResponse<HttpBodyType.Stream> = {
         statusCode: response.statusCode ?? -1,
         statusMessage: response.statusMessage,
         header: response.headers as StringMap<string | string[]>,
@@ -84,7 +86,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
           statusCode: error.response.statusCode,
           statusMessage: error.response.statusMessage,
           header: error.response.headers as StringMap<string | string[]>,
-          body: error.response.body as HttpResponseTypeValueType<any>
+          body: error.response.body as HttpBody<any>
         };
 
         throw new HttpError(url, method, options ?? {}, response);
@@ -94,7 +96,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     }
   }
 
-  private async _call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  private async _call<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
     try {
       const gotOptions = getGotOptions(method, options);
       const request = Got(url, { ...gotOptions, responseType: responseType as any });
@@ -103,7 +105,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
         statusCode: response.statusCode,
         statusMessage: response.statusMessage,
         header: response.headers as StringMap<string | string[]>,
-        body: response.body as HttpResponseTypeValueType<T>
+        body: response.body as HttpBody<T>
       };
 
       return result;
@@ -114,7 +116,7 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
           statusCode: error.response.statusCode,
           statusMessage: error.response.statusMessage,
           header: error.response.headers as StringMap<string | string[]>,
-          body: error.response.body as HttpResponseTypeValueType<any>
+          body: error.response.body as HttpBody<any>
         };
 
         throw new HttpError(url, method, options, response, error);
@@ -134,10 +136,10 @@ function getGotOptions(method: HttpMethod, { headers, body, timeout }: HttpReque
   };
 
   if (isDefined(body)) {
-    const binary = body.buffer ?? body.readable ?? body.text;
+    const binary = body.buffer ?? body.stream ?? body.text;
 
     if (isDefined(binary)) {
-      options.body = isArrayBuffer(binary) ? Buffer.from(binary) : binary;
+      options.body = isArrayBuffer(binary) ? Buffer.from(binary) : Readable.from(binary);
     }
     else if (isDefined(body.json)) {
       options.body = JSON.stringify(body.json);
