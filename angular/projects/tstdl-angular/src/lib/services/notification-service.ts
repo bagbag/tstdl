@@ -6,12 +6,12 @@ export type MessageBoxAction<T = any> = {
   localize?: boolean,
   value?: T,
   disableOnInvalidInputs?: boolean,
-  handler?: (value: T) => any | Promise<any>
+  handler?: (value?: T) => any | Promise<any>
 };
 
 export type MessageBoxResult<T = any> = {
-  actionValue: T,
-  input: string
+  actionValue?: T,
+  inputs: StringMap
 };
 
 export type InputType =
