@@ -33,10 +33,17 @@ export type InputType =
   | 'week';
 
 export type MessageBoxData<T = any> = {
-  actions: MessageBoxAction<T>[],
-  input?: InputType,
   header?: string,
   message?: string,
+  actions: MessageBoxAction<T>[],
+  input?: {
+    type: InputType,
+    label?: string,
+    placeholder?: string,
+    value?: any,
+    min?: string | number,
+    max?: string | number
+  },
   backdropDismiss?: boolean,
   localizeHeader?: boolean,
   localizeMessage?: boolean,
