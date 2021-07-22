@@ -143,13 +143,48 @@ export function toError(obj: any): Error {
   return error;
 }
 
-export function formatError(error: Error, includeStack: boolean): string {
-  const { name, stack, message, ...rest } = error;
+export type FormatErrorOptions = {
+  includeRest?: boolean,
+  includeStack?: boolean
+};
 
-  const stackMessage = (includeStack && (stack != undefined)) ? `\n${stack}` : '';
-  const restString = Object.keys(rest).length > 0 ? `\n${JSON.stringify(rest, null, 2)}` : '';
+// eslint-disable-next-line max-statements
+export function formatError(error: any, options: FormatErrorOptions = {}): string {
+  const { includeRest = false, includeStack = false } = options;
 
-  return `${name}: ${message}${stackMessage}${restString}`;
+  let name: string | undefined;
+  let message: string | undefined;
+  let stack: string | undefined;
+  let rest: StringMap | undefined;
+
+  if (error instanceof Error) {
+    ({ name, message, stack, ...rest } = error);
+  }
+  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+  else if (error?.rejection instanceof Error) {
+    return formatError(error.rejection, options);
+  }
+  else if (error?.reason instanceof Error) {
+    return formatError(error.reason, options);
+  }
+  else if (error?.error instanceof Error) {
+    return formatError(error.error, options);
+  }
+  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+
+  if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
+    try {
+      message = JSON.stringify(error, null, 2);
+    }
+    catch (stringifyError: unknown) {
+      throw error;
+    }
+  }
+
+  const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
+  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(rest, null, 2)}` : '';
+
+  return `${name ?? 'Error'}: ${message}${restString}${stackString}`;
 }
 
 export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {

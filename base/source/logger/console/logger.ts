@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 
-import { formatError, isPrimitive } from '../../utils';
+import { formatError } from '../../utils';
 import { LogLevel } from '../level';
-import type { LogEntry, Logger } from '../logger';
+import type { LogEntry, LogErrorOptions, Logger } from '../logger';
 
 export class ConsoleLogger implements Logger {
   private readonly level: LogLevel;
@@ -17,15 +17,8 @@ export class ConsoleLogger implements Logger {
     return new ConsoleLogger(this.level, this.logPrefix + prefix);
   }
 
-  error(entry: LogEntry): void;
-  error(error: Error, includeStack?: boolean): void;
-  error(error: any, includeStack: boolean = true): void {
-    const entry = (error instanceof Error)
-      ? formatError(error, includeStack)
-      : isPrimitive(error)
-        ? error
-        : JSON.stringify(error, null, 2);
-
+  error(error: any, options?: LogErrorOptions): void {
+    const entry = formatError(error, options);
     this.log(console.error, entry, LogLevel.Error);
   }
 
