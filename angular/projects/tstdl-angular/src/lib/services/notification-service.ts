@@ -75,7 +75,7 @@ export type NotifyData = {
 };
 
 export interface NotificationService {
-  openMessageBox<T>(data: MessageBoxData<T>): Promise<T | undefined>;
+  openMessageBox<T>(data: MessageBoxData<T>): Promise<MessageBoxResult<T>>;
   notify(data: NotifyData): void;
 }
 
