@@ -1,17 +1,18 @@
 import { InjectionToken } from '@angular/core';
 import type { StringMap } from '@tstdl/base/esm/types';
 
-export type MessageBoxAction<T = any> = {
-  text: string,
-  localize?: boolean,
-  value?: T,
-  disableOnInvalidInputs?: boolean,
-  handler?: (value: T | undefined, inputs: StringMap) => any | Promise<any>
-};
-
 export type MessageBoxResult<T = any> = {
   actionValue?: T,
   inputs: StringMap
+};
+
+export type MessageBoxAction<T = any> = {
+  text: string,
+  localizeText?: boolean,
+  localizeTextParameters?: StringMap,
+  value?: T,
+  disableOnInvalidInputs?: boolean,
+  handler?: (value: T | undefined, inputs: StringMap) => any | Promise<any>
 };
 
 export type InputType =
@@ -34,37 +35,42 @@ export type InputType =
   | 'url'
   | 'week';
 
-export type MessageBoxInput = {
-  type: InputType,
-  label?: string,
-  placeholder?: string,
-  value?: any,
-  min?: string | number,
-  max?: string | number,
-  localizeLabel?: boolean,
-  localizePlaceholder?: boolean,
-  validator?: (value: any) => boolean
-};
+  export type MessageBoxInput = {
+    type: InputType,
+    label?: string,
+    localizeLabel?: boolean,
+    localizeLabelParameters?: StringMap,
+    placeholder?: string,
+    localizePlaceholder?: boolean,
+    localizePlaceholderParameters?: StringMap,
+    value?: any,
+    min?: string | number,
+    max?: string | number,
+    validator?: (value: any) => boolean
+  };
 
 export type MessageBoxData<T = any> = {
   header?: string,
+  localizeHeader?: boolean,
+  localizeHeaderParameters?: StringMap,
   subHeader?: string,
+  localizeSubHeader?: boolean,
+  localizeSubHeaderParameters?: StringMap,
   message?: string,
+  localizeMessage?: boolean,
+  localizeMessageParameters?: StringMap,
   actions: MessageBoxAction<T>[],
   inputs?: StringMap<MessageBoxInput>,
-  backdropDismiss?: boolean,
-  localizeHeader?: boolean,
-  localizeSubHeader?: boolean,
-  localizeMessage?: boolean,
-  localizeHeaderParameters?: StringMap<string | number>,
-  localizeMessageParameters?: StringMap<string | number>
+  backdropDismiss?: boolean
 };
 
 export type NotifyData = {
   header?: string,
   message: string,
-  localize?: boolean,
-  localizeParameters?: StringMap,
+  localizeHeader?: boolean,
+  localizeHeaderParameters?: StringMap,
+  localizeMessage?: boolean,
+  localizeMessageParameters?: StringMap,
   duration?: number
 };
 
