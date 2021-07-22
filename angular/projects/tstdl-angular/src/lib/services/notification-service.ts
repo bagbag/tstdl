@@ -4,7 +4,9 @@ import type { StringMap } from '@tstdl/base/esm/types';
 export type MessageBoxAction<T = any> = {
   text: string,
   localize?: boolean,
-  value: T
+  value?: T,
+  disableOnInvalidInputs?: boolean,
+  handler?: (value: T) => any | Promise<any>
 };
 
 export type MessageBoxResult<T = any> = {
@@ -32,20 +34,25 @@ export type InputType =
   | 'url'
   | 'week';
 
+export type MessageBoxInput = {
+  type: InputType,
+  label?: string,
+  placeholder?: string,
+  value?: any,
+  min?: string | number,
+  max?: string | number,
+  validator?: (value: any) => boolean
+};
+
 export type MessageBoxData<T = any> = {
   header?: string,
+  subHeader?: string,
   message?: string,
   actions: MessageBoxAction<T>[],
-  input?: {
-    type: InputType,
-    label?: string,
-    placeholder?: string,
-    value?: any,
-    min?: string | number,
-    max?: string | number
-  },
+  inputs?: StringMap<MessageBoxInput>,
   backdropDismiss?: boolean,
   localizeHeader?: boolean,
+  localizeSubHeader?: boolean,
   localizeMessage?: boolean,
   localizeHeaderParameters?: StringMap<string | number>,
   localizeMessageParameters?: StringMap<string | number>
