@@ -4,7 +4,7 @@ import type { StringMap } from '@tstdl/base/types';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { LocalizationService } from '../services/localization.service';
+import { LocalizationService } from '../services';
 
 @Pipe({
   name: 'localize',

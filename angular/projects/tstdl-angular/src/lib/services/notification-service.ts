@@ -9,23 +9,47 @@ export type MessageBoxAction<T = any> = {
 
 export type MessageBoxResult<T = any> = {
   actionValue: T,
-  textInput: string
+  input: string
 };
+
+export type InputType =
+  | 'checkbox'
+  | 'color'
+  | 'date'
+  | 'datetime-local'
+  | 'email'
+  | 'file'
+  | 'image'
+  | 'month'
+  | 'number'
+  | 'password'
+  | 'radio'
+  | 'range'
+  | 'search'
+  | 'tel'
+  | 'text'
+  | 'time'
+  | 'url'
+  | 'week';
 
 export type MessageBoxData<T = any> = {
   actions: MessageBoxAction<T>[],
-  showInput?: boolean,
-  title?: string,
-  message: string,
-  localizeTitle?: boolean,
+  input?: InputType,
+  header?: string,
+  message?: string,
+  backdropDismiss?: boolean,
+  localizeHeader?: boolean,
   localizeMessage?: boolean,
-  localizeTitleParameters?: StringMap<string | number>,
+  localizeHeaderParameters?: StringMap<string | number>,
   localizeMessageParameters?: StringMap<string | number>
 };
 
 export type NotifyData = {
+  header?: string,
   message: string,
-  localize?: boolean
+  localize?: boolean,
+  localizeParameters?: StringMap,
+  duration?: number
 };
 
 export interface NotificationService {

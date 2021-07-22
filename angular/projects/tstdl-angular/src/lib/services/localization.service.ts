@@ -23,6 +23,21 @@ type MappedLocalization = {
   keys: Map<string, string | LocalizeFunction>
 };
 
+export type LocalizationKeys<T extends Localization> = {
+  [P in keyof T['keys']]: P;
+};
+
+/**
+ * returns a Proxy which simply returns the key you accessed. Can be used to have typesafe localizations (in templates and the API) by not relying on plain strings
+ * @param localization
+ * @returns
+ */
+export function getLocalizationKeys<T extends Localization>(localization?: T): LocalizationKeys<NonNullable<typeof localization>> {
+  return new Proxy({} as LocalizationKeys<T>, {
+    get: (_, property) => property
+  });
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -106,7 +121,7 @@ export class LocalizationService {
     return textOrFunction;
   }
 
-  localize$(key: string, parameters: StringMap<string | number> = {}): Observable<string> {
+  localize$(key: string, parameters: StringMap = {}): Observable<string> {
     return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
   }
 }

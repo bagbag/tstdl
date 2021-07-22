@@ -1,5 +1,6 @@
-import { NgZone } from '@angular/core';
-import { MonoTypeOperatorFunction, Observable } from 'rxjs';
+import type { NgZone } from '@angular/core';
+import type { MonoTypeOperatorFunction } from 'rxjs';
+import { Observable } from 'rxjs';
 
 export function runInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
   return function <T>(source: Observable<T>): Observable<T> {
@@ -10,7 +11,7 @@ export function runInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
         error: (error) => zone.run(() => subscriber.error(error))
       })
     );
-  }
+  };
 }
 
 export function runOutsideAngular<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
@@ -22,7 +23,7 @@ export function runOutsideAngular<T>(zone: NgZone): MonoTypeOperatorFunction<T> 
         error: (error) => zone.runOutsideAngular(() => subscriber.error(error))
       })
     );
-  }
+  };
 }
 
 export function runTaskInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
@@ -34,5 +35,16 @@ export function runTaskInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
         error: (error) => zone.runTask(() => subscriber.error(error))
       })
     );
-  }
+  };
+}
+
+export function runGuardedInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
+  return function <T>(source: Observable<T>): Observable<T> {
+    return new Observable<T>((subscriber) => source.subscribe({
+      next: (state) => zone.runGuarded(() => subscriber.next(state)),
+      complete: () => zone.runGuarded(() => subscriber.complete()),
+      error: (error) => zone.runGuarded(() => subscriber.error(error))
+    })
+    );
+  };
 }
