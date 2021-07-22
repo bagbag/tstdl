@@ -6,7 +6,7 @@ export type MessageBoxAction<T = any> = {
   localize?: boolean,
   value?: T,
   disableOnInvalidInputs?: boolean,
-  handler?: (value?: T) => any | Promise<any>
+  handler?: (value: T | undefined, inputs: StringMap) => any | Promise<any>
 };
 
 export type MessageBoxResult<T = any> = {
@@ -41,6 +41,8 @@ export type MessageBoxInput = {
   value?: any,
   min?: string | number,
   max?: string | number,
+  localizeLabel?: boolean,
+  localizePlaceholder?: boolean,
   validator?: (value: any) => boolean
 };
 
