@@ -129,7 +129,7 @@ export function toError(obj: any): Error {
   let message: string;
 
   try {
-    message = JSON.stringify(obj);
+    message = JSON.stringify(decycle(obj));
   }
   catch {
     message = 'serialization of error reason failed. Take a look at the details property of this error instance.';
@@ -170,7 +170,7 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
 
   if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
     try {
-      message = JSON.stringify(error, null, 2);
+      message = JSON.stringify(decycle(error), null, 2);
     }
     catch (stringifyError: unknown) {
       throw error;
@@ -178,7 +178,7 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   }
 
   const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
-  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(rest, null, 2)}` : '';
+  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycle(rest), null, 2)}` : '';
 
   return `${name ?? 'Error'}: ${message}${restString}${stackString}`;
 }
