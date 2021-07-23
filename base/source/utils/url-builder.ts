@@ -1,5 +1,4 @@
 import type { StringMap } from '../types';
-import { matchAll } from './helpers';
 import { singleton } from './singleton';
 import { isDefined } from './type-guards';
 
@@ -33,7 +32,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
     parseUrl = pathname;
   }
 
-  const matches = matchAll(urlParseRegex, parseUrl);
+  const matches = parseUrl.matchAll(urlParseRegex);
 
   for (const [, literal, parameter] of matches) {
     if (isDefined(literal)) {

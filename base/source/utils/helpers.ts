@@ -6,7 +6,7 @@ import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { assertString, assertStringPass, isArrayBuffer, isDefined, isUndefined } from './type-guards';
+import { assertString, assertStringPass, isArray, isArrayBuffer, isDate, isDefined, isFunction, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isString, isUndefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -41,23 +41,19 @@ export function toArray<T>(value: T | T[]): T[] {
 }
 
 export function clone<T>(object: T, deep: boolean): T {
-  const type = typeof object;
-
-  if (type == 'string' || type == 'number' || type == 'boolean' || type == 'undefined' || type == 'function' || object == undefined || object instanceof Date || object instanceof RegExp) {
+  if (isPrimitive(object) || isNullOrUndefined(object) || isDate(object) || isRegExp(object)) {
     return object;
   }
 
   if (!deep) {
-    return { ...object };
+    return (isArray(object) ? [...object] : { ...object }) as T;
   }
 
-  const result: StringMap = {};
-
-  for (const [property, value] of Object.entries(object)) {
-    result[property] = clone(value, true);
+  if (isArray(object)) {
+    return object.map((value): any => clone(value, true)) as any as T;
   }
 
-  return result as T;
+  return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, clone(value, true)] as const)) as T;
 }
 
 type DidNotRun = symbol;
@@ -288,22 +284,6 @@ export function compareByValueDescending<T>(a: T, b: T): number {
   throw new Error('objects not comparable');
 }
 
-export function matchAll(regex: RegExp, text: string): RegExpExecArray[] {
-  const matches: RegExpExecArray[] = [];
-
-  let match: RegExpExecArray | null;
-  do {
-    match = regex.exec(text);
-
-    if (match != undefined) {
-      matches.push(match);
-    }
-  }
-  while (match != undefined);
-
-  return matches;
-}
-
 export function propertyNameOf<T extends object>(expression: (instance: T) => any, { deep = true, flattenArray = false }: { deep?: boolean, flattenArray?: boolean } = {}): string {
   let name: string | undefined;
 
@@ -392,8 +372,9 @@ export type EqualsOptions = {
 
 const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];
 
-// eslint-disable-next-line max-statements, max-lines-per-function
-export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
+export function equals(a: any, b: any, options?: EqualsOptions): boolean;
+export function equals(a: any, b: any, options?: EqualsOptions, __doNotUse?: any): boolean; // eslint-disable-line @typescript-eslint/unified-signatures
+export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes: Set<any> = new Set()): boolean { // eslint-disable-line max-statements, complexity, max-lines-per-function
   if (a === b) {
     return true;
   }
@@ -421,6 +402,12 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
         return false;
       }
 
+      if (visitedNodes.has(a)) {
+        return true;
+      }
+
+      visitedNodes.add(a);
+
       const aPrototype = Object.getPrototypeOf(a);
       const bPrototype = Object.getPrototypeOf(b);
 
@@ -430,7 +417,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
 
       if (Array.isArray(a)) {
         return (options.arrayDeep != false && (options.deep == true || options.arrayDeep == true))
-          ? arrayEquals(a, b as any[], { sort: (options.sortArray == true) ? compareByValue : undefined, comparator: (x, y) => equals(x, y, options) })
+          ? arrayEquals(a, b as any[], { sort: (options.sortArray == true) ? compareByValue : undefined, comparator: (x, y) => equals(x, y, options, visitedNodes) })
           : a === b;
       }
 
@@ -438,7 +425,11 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
         throw new Error('equals only supports plain objects, arrays and primitives');
       }
 
-      return objectEquals(a as Record<any, any>, b as Record<any, any>, options);
+      if (options.deep == false) {
+        return false;
+      }
+
+      return objectEquals(a as Record<any, any>, b as Record<any, any>, options, visitedNodes);
 
     default:
       return a === b;
@@ -446,7 +437,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}): boolean {
 }
 
 // eslint-disable-next-line max-statements, max-lines-per-function
-function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, options: EqualsOptions): boolean {
+function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, options: EqualsOptions, visitedNodes: Set<any>): boolean {
   const aProperties = Object.getOwnPropertyNames(a);
   const bProperties = Object.getOwnPropertyNames(b);
 
@@ -455,7 +446,7 @@ function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, op
   }
 
   for (const property of aProperties) {
-    const eq = equals(a[property], b[property], options);
+    const eq = equals(a[property], b[property], options, visitedNodes);
 
     if (!eq) {
       return false;
@@ -544,4 +535,113 @@ export function deferThrow(value: any): () => never {
   return function deferThrow() {
     throw value;
   };
+}
+
+export type Decycled<T> = { __type: T } & StringMap;
+
+/**
+ * replaces cycles (circular references) in objects with JSONPath
+ * @param value object to decycle
+ * @param replacer replace values. Like JSON.stringify(value, *replacer*)
+ */
+export function decycle<T>(value: T, replacer?: (value: any) => any): Decycled<T>;
+export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<T> {
+  const mapping = new Map();
+
+  function _decycle(__value: any, path: string): any {
+    const value = isDefined(replacer) ? replacer(__value) : __value;
+
+    if (isPrimitive(value) || isRegExp(value) || isDate(value) || isFunction(value)) {
+      return value;
+    }
+
+    const mappedPath = mapping.get(value as object);
+
+    if (isDefined(mappedPath)) {
+      return { $ref: mappedPath };
+    }
+
+    mapping.set(value as object, path);
+
+    if (isArray(value)) {
+      return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
+    }
+
+    return Object.fromEntries(Object.entries(value as StringMap).map(([key, item]) => [key, _decycle(item, `${path}['${key}']`)] as const));
+  }
+
+  return _decycle(_value, '$') as Decycled<T>;
+}
+
+const pathPattern = /^\$(?:\[(?:(\d+)|'(.*?)')\])*$/u;
+const pathPartsPattern = /\[(?:(\d+)|'(.*?)')\]/ug;
+
+/**
+ * replaces JSONPath in objects with their reference
+ * @param value object to recycle
+ */
+
+export function recycle<T = any>(value: Decycled<T>, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow
+export function recycle<T = any>(value: any, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow, @typescript-eslint/unified-signatures
+export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T { // eslint-disable-line max-lines-per-function
+  const value = _clone ? clone(_value, true) : _value;
+
+  function deref(ref: string): any {
+    const parts = ref.matchAll(pathPartsPattern);
+
+    let target = value;
+    for (const [, index, property] of parts) {
+      const key = index ?? property;
+
+      if (!Object.prototype.hasOwnProperty.call(target, key!)) {
+        throw new Error(`reference ${ref} not found`);
+      }
+
+      target = (target as StringMap)[key!];
+    }
+
+    return target;
+  }
+
+  function getRef(node: any): string | undefined {
+    if (isObject(node) && Object.prototype.hasOwnProperty.call(node, '$ref')) {
+      const ref = (node as StringMap)['$ref'];
+
+      if (isString(ref) && pathPattern.test(ref)) {
+        return ref;
+      }
+    }
+
+    return undefined;
+  }
+
+  function _recycle(node: any): void {
+    if (isArray(node)) {
+      for (let i = 0; i < node.length; i++) {
+        const ref = getRef(node[i]);
+
+        if (isDefined(ref)) {
+          node[i] = deref(ref);
+        }
+        else {
+          _recycle(node[i]);
+        }
+      }
+    }
+    else if (isObject(node) && isNotNull(node)) {
+      for (const key of Object.keys(node)) {
+        const ref = getRef((node as StringMap)[key]);
+
+        if (isDefined(ref)) {
+          (node as StringMap)[key] = deref(ref);
+        }
+        else {
+          _recycle((node as StringMap)[key]);
+        }
+      }
+    }
+  }
+
+  _recycle(value);
+  return value as any as T;
 }

@@ -6,6 +6,18 @@ import { AssertionError } from '../error';
 type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
 type InferIsNotType<ValueType, T> = T extends (value: any) => value is infer R ? Exclude<ValueType, R> : never;
 
+export function assert(condition: boolean, message: string = 'assertion failed'): asserts condition {
+  if (!condition) {
+    throw new AssertionError(message);
+  }
+}
+
+export function assertNot(condition: boolean, message: string = 'assertion failed'): asserts condition {
+  if (condition) {
+    throw new AssertionError(message);
+  }
+}
+
 export function isUndefined(value: any): value is undefined { return value === undefined; }
 export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return !isUndefined(value); }
 export function assertUndefined(value: any, message: string = `expected value to be undefined, but it is ${value}`): asserts value is InferIsType<typeof isUndefined> { assert(isUndefined(value), message); }
@@ -83,6 +95,27 @@ export function assertNotPrimitive<T>(value: T, message: string = `expected valu
 export function assertPrimitivePass(value: any, message?: string): InferIsType<typeof isPrimitive> { assertPrimitive(value, message); return value; }
 export function assertNotPrimitivePass<T>(value: T, message?: string): InferIsNotType<T, typeof isPrimitive> { assertNotPrimitive(value, message); return value; }
 
+export function isDate(value: any): value is Date { return (value instanceof Date); }
+export function isNotDate<T>(value: T): value is InferIsNotType<T, typeof isDate> { return !isDate(value); }
+export function assertDate(value: any, message: string = `expected value to be Date, but it is ${value}`): asserts value is InferIsType<typeof isDate> { assert(isDate(value), message); }
+export function assertNotDate<T>(value: T, message: string = `expected value to not be Date, but it is ${value}`): asserts value is InferIsNotType<T, typeof isDate> { assert(isNotDate(value), message); }
+export function assertDatePass(value: any, message?: string): InferIsType<typeof isDate> { assertDate(value, message); return value; }
+export function assertNotDatePass<T>(value: T, message?: string): InferIsNotType<T, typeof isDate> { assertNotDate(value, message); return value; }
+
+export function isRegExp(value: any): value is RegExp { return (value instanceof RegExp); }
+export function isNotRegExp<T>(value: T): value is InferIsNotType<T, typeof isRegExp> { return !isRegExp(value); }
+export function assertRegExp(value: any, message: string = `expected value to be RegExp, but it is ${value}`): asserts value is InferIsType<typeof isRegExp> { assert(isRegExp(value), message); }
+export function assertNotRegExp<T>(value: T, message: string = `expected value to not be RegExp, but it is ${value}`): asserts value is InferIsNotType<T, typeof isRegExp> { assert(isNotRegExp(value), message); }
+export function assertRegExpPass(value: any, message?: string): InferIsType<typeof isRegExp> { assertRegExp(value, message); return value; }
+export function assertNotRegExpPass<T>(value: T, message?: string): InferIsNotType<T, typeof isRegExp> { assertNotRegExp(value, message); return value; }
+
+export function isArray(value: any): value is any[] { return Array.isArray(value); }
+export function isNotArray<T>(value: T): value is InferIsNotType<T, typeof isArray> { return !isArray(value); }
+export function assertArray(value: any, message: string = `expected value to be Array, but it is ${value}`): asserts value is InferIsType<typeof isArray> { assert(isArray(value), message); }
+export function assertNotArray<T>(value: T, message: string = `expected value to not be Array, but it is ${value}`): asserts value is InferIsNotType<T, typeof isArray> { assert(isNotArray(value), message); }
+export function assertArrayPass(value: any, message?: string): InferIsType<typeof isArray> { assertArray(value, message); return value; }
+export function assertNotArrayPass<T>(value: T, message?: string): InferIsNotType<T, typeof isArray> { assertNotArray(value, message); return value; }
+
 export function isTypedArray(value: any): value is TypedArray { return (value instanceof Int8Array) || (value instanceof Uint8Array) || (value instanceof Uint8ClampedArray) || (value instanceof Int16Array) || (value instanceof Uint16Array) || (value instanceof Int32Array) || (value instanceof Uint32Array) || (value instanceof Float32Array) || (value instanceof Float64Array) || (value instanceof BigInt64Array) || (value instanceof BigUint64Array); }
 export function isNotTypedArray<T>(value: T): value is InferIsNotType<T, typeof isTypedArray> { return !isTypedArray(value); }
 export function assertTypedArray(value: any, message: string = `expected value to be TypedArray, but it is ${value}`): asserts value is InferIsType<typeof isTypedArray> { assert(isTypedArray(value), message); }
@@ -96,9 +129,3 @@ export function assertArrayBuffer(value: any, message: string = `expected value 
 export function assertNotArrayBuffer<T>(value: T, message: string = `expected value to not be ArrayBuffer, but it is ${value}`): asserts value is InferIsNotType<T, typeof isArrayBuffer> { assert(isNotArrayBuffer(value), message); }
 export function assertArrayBufferPass(value: any, message?: string): InferIsType<typeof isArrayBuffer> { assertArrayBuffer(value, message); return value; }
 export function assertNotArrayBufferPass<T>(value: T, message?: string): InferIsNotType<T, typeof isArrayBuffer> { assertNotArrayBuffer(value, message); return value; }
-
-export function assert(condition: boolean, message: string = 'assertion failed'): asserts condition {
-  if (!condition) {
-    throw new AssertionError(message);
-  }
-}
