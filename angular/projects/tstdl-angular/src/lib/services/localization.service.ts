@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
-import { isFunction, isUndefined } from '@tstdl/base/esm/utils';
+import { isFunction, isNotNull, isObject, isUndefined } from '@tstdl/base/esm/utils';
 import type { StringMap } from '@tstdl/base/types';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
@@ -11,16 +11,11 @@ export type Language = {
   name: string
 };
 
-export type LocalizeFunction = (parameters: StringMap) => string;
+export type LocalizeFunction<T = any> = (parameter: T) => string;
 
 export type Localization<T extends StringMap<string | LocalizeFunction> = StringMap<string | LocalizeFunction>> = {
   language: Language,
-  keys: T
-};
-
-type MappedLocalization = {
-  language: Language,
-  keys: Map<string, string | LocalizeFunction>
+  keys: { [P in keyof T]: string | LocalizeFunction }
 };
 
 export type LocalizationKeys<T extends Localization> = {
@@ -37,6 +32,13 @@ export function getLocalizationKeys<T extends Localization>(localization?: T): L
     get: (_, property) => property
   });
 }
+
+type MappedLocalization = {
+  language: Language,
+  keys: Map<string, string | LocalizeFunction>
+};
+
+const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
 
 @Injectable({
   providedIn: 'root'
@@ -92,7 +94,8 @@ export class LocalizationService {
     this.setLanguage(localization.language);
   }
 
-  localize(key: string, parameters: StringMap = {}): string {
+  // eslint-disable-next-line max-statements
+  localize(key: string, parameters: any = {}): string {
     if (this.language == undefined) {
       throw new Error('language not set');
     }
@@ -103,25 +106,36 @@ export class LocalizationService {
       return `__${key}__`;
     }
 
-    let textOrFunction = localization.keys.get(key);
+    const templateOrFunction = localization.keys.get(key);
 
-    if (textOrFunction == undefined) {
+    if (templateOrFunction == undefined) {
       return `__${key}__`;
     }
 
-    if (isFunction(textOrFunction)) {
-      return textOrFunction(parameters);
+    if (isFunction(templateOrFunction)) {
+      return templateOrFunction(parameters);
     }
 
-    for (const [parameter, value] of Object.entries(parameters)) {
-      const regex = new RegExp(`\\{\\{\\s*${parameter}\\s*\\}\\}`, 'gui');
-      textOrFunction = textOrFunction.replace(regex, value as string);
+    const template = templateOrFunction;
+    const templateParameters = ((isNotNull(parameters) && isObject(parameters)) ? parameters : {}) as StringMap;
+    const matches = template.matchAll(parametersPattern);
+
+    let currentIndex = 0;
+    let result = '';
+
+    for (const { 0: match, index, groups } of matches) {
+      const parameter = groups!['parameter']!;
+
+      result += template.slice(currentIndex, index);
+      result += templateParameters[parameter] ?? `__${parameter}__`;
+      currentIndex = index! + match!.length;
     }
 
-    return textOrFunction;
+    result += template.slice(currentIndex);
+    return result;
   }
 
-  localize$(key: string, parameters: StringMap = {}): Observable<string> {
+  localize$(key: string, parameters: any = {}): Observable<string> {
     return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
   }
 }

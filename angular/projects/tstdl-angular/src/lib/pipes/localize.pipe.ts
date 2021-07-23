@@ -1,6 +1,5 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectorRef, OnDestroy, Pipe, PipeTransform } from '@angular/core';
-import type { StringMap } from '@tstdl/base/types';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -13,7 +12,7 @@ import { LocalizationService } from '../services';
 export class LocalizePipe implements PipeTransform, OnDestroy {
   private readonly asyncPipe: AsyncPipe;
   private readonly localizationService: LocalizationService;
-  private readonly transform$: ReplaySubject<{ key: string, parameters: StringMap<string | number> }>;
+  private readonly transform$: ReplaySubject<{ key: string, parameters: any }>;
   private readonly localized$: Observable<string>;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
@@ -29,7 +28,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transform$.complete();
   }
 
-  transform(key: string, parameters: StringMap<string | number> = {}): any {
+  transform(key: string, parameters: any): any {
     this.transform$.next({ key, parameters });
     return this.asyncPipe.transform(this.localized$);
   }
