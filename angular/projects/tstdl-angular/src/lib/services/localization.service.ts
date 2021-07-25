@@ -95,7 +95,7 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(key: string, parameters: any = {}): string {
+  localize(key: string, parameters?: any): string {
     if (this.language == undefined) {
       throw new Error('language not set');
     }
@@ -135,7 +135,7 @@ export class LocalizationService {
     return result;
   }
 
-  localize$(key: string, parameters: any = {}): Observable<string> {
+  localize$(key: string, parameters?: any): Observable<string> {
     return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
   }
 }
