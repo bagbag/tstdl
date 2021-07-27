@@ -1,5 +1,6 @@
 import { ApplicationRef, Injectable, NgZone } from '@angular/core';
-import { Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { distinctUntilChanged, first, mapTo, shareReplay } from 'rxjs/operators';
 import { runInZone } from '../utils/rxjs';
 
@@ -19,14 +20,6 @@ export class AppStabilizationService {
     this.state$ = this.getStateObservable();
   }
 
-  private getStateObservable(): Observable<boolean> {
-    return this.applicationRef.isStable.pipe(
-      runInZone(this.ngZone),
-      distinctUntilChanged(),
-      shareReplay({ bufferSize: 1, refCount: true })
-    )
-  }
-
   wait$(state: boolean = true): Observable<void> {
     return this.state$.pipe(
       first((isStable) => isStable == state),
@@ -35,6 +28,14 @@ export class AppStabilizationService {
   }
 
   async wait(state: boolean = true): Promise<void> {
-    return this.wait$(state).toPromise();
+    return firstValueFrom(this.wait$(state));
+  }
+
+  private getStateObservable(): Observable<boolean> {
+    return this.applicationRef.isStable.pipe(
+      runInZone(this.ngZone),
+      distinctUntilChanged(),
+      shareReplay({ bufferSize: 1, refCount: true })
+    );
   }
 }
