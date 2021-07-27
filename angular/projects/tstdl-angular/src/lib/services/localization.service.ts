@@ -95,7 +95,7 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(key: string, parameters?: any): string {
+  localize(key: string, parameter?: any): string {
     if (this.language == undefined) {
       throw new Error('language not set');
     }
@@ -113,21 +113,21 @@ export class LocalizationService {
     }
 
     if (isFunction(templateOrFunction)) {
-      return templateOrFunction(parameters);
+      return templateOrFunction(parameter);
     }
 
     const template = templateOrFunction;
-    const templateParameters = ((isNotNull(parameters) && isObject(parameters)) ? parameters : {}) as StringMap;
+    const templateParameters = ((isNotNull(parameter) && isObject(parameter)) ? parameter : {}) as StringMap;
     const matches = template.matchAll(parametersPattern);
 
     let currentIndex = 0;
     let result = '';
 
     for (const { 0: match, index, groups } of matches) {
-      const parameter = groups!['parameter']!;
+      const parameterName = groups!['parameter']!;
 
       result += template.slice(currentIndex, index);
-      result += templateParameters[parameter] ?? `__${parameter}__`;
+      result += templateParameters[parameterName] ?? `__${parameterName}__`;
       currentIndex = index! + match!.length;
     }
 
@@ -135,8 +135,8 @@ export class LocalizationService {
     return result;
   }
 
-  localize$(key: string, parameters?: any): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
+  localize$(key: string, parameter?: any): Observable<string> {
+    return this.activeLanguage$.pipe(map(() => this.localize(key, parameter)));
   }
 }
 

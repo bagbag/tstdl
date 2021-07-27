@@ -12,7 +12,7 @@ import { LocalizationService } from '../services';
 export class LocalizePipe implements PipeTransform, OnDestroy {
   private readonly asyncPipe: AsyncPipe;
   private readonly localizationService: LocalizationService;
-  private readonly transform$: ReplaySubject<{ key: string, parameters: any }>;
+  private readonly transform$: ReplaySubject<{ key: string, parameter: any }>;
   private readonly localized$: Observable<string>;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
@@ -20,7 +20,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.localizationService = localizationService;
 
     this.transform$ = new ReplaySubject(1);
-    this.localized$ = this.transform$.pipe(switchMap(({ key, parameters }) => this.localizationService.localize$(key, parameters)));
+    this.localized$ = this.transform$.pipe(switchMap(({ key, parameter }) => this.localizationService.localize$(key, parameter)));
   }
 
   ngOnDestroy(): void {
@@ -28,8 +28,8 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transform$.complete();
   }
 
-  transform(key: string, parameters: any): any {
-    this.transform$.next({ key, parameters });
+  transform(key: string, parameter?: any): any {
+    this.transform$.next({ key, parameter });
     return this.asyncPipe.transform(this.localized$);
   }
 }

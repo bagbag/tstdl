@@ -4,7 +4,7 @@ import { Logger } from '@tstdl/base/esm/logger';
 import { formatError } from '@tstdl/base/esm/utils';
 import { catchError, OperatorFunction, throwError } from 'rxjs';
 import { loggerInjectionToken } from '../utils/injection-tokens';
-import { NotificationService } from './notification-service';
+import { NotificationService } from './notification.service';
 
 @Injectable({
   providedIn: 'root'

@@ -1,11 +1,9 @@
-import { MonoTypeOperatorFunction, Observable } from 'rxjs';
+import type { MonoTypeOperatorFunction, Observable } from 'rxjs';
 import { switchMapTo } from 'rxjs/operators';
-import { AppStabilizationService } from '../../services';
+import type { AppStabilizationService } from '../../services';
 
 export function waitForAppStabilization<T>(appStabilizationService: AppStabilizationService): MonoTypeOperatorFunction<T> {
-  return function <T>(source: Observable<T>): Observable<T> {
-    return appStabilizationService.wait$().pipe(
-      switchMapTo(source)
-    );
+  return function waitForAppStabilization<T>(source: Observable<T>): Observable<T> { // eslint-disable-line @typescript-eslint/no-shadow
+    return appStabilizationService.wait$().pipe(switchMapTo(source)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   };
 }
