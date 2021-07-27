@@ -1,4 +1,3 @@
-import { InjectionToken } from '@angular/core';
 import type { StringMap } from '@tstdl/base/esm/types';
 
 export type MessageBoxResult<T = any> = {
@@ -35,19 +34,19 @@ export type InputType =
   | 'url'
   | 'week';
 
-  export type MessageBoxInput = {
-    type: InputType,
-    label?: string,
-    localizeLabel?: boolean,
-    localizeLabelParameters?: StringMap,
-    placeholder?: string,
-    localizePlaceholder?: boolean,
-    localizePlaceholderParameters?: StringMap,
-    value?: any,
-    min?: string | number,
-    max?: string | number,
-    validator?: (value: any) => boolean
-  };
+export type MessageBoxInput = {
+  type: InputType,
+  label?: string,
+  localizeLabel?: boolean,
+  localizeLabelParameters?: StringMap,
+  placeholder?: string,
+  localizePlaceholder?: boolean,
+  localizePlaceholderParameters?: StringMap,
+  value?: any,
+  min?: string | number,
+  max?: string | number,
+  validator?: (value: any) => boolean
+};
 
 export type MessageBoxData<T = any> = {
   header?: string,
@@ -74,9 +73,7 @@ export type NotifyData = {
   duration?: number
 };
 
-export interface NotificationService {
-  openMessageBox<T>(data: MessageBoxData<T>): Promise<MessageBoxResult<T>>;
-  notify(data: NotifyData): void;
+export abstract class NotificationService {
+  abstract openMessageBox<T>(data: MessageBoxData<T>): Promise<MessageBoxResult<T>>;
+  abstract notify(data: NotifyData): void;
 }
-
-export const notificationServiceInjectionToken = new InjectionToken<NotificationService>('NotificationService');

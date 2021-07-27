@@ -4,7 +4,7 @@ import { Logger } from '@tstdl/base/esm/logger';
 import { formatError } from '@tstdl/base/esm/utils';
 import { catchError, OperatorFunction, throwError } from 'rxjs';
 import { loggerInjectionToken } from '../utils/injection-tokens';
-import { NotificationService, notificationServiceInjectionToken } from './notification-service';
+import { NotificationService } from './notification-service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +13,7 @@ export class ErrorHandlerService implements ErrorHandler {
   private readonly notificationService: NotificationService;
   private readonly logger: Logger;
 
-  constructor(@Inject(notificationServiceInjectionToken) notificationService: NotificationService, @Inject(loggerInjectionToken) logger: Logger) {
+  constructor(notificationService: NotificationService, @Inject(loggerInjectionToken) logger: Logger) {
     this.notificationService = notificationService;
     this.logger = logger;
   }
