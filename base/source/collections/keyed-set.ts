@@ -12,12 +12,13 @@ export class KeyedSet<T> implements Set<T> {
   private readonly mode: KeyedSetMode;
   private readonly backingMap: Map<any, T>;
 
-  [Symbol.toStringTag]: 'KeyedSet';
+  readonly [Symbol.toStringTag]: 'KeyedSet';
 
   constructor(selector: Selector<T>, mode: KeyedSetMode = KeyedSetMode.Overwrite) {
     this.selector = selector;
     this.mode = mode;
 
+    this[Symbol.toStringTag] = 'KeyedSet';
     this.backingMap = new Map();
   }
 

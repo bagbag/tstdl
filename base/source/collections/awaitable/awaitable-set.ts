@@ -6,7 +6,7 @@ export class AwaitableSet<T> implements Set<T> {
   private readonly _deleted: DeferredPromise<T>;
   private readonly _cleared: DeferredPromise;
 
-  [Symbol.toStringTag] = 'AwaitableSet';
+  readonly [Symbol.toStringTag]: 'AwaitableSet';
 
   get added(): Promise<T | T[]> {
     return this._added;
@@ -27,6 +27,7 @@ export class AwaitableSet<T> implements Set<T> {
   constructor() {
     this.backingSet = new Set();
 
+    this[Symbol.toStringTag] = 'AwaitableSet';
     this._added = new DeferredPromise();
     this._cleared = new DeferredPromise();
     this._deleted = new DeferredPromise();

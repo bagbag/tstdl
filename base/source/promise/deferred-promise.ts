@@ -19,7 +19,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
 
   private state: PromiseState;
 
-  readonly [Symbol.toStringTag] = 'DeferredPromise';
+  readonly [Symbol.toStringTag]: 'DeferredPromise';
 
   get resolved(): boolean {
     return this.state == PromiseState.Resolved;
@@ -38,6 +38,8 @@ export class DeferredPromise<T = void> implements Promise<T> {
   }
 
   constructor(executor?: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+    this[Symbol.toStringTag] = 'DeferredPromise';
+
     this.reset();
 
     if (executor != undefined) {

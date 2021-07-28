@@ -7,7 +7,7 @@ export class AwaitableMap<K, V> implements Map<K, V> {
   private readonly _cleared: DeferredPromise;
   private readonly _deleted: DeferredPromise<K>;
 
-  [Symbol.toStringTag]: 'AwaitableMap';
+  readonly [Symbol.toStringTag]: 'AwaitableMap';
 
   get setted(): Promise<[K, V]> {
     return this._setted;
@@ -28,6 +28,7 @@ export class AwaitableMap<K, V> implements Map<K, V> {
   constructor(backingMap: Map<K, V> = new Map<K, V>()) {
     this.backingMap = backingMap;
 
+    this[Symbol.toStringTag] = 'AwaitableMap';
     this._setted = new DeferredPromise();
     this._cleared = new DeferredPromise();
     this._deleted = new DeferredPromise();

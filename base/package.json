@@ -1,13 +1,13 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.39",
+  "version": "0.65.40",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
     "build": "ttsc --project tsconfig.json",
-    "build:esm": "ttsc --project tsconfig-esm.json",
+    "build:esm": "ttsc --project tsconfig.esm.json",
     "build:watch": "ttsc --watch",
     "build:prod": "rm -rf dist && npm run build && npm run build:esm && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
