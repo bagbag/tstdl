@@ -4,7 +4,7 @@ import type * as NodeCrypto from 'crypto';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { getRandomBytes } from './random';
-import { isDefined, isString } from './type-guards';
+import { isDefined, isString, isUndefined } from './type-guards';
 
 export type AesMode = 'CBC' | 'CTR' | 'GCM' | 'KW';
 export type EcdsaCurve = 'P-256' | 'P-384' | 'P-521';
@@ -54,15 +54,16 @@ export interface SignResult {
   toZBase32(): Promise<string>;
 }
 
-let subtle: SubtleCrypto;
-
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-if (isDefined(globalThis?.crypto?.subtle)) {
-  subtle = globalThis.crypto.subtle;
-}
-else {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+let subtle: SubtleCrypto = globalThis?.crypto?.subtle;
+
+if (isUndefined(subtle)) {
+// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
   subtle = ((require(['crypto'][0]!) as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+
+  if (isUndefined(subtle)) {
+    throw new Error('could not find SubtleCrypto implementation');
+  }
 }
 
 /* eslint-disable @typescript-eslint/unbound-method */
