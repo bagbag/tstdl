@@ -4,7 +4,7 @@ import { ObservableCollectionBase } from './observable-collection-base';
 export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<T>> implements Set<T>, ObservableCollection<T> {
   private readonly backingSet: Set<T>;
 
-  readonly [Symbol.toStringTag] = ObservableSet.name;
+  readonly [Symbol.toStringTag] = 'ObservableSet';
 
   get self(): ObservableSet<T> {
     return this;

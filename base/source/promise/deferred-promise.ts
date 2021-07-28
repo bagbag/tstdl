@@ -19,7 +19,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
 
   private state: PromiseState;
 
-  readonly [Symbol.toStringTag]: string = 'Promise';
+  readonly [Symbol.toStringTag] = 'DeferredPromise';
 
   get resolved(): boolean {
     return this.state == PromiseState.Resolved;

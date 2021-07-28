@@ -5,7 +5,7 @@ export class ObservableMap<K, V> implements Map<K, V> {
   private readonly backingMap: Map<K, V>;
   private readonly subject: BehaviorSubject<ObservableMap<K, V>>;
 
-  readonly [Symbol.toStringTag] = ObservableMap.name;
+  readonly [Symbol.toStringTag] = 'ObservableMap';
 
   get observe$(): Observable<ObservableMap<K, V>> {
     return this.subject.asObservable();

@@ -3,7 +3,7 @@ type Factory<Key, Value> = (key: Key) => Value;
 export class FactoryMap<K, V> implements Map<K, V> {
   private readonly factory: Factory<K, V>;
 
-  readonly [Symbol.toStringTag]: string = 'FactoryMap';
+  readonly [Symbol.toStringTag] = 'FactoryMap';
   readonly backingMap: Map<K, V>;
 
   get size(): number {
