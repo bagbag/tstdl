@@ -1,4 +1,4 @@
-import { HttpApi } from './api';
+import { HttpApi } from './api/http-api';
 import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
 import { NotFoundError, UnauthorizedError, ValidationError } from './error';

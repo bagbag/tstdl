@@ -1,7 +1,7 @@
 import type { Logger } from '#/logger';
 import type { CancellationToken } from '#/utils/cancellation-token';
 import type * as Http from 'http';
-import type { AnyRoute, HttpApi } from '../../api';
+import type { AnyRoute, HttpApi } from '../../api/http-api';
 import { HttpServer } from '../../http/server';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
