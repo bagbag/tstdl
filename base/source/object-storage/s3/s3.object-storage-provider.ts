@@ -1,7 +1,38 @@
 import type { ObjectStorageProvider } from '#/object-storage';
-import { assert, assertStringPass, isString } from '#/utils';
+import { assertDefinedPass, assertStringPass, isDefined } from '#/utils';
 import { Client } from 'minio';
 import { S3ObjectStorage } from './s3.object-storage';
+
+export type S3ObjectStorageProviderConfig = {
+  /**
+   * s3 endpoint
+   */
+  endpoint: string,
+
+  /**
+   * s3 bucket, use a single bucket for all modules (which will become transparent key prefixes)
+   *
+   * mutually exclusive with bucketPerModule
+   */
+  bucket?: string,
+
+  /**
+   * use an own bucket for every module
+   *
+   * mutually exclusive with bucket
+   */
+  bucketPerModule?: boolean,
+
+  /**
+   * s3 access key
+   */
+  accessKey: string,
+
+  /**
+   * s3 secret key
+   */
+  secretKey: string
+};
 
 export const bucketPerModule: unique symbol = Symbol('bucket per module');
 
@@ -9,38 +40,22 @@ export class S3ObjectStorageProvider implements ObjectStorageProvider<S3ObjectSt
   private readonly client: Client;
   private readonly bucket: string | true;
 
-  /**
-   * use a single bucket for all modules (which will become transparent key prefixes)
-   * @param endpoint s3 endpoint
-   * @param bucket bucket name
-   * @param accessKey s3 access key
-   * @param secretKey s3 secret key
-   */
-  constructor(endpoint: string, bucket: string, accessKey: string, secretKey: string);
+  constructor(config: S3ObjectStorageProviderConfig) {
+    const { hostname, port, protocol } = new URL(config.endpoint);
 
-  /**
-   * use a own bucket for every module
-   * @param endpoint s3 endpoint
-   * @param bucketPerModule can only accept true
-   * @param accessKey
-   * @param secretKey
-   */
-  constructor(endpoint: string, bucketPerModule: true, accessKey: string, secretKey: string); // eslint-disable-line @typescript-eslint/unified-signatures
-
-  constructor(endpoint: string, bucket: string | true, accessKey: string, secretKey: string) {
-    const { hostname, port, protocol } = new URL(endpoint);
-
-    assert(isString(bucket) || bucket, 'bucket/bucketPerModule must bei either a string or true');
+    if (isDefined(config.bucket) && (config.bucketPerModule == true)) {
+      throw new Error('bucket and bucketPerModule is mutually exclusive');
+    }
 
     this.client = new Client({
       endPoint: hostname,
       port: (port.length > 0) ? parseInt(port, 10) : undefined,
       useSSL: protocol == 'https:',
-      accessKey,
-      secretKey
+      accessKey: config.accessKey,
+      secretKey: config.secretKey
     });
 
-    this.bucket = bucket;
+    this.bucket = assertDefinedPass((config.bucketPerModule == true) ? true : config.bucket, 'either bucket or bucketPerModule must be specified');
   }
 
   get(module: string): S3ObjectStorage {

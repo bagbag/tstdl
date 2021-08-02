@@ -7,7 +7,7 @@ import { readStream } from '../../utils';
 import type { TypedReadable } from '../../utils/typed-readable';
 import type { S3Object, S3ObjectInformation } from './s3.object';
 
-export class S3ObjectStorage implements ObjectStorage<S3Object, S3ObjectInformation> {
+export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Object> {
   private readonly client: Client;
   private readonly bucket: string;
   private readonly prefix: string;

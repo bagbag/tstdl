@@ -1,6 +1,6 @@
 import type { ObjectInformation, ObjectStorageObject } from './object';
 
-export interface ObjectStorage<O extends ObjectStorageObject<OI>, OI extends ObjectInformation> {
+export interface ObjectStorage<OI extends ObjectInformation = ObjectInformation, O extends ObjectStorageObject<OI> = ObjectStorageObject<OI>> {
   /**
    * object storage module
    */
