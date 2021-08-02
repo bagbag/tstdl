@@ -1,3 +1,4 @@
+import { DetailsError } from '#/error';
 import type { BinaryData, TypedExtract } from '#/types';
 import { zBase32Encode } from '#/utils';
 import type * as NodeCrypto from 'crypto';
@@ -54,15 +55,20 @@ export interface SignResult {
   toZBase32(): Promise<string>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-let subtle: SubtleCrypto = globalThis?.crypto?.subtle;
+let subtle: SubtleCrypto;
 
-if (isUndefined(subtle)) {
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-  subtle = ((require(['crypto'][0]!) as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  subtle = globalThis?.crypto?.subtle;
 
   if (isUndefined(subtle)) {
-    throw new Error('could not find SubtleCrypto implementation');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+    subtle = ((require(['crypto'][0]!) as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+  }
+}
+catch (error: unknown) {
+  if (isUndefined(subtle!)) {
+    throw new DetailsError('could not find SubtleCrypto implementation', error);
   }
 }
 

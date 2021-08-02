@@ -1,10 +1,10 @@
-import type { Logger } from '#/logger';
-import { now } from '#/utils';
 import type { EntityRepository } from '#/database';
 import { getNewId } from '#/database';
-import { MongoError } from 'mongodb';
 import { MongoEntityRepository, noopTransformer } from '#/database/mongo/mongo-entity-repository';
 import type { Collection, Filter, TypedIndexDescription } from '#/database/mongo/types';
+import type { Logger } from '#/logger';
+import { now } from '#/utils';
+import { MongoError } from 'mongodb';
 import type { MongoLockEntity } from './model';
 
 const indexes: TypedIndexDescription<MongoLockEntity>[] = [

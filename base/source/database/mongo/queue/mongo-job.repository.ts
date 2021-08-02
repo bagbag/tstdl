@@ -1,7 +1,7 @@
-import type { Logger } from '#/logger';
-import { UniqueTagStrategy } from '#/queue';
 import type { EntityRepository } from '#/database';
 import { getNewId } from '#/database';
+import type { Logger } from '#/logger';
+import { UniqueTagStrategy } from '#/queue';
 import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
 import type { Collection, TypedIndexDescription } from '../types';
 import type { MongoJob, NewMongoJob } from './job';

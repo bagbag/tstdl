@@ -9,7 +9,7 @@ import type { FindOneAndUpdateOptions } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
-import type { Collection, DeleteManyBulkWriteOperation, DeleteOneBulkWriteOperation, Filter, InsertOneBulkWriteOperation, ReplaceOneBulkWriteOperation, Sort, TypedIndexDescription, UpdateManyBulkWriteOperation, UpdateOneBulkWriteOperation, UpdateFilter } from './types';
+import type { Collection, DeleteManyBulkWriteOperation, DeleteOneBulkWriteOperation, Filter, InsertOneBulkWriteOperation, ReplaceOneBulkWriteOperation, Sort, TypedIndexDescription, UpdateFilter, UpdateManyBulkWriteOperation, UpdateOneBulkWriteOperation } from './types';
 
 export enum ProjectionMode {
   Include = 0,
@@ -305,14 +305,14 @@ export class MongoBaseRepository<T extends Entity> {
     const { replaceOne: { filter, replacement } } = replaceOneOperation(document, options);
     const result = await this.collection.replaceOne(filter as Filter<T>, replacement, options);
 
-    return (result.matchedCount + result.upsertedCount) > 0;
+    return ((result.matchedCount as number) + (result.upsertedCount as number)) > 0;
   }
 
   async replaceByFilter<U extends T>(filter: Filter<U>, entity: U, options: ReplaceOptions = {}): Promise<boolean> {
     const document = toMongoDocument(entity);
     const result = await this.collection.replaceOne(filter as Filter<T>, document, options);
 
-    return (result.matchedCount + result.upsertedCount) > 0;
+    return ((result.matchedCount as number) + (result.upsertedCount as number)) > 0;
   }
 
   async replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): Promise<number> {
