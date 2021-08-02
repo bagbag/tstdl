@@ -10,6 +10,8 @@ import { ConsoleLogger } from './logger/console';
 import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
+import type { ObjectStorage } from './object-storage';
+import { ObjectStorageProvider } from './object-storage';
 import type { OidcStateRepository } from './openid-connect';
 import { CachedOidcConfigurationService, OidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
@@ -21,6 +23,7 @@ const loggerProviderToken = Symbol('logger-provider');
 const lockProviderToken = Symbol('lock-provider');
 const keyValueStoreProviderToken = Symbol('key-value-store-provider');
 const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
+const objectStorageScopeToken = Symbol('object-storages');
 
 let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
@@ -29,6 +32,8 @@ let loggerProvider: () => Logger = () => new ConsoleLogger(logLevel);
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
+
+let objectStorageProviderProvider: () => ObjectStorageProvider | Promise<ObjectStorageProvider> = deferThrow(new Error('ObjectStorageProvider not configured'));
 
 let migrationLogPrefix = 'MIGRATION';
 let supressErrorLog: Type<Error>[] = [];
@@ -51,6 +56,7 @@ export function configureBaseInstanceProvider(
     loggerProvider?: () => Logger,
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
+    objectStorageProviderProvider?: () => ObjectStorageProvider | Promise<ObjectStorageProvider>,
     webServerPort?: number,
     httpApiUrlPrefix?: string,
     httpApiBehindProxy?: boolean,
@@ -67,6 +73,7 @@ export function configureBaseInstanceProvider(
   loggerProvider = options.loggerProvider ?? loggerProvider;
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
+  objectStorageProviderProvider = options.objectStorageProviderProvider ?? objectStorageProviderProvider;
   webServerPort = options.webServerPort ?? webServerPort;
   httpApiUrlPrefix = options.httpApiUrlPrefix ?? httpApiUrlPrefix;
   httpApiBehindProxy = options.httpApiBehindProxy ?? httpApiBehindProxy;
@@ -126,6 +133,17 @@ export async function getMigrator(): Promise<Migrator> {
     const logger = getLogger(migrationLogPrefix);
 
     return new Migrator(migrationStateRepository, lockProvider, logger);
+  });
+}
+
+export async function getObjectStorageProvider(): Promise<ObjectStorageProvider> {
+  return singleton(singletonScope, ObjectStorageProvider, objectStorageProviderProvider);
+}
+
+export async function getObjectStorage(module: string): Promise<ObjectStorage> {
+  return singleton(objectStorageScopeToken, module, async () => {
+    const objectStorageProvider = await getObjectStorageProvider();
+    return objectStorageProvider.get(module);
   });
 }
 
