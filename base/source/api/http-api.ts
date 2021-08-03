@@ -1,10 +1,10 @@
 import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
 import type { CustomErrorStatic } from '#/error';
-import { UnsupportedMediaTypeError } from '#/error';
+import { MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
-import { isObject, round, Timer, toArray } from '#/utils';
+import { decodeText, isObject, round, Timer, toArray } from '#/utils';
 import * as KoaRouter from '@koa/router';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
@@ -316,7 +316,7 @@ async function getBody<B extends BodyType>(request: Koa.Request, bodyType: B, ma
       return request.req as unknown as BodyValueType<B>;
 
     case BodyType.Binary:
-      return readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes) as unknown as Promise<BodyValueType<B>>;
+      return readRawBody(request, maxBytes) as Promise<BodyValueType<B>>;
 
     case BodyType.Auto:
       const contentType = request.type;
@@ -350,13 +350,19 @@ async function readJsonBody(request: Koa.Request, maxBytes: number): Promise<Jso
 }
 
 async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {
-  const { req, charset } = request;
-
-  const rawBody = await readStream(req as TypedReadable<NonObjectBufferMode>, maxBytes);
-  const encoding = (charset.length > 0) ? charset : 'utf-8';
-  const body = rawBody.toString(encoding as BufferEncoding);
+  const rawBody = await readRawBody(request, maxBytes);
+  const body = decodeText(rawBody, request.charset);
 
   return body;
+}
+
+async function readRawBody(request: Koa.Request, maxBytes: number): Promise<ArrayBuffer> {
+  if (request.length > maxBytes) {
+    throw new MaxBytesExceededError(`maximum content-length of ${maxBytes} bytes exceeded`);
+  }
+
+  const buffer = await readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes);
+  return buffer.buffer;
 }
 
 function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
