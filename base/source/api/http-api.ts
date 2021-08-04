@@ -363,7 +363,7 @@ async function readRawBody(request: Koa.Request, maxBytes: number): Promise<Arra
   }
 
   const buffer = await readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes);
-  return buffer.buffer;
+  return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
 function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>) {
