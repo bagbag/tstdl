@@ -10,15 +10,24 @@ import { filter, mapTo } from 'rxjs/operators';
   exportAs: 'visibilityObserver'
 })
 export class VisibleObserverDirective implements OnDestroy, OnInit, OnChanges {
-  private readonly elementRef: ElementRef<HTMLElement>;
   private readonly renderer: Renderer2;
   private readonly isVisibleSubject: BehaviorSubject<boolean>;
   private readonly visibilitySubject: BehaviorSubject<number>;
 
   private observer: IntersectionObserver;
 
+  readonly elementRef: ElementRef<HTMLElement>;
   readonly isVisible$: Observable<boolean>;
   readonly visibility$: Observable<number>;
+
+  @Input('visibilityObserver') dataAttribute: string;
+  @Input('visibilityTreshold') treshold: number;
+  @Input('visibilityMargin') margin: string;
+  @Input('visibilityRoot') root: HTMLElement | number | null | undefined;
+
+  @Output() visible: EventEmitter<ElementRef>;
+  @Output() isVisibleChanged: EventEmitter<boolean>;
+  @Output() visibilityChanged: EventEmitter<number>;
 
   get isVisible(): boolean {
     return this.isVisibleSubject.value;
@@ -28,22 +37,13 @@ export class VisibleObserverDirective implements OnDestroy, OnInit, OnChanges {
     return this.visibilitySubject.value;
   }
 
-  @Input('visibilityObserver') dataAttribute: string;
-  @Input('visibilityTreshold') treshold: number;
-  @Input('visibilityMargin') margin: string;
-  @Input('visibilityRelativeToParent') parent: HTMLElement | number | null | undefined;
-
-  @Output() visible: EventEmitter<ElementRef>;
-  @Output() isVisibleChanged: EventEmitter<boolean>;
-  @Output() visibilityChanged: EventEmitter<number>;
-
   constructor(elementRef: ElementRef, renderer: Renderer2) {
     this.elementRef = elementRef;
     this.renderer = renderer;
 
     this.treshold = 0.05;
     this.margin = '0px';
-    this.parent = null;
+    this.root = null;
     this.isVisibleSubject = new BehaviorSubject<boolean>(false);
     this.visibilitySubject = new BehaviorSubject<number>(0);
 
@@ -92,18 +92,18 @@ export class VisibleObserverDirective implements OnDestroy, OnInit, OnChanges {
       this.unobserve();
     }
 
-    let root: HTMLElement | null = isNullOrUndefined(this.parent)
+    let root: HTMLElement | null = isNullOrUndefined(this.root)
       ? null
-      : isNumber(this.parent)
+      : isNumber(this.root)
         ? this.elementRef.nativeElement
-        : this.parent;
+        : this.root;
 
-    if (isNumber(this.parent)) {
-      for (let i = 0; i < this.parent; i++) {
+    if (isNumber(this.root)) {
+      for (let i = 0; i < this.root; i++) {
         root = root!.parentElement;
 
         if (isNull(root)) {
-          throw new Error(`parent element ${this.parent} levels above not available`);
+          throw new Error(`parent element ${this.root} levels above not available`);
         }
       }
     }

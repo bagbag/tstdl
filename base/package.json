@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.46",
+  "version": "0.65.47",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -28,7 +28,7 @@
     "eslint": "7",
     "ttypescript": "1.5",
     "typescript": "4.3",
-    "typescript-transform-paths": "3.1"
+    "typescript-transform-paths": "3.2"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "7.13",
@@ -36,7 +36,7 @@
     "got": "11.8",
     "koa": "2.13",
     "minio": "7.0",
-    "mongodb": "4.0",
+    "mongodb": "4.1",
     "superstruct": "0.15"
   }
 }

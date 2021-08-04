@@ -22,7 +22,5 @@ export type Sort<T extends Entity = Entity> = SortArray<T> | SortObject<T>;
 
 export type TypedIndexDescription<T extends Entity = Entity> = Omit<Mongo.IndexDescription, 'key' | 'partialFilterExpression'> & {
   key: { [P in keyof T]?: 1 | -1 | 'text' | 'hashed' },
-  partialFilterExpression?: Filter<T>,
-  unique?: boolean,
-  expireAfterSeconds?: number
+  partialFilterExpression?: Filter<T>
 };

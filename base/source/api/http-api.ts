@@ -4,7 +4,7 @@ import type { CustomErrorStatic } from '#/error';
 import { MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
-import { decodeText, isObject, round, Timer, toArray } from '#/utils';
+import { decodeText, isDefined, isObject, round, Timer, toArray } from '#/utils';
 import * as KoaRouter from '@koa/router';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
@@ -351,7 +351,8 @@ async function readJsonBody(request: Koa.Request, maxBytes: number): Promise<Jso
 
 async function readBody(request: Koa.Request, maxBytes: number): Promise<string> {
   const rawBody = await readRawBody(request, maxBytes);
-  const body = decodeText(rawBody, request.charset);
+  const encoding = (isDefined(request.charset) && (request.charset.length > 0)) ? request.charset : undefined;
+  const body = decodeText(rawBody, encoding);
 
   return body;
 }
