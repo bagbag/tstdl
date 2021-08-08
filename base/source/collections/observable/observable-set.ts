@@ -18,11 +18,11 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
     return this.backingSet.size;
   }
 
-  constructor() {
+  constructor(values?: Iterable<T> | null) {
     super();
 
     this[Symbol.toStringTag] = 'ObservableSet';
-    this.backingSet = new Set();
+    this.backingSet = new Set(values);
   }
 
   add(value: T): this {
@@ -63,6 +63,7 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
 
     for (const value of values) {
       const deleted = this.backingSet.delete(value);
+
       if (deleted) {
         deletedValues.push(value);
       }
