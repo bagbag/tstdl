@@ -117,6 +117,10 @@ export function formatDuration(milliseconds: number, precision: number): string 
   return result;
 }
 
+export function valueOfType<T>(value: T): T {
+  return value;
+}
+
 export function flatten<T>(array: DeepArray<T>): T[] {
   return array.reduce<T[]>((acc, item) => (Array.isArray(item) ? [...(acc), ...flatten(item)] : [...(acc), item]), []);
 }
