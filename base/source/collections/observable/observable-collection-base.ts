@@ -1,5 +1,6 @@
+import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { firstValueFrom, merge, Subject } from 'rxjs';
+import { merge, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith } from 'rxjs/operators';
 import type { ObservableCollection } from './observable-collection';
 

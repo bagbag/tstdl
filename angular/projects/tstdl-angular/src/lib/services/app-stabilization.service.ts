@@ -1,6 +1,6 @@
 import { ApplicationRef, Injectable, NgZone } from '@angular/core';
+import { firstValueFrom } from '@tstdl/base/esm/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { firstValueFrom } from 'rxjs';
 import { distinctUntilChanged, first, mapTo, shareReplay } from 'rxjs/operators';
 import { runInZone } from '../utils/rxjs';
 

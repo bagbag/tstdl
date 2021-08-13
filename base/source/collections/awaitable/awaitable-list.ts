@@ -1,5 +1,6 @@
+import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { firstValueFrom, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 export class AwaitableList<T> implements Iterable<T> {
   private readonly _added: Subject<T | T[]>;
