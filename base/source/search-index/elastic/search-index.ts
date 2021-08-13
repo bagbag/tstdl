@@ -7,14 +7,14 @@ import type { TypedOmit } from '#/types';
 import { isDefined, isString } from '#/utils';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
-import type { QueryContainer, Sort as ElasticSort, SortCombinations } from '@elastic/elasticsearch/api/types';
+import type { QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
 
 type CursorData<T extends Entity = Entity> = {
-  query: QueryContainer,
-  sort: SortCombinations[] | undefined,
+  query: QueryDslQueryContainer,
+  sort: SearchSortCombinations[] | undefined,
   options?: QueryOptions<T>,
   searchAfter: any
 };
@@ -92,7 +92,7 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const search: Search<{ query: QueryContainer, search_after?: any }> = { index: this.indexName, body: { query: queryBody } };
+    const search: Search<{ query: QueryDslQueryContainer, search_after?: any }> = { index: this.indexName, body: { query: queryBody } };
 
     if ((options?.skip ?? 0) + (options?.limit ?? 0) > 10000) {
       throw new BadRequestError(`Result window is too large, skip + limit must be less than or equal to ${this.indexSettings.max_result_window ?? 10000}. Use cursor for more results`);
@@ -116,9 +116,9 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
     }
 
-    const sort: SortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort: SearchSortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
-    (search.sort as ElasticSort | undefined) = sort;
+    (search.sort as SearchSort | undefined) = sort;
     search.from = options?.skip;
     search.size = options?.limit ?? cursorData?.options?.limit;
     search.body!.search_after = cursorData?.searchAfter;
@@ -150,7 +150,7 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryContainer, sort: SortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
+function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SearchSortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
   return Buffer.from((JSON.stringify(data))).toString('base64');
 }

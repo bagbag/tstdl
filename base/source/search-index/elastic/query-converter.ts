@@ -1,7 +1,7 @@
-import type { RangeQuery, TextQueryType } from '@elastic/elasticsearch/api/types';
-import { isPrimitive } from '#/utils';
 import type { Entity } from '#/database';
 import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, ComplexTextSpanQuery, ComplexTextSpanQueryMode, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '#/database/query';
+import { isPrimitive, isRegExp, isString } from '#/utils';
+import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/api/types';
 import type { ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
 
@@ -15,7 +15,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
   for (const [rawProperty, value] of queryEntries) {
     const property = getPropertyName(rawProperty);
     const isPrimitiveValue = isPrimitive(value);
-    const range: RangeQuery = {};
+    const range: QueryDslRangeQuery = {};
 
     let canHandleProperty = false;
 
@@ -114,8 +114,16 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
     }
 
     if (Object.prototype.hasOwnProperty.call(value, '$regex')) {
+      const regex = (value as ComparisonRegexQuery).$regex;
+
+      const regexp: ElasticRegexQuery['regexp'][any] = isString(regex)
+        ? regex
+        : isRegExp(regex)
+          ? ({ flags: regex.flags, value: regex.source } as QueryDslRegexpQuery)
+          : ({ flags: regex.flags, value: regex.pattern } as QueryDslRegexpQuery);
+
       const termQuery: ElasticRegexQuery = {
-        regexp: { [property]: (value as ComparisonRegexQuery).$regex }
+        regexp: { property: regexp }
       };
 
       defaultBoolQueryBuilder.must(termQuery);
@@ -165,7 +173,7 @@ export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQue
   return new BoolQueryBuilder().mustNot(...norQuery.map(convertQuery)).build();
 }
 
-export function convertComplexTextSpanQueryMode(mode: ComplexTextSpanQueryMode | undefined): TextQueryType | undefined {
+export function convertComplexTextSpanQueryMode(mode: ComplexTextSpanQueryMode | undefined): QueryDslTextQueryType | undefined {
   switch (mode) {
     case undefined:
       return undefined;

@@ -199,7 +199,7 @@ export async function importHmacKey(algorithm: HashAlgorithm, key: Key | string,
 export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 128 | 192 | 256, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
   const _key = isString(key) ? encodeUtf8(key) : key;
   const keyType = isBinaryKey(_key) ? 'raw' : 'jwk';
-  return window.crypto.subtle.importKey(keyType, _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  return subtle.importKey(keyType, _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
 }
 
 /**
@@ -211,7 +211,7 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
 export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
   const _key = isString(key) ? encodeUtf8(key) : key;
   const keyType = isBinaryKey(_key) ? 'spki' : 'jwk';
-  return window.crypto.subtle.importKey(keyType, _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  return subtle.importKey(keyType, _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
 }
 
 /**
