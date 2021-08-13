@@ -15,8 +15,7 @@
       "tstdl-angular": [
         "dist/tstdl-angular/tstdl-angular",
         "dist/tstdl-angular"
-      ],
-      "@tstdl/base/*": ["node_modules/@tstdl/base/esm/*"]
+      ]
     }
   },
   "angularCompilerOptions": {

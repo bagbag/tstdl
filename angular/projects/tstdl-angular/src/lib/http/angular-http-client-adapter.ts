@@ -1,9 +1,9 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpParams as AngularHttpParams } from '@angular/common/http';
-import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from '@tstdl/base/http';
-import { HttpError, HttpResponseType } from '@tstdl/base/http';
-import type { StringMap } from '@tstdl/base/types';
-import { isDefined, isUndefined } from '@tstdl/base/utils';
+import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from '@tstdl/base/esm/http';
+import { HttpError, HttpResponseType } from '@tstdl/base/esm/http';
+import type { StringMap } from '@tstdl/base/esm/types';
+import { isDefined, isUndefined } from '@tstdl/base/esm/utils';
 import { firstValueFrom } from 'rxjs';
 
 export class AngularHttpClientAdapter implements HttpClientAdapter {

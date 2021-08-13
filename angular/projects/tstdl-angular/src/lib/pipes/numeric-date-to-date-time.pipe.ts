@@ -1,6 +1,8 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { numericDateToDate } from '@tstdl/base/utils';
-import { DateObject, DateTime } from 'luxon';
+import type { PipeTransform } from '@angular/core';
+import { Pipe } from '@angular/core';
+import { numericDateToDate } from '@tstdl/base/esm/utils';
+import type { DateObject } from 'luxon';
+import { DateTime } from 'luxon';
 
 @Pipe({
   name: 'numericDateToDateTime'
