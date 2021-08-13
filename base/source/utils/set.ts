@@ -7,6 +7,10 @@ export function intersectSets<T>(...sets: Set<T>[]): T[] {
     return [];
   }
 
+  if (intersectSets.length == 1) {
+    return [...sets[0]!];
+  }
+
   const sortedSets = sets.sort(compareByValueSelectionDescending((set) => set.size));
   const [smallestSet, ...otherSets] = sortedSets;
 
