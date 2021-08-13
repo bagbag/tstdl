@@ -108,7 +108,7 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
  * @param data data to decrypt
  */
 export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: ArrayBuffer): DecryptionResult {
-  const decryptedBuffer = subtle.encrypt(algorithm, key, bytes);
+  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes);
 
   return {
     toBuffer: async () => decryptedBuffer,
