@@ -3,11 +3,11 @@
 import { compareByValueSelectionDescending } from './helpers';
 
 export function intersectSets<T>(...sets: Set<T>[]): T[] {
-  if (intersectSets.length == 0) {
+  if (sets.length == 0) {
     return [];
   }
 
-  if (intersectSets.length == 1) {
+  if (sets.length == 1) {
     return [...sets[0]!];
   }
 
