@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.58",
+  "version": "0.65.62",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/koa__router": "8.0",
+    "@types/luxon": "^2.0.0",
     "@types/minio": "7.0",
     "@types/node": "16",
     "@types/yup": "0.29",
