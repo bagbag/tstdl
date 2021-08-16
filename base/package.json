@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.57",
+  "version": "0.65.58",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -14,12 +14,11 @@
     "pub": "npm run build:prod && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "1",
+    "luxon": "2",
     "rxjs": "^7.3.0"
   },
   "devDependencies": {
     "@types/koa__router": "8.0",
-    "@types/luxon": "1",
     "@types/minio": "7.0",
     "@types/node": "16",
     "@types/yup": "0.29",

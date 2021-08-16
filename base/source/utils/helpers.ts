@@ -288,14 +288,25 @@ export function compareByValueDescending<T>(a: T, b: T): number {
   throw new Error('objects not comparable');
 }
 
-export function propertyNameOf<T extends object>(expression: (instance: T) => any, { deep = true, flattenArray = false }: { deep?: boolean, flattenArray?: boolean } = {}): string {
+
+/**
+ * get the path to a property
+ * @param expression property selection expression
+ * @param options options
+ *
+ * deep: whether to return the whole path to the property or just the property itself
+ *
+ * skipArray: ignore array accesses
+ * @returns property name
+ */
+export function propertyNameOf<T extends object>(expression: (instance: T) => any, { deep = true, skipArray = false }: { deep?: boolean, skipArray?: boolean } = {}): string {
   let name: string | undefined;
 
   const { proxy, revoke } = Proxy.revocable<T>({} as T, {
     get: (_target, property): any => {
       assertString(property, `property must be a string, but was ${property.toString()}`);
 
-      const ignore = (flattenArray && (/\d+/u).test(property));
+      const ignore = (skipArray && (/\d+/u).test(property));
 
       if (ignore) {
         return proxy;
@@ -318,22 +329,84 @@ export function propertyNameOf<T extends object>(expression: (instance: T) => an
   return assertStringPass(name, 'invalid expression');
 }
 
+/**
+ * creates a new array of specified length and fills it with values from the specified value provider function
+ * @param length length of the new array
+ * @param valueProvider provider function for the array values
+ * @returns created array
+ */
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
-  const array = [];
+  const array = new Array<T>(length);
 
   for (let i = 0; i < length; i++) {
-    array.push(valueProvider(i));
+    array[i] = valueProvider(i);
   }
 
   return array;
 }
 
-export function randomElement<T>(array: T[], { min, max }: { min?: number, max?: number } = {}): T {
-  const _min = min != undefined ? Math.max(min, 0) : 0;
-  const _max = max != undefined ? Math.min(max, array.length - 1) : array.length - 1;
+/**
+ * shuffles items using "The modern version of the Fisher–Yates shuffle"
+ * @param items items to shuffle
+ * @returns shuffled items
+ */
+export function shuffle<T>(items: T[]): T[] {
+  const cloned = [...items];
+
+  for (let i = 0; i < cloned.length; i++) {
+    const j = random(i, cloned.length - 1, true);
+    [cloned[i], cloned[j]] = [cloned[j]!, cloned[i]!];
+  }
+
+  return cloned;
+}
+
+/**
+ * picks a random item from specified array
+ * @param array array to pick random item from
+ * @param options options
+ * @returns random item
+ */
+export function randomItem<T>(array: T[], { min, max }: { min?: number, max?: number } = {}): T {
+  const _min = isDefined(min) ? Math.max(min, 0) : 0;
+  const _max = isDefined(max) ? Math.min(max, array.length - 1) : array.length - 1;
   const index = random(_min, _max, true);
 
   return array[index]!;
+}
+
+/**
+ * picks random items from specified array
+ * @param array array to pick random items from
+ * @param count count of items to pick
+ * @param allowDuplicates allow picking an item multiple times - required when count is larger than array length
+ * @returns random items
+ */
+export function randomItems<T>(array: T[], count: number, allowDuplicates: boolean = false): T[] {
+  if (allowDuplicates) {
+    return createArray(count, () => array[random(0, array.length - 1, true)]!);
+  }
+
+  if (count > array.length) {
+    throw new Error('count larger than length of array without allowing duplicates');
+  }
+
+  if (count >= (array.length / 2)) {
+    return shuffle(array).slice(0, count);
+  }
+
+  const taken = new Set<number>();
+
+  return createArray<T>(count, () => {
+    while (true) {
+      const index = random(0, array.length - 1, true);
+
+      if (!taken.has(index)) {
+        taken.add(index);
+        return array[index]!;
+      }
+    }
+  });
 }
 
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
