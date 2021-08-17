@@ -150,7 +150,7 @@ export type FormatErrorOptions = {
 
 // eslint-disable-next-line max-statements
 export function formatError(error: any, options: FormatErrorOptions = {}): string {
-  const { includeRest = false, includeStack = false } = options;
+  const { includeRest = true, includeStack = true } = options;
 
   let name: string | undefined;
   let message: string | undefined;
