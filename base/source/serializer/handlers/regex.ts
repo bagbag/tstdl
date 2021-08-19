@@ -1,7 +1,7 @@
-import type { registerSerializationType } from '../serializer';
+import { registerSerializationType } from '../serializer';
 
-export function registerRegExpType(register: typeof registerSerializationType): void {
-  register(RegExp, serialize, deserialize);
+export function registerRegExpType(): void {
+  registerSerializationType(RegExp, serialize, deserialize);
 }
 
 type RegExpData = {

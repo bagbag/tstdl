@@ -1,3 +1,4 @@
+import { isFunction } from '#/utils';
 import type { Json } from '../types';
 
 export const serializeSymbol: unique symbol = Symbol('Symbol for serialization function');
@@ -9,4 +10,12 @@ export interface Serializable {
 
 export interface SerializableStatic extends Function {
   [deserializeSymbol](data: any): Serializable;
+}
+
+export function isSerializable(value: any): value is Serializable {
+  return isFunction((value as Serializable)[serializeSymbol]);
+}
+
+export function isSerializableStatic(value: any): value is SerializableStatic {
+  return isFunction((value as SerializableStatic)[deserializeSymbol]);
 }

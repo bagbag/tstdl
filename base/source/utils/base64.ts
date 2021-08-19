@@ -2,12 +2,26 @@
 
 import type { TypedArray } from '../types';
 import { toUint8Array } from './helpers';
-import { isDefined } from './type-guards';
+import { isArrayBuffer, isDefined } from './type-guards';
 
-export function encodeBase64(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
+export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOffset?: number, bytesLength?: number): string {
+  let arrayBuffer: ArrayBuffer;
+  let offset: number | undefined;
+  let length: number | undefined;
+
+  if (isArrayBuffer(array)) {
+    arrayBuffer = array;
+  }
+  else {
+    arrayBuffer = array.buffer;
+    offset = bytesOffset ?? array.byteOffset;
+    length = bytesLength ?? array.byteLength;
+  }
+
   if (typeof Buffer != 'undefined') {
-    const buffer = Buffer.from(array, bytesOffset, length);
-    return buffer.toString('base64');
+    const buffer = Buffer.from(arrayBuffer, offset, length);
+    const base64 = buffer.toString('base64');
+    return base64;
   }
 
   return encodeBase64Fallback(array);
@@ -43,7 +57,7 @@ export function base64UrlToBase64(input: string): string {
     .replace(/_/ug, '/');
 }
 
-function encodeBase64Fallback(data: TypedArray | ArrayBuffer): string {
+function encodeBase64Fallback(data: ArrayBuffer | TypedArray | DataView): string {
   const bytes = toUint8Array(data);
 
   let nMod3 = 2;

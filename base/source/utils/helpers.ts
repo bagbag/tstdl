@@ -6,7 +6,7 @@ import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { assertString, assertStringPass, isArray, isArrayBuffer, isDate, isDefined, isFunction, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isString, isUndefined } from './type-guards';
+import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
@@ -35,14 +35,80 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
 }
 
 export function toArray<T>(value: T | T[]): T[] {
-  return Array.isArray(value)
-    ? value
-    : [value];
+  return Array.isArray(value) ? value : [value];
 }
 
+const supportsNotification = typeof Notification != 'undefined';
+
+/**
+ * create an structural clone of an value
+ *
+ * may not work in every environment!
+ * @param value value to clone
+ * @returns clone of value
+ */
+export function structuralClone<T>(value: T): T {
+  if (supportsNotification) {
+    return new Notification('', { data: value, silent: true }).data as T;
+  }
+
+  const oldState = history.state;
+  history.replaceState(value, document.title);
+  const copy = history.state as T;
+  history.replaceState(oldState, document.title);
+
+  return copy;
+}
+
+/**
+ * create an structural clone of an value using a MessageChannel
+ *
+ * should work in all environments
+ * @param value value to clone
+ * @returns clone of value
+ */
+export async function structuralCloneAsync<T>(value: T): Promise<T> {
+  const { port1, port2 } = new MessageChannel();
+
+  const promise = new Promise<T>((resolve) => (port2.onmessage = (event) => resolve(event.data as T)));
+  port1.postMessage(value);
+
+  return promise;
+}
+
+// eslint-disable-next-line max-statements
 export function clone<T>(object: T, deep: boolean): T {
-  if (isPrimitive(object) || isNullOrUndefined(object) || isDate(object) || isRegExp(object)) {
+  if (isPrimitive(object) || isNullOrUndefined(object)) {
     return object;
+  }
+
+  if (isDate(object)) {
+    return new Date(object) as unknown as T;
+  }
+
+  if (isRegExp(object)) {
+    return new RegExp(object.source, object.flags) as unknown as T;
+  }
+
+  if (isSet(object)) {
+    return new Set(object) as unknown as T;
+  }
+
+  if (isMap(object)) {
+    return new Map(object) as unknown as T;
+  }
+
+  if (isArrayBuffer(object)) {
+    return object.slice(0) as unknown as T;
+  }
+
+  if (isTypedArray(object)) {
+    return object.slice() as unknown as T;
+  }
+
+  if (isDataView(object)) {
+    const clonedBuffer = object.buffer.slice(0);
+    return new DataView(clonedBuffer, object.byteOffset, object.byteLength) as unknown as T;
   }
 
   if (!deep) {
@@ -329,6 +395,23 @@ export function propertyNameOf<T extends object>(expression: (instance: T) => an
   return assertStringPass(name, 'invalid expression');
 }
 
+const dereferencePathPartsPattern = /[^.]+/ug;
+
+export function dereference(value: object, reference: string): unknown {
+  const parts = reference.matchAll(dereferencePathPartsPattern);
+
+  let target = value;
+  for (const [property] of parts) {
+    if (!Object.prototype.hasOwnProperty.call(target, property!)) {
+      throw new Error(`property ${property} not found`);
+    }
+
+    target = (target as StringMap)[property!];
+  }
+
+  return target;
+}
+
 /**
  * creates a new array of specified length and fills it with values from the specified value provider function
  * @param length length of the new array
@@ -563,6 +646,7 @@ export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Arr
   if (isArrayBuffer(data)) {
     return clone ? new Uint8Array(data.slice(0)) : new Uint8Array(data);
   }
+
   const { buffer, byteOffset, byteLength } = (data as TypedArray | DataView);
 
   return clone
@@ -650,8 +734,8 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
   return _decycle(_value, '$') as Decycled<T>;
 }
 
-const pathPattern = /^\$(?:\[(?:(\d+)|'(.*?)')\])*$/u;
-const pathPartsPattern = /\[(?:(\d+)|'(.*?)')\]/ug;
+const recyclePathPattern = /^\$(?:\[(?:(\d+)|'(.*?)')\])*$/u;
+const recyclePathPartsPattern = /\[(?:(\d+)|'(.*?)')\]/ug;
 
 /**
  * replaces JSONPath in objects with their reference
@@ -664,7 +748,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   const value = _clone ? clone(_value, true) : _value;
 
   function deref(ref: string): any {
-    const parts = ref.matchAll(pathPartsPattern);
+    const parts = ref.matchAll(recyclePathPartsPattern);
 
     let target = value;
     for (const [, index, property] of parts) {
@@ -684,7 +768,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
     if (isObject(node) && Object.prototype.hasOwnProperty.call(node, '$ref')) {
       const ref = (node as StringMap)['$ref'];
 
-      if (isString(ref) && pathPattern.test(ref)) {
+      if (isString(ref) && recyclePathPattern.test(ref)) {
         return ref;
       }
     }
