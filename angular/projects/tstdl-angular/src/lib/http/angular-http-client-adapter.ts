@@ -1,6 +1,6 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpParams as AngularHttpParams } from '@angular/common/http';
-import type { HttpClientAdapter, HttpMethod, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from '@tstdl/base/esm/http';
+import type { HttpClientAdapter, HttpRequest, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from '@tstdl/base/esm/http';
 import { HttpError, HttpResponseType } from '@tstdl/base/esm/http';
 import { firstValueFrom } from '@tstdl/base/esm/rxjs/compat';
 import type { StringMap } from '@tstdl/base/esm/types';
@@ -13,47 +13,49 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
     this.angularHttpClient = angularHttpClient;
   }
 
-  async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
+  async call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const response = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(method.toUpperCase(), url, {
-        headers: new AngularHttpHeaders(options.headers),
-        params: new AngularHttpParams(options.parameters),
-        responseType: getAngularHttpRequestResponseType(responseType),
+      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(request.url, request.method, {
+        headers: new AngularHttpHeaders(request.headers),
+        params: new AngularHttpParams(request.parameters),
+        responseType: getAngularHttpRequestResponseType(request.responseType),
         observe: 'response',
-        body: getAngularBody(options.body)
+        body: getAngularBody(request.body)
       }));
 
-      const header = convertAngularHeaders(response.headers);
+      const header = convertAngularHeaders(angularResponse.headers);
 
-      const result: HttpResponse<T> = {
-        statusCode: response.status,
-        statusMessage: response.statusText,
+      const response: HttpResponse<T> = {
+        request,
+        statusCode: angularResponse.status,
+        statusMessage: angularResponse.statusText,
         header,
-        body: response.body!
+        body: angularResponse.body!
       };
 
-      return result;
+      return response;
     }
     catch (error: unknown) {
       if (error instanceof AngularHttpErrorResponse) {
         const response: HttpResponse<any> = {
+          request,
           statusCode: error.status,
           statusMessage: error.statusText,
           header: convertAngularHeaders(error.headers),
           body: null
         };
 
-        throw new HttpError(url, method, options, response, error);
+        throw new HttpError(request, response, error);
       }
 
-      throw error;
+      throw new HttpError(request, undefined, error as Error);
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async callStream(_method: HttpMethod, _url: string, _options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>> {
-    throw new Error('Method not implemented.');
+  async callStream(_request?: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>> {
+    throw new Error('streams not supported by AngularHttpClientAdapter');
   }
 }
 

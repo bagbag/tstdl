@@ -17,6 +17,8 @@ export type HttpRequestOptions = {
   timeout?: number
 };
 
+export type HttpRequest = { url: string, method: HttpMethod, responseType: HttpResponseType } & HttpRequestOptions;
+
 export type HttpHeaders = StringMap<string | string[]>;
 
 export type HttpParameters = StringMap<string | string[]>;
@@ -36,7 +38,8 @@ export type HttpResponseTypeValueType<T extends HttpResponseType> =
   : T extends HttpResponseType.Json ? Json
   : Readable;
 
-export type HttpResponse<T extends HttpResponseType> = {
+export type HttpResponse<T extends HttpResponseType = HttpResponseType> = {
+  request: HttpRequest,
   statusCode: number,
   statusMessage?: string,
   header: HttpHeaders,
@@ -46,9 +49,13 @@ export type HttpResponse<T extends HttpResponseType> = {
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
 
 export interface HttpClientAdapter {
-  call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
-  callStream(method: HttpMethod, url: string, options?: HttpRequestOptions): Promise<HttpResponse<HttpResponseType.Stream>>;
+  call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>>;
+  callStream(request: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>>;
 }
+
+export type HttpClientHandler = (request: HttpRequest) => Promise<HttpResponse>;
+
+export type HttpClientMiddleware = (request: HttpRequest, next: HttpClientHandler) => HttpResponse | Promise<HttpResponse>;
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
@@ -56,8 +63,11 @@ export class HttpClient {
 
   private readonly adapter: HttpClientAdapter;
   private readonly headers: Map<string, string | string[]>;
+  private readonly middleware: HttpClientMiddleware[];
+  private readonly internalMiddleware: HttpClientMiddleware[];
 
-  readonly baseUrl?: string;
+  private callHandler: HttpClientHandler;
+  private callStreamHandler: HttpClientHandler;
 
   static get instance(): HttpClient {
     if (isUndefined(this._instance)) {
@@ -69,13 +79,24 @@ export class HttpClient {
 
   constructor(adapter: HttpClientAdapter, baseUrl?: string) {
     this.adapter = adapter;
-    this.baseUrl = baseUrl;
 
+    this.middleware = [];
     this.headers = new Map();
+
+    this.internalMiddleware = [
+      getBuildRequestUrlMiddleware(baseUrl)
+    ];
+
+    this.updateHandlers();
   }
 
   static configureGlobalInstance(adapter: HttpClientAdapter, baseUrl?: string): void {
     this._instance = new HttpClient(adapter, baseUrl);
+  }
+
+  addMiddleware(middleware: HttpClientMiddleware): void {
+    this.middleware.push(middleware);
+    this.updateHandlers();
   }
 
   setDefaultHeader(name: string, value: string | string[]): void {
@@ -210,57 +231,99 @@ export class HttpClient {
     return response.body;
   }
 
+  private updateHandlers(): void {
+    this.callHandler = this.composeMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.call(options));
+    this.callStreamHandler = this.composeMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.callStream(options));
+  }
+
   private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
-    const { uri, newOptions } = this.prepareRequest(url, options);
-    return this.adapter.call(method, uri, responseType, newOptions);
+    const request: HttpRequest = { url, method, responseType, ...options };
+    const preparedRequest = this.prepareRequest(request);
+
+    return this.callHandler(preparedRequest);
   }
 
   private async callStream(method: HttpMethod, url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<HttpResponseType.Stream>> {
-    const { uri, newOptions } = this.prepareRequest(url, options);
-    return this.adapter.callStream(method, uri, newOptions);
+    const request: HttpRequest = { url, method, responseType: HttpResponseType.Stream, ...options };
+    const preparedRequest = this.prepareRequest(request);
+
+    return this.callStreamHandler(preparedRequest);
   }
 
-  private prepareRequest(url: string, options: HttpRequestOptions): { uri: string, newOptions: HttpRequestOptions } {
-    const optionsWithHeaders = this.addHeaders(options, Object.fromEntries(this.headers));
-    return this.getUri(url, optionsWithHeaders);
-  }
+  private composeMiddleware(middlewares: HttpClientMiddleware[], handler: HttpClientHandler): HttpClientHandler {
+    let currentIndex = -1;
 
-  private addHeaders(options: HttpRequestOptions, headers: HttpHeaders): HttpRequestOptions {
-    const newOptions = { ...options, headers: { ...headers, ...options.headers } };
-    return newOptions;
-  }
+    async function dispatch(index: number, request: HttpRequest): Promise<HttpResponse> {
+      if (index == middlewares.length) {
+        return handler(request);
+      }
 
-  private getUri(url: string, options: HttpRequestOptions = {}): { uri: string, newOptions: HttpRequestOptions } {
-    let uri: URL;
-    let modifiedOptions: HttpRequestOptions = options;
+      const middleware = middlewares[index]!;
+      currentIndex = index;
 
-    if (options.mapUrlParameters == false || isUndefined(options.parameters)) {
-      uri = new URL(url, this.baseUrl);
-    }
-    else {
-      const { parsedUrl, parametersRest } = buildUrl(url, options.parameters);
-
-      uri = new URL(parsedUrl, this.baseUrl);
-      modifiedOptions = { ...options, parameters: parametersRest as HttpRequestOptions['parameters'] };
-    }
-
-    if (isDefined(modifiedOptions.parameters)) {
-      for (const [key, valueOrValues] of Object.entries(modifiedOptions.parameters)) {
-        if (Array.isArray(valueOrValues)) {
-          for (const value of valueOrValues) {
-            uri.searchParams.append(key, value);
-          }
+      async function next(nextRequest: HttpRequest): Promise<HttpResponse> {
+        if (index < currentIndex) {
+          throw new Error('next() called multiple times');
         }
-        else {
-          uri.searchParams.append(key, valueOrValues);
+
+        return dispatch(index + 1, nextRequest);
+      }
+
+      return middleware(request, next);
+    }
+
+    return async (request: HttpRequest) => dispatch(0, request);
+  }
+
+  private prepareRequest(request: HttpRequest): HttpRequest {
+    return addHeaders(request, Object.fromEntries(this.headers));
+  }
+}
+
+function addHeaders(request: HttpRequest, headers: HttpHeaders): HttpRequest {
+  const modifiedRequest = { ...request, headers: { ...headers, ...request.headers } };
+  return modifiedRequest;
+}
+
+function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
+  async function buildUrlParametersMiddleware(request: HttpRequest, next: HttpClientHandler): Promise<HttpResponse> {
+    const modifiedRequest = buildRequestUrl(request, baseUrl);
+    return next(modifiedRequest);
+  }
+
+  return buildUrlParametersMiddleware;
+}
+
+function buildRequestUrl(request: HttpRequest, baseUrl?: string): HttpRequest {
+  let url: URL;
+  let modifiedOptions: HttpRequest = request;
+
+  if (request.mapUrlParameters == false) {
+    url = new URL(modifiedOptions.url, baseUrl);
+  }
+  else {
+    const { parsedUrl, parametersRest } = buildUrl(modifiedOptions.url, request.parameters);
+
+    url = new URL(parsedUrl, baseUrl);
+    modifiedOptions = { ...request, parameters: parametersRest as HttpRequestOptions['parameters'] };
+  }
+
+  if (isDefined(modifiedOptions.parameters)) {
+    for (const [key, valueOrValues] of Object.entries(modifiedOptions.parameters)) {
+      if (Array.isArray(valueOrValues)) {
+        for (const value of valueOrValues) {
+          url.searchParams.append(key, value);
         }
       }
+      else {
+        url.searchParams.append(key, valueOrValues);
+      }
     }
-
-    if (isDefined(options.hash)) {
-      uri.hash = options.hash;
-    }
-
-    return { uri: uri.href, newOptions: modifiedOptions };
   }
+
+  if (isDefined(request.hash)) {
+    url.hash = request.hash;
+  }
+
+  return { ...modifiedOptions, url: url.href };
 }

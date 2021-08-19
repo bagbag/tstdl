@@ -1,22 +1,16 @@
 import { CustomError } from '../error';
-import type { HttpMethod, HttpRequestOptions, HttpResponse } from './client';
+import type { HttpRequest, HttpResponse } from './client';
 
 export class HttpError extends CustomError {
   static readonly errorName = 'HttpError';
 
-  readonly url: string;
-  readonly method: HttpMethod;
-  readonly options: HttpRequestOptions;
+  readonly request: HttpRequest;
   readonly response?: HttpResponse<any>;
-  readonly error: Error;
 
-  constructor(url: string, method: HttpMethod, options: HttpRequestOptions = {}, response?: HttpResponse<any>, error: Error | undefined = { name: 'Error not provided', message: response?.statusMessage ?? 'An error occurred' }) {
-    super({ name: 'HttpError', message: error.message });
+  constructor(request: HttpRequest, response?: HttpResponse<any>, cause?: Error) {
+    super({ name: 'HttpError', message: cause?.message ?? 'An error occurred', cause });
 
-    this.url = url;
-    this.method = method;
-    this.options = options;
+    this.request = request;
     this.response = response;
-    this.error = error;
   }
 }
