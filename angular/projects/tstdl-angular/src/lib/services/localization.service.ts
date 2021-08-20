@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Enumerable } from '@tstdl/base/esm/enumerable';
-import type { StringMap } from '@tstdl/base/esm/types';
-import { isFunction, isNotNull, isObject, isUndefined } from '@tstdl/base/esm/utils';
+import { Enumerable } from '@tstdl/base/cjs/enumerable';
+import type { StringMap } from '@tstdl/base/cjs/types';
+import { isFunction, isNotNull, isObject, isUndefined } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import { map } from 'rxjs/operators';

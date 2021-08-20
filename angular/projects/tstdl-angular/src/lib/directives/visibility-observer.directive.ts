@@ -1,6 +1,6 @@
 import type { OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core';
-import { isDefined, isNull, isNullOrUndefined, isNumber } from '@tstdl/base/esm/utils';
+import { isDefined, isNull, isNullOrUndefined, isNumber } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { filter, mapTo } from 'rxjs/operators';

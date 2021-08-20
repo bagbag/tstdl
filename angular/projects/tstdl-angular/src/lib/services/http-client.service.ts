@@ -1,6 +1,6 @@
 import { HttpClient as AngularHttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { HttpClient as TstdlHttpClient } from '@tstdl/base/esm/http';
+import { HttpClient as TstdlHttpClient } from '@tstdl/base/cjs/http';
 import { AngularHttpClientAdapter } from '../http';
 
 @Injectable({

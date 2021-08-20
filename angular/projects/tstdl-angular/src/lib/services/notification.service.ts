@@ -1,4 +1,4 @@
-import type { StringMap } from '@tstdl/base/esm/types';
+import type { StringMap } from '@tstdl/base/cjs/types';
 
 export type MessageBoxResult<T = any> = {
   actionValue?: T,

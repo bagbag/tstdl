@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { numericDateToDate } from '@tstdl/base/esm/utils';
+import { numericDateToDate } from '@tstdl/base/cjs/utils';
 import type { DateObject } from 'luxon';
 import { DateTime } from 'luxon';
 
