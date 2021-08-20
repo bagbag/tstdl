@@ -2,8 +2,6 @@ import type { Readable } from 'stream';
 import type { Json, StringMap, UndefinableJson } from '../types';
 import { buildUrl, isDefined, isUndefined } from '../utils';
 
-export const httpRequestMeta = Symbol('HttpRequestMeta');
-
 export type HttpRequestOptions = {
   headers?: HttpHeaders,
   parameters?: HttpParameters,
@@ -17,7 +15,7 @@ export type HttpRequestOptions = {
     readable?: Readable
   },
   timeout?: number,
-  [httpRequestMeta]?: Record<any, unknown>
+  context?: Record<any, unknown>
 };
 
 export type HttpRequest = { url: string, method: HttpMethod, responseType: HttpResponseType } & HttpRequestOptions;
