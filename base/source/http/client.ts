@@ -1,6 +1,6 @@
 import type { Readable } from 'stream';
 import type { Json, StringMap, UndefinableJson } from '../types';
-import { buildUrl, isDefined, isUndefined } from '../utils';
+import { buildUrl, isDefined, isUndefined, toArray } from '../utils';
 
 export type HttpRequestOptions = {
   headers?: HttpHeaders,
@@ -297,34 +297,31 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
 
 function buildRequestUrl(request: HttpRequest, baseUrl?: string): HttpRequest {
   let url: URL;
-  let modifiedOptions: HttpRequest = request;
+  let modifiedRequest: HttpRequest = request;
 
   if (request.mapUrlParameters == false) {
-    url = new URL(modifiedOptions.url, baseUrl);
+    url = new URL(modifiedRequest.url, baseUrl);
   }
   else {
-    const { parsedUrl, parametersRest } = buildUrl(modifiedOptions.url, request.parameters);
+    const { parsedUrl, parametersRest } = buildUrl(modifiedRequest.url, modifiedRequest.parameters);
 
     url = new URL(parsedUrl, baseUrl);
-    modifiedOptions = { ...request, parameters: parametersRest as HttpRequestOptions['parameters'] };
+    modifiedRequest = { ...modifiedRequest, parameters: parametersRest as HttpRequestOptions['parameters'] };
   }
 
-  if (isDefined(modifiedOptions.parameters)) {
-    for (const [key, valueOrValues] of Object.entries(modifiedOptions.parameters)) {
-      if (Array.isArray(valueOrValues)) {
-        for (const value of valueOrValues) {
-          url.searchParams.append(key, value);
-        }
-      }
-      else {
-        url.searchParams.append(key, valueOrValues);
+  if (isDefined(modifiedRequest.parameters)) {
+    for (const [key, valueOrValues] of Object.entries(modifiedRequest.parameters)) {
+      for (const value of toArray(valueOrValues)) {
+        url.searchParams.append(key, value);
       }
     }
+
+    modifiedRequest = { ...modifiedRequest, parameters: undefined };
   }
 
-  if (isDefined(request.hash)) {
-    url.hash = request.hash;
+  if (isDefined(modifiedRequest.hash)) {
+    url.hash = modifiedRequest.hash;
   }
 
-  return { ...modifiedOptions, url: url.href };
+  return { ...modifiedRequest, url: url.href };
 }
