@@ -16,9 +16,9 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
   async call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(request.url, request.method, {
+      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(request.method, request.url, {
         headers: new AngularHttpHeaders(request.headers),
-        params: new AngularHttpParams(request.parameters),
+        params: new AngularHttpParams({ fromObject: request.parameters }),
         responseType: getAngularHttpRequestResponseType(request.responseType),
         observe: 'response',
         body: getAngularBody(request.body)
