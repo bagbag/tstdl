@@ -807,37 +807,71 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   return value as any as T;
 }
 
+type NormalizeTextOptions = {
+  /**
+   * remove leading and trailing whitespace
+   */
+  trim?: boolean,
+  /**
+   * lowercase all characters
+   */
+  lowercase?: boolean,
+  /**
+   * remove multiple consecutive whitespace characters
+   */
+  multipleWhitespace?: boolean,
+  /**
+   * remove diacritics (è -> e)
+   *
+   * applies unicode NFD normalization and removes diacritics
+   * @see unicode option
+   */
+  diacritics?: boolean,
+  /**
+   * replace ligatures with their consecutive characters (æ -> ae)
+   *
+   * applies unicode NFKC normalization
+   * @see unicode option
+   */
+  ligatures?: boolean,
+  /**
+   * unicode normalization
+   * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
+   */
+  unicode?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD'
+};
+
 /**
  * trims, lowercases, replaces multi-character whitespace with a single space and unicode normalization
  * @param text text to normalize
  * @param options specify what to normalize. Defaults to all except unicode
  * @returns normalized text
  */
-export function normalizeText(text: string, options?: { trim?: boolean, lowercase?: boolean, multipleWhitespace?: boolean, diacritics?: boolean, ligatures?: boolean, unicode?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD' }): string {
+export function normalizeText(text: string, options: NormalizeTextOptions = { trim: true, lowercase: true, multipleWhitespace: true, diacritics: true, ligatures: true }): string {
   let normalized = text;
 
-  if (options?.trim ?? true) {
+  if (options.trim == true) {
     normalized = normalized.trim();
   }
 
-  if (options?.lowercase ?? true) {
+  if (options.lowercase == true) {
     normalized = normalized.toLowerCase();
   }
 
-  if (options?.multipleWhitespace ?? true) {
+  if (options.multipleWhitespace == true) {
     normalized = normalized.replace(/\s+/ug, ' ');
   }
 
-  if (options?.diacritics ?? true) {
+  if (options.diacritics == true) {
     normalized = normalized.normalize('NFD').replace(/\p{Diacritic}/ug, '');
   }
 
-  if (options?.ligatures ?? true) {
+  if (options.ligatures == true) {
     normalized = normalized.normalize('NFKC');
   }
 
-  if (isDefined(options?.unicode)) {
-    normalized = normalized.normalize(options!.unicode);
+  if (isDefined(options.unicode)) {
+    normalized = normalized.normalize(options.unicode);
   }
 
   return normalized;
