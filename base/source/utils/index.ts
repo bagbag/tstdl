@@ -20,6 +20,7 @@ export * from './jwt';
 export * from './map';
 export * from './math';
 export * from './moving-metric';
+export * from './object';
 export * from './ordered-feedable-async-iterable';
 export * from './periodic-reporter';
 export * from './periodic-sampler';

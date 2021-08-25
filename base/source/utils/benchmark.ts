@@ -1,4 +1,4 @@
-import { getGetter } from './helpers';
+import { getGetter } from './object';
 import { Timer } from './timer';
 
 let millisecondsPerTimerRead = 0;

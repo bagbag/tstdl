@@ -6,33 +6,7 @@ import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
 import { random } from './math';
 import type { Comparator } from './sort';
-import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
-
-export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
-  if (!(property in obj)) {
-    throw new Error(`property ${property as string} does not exist`);
-  }
-
-  let objOrPrototype = obj as object;
-
-  while (!Object.prototype.hasOwnProperty.call(objOrPrototype, property)) {
-    objOrPrototype = Object.getPrototypeOf(objOrPrototype) as object;
-  }
-
-  const descriptor = Object.getOwnPropertyDescriptor(objOrPrototype, property);
-
-  if (descriptor == undefined) {
-    throw new Error('could not get property descriptor');
-  }
-
-  if (descriptor.get == undefined) {
-    throw new Error(`property ${property as string} has no getter`);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const getter = bind ? descriptor.get.bind(obj) : descriptor.get;
-  return getter;
-}
+import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 export function toArray<T>(value: T | T[]): T[] {
   return Array.isArray(value) ? value : [value];
@@ -660,15 +634,15 @@ export function stripPropertyWhen<T extends object, S>(obj: T, predicate: (value
 }
 
 export function stripPropertyWhenUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, (value): value is undefined => value === undefined);
+  return stripPropertyWhen(obj, isUndefined);
 }
 
 export function stripPropertyWhenNull<T extends object>(obj: T): { [P in keyof T]: T[P] extends null ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, (value): value is null => value === null);
+  return stripPropertyWhen(obj, isNull);
 }
 
 export function stripPropertyWhenNullOrUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined | null ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, (value): value is undefined | null => value == undefined);
+  return stripPropertyWhen(obj, isNullOrUndefined);
 }
 
 export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {
