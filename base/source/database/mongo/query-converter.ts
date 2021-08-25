@@ -23,13 +23,13 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
       filterQuery[newProperty] = value;
     }
     else if (property as LogicalQueryTypes == '$and') {
-      filterQuery.$and = convertLogicalAndQuery(value as LogicalAndQuery, mappingMap);
+      filterQuery.$and = convertLogicalAndQuery(value as LogicalAndQuery<T>['$and'], mappingMap);
     }
     else if (property as LogicalQueryTypes == '$or') {
-      filterQuery.$or = convertLogicalOrQuery(value as LogicalOrQuery, mappingMap);
+      filterQuery.$or = convertLogicalOrQuery(value as LogicalOrQuery<T>['$or'], mappingMap);
     }
     else if (property as LogicalQueryTypes == '$nor') {
-      filterQuery.$nor = convertLogicalNorQuery(value as LogicalNorQuery, mappingMap);
+      filterQuery.$nor = convertLogicalNorQuery(value as LogicalNorQuery<T>['$nor'], mappingMap);
     }
     else if (property as ComparisonQueryTypes == '$regex') {
       if (isString(value) || (value instanceof RegExp)) {
@@ -67,16 +67,16 @@ function getPropertyName(property: string): string {
   return property == 'id' ? '_id' : property;
 }
 
-export function convertLogicalAndQuery<T extends Entity>(andQuery: LogicalAndQuery<T>, mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return andQuery.$and.map((query) => convertQuery(query, mapping));
+export function convertLogicalAndQuery<T extends Entity>(ands: LogicalAndQuery<T>['$and'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
+  return ands.map((query) => convertQuery(query, mapping));
 }
 
-export function convertLogicalOrQuery<T extends Entity>(orQuery: LogicalOrQuery<T>, mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return orQuery.$or.map((query) => convertQuery(query, mapping));
+export function convertLogicalOrQuery<T extends Entity>(ors: LogicalOrQuery<T>['$or'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
+  return ors.map((query) => convertQuery(query, mapping));
 }
 
-export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQuery<T>, mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return norQuery.$nor.map((query) => convertQuery(query, mapping));
+export function convertLogicalNorQuery<T extends Entity>(nors: LogicalNorQuery<T>['$nor'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
+  return nors.map((query) => convertQuery(query, mapping));
 }
 
 export function convertSort<T extends Entity, TDb extends Entity>(sort: Sort<T>, mappingMap: TransformerMappingMap<T, TDb>): SortArrayItem<TDb> {
