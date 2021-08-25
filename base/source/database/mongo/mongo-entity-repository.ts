@@ -25,17 +25,25 @@ export type TransformerMapping<T extends Entity, TDb extends Entity> = { [P in k
 export type TransformerMappingMap<T extends Entity, TDb extends Entity> = Map<keyof T, MappingItem<T, TDb>>;
 
 export type EntityTransformer<T extends Entity, TDb extends Entity> = {
+  /**
+   * function to transform the base entity to the mongo entity
+   */
   transform: (item: MaybeNewEntity<T>) => MaybeNewEntity<TDb>,
+  /**
+   * function to transform the mongo entity to the base entity
+   */
   untransform: (item: TDb) => T,
-  mapping: TransformerMapping<T, TDb>
+  /**
+   * maps a single property, required if an existing property changes its name or value. Not required for additional properties.
+   */
+  mapping?: TransformerMapping<T, TDb>
 }
 
 export const noopTransformerFunction = <T>(item: T): T => item;
 
 export const noopTransformer: EntityTransformer<any, any> = {
   transform: noopTransformerFunction,
-  untransform: noopTransformerFunction,
-  mapping: {}
+  untransform: noopTransformerFunction
 }
 
 export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<T, T> {
@@ -63,7 +71,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 
     this.baseRepository = new MongoBaseRepository(collection, { entityName });
 
-    this.transformerMappingMap = new Map(Object.entries(transformer.mapping) as [keyof T, MappingItem<T, TDb>][]);
+    this.transformerMappingMap = new Map(Object.entries(transformer.mapping ?? {}) as [keyof T, MappingItem<T, TDb>][]);
   }
 
   async initialize(): Promise<void> {

@@ -20,6 +20,7 @@ export type ComparisonQuery<Value = any> = Value | Partial<
   & ComparisonNotEqualsQuery<Value>
   & ComparisonInQuery<Value>
   & ComparisonNotInQuery<Value>
+  & ComparisonAllQuery<Value>
   & ComparisonGreaterThanQuery<Value>
   & ComparisonGreaterThanOrEqualsQuery<Value>
   & ComparisonLessThanQuery<Value>
@@ -73,6 +74,10 @@ export type ComparisonInQuery<T = any> = {
 
 export type ComparisonNotInQuery<T = any> = {
   $nin: ComparisonValue<T>[]
+};
+
+export type ComparisonAllQuery<T = any> = {
+  $all: ComparisonValue<T>[]
 };
 
 export type ComparisonGreaterThanQuery<T = any> = {

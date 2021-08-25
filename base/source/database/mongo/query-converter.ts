@@ -1,5 +1,5 @@
 import type { Entity } from '#/database';
-import type { ComparisonInQuery, ComparisonNotInQuery, ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '#/database/query';
+import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '#/database/query';
 import { allComparisonQueryTypes } from '#/database/query';
 import { isDefined, isObject, isPrimitive, isString, isUndefined } from '#/utils';
 import type { TransformerMappingMap } from './mongo-entity-repository';
@@ -8,12 +8,13 @@ import type { Filter, SortArrayItem } from './types';
 // eslint-disable-next-line max-lines-per-function, max-statements
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>, parentRawProperty?: string): Filter<TDb> {
   const filterQuery: Filter<any> = {};
+  const innerMapping = mappingMap.get(parentRawProperty as keyof T);
 
   for (const [rawProperty, rawValue] of Object.entries(query)) {
     const mapping = mappingMap.get(rawProperty as keyof T);
 
     const property = isDefined(mapping) ? getPropertyName(mapping.key as string) : getPropertyName(rawProperty);
-    const value = isDefined(mapping) ? mapping.transform(rawValue) : rawValue;
+    const value = isDefined(mapping) ? mapping.transform(rawValue as T[keyof T]) : rawValue;
 
     const newProperty = getPropertyName(property);
     const isPrimitiveValue = isPrimitive(value);
@@ -22,13 +23,13 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
       filterQuery[newProperty] = value;
     }
     else if (property as LogicalQueryTypes == '$and') {
-      filterQuery.$and = convertLogicalAndQuery(value, mappingMap);
+      filterQuery.$and = convertLogicalAndQuery(value as LogicalAndQuery, mappingMap);
     }
     else if (property as LogicalQueryTypes == '$or') {
-      filterQuery.$or = convertLogicalOrQuery(value, mappingMap);
+      filterQuery.$or = convertLogicalOrQuery(value as LogicalOrQuery, mappingMap);
     }
     else if (property as LogicalQueryTypes == '$nor') {
-      filterQuery.$nor = convertLogicalNorQuery(value, mappingMap);
+      filterQuery.$nor = convertLogicalNorQuery(value as LogicalNorQuery, mappingMap);
     }
     else if (property as ComparisonQueryTypes == '$regex') {
       if (isString(value) || (value instanceof RegExp)) {
@@ -40,12 +41,13 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
       }
     }
     else if (property as ComparisonQueryTypes == '$in') {
-      const innerMapping = mappingMap.get(parentRawProperty as keyof T);
       filterQuery['$in'] = isUndefined(innerMapping) ? value : (value as ComparisonInQuery).$in.map(innerMapping.transform);
     }
     else if (property as ComparisonQueryTypes == '$nin') {
-      const innerMapping = mappingMap.get(parentRawProperty as keyof T);
       filterQuery['$nin'] = isUndefined(innerMapping) ? value : (value as ComparisonNotInQuery).$nin.map(innerMapping.transform);
+    }
+    else if (property as ComparisonQueryTypes == '$all') {
+      filterQuery['$all'] = isUndefined(innerMapping) ? value : (value as ComparisonAllQuery).$all.map(innerMapping.transform);
     }
     else if ((allComparisonQueryTypes as string[]).includes(property)) {
       filterQuery[newProperty] = value;
