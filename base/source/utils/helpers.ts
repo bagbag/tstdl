@@ -806,3 +806,39 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   _recycle(value);
   return value as any as T;
 }
+
+/**
+ * trims, lowercases, replaces multi-character whitespace with a single space and unicode normalization
+ * @param text text to normalize
+ * @param options specify what to normalize. Defaults to all except unicode
+ * @returns normalized text
+ */
+export function normalizeText(text: string, options?: { trim?: boolean, lowercase?: boolean, multipleWhitespace?: boolean, diacritics?: boolean, ligatures?: boolean, unicode?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD' }): string {
+  let normalized = text;
+
+  if (options?.trim ?? true) {
+    normalized = normalized.trim();
+  }
+
+  if (options?.lowercase ?? true) {
+    normalized = normalized.toLowerCase();
+  }
+
+  if (options?.multipleWhitespace ?? true) {
+    normalized = normalized.replace(/\s+/ug, ' ');
+  }
+
+  if (options?.diacritics ?? true) {
+    normalized = normalized.normalize('NFD').replace(/\p{Diacritic}/ug, '');
+  }
+
+  if (options?.ligatures ?? true) {
+    normalized = normalized.normalize('NFKC');
+  }
+
+  if (isDefined(options?.unicode)) {
+    normalized = normalized.normalize(options!.unicode);
+  }
+
+  return normalized;
+}

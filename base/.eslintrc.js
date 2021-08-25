@@ -23,6 +23,7 @@ module.exports = {
     '@typescript-eslint'
   ],
   rules: {
+    '@angular-eslint/template/eqeqeq': 'off',
     '@typescript-eslint/brace-style': ['error', 'stroustrup', { allowSingleLine: true }],
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
@@ -97,6 +98,7 @@ module.exports = {
     'one-var': ['error', 'never'],
     'operator-linebreak': ['warn', 'before'],
     'padded-blocks': ['error', 'never'],
+    'prefer-arrow/prefer-arrow-functions': 'off',
     'prefer-destructuring': 'off',
     'prefer-named-capture-group': 'off',
     'quote-props': ['error', 'as-needed'],
