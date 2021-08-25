@@ -1,6 +1,6 @@
 import { emailRegex, isDefined } from '#/utils';
 import type { Failure, Struct, StructError } from 'superstruct';
-import { coerce, number, pattern, string } from 'superstruct';
+import { boolean, coerce, literal, number, pattern, string, union } from 'superstruct';
 import type { SyncEndpointParametersValidator, ValidationResult } from '../types';
 import { ValidationError } from '../types';
 
@@ -18,8 +18,12 @@ export function setDefaultSuperstructOptions(options: SuperstructOptions): void 
   defaultOptions = options;
 }
 
+const coerceBooleanLiteralsStruct = union([literal(true), literal(false), literal(1), literal(0), literal('true'), literal('false'), literal('1'), literal('0'), literal('yes'), literal('no')]);
+const coerceBooleanTrueLiterals = [true, 1, 'true', '1', 'yes'];
+
 export const email = (): Struct<string, null> => pattern(string(), emailRegex);
 export const coerceNumber = (): Struct<number, null> => coerce(number(), string(), (value) => parseFloat(value));
+export const coerceBoolean = (): Struct<boolean, null> => coerce(boolean(), coerceBooleanLiteralsStruct, (value) => coerceBooleanTrueLiterals.includes(value));
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());
 export const nulledStructSchema = <T>(struct: Struct<T, any>): Struct<T, null> => struct as any as Struct<T, null>;
 
