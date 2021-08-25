@@ -59,7 +59,11 @@ export type LogicalNorQuery<T extends Entity = Entity> = {
 };
 
 export type ComparisonValue<T> = T | Flatten<T>;
-export type ComparisonValueWithRegex<T> = T extends string ? ComparisonValue<T | RegExp> : (T | Flatten<T>);
+export type ComparisonValueWithRegex<T> = T extends string
+  ? ComparisonValue<T | RegExp>
+  : T extends string[]
+  ? ComparisonValue<(Flatten<T> | RegExp)[]>
+  : (T | Flatten<T>);
 
 export type ComparisonEqualsQuery<T = any> = {
   $eq: ComparisonValueWithRegex<T>
