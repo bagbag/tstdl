@@ -4,7 +4,7 @@ import type { Entity, MaybeNewEntity } from '#/database';
 import { getNewId } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
-import { assertDefined, assertDefinedPass, isNull, isUndefined } from '#/utils';
+import { assertDefined, assertDefinedPass, isNullOrUndefined, isUndefined } from '#/utils';
 import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
@@ -173,7 +173,7 @@ export class MongoBaseRepository<T extends Entity> {
   async tryLoadByFilter<U extends T = T>(filter: Filter<U>, options?: LoadOptions<U>): Promise<U | undefined> {
     const document = await this.collection.findOne<MongoDocument<U>>(filter as Filter<T>, options as object);
 
-    if (isNull(document)) {
+    if (isNullOrUndefined(document)) {
       return undefined;
     }
 
@@ -188,7 +188,7 @@ export class MongoBaseRepository<T extends Entity> {
   async tryLoadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
     const document = await this.collection.findOne<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
-    if (isNull(document)) {
+    if (isNullOrUndefined(document)) {
       return undefined;
     }
 
@@ -247,7 +247,7 @@ export class MongoBaseRepository<T extends Entity> {
     const cursor = this.collection.find<MongoDocument<U>>(filter as Filter<T>, options as object);
 
     for await (const document of cursor) {
-      if (isNull(document)) {
+      if (isNullOrUndefined(document)) {
         continue;
       }
 
@@ -268,7 +268,7 @@ export class MongoBaseRepository<T extends Entity> {
     const cursor = this.collection.find<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     for await (const document of cursor) {
-      if (isNull(document)) {
+      if (isNullOrUndefined(document)) {
         continue;
       }
 
