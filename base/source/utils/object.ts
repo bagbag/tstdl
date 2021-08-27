@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { Record } from '#/types';
+import { isArray, isObject, isUndefined } from './type-guards';
+
 export function mapObject<T extends Record<any, any>, K extends string | number | symbol, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => [key: K, value: V]): Record<K, V> {
   const mappedEntries = Object.entries(object).map(([key, value]) => mapper(key, value as T[keyof T]));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
@@ -38,4 +41,27 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const getter = bind ? descriptor.get.bind(obj) : descriptor.get;
   return getter;
+}
+
+export function deepEntries(object: Record, keepInnerObjects: boolean = false, prefix?: string): [string, any][] {
+  const rawEntries: [string, any][] = isUndefined(prefix)
+    ? Object.entries(object)
+    : Object.entries(object).map(([key, value]) => [`${prefix}${key}`, value]);
+
+  let entries: [string, any][] = [];
+
+  for (const [key, value] of rawEntries) {
+    if (isObject(value) || isArray(value)) {
+      if (keepInnerObjects) {
+        entries.push([key, value]);
+      }
+
+      entries = [...entries, ...deepEntries(value, keepInnerObjects, `${key}.`)];
+    }
+    else {
+      entries.push([key, value]);
+    }
+  }
+
+  return entries;
 }

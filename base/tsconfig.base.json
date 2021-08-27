@@ -26,7 +26,6 @@
     "strictPropertyInitialization": false,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "useUnknownInCatchVariables": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitOverride": true,

@@ -1,5 +1,6 @@
 import { AsyncPipe } from '@angular/common';
-import { ChangeDetectorRef, OnDestroy, Pipe, PipeTransform } from '@angular/core';
+import type { OnDestroy, PipeTransform } from '@angular/core';
+import { ChangeDetectorRef, Pipe } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';

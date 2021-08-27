@@ -328,22 +328,35 @@ export function compareByValueDescending<T>(a: T, b: T): number {
   throw new Error('objects not comparable');
 }
 
+export const propertyName = Symbol('PropertyKey');
+
+export type PropertyName = { [propertyName]: string };
+export type PropertyNameProxy<T extends Record<any, any>> = { [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> };
+export type PropertyNameProxyChild<T> = T extends Record<any, any> ? ({ [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
 
 /**
  * get the path to a property
- * @param expression property selection expression
- * @param options options
  *
- * deep: whether to return the whole path to the property or just the property itself
+ * @param options.deep whether to return the whole path to the property or just the last property
+ * @param options.skipArray ignore array accesses
+ * @param options.prefix name prefix
  *
- * skipArray: ignore array accesses
- * @returns property name
+ * @example
+ * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils';
+ *
+ * const name = getPropertyNameProxy<MyType>().foo.bar[propertyName];
+ *
+ * name == 'foo.bar' // true
  */
-export function propertyNameOf<T extends object>(expression: (instance: T) => any, { deep = true, skipArray = false }: { deep?: boolean, skipArray?: boolean } = {}): string {
-  let name: string | undefined;
+export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, skipArray?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
+  const { deep = true, skipArray = false, prefix } = options;
 
-  const { proxy, revoke } = Proxy.revocable<T>({} as T, {
+  const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
     get: (_target, property): any => {
+      if (property == propertyName) {
+        return prefix;
+      }
+
       assertString(property, `property must be a string, but was ${property.toString()}`);
 
       const ignore = (skipArray && (/\d+/u).test(property));
@@ -353,19 +366,25 @@ export function propertyNameOf<T extends object>(expression: (instance: T) => an
       }
 
       if (deep) {
-        name = isUndefined(name) ? property : `${name}.${property}`;
-      }
-      else {
-        name = property;
+        return getPropertyNameProxy({ deep, skipArray, prefix: isUndefined(prefix) ? property : `${prefix}.${property}` });
       }
 
-      return proxy;
+      return getPropertyNameProxy({ deep, skipArray, prefix: property });
     }
   });
 
-  expression(proxy);
-  revoke();
+  return proxy;
+}
 
+/**
+ * get the path to a property
+ * @param expression property selection expression
+ * @param options.deep whether to return the whole path to the property or just the last property
+ * @param options.skipArray ignore array accesses
+ * @returns property name
+ */
+export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: T) => any, options: { deep?: boolean, skipArray?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy<T>(options) as T) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 

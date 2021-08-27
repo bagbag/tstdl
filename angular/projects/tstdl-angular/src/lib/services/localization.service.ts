@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/cjs/enumerable';
 import type { StringMap } from '@tstdl/base/cjs/types';
-import { isFunction, isNotNull, isObject, isUndefined } from '@tstdl/base/cjs/utils';
+import type { PropertyName } from '@tstdl/base/cjs/utils';
+import { assertDefinedPass, deepEntries, getPropertyNameProxy, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
-import { ReplaySubject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export type Language = {
@@ -13,13 +14,16 @@ export type Language = {
 
 export type LocalizeFunction<T = any> = (parameter: T) => string;
 
-export type Localization<T extends StringMap<string | LocalizeFunction> = StringMap<string | LocalizeFunction>> = {
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
+type LocalizationTemplate = { [key: string]: string | LocalizeFunction | LocalizationTemplate };
+
+export type Localization<T extends LocalizationTemplate = LocalizationTemplate> = {
   language: Language,
-  keys: { [P in keyof T]: string | LocalizeFunction }
+  keys: T
 };
 
-export type LocalizationKeys<T extends Localization> = {
-  [P in keyof T['keys']]: P;
+export type LocalizationKeys<T extends LocalizationTemplate> = {
+  [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : PropertyName;
 };
 
 /**
@@ -27,10 +31,8 @@ export type LocalizationKeys<T extends Localization> = {
  * @param localization
  * @returns
  */
-export function getLocalizationKeys<T extends Localization>(localization?: T): LocalizationKeys<NonNullable<typeof localization>> {
-  return new Proxy({} as LocalizationKeys<T>, {
-    get: (_, property) => property
-  });
+export function getLocalizationKeys<T extends Localization>(_localization?: T): LocalizationKeys<T['keys']> {
+  return getPropertyNameProxy();
 }
 
 type MappedLocalization = {
@@ -45,25 +47,27 @@ const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
 })
 export class LocalizationService {
   private readonly localizations: Map<string, MappedLocalization>;
-  private readonly languageSubject: ReplaySubject<Language>;
+  private readonly activeLanguageSubject: BehaviorSubject<Language | undefined>;
+  private readonly availableLanguagesSubject: BehaviorSubject<Language[]>;
 
-  private language: Language | undefined;
+  get availableLanguages(): readonly Language[] {
+    return this.availableLanguagesSubject.value;
+  }
 
   get activeLanguage(): Language | undefined {
-    return this.language;
+    return this.activeLanguageSubject.value;
   }
 
-  get activeLanguage$(): Observable<Language> {
-    return this.languageSubject.asObservable();
-  }
-
-  get availableLanguages(): Iterable<Language> {
-    return Enumerable.from(this.localizations).map(([, localization]) => localization.language);
-  }
+  readonly activeLanguage$: Observable<Language | undefined>;
+  readonly availableLanguages$: Observable<readonly Language[]>;
 
   constructor() {
     this.localizations = new Map();
-    this.languageSubject = new ReplaySubject(1);
+    this.activeLanguageSubject = new BehaviorSubject<Language | undefined>(undefined);
+    this.availableLanguagesSubject = new BehaviorSubject<Language[]>([]);
+
+    this.activeLanguage$ = this.activeLanguageSubject.asObservable();
+    this.availableLanguages$ = this.availableLanguagesSubject.asObservable();
   }
 
   registerLocalization(localization: Localization): void {
@@ -77,6 +81,17 @@ export class LocalizationService {
     if (isUndefined(this.activeLanguage)) {
       this.setLocalization(localization);
     }
+
+    const availableLanguages = Enumerable.from(this.localizations).map(([, loc]) => loc.language).toArray();
+    this.availableLanguagesSubject.next(availableLanguages);
+  }
+
+  hasLanguage(languageCode: string): boolean {
+    return this.localizations.has(languageCode);
+  }
+
+  getLanguage(languageCode: string): Language {
+    return assertDefinedPass(this.localizations.get(languageCode), 'language not available').language;
   }
 
   setLanguage(language: Language): void {
@@ -86,8 +101,7 @@ export class LocalizationService {
       throw new Error(`language ${language.code} (${language.name}) not registered`);
     }
 
-    this.language = language;
-    this.languageSubject.next(language);
+    this.activeLanguageSubject.next(language);
   }
 
   setLocalization(localization: Localization): void {
@@ -95,20 +109,22 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(key: string, parameter?: any): string {
-    if (this.language == undefined) {
+  localize(keyOrPropertyName: string | PropertyName, parameter?: any): string {
+    if (isUndefined(this.activeLanguage)) {
       throw new Error('language not set');
     }
 
-    const localization = this.localizations.get(this.language.code);
+    const key = isString(keyOrPropertyName) ? keyOrPropertyName : keyOrPropertyName[propertyName];
 
-    if (localization == undefined) {
+    const localization = this.localizations.get(this.activeLanguage.code);
+
+    if (isUndefined(localization)) {
       return `__${key}__`;
     }
 
     const templateOrFunction = localization.keys.get(key);
 
-    if (templateOrFunction == undefined) {
+    if (isUndefined(templateOrFunction)) {
       return `__${key}__`;
     }
 
@@ -143,7 +159,7 @@ export class LocalizationService {
 function buildMappedLocalization({ language, keys }: Localization): MappedLocalization {
   const mappedLocalization: MappedLocalization = {
     language,
-    keys: new Map(Object.entries(keys))
+    keys: new Map(deepEntries(keys))
   };
 
   return mappedLocalization;

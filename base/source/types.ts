@@ -23,6 +23,8 @@ export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
 export type Type<T, Args extends any[] = any> = new (...args: Args) => T;
 
+export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
+export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };
 export type StringMap<T = any> = { [key: string]: T };
 export type NumberMap<T = any> = { [key: number]: T };
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
@@ -45,7 +47,7 @@ export type PropertiesOfType<T, U> = keyof ExtractPropertiesOfType<T, U>;
 export type Flatten<T> = T extends readonly (infer R)[] ? R : T;
 export type DeepFlatten<T> = T extends readonly (infer R)[]
   ? R
-  : T extends Record<any, any> ? { [P in keyof T]: DeepFlatten<T[P]> }
+  : T extends Record ? { [P in keyof T]: DeepFlatten<T[P]> }
   : T;
 
 export type DeepArray<T> = (T | DeepArray<T>)[];

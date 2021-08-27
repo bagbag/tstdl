@@ -1,15 +1,17 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { DateTime, DateTimeFormatOptions, LocaleOptions } from 'luxon';
+import type { PipeTransform } from '@angular/core';
+import { Pipe } from '@angular/core';
+import type { DateTimeFormatOptions, LocaleOptions } from 'luxon';
+import { DateTime } from 'luxon';
 
 @Pipe({
   name: 'dateTimeLocale'
 })
 export class DateTimeLocalePipe implements PipeTransform {
-  transform(dateTime: DateTime, options?: keyof typeof DateTime | (LocaleOptions & DateTimeFormatOptions)): string {
-    const localeOptions = (typeof options == 'string')
-      ? DateTime[options as keyof typeof DateTime] as DateTimeFormatOptions
-      : options;
+  transform(dateTime: DateTime, format?: keyof typeof DateTime | DateTimeFormatOptions, options?: LocaleOptions): string {
+    const formatOptions = (typeof format == 'string')
+      ? DateTime[format] as DateTimeFormatOptions
+      : format;
 
-    return dateTime.toLocaleString(localeOptions);
+    return dateTime.toLocaleString(formatOptions, options);
   }
 }
