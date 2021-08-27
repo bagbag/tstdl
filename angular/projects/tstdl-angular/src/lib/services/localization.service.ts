@@ -22,7 +22,9 @@ export type Localization<T extends LocalizationTemplate = LocalizationTemplate> 
   keys: T
 };
 
-export type LocalizationKey = PropertyName;
+declare const localizationKeySymbol: unique symbol;
+
+export type LocalizationKey = PropertyName & { [localizationKeySymbol]?: undefined };
 
 export type LocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
@@ -153,7 +155,7 @@ export class LocalizationService {
     return result;
   }
 
-  localize$(key: string, parameter?: any): Observable<string> {
+  localize$(key: string | LocalizationKey, parameter?: any): Observable<string> {
     return this.activeLanguage$.pipe(map(() => this.localize(key, parameter)));
   }
 }
