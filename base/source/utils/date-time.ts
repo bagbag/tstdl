@@ -1,4 +1,4 @@
-import type { DateObject, DateTimeOptions } from 'luxon';
+import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
 import { day } from './units';
 
@@ -94,8 +94,8 @@ export function numericDateTimeToTimestamp({ date, time }: NumericDateTime): num
   return numericDateToTimestamp(date) + time;
 }
 
-export function zonedDateToDateTime(zonedDate: ZonedDate, options: DateObject & DateTimeOptions = {}): DateTime {
-  return DateTime.fromObject({ ...zonedDate, ...options });
+export function zonedDateToDateTime(zonedDate: ZonedDate, unitsAndOptions: DateObjectUnits & DateTimeJSOptions): DateTime {
+  return DateTime.fromObject({ ...zonedDate, ...unitsAndOptions }, unitsAndOptions);
 }
 
 export function dateTimeToNumericDate(dateTime: DateTime): number {
@@ -103,9 +103,9 @@ export function dateTimeToNumericDate(dateTime: DateTime): number {
   return timestampToNumericDate(timestamp);
 }
 
-export function numericDateToDateTime(numericDate: number, options: DateObject & DateTimeOptions = {}): DateTime {
+export function numericDateToDateTime(numericDate: number, unitsAndOptions: DateObjectUnits & DateTimeJSOptions): DateTime {
   const date = numericDateToDate(numericDate);
-  return DateTime.fromObject({ ...date, ...options });
+  return DateTime.fromObject({ ...date, ...unitsAndOptions }, unitsAndOptions);
 }
 
 export function dateTimeToTime(dateTime: DateTime): number {

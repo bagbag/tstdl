@@ -90,7 +90,7 @@ export const wrapKey = subtle.wrapKey;
  */
 export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: BinaryData | string): CryptionResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
-  const encryptedBuffer = subtle.encrypt(algorithm, key, bytes);
+  const encryptedBuffer = subtle.encrypt(algorithm, key, bytes) as Promise<ArrayBuffer>;
 
   return {
     toBuffer: async () => encryptedBuffer,
@@ -108,7 +108,7 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
  * @param data data to decrypt
  */
 export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: ArrayBuffer): DecryptionResult {
-  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes);
+  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes) as Promise<ArrayBuffer>;
 
   return {
     toBuffer: async () => decryptedBuffer,
@@ -182,11 +182,14 @@ export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature
  * @param key JWK or binary key
  * @param extractable whether the key can be used for exportKey
  */
-export async function importHmacKey(algorithm: HashAlgorithm, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
+export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
   const _key = isString(key) ? encodeUtf8(key) : key;
-  const isBinary = isBinaryKey(_key);
 
-  return subtle.importKey(isBinary ? 'raw' : 'jwk', _key, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  if (isBinaryKey(_key)) {
+    return subtle.importKey('raw', _key, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  }
+
+  return subtle.importKey('jwk', _key, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
 }
 
 /**
@@ -198,8 +201,12 @@ export async function importHmacKey(algorithm: HashAlgorithm, key: Key | string,
  */
 export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 128 | 192 | 256, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
   const _key = isString(key) ? encodeUtf8(key) : key;
-  const keyType = isBinaryKey(_key) ? 'raw' : 'jwk';
-  return subtle.importKey(keyType, _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+
+  if (isBinaryKey(_key)) {
+    return subtle.importKey('raw', _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  }
+
+  return subtle.importKey('jwk', _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
 }
 
 /**
@@ -210,8 +217,12 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
  */
 export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
   const _key = isString(key) ? encodeUtf8(key) : key;
-  const keyType = isBinaryKey(_key) ? 'spki' : 'jwk';
-  return subtle.importKey(keyType, _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+
+  if (isBinaryKey(_key)) {
+    return subtle.importKey('spki', _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  }
+
+  return subtle.importKey('jwk', _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
 }
 
 /**

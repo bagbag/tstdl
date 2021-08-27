@@ -5,7 +5,7 @@ import { getNewId } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
 import { assertDefined, assertDefinedPass, isNull, isUndefined } from '#/utils';
-import type { FindOneAndUpdateOptions } from 'mongodb';
+import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
@@ -85,7 +85,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async insert<U extends T>(entity: MaybeNewEntity<U>): Promise<U> {
     const document = mongoDocumentFromMaybeNewEntity(entity);
-    await this.collection.insertOne(document as any);
+    await this.collection.insertOne(document as any as OptionalId<MongoDocument<T>>);
 
     return toEntity(document);
   }
@@ -171,9 +171,9 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async tryLoadByFilter<U extends T = T>(filter: Filter<U>, options?: LoadOptions<U>): Promise<U | undefined> {
-    const document = await this.collection.findOne<MongoDocument<U>>(filter, options as object);
+    const document = await this.collection.findOne<MongoDocument<U>>(filter as Filter<T>, options as object);
 
-    if (document == undefined) {
+    if (isNull(document)) {
       return undefined;
     }
 
@@ -186,9 +186,9 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async tryLoadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
-    const document = await this.collection.findOne<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) } as object);
+    const document = await this.collection.findOne<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
-    if (document == undefined) {
+    if (isNull(document)) {
       return undefined;
     }
 
@@ -234,8 +234,8 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async loadManyByFilter<U extends T = T>(filter: Filter<U>, options?: LoadManyOptions<U>): Promise<U[]> {
-    const documents = await this.collection.find(filter, options as object).toArray();
-    return documents.map(toEntity);
+    const documents = await this.collection.find(filter as Filter<T>, options as object).toArray();
+    return documents.map(toEntity) as U[];
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -244,15 +244,14 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async *loadManyByFilterWithCursor<U extends T = T>(filter: Filter<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
-    const cursor = this.collection.find<MongoDocument<U>>(filter, options as object);
+    const cursor = this.collection.find<MongoDocument<U>>(filter as Filter<T>, options as object);
 
     for await (const document of cursor) {
       if (isNull(document)) {
         continue;
       }
 
-      const entity = toEntity(document);
-      yield entity;
+      yield toEntity(document);
     }
   }
 
@@ -261,20 +260,19 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async loadManyProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
-    const documents = await this.collection.find<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) } as object).toArray();
+    const documents = await this.collection.find<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object).toArray();
     return documents.map(toProjectedEntity) as ProjectedEntity<U, M, P>[];
   }
 
   async * loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
-    const cursor = this.collection.find<MongoDocument<U>>(filter, { ...options, projection: toMongoProjection(mode, projection) } as object);
+    const cursor = this.collection.find<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     for await (const document of cursor) {
       if (isNull(document)) {
         continue;
       }
 
-      const entity = toProjectedEntity<U, M, P>(document);
-      yield entity;
+      yield toProjectedEntity<U, M, P>(document);
     }
   }
 

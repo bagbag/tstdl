@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.65.77",
+  "version": "0.65.78",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@types/koa__router": "8.0",
-    "@types/luxon": "^2.0.0",
+    "@types/luxon": "2.0",
     "@types/minio": "7.0",
     "@types/node": "16",
     "@types/yup": "0.29",
@@ -27,7 +27,7 @@
     "@typescript-eslint/parser": "4",
     "eslint": "7",
     "ttypescript": "1.5",
-    "typescript": "4.3",
+    "typescript": "4.4",
     "typescript-transform-paths": "3.3"
   },
   "peerDependencies": {

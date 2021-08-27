@@ -123,7 +123,14 @@ export function assertNotArrayBuffer<T>(value: T, message: string = 'expected va
 export function assertArrayBufferPass(value: any, message?: string): InferIsType<typeof isArrayBuffer> { assertArrayBuffer(value, message); return value; }
 export function assertNotArrayBufferPass<T>(value: T, message?: string): InferIsNotType<T, typeof isArrayBuffer> { assertNotArrayBuffer(value, message); return value; }
 
-export function isTypedArray(value: any): value is TypedArray { return isInt8Array(value) || isUint8Array(value) || isUint8ClampedArray(value) || isInt16Array(value) || isUint16Array(value) || isInt32Array(value) || isUint32Array(value) || isFloat32Array(value) || isFloat64Array(value) || isBigInt64Array(value) || (isBigUint64Array(value)); }
+export function isArrayBufferView(value: any): value is ArrayBufferView { return ArrayBuffer.isView(value); }
+export function isNotArrayBufferView<T>(value: T): value is InferIsNotType<T, typeof isArrayBufferView> { return !isArrayBufferView(value); }
+export function assertArrayBufferView(value: any, message: string = 'expected value to be ArrayBufferView'): asserts value is InferIsType<typeof isArrayBufferView> { assert(isArrayBufferView(value), message); }
+export function assertNotArrayBufferView<T>(value: T, message: string = 'expected value to not be ArrayBufferView'): asserts value is InferIsNotType<T, typeof isArrayBufferView> { assert(isNotArrayBufferView(value), message); }
+export function assertArrayBufferViewPass(value: any, message?: string): InferIsType<typeof isArrayBufferView> { assertArrayBufferView(value, message); return value; }
+export function assertNotArrayBufferViewPass<T>(value: T, message?: string): InferIsNotType<T, typeof isArrayBufferView> { assertNotArrayBufferView(value, message); return value; }
+
+export function isTypedArray(value: any): value is TypedArray { return ArrayBuffer.isView(value) && isNotDataView(value); }
 export function isNotTypedArray<T>(value: T): value is InferIsNotType<T, typeof isTypedArray> { return !isTypedArray(value); }
 export function assertTypedArray(value: any, message: string = 'expected value to be TypedArray'): asserts value is InferIsType<typeof isTypedArray> { assert(isTypedArray(value), message); }
 export function assertNotTypedArray<T>(value: T, message: string = 'expected value to not be TypedArray'): asserts value is InferIsNotType<T, typeof isTypedArray> { assert(isNotTypedArray(value), message); }

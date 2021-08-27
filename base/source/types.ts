@@ -67,4 +67,4 @@ export type TypedArray =
   | BigInt64Array
   | BigUint64Array;
 
-export type BinaryData = TypedArray | ArrayBuffer | DataView;
+export type BinaryData = ArrayBuffer | ArrayBufferView;
