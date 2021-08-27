@@ -98,11 +98,11 @@ export class LocalizationService {
     return assertDefinedPass(this.localizations.get(languageCode), 'language not available').language;
   }
 
-  setLanguage(language: Language): void {
-    const has = this.localizations.has(language.code);
+  setLanguage(languageOrCode: Language | string): void {
+    const language = isString(languageOrCode) ? this.localizations.get(languageOrCode)?.language : languageOrCode;
 
-    if (!has) {
-      throw new Error(`language ${language.code} (${language.name}) not registered`);
+    if (isUndefined(language) || !this.localizations.has(language.code)) {
+      throw new Error('language not registered');
     }
 
     this.activeLanguageSubject.next(language);
