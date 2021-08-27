@@ -22,8 +22,10 @@ export type Localization<T extends LocalizationTemplate = LocalizationTemplate> 
   keys: T
 };
 
+export type LocalizationKey = PropertyName;
+
 export type LocalizationKeys<T extends LocalizationTemplate> = {
-  [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : PropertyName;
+  [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
 };
 
 /**
@@ -109,7 +111,7 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(keyOrPropertyName: string | PropertyName, parameter?: any): string {
+  localize(keyOrPropertyName: string | LocalizationKey, parameter?: any): string {
     if (isUndefined(this.activeLanguage)) {
       throw new Error('language not set');
     }
