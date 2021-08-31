@@ -1,27 +1,23 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
-export type Primitive = string | number | boolean | undefined | null;
+export type Primitive = string | number | boolean | null | undefined | symbol;
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export type PrimitiveArray = PrimitiveValue[];
 
-// eslint-disable-next-line capitalized-comments
-// AsJson as workaround for https://github.com/Microsoft/TypeScript/issues/15300
-export type AsJson<T> = T extends Json ? Json : Json;
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
 export type JsonArray = Json[];
 
-export type AsUndefinableJson<T> = T extends UndefinableJson ? UndefinableJson : UndefinableJson;
-export type AsUndefinableJsonInnerNode<T> = T extends UndefinableJsonInnerNode ? UndefinableJsonInnerNode : UndefinableJsonInnerNode;
 export type UndefinableJson = JsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
 export type UndefinableJsonInnerNode = UndefinableJsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
-export type UndefinableJsonPrimitive = string | number | boolean | null | undefined;
+export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
-export type Type<T, Args extends any[] = any> = new (...args: Args) => T;
+export type Constructor<T = any, Args extends any[] = any> = Type<T, Args>;
+export type Type<T = any, Args extends any[] = any> = new (...args: Args) => T;
 
 export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
 export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };

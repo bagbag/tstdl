@@ -103,7 +103,7 @@ export function dateTimeToNumericDate(dateTime: DateTime): number {
   return timestampToNumericDate(timestamp);
 }
 
-export function numericDateToDateTime(numericDate: number, unitsAndOptions: DateObjectUnits & DateTimeJSOptions): DateTime {
+export function numericDateToDateTime(numericDate: number, unitsAndOptions?: DateObjectUnits & DateTimeJSOptions): DateTime {
   const date = numericDateToDate(numericDate);
   return DateTime.fromObject({ ...date, ...unitsAndOptions }, unitsAndOptions);
 }

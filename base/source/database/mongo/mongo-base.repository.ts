@@ -124,6 +124,11 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
+  /**
+   *
+   * @param items
+   * @returns inserted entities - entities which are already in the database are not returned
+   */
   async insertManyIfNotExistsByFilter<U extends T>(items: InsertIfNotExistsByFilterItem<U>[]): Promise<U[]> {
     if (items.length == 0) {
       return [];
