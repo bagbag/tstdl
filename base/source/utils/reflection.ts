@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function getDesignType(target: object, propertyKey?: string | symbol): any {
   return Reflect.getMetadata('design:type', target, propertyKey as string);
