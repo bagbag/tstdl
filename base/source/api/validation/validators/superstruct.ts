@@ -20,9 +20,11 @@ export function setDefaultSuperstructOptions(options: SuperstructOptions): void 
 
 const coerceBooleanLiteralsStruct = union([literal(true), literal(false), literal(1), literal(0), literal('true'), literal('false'), literal('1'), literal('0'), literal('yes'), literal('no')]);
 const coerceBooleanTrueLiterals = [true, 1, 'true', '1', 'yes'];
+const numberStruct = number();
+const numberStringStruct = pattern(string(), /^[+-]?(?:\d*\.)?\d+$/u);
 
 export const email = (): Struct<string, null> => pattern(string(), emailRegex);
-export const coerceNumber = (): Struct<number, null> => coerce(number(), string(), (value) => parseFloat(value));
+export const coerceNumber = (struct: Struct<number, null> = numberStruct): Struct<number, null> => coerce(struct, numberStringStruct, (value) => parseFloat(value));
 export const coerceBoolean = (): Struct<boolean, null> => coerce(boolean(), coerceBooleanLiteralsStruct, (value) => coerceBooleanTrueLiterals.includes(value));
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());
 export const nulledStructSchema = <T>(struct: Struct<T, any>): Struct<T, null> => struct as any as Struct<T, null>;
