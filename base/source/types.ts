@@ -29,6 +29,9 @@ export type OneOrMany<T> = T | T[];
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
+export type RequiredKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? never : K }[keyof T];
+export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T];
+
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type TypedExtract<T, U extends T> = T extends U ? T : never;
 

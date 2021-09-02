@@ -19,6 +19,7 @@ export * from './helpers';
 export * from './jwt';
 export * from './map';
 export * from './math';
+export * from './middleware';
 export * from './moving-metric';
 export * from './object';
 export * from './ordered-feedable-async-iterable';

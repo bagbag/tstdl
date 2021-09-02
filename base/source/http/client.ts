@@ -1,6 +1,8 @@
+import { isIterable } from '#/utils/iterable-helpers';
 import type { Readable } from 'stream';
 import type { Json, StringMap, UndefinableJson } from '../types';
-import { buildUrl, isDefined, isUndefined, toArray } from '../utils';
+import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
+import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isUndefined, toArray } from '../utils';
 
 export type HttpRequestOptions = {
   headers?: HttpHeaders,
@@ -18,13 +20,21 @@ export type HttpRequestOptions = {
   context?: Record<any, unknown>
 };
 
+type HttpValueEntry = [string, HttpValue | HttpValue[]];
+
+export type HttpValue = string | number | boolean | undefined;
+
+export type HttpValueMap = StringMap<HttpValue | HttpValue[]>;
+
+export type NormalizedHttpValueMap = StringMap<string | string[]>;
+
 export type HttpRequest = { url: string, method: HttpMethod, responseType: HttpResponseType } & HttpRequestOptions;
 
-export type HttpHeaders = StringMap<string | string[]>;
+export type HttpHeaders = HttpValueMap;
 
-export type HttpParameters = StringMap<string | string[]>;
+export type HttpParameters = HttpValueMap;
 
-export type HttpForm = StringMap<string | string[]>;
+export type HttpForm = HttpValueMap;
 
 export enum HttpResponseType {
   Text = 'text',
@@ -54,16 +64,16 @@ export interface HttpClientAdapter {
   callStream(request: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>>;
 }
 
-export type HttpClientHandler = (request: HttpRequest) => Promise<HttpResponse>;
+export type HttpClientHandler = AsyncMiddlerwareHandler<HttpRequest, HttpResponse>;
 
-export type HttpClientMiddleware = (request: HttpRequest, next: HttpClientHandler) => HttpResponse | Promise<HttpResponse>;
+export type HttpClientMiddleware = AsyncMiddleware<HttpRequest, HttpResponse>;
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
   private static _instance?: HttpClient;
 
   private readonly adapter: HttpClientAdapter;
-  private readonly headers: Map<string, string | string[]>;
+  private readonly headers: Map<string, HttpValue | HttpValue[]>;
   private readonly middleware: HttpClientMiddleware[];
   private readonly internalMiddleware: HttpClientMiddleware[];
 
@@ -100,7 +110,7 @@ export class HttpClient {
     this.updateHandlers();
   }
 
-  setDefaultHeader(name: string, value: string | string[]): void {
+  setDefaultHeader(name: string, value: HttpValue | HttpValue[]): void {
     this.headers.set(name, value);
   }
 
@@ -233,8 +243,8 @@ export class HttpClient {
   }
 
   private updateHandlers(): void {
-    this.callHandler = this.composeMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.call(options));
-    this.callStreamHandler = this.composeMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.callStream(options));
+    this.callHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.call(options));
+    this.callStreamHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.callStream(options));
   }
 
   private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
@@ -251,39 +261,14 @@ export class HttpClient {
     return this.callStreamHandler(preparedRequest);
   }
 
-  private composeMiddleware(middlewares: HttpClientMiddleware[], handler: HttpClientHandler): HttpClientHandler {
-    let currentIndex = -1;
-
-    async function dispatch(index: number, request: HttpRequest): Promise<HttpResponse> {
-      if (index == middlewares.length) {
-        return handler(request);
-      }
-
-      const middleware = middlewares[index]!;
-      currentIndex = index;
-
-      async function next(nextRequest: HttpRequest): Promise<HttpResponse> {
-        if (index < currentIndex) {
-          throw new Error('next() called multiple times');
-        }
-
-        return dispatch(index + 1, nextRequest);
-      }
-
-      return middleware(request, next);
-    }
-
-    return async (request: HttpRequest) => dispatch(0, request);
-  }
-
   private prepareRequest(request: HttpRequest): HttpRequest {
-    return addHeaders(request, Object.fromEntries(this.headers));
-  }
-}
+    const headers = filterAndMergeHttpValueContainers(this.headers, request.headers);
+    const parameters = filterAndMergeHttpValueContainers(request.parameters);
+    const body = isDefined(request.body?.form) ? { ...request.body, form: filterAndMergeHttpValueContainers(request.body?.form) } : request.body;
 
-function addHeaders(request: HttpRequest, headers: HttpHeaders): HttpRequest {
-  const modifiedRequest = { ...request, headers: { ...headers, ...request.headers } };
-  return modifiedRequest;
+    const preparedRequest: HttpRequest = { ...request, headers, parameters, body };
+    return preparedRequest;
+  }
 }
 
 function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
@@ -312,7 +297,9 @@ function buildRequestUrl(request: HttpRequest, baseUrl?: string): HttpRequest {
   if (isDefined(modifiedRequest.parameters)) {
     for (const [key, valueOrValues] of Object.entries(modifiedRequest.parameters)) {
       for (const value of toArray(valueOrValues)) {
-        url.searchParams.append(key, value);
+        if (isDefined(value)) {
+          url.searchParams.append(key, value.toString());
+        }
       }
     }
 
@@ -324,4 +311,17 @@ function buildRequestUrl(request: HttpRequest, baseUrl?: string): HttpRequest {
   }
 
   return { ...modifiedRequest, url: url.href };
+}
+
+function filterAndMergeHttpValueContainers(...items: (HttpValueMap | Iterable<HttpValueEntry> | undefined)[]): HttpValueMap | undefined {
+  const filteredEntries = items.filter(isDefined)
+    .flatMap((value) => (isIterable(value) ? (isArray(value) ? (value as HttpValueEntry[]) : [...value]) : Object.entries(value)))
+    .map(([key, value]) => (isArray(value) ? [key, value.filter(isDefined)] as const : [key, value] as const))
+    .filter(([, value]) => (isArray(value) ? value.length > 0 : isDefined(value)));
+
+  if (filteredEntries.length == 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(filteredEntries) as HttpValueMap;
 }

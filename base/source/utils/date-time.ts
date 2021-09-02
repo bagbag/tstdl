@@ -1,6 +1,6 @@
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
-import { day } from './units';
+import { millisecondsPerDay } from '.';
 
 export type SimpleDate = {
   year: number,
@@ -56,7 +56,7 @@ export function currentTime(): number {
 }
 
 export function timestampToNumericDate(timestamp: number): number {
-  return Math.floor(timestamp / day);
+  return Math.floor(timestamp / millisecondsPerDay);
 }
 
 export function dateToNumericDate(date: Date): number {
@@ -65,7 +65,7 @@ export function dateToNumericDate(date: Date): number {
 }
 
 export function timestampToTime(timestamp: number): number {
-  return timestamp % day;
+  return timestamp % millisecondsPerDay;
 }
 
 export function timestampToNumericDateAndTime(timestamp: number): NumericDateTime {
@@ -76,7 +76,7 @@ export function timestampToNumericDateAndTime(timestamp: number): NumericDateTim
 }
 
 export function numericDateToTimestamp(numericDate: number): number {
-  return numericDate * day;
+  return numericDate * millisecondsPerDay;
 }
 
 export function numericDateToDate(numericDate: number): { year: number, month: number, day: number } {

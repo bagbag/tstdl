@@ -3,8 +3,8 @@ import Got, { HTTPError } from 'got';
 import type { IncomingMessage } from 'http';
 import { DeferredPromise } from '../promise';
 import type { StringMap } from '../types';
-import { isArray, isArrayBuffer, isDefined } from '../utils';
-import type { HttpClientAdapter, HttpRequest, HttpResponse, HttpResponseTypeValueType } from './client';
+import { isArrayBuffer, isDefined, toArray } from '../utils';
+import type { HttpClientAdapter, HttpRequest, HttpResponse, HttpResponseTypeValueType, NormalizedHttpValueMap } from './client';
 import { HttpResponseType } from './client';
 import { HttpError } from './http.error';
 
@@ -133,7 +133,7 @@ function getGotOptions({ url, method, headers, body, timeout }: HttpRequest): Go
     ...defaultGotOptions,
     url,
     method,
-    headers,
+    headers: headers as NormalizedHttpValueMap,
     timeout
   };
 
@@ -150,14 +150,10 @@ function getGotOptions({ url, method, headers, body, timeout }: HttpRequest): Go
       const paras = new URLSearchParams();
 
       for (const [key, valueOrValues] of Object.entries(body.form)) {
-        if (isArray(valueOrValues)) {
-          // eslint-disable-next-line max-depth
-          for (const value of valueOrValues) {
-            paras.append(key, value);
-          }
-        }
-        else {
-          paras.append(key, valueOrValues);
+        const values = toArray(valueOrValues).filter(isDefined);
+
+        for (const value of values) {
+          paras.append(key, value.toString());
         }
       }
 

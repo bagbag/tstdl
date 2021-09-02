@@ -15,7 +15,7 @@ import { ObjectStorageProvider } from './object-storage';
 import type { OidcStateRepository } from './openid-connect';
 import { CachedOidcConfigurationService, OidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
-import { deferThrow, minute, singleton, timeout } from './utils';
+import { deferThrow, millisecondsPerMinute, singleton, timeout } from './utils';
 
 const singletonScope = Symbol('singletons');
 const coreLoggerToken = Symbol('core-logger');
@@ -169,7 +169,7 @@ export async function getOidcService(): Promise<OidcService> {
   return singleton(singletonScope, OidcService, async () => {
     const oidcStateRepository = await oidcStateRepositoryProvider();
     const oidcConfigurationService = new OidcConfigurationService();
-    const cachedOidcConfigurationService = new CachedOidcConfigurationService(oidcConfigurationService, minute);
+    const cachedOidcConfigurationService = new CachedOidcConfigurationService(oidcConfigurationService, 5 * millisecondsPerMinute);
 
     return new OidcService(cachedOidcConfigurationService, oidcStateRepository);
   });
