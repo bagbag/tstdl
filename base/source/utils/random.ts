@@ -56,8 +56,7 @@ export function getRandomString(length: number, alphabet: string): string {
 
   const bytes = getRandomBytes(length * 2);
   const array = new Uint16Array(bytes.buffer);
-  const maxValue = (2 ** (array.BYTES_PER_ELEMENT * 8)) - 1;
-  const factor = alphabet.length / (maxValue + 1);
+  const factor = alphabet.length / (2 ** (array.BYTES_PER_ELEMENT * 8));
 
   for (let i = 0; i < length; i++) {
     const value = array[i]!;

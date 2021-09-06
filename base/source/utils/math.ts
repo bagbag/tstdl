@@ -1,13 +1,30 @@
 /**
- * get a random number
- * @param min minimum value - inclusive
- * @param max maximum value - inclusive
- * @param integer return integers (whole numbers) only
- * @returns random number
+ * generate a random value in interval [0, 1)
  */
-export function random(min: number, max: number, integer: boolean = false): number {
-  const value = (Math.random() * (max - min)) + min;
-  return integer ? Math.round(value) : value;
+export type RandomNumberGenerator = () => number;
+
+const defaultRandomNumberGenerator: RandomNumberGenerator = () => Math.random();
+
+/**
+ * generate a random float in interval [min, max)
+ * @param min minimum value
+ * @param max maximum value
+ * @param generator random number generator to use, defaults to Math.random
+ * @returns random number (float)
+ */
+export function random(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
+  return linearInterpolateFloat(generator(), min, max);
+}
+
+/**
+ * generate a random integer in interval [min, max]
+ * @param min minimum value
+ * @param max maximum value
+ * @param generator random number generator to use, defaults to Math.random
+ * @returns random number (integer)
+ */
+export function randomInt(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
+  return linearInterpolateInt(generator(), min, max);
 }
 
 /**
@@ -32,7 +49,7 @@ export function round(value: number, decimals: number): number {
 }
 
 /**
- * linearly interpolate a range into another
+ * linearly interpolate the interval [fromLow, fromHigh] into [toLow, toHigh]
  * @param value value to interpolate
  * @param fromLow source lower bound
  * @param fromHigh source upper bound
@@ -41,14 +58,29 @@ export function round(value: number, decimals: number): number {
  * @returns interpolated value
  */
 export function linearInterpolate(value: number, fromLow: number, fromHigh: number, toLow: number, toHigh: number): number {
-  const sourceOffset = value - fromLow;
-  const sourceSize = fromHigh - fromLow;
-  const targetSize = toHigh - toLow;
-  const quotient = targetSize / sourceSize;
-  const targetOffset = sourceOffset * quotient;
-  const interpolated = toLow + targetOffset;
+  return toLow + ((value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow));
+}
 
-  return interpolated;
+/**
+ * linearly interpolate [0, 1] into an interval
+ * @param value value to interpolate in interval [0, 1]
+ * @param low lower bound
+ * @param high upper bound
+ * @returns interpolated value
+ */
+export function linearInterpolateFloat(value: number, low: number, high: number): number {
+  return ((1 - value) * low) + (value * high);
+}
+
+/**
+ * linearly interpolate [0, 1] into an interval
+ * @param value value to interpolate in interval [0, 1]
+ * @param low lower bound
+ * @param high upper bound
+ * @returns interpolated integer value
+ */
+export function linearInterpolateInt(value: number, low: number, high: number): number {
+  return Math.floor(value * (high - low + 1)) + low;
 }
 
 /**
@@ -58,6 +90,6 @@ export function linearInterpolate(value: number, fromLow: number, fromHigh: numb
  * @param maximum upper bound
  * @returns clamped value
  */
-export function minmax(value: number, minimum: number, maximum: number): number {
+export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }

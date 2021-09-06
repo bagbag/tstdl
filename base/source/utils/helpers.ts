@@ -4,7 +4,7 @@ import { DetailsError } from '../error';
 import type { BinaryData, DeepArray, StringMap, TypedArray } from '../types';
 import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
-import { random } from './math';
+import { randomInt } from './math';
 import type { Comparator } from './sort';
 import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
@@ -430,7 +430,7 @@ export function shuffle<T>(items: T[]): T[] {
   const cloned = [...items];
 
   for (let i = 0; i < cloned.length; i++) {
-    const j = random(i, cloned.length - 1, true);
+    const j = randomInt(i, cloned.length - 1);
     [cloned[i], cloned[j]] = [cloned[j]!, cloned[i]!];
   }
 
@@ -446,7 +446,7 @@ export function shuffle<T>(items: T[]): T[] {
 export function randomItem<T>(array: T[], { min, max }: { min?: number, max?: number } = {}): T {
   const _min = isDefined(min) ? Math.max(min, 0) : 0;
   const _max = isDefined(max) ? Math.min(max, array.length - 1) : array.length - 1;
-  const index = random(_min, _max, true);
+  const index = randomInt(_min, _max);
 
   return array[index]!;
 }
@@ -460,7 +460,7 @@ export function randomItem<T>(array: T[], { min, max }: { min?: number, max?: nu
  */
 export function randomItems<T>(array: T[], count: number, allowDuplicates: boolean = false): T[] {
   if (allowDuplicates) {
-    return createArray(count, () => array[random(0, array.length - 1, true)]!);
+    return createArray(count, () => array[randomInt(0, array.length - 1)]!);
   }
 
   if (count > array.length) {
@@ -475,7 +475,7 @@ export function randomItems<T>(array: T[], count: number, allowDuplicates: boole
 
   return createArray<T>(count, () => {
     while (true) {
-      const index = random(0, array.length - 1, true);
+      const index = randomInt(0, array.length - 1);
 
       if (!taken.has(index)) {
         taken.add(index);
