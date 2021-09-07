@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import type { Entity } from '#/database';
-import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, ComplexTextSpanQuery, ComplexTextSpanQueryMode, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '#/database/query';
-import { isPrimitive, isRegExp, isString } from '#/utils';
+import type { ComparisonEqualsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
+import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils';
 import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/api/types';
-import type { ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
+import type { ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
@@ -44,8 +46,8 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
     }
 
     if (rawProperty == '$textSpan') {
-      const { fields, text, mode, operator } = value as ComplexTextSpanQuery['$textSpan'];
-      const type = convertComplexTextSpanQueryMode(mode);
+      const { fields, text, mode, operator } = value as TextSpanQuery['$textSpan'];
+      const type = convertTextSpanQueryMode(mode);
       const matchQuery: ElasticMultiMatchQuery = { multi_match: { fields, query: text, type, operator } };
 
       defaultBoolQueryBuilder.must(matchQuery);
@@ -145,6 +147,37 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
+    if (Object.prototype.hasOwnProperty.call(value, '$geoShape')) {
+      const geoShapeQuery: ElasticGeoShapeQuery = {
+        geo_shape: {
+          [property]: {
+            shape: (value as ComparisonGeoShapeQuery).$geoShape.geometry,
+            relation: (value as ComparisonGeoShapeQuery).$geoShape.relation
+          }
+        }
+      };
+
+      defaultBoolQueryBuilder.must(geoShapeQuery);
+      canHandleProperty = true;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(value, '$geoDistance')) {
+      const distance = assertDefinedPass((value as ComparisonGeoDistanceQuery).$geoDistance.maxDistance, 'maxDistance required');
+
+      const geoShapeQuery: ElasticGeoDistanceQuery = {
+        geo_distance: {
+          distance: `${distance}m`,
+          [property]: [
+            (value as ComparisonGeoDistanceQuery).$geoDistance.latitude,
+            (value as ComparisonGeoDistanceQuery).$geoDistance.longitude
+          ]
+        }
+      };
+
+      defaultBoolQueryBuilder.must(geoShapeQuery);
+      canHandleProperty = true;
+    }
+
     if (!canHandleProperty) {
       throw new Error(`unsupported query type "${rawProperty}"`);
     }
@@ -173,7 +206,7 @@ export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQue
   return new BoolQueryBuilder().mustNot(...norQuery.map(convertQuery)).build();
 }
 
-export function convertComplexTextSpanQueryMode(mode: ComplexTextSpanQueryMode | undefined): QueryDslTextQueryType | undefined {
+export function convertTextSpanQueryMode(mode: TextSpanQueryMode | undefined): QueryDslTextQueryType | undefined {
   switch (mode) {
     case undefined:
       return undefined;

@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
 import type { Entity } from '#/database';
+import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
+import type { ElasticGeoPoint } from './geo-point';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = {
   properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticIndexMappingItem<DeepFlatten<T[P]>> }
 };
+
+export type OnScriptError = 'fail' | 'continue';
 
 export type ElasticIndexMappingItemBase<Type extends string = string> = {
   type: Type,
@@ -30,7 +33,17 @@ export type ElasticNumberIndexMappingItem = ElasticIndexMappingItemBase<'long' |
   boost?: number,
   doc_values?: boolean,
   null_value?: number | null,
-  on_script_error?: 'fail' | 'continue',
+  on_script_error?: OnScriptError,
+  script?: string,
+  store?: boolean
+};
+
+export type ElasticBooleanIndexMappingItem = ElasticIndexMappingItemBase<'boolean'> & {
+  index?: boolean,
+  boost?: number,
+  doc_values?: boolean,
+  null_value?: boolean | null,
+  on_script_error?: OnScriptError,
   script?: string,
   store?: boolean
 };
@@ -44,10 +57,27 @@ export type ElasticDateIndexMappingItem = ElasticIndexMappingItemBase<'date'> & 
   store?: boolean
 };
 
+export type ElasticGeoPointIndexMappingItem = ElasticIndexMappingItemBase<'geo_point'> & {
+  index?: boolean,
+  ignore_malformed?: boolean,
+  ignore_z_value?: boolean,
+  null_value?: ElasticGeoPoint | null,
+  on_script_error?: OnScriptError,
+  script?: string
+};
+
 export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase<'object'> & {
   index?: boolean,
   dynamic?: boolean | 'strict',
   enabled?: boolean,
+  properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
+};
+
+export type ElasticNestedIndexMappingItem<T> = ElasticIndexMappingItemBase<'nested'> & {
+  index?: boolean,
+  dynamic?: boolean | 'strict',
+  include_in_parent?: boolean,
+  include_in_root?: boolean,
   properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
 };
 

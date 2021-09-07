@@ -1,4 +1,5 @@
 import type { Flatten, StringMap } from '#/types';
+import type { Geometry } from '#/types/geo-json';
 import type { Entity } from './entity';
 
 export type QueryOptions<T extends Entity = Entity> = {
@@ -7,7 +8,7 @@ export type QueryOptions<T extends Entity = Entity> = {
   limit?: number
 };
 
-export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & ComplexQuery<T>);
+export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
 
 export type LogicalQuery<T extends Entity = Entity> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
@@ -27,13 +28,15 @@ export type ComparisonQuery<Value = any> = Value | Partial<
   & ComparisonLessThanOrEqualsQuery<Value>
   & ComparisonRegexQuery
   & ComparisonTextQuery
+  & ComparisonGeoShapeQuery
+  & ComparisonGeoDistanceQuery
 >;
 export type ComparisonQueryTypes = keyof ComparisonQuery;
 export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
 
-export type ComplexQuery<T extends Entity = Entity> = Partial<ComplexTextSpanQuery<T>>;
-export type ComplexQueryTypes = keyof ComplexQuery;
-export const allComplexQueryTypes: ComplexQueryTypes[] = ['$textSpan'];
+export type SpecialQuery<T extends Entity = Entity> = Partial<TextSpanQuery<T>>;
+export type SpecialQueryTypes = keyof SpecialQuery;
+export const allSpecialQueryTypes: SpecialQueryTypes[] = ['$textSpan'];
 
 export type Order = 'asc' | 'desc';
 export const allOrders: Order[] = ['asc', 'desc'];
@@ -109,14 +112,38 @@ export type ComparisonTextQuery = {
   $text: string | { text: string, operator?: Operator }
 };
 
-export type ComplexTextSpanQueryMode = 'best' | 'most' | 'cross';
-export const allComplexTextSpanQueryModes: ComplexTextSpanQueryMode[] = ['best', 'most', 'cross'];
+export type GeoShapeRelation = 'intersect' | 'within' | 'disjoint' | 'contains';
 
-export type ComplexTextSpanQuery<T extends Entity = Entity> = {
+export type ComparisonGeoShapeQuery = {
+  $geoShape: {
+    geometry: Geometry,
+    relation: GeoShapeRelation
+  }
+};
+
+export type ComparisonGeoDistanceQuery = {
+  $geoDistance: {
+    longitude: number,
+    latitude: number,
+    /**
+     * maximum distance in meters
+     */
+    maxDistance?: number,
+    /**
+     * minimum distance in meters
+     */
+    minDistance?: number
+  }
+};
+
+export type TextSpanQueryMode = 'best' | 'most' | 'cross';
+export const allTextSpanQueryModes: TextSpanQueryMode[] = ['best', 'most', 'cross'];
+
+export type TextSpanQuery<T extends Entity = Entity> = {
   $textSpan: {
     fields: (Extract<keyof T, string>)[],
     text: string,
-    mode?: ComplexTextSpanQueryMode,
+    mode?: TextSpanQueryMode,
     operator?: Operator
   }
 };
