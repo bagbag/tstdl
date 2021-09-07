@@ -12,6 +12,9 @@ export type ElasticIndexSettings = {
     analyzer?: StringMap<ElasticAnalyzer>,
     tokenizer?: StringMap<ElasticTokenizer>,
     filter?: StringMap<ElasticFilter>
+  },
+  mapping?: {
+    coerce?: boolean
   }
 };
 

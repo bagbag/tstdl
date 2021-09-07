@@ -104,7 +104,7 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async has(id: string): Promise<boolean> {
-    return this.repository.has(id);
+    return this.repository.hasByFilter({ jobId: id });
   }
 
   async countByTag(tag: JobTag): Promise<number> {
@@ -112,7 +112,7 @@ export class MongoQueue<T> implements Queue<T> {
   }
 
   async get(id: string): Promise<Job<T> | undefined> {
-    return this.repository.tryLoad(id);
+    return this.repository.tryLoadByFilter({ jobId: id });
   }
 
   async getByTag(tag: JobTag): Promise<Job<T>[]> {

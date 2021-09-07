@@ -4,8 +4,10 @@ import type { Entity } from '#/database';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
 import type { ElasticGeoPoint } from './geo-point';
 
-export type ElasticIndexMapping<T extends Entity = Entity> = {
-  properties: { [P in keyof TypedOmit<T, 'id'>]: ElasticIndexMappingItem<DeepFlatten<T[P]>> }
+export type ElasticIndexMapping<T extends Entity = Entity> = ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
+
+export type ElasticNestedIndexMapping<T> = {
+  properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> }
 };
 
 export type OnScriptError = 'fail' | 'continue';
@@ -69,17 +71,15 @@ export type ElasticGeoPointIndexMappingItem = ElasticIndexMappingItemBase<'geo_p
 export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase<'object'> & {
   index?: boolean,
   dynamic?: boolean | 'strict',
-  enabled?: boolean,
-  properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
-};
+  enabled?: boolean
+} & ElasticNestedIndexMapping<T>;
 
 export type ElasticNestedIndexMappingItem<T> = ElasticIndexMappingItemBase<'nested'> & {
   index?: boolean,
   dynamic?: boolean | 'strict',
   include_in_parent?: boolean,
-  include_in_root?: boolean,
-  properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
-};
+  include_in_root?: boolean
+} & ElasticNestedIndexMapping<T>;
 
 export type ElasticIndexMappingItem<T = any> =
   | ElasticKeywordIndexMappingItem

@@ -7,6 +7,7 @@ import type { Collection, TypedIndexDescription } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [
+  { name: 'jobId', key: { jobId: 1 }, unique: true },
   { name: 'priority_enqueueTimestamp_lastDequeueTimestamp_tries', key: { priority: 1, enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
   { name: 'tag', key: { tag: 1 } },
   { name: 'batch', key: { batch: 1 } }
@@ -21,10 +22,10 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
     const { tag, ...rest } = newJob;
 
     if (uniqueTagStrategy == UniqueTagStrategy.KeepOld) {
-      return this.baseRepository.loadByFilterAndUpdate({ tag }, { $setOnInsert: { ...rest, _id: getNewId() } }, { returnDocument: 'after' });
+      return this.baseRepository.loadByFilterAndUpdate({ tag }, { $setOnInsert: { _id: getNewId(), ...rest } }, { upsert: true, returnDocument: 'after' });
     }
 
-    return this.baseRepository.loadByFilterAndUpdate({ tag }, { $set: rest, $setOnInsert: { _id: getNewId() } }, { returnDocument: 'after' });
+    return this.baseRepository.loadByFilterAndUpdate({ tag }, { $set: rest, $setOnInsert: { _id: getNewId() } }, { upsert: true, returnDocument: 'after' });
   }
 
   async bulkInsertWithUniqueTagStrategy(newJobs: NewMongoJob<T>[], uniqueTagStrategy: UniqueTagStrategy): Promise<void> {
@@ -34,7 +35,7 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
       const { tag, ...rest } = newJob;
 
       const updateQuery = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
-        ? { $setOnInsert: { ...rest, _id: getNewId() } }
+        ? { $setOnInsert: { _id: getNewId(), ...rest } }
         : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
       bulk.update({ tag }, updateQuery);
