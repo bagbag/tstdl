@@ -81,4 +81,12 @@ export type ElasticNestedIndexMappingItem<T> = ElasticIndexMappingItemBase<'nest
   properties: { [P in keyof T]: ElasticIndexMappingItem<T[P]> }
 };
 
-export type ElasticIndexMappingItem<T = any> = ElasticKeywordIndexMappingItem | ElasticTextIndexMappingItem | ElasticNumberIndexMappingItem | ElasticDateIndexMappingItem | ElasticObjectIndexMappingItem<T>;
+export type ElasticIndexMappingItem<T = any> =
+  | ElasticKeywordIndexMappingItem
+  | ElasticTextIndexMappingItem
+  | ElasticNumberIndexMappingItem
+  | ElasticBooleanIndexMappingItem
+  | ElasticDateIndexMappingItem
+  | ElasticGeoPointIndexMappingItem
+  | ElasticObjectIndexMappingItem<T>
+  | ElasticNestedIndexMappingItem<T>;
