@@ -4,7 +4,7 @@ import type { HttpClientAdapter, HttpRequest, HttpRequestOptions, HttpResponse, 
 import { HttpError, HttpResponseType } from '@tstdl/base/cjs/http';
 import { firstValueFrom } from '@tstdl/base/cjs/rxjs/compat';
 import type { StringMap } from '@tstdl/base/cjs/types';
-import { isDefined, isUndefined } from '@tstdl/base/cjs/utils';
+import { isDefined, isUndefined, toArray } from '@tstdl/base/cjs/utils';
 
 export class AngularHttpClientAdapter implements HttpClientAdapter {
   private readonly angularHttpClient: AngularHttpClient;
@@ -17,8 +17,8 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const angularResponse = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(request.method, request.url, {
-        headers: new AngularHttpHeaders(request.headers),
-        params: new AngularHttpParams({ fromObject: request.parameters }),
+        headers: new AngularHttpHeaders(request.headers as StringMap),
+        params: new AngularHttpParams({ fromObject: request.parameters as StringMap }),
         responseType: getAngularHttpRequestResponseType(request.responseType),
         observe: 'response',
         body: getAngularBody(request.body)
@@ -79,14 +79,11 @@ function getAngularBody(body: HttpRequestOptions['body']): any {
   else if (isDefined(body.form)) {
     const formData = new FormData();
 
-    for (const [key, value] of Object.entries(body.form)) {
-      if (Array.isArray(value)) {
-        for (const _value of value) {
-          formData.append(key, _value);
+    for (const [key, valueOrValues] of Object.entries(body.form)) {
+      for (const value of toArray(valueOrValues)) {
+        if (isDefined(value)) {
+          formData.append(key, value.toString());
         }
-      }
-      else {
-        formData.set(key, value);
       }
     }
 
