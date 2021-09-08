@@ -4,7 +4,13 @@ import type { Entity } from '#/database';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
 import type { ElasticGeoPoint } from './geo-point';
 
-export type ElasticIndexMapping<T extends Entity = Entity> = ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
+export type ElasticIndexMapping<T extends Entity = Entity> = ElasticNestedIndexMapping<TypedOmit<T, 'id'>> & {
+  _source?: {
+    enabled?: false,
+    includes?: string[],
+    excludes?: string[]
+  }
+};
 
 export type ElasticNestedIndexMapping<T> = {
   properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> }
