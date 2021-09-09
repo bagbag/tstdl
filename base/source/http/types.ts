@@ -191,7 +191,6 @@ export type HttpRequestData<B extends HttpBodyType = 'auto'> = {
   body: HttpBody<B>
 };
 
-
 export function normalizedHttpClientRequest(request: HttpClientRequest): NormalizedHttpClientRequest {
   const normalizedRequest: NormalizedHttpClientRequest = stripPropertyWhenUndefined({
     url: request.url,
