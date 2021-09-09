@@ -283,7 +283,7 @@ async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B
     case 'stream':
       return request.req as unknown as HttpBody<B>;
 
-    case 'binary':
+    case 'buffer':
       return readRawBody(request, maxBytes) as Promise<HttpBody<B>>;
 
     case 'auto':

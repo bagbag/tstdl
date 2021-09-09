@@ -3,7 +3,6 @@ import Got, { HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
-import type { StringMap } from '../types';
 import { isArrayBuffer, isDefined, toArray } from '../utils';
 import type { HttpClientAdapter } from './client';
 import { HttpError, HttpErrorReason } from './http.error';
@@ -16,36 +15,12 @@ const defaultGotOptions: GotOptions = {
 
 export class GotHttpClientAdapter implements HttpClientAdapter {
   async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
-    const baseHeaders: StringMap<string | string[]> = {};
-
-    if (request.responseType == 'text') {
-      baseHeaders['Accept'] = 'text/plain';
-    }
-    else if (request.responseType == 'json') {
-      baseHeaders['Accept'] = 'application/json';
-    }
-
-    if (isDefined(request.body?.text)) {
-      baseHeaders['Content-Type'] = 'text/plain';
-    }
-    else if (isDefined(request.body?.json)) {
-      baseHeaders['Content-Type'] = 'application/json';
-    }
-    else if (isDefined(request.body?.form)) {
-      baseHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
-    }
-    else if (isDefined(request.body?.stream) || isDefined(request.body?.buffer)) {
-      baseHeaders['Content-Type'] = 'application/octet-stream';
-    }
-
-    const headers = { ...baseHeaders, ...request.headers };
-
     switch (request.responseType) {
       case 'stream':
-        return this.callStream({ ...request, headers }) as Promise<HttpClientResponse<T>>;
+        return this.callStream({ ...request, headers: request.headers }) as Promise<HttpClientResponse<T>>;
 
       default:
-        return this._call({ ...request, headers });
+        return this._call({ ...request, headers: request.headers });
     }
   }
 

@@ -2,7 +2,7 @@ import type { UndefinableJson } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
 import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
 import { HttpError, HttpErrorReason } from './http.error';
-import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
+import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
 import { normalizedHttpClientRequest, normalizeHttpValue } from './types';
 
 export interface HttpClientAdapter {
@@ -41,7 +41,8 @@ export class HttpClient {
     this.headers = new Map();
 
     this.internalMiddleware = [
-      getBuildRequestUrlMiddleware(baseUrl)
+      getBuildRequestUrlMiddleware(baseUrl),
+      addRequestHeadersMiddleware
     ];
 
     this.updateHandlers();
@@ -223,6 +224,47 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
   }
 
   return buildUrlParametersMiddleware;
+}
+
+function setHeader(headers: HttpHeaders, key: string, value: string): void {
+  if (!isDefined(headers[key])) {
+    headers[key] = value;
+  }
+}
+
+async function addRequestHeadersMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {
+  const headers = { ...request.headers };
+  let updatedHeaders = false;
+
+  if (request.responseType == 'text') {
+    setHeader(headers, 'Accept', 'text/plain');
+    updatedHeaders = true;
+  }
+  else if (request.responseType == 'json') {
+    setHeader(headers, 'Accept', 'application/json');
+    updatedHeaders = true;
+  }
+
+  if (isDefined(request.body)) {
+    if (isDefined(request.body.json)) {
+      setHeader(headers, 'Content-Type', 'application/json');
+      updatedHeaders = true;
+    }
+    else if (isDefined(request.body.text)) {
+      setHeader(headers, 'Content-Type', 'text/plain');
+      updatedHeaders = true;
+    }
+    else if (isDefined(request.body.form)) {
+      setHeader(headers, 'Content-Type', 'application/x-www-form-urlencoded');
+      updatedHeaders = true;
+    }
+    else if (isDefined(request.body.stream) || isDefined(request.body.buffer)) {
+      setHeader(headers, 'Content-Type', 'application/octet-stream');
+      updatedHeaders = true;
+    }
+  }
+
+  return next(updatedHeaders ? { ...request, headers } : request);
 }
 
 // eslint-disable-next-line max-statements, max-lines-per-function
