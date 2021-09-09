@@ -199,7 +199,11 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
   };
 
   if (isDefined(request.headers)) {
-    normalizedRequest.headers = normalizeHttpParameters(request.headers);
+    const normalizedHeaders = normalizeHttpParameters(request.headers);
+
+    if (isDefined(normalizedHeaders)) {
+      normalizedRequest.headers = normalizedHeaders;
+    }
   }
 
   if (isDefined(request.body)) {
