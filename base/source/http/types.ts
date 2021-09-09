@@ -1,4 +1,5 @@
-import type { StringMap, TypedOmit, UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
+import type { JsonPrimitive, StringMap, TypedOmit, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
+import { isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
 
 export type HttpValue = UndefinableJsonPrimitive;
 export type HttpValueMap = StringMap<HttpValue | HttpValue[]>;
@@ -189,3 +190,70 @@ export type HttpRequestData<B extends HttpBodyType = 'auto'> = {
   query: NormalizedHttpQuery,
   body: HttpBody<B>
 };
+
+
+export function normalizedHttpClientRequest(request: HttpClientRequest): NormalizedHttpClientRequest {
+  const normalizedRequest: NormalizedHttpClientRequest = stripPropertyWhenUndefined({
+    url: request.url,
+    method: request.method,
+    responseType: request.responseType,
+    headers: normalizeHttpParameters(request.headers),
+    body: stripPropertyWhenUndefined({
+      form: normalizeHttpParameters(request.body?.form),
+      json: request.body?.json,
+      text: request.body?.text,
+      buffer: request.body?.buffer,
+      stream: request.body?.stream
+    }),
+    timeout: request.timeout,
+    context: request.context
+  });
+
+  return normalizedRequest;
+}
+
+export function normalizeHttpParameters(parameters: HttpParameters | undefined): NormalizedHttpValueMap | undefined {
+  if (isUndefined(parameters)) {
+    return undefined;
+  }
+
+  const entries = Object.entries(parameters);
+
+  const normalizedEntries = entries
+    .map(([key, value]) => {
+      const normalizedValue = normalizeHttpValue(value);
+      return isDefined(normalizedValue) ? ([key, normalizedValue] as const) : undefined;
+    })
+    .filter(isDefined);
+
+  if (normalizedEntries.length == 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(normalizedEntries) as NormalizedHttpValueMap;
+}
+
+export function normalizeHttpValue(value: UndefinableJsonInnerNode): NormalizedHttpValue | NormalizedHttpValue[] | undefined {
+  if (isUndefined(value)) {
+    return undefined;
+  }
+
+  if (isArray(value)) {
+    const normalizedArray = value.map(normalizeHttpValue).filter(isDefined) as NormalizedHttpValue[];
+    return (normalizedArray.length > 0) ? normalizedArray : undefined;
+  }
+
+  return normalizeSingleHttpValue(value);
+}
+
+export function normalizeSingleHttpValue(value: JsonPrimitive | UndefinableJsonObject): NormalizedHttpValue | undefined {
+  if (isObject(value)) {
+    return JSON.stringify(value);
+  }
+
+  if (isNull(value)) {
+    return '[[null]]';
+  }
+
+  return value.toString();
+}

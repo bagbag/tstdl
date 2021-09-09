@@ -1,13 +1,13 @@
-import type { CustomErrorStatic } from '../error';
+import type { CustomError, CustomErrorStatic } from '../error';
 import { ApiError } from '../error/api.error';
-import type { Type, UndefinableJson } from '../types';
+import type { UndefinableJson } from '../types';
 import { isDefined } from '../utils';
 
 type ErrorHandlerData = undefined | UndefinableJson;
 
-export type ErrorSerializer<T extends Error, TData extends ErrorHandlerData> = (error: T) => TData;
-export type ErrorDeserializer<T extends Error, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
-export type ErrorHandler<T extends Error = Error, TData extends ErrorHandlerData = undefined> = {
+export type ErrorSerializer<T extends CustomError, TData extends ErrorHandlerData> = (error: T) => TData;
+export type ErrorDeserializer<T extends CustomError, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
+export type ErrorHandler<T extends CustomError = CustomError, TData extends ErrorHandlerData = undefined> = {
   statusCode: number,
   serializer: ErrorSerializer<T, TData>,
   deserializer: ErrorDeserializer<T, TData>
@@ -27,22 +27,25 @@ export type ResponseError = {
   name: string,
   message: string,
   details?: any,
-  errorData?: ErrorHandlerData
+  data?: ErrorHandlerData
 };
 
 const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
 
-export function registerErrorHandler<T extends Error, TData extends ErrorHandlerData>(constructor: Type<T> & CustomErrorStatic, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+export function registerErrorHandler<T extends CustomError, TData extends ErrorHandlerData>(constructor: CustomErrorStatic<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+  if (errorHandlers.has(constructor.errorName)) {
+    throw new Error(`a handler for ${constructor.errorName} already registered`);
+  }
+
   errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
 }
 
-export function hasErrorHandler(constructor: Type<Error> & CustomErrorStatic): boolean {
+export function hasErrorHandler(constructor: CustomErrorStatic): boolean {
   return errorHandlers.has(constructor.errorName);
 }
 
-export function getErrorStatusCode(error: Error, defaultStatusCode: number = 500): number {
-  const handler = errorHandlers.get(error.name);
-  return (handler != undefined) ? handler.statusCode : defaultStatusCode;
+export function getErrorStatusCode(error: CustomError, defaultStatusCode: number = 500): number {
+  return errorHandlers.get(error.name)?.statusCode ?? defaultStatusCode;
 }
 
 export function createResultResponse<T>(result: T): ResultResponse<T> {
@@ -62,14 +65,14 @@ export function createErrorResponse(errorOrName: Error | string, message: string
     const handler = errorHandlers.get(errorOrName.name);
 
     if (handler != undefined) {
-      const errorData = handler.serializer(errorOrName) as ErrorHandlerData;
+      const data = handler.serializer(errorOrName) as ErrorHandlerData;
 
       response = {
         error: {
           name: errorOrName.name,
           message: errorOrName.message,
           details,
-          errorData
+          data
         }
       };
     }
@@ -112,7 +115,7 @@ export function parseErrorResponse(response: ErrorResponse): Error {
   const handler = errorHandlers.get(response.error.name);
 
   if (handler != undefined) {
-    const error = handler.deserializer(response.error.errorData, response.error) as Error;
+    const error = handler.deserializer(response.error.data, response.error) as Error;
     return error;
   }
 

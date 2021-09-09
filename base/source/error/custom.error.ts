@@ -17,6 +17,8 @@ export class CustomError extends Error {
   }
 }
 
-export interface CustomErrorStatic {
+export interface CustomErrorStatic<T extends CustomError = CustomError> {
   errorName: string;
+
+  new(...args: any[]): T;
 }

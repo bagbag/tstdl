@@ -1,8 +1,9 @@
-import type { JsonPrimitive, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject } from '../types';
+import { normalizedHttpClientRequest, normalizeHttpValue } from '.';
+import type { UndefinableJson } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
-import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined, toArray } from '../utils';
+import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
 import { HttpError, HttpErrorReason } from './http.error';
-import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpMethod, HttpParameters, HttpValue, NormalizedHttpClientRequest, NormalizedHttpValue, NormalizedHttpValueMap } from './types';
+import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
 
 export interface HttpClientAdapter {
   call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>>;
@@ -296,70 +297,4 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
   }
 
   return modifiedRequest;
-}
-
-function normalizedHttpClientRequest(request: HttpClientRequest): NormalizedHttpClientRequest {
-  const normalizedRequest: NormalizedHttpClientRequest = stripPropertyWhenUndefined({
-    url: request.url,
-    method: request.method,
-    responseType: request.responseType,
-    headers: normalizeHttpParameters(request.headers),
-    body: stripPropertyWhenUndefined({
-      form: normalizeHttpParameters(request.body?.form),
-      json: request.body?.json,
-      text: request.body?.text,
-      buffer: request.body?.buffer,
-      stream: request.body?.stream
-    }),
-    timeout: request.timeout,
-    context: request.context
-  });
-
-  return normalizedRequest;
-}
-
-function normalizeHttpParameters(parameters: HttpParameters | undefined): NormalizedHttpValueMap | undefined {
-  if (isUndefined(parameters)) {
-    return undefined;
-  }
-
-  const entries = Object.entries(parameters);
-
-  const normalizedEntries = entries
-    .map(([key, value]) => {
-      const normalizedValue = normalizeHttpValue(value);
-      return isDefined(normalizedValue) ? ([key, normalizedValue] as const) : undefined;
-    })
-    .filter(isDefined);
-
-  if (normalizedEntries.length == 0) {
-    return undefined;
-  }
-
-  return Object.fromEntries(normalizedEntries) as NormalizedHttpValueMap;
-}
-
-function normalizeHttpValue(value: UndefinableJsonInnerNode): NormalizedHttpValue | NormalizedHttpValue[] | undefined {
-  if (isUndefined(value)) {
-    return undefined;
-  }
-
-  if (isArray(value)) {
-    const normalizedArray = value.map(normalizeHttpValue).filter(isDefined) as NormalizedHttpValue[];
-    return (normalizedArray.length > 0) ? normalizedArray : undefined;
-  }
-
-  return normalizeSingleHttpValue(value);
-}
-
-function normalizeSingleHttpValue(value: JsonPrimitive | UndefinableJsonObject): NormalizedHttpValue | undefined {
-  if (isObject(value)) {
-    return JSON.stringify(value);
-  }
-
-  if (isNull(value)) {
-    return '[[null]]';
-  }
-
-  return value.toString();
 }
