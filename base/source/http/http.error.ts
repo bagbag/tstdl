@@ -1,16 +1,28 @@
+import { isDefined } from '#/utils';
 import { CustomError } from '../error';
-import type { HttpRequest, HttpResponse } from './client';
+import type { HttpClientRequest, HttpClientResponse } from './types';
+
+export enum HttpErrorReason {
+  Unknown = 'Unknown',
+  InvalidRequest = 'InvalidRequest',
+  Timeout = 'Timeout'
+}
 
 export class HttpError extends CustomError {
   static readonly errorName = 'HttpError';
 
-  readonly request: HttpRequest;
-  readonly response?: HttpResponse<any>;
+  readonly reason: HttpErrorReason;
+  readonly request: HttpClientRequest;
+  readonly response?: HttpClientResponse;
 
-  constructor(request: HttpRequest, response?: HttpResponse<any>, cause?: Error) {
-    super({ name: 'HttpError', message: cause?.message ?? 'An error occurred', cause });
+  constructor(reason: HttpErrorReason, request: HttpClientRequest, response?: HttpClientResponse, cause?: Error) {
+    super({ message: cause?.message ?? 'An error occurred', cause });
 
+    this.reason = reason;
     this.request = request;
-    this.response = response;
+
+    if (isDefined(response)) {
+      this.response = response;
+    }
   }
 }

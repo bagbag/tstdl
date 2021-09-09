@@ -1,12 +1,14 @@
 import type { Options as GotOptions, Response, ResponseType } from 'got';
-import Got, { HTTPError } from 'got';
+import Got, { HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
+import { Readable } from 'stream';
+import { HttpErrorReason, NormalizedHttpHeaders } from '.';
 import { DeferredPromise } from '../promise';
 import type { StringMap } from '../types';
 import { isArrayBuffer, isDefined, toArray } from '../utils';
-import type { HttpClientAdapter, HttpRequest, HttpResponse, HttpResponseTypeValueType, NormalizedHttpValueMap } from './client';
-import { HttpResponseType } from './client';
+import type { HttpClientAdapter } from './client';
 import { HttpError } from './http.error';
+import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from './types';
 
 const defaultGotOptions: GotOptions = {
   retry: 0,
@@ -14,13 +16,13 @@ const defaultGotOptions: GotOptions = {
 };
 
 export class GotHttpClientAdapter implements HttpClientAdapter {
-  async call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>> {
+  async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     const baseHeaders: StringMap<string | string[]> = {};
 
-    if (request.responseType == HttpResponseType.Text) {
+    if (request.responseType == 'text') {
       baseHeaders['Accept'] = 'text/plain';
     }
-    else if (request.responseType == HttpResponseType.Json) {
+    else if (request.responseType == 'json') {
       baseHeaders['Accept'] = 'application/json';
     }
 
@@ -33,22 +35,22 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     else if (isDefined(request.body?.form)) {
       baseHeaders['Content-Type'] = 'application/x-www-form-urlencoded';
     }
-    else if (isDefined(request.body?.readable) || isDefined(request.body?.buffer)) {
+    else if (isDefined(request.body?.stream) || isDefined(request.body?.buffer)) {
       baseHeaders['Content-Type'] = 'application/octet-stream';
     }
 
     const headers = { ...baseHeaders, ...request.headers };
 
     switch (request.responseType) {
-      case HttpResponseType.Stream:
-        return this.callStream({ ...request, headers }) as Promise<HttpResponse<T>>;
+      case 'stream':
+        return this.callStream({ ...request, headers }) as Promise<HttpClientResponse<T>>;
 
       default:
         return this._call({ ...request, headers });
     }
   }
 
-  async callStream(request: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>> {
+  async callStream(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>> {
     const gotOptions = getGotOptions(request);
 
     const responsePromise = new DeferredPromise<IncomingMessage>();
@@ -68,11 +70,11 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     try {
       const response = await responsePromise;
 
-      const result: HttpResponse<HttpResponseType.Stream> = {
+      const result: HttpClientResponse<'stream'> = {
         request,
         statusCode: response.statusCode ?? -1,
         statusMessage: response.statusMessage,
-        header: response.headers as StringMap<string | string[]>,
+        header: response.headers as NormalizedHttpHeaders,
         body: gotRequest
       };
 
@@ -80,68 +82,80 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     }
     catch (error: unknown) {
       if (error instanceof HTTPError) {
-        const response: HttpResponse<any> = {
+        const response: HttpClientResponse = {
           request,
           statusCode: error.response.statusCode,
           statusMessage: error.response.statusMessage,
-          header: error.response.headers as StringMap<string | string[]>,
-          body: error.response.body as HttpResponseTypeValueType<any>
+          header: error.response.headers as NormalizedHttpHeaders,
+          body: error.response.body as HttpBody
         };
 
-        throw new HttpError(request, response);
+        throw new HttpError(HttpErrorReason.Unknown, request, response);
       }
 
-      throw new HttpError(request, undefined, error as Error);
+      if (error instanceof TimeoutError) {
+        throw new HttpError(HttpErrorReason.Timeout, request, undefined, error);
+      }
+
+      throw new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
     }
   }
 
-  private async _call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>> {
+  private async _call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     try {
       const gotOptions = getGotOptions(request);
-      const gotRequest = Got({ ...gotOptions, responseType: request.responseType as ResponseType });
+      const gotRequest = Got({ ...gotOptions, responseType: httpBodyTypeToGotResponseType(request.responseType) });
       const response = await gotRequest as Response;
-      const result: HttpResponse<T> = {
+      const result: HttpClientResponse<T> = {
         request,
         statusCode: response.statusCode,
         statusMessage: response.statusMessage,
-        header: response.headers as StringMap<string | string[]>,
-        body: response.body as HttpResponseTypeValueType<T>
+        header: response.headers as NormalizedHttpHeaders,
+        body: response.body as HttpBody<T>
       };
 
       return result;
     }
     catch (error: unknown) {
       if (error instanceof HTTPError) {
-        const response: HttpResponse<any> = {
+        const response: HttpClientResponse = {
           request,
           statusCode: error.response.statusCode,
           statusMessage: error.response.statusMessage,
-          header: error.response.headers as StringMap<string | string[]>,
-          body: error.response.body as HttpResponseTypeValueType<any>
+          header: error.response.headers as NormalizedHttpHeaders,
+          body: error.response.body as HttpBody
         };
 
-        throw new HttpError(request, response, error);
+        throw new HttpError(HttpErrorReason.Unknown, request, response, error);
       }
 
-      throw new HttpError(request, undefined, error as Error);
+      if (error instanceof TimeoutError) {
+        throw new HttpError(HttpErrorReason.Timeout, request, undefined, error);
+      }
+
+      throw new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
     }
   }
 }
 
-function getGotOptions({ url, method, headers, body, timeout }: HttpRequest): GotOptions {
+function getGotOptions({ url, method, headers, body, responseType, timeout }: NormalizedHttpClientRequest): GotOptions {
   const options: GotOptions = {
     ...defaultGotOptions,
     url,
     method,
-    headers: headers as NormalizedHttpValueMap,
+    headers,
+    responseType: httpBodyTypeToGotResponseType(responseType),
     timeout
   };
 
   if (isDefined(body)) {
-    const binary = body.buffer ?? body.readable ?? body.text;
+    const binary = body.buffer ?? body.stream;
 
     if (isDefined(binary)) {
-      options.body = isArrayBuffer(binary) ? Buffer.from(binary) : binary;
+      options.body = isArrayBuffer(binary) ? Buffer.from(binary) : Readable.from(binary);
+    }
+    else if (isDefined(body.text)) {
+      options.body = body.text;
     }
     else if (isDefined(body.json)) {
       options.body = JSON.stringify(body.json);
@@ -162,4 +176,20 @@ function getGotOptions({ url, method, headers, body, timeout }: HttpRequest): Go
   }
 
   return options;
+}
+
+function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): ResponseType | undefined {
+  switch (bodyType) {
+    case 'json':
+      return 'json';
+
+    case 'text':
+      return 'text';
+
+    case 'buffer':
+      return 'buffer';
+
+    default:
+      return undefined;
+  }
 }

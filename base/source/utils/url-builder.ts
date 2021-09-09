@@ -1,6 +1,6 @@
-import type { StringMap } from '../types';
+import type { UndefinableJsonObject, UndefinableJsonPrimitive } from '../types';
 import { singleton } from './singleton';
-import { isDefined } from './type-guards';
+import { isArray, isDefined, isNull, isObject, isUndefined } from './type-guards';
 
 enum UrlBuilderPartType {
   Literal = 0,
@@ -12,15 +12,17 @@ type UrlBuilderPart = {
   value: string
 };
 
-export type UrlBuilderParameterValue = string | number | boolean | undefined;
-export type UrlBuilderParameters = StringMap<UrlBuilderParameterValue | UrlBuilderParameterValue[]>;
+export type UrlBuilderParameterValue = UndefinableJsonPrimitive;
+export type UrlBuilderParameters = UndefinableJsonObject;
+export type UrlBuilderOptions = { separator?: string };
 export type UrlBuilderResult = { parsedUrl: string, parametersRest: UrlBuilderParameters };
 
 const builderScope = Symbol('url-builder cache');
 const urlParseRegex = /([^:]+|:\/+)|:([\w-]+)/ug;
 const isFullUrlRegex = /^\w+:\/\//u;
 
-export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters) => UrlBuilderResult {
+// eslint-disable-next-line max-lines-per-function
+export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters, options?: UrlBuilderOptions) => UrlBuilderResult {
   const parts: UrlBuilderPart[] = [];
   const isFullUrl = isFullUrlRegex.test(url);
 
@@ -47,7 +49,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
   }
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
-  return function buildUrl(parameters: UrlBuilderParameters = {}): UrlBuilderResult {
+  return function buildUrl(parameters: UrlBuilderParameters = {}, { separator = ',' }: UrlBuilderOptions = {}): UrlBuilderResult {
     let parsedUrl = '';
     let parametersRest = parameters;
 
@@ -56,13 +58,18 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
         parsedUrl += part.value;
       }
       else {
-        if (!Object.prototype.hasOwnProperty.call(parametersRest, part.value)) {
-          throw new Error(`parameter ${part.value} not found`);
-        }
-
         const { [part.value]: value, ...rest } = parametersRest;
         parametersRest = rest;
-        parsedUrl += Array.isArray(value) ? value.join(',') : value;
+
+        if (isUndefined(value)) {
+          throw new Error(`url parameter ${part.value} not provided`);
+        }
+
+        if (isObject(value)) {
+          throw new Error(`url parameter ${part.value} is a object`);
+        }
+
+        parsedUrl += isArray(value) ? value.join(separator) : (isNull(value) ? '[[null]]' : value.toString());
       }
     }
 
@@ -70,7 +77,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
   };
 }
 
-export function buildUrl(url: string, parameters: UrlBuilderParameters = {}): UrlBuilderResult {
+export function buildUrl(url: string, parameters: UrlBuilderParameters = {}, options?: UrlBuilderOptions): UrlBuilderResult {
   const builder = singleton(builderScope, url, () => compileUrlBuilder(url));
-  return builder(parameters);
+  return builder(parameters, options);
 }

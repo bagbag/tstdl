@@ -1,3 +1,5 @@
+import { isDefined } from '#/utils';
+
 export class CustomError extends Error {
   readonly cause: Error | undefined;
 
@@ -8,7 +10,10 @@ export class CustomError extends Error {
     Object.setPrototypeOf(this, prototype);
 
     this.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? new.target.name;
-    this.cause = cause;
+
+    if (isDefined(cause)) {
+      this.cause = cause;
+    }
   }
 }
 

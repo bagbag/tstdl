@@ -1,72 +1,17 @@
-import { isIterable } from '#/utils/iterable-helpers';
-import type { Readable } from 'stream';
-import type { Json, StringMap, UndefinableJson } from '../types';
+import type { JsonPrimitive, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
-import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isUndefined, toArray } from '../utils';
-
-export type HttpRequestOptions = {
-  headers?: HttpHeaders,
-  parameters?: HttpParameters,
-  mapUrlParameters?: boolean,
-  hash?: string,
-  body?: {
-    form?: HttpForm,
-    json?: Json,
-    text?: string,
-    buffer?: ArrayBuffer,
-    readable?: Readable
-  },
-  timeout?: number,
-  context?: Record<any, unknown>
-};
-
-type HttpValueEntry = [string, HttpValue | HttpValue[]];
-
-export type HttpValue = string | number | boolean | undefined;
-
-export type HttpValueMap = StringMap<HttpValue | HttpValue[]>;
-
-export type NormalizedHttpValueMap = StringMap<string | string[]>;
-
-export type HttpRequest = { url: string, method: HttpMethod, responseType: HttpResponseType } & HttpRequestOptions;
-
-export type HttpHeaders = HttpValueMap;
-
-export type HttpParameters = HttpValueMap;
-
-export type HttpForm = HttpValueMap;
-
-export enum HttpResponseType {
-  Text = 'text',
-  Buffer = 'buffer',
-  Json = 'json', // eslint-disable-line @typescript-eslint/no-shadow
-  Stream = 'stream'
-}
-
-export type HttpResponseTypeValueType<T extends HttpResponseType> =
-  T extends HttpResponseType.Text ? string
-  : T extends HttpResponseType.Buffer ? ArrayBuffer
-  : T extends HttpResponseType.Json ? Json
-  : Readable;
-
-export type HttpResponse<T extends HttpResponseType = HttpResponseType> = {
-  request: HttpRequest,
-  statusCode: number,
-  statusMessage?: string,
-  header: HttpHeaders,
-  body: HttpResponseTypeValueType<T>
-};
-
-export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'head' | 'delete' | 'trace';
+import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined, toArray } from '../utils';
+import { HttpError, HttpErrorReason } from './http.error';
+import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpMethod, HttpParameters, HttpValue, NormalizedHttpClientRequest, NormalizedHttpValue, NormalizedHttpValueMap } from './types';
 
 export interface HttpClientAdapter {
-  call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>>;
-  callStream(request: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>>;
+  call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>>;
+  callStream(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>>;
 }
 
-export type HttpClientHandler = AsyncMiddlerwareHandler<HttpRequest, HttpResponse>;
+export type HttpClientHandler = AsyncMiddlerwareHandler<HttpClientRequest, HttpClientResponse>;
 
-export type HttpClientMiddleware = AsyncMiddleware<HttpRequest, HttpResponse>;
+export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class HttpClient {
@@ -118,210 +63,303 @@ export class HttpClient {
     this.headers.delete(name);
   }
 
-  async head<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async head<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('head', url, responseType, options);
   }
 
-  async get<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async get<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('get', url, responseType, options);
   }
 
-  async getString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('get', url, HttpResponseType.Text, options);
+  async getString(url: string, options?: HttpClientRequestOptions): Promise<string> {
+    const response = await this.call('get', url, 'text', options);
     return response.body;
   }
 
-  async getJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('get', url, HttpResponseType.Json, options);
+  async getJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+    const response = await this.call('get', url, 'json', options);
     return response.body as T;
   }
 
-  async getBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('get', url, HttpResponseType.Buffer, options);
+  async getBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+    const response = await this.call('get', url, 'buffer', options);
     return response.body;
   }
 
-  async getStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async *getStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
     const response = await this.callStream('get', url, options);
-    return response.body;
+    yield* response.body;
   }
 
-  async post<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async post<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('post', url, responseType, options);
   }
 
-  async postString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('post', url, HttpResponseType.Text, options);
+  async postString(url: string, options?: HttpClientRequestOptions): Promise<string> {
+    const response = await this.call('post', url, 'text', options);
     return response.body;
   }
 
-  async postJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('post', url, HttpResponseType.Json, options);
+  async postJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+    const response = await this.call('post', url, 'json', options);
     return response.body as T;
   }
 
-  async postBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('post', url, HttpResponseType.Buffer, options);
+  async postBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+    const response = await this.call('post', url, 'buffer', options);
     return response.body;
   }
 
-  async postStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async *postStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
     const response = await this.callStream('post', url, options);
-    return response.body;
+    yield* response.body;
   }
 
-  async put<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async put<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('put', url, responseType, options);
   }
 
-  async putString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('put', url, HttpResponseType.Text, options);
+  async putString(url: string, options?: HttpClientRequestOptions): Promise<string> {
+    const response = await this.call('put', url, 'text', options);
     return response.body;
   }
 
-  async putJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('put', url, HttpResponseType.Json, options);
+  async putJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+    const response = await this.call('put', url, 'json', options);
     return response.body as T;
   }
 
-  async putBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('put', url, HttpResponseType.Buffer, options);
+  async putBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+    const response = await this.call('put', url, 'buffer', options);
     return response.body;
   }
 
-  async putStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async *putStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
     const response = await this.callStream('put', url, options);
-    return response.body;
+    yield* response.body;
   }
 
-  async patch<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async patch<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('patch', url, responseType, options);
   }
 
-  async patchString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('patch', url, HttpResponseType.Text, options);
+  async patchString(url: string, options?: HttpClientRequestOptions): Promise<string> {
+    const response = await this.call('patch', url, 'text', options);
     return response.body;
   }
 
-  async patchJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('patch', url, HttpResponseType.Json, options);
+  async patchJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+    const response = await this.call('patch', url, 'json', options);
     return response.body as T;
   }
 
-  async patchBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('patch', url, HttpResponseType.Buffer, options);
+  async patchBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+    const response = await this.call('patch', url, 'buffer', options);
     return response.body;
   }
 
-  async patchStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async *patchStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
     const response = await this.callStream('patch', url, options);
-    return response.body;
+    yield* response.body;
   }
 
-  async delete<T extends HttpResponseType>(url: string, responseType: T, options?: HttpRequestOptions): Promise<HttpResponse<T>> {
+  async delete<T extends HttpBodyType>(url: string, responseType: T, options?: HttpClientRequestOptions): Promise<HttpClientResponse<T>> {
     return this.call('delete', url, responseType, options);
   }
 
-  async deleteString(url: string, options?: HttpRequestOptions): Promise<string> {
-    const response = await this.call('delete', url, HttpResponseType.Text, options);
+  async deleteString(url: string, options?: HttpClientRequestOptions): Promise<string> {
+    const response = await this.call('delete', url, 'text', options);
     return response.body;
   }
 
-  async deleteJson<T extends UndefinableJson>(url: string, options?: HttpRequestOptions): Promise<T> {
-    const response = await this.call('delete', url, HttpResponseType.Json, options);
+  async deleteJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+    const response = await this.call('delete', url, 'json', options);
     return response.body as T;
   }
 
-  async deleteBuffer(url: string, options?: HttpRequestOptions): Promise<ArrayBuffer> {
-    const response = await this.call('delete', url, HttpResponseType.Buffer, options);
+  async deleteBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+    const response = await this.call('delete', url, 'buffer', options);
     return response.body;
   }
 
-  async deleteStream(url: string, options?: HttpRequestOptions): Promise<Readable> {
+  async *deleteStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
     const response = await this.callStream('delete', url, options);
-    return response.body;
+    yield* response.body;
   }
 
   private updateHandlers(): void {
-    this.callHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.call(options));
-    this.callStreamHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (options) => this.adapter.callStream(options));
+    this.callHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (request) => this.adapter.call(normalizedHttpClientRequest(request)));
+
+    this.callStreamHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (request) => this.adapter.callStream(normalizedHttpClientRequest(request)));
   }
 
-  private async call<T extends HttpResponseType>(method: HttpMethod, url: string, responseType: T, options: HttpRequestOptions = {}): Promise<HttpResponse<T>> {
-    const request: HttpRequest = { url, method, responseType, ...options };
+  private async call<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options: HttpClientRequestOptions = {}): Promise<HttpClientResponse<T>> {
+    const request: HttpClientRequest = { url, method, responseType, ...options };
     const preparedRequest = this.prepareRequest(request);
 
     return this.callHandler(preparedRequest);
   }
 
-  private async callStream(method: HttpMethod, url: string, options: HttpRequestOptions = {}): Promise<HttpResponse<HttpResponseType.Stream>> {
-    const request: HttpRequest = { url, method, responseType: HttpResponseType.Stream, ...options };
+  private async callStream(method: HttpMethod, url: string, options: HttpClientRequestOptions = {}): Promise<HttpClientResponse<'stream'>> {
+    const request: HttpClientRequest = { url, method, responseType: 'stream', ...options };
     const preparedRequest = this.prepareRequest(request);
 
     return this.callStreamHandler(preparedRequest);
   }
 
-  private prepareRequest(request: HttpRequest): HttpRequest {
-    const headers = filterAndMergeHttpValueContainers(this.headers, request.headers);
-    const parameters = filterAndMergeHttpValueContainers(request.parameters);
-    const body = isDefined(request.body?.form) ? { ...request.body, form: filterAndMergeHttpValueContainers(request.body?.form) } : request.body;
+  private prepareRequest(request: HttpClientRequest): HttpClientRequest {
+    const headers = Object.fromEntries([...this.headers, ...Object.entries(request.headers ?? {})]);
+    const preparedRequest: HttpClientRequest = { ...request, headers };
 
-    const preparedRequest: HttpRequest = { ...request, headers, parameters, body };
     return preparedRequest;
   }
 }
 
 function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
-  async function buildUrlParametersMiddleware(request: HttpRequest, next: HttpClientHandler): Promise<HttpResponse> {
-    const modifiedRequest = buildRequestUrl(request, baseUrl);
+  async function buildUrlParametersMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {
+    const modifiedRequest = mapParameters(request, baseUrl);
     return next(modifiedRequest);
   }
 
   return buildUrlParametersMiddleware;
 }
 
-function buildRequestUrl(request: HttpRequest, baseUrl?: string): HttpRequest {
-  let url: URL;
-  let modifiedRequest: HttpRequest = request;
+// eslint-disable-next-line max-statements, max-lines-per-function
+function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClientRequest {
+  const isGetOrHead = (request.method == 'get') || (request.method == 'head');
 
-  if (request.mapUrlParameters == false) {
-    url = new URL(modifiedRequest.url, baseUrl);
+  let url: URL;
+  let parameterEntries = new Set(Object.entries(request.parameters ?? {}));
+
+  if (request.mapParametersToUrl == false) {
+    url = new URL(request.url, baseUrl);
   }
   else {
-    const { parsedUrl, parametersRest } = buildUrl(modifiedRequest.url, modifiedRequest.parameters);
+    const { parsedUrl, parametersRest } = buildUrl(request.url, request.parameters, { separator: request.urlParametersSeparator });
 
     url = new URL(parsedUrl, baseUrl);
-    modifiedRequest = { ...modifiedRequest, parameters: parametersRest as HttpRequestOptions['parameters'] };
+    parameterEntries = new Set(Object.entries(parametersRest));
   }
 
-  if (isDefined(modifiedRequest.parameters)) {
-    for (const [key, valueOrValues] of Object.entries(modifiedRequest.parameters)) {
-      for (const value of toArray(valueOrValues)) {
-        if (isDefined(value)) {
-          url.searchParams.append(key, value.toString());
+  if (request.mapParametersToQuery != false) {
+    for (const entry of parameterEntries) {
+      const [parameter, value] = entry;
+
+      if (isUndefined(value)) {
+        continue;
+      }
+
+      const valueIsObjectOrArray = isObject(value) || isArray(value);
+
+      if (valueIsObjectOrArray && !isGetOrHead && isUndefined(request.body)) {
+        continue;
+      }
+
+      const normalizedValueOrValues = normalizeHttpValue(value);
+
+      if (isDefined(normalizedValueOrValues)) {
+        for (const normalizedValue of toArray(normalizedValueOrValues)) {
+          url.searchParams.append(parameter, normalizedValue);
+        }
+
+        parameterEntries.delete(entry);
+      }
+    }
+  }
+
+  if (isDefined(request.query)) {
+    for (const [key, valueOrValues] of Object.entries(request.query)) {
+      const normalizedValues = normalizeHttpValue(valueOrValues);
+
+      if (isDefined(normalizedValues)) {
+        for (const normalizedValue of toArray(normalizedValues)) {
+          url.searchParams.append(key, normalizedValue.toString());
         }
       }
     }
-
-    modifiedRequest = { ...modifiedRequest, parameters: undefined };
   }
 
-  if (isDefined(modifiedRequest.hash)) {
-    url.hash = modifiedRequest.hash;
+  const modifiedRequest = { ...request, url: url.href };
+
+  if (parameterEntries.size > 0) {
+    if (isDefined(request.body)) {
+      const error = new Error('not all parameters could be mapped to url and query but cannot map to body because it is already defined');
+      throw new HttpError(HttpErrorReason.InvalidRequest, request, undefined, error);
+    }
+
+    if (isGetOrHead) {
+      const error = new Error('cannot map parameters to body because request is GET/HEAD');
+      throw new HttpError(HttpErrorReason.InvalidRequest, request, undefined, error);
+    }
+
+    modifiedRequest.body = { json: Object.fromEntries(parameterEntries) };
   }
 
-  return { ...modifiedRequest, url: url.href };
+  return modifiedRequest;
 }
 
-function filterAndMergeHttpValueContainers(...items: (HttpValueMap | Iterable<HttpValueEntry> | undefined)[]): HttpValueMap | undefined {
-  const filteredEntries = items.filter(isDefined)
-    .flatMap((value) => (isIterable(value) ? (isArray(value) ? (value as HttpValueEntry[]) : [...value]) : Object.entries(value)))
-    .map(([key, value]) => (isArray(value) ? [key, value.filter(isDefined)] as const : [key, value] as const))
-    .filter(([, value]) => (isArray(value) ? value.length > 0 : isDefined(value)));
+function normalizedHttpClientRequest(request: HttpClientRequest): NormalizedHttpClientRequest {
+  const normalizedRequest: NormalizedHttpClientRequest = stripPropertyWhenUndefined({
+    url: request.url,
+    method: request.method,
+    responseType: request.responseType,
+    headers: normalizeHttpParameters(request.headers),
+    body: stripPropertyWhenUndefined({
+      form: normalizeHttpParameters(request.body?.form),
+      json: request.body?.json,
+      text: request.body?.text,
+      buffer: request.body?.buffer,
+      stream: request.body?.stream
+    }),
+    timeout: request.timeout,
+    context: request.context
+  });
 
-  if (filteredEntries.length == 0) {
+  return normalizedRequest;
+}
+
+function normalizeHttpParameters(parameters: HttpParameters | undefined): NormalizedHttpValueMap | undefined {
+  if (isUndefined(parameters)) {
     return undefined;
   }
 
-  return Object.fromEntries(filteredEntries) as HttpValueMap;
+  const entries = Object.entries(parameters);
+
+  const normalizedEntries = entries
+    .map(([key, value]) => {
+      const normalizedValue = normalizeHttpValue(value);
+      return isDefined(normalizedValue) ? ([key, normalizedValue] as const) : undefined;
+    })
+    .filter(isDefined);
+
+  if (normalizedEntries.length == 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(normalizedEntries) as NormalizedHttpValueMap;
+}
+
+function normalizeHttpValue(value: UndefinableJsonInnerNode): NormalizedHttpValue | NormalizedHttpValue[] | undefined {
+  if (isUndefined(value)) {
+    return undefined;
+  }
+
+  if (isArray(value)) {
+    const normalizedArray = value.map(normalizeHttpValue).filter(isDefined) as NormalizedHttpValue[];
+    return (normalizedArray.length > 0) ? normalizedArray : undefined;
+  }
+
+  return normalizeSingleHttpValue(value);
+}
+
+function normalizeSingleHttpValue(value: JsonPrimitive | UndefinableJsonObject): NormalizedHttpValue | undefined {
+  if (isObject(value)) {
+    return JSON.stringify(value);
+  }
+
+  if (isNull(value)) {
+    return '[[null]]';
+  }
+
+  return value.toString();
 }
