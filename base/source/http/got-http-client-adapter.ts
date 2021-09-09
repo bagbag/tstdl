@@ -17,10 +17,10 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
   async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     switch (request.responseType) {
       case 'stream':
-        return this.callStream({ ...request, headers: request.headers }) as Promise<HttpClientResponse<T>>;
+        return this.callStream(request) as Promise<HttpClientResponse<T>>;
 
       default:
-        return this._call({ ...request, headers: request.headers });
+        return this._call(request);
     }
   }
 
