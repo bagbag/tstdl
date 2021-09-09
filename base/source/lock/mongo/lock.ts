@@ -1,9 +1,9 @@
-import type { AcquireResult, Lock, LockController, LockedFunction, UsingResult } from '..';
 import type { Logger } from '../../logger';
 import { Alphabet, cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, timeout as utilsTimeout, Timer } from '../../utils';
+import type { AcquireResult, Lock, LockController, LockedFunction, UsingResult } from '../lock';
 import type { MongoLockRepository } from './mongo-lock-repository';
 
-const EXPIRATION_TIME = 30000;
+const expirationTime = 30000;
 
 export class MongoLock implements Lock {
   private readonly lockRepository: MongoLockRepository;
@@ -113,5 +113,5 @@ export class MongoLock implements Lock {
 }
 
 function getExpirationDate(): Date {
-  return new Date(currentTimestamp() + EXPIRATION_TIME);
+  return new Date(currentTimestamp() + expirationTime);
 }

@@ -1,6 +1,6 @@
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
-import { millisecondsPerDay } from '.';
+import { millisecondsPerDay } from './units';
 
 export type SimpleDate = {
   year: number,

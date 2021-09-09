@@ -1,7 +1,7 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
-import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpParams as AngularHttpParams } from '@angular/common/http';
-import type { HttpClientAdapter, HttpRequest, HttpRequestOptions, HttpResponse, HttpResponseTypeValueType } from '@tstdl/base/cjs/http';
-import { HttpError, HttpResponseType } from '@tstdl/base/cjs/http';
+import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
+import type { HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/cjs/http';
+import { HttpError, HttpErrorReason } from '@tstdl/base/cjs/http';
 import { firstValueFrom } from '@tstdl/base/cjs/rxjs/compat';
 import type { StringMap } from '@tstdl/base/cjs/types';
 import { isDefined, isUndefined, toArray } from '@tstdl/base/cjs/utils';
@@ -13,12 +13,11 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
     this.angularHttpClient = angularHttpClient;
   }
 
-  async call<T extends HttpResponseType>(request: HttpRequest): Promise<HttpResponse<T>> {
+  async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpResponseTypeValueType<T>>>(this.angularHttpClient.request(request.method, request.url, {
-        headers: new AngularHttpHeaders(request.headers as StringMap),
-        params: new AngularHttpParams({ fromObject: request.parameters as StringMap }),
+      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpBody<T>>>(this.angularHttpClient.request(request.method, request.url, {
+        headers: new AngularHttpHeaders(request.headers),
         responseType: getAngularHttpRequestResponseType(request.responseType),
         observe: 'response',
         body: getAngularBody(request.body)
@@ -26,36 +25,36 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
 
       const header = convertAngularHeaders(angularResponse.headers);
 
-      const response: HttpResponse<T> = {
+      const response: HttpClientResponse<T> = {
         request,
         statusCode: angularResponse.status,
         statusMessage: angularResponse.statusText,
         header,
-        body: angularResponse.body!
+        body: (angularResponse.body ?? undefined) as HttpBody<T>
       };
 
       return response;
     }
     catch (error: unknown) {
       if (error instanceof AngularHttpErrorResponse) {
-        const response: HttpResponse<any> = {
+        const response: HttpClientResponse = {
           request,
           statusCode: error.status,
           statusMessage: error.statusText,
           header: convertAngularHeaders(error.headers),
-          body: null
+          body: undefined
         };
 
-        throw new HttpError(request, response, error);
+        throw new HttpError(HttpErrorReason.InvalidRequest, request, response, error);
       }
 
-      throw new HttpError(request, undefined, error as Error);
+      throw new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async callStream(_request?: HttpRequest): Promise<HttpResponse<HttpResponseType.Stream>> {
-    throw new Error('streams not supported by AngularHttpClientAdapter');
+  async callStream(_request?: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>> {
+    throw new Error('streams not (yet) supported by AngularHttpClientAdapter');
   }
 }
 
@@ -63,18 +62,22 @@ function convertAngularHeaders(headers: AngularHttpHeaders): StringMap<string | 
   return Object.fromEntries(headers.keys().map((name) => [name, headers.getAll(name)!] as const).map(([name, values]) => [name, values.length > 1 ? values : values[0]!] as const));
 }
 
-function getAngularBody(body: HttpRequestOptions['body']): any {
+function getAngularBody(body: NormalizedHttpClientRequest['body']): any {
   if (isUndefined(body)) {
     return null;
   }
 
-  const binary = body.buffer ?? body.readable ?? body.text;
-
-  if (isDefined(binary)) {
-    return binary;
-  }
   else if (isDefined(body.json)) {
     return body.json;
+  }
+  else if (isDefined(body.text)) {
+    return body.text;
+  }
+  if (isDefined(body.buffer)) {
+    return body.buffer;
+  }
+  if (isDefined(body.stream)) {
+    return body.stream;
   }
   else if (isDefined(body.form)) {
     const formData = new FormData();
@@ -93,15 +96,15 @@ function getAngularBody(body: HttpRequestOptions['body']): any {
   throw new Error('unsupported body');
 }
 
-function getAngularHttpRequestResponseType(responseType: HttpResponseType): AngularHttpRequest<any>['responseType'] {
+function getAngularHttpRequestResponseType(responseType: HttpBodyType): AngularHttpRequest<any>['responseType'] {
   switch (responseType) {
-    case HttpResponseType.Buffer:
+    case 'buffer':
       return 'arraybuffer';
 
-    case HttpResponseType.Json:
+    case 'json':
       return 'json';
 
-    case HttpResponseType.Text:
+    case 'text':
       return 'text';
 
     default:

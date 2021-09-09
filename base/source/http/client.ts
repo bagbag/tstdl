@@ -1,9 +1,9 @@
-import { normalizedHttpClientRequest, normalizeHttpValue } from '.';
 import type { UndefinableJson } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
 import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
 import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
+import { normalizedHttpClientRequest, normalizeHttpValue } from './types';
 
 export interface HttpClientAdapter {
   call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>>;

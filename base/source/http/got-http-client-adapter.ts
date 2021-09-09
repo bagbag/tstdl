@@ -2,13 +2,12 @@ import type { Options as GotOptions, Response, ResponseType } from 'got';
 import Got, { HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
-import { HttpErrorReason, NormalizedHttpHeaders } from '.';
 import { DeferredPromise } from '../promise';
 import type { StringMap } from '../types';
 import { isArrayBuffer, isDefined, toArray } from '../utils';
 import type { HttpClientAdapter } from './client';
-import { HttpError } from './http.error';
-import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from './types';
+import { HttpError, HttpErrorReason } from './http.error';
+import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
 
 const defaultGotOptions: GotOptions = {
   retry: 0,
