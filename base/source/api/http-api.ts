@@ -2,7 +2,7 @@ import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
 import type { CustomError, CustomErrorStatic } from '#/error';
 import { MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
-import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, HttpServerRequest, HttpServerResponse, NormalizedHttpQuery } from '#/http';
+import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, HttpServerRequest, HttpServerResponse, NormalizedHttpHeaders, NormalizedHttpQuery, NormalizedHttpValueMap } from '#/http';
 import { normalizeHttpValue } from '#/http';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
@@ -213,13 +213,13 @@ export class HttpApi {
       return;
     }
 
-    const requestData: RequestData<B> = { parameters: requestParameters as StringMap<string>, body };
+    const requestData: RequestData<B> = { parameters: requestParameters as NormalizedHttpValueMap, body };
 
     const handlerParameters = requestDataTransformer(requestData, bodyType);
     const httpRequest: HttpServerRequest = {
       url: context.URL,
       method: convertMethod(context.request.method),
-      headers: context.req.headers as StringMap<string | string[]>,
+      headers: context.req.headers as NormalizedHttpHeaders,
       urlParameters: params,
       query: query as NormalizedHttpQuery,
       ip: context.request.ip,
