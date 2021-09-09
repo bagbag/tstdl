@@ -192,21 +192,33 @@ export type HttpRequestData<B extends HttpBodyType = 'auto'> = {
 };
 
 export function normalizedHttpClientRequest(request: HttpClientRequest): NormalizedHttpClientRequest {
-  const normalizedRequest: NormalizedHttpClientRequest = stripPropertyWhenUndefined({
+  const normalizedRequest: NormalizedHttpClientRequest = {
     url: request.url,
     method: request.method,
-    responseType: request.responseType,
-    headers: normalizeHttpParameters(request.headers),
-    body: stripPropertyWhenUndefined({
+    responseType: request.responseType
+  };
+
+  if (isDefined(request.headers)) {
+    normalizedRequest.headers = normalizeHttpParameters(request.headers);
+  }
+
+  if (isDefined(request.body)) {
+    normalizedRequest.body = stripPropertyWhenUndefined({
       form: normalizeHttpParameters(request.body?.form),
       json: request.body?.json,
       text: request.body?.text,
       buffer: request.body?.buffer,
       stream: request.body?.stream
-    }),
-    timeout: request.timeout,
-    context: request.context
-  });
+    });
+  }
+
+  if (isDefined(request.timeout)) {
+    normalizedRequest.timeout = request.timeout;
+  }
+
+  if (isDefined(request.context)) {
+    normalizedRequest.context = request.context;
+  }
 
   return normalizedRequest;
 }
