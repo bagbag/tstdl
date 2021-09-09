@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/semi */
 import type { Entity, Query, QueryOptions } from '#/database';
-import { BadRequestError } from '#/error';
+import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
 import type { SearchIndex, SearchResult, SearchResultItem } from '#/search-index';
+import { SearchIndexError } from '#/search-index';
 import type { TypedOmit } from '#/types';
 import { isDefined, isString } from '#/utils';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
-import type { QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
+import type { BulkResponse, ErrorCause, QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -84,7 +85,23 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
       })
     };
 
-    await this.client.bulk(request);
+    const result = await this.client.bulk(request);
+    const body = (result.body as BulkResponse)
+
+    if (body.errors) {
+      const errorItems = body.items
+        .filter((item) => isDefined(item.index!.error))
+        .map((item) => item.index!);
+
+      const errors = errorItems.map((item) => convertError(item.error!, item));
+
+      if (errors.length == 1) {
+        throw errors[0]!;
+      }
+
+      const multiError = new MultiError(errors);
+      throw new SearchIndexError('index error', 'multiple errors', { cause: multiError });
+    }
   }
 
   // eslint-disable-next-line max-statements
@@ -157,4 +174,9 @@ function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: 
 
 function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
   return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8')) as CursorData<T>;
+}
+
+function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
+  const cause = (isDefined(error.caused_by)) ? convertError(error.caused_by) : undefined;
+  return new SearchIndexError(error.type, error.reason, { raw, cause })
 }
