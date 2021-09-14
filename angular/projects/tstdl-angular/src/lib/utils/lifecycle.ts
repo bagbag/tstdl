@@ -23,6 +23,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   private readonly viewCheckedSubject: Subject<void>;
   private readonly contentCheckedSubject: Subject<void>;
 
+  readonly init$: Observable<void>;
   readonly changes$: Observable<SimpleChanges>;
   readonly destroy$: Observable<void>;
   readonly viewInit$: Observable<void>;
@@ -41,6 +42,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
     this.viewCheckedSubject = new Subject();
     this.contentCheckedSubject = new Subject();
 
+    this.init$ = this.initSubject.asObservable();
     this.changes$ = this.changesSubject.asObservable();
     this.destroy$ = this.destroySubject.asObservable();
     this.viewInit$ = this.viewInitSubject.asObservable();
