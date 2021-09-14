@@ -3,7 +3,7 @@ import type { LogErrorOptions } from '@tstdl/base/cjs/logger';
 import { Logger as TstdlLogger } from '@tstdl/base/cjs/logger';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const LOGGER_IMPLEMENTATION = new InjectionToken<Logger>('Logger');
+export const LOGGER = new InjectionToken<Logger>('Logger');
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +11,7 @@ export const LOGGER_IMPLEMENTATION = new InjectionToken<Logger>('Logger');
 export class Logger implements TstdlLogger {
   private readonly logger: TstdlLogger;
 
-  constructor(@Inject(LOGGER_IMPLEMENTATION) logger: TstdlLogger) {
+  constructor(@Inject(LOGGER) logger: TstdlLogger) {
     this.logger = logger;
   }
 
