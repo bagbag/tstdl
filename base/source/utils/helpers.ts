@@ -869,3 +869,7 @@ export function normalizeText(text: string, options: NormalizeTextOptions = { tr
 
   return normalized;
 }
+
+export function iif<T, F>(condition: boolean, trueFn: () => T, falseFn: () => F): T | F {
+  return condition ? trueFn() : falseFn();
+}

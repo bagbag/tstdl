@@ -2,30 +2,26 @@ import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable, Observer, Subscribable, Unsubscribable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, filter, mapTo, skip, take } from 'rxjs/operators';
+import { iif } from './helpers';
+import { isBoolean } from './type-guards';
 
 type InheritanceMode = 'set' | 'unset' | 'both';
 
-export class CancellationToken implements PromiseLike<void>, Subscribable<void> {
-  private readonly stateSubject: BehaviorSubject<boolean>;
+export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribable<void> {
+  /**
+   * returns whether this token set
+   */
+  readonly isSet: boolean;
+
+  /**
+   * returns whether this token unset
+   */
+  readonly isUnset: boolean;
 
   /**
    * observable which emits the current state and every state change
    */
   readonly state$: Observable<boolean>;
-
-  /**
-   * returns whether this token set
-   */
-  get isSet(): boolean {
-    return this.stateSubject.value;
-  }
-
-  /**
-   * returns whether this token unset
-   */
-  get isUnset(): boolean {
-    return !this.stateSubject.value;
-  }
 
   /**
    * observable which emits whenever this token is set
@@ -40,22 +36,48 @@ export class CancellationToken implements PromiseLike<void>, Subscribable<void> 
   /**
    * returns a promise which is resolved whenever this token is set
    */
-  get $set(): Promise<void> {
-    return firstValueFrom(this.set$);
-  }
+  readonly $set: Promise<void>;
 
   /**
    * returns a promise which is resolved whenever this token is unset
    */
-  get $unset(): Promise<void> {
-    return firstValueFrom(this.unset$);
-  }
+  readonly $unset: Promise<void>;
 
   /**
    * returns a promise which is resolved whenever this token changes is state
    */
+  readonly $state: Promise<boolean>;
+}
+
+export class CancellationToken implements ReadonlyCancellationToken {
+  private readonly stateSubject: BehaviorSubject<boolean>;
+
+  readonly state$: Observable<boolean>;
+  readonly set$: Observable<void>;
+  readonly unset$: Observable<void>;
+
+  get isSet(): boolean {
+    return this.stateSubject.value;
+  }
+
+  get isUnset(): boolean {
+    return !this.stateSubject.value;
+  }
+
+  get $set(): Promise<void> {
+    return firstValueFrom(this.set$);
+  }
+
+  get $unset(): Promise<void> {
+    return firstValueFrom(this.unset$);
+  }
+
   get $state(): Promise<boolean> {
     return firstValueFrom(this.state$.pipe(skip(1)));
+  }
+
+  get readonly(): ReadonlyCancellationToken {
+    return this;
   }
 
   /**
@@ -74,27 +96,47 @@ export class CancellationToken implements PromiseLike<void>, Subscribable<void> 
   /**
    * creates a token and sets it whenever the promise is resolved
    * @param promise promise to await
+   * @param complete complete token after resolve
    */
-  static fromPromise(promise: PromiseLike<any>): CancellationToken {
+  static fromPromise(promise: PromiseLike<any>, complete: boolean = true): CancellationToken {
     const token = new CancellationToken();
 
     void (async () => {
-      await promise;
-      token.set();
+      try {
+        await promise;
+        token.set();
+
+        if (complete) {
+          token.complete();
+        }
+      }
+      catch (error: unknown) {
+        token.stateSubject.error(error);
+      }
     })();
 
     return token;
   }
 
   /**
-   * creates a token and sets it whenever the observable emits
+   * creates a token and connets its next, error and complete
    * @param observable observable to subscribe
    * @param once unsubscribe after first emit if true
+   * @param complete complete token when observable completes
    */
-  static fromObservable(observable: Observable<void>, once: boolean = false): CancellationToken {
-    const token = new CancellationToken();
+  static fromObservable(observable: Observable<void | boolean>, options: { once?: boolean, complete?: boolean } = {}): CancellationToken {
+    const { once = false, complete = true } = options;
 
-    (once ? observable.pipe(take(1)) : observable).subscribe(() => token.set());
+    const token = new CancellationToken();
+    const source = once
+      ? observable.pipe(take(1))
+      : observable;
+
+    source.subscribe({
+      next: (value) => token.setState(isBoolean(value) ? value : true),
+      error: (error) => token.stateSubject.error(error),
+      complete: () => iif(complete, () => token.complete(), () => undefined)
+    });
 
     return token;
   }
@@ -142,6 +184,13 @@ export class CancellationToken implements PromiseLike<void>, Subscribable<void> 
    */
   unset(): void {
     this.stateSubject.next(false);
+  }
+
+  /**
+   * set the state
+   */
+  setState(state: boolean): void {
+    this.stateSubject.next(state);
   }
 
   async then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | undefined | null): Promise<TResult> {
