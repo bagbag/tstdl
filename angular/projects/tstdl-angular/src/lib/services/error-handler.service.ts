@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ErrorHandler } from '@angular/core';
-import { Inject, Injectable } from '@angular/core';
-import { Logger } from '@tstdl/base/cjs/logger';
+import { Injectable } from '@angular/core';
 import { formatError } from '@tstdl/base/cjs/utils';
 import type { OperatorFunction } from 'rxjs';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { loggerInjectionToken } from '../utils/injection-tokens';
+import { Logger } from './logger.service';
 import { NotificationService } from './notification.service';
 
 @Injectable({
@@ -16,7 +15,7 @@ export class ErrorHandlerService implements ErrorHandler {
   private readonly notificationService: NotificationService;
   private readonly logger: Logger;
 
-  constructor(notificationService: NotificationService, @Inject(loggerInjectionToken) logger: Logger) {
+  constructor(notificationService: NotificationService, logger: Logger) {
     this.notificationService = notificationService;
     this.logger = logger;
   }
@@ -32,8 +31,7 @@ export class ErrorHandlerService implements ErrorHandler {
   handleError(error: any): void {
     this.logger.error(error as Error, { includeRest: true, includeStack: true });
 
-    const message = formatError(error);
-
-    void this.notificationService.notify({ message });
+    const message = formatError(error, { includeRest: true });
+    this.notificationService.notify({ message });
   }
 }

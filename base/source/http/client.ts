@@ -10,6 +10,10 @@ export interface HttpClientAdapter {
   callStream(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>>;
 }
 
+export type HttpClientOptions = {
+  baseUrl?: string
+};
+
 export type HttpClientHandler = AsyncMiddlerwareHandler<HttpClientRequest, HttpClientResponse>;
 
 export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
@@ -19,6 +23,7 @@ export class HttpClient {
   private static _instance?: HttpClient;
 
   private readonly adapter: HttpClientAdapter;
+  private readonly options: HttpClientOptions;
   private readonly headers: Map<string, HttpValue | HttpValue[]>;
   private readonly middleware: HttpClientMiddleware[];
   private readonly internalMiddleware: HttpClientMiddleware[];
@@ -34,22 +39,23 @@ export class HttpClient {
     return this._instance;
   }
 
-  constructor(adapter: HttpClientAdapter, baseUrl?: string) {
+  constructor(adapter: HttpClientAdapter, options: HttpClientOptions = {}) {
     this.adapter = adapter;
+    this.options = options;
 
     this.middleware = [];
     this.headers = new Map();
 
     this.internalMiddleware = [
-      getBuildRequestUrlMiddleware(baseUrl),
+      getBuildRequestUrlMiddleware(options.baseUrl),
       addRequestHeadersMiddleware
     ];
 
     this.updateHandlers();
   }
 
-  static configureGlobalInstance(adapter: HttpClientAdapter, baseUrl?: string): void {
-    this._instance = new HttpClient(adapter, baseUrl);
+  static configureGlobalInstance(adapter: HttpClientAdapter, options: HttpClientOptions = {}): void {
+    this._instance = new HttpClient(adapter, options);
   }
 
   addMiddleware(middleware: HttpClientMiddleware): void {
