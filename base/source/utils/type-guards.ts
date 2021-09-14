@@ -234,3 +234,10 @@ export function assertMap<K, V>(value: Map<K, V> | any, message: string = 'expec
 export function assertNotMap<T>(value: T, message: string = 'expected value to not be Map'): asserts value is InferIsNotType<T, typeof isMap> { assert(isNotMap(value), message); }
 export function assertMapPass<K, V>(value: Map<K, V> | any, message?: string): Map<K, V> { assertMap(value, message); return value as Map<K, V>; }
 export function assertNotMapPass<T>(value: T, message?: string): InferIsNotType<T, typeof isMap> { assertNotMap(value, message); return value; }
+
+export function isPromise<T>(value: Promise<T> | any): value is Promise<T> { return (value instanceof Promise); }
+export function isNotPromise<T>(value: T): value is InferIsNotType<T, typeof isPromise> { return !isPromise(value); }
+export function assertPromise<T>(value: Promise<T> | any, message: string = 'expected value to be Promise'): asserts value is Promise<T> { assert(isPromise(value), message); }
+export function assertNotPromise<T>(value: T, message: string = 'expected value to not be Promise'): asserts value is InferIsNotType<T, typeof isPromise> { assert(isNotPromise(value), message); }
+export function assertPromisePass<T>(value: Promise<T> | any, message?: string): Promise<T> { assertPromise(value, message); return value as Promise<T>; } // eslint-disable-line @typescript-eslint/promise-function-async
+export function assertNotPromisePass<T>(value: T, message?: string): InferIsNotType<T, typeof isPromise> { assertNotPromise(value, message); return value; }

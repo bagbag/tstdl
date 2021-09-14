@@ -1,8 +1,8 @@
 import type { Observable } from 'rxjs';
-import type { AnyIterable, AsyncComparator } from '../utils';
+import type { AnyIterable, AsyncComparator, CancellationToken } from '../utils';
 import { isAnyIterable, isNotNullOrUndefined } from '../utils';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, cancelableAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toAsyncIterableIterator, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
@@ -57,6 +57,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
 
   buffer(size: number): AsyncEnumerable<T> {
     const result = bufferAsync(this.source, size);
+    return new AsyncEnumerable(result);
+  }
+
+  cancelable(cancellationToken: CancellationToken): AsyncEnumerable<T> {
+    const result = cancelableAsync(this.source, cancellationToken);
     return new AsyncEnumerable(result);
   }
 

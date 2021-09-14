@@ -1,3 +1,7 @@
+import { firstValueFrom } from '#/rxjs/compat';
+import { mapTo, race, timer } from 'rxjs';
+import type { CancellationToken } from './cancellation-token';
+
 declare const process: { nextTick(callback: () => void, ...args: unknown[]): void }; // eslint-disable-line init-declarations
 declare function requestIdleCallback(callback: IdleRequestCallback, options?: { timeout?: number }): void;
 
@@ -13,27 +17,11 @@ export async function timeout(milliseconds: number = 0): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
-export async function cancelableTimeout(milliseconds: number, cancelPromise: PromiseLike<void>): Promise<boolean> {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise<boolean>((resolve) => {
-    let pending = true;
-
-    const timer = setTimeout(() => {
-      if (pending) {
-        pending = false;
-        resolve(false);
-      }
-    }, milliseconds);
-
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    cancelPromise.then(() => {
-      if (pending) {
-        pending = false;
-        clearTimeout(timer);
-        resolve(true);
-      }
-    });
-  });
+export async function cancelableTimeout(milliseconds: number, cancelToken: CancellationToken): Promise<boolean> {
+  return firstValueFrom(race([
+    timer(milliseconds).pipe(mapTo(false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    cancelToken.set$.pipe(mapTo(true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
+  ]));
 }
 
 export async function immediate(): Promise<void> {
@@ -48,7 +36,6 @@ export async function animationFrame(): Promise<number> {
   return new Promise<number>(requestAnimationFrame);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-shadow
-export async function idle(timeout?: number): Promise<IdleDeadline> {
+export async function idle(timeout?: number): Promise<IdleDeadline> { // eslint-disable-line @typescript-eslint/no-shadow
   return new Promise<IdleDeadline>((resolve) => requestIdleCallback(resolve, { timeout }));
 }

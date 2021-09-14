@@ -1,7 +1,8 @@
 import * as Http from 'http';
 import type { Socket } from 'net';
+import { bindNodeCallback } from 'rxjs';
 import type { Logger } from '../logger';
-import { cancelableTimeout, isDefined, Timer } from '../utils';
+import { cancelableTimeout, CancellationToken, Timer } from '../utils';
 
 export class HttpServer {
   private readonly logger: Logger;
@@ -56,16 +57,7 @@ export class HttpServer {
   async close(timeout: number): Promise<void> {
     const timer = new Timer(true);
 
-    const closePromise = new Promise<void>((resolve, reject) => {
-      this.server.close((error) => {
-        if (isDefined(error)) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
-    });
+    const close$ = bindNodeCallback(this.server.close.bind(this.server))();
 
     while (true) {
       const connections = await getConnectionsCount(this.server);
@@ -82,7 +74,7 @@ export class HttpServer {
 
       if (connections > 0) {
         this.logger.info(`waiting for ${connections} connections to end`);
-        await cancelableTimeout(250, closePromise);
+        await cancelableTimeout(250, CancellationToken.fromObservable(close$));
       }
     }
 

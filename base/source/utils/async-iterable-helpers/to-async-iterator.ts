@@ -1,5 +1,6 @@
-import type { AnyIterable, AnyIterator } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator';
 import { isIterable } from '../iterable-helpers/is-iterable';
+import { isDefined } from '../type-guards';
 import { isAsyncIterable } from './is-async-iterable';
 
 export function iterableToAsyncIterator<T>(iterable: AnyIterable<T>): AsyncIterator<T> {
@@ -19,19 +20,27 @@ export function iterableToAsyncIterator<T>(iterable: AnyIterable<T>): AsyncItera
   return asyncIterator;
 }
 
-export function iteratorToAsyncIterator<T>(iterator: AnyIterator<T>): AsyncIterator<T> {
+export function iteratorToAsyncIterator<T>(iterator: Iterator<T>): AsyncIterator<T> {
   const asyncIterator: AsyncIterator<T> = {
-    next: async (value?: any) => iterator.next(value)
+    async next(value?: any) { // eslint-disable-line @typescript-eslint/require-await
+      return iterator.next(value);
+    }
   };
 
-  if (iterator.return != undefined) {
-    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-non-null-assertion, @typescript-eslint/unbound-method
-    asyncIterator.return = (value?: any) => ((value instanceof Promise) ? value : Promise.resolve(iterator.return!(value)));
+  if (isDefined(iterator.return)) { // eslint-disable-line @typescript-eslint/unbound-method
+    asyncIterator.return = ({ // eslint-disable-line @typescript-eslint/unbound-method
+      async return(value: any) {
+        return iterator.return!(await value);
+      }
+    }).return;
   }
 
-  if (iterator.throw != undefined) {
-    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-non-null-assertion, @typescript-eslint/unbound-method
-    asyncIterator.throw = (e?: any) => ((e instanceof Promise) ? e : Promise.resolve(iterator.throw!(e)));
+  if (isDefined(iterator.throw)) { // eslint-disable-line @typescript-eslint/unbound-method
+    asyncIterator.throw = ({ // eslint-disable-line @typescript-eslint/unbound-method
+      async throw(error?: any) { // eslint-disable-line @typescript-eslint/require-await
+        return iterator.throw!(error);
+      }
+    }).throw;
   }
 
   return asyncIterator;

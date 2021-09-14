@@ -3,6 +3,7 @@ export * from './any';
 export * from './assert';
 export * from './batch';
 export * from './buffer';
+export * from './cancelable';
 export * from './concat';
 export * from './default-if-empty';
 export * from './deferred';

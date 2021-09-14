@@ -1,6 +1,7 @@
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { DeferredPromise } from '../promise/deferred-promise';
+import { CancellationToken } from './cancellation-token';
 import { cancelableTimeout } from './timing';
 
 export class PeriodicReporter {
@@ -8,7 +9,7 @@ export class PeriodicReporter {
   private readonly interval: number;
   private readonly ignoreZero: boolean;
   private readonly resetAfterReport: boolean;
-  private readonly stopPromise: DeferredPromise;
+  private readonly stopToken: CancellationToken;
   private readonly stopped: DeferredPromise;
 
   private running: boolean;
@@ -25,7 +26,7 @@ export class PeriodicReporter {
     this.resetAfterReport = resetAfterReport;
     this.running = false;
 
-    this.stopPromise = new DeferredPromise();
+    this.stopToken = new CancellationToken();
     this.stopped = new DeferredPromise();
     this.reportSubject = new Subject();
   }
@@ -45,11 +46,11 @@ export class PeriodicReporter {
     (async () => {
       this.counter = 0;
       this.stopRequested = false;
-      this.stopPromise.reset();
+      this.stopToken.unset();
       this.stopped.reset();
 
       while (!this.stopRequested) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-        await cancelableTimeout(this.interval, this.stopPromise);
+        await cancelableTimeout(this.interval, this.stopToken);
 
         if (!this.stopRequested && (!this.ignoreZero || (this.counter > 0))) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
           this.emitReport(this.resetAfterReport);
@@ -67,7 +68,7 @@ export class PeriodicReporter {
     }
 
     this.stopRequested = true;
-    this.stopPromise.resolve();
+    this.stopToken.set();
     await this.stopped;
   }
 

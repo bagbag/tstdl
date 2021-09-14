@@ -6,7 +6,6 @@ export * from './backoff';
 export * from './base64';
 export * from './benchmark';
 export * from './binary-search';
-export * from './cancelable-async-iterable';
 export * from './cancellation-token';
 export * from './cryptography';
 export * from './date-time';

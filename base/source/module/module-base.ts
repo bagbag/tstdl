@@ -4,18 +4,14 @@ import type { Module, ModuleMetric } from './module';
 import { ModuleState } from './module';
 
 export abstract class ModuleBase implements Module {
-  private readonly _cancellationToken: CancellationToken;
-
   private runPromise: Promise<void>;
   private state: ModuleState;
+
+  protected readonly cancellationToken: CancellationToken;
 
   readonly name: string;
 
   abstract readonly metrics: StringMap<ModuleMetric>;
-
-  protected get cancellationToken(): CancellationToken {
-    return this._cancellationToken;
-  }
 
   private get stateString(): string {
     return ModuleState[this.state]!.toLowerCase();
@@ -25,7 +21,7 @@ export abstract class ModuleBase implements Module {
     this.name = name;
     this.runPromise = Promise.resolve();
     this.state = ModuleState.Stopped;
-    this._cancellationToken = new CancellationToken();
+    this.cancellationToken = new CancellationToken();
   }
 
   async run(): Promise<void> {
@@ -33,11 +29,11 @@ export abstract class ModuleBase implements Module {
       throw new Error(`cannot start module, it is ${this.stateString}`);
     }
 
-    this.cancellationToken.reset();
+    this.cancellationToken.unset();
 
     try {
       this.state = ModuleState.Running;
-      this.runPromise = this._run(this._cancellationToken);
+      this.runPromise = this._run(this.cancellationToken);
       await this.runPromise;
       this.state = ModuleState.Stopped;
     }
