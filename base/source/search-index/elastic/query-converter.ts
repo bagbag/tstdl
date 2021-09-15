@@ -168,8 +168,8 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
         geo_distance: {
           distance: `${distance}m`,
           [property]: [
-            (value as ComparisonGeoDistanceQuery).$geoDistance.latitude,
-            (value as ComparisonGeoDistanceQuery).$geoDistance.longitude
+            (value as ComparisonGeoDistanceQuery).$geoDistance.longitude,
+            (value as ComparisonGeoDistanceQuery).$geoDistance.latitude
           ]
         }
       };
