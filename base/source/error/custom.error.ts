@@ -1,4 +1,4 @@
-import { isDefined } from '#/utils';
+import { isDefined } from '#/utils/type-guards';
 
 export class CustomError extends Error {
   readonly cause: Error | undefined;
