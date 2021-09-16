@@ -159,7 +159,7 @@ export function getHttpApi(): HttpApi {
     const logger = getLogger(httpApiLogPrefix);
     const httpApi = new HttpApi({ logger, behindProxy: httpApiBehindProxy });
 
-    httpApi.supressErrorLog(UnauthorizedError, NotFoundError, ValidationError, ...supressErrorLog);
+    httpApi.supressErrorLog(...supressErrorLog);
 
     return httpApi;
   });
