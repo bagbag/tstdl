@@ -31,7 +31,7 @@ export class ErrorHandlerService implements ErrorHandler {
   handleError(error: any): void {
     this.logger.error(error as Error, { includeRest: true, includeStack: true });
 
-    const message = formatError(error, { includeRest: true });
+    const message = formatError(error, { includeRest: false, includeStack: false, handleBuiltInErrors: true });
     this.notificationService.notify({ message });
   }
 }

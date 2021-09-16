@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { HttpError } from '#/http';
 import { DetailsError } from '../error';
 import type { BinaryData, DeepArray, StringMap, TypedArray } from '../types';
 import { currentTimestamp } from './date-time';
@@ -184,21 +185,43 @@ export function toError(obj: any): Error {
 }
 
 export type FormatErrorOptions = {
+  /**
+   * include all error properties beside name and message
+   */
   includeRest?: boolean,
-  includeStack?: boolean
+
+  /**
+   * include stack trace
+   */
+  includeStack?: boolean,
+
+  /**
+   * enable special formatting for some known Errors like {@link HttpError} in certain configurations
+   */
+  handleBuiltInErrors?: boolean
 };
 
 // eslint-disable-next-line max-statements
 export function formatError(error: any, options: FormatErrorOptions = {}): string {
-  const { includeRest = true, includeStack = true } = options;
+  const { includeRest = true, includeStack = true, handleBuiltInErrors = true } = options;
 
   let name: string | undefined;
   let message: string | undefined;
   let stack: string | undefined;
   let rest: StringMap | undefined;
+  let builtIn: StringMap | undefined;
 
   if (error instanceof Error) {
     ({ name, message, stack, ...rest } = error);
+
+    if (handleBuiltInErrors) {
+      if ((error instanceof HttpError) && !includeRest) {
+        builtIn = {
+          url: error.request.url,
+          method: error.request.method
+        };
+      }
+    }
   }
   /* eslint-disable @typescript-eslint/no-unsafe-member-access */
   else if (error?.rejection instanceof Error) {
@@ -216,15 +239,16 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
     try {
       message = JSON.stringify(decycle(error), null, 2);
     }
-    catch (stringifyError: unknown) {
+    catch {
       throw error;
     }
   }
 
-  const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
   const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycle(rest), null, 2)}` : '';
+  const builtInString = isDefined(builtIn) ? `\n${JSON.stringify(builtIn, null, 2)}` : '';
+  const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
 
-  return `${name ?? 'Error'}: ${message}${restString}${stackString}`;
+  return `${name ?? 'Error'}: ${message}${restString}${builtInString}${stackString}`;
 }
 
 export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
