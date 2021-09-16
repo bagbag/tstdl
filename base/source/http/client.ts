@@ -1,3 +1,4 @@
+import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
 import type { UndefinableJson } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
 import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
@@ -11,7 +12,15 @@ export interface HttpClientAdapter {
 }
 
 export type HttpClientOptions = {
-  baseUrl?: string
+  /**
+   * base url for requests when only path is provided
+   */
+  baseUrl?: string,
+
+  /**
+   * enables parsing of response errors with registered error handlers via {@link parseErrorResponse}
+   */
+  enableErrorHandling?: boolean
 };
 
 export type HttpClientHandler = AsyncMiddlerwareHandler<HttpClientRequest, HttpClientResponse>;
@@ -48,7 +57,8 @@ export class HttpClient {
 
     this.internalMiddleware = [
       getBuildRequestUrlMiddleware(options.baseUrl),
-      addRequestHeadersMiddleware
+      addRequestHeadersMiddleware,
+      errorMiddleware
     ];
 
     this.updateHandlers();
@@ -270,6 +280,23 @@ async function addRequestHeadersMiddleware(request: HttpClientRequest, next: Htt
   }
 
   return next(updatedHeaders ? { ...request, headers } : request);
+}
+
+async function errorMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {
+  try {
+    return await next(request);
+  }
+  catch (error: unknown) {
+    if ((error instanceof HttpError) && isErrorResponse(error.response?.body) && hasErrorHandler(error.response!.body)) {
+      const parsedError = parseErrorResponse(error.response!.body, false);
+
+      if (isDefined(parsedError)) {
+        throw parsedError;
+      }
+    }
+
+    throw error;
+  }
 }
 
 // eslint-disable-next-line max-statements, max-lines-per-function

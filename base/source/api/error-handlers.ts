@@ -10,16 +10,16 @@ type SerializedValidationError = {
 };
 
 export function registerDefaultErrorHandlers(): void {
-  registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
   registerErrorHandler(ApiError, 400, ({ response }) => response, (response) => new ApiError(response));
-  registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
-  registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
   registerErrorHandler(BadRequestError, 400, () => undefined, (_, error) => new BadRequestError(error.message));
-  registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
   registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new ForbiddenError(error.message));
-  registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
   registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
+  registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
+  registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
   registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
+  registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
+  registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
+  registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
 }
 
 export function serializeValidationError(error: ValidationError): SerializedValidationError {

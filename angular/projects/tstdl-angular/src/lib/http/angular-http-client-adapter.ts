@@ -42,7 +42,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
           statusCode: error.status,
           statusMessage: error.statusText,
           header: convertAngularHeaders(error.headers),
-          body: undefined
+          body: error.error
         };
 
         throw new HttpError(HttpErrorReason.InvalidRequest, request, response, error);

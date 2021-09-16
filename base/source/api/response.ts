@@ -1,7 +1,7 @@
 import type { CustomError, CustomErrorStatic } from '../error';
 import { ApiError } from '../error/api.error';
 import type { UndefinableJson } from '../types';
-import { isDefined } from '../utils';
+import { isDefined, isFunction, isString } from '../utils';
 
 type ErrorHandlerData = undefined | UndefinableJson;
 
@@ -40,8 +40,16 @@ export function registerErrorHandler<T extends CustomError, TData extends ErrorH
   errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
 }
 
-export function hasErrorHandler(constructor: CustomErrorStatic): boolean {
-  return errorHandlers.has(constructor.errorName);
+export function hasErrorHandler(constructor: CustomErrorStatic | ErrorResponse | string): boolean {
+  const name = isFunction(constructor)
+    ? constructor.errorName
+    : isString(constructor)
+      ? constructor
+      : isErrorResponse(constructor)
+        ? constructor.error.name
+        : undefined;
+
+  return errorHandlers.has(name!);
 }
 
 export function getErrorStatusCode(error: CustomError, defaultStatusCode: number = 500): number {
@@ -111,12 +119,18 @@ export function parseResponse<T>(response: Response<T>): T {
   throw new Error('unsupported response');
 }
 
-export function parseErrorResponse(response: ErrorResponse): Error {
+export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError?: true): Error;
+export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError: false): Error | undefined;
+export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError: boolean = true): Error | undefined {
   const handler = errorHandlers.get(response.error.name);
 
   if (handler != undefined) {
     const error = handler.deserializer(response.error.data, response.error) as Error;
     return error;
+  }
+
+  if (!fallbackToGenericApiError) {
+    return undefined;
   }
 
   return new ApiError(response);
