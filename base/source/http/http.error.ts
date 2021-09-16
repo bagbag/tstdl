@@ -1,4 +1,4 @@
-import { isDefined } from '#/utils';
+import { isDefined } from '#/utils/type-guards';
 import { CustomError } from '../error';
 import type { HttpClientRequest, HttpClientResponse } from './types';
 
