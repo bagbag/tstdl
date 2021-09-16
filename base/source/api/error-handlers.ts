@@ -1,4 +1,4 @@
-import { BadRequestError, ForbiddenError, MaxBytesExceededError, NotFoundError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
+import { BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, NotFoundError, NotImplementedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
 import { ApiError } from '../error/api.error';
 import { ValidationError } from '../error/validation.error';
 import { registerErrorHandler } from './response';
@@ -18,6 +18,8 @@ export function registerDefaultErrorHandlers(): void {
   registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
   registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new ForbiddenError(error.message));
   registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
+  registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
+  registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
 }
 
 export function serializeValidationError(error: ValidationError): SerializedValidationError {
