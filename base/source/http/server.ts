@@ -1,6 +1,6 @@
 import * as Http from 'http';
 import type { Socket } from 'net';
-import { bindNodeCallback } from 'rxjs';
+import { bindNodeCallback, share } from 'rxjs';
 import type { Logger } from '../logger';
 import { cancelableTimeout, CancellationToken, Timer } from '../utils';
 
@@ -57,7 +57,8 @@ export class HttpServer {
   async close(timeout: number): Promise<void> {
     const timer = new Timer(true);
 
-    const close$ = bindNodeCallback(this.server.close.bind(this.server))();
+    const close$ = bindNodeCallback(this.server.close.bind(this.server))().pipe(share());
+    close$.subscribe();
 
     while (true) {
       const connections = await getConnectionsCount(this.server);

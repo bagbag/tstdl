@@ -39,6 +39,11 @@ export type EntityTransformer<T extends Entity, TDb extends Entity> = {
   mapping?: TransformerMapping<T, TDb>
 }
 
+export type InsertIfNotExistsByQueryItem<T extends Entity> = {
+  query: Query<T>,
+  entity: MaybeNewEntity<T>
+};
+
 export const noopTransformerFunction = <T>(item: T): T => item;
 
 export const noopTransformer: EntityTransformer<any, any> = {
@@ -283,6 +288,36 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   async insertMany<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
     const transformed = entities.map((entity) => this.transformer.transform(entity as any as T));
     const insertedEntities = await this.baseRepository.insertMany(transformed);
+    return insertedEntities.map((insertedEntity) => this.transformer.untransform(insertedEntity) as U)
+  }
+
+  async insertIfNotExists<U extends T>(entity: MaybeNewEntity<U>): Promise<U | undefined> {
+    const transformed = this.transformer.transform(entity as any as T);
+    const insertedEntity = await this.baseRepository.insertIfNotExists(transformed);
+    return isUndefined(insertedEntity) ? undefined : this.transformer.untransform(insertedEntity) as U;
+  }
+
+  async insertManyIfNotExists<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
+    const transformed = entities.map((entity) => this.transformer.transform(entity as any as T));
+    const insertedEntities = await this.baseRepository.insertManyIfNotExists(transformed);
+    return insertedEntities.map((insertedEntity) => this.transformer.untransform(insertedEntity) as U)
+  }
+
+  async insertIfNotExistsByFilter<U extends T>(query: Query<U>, entity: MaybeNewEntity<U>): Promise<U | undefined> {
+    const transformedFilter = this.transformFilter(query);
+    const transformed = this.transformer.transform(entity as any as T);
+    const document = await this.baseRepository.insertIfNotExistsByFilter(transformedFilter, transformed);
+
+    return isUndefined(document) ? undefined : this.transformer.untransform(document) as U;
+  }
+
+  async insertManyIfNotExistsByFilter<U extends T>(items: InsertIfNotExistsByQueryItem<U>[]): Promise<U[]> {
+    const transformedItems = items.map((item) => ({
+      filter: this.transformFilter(item.query),
+      entity: this.transformer.transform(item.entity as any as T)
+    }));
+
+    const insertedEntities = await this.baseRepository.insertManyIfNotExistsByFilter(transformedItems);
     return insertedEntities.map((insertedEntity) => this.transformer.untransform(insertedEntity) as U)
   }
 

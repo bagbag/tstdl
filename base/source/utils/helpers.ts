@@ -805,14 +805,17 @@ type NormalizeTextOptions = {
    * remove leading and trailing whitespace
    */
   trim?: boolean,
+
   /**
    * lowercase all characters
    */
   lowercase?: boolean,
+
   /**
    * remove multiple consecutive whitespace characters
    */
   multipleWhitespace?: boolean,
+
   /**
    * remove diacritics (è -> e)
    *
@@ -820,6 +823,7 @@ type NormalizeTextOptions = {
    * @see unicode option
    */
   diacritics?: boolean,
+
   /**
    * replace ligatures with their consecutive characters (æ -> ae)
    *
@@ -827,6 +831,7 @@ type NormalizeTextOptions = {
    * @see unicode option
    */
   ligatures?: boolean,
+
   /**
    * unicode normalization
    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize

@@ -42,6 +42,9 @@ export interface EntityRepository<T extends Entity = Entity> {
   insert<U extends T>(entity: MaybeNewEntity<U>): Promise<U>;
   insertMany<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]>;
 
+  insertIfNotExists<U extends T>(entity: MaybeNewEntity<U>): Promise<U | undefined>;
+  insertIfNotExistsByFilter<U extends T>(query: Query<U>, entity: MaybeNewEntity<U>): Promise<U | undefined>;
+
   update<U extends T>(entity: U, options?: UpdateOptions): Promise<boolean>;
   updateMany<U extends T>(entities: U[], options?: UpdateOptions): Promise<number>;
 

@@ -3,7 +3,16 @@ export type OidcInitParameters<Data = unknown> = {
   clientId: string,
   clientSecret: string,
   scope: string,
-  data: Data
+
+  /**
+   * how long the login flow should be valid in milliseconds
+   */
+  expiration: number,
+
+  /**
+   * custom data
+   */
+  data?: Data
 };
 
 export type OidcInitResult = {

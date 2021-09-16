@@ -1,10 +1,9 @@
 import { ForbiddenError } from '#/error';
 import { HttpClient } from '#/http';
 import type { Json } from '#/types';
-import { Alphabet, assertNumberPass, digest, getRandomString, isUndefined } from '#/utils';
+import { Alphabet, assertNumberPass, currentTimestamp, digest, getRandomString, isUndefined } from '#/utils';
 import type { JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
-import { DateTime } from 'luxon';
 import { object, optional, string } from 'superstruct';
 import type { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
@@ -33,7 +32,7 @@ export class OidcService {
     this.oidcStateRepository = oidcStateRepository;
   }
 
-  async initAuthorization<Data = unknown>({ endpoint, clientId, clientSecret, scope, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
+  async initAuthorization<Data = unknown>({ endpoint, clientId, clientSecret, scope, expiration, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
     const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(endpoint);
 
     const state: NewOidcState = {
@@ -42,7 +41,7 @@ export class OidcService {
       endpoint,
       clientId,
       clientSecret,
-      expiration: DateTime.local().plus({ minutes: 1 }).toMillis(),
+      expiration: currentTimestamp() + expiration,
       data
     };
 
