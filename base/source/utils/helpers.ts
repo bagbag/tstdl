@@ -201,7 +201,7 @@ export type FormatErrorOptions = {
   handleBuiltInErrors?: boolean
 };
 
-// eslint-disable-next-line max-statements
+// eslint-disable-next-line max-statements, complexity
 export function formatError(error: any, options: FormatErrorOptions = {}): string {
   const { includeRest = true, includeStack = true, handleBuiltInErrors = true } = options;
 
@@ -209,31 +209,26 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   let message: string | undefined;
   let stack: string | undefined;
   let rest: StringMap | undefined;
-  let builtIn: StringMap | undefined;
+  let extraInfo: StringMap | undefined;
 
-  if (error instanceof Error) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const wrappedError = error?.rejection ?? error?.reason ?? error?.error;
+
+  if ((error instanceof Error) && !(error.message.startsWith('Uncaught') && (wrappedError instanceof Error))) {
     ({ name, message, stack, ...rest } = error);
 
     if (handleBuiltInErrors) {
       if ((error instanceof HttpError) && !includeRest) {
-        builtIn = {
+        extraInfo = {
           url: error.request.url,
           method: error.request.method
         };
       }
     }
   }
-  /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-  else if (error?.rejection instanceof Error) {
-    return formatError(error.rejection, options);
+  else if (wrappedError instanceof Error) {
+    return formatError(wrappedError, options);
   }
-  else if (error?.reason instanceof Error) {
-    return formatError(error.reason, options);
-  }
-  else if (error?.error instanceof Error) {
-    return formatError(error.error, options);
-  }
-  /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 
   if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
     try {
@@ -245,10 +240,10 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   }
 
   const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycle(rest), null, 2)}` : '';
-  const builtInString = isDefined(builtIn) ? `\n${JSON.stringify(builtIn, null, 2)}` : '';
+  const extraInfoString = isDefined(extraInfo) ? `\n${JSON.stringify(extraInfo, null, 2)}` : '';
   const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
 
-  return `${name ?? 'Error'}: ${message}${restString}${builtInString}${stackString}`;
+  return `${name ?? 'Error'}: ${message}${restString}${extraInfoString}${stackString}`;
 }
 
 export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
