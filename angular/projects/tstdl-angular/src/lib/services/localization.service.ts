@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/cjs/enumerable';
 import type { StringMap } from '@tstdl/base/cjs/types';
 import type { PropertyName } from '@tstdl/base/cjs/utils';
-import { assertDefinedPass, deepEntries, getPropertyNameProxy, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
+import { assertDefinedPass, deepEntries, getPropertyNameProxy, isDefined, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -29,6 +29,10 @@ export type LocalizationKey = PropertyName & { [localizationKeySymbol]?: undefin
 export type LocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
 };
+
+export function isLocalizationKey(value: any): value is LocalizationKey {
+  return isDefined((value as LocalizationKey)[propertyName]);
+}
 
 /**
  * returns a Proxy which simply returns the key you accessed. Can be used to have typesafe localizations (in templates and the API) by not relying on plain strings

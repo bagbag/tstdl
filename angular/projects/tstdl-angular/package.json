@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.5.39",
+  "version": "0.5.41",
   "publishConfig": {
     "access": "public"
   },
