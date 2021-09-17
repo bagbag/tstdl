@@ -1,6 +1,7 @@
 import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
-import { BadRequestError, CustomError, CustomErrorStatic, MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
+import type { CustomError, CustomErrorStatic } from '#/error';
+import { BadRequestError, MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
 import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, HttpServerRequest, HttpServerResponse, NormalizedHttpHeaders, NormalizedHttpQuery, NormalizedHttpValueMap } from '#/http';
 import { normalizeHttpValue } from '#/http';
 import type { Logger } from '#/logger';
@@ -60,7 +61,11 @@ export function route<Method extends HttpMethod, RouteParameters, B extends Http
   return route;
 }
 
-export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: HttpBodyType) => Out;
+type RouteRequestDataTransformerContext = {
+  request: Koa.Request
+};
+
+export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: HttpBodyType, context: RouteRequestDataTransformerContext) => Out;
 
 export function getTextRouteHandler<Parameters, Result extends string>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
   return getSimpleRouteHandler((result) => ({ body: { text: result } }));
@@ -97,13 +102,15 @@ type DefaultRequestDataTransformerReturnType<B extends HttpBodyType> = undefined
   : StringMap & { body: HttpBody<B> };
 
 export function getDefaultRequestDataTransformer<B extends HttpBodyType>(): RouteRequestDataTransformer<RequestData<B>, DefaultRequestDataTransformerReturnType<B>> {
-  function defaultRequestDataTransformer(data: RequestData<B>, bodyType: B): DefaultRequestDataTransformerReturnType<B> {
+  function defaultRequestDataTransformer(data: RequestData<B>, bodyType: B, context: RouteRequestDataTransformerContext): DefaultRequestDataTransformerReturnType<B> {
     let transformed: StringMap = { ...data.parameters };
 
-    if (bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) {
+    const requestBodyType = contentTypeToBodyType(context.request.type);
+
+    if ((bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) || (bodyType == 'auto' && requestBodyType == 'json')) {
       transformed = { ...transformed, ...(data as RequestData<'json'>).body as JsonObject };
     }
-    else if (bodyType != 'none') {
+    else if (bodyType != 'none' && isDefined(data.body)) {
       transformed = { ...transformed, body: data.body };
     }
 
@@ -211,7 +218,7 @@ export class HttpApi {
 
     const requestData: RequestData<B> = { parameters: requestParameters as NormalizedHttpValueMap, body };
 
-    const handlerParameters = requestDataTransformer(requestData, bodyType);
+    const handlerParameters = requestDataTransformer(requestData, bodyType, { request });
     const httpRequest: HttpServerRequest = {
       url: context.URL,
       method: convertMethod(context.request.method),
@@ -283,25 +290,8 @@ async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B
       return readRawBody(request, maxBytes) as Promise<HttpBody<B>>;
 
     case 'auto':
-      const contentType = request.type;
-
-      switch (contentType) {
-        case 'text/plain':
-          return getBody(request, 'text', maxBytes) as Promise<HttpBody<B>>;
-
-        case 'application/json':
-          return getBody(request, 'json', maxBytes) as Promise<HttpBody<B>>;
-
-        case 'application/octet-stream':
-          return getBody(request, 'buffer', maxBytes) as Promise<HttpBody<B>>;
-
-        case '':
-        case undefined:
-          return undefined as HttpBody<B>;
-
-        default:
-          throw new BadRequestError('unknown HttpBodyType');
-      }
+      const requestBodyType = contentTypeToBodyType(request.type);
+      return getBody(request, requestBodyType, maxBytes) as Promise<HttpBody<B>>;
 
     default:
       throw new Error('unknown HttpBodyType');
@@ -397,5 +387,25 @@ function convertMethod(method: string): HttpMethod {
 
     default:
       throw new Error(`unsupported HTTP method ${method}`);
+  }
+}
+
+function contentTypeToBodyType(contentType: string): HttpBodyType {
+  switch (contentType) {
+    case 'text/plain':
+      return 'text';
+
+    case 'application/json':
+      return 'json';
+
+    case 'application/octet-stream':
+      return 'buffer';
+
+    case '':
+    case undefined:
+      return 'none';
+
+    default:
+      throw new BadRequestError('unknown HttpBodyType');
   }
 }

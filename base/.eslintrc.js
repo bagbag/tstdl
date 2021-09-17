@@ -92,7 +92,7 @@ module.exports = {
     'no-ternary': 'off',
     'no-undefined': 'off',
     'no-underscore-dangle': 'off',
-    'no-void': ['error', { allowAsStatement: true }],
+    'no-void': 'off',
     'object-curly-spacing': 'off',
     'object-property-newline': ['warn', { allowAllPropertiesOnSameLine: true }],
     'one-var': ['error', 'never'],

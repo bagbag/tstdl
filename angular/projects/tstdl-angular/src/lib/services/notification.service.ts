@@ -1,4 +1,5 @@
 import type { StringMap } from '@tstdl/base/cjs/types';
+import type { LocalizationKey } from './localization.service';
 
 export type MessageBoxResult<T = any> = {
   actionValue?: T,
@@ -6,7 +7,7 @@ export type MessageBoxResult<T = any> = {
 };
 
 export type MessageBoxAction<T = any> = {
-  text: string,
+  text: string | LocalizationKey,
   localizeText?: boolean,
   localizeTextParameters?: StringMap,
   value?: T,
@@ -36,10 +37,10 @@ export type InputType =
 
 export type MessageBoxInput = {
   type: InputType,
-  label?: string,
+  label?: string | LocalizationKey,
   localizeLabel?: boolean,
   localizeLabelParameters?: StringMap,
-  placeholder?: string,
+  placeholder?: string | LocalizationKey,
   localizePlaceholder?: boolean,
   localizePlaceholderParameters?: StringMap,
   value?: any,
@@ -49,13 +50,13 @@ export type MessageBoxInput = {
 };
 
 export type MessageBoxData<T = any> = {
-  header?: string,
+  header?: string | LocalizationKey,
   localizeHeader?: boolean,
   localizeHeaderParameters?: StringMap,
-  subHeader?: string,
+  subHeader?: string | LocalizationKey,
   localizeSubHeader?: boolean,
   localizeSubHeaderParameters?: StringMap,
-  message?: string,
+  message?: string | LocalizationKey,
   localizeMessage?: boolean,
   localizeMessageParameters?: StringMap,
   actions: MessageBoxAction<T>[],
@@ -64,8 +65,8 @@ export type MessageBoxData<T = any> = {
 };
 
 export type NotifyData = {
-  header?: string,
-  message: string,
+  header?: string | LocalizationKey,
+  message: string | LocalizationKey,
   localizeHeader?: boolean,
   localizeHeaderParameters?: StringMap,
   localizeMessage?: boolean,
