@@ -1,7 +1,6 @@
 import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
-import type { CustomError, CustomErrorStatic } from '#/error';
-import { MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
+import { BadRequestError, CustomError, CustomErrorStatic, MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
 import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, HttpServerRequest, HttpServerResponse, NormalizedHttpHeaders, NormalizedHttpQuery, NormalizedHttpValueMap } from '#/http';
 import { normalizeHttpValue } from '#/http';
 import type { Logger } from '#/logger';
@@ -174,11 +173,8 @@ export class HttpApi {
           case 'post':
           case 'patch':
           case 'put':
-            this.registerRoute(method, route.path, route.bodyType ?? 'json', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
-            break;
-
           case 'delete':
-            this.registerRoute(method, route.path, route.bodyType ?? 'json', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? 'auto', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -275,10 +271,10 @@ async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B
       return undefined as HttpBody<B>;
 
     case 'text':
-      return readBody(request, maxBytes) as unknown as Promise<HttpBody<B>>;
+      return readBody(request, maxBytes) as Promise<HttpBody<B>>;
 
     case 'json':
-      return readJsonBody(request, maxBytes) as unknown as Promise<HttpBody<B>>;
+      return readJsonBody(request, maxBytes) as Promise<HttpBody<B>>;
 
     case 'stream':
       return request.req as unknown as HttpBody<B>;
@@ -291,14 +287,20 @@ async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B
 
       switch (contentType) {
         case 'text/plain':
-          return getBody(request, 'text', maxBytes) as unknown as Promise<HttpBody<B>>;
+          return getBody(request, 'text', maxBytes) as Promise<HttpBody<B>>;
 
         case 'application/json':
-          return getBody(request, 'json', maxBytes) as unknown as Promise<HttpBody<B>>;
+          return getBody(request, 'json', maxBytes) as Promise<HttpBody<B>>;
 
         case 'application/octet-stream':
+          return getBody(request, 'buffer', maxBytes) as Promise<HttpBody<B>>;
+
+        case '':
+        case undefined:
+          return undefined as HttpBody<B>;
+
         default:
-          return getBody(request, 'buffer', maxBytes) as unknown as Promise<HttpBody<B>>;
+          throw new BadRequestError('unknown HttpBodyType');
       }
 
     default:

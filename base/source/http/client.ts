@@ -58,7 +58,7 @@ export class HttpClient {
     this.internalMiddleware = [
       getBuildRequestUrlMiddleware(options.baseUrl),
       addRequestHeadersMiddleware,
-      errorMiddleware
+      ...((options.enableErrorHandling ?? false) ? [errorMiddleware] : [])
     ];
 
     this.updateHandlers();
