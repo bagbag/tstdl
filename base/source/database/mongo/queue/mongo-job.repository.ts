@@ -15,7 +15,7 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
 
 export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> implements EntityRepository<MongoJob<T>> {
   constructor(collection: Collection<MongoJob<T>>, logger: Logger) {
-    super(collection, noopTransformer, { indexes, logger, entityName: 'mongo-job' });
+    super(collection, noopTransformer, { indexes, logger });
   }
 
   async insertWithUniqueTagStrategy(newJob: NewMongoJob<T>, uniqueTagStrategy: UniqueTagStrategy): Promise<MongoJob<T>> {

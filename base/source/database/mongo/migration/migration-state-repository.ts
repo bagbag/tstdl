@@ -9,6 +9,6 @@ const indexes: TypedIndexDescription<MigrationState>[] = [
 
 export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository {
   constructor(collection: Collection<MigrationState>, logger: Logger) {
-    super(collection, noopTransformer, { logger, indexes, entityName: 'migration-state' });
+    super(collection, noopTransformer, { logger, indexes });
   }
 }

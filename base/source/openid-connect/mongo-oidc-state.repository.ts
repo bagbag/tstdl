@@ -22,6 +22,6 @@ export const transformer: EntityTransformer<OidcState, MongoOidcState> = {
 
 export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository {
   constructor(collection: Collection<MongoOidcState>, logger: Logger) {
-    super(collection, transformer, { logger, indexes, entityName: 'oidc-state' });
+    super(collection, transformer, { logger, indexes });
   }
 }

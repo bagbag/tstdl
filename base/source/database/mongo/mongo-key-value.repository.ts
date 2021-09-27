@@ -9,6 +9,6 @@ const indexes: TypedIndexDescription<MongoKeyValue>[] = [
 
 export class MongoKeyValueRepository extends MongoEntityRepository<MongoKeyValue> {
   constructor(collection: Collection<MongoKeyValue>, logger: Logger) {
-    super(collection, noopTransformer, { logger, indexes, entityName: 'key-value' });
+    super(collection, noopTransformer, { logger, indexes });
   }
 }
