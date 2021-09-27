@@ -545,7 +545,7 @@ export type EqualsOptions = {
 const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];
 
 export function equals(a: any, b: any, options?: EqualsOptions): boolean;
-export function equals(a: any, b: any, options?: EqualsOptions, __doNotUse?: any): boolean; // eslint-disable-line @typescript-eslint/unified-signatures
+export function equals(a: any, b: any, options?: EqualsOptions, __internal?: any): boolean; // eslint-disable-line @typescript-eslint/unified-signatures
 export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes: Set<any> = new Set()): boolean { // eslint-disable-line max-statements, complexity, max-lines-per-function
   if (a === b) {
     return true;
