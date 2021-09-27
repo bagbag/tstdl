@@ -381,8 +381,10 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
 }
 
 function normalizeIndex(index: TypedIndexDescription<any> & { v?: any, background?: any, ns?: any }): TypedIndexDescription<any> {
-  const { v, background, ns, ...indexRest } = index;
-  return indexRest;
+  const { name: providedName, v, background, ns, ...indexRest } = index;
+  const name = providedName ?? Object.keys(index.key).join('_');
+
+  return { name, ...indexRest };
 }
 
 function convertOptions<T extends Entity, TDb extends Entity>(options: QueryOptions<T> | undefined, mappingMap: TransformerMappingMap<T, TDb>): LoadOptions<TDb> | undefined {
