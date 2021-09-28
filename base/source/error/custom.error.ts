@@ -1,5 +1,3 @@
-import { isDefined } from '#/utils/type-guards';
-
 export class CustomError extends Error {
   readonly cause: Error | undefined;
 
@@ -11,7 +9,7 @@ export class CustomError extends Error {
 
     this.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? new.target.name;
 
-    if (isDefined(cause)) {
+    if (cause != undefined) {
       this.cause = cause;
     }
   }

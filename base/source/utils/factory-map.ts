@@ -10,11 +10,11 @@ export class FactoryMap<K, V> implements Map<K, V> {
     return this.backingMap.size;
   }
 
-  constructor(factory: Factory<K, V>) {
+  constructor(factory: Factory<K, V>, backingMap?: Map<K, V>) {
     this.factory = factory;
 
     this[Symbol.toStringTag] = 'FactoryMap';
-    this.backingMap = new Map();
+    this.backingMap = backingMap ?? new Map();
   }
 
   clear(): void {
@@ -37,6 +37,10 @@ export class FactoryMap<K, V> implements Map<K, V> {
     return newValue;
   }
 
+  getWithoutBuild(key: K): V | undefined {
+    return this.backingMap.get(key);
+  }
+
   set(key: K, value: V): this {
     this.backingMap.set(key, value);
     return this;
@@ -47,7 +51,7 @@ export class FactoryMap<K, V> implements Map<K, V> {
   }
 
   forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-    this.backingMap.forEach(callbackfn, thisArg);
+    this.backingMap.forEach((value, key) => callbackfn(value, key, this), thisArg);
   }
 
   [Symbol.iterator](): IterableIterator<[K, V]> {

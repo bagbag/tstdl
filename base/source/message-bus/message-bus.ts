@@ -6,8 +6,8 @@ import { disposeAsync } from '../disposable';
 import { CancellationToken } from '../utils';
 
 export interface MessageBus<T> extends AsyncDisposable {
-  readonly message$: Observable<T>;
-  readonly allMessage$: Observable<T>;
+  readonly messages$: Observable<T>;
+  readonly allMessages$: Observable<T>;
 
   publish(message: T): Promise<void>;
 }
@@ -16,17 +16,17 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
   private readonly publishSubject: Subject<T>;
   protected readonly disposeToken: CancellationToken;
 
-  readonly message$: Observable<T>;
-  readonly allMessage$: Observable<T>;
+  readonly messages$: Observable<T>;
+  readonly allMessages$: Observable<T>;
 
-  protected abstract _message$: Observable<T>;
+  protected abstract _messages$: Observable<T>;
 
   constructor() {
     this.publishSubject = new Subject();
     this.disposeToken = new CancellationToken();
 
-    this.message$ = defer(() => this._message$).pipe(takeUntil(this.disposeToken.set$), share());
-    this.allMessage$ = merge(this.message$, this.publishSubject);
+    this.messages$ = defer(() => this._messages$).pipe(takeUntil(this.disposeToken.set$), share());
+    this.allMessages$ = merge(this.messages$, this.publishSubject);
   }
 
   async publish(message: T): Promise<void> {
@@ -49,7 +49,7 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
     return this._disposeAsync();
   }
 
-  protected abstract _publish(message: T): Promise<void>;
+  protected abstract _publish(message: T): void | Promise<void>;
 
-  protected abstract _disposeAsync(): Promise<void>;
+  protected abstract _disposeAsync(): void | Promise<void>;
 }

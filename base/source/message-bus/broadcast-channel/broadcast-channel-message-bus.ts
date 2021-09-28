@@ -10,7 +10,7 @@ export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements 
 
   private _channel: BroadcastChannel | undefined;
 
-  protected readonly _message$: Observable<T>;
+  protected readonly _messages$: Observable<T>;
 
   get channel(): BroadcastChannel {
     if (isUndefined(this._channel)) {
@@ -29,17 +29,17 @@ export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements 
 
     this.channelProvider = channelProvider;
 
-    this._message$ = defer(() => of(this.channel)).pipe(
+    this._messages$ = defer(() => of(this.channel)).pipe(
       switchMap((channel) => fromEvent<MessageEvent<T>>(channel, 'message')),
       map((event) => event.data)
     );
   }
 
-  protected async _publish(message: T): Promise<void> {
+  protected _publish(message: T): void {
     this.channel.postMessage(message);
   }
 
-  protected async _disposeAsync(): Promise<void> {
+  protected _disposeAsync(): void {
     this._channel?.close();
     this._channel = undefined;
   }
