@@ -1,7 +1,8 @@
+import type { Logger } from '#/logger';
 import type { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs';
 import type { MessageBus } from '../message-bus';
-import { MessageBusBase } from '../message-bus';
+import { MessageBusBase } from '../message-bus-base';
 import type { LocalMessageBusItem } from './types';
 
 export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
@@ -10,8 +11,8 @@ export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<
 
   protected _messages$: Observable<T>;
 
-  constructor(subject: Subject<LocalMessageBusItem<T>>) {
-    super();
+  constructor(subject: Subject<LocalMessageBusItem<T>>, logger: Logger) {
+    super(logger);
 
     this.subject = subject;
 

@@ -1,9 +1,10 @@
+import type { Logger } from '#/logger';
 import type { Observable } from 'rxjs';
 import { defer, fromEvent, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { isUndefined } from '../../utils';
 import type { MessageBus } from '../message-bus';
-import { MessageBusBase } from '../message-bus';
+import { MessageBusBase } from '../message-bus-base';
 
 export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
   private readonly channelProvider: () => BroadcastChannel;
@@ -24,8 +25,8 @@ export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements 
     return this._channel;
   }
 
-  constructor(channelProvider: () => BroadcastChannel) {
-    super();
+  constructor(channelProvider: () => BroadcastChannel, logger: Logger) {
+    super(logger);
 
     this.channelProvider = channelProvider;
 

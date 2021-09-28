@@ -1,3 +1,4 @@
+import type { Logger } from '#/logger';
 import { FactoryMap, isUndefined } from '#/utils';
 import { WeakRefMap } from '#/utils/weak-ref-map';
 import { Subject } from 'rxjs';
@@ -7,9 +8,12 @@ import { LocalMessageBus } from './local-message-bus';
 import type { LocalMessageBusItem } from './types';
 
 export class LocalMessageBusProvider implements MessageBusProvider {
+  private readonly logger: Logger;
   private readonly channelSubjectsMap: FactoryMap<string, WeakRef<Subject<LocalMessageBusItem<any>>>>;
 
-  constructor() {
+  constructor(logger: Logger) {
+    this.logger = logger;
+
     this.channelSubjectsMap = new FactoryMap<string, WeakRef<any>>(() => new WeakRef(new Subject()), WeakRefMap.supported ? new WeakRefMap() : undefined);
   }
 
@@ -21,6 +25,6 @@ export class LocalMessageBusProvider implements MessageBusProvider {
       return this.get(channel);
     }
 
-    return new LocalMessageBus(subject);
+    return new LocalMessageBus(subject, this.logger);
   }
 }
