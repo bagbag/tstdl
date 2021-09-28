@@ -1,5 +1,9 @@
 import type { JsonPrimitive, StringMap, TypedOmit, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
-import { isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
+import { CancellationToken, isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
+
+export const abortToken: unique symbol = Symbol('abortToken');
+
+export type HttpClientRequestContext<T extends Record<any, unknown> = Record<any, unknown>> = T;
 
 export type HttpValue = UndefinableJsonPrimitive;
 export type HttpValueMap = StringMap<HttpValue | HttpValue[]>;
@@ -63,6 +67,7 @@ export type NormalizedHttpClientRequest = {
   url: string,
   method: HttpMethod,
   responseType: HttpBodyType,
+  [abortToken]: CancellationToken,
   headers?: NormalizedHttpHeaders,
   body?: {
     form?: NormalizedHttpForm,
@@ -72,7 +77,7 @@ export type NormalizedHttpClientRequest = {
     stream?: AsyncIterable<ArrayBuffer>
   },
   timeout?: number,
-  context?: Record<any, unknown>
+  context?: HttpClientRequestContext
 };
 
 export type HttpClientRequest = {
@@ -146,17 +151,24 @@ export type HttpClientRequest = {
   timeout?: number,
 
   /**
+   * can be used to cancel the request. Throws HttpError
+   */
+  [abortToken]: CancellationToken,
+
+  /**
    * can be used to store data for middleware etc.
    *
    * will not be used for actual request
    */
-  context?: Record<any, unknown>
+  context?: HttpClientRequestContext
 };
 
-export type HttpClientRequestOptions = TypedOmit<HttpClientRequest, 'url' | 'method' | 'responseType'>;
+export type HttpClientRequestOptions = TypedOmit<HttpClientRequest, 'url' | 'method' | 'responseType' | typeof abortToken> & {
+  abortToken?: CancellationToken
+};
 
 export type HttpClientResponse<T extends HttpBodyType = HttpBodyType> = {
-  request: HttpClientRequest,
+  request: NormalizedHttpClientRequest,
   statusCode: number,
   statusMessage?: string,
   header: NormalizedHttpHeaders,
@@ -195,7 +207,8 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
   const normalizedRequest: NormalizedHttpClientRequest = {
     url: request.url,
     method: request.method,
-    responseType: request.responseType
+    responseType: request.responseType,
+    [abortToken]: request[abortToken]
   };
 
   if (isDefined(request.headers)) {

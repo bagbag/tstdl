@@ -1,5 +1,5 @@
 import { firstValueFrom } from '#/rxjs/compat';
-import type { Observable, Observer, Subscribable, Unsubscribable } from 'rxjs';
+import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, filter, mapTo, skip, take } from 'rxjs/operators';
 import { iif } from './helpers';
@@ -198,7 +198,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
     return onfulfilled?.() as TResult;
   }
 
-  subscribe(observer: Partial<Observer<void>>): Unsubscribable {
+  subscribe(observer: Partial<Observer<void>>): Subscription {
     return this.set$.subscribe(observer);
   }
 

@@ -1,12 +1,11 @@
-import type { Options as GotOptions, Response, ResponseType } from 'got';
-import Got, { HTTPError, TimeoutError } from 'got';
+import { isArrayBuffer, isDefined, isUndefined, toArray } from '#/utils';
+import Got, { CancelableRequest, CancelError, HTTPError, Options as GotOptions, Response, ResponseType, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
-import { isArrayBuffer, isDefined, toArray } from '../utils';
 import type { HttpClientAdapter } from './client';
 import { HttpError, HttpErrorReason } from './http.error';
-import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
+import { abortToken, HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
 
 const defaultGotOptions: GotOptions = {
   retry: 0,
@@ -30,6 +29,8 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
     const responsePromise = new DeferredPromise<IncomingMessage>();
     const gotRequest = Got.stream({ ...gotOptions, isStream: true });
     const originalOnResponse = gotRequest._onResponse.bind(gotRequest);
+
+    request[abortToken].set$.subscribe(() => gotRequest.destroy());
 
     async function onResponseWrapper(response: IncomingMessage): Promise<void> {
       if (!responsePromise.resolved) {
@@ -55,30 +56,17 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
       return result;
     }
     catch (error: unknown) {
-      if (error instanceof HTTPError) {
-        const response: HttpClientResponse = {
-          request,
-          statusCode: error.response.statusCode,
-          statusMessage: error.response.statusMessage,
-          header: error.response.headers as NormalizedHttpHeaders,
-          body: error.response.body as HttpBody
-        };
-
-        throw new HttpError(HttpErrorReason.Unknown, request, response);
-      }
-
-      if (error instanceof TimeoutError) {
-        throw new HttpError(HttpErrorReason.Timeout, request, undefined, error);
-      }
-
-      throw new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
+      throw convertError(error, request);
     }
   }
 
   private async _call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     try {
       const gotOptions = getGotOptions(request);
-      const gotRequest = Got({ ...gotOptions, responseType: httpBodyTypeToGotResponseType(request.responseType) });
+      const gotRequest = Got({ ...gotOptions, responseType: httpBodyTypeToGotResponseType(request.responseType) }) as CancelableRequest;
+
+      request[abortToken].set$.subscribe(() => gotRequest.cancel());
+
       const response = await gotRequest as Response;
       const result: HttpClientResponse<T> = {
         request,
@@ -91,25 +79,41 @@ export class GotHttpClientAdapter implements HttpClientAdapter {
       return result;
     }
     catch (error: unknown) {
-      if (error instanceof HTTPError) {
-        const response: HttpClientResponse = {
-          request,
-          statusCode: error.response.statusCode,
-          statusMessage: error.response.statusMessage,
-          header: error.response.headers as NormalizedHttpHeaders,
-          body: error.response.body as HttpBody
-        };
-
-        throw new HttpError(HttpErrorReason.Unknown, request, response, error);
-      }
-
-      if (error instanceof TimeoutError) {
-        throw new HttpError(HttpErrorReason.Timeout, request, undefined, error);
-      }
-
-      throw new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
+      throw convertError(error, request);
     }
   }
+}
+
+function convertError(error: unknown, request: NormalizedHttpClientRequest): HttpError {
+  if (error instanceof HTTPError) {
+    return new HttpError(HttpErrorReason.Unknown, request, convertResponse(request, error.response), error);
+  }
+
+  if (error instanceof CancelError) {
+    return new HttpError(HttpErrorReason.Cancelled, request, convertResponse(request, error.response), error);
+  }
+
+  if (error instanceof TimeoutError) {
+    return new HttpError(HttpErrorReason.Timeout, request, convertResponse(request, error.response), error);
+  }
+
+  return new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
+}
+
+function convertResponse(request: NormalizedHttpClientRequest, gotResponse: Response | undefined): HttpClientResponse | undefined {
+  if (isUndefined(gotResponse)) {
+    return undefined;
+  }
+
+  const response: HttpClientResponse = {
+    request,
+    statusCode: gotResponse.statusCode,
+    statusMessage: gotResponse.statusMessage,
+    header: gotResponse.headers as NormalizedHttpHeaders,
+    body: gotResponse.body as HttpBody
+  };
+
+  return response;
 }
 
 function getGotOptions({ url, method, headers, body, responseType, timeout }: NormalizedHttpClientRequest): GotOptions {

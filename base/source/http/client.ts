@@ -1,10 +1,9 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
 import type { UndefinableJson } from '../types';
-import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
-import { buildUrl, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
+import { AsyncMiddlerwareHandler, AsyncMiddleware, buildUrl, CancellationToken, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
 import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
-import { normalizedHttpClientRequest, normalizeHttpValue } from './types';
+import { abortToken, normalizedHttpClientRequest, normalizeHttpValue } from './types';
 
 export interface HttpClientAdapter {
   call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>>;
@@ -206,17 +205,35 @@ export class HttpClient {
   }
 
   async request<T extends HttpBodyType>(method: HttpMethod, url: string, responseType: T, options: HttpClientRequestOptions = {}): Promise<HttpClientResponse<T>> {
-    const request: HttpClientRequest = { url, method, responseType, ...options };
-    const preparedRequest = this.prepareRequest(request);
+    const request: HttpClientRequest = {
+      url,
+      method,
+      responseType,
+      [abortToken]: options.abortToken?.createChild('set') ?? new CancellationToken(),
+      ...options
+    };
 
-    return this.callHandler(preparedRequest);
+    const preparedRequest = this.prepareRequest(request);
+    const response = await this.callHandler(preparedRequest);
+    request[abortToken].complete();
+
+    return response;
   }
 
   async requestStream(method: HttpMethod, url: string, options: HttpClientRequestOptions = {}): Promise<HttpClientResponse<'stream'>> {
-    const request: HttpClientRequest = { url, method, responseType: 'stream', ...options };
-    const preparedRequest = this.prepareRequest(request);
+    const request: HttpClientRequest = {
+      url,
+      method,
+      responseType: 'stream',
+      [abortToken]: options.abortToken?.createChild('set') ?? new CancellationToken(),
+      ...options
+    };
 
-    return this.callStreamHandler(preparedRequest);
+    const preparedRequest = this.prepareRequest(request);
+    const response = await this.callStreamHandler(preparedRequest);
+    request[abortToken].complete();
+
+    return response;
   }
 
   private updateHandlers(): void {

@@ -80,7 +80,7 @@ export class AsyncDisposer implements AsyncDisposable {
   // eslint-disable-next-line max-statements
   async [disposeAsync](): Promise<void> {
     if (this.disposing) {
-      return this.disposingToken;
+      return this.disposedToken;
     }
 
     this.disposingToken.set();

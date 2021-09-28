@@ -4,6 +4,7 @@ import type { HttpClientRequest, HttpClientResponse } from './types';
 
 export enum HttpErrorReason {
   Unknown = 'Unknown',
+  Cancelled = 'Cancelled',
   InvalidRequest = 'InvalidRequest',
   Timeout = 'Timeout'
 }
