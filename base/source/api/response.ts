@@ -1,7 +1,7 @@
 import type { CustomError, CustomErrorStatic } from '../error';
 import { ApiError } from '../error/api.error';
 import type { UndefinableJson } from '../types';
-import { isDefined, isFunction, isString } from '../utils';
+import { isDefined, isFunction, isObject, isString } from '../utils';
 
 type ErrorHandlerData = undefined | UndefinableJson;
 
@@ -137,12 +137,12 @@ export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApi
 }
 
 export function isResultResponse<T = any>(response: Response<T> | unknown): response is ResultResponse<T> {
-  const hasResult = isDefined((response as ResultResponse<T>).result);
+  const hasResult = isObject(response) && isDefined((response as ResultResponse<T>).result);
   return hasResult;
 }
 
 export function isErrorResponse(response: Response<any> | unknown): response is ErrorResponse {
-  const hasError = isDefined((response as ErrorResponse).error);
+  const hasError = isObject(response) && isDefined((response as ErrorResponse).error);
   return hasError;
 }
 
