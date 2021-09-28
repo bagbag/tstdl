@@ -1,10 +1,12 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
-import type { HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/cjs/http';
-import { HttpError, HttpErrorReason } from '@tstdl/base/cjs/http';
+import { abortToken, HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, NormalizedHttpClientRequest } from '@tstdl/base/cjs/http';
 import { firstValueFrom } from '@tstdl/base/cjs/rxjs/compat';
 import type { StringMap } from '@tstdl/base/cjs/types';
 import { isDefined, isUndefined, toArray } from '@tstdl/base/cjs/utils';
+import { Observable, race, switchMapTo, throwError } from 'rxjs';
+
+const aborted = Symbol('aborted');
 
 export class AngularHttpClientAdapter implements HttpClientAdapter {
   private readonly angularHttpClient: AngularHttpClient;
@@ -16,12 +18,17 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
   async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const angularResponse = await firstValueFrom<AngularHttpResponse<HttpBody<T>>>(this.angularHttpClient.request(request.method, request.url, {
-        headers: new AngularHttpHeaders(request.headers),
-        responseType: getAngularHttpRequestResponseType(request.responseType),
-        observe: 'response',
-        body: getAngularBody(request.body)
-      }));
+      const angularResponse = await firstValueFrom(
+        race(
+          this.angularHttpClient.request(request.method, request.url, {
+            headers: new AngularHttpHeaders(request.headers),
+            responseType: getAngularHttpRequestResponseType(request.responseType),
+            observe: 'response',
+            body: getAngularBody(request.body)
+          }) as Observable<AngularHttpResponse<HttpBody<T>>>,
+          request[abortToken].set$.pipe(switchMapTo(throwError(() => aborted)))
+        )
+      );
 
       const header = convertAngularHeaders(angularResponse.headers);
 
@@ -36,6 +43,10 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
       return response;
     }
     catch (error: unknown) {
+      if (error == aborted) {
+        throw new HttpError(HttpErrorReason.Cancelled, request);
+      }
+
       if (error instanceof AngularHttpErrorResponse) {
         const response: HttpClientResponse = {
           request,
