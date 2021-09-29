@@ -1,4 +1,4 @@
-import { zBase32Encode } from '#/utils';
+import { encodeUtf8, zBase32Encode } from '#/utils';
 import * as Zlib from 'zlib';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex } from './encoding';
@@ -21,7 +21,7 @@ export function compressString(input: string, algorithm: 'gzip' | 'deflate' | 'd
 export function compressString(input: string, algorithm: 'brotli', options?: Zlib.BrotliOptions): CompressionResult;
 export function compressString(input: string, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult;
 export function compressString(input: string, algorithm: Algorithms, options?: Zlib.ZlibOptions | Zlib.BrotliOptions): CompressionResult {
-  const inputBuffer = Buffer.from(input, 'utf8');
+  const inputBuffer = encodeUtf8(input);
   return compress(inputBuffer, algorithm, options);
 }
 

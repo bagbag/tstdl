@@ -5,7 +5,7 @@ import type { Logger } from '#/logger';
 import type { SearchIndex, SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndexError } from '#/search-index';
 import type { TypedOmit } from '#/types';
-import { isDefined, isString } from '#/utils';
+import { decodeBase64, decodeText, encodeBase64, encodeUtf8, isDefined, isString } from '#/utils';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
 import type { BulkResponse, ErrorCause, QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
@@ -169,11 +169,11 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
 
 function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SearchSortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
-  return Buffer.from((JSON.stringify(data))).toString('base64');
+  return encodeBase64(encodeUtf8(JSON.stringify(data)));
 }
 
 function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
-  return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8')) as CursorData<T>;
+  return JSON.parse(decodeText(decodeBase64(cursor))) as CursorData<T>;
 }
 
 function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {

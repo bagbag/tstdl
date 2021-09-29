@@ -2,7 +2,8 @@
 
 import { HttpError } from '#/http';
 import { DetailsError } from '../error';
-import type { BinaryData, DeepArray, StringMap, TypedArray } from '../types';
+import type { BinaryData, DeepArray, StringMap } from '../types';
+import { toUint8Array } from './binary';
 import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
 import { randomInt } from './math';
@@ -646,24 +647,6 @@ export function binaryEquals(bufferA: BinaryData, bufferB: BinaryData): boolean 
   }
 
   return true;
-}
-
-/**
- * eslint-disable-next-line @typescript-eslint/no-shadow
- * convert to Uint8Array
- * @param data binary data
- * @param clone whether to clone buffer or not
- */
-export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Array { // eslint-disable-line @typescript-eslint/no-shadow
-  if (isArrayBuffer(data)) {
-    return clone ? new Uint8Array(data.slice(0)) : new Uint8Array(data);
-  }
-
-  const { buffer, byteOffset, byteLength } = (data as TypedArray | DataView);
-
-  return clone
-    ? new Uint8Array(buffer.slice(byteOffset, byteLength))
-    : new Uint8Array(buffer, byteOffset, byteLength);
 }
 
 export function stripPropertyWhen<T extends object, S>(obj: T, predicate: (value: unknown) => value is S): { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] } {

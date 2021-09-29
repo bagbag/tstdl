@@ -1,5 +1,8 @@
+import { AssertionError } from '#/error';
 import type { BinaryData } from '#/types';
-import { createArray, toUint8Array } from './helpers';
+import { toUint8Array } from './binary';
+import { createArray } from './helpers';
+import { isUndefined } from './type-guards';
 
 const byteToHex = createArray(2 ** 8, (i) => i).map((value) => value.toString(16).padStart(2, '0'));
 const hexToByte = new Map(byteToHex.map((hex, value) => [hex, value]));
@@ -52,7 +55,13 @@ export function decodeHex(hex: string): Uint8Array {
 
   for (let i = 0; i < hex.length; i += 2) {
     const hexPart = hex.substr(i, 2);
-    bytes[i / 2] = hexToByte.get(hexPart)!;
+    const byte = hexToByte.get(hexPart);
+
+    if (isUndefined(byte)) {
+      throw new AssertionError(`invalid hex string at position ${i}`);
+    }
+
+    bytes[i / 2] = byte;
   }
 
   return bytes;

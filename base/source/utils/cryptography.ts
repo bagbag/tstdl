@@ -39,21 +39,9 @@ export interface DecryptionResult extends CryptionResult {
   toUtf8(): Promise<string>;
 }
 
-export interface HashResult {
-  toBuffer(): Promise<ArrayBuffer>;
-  toHex(): Promise<string>;
-  toBase64(): Promise<string>;
-  toBase64Url(): Promise<string>;
-  toZBase32(): Promise<string>;
-}
+export interface DigestResult extends CryptionResult { }
 
-export interface SignResult {
-  toBuffer(): Promise<ArrayBuffer>;
-  toHex(): Promise<string>;
-  toBase64(): Promise<string>;
-  toBase64Url(): Promise<string>;
-  toZBase32(): Promise<string>;
-}
+export interface SignResult extends CryptionResult { }
 
 let subtle: SubtleCrypto;
 
@@ -125,11 +113,11 @@ export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: Arr
  * @param algorithm algorithm as supported by Web Crypto API
  * @param data data to encrypt. Encodes string to utf8
  */
-export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | string): HashResult {
+export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | string): DigestResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
   const arrayBufferPromise = subtle.digest(algorithm, bytes);
 
-  const result: HashResult = {
+  const result: DigestResult = {
     toBuffer: async () => arrayBufferPromise,
     toHex: async () => encodeHex(await arrayBufferPromise),
     toBase64: async () => encodeBase64(await arrayBufferPromise),
@@ -151,7 +139,7 @@ export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData 
 
   const arrayBufferPromise = subtle.sign(algorithm, key, bytes);
 
-  const result: HashResult = {
+  const result: SignResult = {
     toBuffer: async () => arrayBufferPromise,
     toHex: async () => encodeHex(await arrayBufferPromise),
     toBase64: async () => encodeBase64(await arrayBufferPromise),

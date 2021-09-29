@@ -1,7 +1,7 @@
 /* eslint-disable no-bitwise */
 
 import type { TypedArray } from '../types';
-import { toUint8Array } from './helpers';
+import { toUint8Array } from './binary';
 import { isArrayBuffer, isDefined } from './type-guards';
 
 export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOffset?: number, bytesLength?: number): string {

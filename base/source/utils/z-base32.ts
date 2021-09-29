@@ -2,7 +2,7 @@
 
 import type { BinaryData } from '#/types';
 import { Alphabet } from './alphabet';
-import { toUint8Array } from './helpers';
+import { toUint8Array } from './binary';
 
 const alphabet = Alphabet.ZBase32;
 

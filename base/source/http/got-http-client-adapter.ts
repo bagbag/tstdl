@@ -1,11 +1,13 @@
 import { isArrayBuffer, isDefined, isUndefined, toArray } from '#/utils';
-import Got, { CancelableRequest, CancelError, HTTPError, Options as GotOptions, Response, ResponseType, TimeoutError } from 'got';
+import type { CancelableRequest, Options as GotOptions, Response, ResponseType } from 'got';
+import Got, { CancelError, HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
 import type { HttpClientAdapter } from './client';
 import { HttpError, HttpErrorReason } from './http.error';
-import { abortToken, HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
+import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
+import { abortToken } from './types';
 
 const defaultGotOptions: GotOptions = {
   retry: 0,

@@ -1,4 +1,5 @@
 import { MaxBytesExceededError } from '#/error';
+import { concatArrayBufferViews } from './binary';
 import type { NonObjectBufferMode } from './stream-helper-types';
 import type { TypedReadable } from './typed-readable';
 
@@ -15,6 +16,6 @@ export async function readStream(readable: TypedReadable<NonObjectBufferMode>, m
     }
   }
 
-  const buffer = Buffer.concat(chunks, totalLength);
+  const buffer = concatArrayBufferViews(chunks, totalLength);
   return buffer;
 }

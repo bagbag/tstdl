@@ -5,6 +5,7 @@ export * from './async-writable-stream';
 export * from './backoff';
 export * from './base64';
 export * from './benchmark';
+export * from './binary';
 export * from './binary-search';
 export * from './cancellation-token';
 export * from './cryptography';
