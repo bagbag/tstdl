@@ -1,7 +1,6 @@
 import { HttpApi } from './api/http-api';
 import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
-import { NotFoundError, UnauthorizedError, ValidationError } from './error';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
 import type { Logger } from './logger';

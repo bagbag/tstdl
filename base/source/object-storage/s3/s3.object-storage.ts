@@ -60,6 +60,7 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const objectInformations = bucketItems.map((item): S3ObjectInformation => ({
       module: this.module,
       key: this.getKey(item.name),
+      resource: `s3://${this.bucket}/${item.name}`,
       contentLength: item.size
     }));
 
@@ -75,6 +76,7 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const object: S3Object = {
       module: this.module,
       key,
+      resource: `s3://${this.bucket}/${bucketKey}`,
       contentLength: stat.size,
       content
     };
@@ -89,6 +91,7 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const information: S3ObjectInformation = {
       module: this.module,
       key,
+      resource: `s3://${this.bucket}/${bucketKey}`,
       contentLength: stat.size
     };
 
