@@ -19,6 +19,6 @@ export const imageOptionsSchema = object({
 });
 export type ImageOptions = Infer<typeof imageOptionsSchema>;
 
-export interface ImageService {
-  getUrl(resource: string, options?: ImageOptions): Promise<string>;
+export abstract class ImageService {
+  abstract getUrl(resource: string, options?: ImageOptions): Promise<string>;
 }

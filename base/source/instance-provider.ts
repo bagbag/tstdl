@@ -1,6 +1,7 @@
 import { HttpApi } from './api/http-api';
 import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
+import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
 import type { Logger } from './logger';
@@ -29,10 +30,9 @@ let logLevel = LogLevel.Debug;
 let loggerProvider: () => Logger = () => new ConsoleLogger(logLevel);
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
-
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
-
 let objectStorageProviderProvider: () => ObjectStorageProvider | Promise<ObjectStorageProvider> = deferThrow(new Error('ObjectStorageProvider not configured'));
+let imageServiceProvider: () => ImageService | Promise<ImageService> = deferThrow(new Error('ImageService not configured'));
 
 let migrationLogPrefix = 'MIGRATION';
 let supressErrorLog: Type<Error>[] = [];
@@ -56,6 +56,7 @@ export function configureBaseInstanceProvider(
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
     objectStorageProviderProvider?: () => ObjectStorageProvider | Promise<ObjectStorageProvider>,
+    imageServiceProvider?: () => ImageService | Promise<ImageService>,
     webServerPort?: number,
     httpApiUrlPrefix?: string,
     httpApiBehindProxy?: boolean,
@@ -73,6 +74,7 @@ export function configureBaseInstanceProvider(
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
   objectStorageProviderProvider = options.objectStorageProviderProvider ?? objectStorageProviderProvider;
+  imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
   webServerPort = options.webServerPort ?? webServerPort;
   httpApiUrlPrefix = options.httpApiUrlPrefix ?? httpApiUrlPrefix;
   httpApiBehindProxy = options.httpApiBehindProxy ?? httpApiBehindProxy;
@@ -144,6 +146,10 @@ export async function getObjectStorage(module: string): Promise<ObjectStorage> {
     const objectStorageProvider = await getObjectStorageProvider();
     return objectStorageProvider.get(module);
   });
+}
+
+export async function getImageService(): Promise<ImageService> {
+  return singleton(singletonScope, ImageService, imageServiceProvider);
 }
 
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {
