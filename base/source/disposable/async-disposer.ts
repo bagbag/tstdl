@@ -1,5 +1,6 @@
 import { MultiError } from '../error/multi.error';
 import { DeferredPromise } from '../promise';
+import type { ReadonlyCancellationToken } from '../utils';
 import { CancellationToken } from '../utils';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
 import type { AsyncDisposable, Disposable } from './disposable';
@@ -18,22 +19,30 @@ export class AsyncDisposer implements AsyncDisposable {
   private readonly deferrers: Set<Deferrer>;
   private readonly tasks: Set<Task>;
 
-  readonly disposingToken: CancellationToken;
-  readonly disposedToken: CancellationToken;
+  readonly _disposingToken: CancellationToken;
+  readonly _disposedToken: CancellationToken;
+
+  get disposingToken(): ReadonlyCancellationToken {
+    return this.disposingToken;
+  }
+
+  get disposedToken(): ReadonlyCancellationToken {
+    return this._disposedToken;
+  }
 
   get disposing(): boolean {
-    return this.disposingToken.isSet;
+    return this._disposingToken.isSet;
   }
 
   get disposed(): boolean {
-    return this.disposedToken.isSet;
+    return this._disposedToken.isSet;
   }
 
   constructor() {
     this.deferrers = new Set();
     this.tasks = new Set();
-    this.disposingToken = new CancellationToken();
-    this.disposedToken = new CancellationToken();
+    this._disposingToken = new CancellationToken();
+    this._disposedToken = new CancellationToken();
   }
 
   getDeferrer(): Deferrer {
@@ -77,13 +86,12 @@ export class AsyncDisposer implements AsyncDisposable {
     }
   }
 
-  // eslint-disable-next-line max-statements
   async [disposeAsync](): Promise<void> {
     if (this.disposing) {
-      return this.disposedToken;
+      return this._disposedToken.$set;
     }
 
-    this.disposingToken.set();
+    this._disposingToken.set();
 
     const errors: Error[] = [];
 
@@ -105,10 +113,10 @@ export class AsyncDisposer implements AsyncDisposable {
       }
     });
 
-    this.disposedToken.set();
+    this._disposedToken.set();
 
     if (errors.length == 1) {
-      throw errors[0];
+      throw errors[0]!;
     }
 
     if (errors.length > 1) {

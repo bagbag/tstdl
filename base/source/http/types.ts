@@ -1,5 +1,6 @@
 import type { JsonPrimitive, StringMap, TypedOmit, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
-import { CancellationToken, isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
+import type { CancellationToken, ReadonlyCancellationToken } from '#/utils';
+import { isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
 
 export const abortToken: unique symbol = Symbol('abortToken');
 
@@ -164,7 +165,7 @@ export type HttpClientRequest = {
 };
 
 export type HttpClientRequestOptions = TypedOmit<HttpClientRequest, 'url' | 'method' | 'responseType' | typeof abortToken> & {
-  abortToken?: CancellationToken
+  abortToken?: ReadonlyCancellationToken
 };
 
 export type HttpClientResponse<T extends HttpBodyType = HttpBodyType> = {
@@ -221,11 +222,11 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
 
   if (isDefined(request.body)) {
     normalizedRequest.body = stripPropertyWhenUndefined({
-      form: normalizeHttpParameters(request.body?.form),
-      json: request.body?.json,
-      text: request.body?.text,
-      buffer: request.body?.buffer,
-      stream: request.body?.stream
+      form: normalizeHttpParameters(request.body.form),
+      json: request.body.json,
+      text: request.body.text,
+      buffer: request.body.buffer,
+      stream: request.body.stream
     });
   }
 

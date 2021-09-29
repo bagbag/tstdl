@@ -1,6 +1,7 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
 import type { UndefinableJson } from '../types';
-import { AsyncMiddlerwareHandler, AsyncMiddleware, buildUrl, CancellationToken, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
+import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
+import { buildUrl, CancellationToken, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
 import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
 import { abortToken, normalizedHttpClientRequest, normalizeHttpValue } from './types';

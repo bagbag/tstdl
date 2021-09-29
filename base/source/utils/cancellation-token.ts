@@ -47,6 +47,20 @@ export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribab
    * returns a promise which is resolved whenever this token changes is state
    */
   readonly $state: Promise<boolean>;
+
+  /**
+   * create a new token and connect it to this instance
+   * @see {@link connect}
+   * @param mode which events to propagate
+   */
+  createChild(mode: InheritanceMode): CancellationToken;
+
+  /**
+   * propagate events from this instance to the `child`. Events from the `child` are *not* propagated to this instance
+   * @param child child to connect
+   * @param mode which events to propagate
+   */
+  connect(child: CancellationToken, mode: InheritanceMode): void;
 }
 
 export class CancellationToken implements ReadonlyCancellationToken {
@@ -141,11 +155,6 @@ export class CancellationToken implements ReadonlyCancellationToken {
     return token;
   }
 
-  /**
-   * create a new token and connect it to this instance
-   * @see {@link connect}
-   * @param mode which events to propagate
-   */
   createChild(mode: InheritanceMode): CancellationToken {
     const child = new CancellationToken();
     this.connect(child, mode);
@@ -153,11 +162,6 @@ export class CancellationToken implements ReadonlyCancellationToken {
     return child;
   }
 
-  /**
-   * propagate events from this instance to the `child`. Events from the `child` are *not* propagated to this instance
-   * @param child child to connect
-   * @param mode which events to propagate
-   */
   connect(child: CancellationToken, mode: InheritanceMode): void {
     this._connect(mode, this, child);
   }
