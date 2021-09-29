@@ -23,7 +23,7 @@ export class AsyncDisposer implements AsyncDisposable {
   readonly _disposedToken: CancellationToken;
 
   get disposingToken(): ReadonlyCancellationToken {
-    return this.disposingToken;
+    return this._disposingToken;
   }
 
   get disposedToken(): ReadonlyCancellationToken {
