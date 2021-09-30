@@ -1,7 +1,7 @@
 import { concatArrayBufferViews, decodeHex, encodeBase64Url, encodeUtf8, importHmacKey, isDefined, sign } from '#/utils';
-import type { ImageOptions, ImageOrigin } from '../image-service';
+import type { ImageOptions, ImageOrigin, ImageService } from '../image-service';
 
-export class ImgproxyService {
+export class ImgproxyImageService implements ImageService {
   private readonly endpoint: string;
   private readonly keyBytes: Uint8Array;
   private readonly saltBytes: Uint8Array;
@@ -14,8 +14,8 @@ export class ImgproxyService {
     this.saltBytes = decodeHex(salt);
   }
 
-  async getUrl(resource: string, options: ImageOptions = {}): Promise<string> {
-    const encodedRessourceUri = encodeBase64Url(encodeUtf8(resource));
+  async getUrl(resourceUri: string, options: ImageOptions = {}): Promise<string> {
+    const encodedRessourceUri = encodeBase64Url(encodeUtf8(resourceUri));
     const processingOptions: string[] = [];
 
     const { resizeMode, width, height } = options;
@@ -37,23 +37,23 @@ export class ImgproxyService {
     }
 
     const processingOptionsString = processingOptions.join('/');
-    let path = `${processingOptionsString}/${encodedRessourceUri}`;
+    let path = `/${[processingOptionsString, encodedRessourceUri].join('/')}`;
 
     if (isDefined(options.format)) {
       path += `.${options.format}`;
     }
 
-    const signedPath = await signString(this.keyBytes, this.saltBytes, path, this.signatureSize);
-    return `${this.endpoint}/${signedPath}`;
+    const signature = await signString(this.keyBytes, this.saltBytes, path, this.signatureSize);
+    return `${this.endpoint}/${signature}${path}`;
   }
 }
 
 async function signString(keyBytes: Uint8Array, saltBytes: Uint8Array, target: string, size: number = 32): Promise<string> {
-  const hmacKey = await importHmacKey('SHA256', keyBytes, false);
+  const hmacKey = await importHmacKey('SHA-256', keyBytes, false);
   const targetBytes = concatArrayBufferViews([saltBytes, encodeUtf8(target)]);
 
-  const base64Signature = await sign({ name: 'HMAC', hash: 'SHA256' }, hmacKey, targetBytes).toBase64Url();
-  return base64Signature.slice(0, size);
+  const base64Signature = await sign('HMAC', hmacKey, targetBytes).toBuffer();
+  return encodeBase64Url(base64Signature.slice(0, size));
 }
 
 function convertOrigin(origin: ImageOrigin): string {

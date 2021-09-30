@@ -1,7 +1,7 @@
 export type ObjectInformation = {
   module: string,
   key: string,
-  resource: string,
+  resourceUri: string,
   contentLength: number
 };
 

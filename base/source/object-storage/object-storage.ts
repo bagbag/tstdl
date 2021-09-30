@@ -9,7 +9,6 @@ export interface ObjectStorage<OI extends ObjectInformation = ObjectInformation,
   /**
    * checks if an object exists
    * @param key object key
-   * @returns wether object exists or not
    */
   exists(key: string): Promise<boolean>;
 
@@ -24,35 +23,36 @@ export interface ObjectStorage<OI extends ObjectInformation = ObjectInformation,
    * gets an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
-   * @returns url
    */
   getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
 
   /**
    * gets all objects
-   * @return array of all objects
    */
   getObjects(): Promise<OI[]>;
 
   /**
    * gets object
    * @param key object key
-   * @returns object
    */
   getObject(key: string): Promise<O>;
 
   /**
    * gets object information
    * @param key object key
-   * @returns object information
    */
   getObjectInformation(key: string): Promise<OI>;
+
+  /**
+   * gets object resource uri
+   * @param key object key
+   */
+  getResourceUri(key: string): Promise<string>;
 
   /**
    * gets an url which can be used to download the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
-   * @returns url
    */
   getDownloadUrl(key: string, expirationTimestamp: number): Promise<string>;
 

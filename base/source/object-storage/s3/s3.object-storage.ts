@@ -60,7 +60,7 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const objectInformations = bucketItems.map((item): S3ObjectInformation => ({
       module: this.module,
       key: this.getKey(item.name),
-      resource: `s3://${this.bucket}/${item.name}`,
+      resourceUri: `s3://${this.bucket}/${item.name}`,
       contentLength: item.size
     }));
 
@@ -76,7 +76,7 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const object: S3Object = {
       module: this.module,
       key,
-      resource: `s3://${this.bucket}/${bucketKey}`,
+      resourceUri: `s3://${this.bucket}/${bucketKey}`,
       contentLength: stat.size,
       content
     };
@@ -91,11 +91,16 @@ export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Obj
     const information: S3ObjectInformation = {
       module: this.module,
       key,
-      resource: `s3://${this.bucket}/${bucketKey}`,
+      resourceUri: `s3://${this.bucket}/${bucketKey}`,
       contentLength: stat.size
     };
 
     return information;
+  }
+
+  async getResourceUri(key: string): Promise<string> { // eslint-disable-line @typescript-eslint/require-await
+    const bucketKey = this.getBucketKey(key);
+    return `s3://${this.bucket}/${bucketKey}`;
   }
 
   async getDownloadUrl(key: string, expirationTimestamp: number): Promise<string> {
