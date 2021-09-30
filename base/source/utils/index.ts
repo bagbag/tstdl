@@ -16,6 +16,7 @@ export * from './factory-map';
 export * from './feedable-async-iterable';
 export * from './file-reader';
 export * from './helpers';
+export * from './image';
 export * from './jwt';
 export * from './map';
 export * from './math';

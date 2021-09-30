@@ -1,3 +1,5 @@
+import { isDefined } from './type-guards';
+
 type Factory<Key, Value> = (key: Key) => Value;
 
 export class FactoryMap<K, V> implements Map<K, V> {
@@ -28,7 +30,7 @@ export class FactoryMap<K, V> implements Map<K, V> {
   get(key: K): V {
     const value = this.backingMap.get(key);
 
-    if (value != undefined) {
+    if (isDefined(value)) {
       return value;
     }
 
