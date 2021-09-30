@@ -29,9 +29,9 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
   let parseUrl = url;
 
   if (isFullUrl) {
-    const { origin, pathname } = new URL(url);
+    const { origin } = new URL(url);
     parts.push({ type: UrlBuilderPartType.Literal, value: origin });
-    parseUrl = pathname;
+    parseUrl = url.slice(origin.length);
   }
 
   const matches = parseUrl.matchAll(urlParseRegex);
