@@ -8,13 +8,16 @@ export type ImageResizeMode = Infer<typeof imageResizeModeSchema>;
 export const imageOriginSchema = enums(['center', 'smart', 'top', 'left', 'right', 'bottom', 'topleft', 'topright', 'bottomleft', 'bottomright']);
 export type ImageOrigin = Infer<typeof imageOriginSchema>;
 
+export const imageFormatSchema = enums(['png', 'jpg', 'jpeg', 'webp', 'avif']);
+export type ImageFormat = Infer<typeof imageFormatSchema>;
+
 export const imageOptionsSchema = object({
   resizeMode: optional(imageResizeModeSchema),
   width: optional(coerceNumber()),
   height: optional(coerceNumber()),
   origin: optional(imageOriginSchema),
   quality: optional(coerceNumber()),
-  format: optional(string()),
+  format: optional(imageFormatSchema),
   cacheBuster: optional(string())
 });
 export type ImageOptions = Infer<typeof imageOptionsSchema>;

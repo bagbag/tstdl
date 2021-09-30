@@ -1,5 +1,5 @@
 import { concatArrayBufferViews, decodeHex, encodeBase64Url, encodeUtf8, importHmacKey, isDefined, sign } from '#/utils';
-import type { ImageOptions, ImageOrigin, ImageService } from '../image-service';
+import type { ImageFormat, ImageOptions, ImageOrigin, ImageService } from '../image-service';
 
 export class ImgproxyImageService implements ImageService {
   private readonly endpoint: string;
@@ -36,12 +36,12 @@ export class ImgproxyImageService implements ImageService {
       processingOptions.push(`cb:${options.cacheBuster}`);
     }
 
-    const processingOptionsString = processingOptions.join('/');
-    let path = `/${[processingOptionsString, encodedRessourceUri].join('/')}`;
-
     if (isDefined(options.format)) {
-      path += `.${options.format}`;
+      processingOptions.push(`f:${convertFormat(options.format)}`);
     }
+
+    const processingOptionsString = processingOptions.join('/');
+    const path = `/${[processingOptionsString, encodedRessourceUri].join('/')}`;
 
     const signature = await signString(this.keyBytes, this.saltBytes, path, this.signatureSize);
     return `${this.endpoint}/${signature}${path}`;
@@ -70,5 +70,15 @@ function convertOrigin(origin: ImageOrigin): string {
     case 'bottomright': return 'soea';
 
     default: throw new Error();
+  }
+}
+
+function convertFormat(format: ImageFormat): string {
+  switch (format) {
+    case 'jpeg':
+      return 'jpg';
+
+    default:
+      return format;
   }
 }
