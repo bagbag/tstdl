@@ -1,40 +1,43 @@
 import type { Flatten, StringMap } from '#/types';
 import type { Geometry } from '#/types/geo-json';
-import type { Entity } from './entity';
 
-export type QueryOptions<T extends Entity = Entity> = {
+export type QueryOptions<T = any> = {
   sort?: Sort<T>[],
   skip?: number,
   limit?: number
 };
 
-export type Query<T extends Entity = Entity> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
+export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
 
-export type LogicalQuery<T extends Entity = Entity> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
+export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
-export type ComparisonQueryBody<T extends Entity = Entity> = { [P in keyof T]?: ComparisonQuery<T[P]> } & StringMap<ComparisonQuery>;
+export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & StringMap<ComparisonQueryOrValue>;
 
-export type ComparisonQuery<Value = any> = Value | Partial<
-  ComparisonEqualsQuery<Value>
-  & ComparisonNotEqualsQuery<Value>
-  & ComparisonInQuery<Value>
-  & ComparisonNotInQuery<Value>
-  & ComparisonAllQuery<Value>
-  & ComparisonGreaterThanQuery<Value>
-  & ComparisonGreaterThanOrEqualsQuery<Value>
-  & ComparisonLessThanQuery<Value>
-  & ComparisonLessThanOrEqualsQuery<Value>
+export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | T | Flatten<T>;
+
+export type ComparisonQuery<T = any> = Partial<
+  & ComparisonEqualsQuery<T>
+  & ComparisonNotEqualsQuery<T>
+  & ComparisonItemQuery<T>
+  & ComparisonInQuery<T>
+  & ComparisonNotInQuery<T>
+  & ComparisonAllQuery<T>
+  & ComparisonGreaterThanQuery<T>
+  & ComparisonGreaterThanOrEqualsQuery<T>
+  & ComparisonLessThanQuery<T>
+  & ComparisonLessThanOrEqualsQuery<T>
   & ComparisonRegexQuery
   & ComparisonTextQuery
   & ComparisonGeoShapeQuery
   & ComparisonGeoDistanceQuery
 >;
-export type ComparisonQueryTypes = keyof ComparisonQuery;
-export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
 
-export type SpecialQuery<T extends Entity = Entity> = Partial<TextSpanQuery<T>>;
+export type ComparisonQueryTypes = keyof ComparisonQuery;
+export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$item', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
+
+export type SpecialQuery<T = any> = Partial<TextSpanQuery<T>>;
 export type SpecialQueryTypes = keyof SpecialQuery;
 export const allSpecialQueryTypes: SpecialQueryTypes[] = ['$textSpan'];
 
@@ -44,20 +47,20 @@ export const allOrders: Order[] = ['asc', 'desc'];
 export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
-export type Sort<T extends Entity = Entity> = {
+export type Sort<T = any> = {
   field: (Extract<keyof T, string> | '$score'),
   order?: Order
 };
 
-export type LogicalAndQuery<T extends Entity = Entity> = {
+export type LogicalAndQuery<T = any> = {
   $and: Query<T>[]
 };
 
-export type LogicalOrQuery<T extends Entity = Entity> = {
+export type LogicalOrQuery<T = any> = {
   $or: Query<T>[]
 };
 
-export type LogicalNorQuery<T extends Entity = Entity> = {
+export type LogicalNorQuery<T = any> = {
   $nor: Query<T>[]
 };
 
@@ -74,6 +77,14 @@ export type ComparisonEqualsQuery<T = any> = {
 
 export type ComparisonNotEqualsQuery<T = any> = {
   $neq: ComparisonValueWithRegex<T>
+};
+
+export type ComparisonItemQuery<T = any> = {
+  $item: T extends (infer U)[]
+  ? U extends Record<any, any>
+  ? Query<U>
+  : ComparisonQuery<U>
+  : never
 };
 
 export type ComparisonInQuery<T = any> = {
@@ -139,7 +150,7 @@ export type ComparisonGeoDistanceQuery = {
 export type TextSpanQueryMode = 'best' | 'most' | 'cross';
 export const allTextSpanQueryModes: TextSpanQueryMode[] = ['best', 'most', 'cross'];
 
-export type TextSpanQuery<T extends Entity = Entity> = {
+export type TextSpanQuery<T = any> = {
   $textSpan: {
     fields: (Extract<keyof T, string>)[],
     text: string,

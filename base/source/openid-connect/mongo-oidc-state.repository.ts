@@ -8,8 +8,8 @@ import type { OidcStateRepository } from './oidc-state.repository';
 export type MongoOidcState = TypedOmit<OidcState, 'expiration'> & { expiration: Date };
 
 const indexes: TypedIndexDescription<MongoOidcState>[] = [
-  { name: 'value', key: { value: 1 }, unique: true },
-  { name: 'expiration', key: { expiration: 1 }, expireAfterSeconds: 1 }
+  { key: { value: 1 }, unique: true },
+  { key: { expiration: 1 }, expireAfterSeconds: 1 }
 ];
 
 export const transformer: EntityTransformer<OidcState, MongoOidcState> = {

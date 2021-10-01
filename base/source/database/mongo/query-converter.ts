@@ -5,7 +5,7 @@ import { isDefined, isObject, isPrimitive, isString, isUndefined } from '#/utils
 import type { TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';
 
-// eslint-disable-next-line max-lines-per-function, max-statements
+// eslint-disable-next-line max-lines-per-function, max-statements, complexity
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>, parentRawProperty?: string): Filter<TDb> {
   const filterQuery: Filter<any> = {};
   const innerMapping = mappingMap.get(parentRawProperty as keyof T);
@@ -49,6 +49,9 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
     else if (property as ComparisonQueryTypes == '$all') {
       filterQuery['$all'] = isUndefined(innerMapping) ? value : (value as ComparisonAllQuery).$all.map(innerMapping.transform);
     }
+    else if (property as ComparisonQueryTypes == '$item') {
+      filterQuery['$elemMatch'] = isObject(value) ? convertQuery(value, mappingMap, rawProperty) : value;
+    }
     else if ((allComparisonQueryTypes as string[]).includes(property)) {
       filterQuery[newProperty] = value;
     }
@@ -64,7 +67,7 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
 }
 
 function getPropertyName(property: string): string {
-  return property == 'id' ? '_id' : property;
+  return (property == 'id') ? '_id' : property;
 }
 
 export function convertLogicalAndQuery<T extends Entity>(ands: LogicalAndQuery<T>['$and'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {

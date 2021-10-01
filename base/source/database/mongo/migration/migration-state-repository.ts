@@ -4,7 +4,7 @@ import { MongoEntityRepository, noopTransformer } from '../mongo-entity-reposito
 import type { Collection, TypedIndexDescription } from '../types';
 
 const indexes: TypedIndexDescription<MigrationState>[] = [
-  { name: 'name', key: { name: 1 }, unique: true }
+  { key: { name: 1 }, unique: true }
 ];
 
 export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository {

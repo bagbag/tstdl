@@ -8,8 +8,8 @@ import { MongoError } from 'mongodb';
 import type { MongoLockEntity } from './model';
 
 const indexes: TypedIndexDescription<MongoLockEntity>[] = [
-  { name: 'resource', key: { resource: 1 }, unique: true },
-  { name: 'expiration', key: { expiration: 1 }, expireAfterSeconds: 1 }
+  { key: { resource: 1 }, unique: true },
+  { key: { expiration: 1 }, expireAfterSeconds: 1 }
 ];
 
 export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements EntityRepository<MongoLockEntity> {

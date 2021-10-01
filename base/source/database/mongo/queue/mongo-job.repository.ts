@@ -7,10 +7,10 @@ import type { Collection, TypedIndexDescription } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [
-  { name: 'jobId', key: { jobId: 1 }, unique: true },
-  { name: 'priority_enqueueTimestamp_lastDequeueTimestamp_tries', key: { priority: 1, enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
-  { name: 'tag', key: { tag: 1 } },
-  { name: 'batch', key: { batch: 1 } }
+  { key: { jobId: 1 }, unique: true },
+  { key: { priority: 1, enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
+  { key: { tag: 1 } },
+  { key: { batch: 1 } }
 ];
 
 export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> implements EntityRepository<MongoJob<T>> {

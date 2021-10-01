@@ -4,7 +4,7 @@ import { MongoEntityRepository, noopTransformer } from './mongo-entity-repositor
 import type { Collection, TypedIndexDescription } from './types';
 
 const indexes: TypedIndexDescription<MongoKeyValue>[] = [
-  { name: 'scope_key', key: { scope: 1, key: 1 }, unique: true }
+  { key: { scope: 1, key: 1 }, unique: true }
 ];
 
 export class MongoKeyValueRepository extends MongoEntityRepository<MongoKeyValue> {

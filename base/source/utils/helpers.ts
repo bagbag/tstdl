@@ -247,6 +247,10 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   return `${name ?? 'Error'}: ${message}${restString}${extraInfoString}${stackString}`;
 }
 
+export function select<T extends Record<any, any>, K extends keyof T>(key: K): (item: T) => T[K] {
+  return (item: T) => item[key];
+}
+
 export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
   return (a: T, b: T) => {
     for (const selector of selectors) {

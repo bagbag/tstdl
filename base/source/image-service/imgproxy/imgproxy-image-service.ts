@@ -37,7 +37,7 @@ export class ImgproxyImageService implements ImageService {
     }
 
     if (isDefined(options.format)) {
-      processingOptions.push(`f:${convertFormat(options.format)}`);
+      processingOptions.push(`f:${options.format}`);
     }
 
     const processingOptionsString = processingOptions.join('/');
@@ -70,15 +70,5 @@ function convertOrigin(origin: ImageOrigin): string {
     case 'bottomright': return 'soea';
 
     default: throw new Error();
-  }
-}
-
-function convertFormat(format: ImageFormat): string {
-  switch (format) {
-    case 'jpeg':
-      return 'jpg';
-
-    default:
-      return format;
   }
 }
