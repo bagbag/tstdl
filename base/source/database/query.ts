@@ -18,6 +18,7 @@ export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrV
 export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | T | Flatten<T>;
 
 export type ComparisonQuery<T = any> = Partial<
+  & ComparisonNotQuery<T>
   & ComparisonEqualsQuery<T>
   & ComparisonNotEqualsQuery<T>
   & ComparisonItemQuery<T>
@@ -70,6 +71,10 @@ export type ComparisonValueWithRegex<T> = T extends string
   : T extends string[]
   ? ComparisonValue<(Flatten<T> | RegExp)[]>
   : (T | Flatten<T>);
+
+export type ComparisonNotQuery<T = any> = {
+  $not: ComparisonValueWithRegex<T>
+};
 
 export type ComparisonEqualsQuery<T = any> = {
   $eq: ComparisonValueWithRegex<T>
