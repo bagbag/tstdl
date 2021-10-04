@@ -1,5 +1,5 @@
 import type { Logger } from '#/logger';
-import type { CancellationToken } from '#/utils/cancellation-token';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import type * as Http from 'http';
 import type { AnyRoute, HttpApi } from '../../api/http-api';
 import { HttpServer } from '../../http/server';
@@ -42,7 +42,7 @@ export class WebServerModule extends ModuleBase implements Module {
     this.httpApi.registerRoutes(...routes);
   }
 
-  protected async _run(cancellationToken: CancellationToken): Promise<void> {
+  protected async _run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
     this.httpServer.server.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => {
       this.httpApi.handleRequest(request, response);
       this.requestCount++;

@@ -1,4 +1,4 @@
-import type { CancellationToken } from '../utils';
+import type { ReadonlyCancellationToken } from '../utils';
 
 export type JobTag = string | number | null;
 
@@ -46,6 +46,6 @@ export interface Queue<T> {
   acknowledge(job: Job<T>): Promise<void>;
   acknowledgeMany(jobs: Job<T>[]): Promise<void>;
 
-  getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>>;
-  getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]>;
+  getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>>;
+  getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]>;
 }

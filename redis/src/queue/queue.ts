@@ -101,7 +101,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     const deferrer = this.disposer.getDeferrer();
 
     try {
-      while (!this.disposer.disposing && !cancellationToken.isSet) {
+      while (!this.disposer.disposing && cancellationToken.isUnset) {
         const job = await this._dequeue(this.redis);
 
         if (job != undefined) {
@@ -123,7 +123,7 @@ export class RedisQueue<T> implements AsyncDisposable, Queue<T> {
     let blockDuration = BLOCK_DURATION;
 
     try {
-      while (!this.disposer.disposing && !cancellationToken.isSet) {
+      while (!this.disposer.disposing && cancellationToken.isUnset) {
         const transaction = this.redis.transaction();
 
         const [jobs] = await Promise.all([

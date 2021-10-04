@@ -7,7 +7,7 @@ import { MongoKeyValueRepository } from '#/database/mongo/mongo-key-value.reposi
 import type { MongoJob } from '#/database/mongo/queue';
 import { MongoJobRepository, MongoQueue } from '#/database/mongo/queue';
 import type { Collection } from '#/database/mongo/types';
-import { connect, disposer, getLogger } from '#/instance-provider';
+import { connect, disposer, getLogger, getMessageBusProvider } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
@@ -198,7 +198,9 @@ export async function getMongoKeyValueStoreProvider(): Promise<MongoKeyValueStor
 
 export async function getMongoQueue<T>(config: MongoQueueConfig<T>): Promise<MongoQueue<T>> {
   const repository = await getMongoRepository(MongoJobRepository as Type<MongoJobRepository<T>>, config.repositoryConfig);
-  return new MongoQueue(repository, config.processTimeout, config.maxTries);
+  const messageBusProvider = await getMessageBusProvider();
+
+  return new MongoQueue(repository, messageBusProvider, config.processTimeout, config.maxTries);
 }
 
 // eslint-disable-next-line @typescript-eslint/unified-signatures

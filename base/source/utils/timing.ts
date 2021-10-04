@@ -1,6 +1,6 @@
 import { firstValueFrom } from '#/rxjs/compat';
 import { mapTo, race, timer } from 'rxjs';
-import type { CancellationToken } from './cancellation-token';
+import type { ReadonlyCancellationToken } from './cancellation-token';
 
 declare const process: { nextTick(callback: () => void, ...args: unknown[]): void }; // eslint-disable-line init-declarations
 declare function requestIdleCallback(callback: IdleRequestCallback, options?: { timeout?: number }): void;
@@ -17,7 +17,7 @@ export async function timeout(milliseconds: number = 0): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
-export async function cancelableTimeout(milliseconds: number, cancelToken: CancellationToken): Promise<boolean> {
+export async function cancelableTimeout(milliseconds: number, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
   return firstValueFrom(race([
     timer(milliseconds).pipe(mapTo(false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     cancelToken.set$.pipe(mapTo(true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument

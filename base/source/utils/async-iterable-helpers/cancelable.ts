@@ -1,10 +1,10 @@
 import { firstValueFrom } from '#/rxjs/compat';
 import { mapTo, race } from 'rxjs';
 import type { AnyIterable } from '../any-iterable-iterator';
-import type { CancellationToken } from '../cancellation-token';
+import type { ReadonlyCancellationToken } from '../cancellation-token';
 import { iterableToAsyncIterator } from './to-async-iterator';
 
-export async function* cancelableAsync<T>(source: AnyIterable<T>, cancellationToken: CancellationToken): AsyncIterableIterator<T> {
+export async function* cancelableAsync<T>(source: AnyIterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
   const iterator = iterableToAsyncIterator(source);
 
   while (cancellationToken.isUnset) {

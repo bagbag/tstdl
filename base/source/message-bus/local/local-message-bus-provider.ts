@@ -9,16 +9,15 @@ import type { LocalMessageBusItem } from './types';
 
 export class LocalMessageBusProvider implements MessageBusProvider {
   private readonly logger: Logger;
-  private readonly channelSubjectsMap: FactoryMap<string, WeakRef<Subject<LocalMessageBusItem<any>>>>;
+  private readonly channelSubjectsMap: FactoryMap<string, Subject<LocalMessageBusItem<any>>>;
 
   constructor(logger: Logger) {
     this.logger = logger;
-
-    this.channelSubjectsMap = new FactoryMap<string, WeakRef<any>>(() => new WeakRef(new Subject()), WeakRefMap.supported ? new WeakRefMap() : undefined);
+    this.channelSubjectsMap = new FactoryMap<string, Subject<LocalMessageBusItem<any>>>(() => new Subject(), WeakRefMap.supported ? new WeakRefMap() : undefined);
   }
 
   get<T>(channel: string): MessageBus<T> {
-    const subject = this.channelSubjectsMap.get(channel).deref();
+    const subject = this.channelSubjectsMap.get(channel);
 
     if (isUndefined(subject)) {
       this.channelSubjectsMap.delete(channel);

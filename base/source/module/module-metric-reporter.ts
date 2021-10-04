@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 import { Enumerable } from '#/enumerable';
-import type { CancellationToken, MetricAggregation, MetricAggregationOptions } from '#/utils';
+import type { MetricAggregation, MetricAggregationOptions, ReadonlyCancellationToken } from '#/utils';
 import { cancelableTimeout, MovingMetric } from '#/utils';
 import type { ModuleMetric } from './module';
 
@@ -52,10 +52,10 @@ export class ModuleMetricReporter {
     this.updateNameLengths();
   }
 
-  async run(cancellationToken: CancellationToken): Promise<void> {
+  async run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
     let counter = 0;
 
-    while (!cancellationToken.isSet) {
+    while (cancellationToken.isUnset) {
       for (const { registrations } of this.metricGroups) {
         for (const { metric, moving } of registrations) {
           moving.add(metric.getValue());

@@ -1,5 +1,5 @@
 import type { Logger } from '../logger';
-import type { CancellationToken } from './cancellation-token';
+import type { ReadonlyCancellationToken } from './cancellation-token';
 import { formatDuration } from './helpers';
 import { AggregationMode, PeriodicSampler } from './periodic-sampler';
 import { Timer } from './timer';
@@ -16,7 +16,7 @@ export async function measureEventLoopDelay(): Promise<number> {
   });
 }
 
-export function runEventLoopWatcher(logger: Logger, cancellationToken: CancellationToken): void {
+export function runEventLoopWatcher(logger: Logger, cancellationToken: ReadonlyCancellationToken): void {
   const sampler = new PeriodicSampler(measureEventLoopDelay, 50);
 
   sampler

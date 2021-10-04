@@ -1,14 +1,15 @@
 import { getNewId } from '#/database/id';
+import type { MessageBus, MessageBusProvider } from '#/message-bus';
 import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, Queue } from '#/queue';
 import { UniqueTagStrategy } from '#/queue';
-import type { BackoffOptions, CancellationToken } from '#/utils';
-import { Alphabet, backoffGenerator, BackoffStrategy, currentTimestamp, getRandomString } from '#/utils';
+import type { BackoffOptions, ReadonlyCancellationToken } from '#/utils';
+import { Alphabet, backoffGenerator, CancellationToken, currentTimestamp, getRandomString } from '#/utils';
 import type { Filter, UpdateFilter } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 import type { MongoJobRepository } from './mongo-job.repository';
 
 const backoffOptions: BackoffOptions = {
-  strategy: BackoffStrategy.Exponential,
+  strategy: 'exponential',
   initialDelay: 100,
   increase: 2,
   maximumDelay: 5000
@@ -18,11 +19,14 @@ export class MongoQueue<T> implements Queue<T> {
   private readonly repository: MongoJobRepository<T>;
   private readonly processTimeout: number;
   private readonly maxTries: number;
+  private readonly messageBus: MessageBus<void>;
 
-  constructor(repository: MongoJobRepository<T>, processTimeout: number, maxTries: number) {
+  constructor(repository: MongoJobRepository<T>, messageBusProvider: MessageBusProvider, processTimeout: number, maxTries: number) {
     this.repository = repository;
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;
+
+    this.messageBus = messageBusProvider.get(`MongoQueue:${repository.collection.collectionName}`);
   }
 
   async enqueue(data: T, options: EnqueueOptions = {}): Promise<Job<T>> {
@@ -172,7 +176,9 @@ export class MongoQueue<T> implements Queue<T> {
     return this.cancelMany(jobIds);
   }
 
-  async *getConsumer(cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>> {
+  async *getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>> {
+    const continueToken = CancellationToken.fromObservable(this.messageBus.messages$);
+
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const job = await this.dequeue();
 
@@ -180,12 +186,16 @@ export class MongoQueue<T> implements Queue<T> {
         yield job;
       }
       else {
-        backoff();
+        backoff(continueToken);
       }
     }
+
+    continueToken.complete();
   }
 
-  async *getBatchConsumer(size: number, cancellationToken: CancellationToken): AsyncIterableIterator<Job<T>[]> {
+  async *getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]> {
+    const continueToken = CancellationToken.fromObservable(this.messageBus.messages$);
+
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const jobs = await this.dequeueMany(size);
 
@@ -193,9 +203,11 @@ export class MongoQueue<T> implements Queue<T> {
         yield jobs;
       }
       else {
-        backoff();
+        backoff(continueToken);
       }
     }
+
+    continueToken.complete();
   }
 }
 

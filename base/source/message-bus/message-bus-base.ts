@@ -27,13 +27,8 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
     this.allMessages$ = merge(this.messages$, this.publishSubject);
   }
 
-  async publishAndForget(message: T): Promise<void> {
-    try {
-      await this.publish(message);
-    }
-    catch (error: unknown) {
-      this.logger.error(error as Error);
-    }
+  publishAndForget(message: T): void {
+    void this._publishAndForget(message);
   }
 
   async publish(message: T): Promise<void> {
@@ -54,6 +49,15 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
     this.publishSubject.complete();
 
     return this._disposeAsync();
+  }
+
+  private async _publishAndForget(message: T): Promise<void> {
+    try {
+      await this.publish(message);
+    }
+    catch (error: unknown) {
+      this.logger.error(error as Error);
+    }
   }
 
   protected abstract _publish(message: T): void | Promise<void>;

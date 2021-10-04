@@ -210,7 +210,7 @@ export class HttpClient {
       url,
       method,
       responseType,
-      [abortToken]: options.abortToken?.createChild('set') ?? new CancellationToken(),
+      [abortToken]: options.abortToken?.createChild() ?? new CancellationToken(),
       ...options
     };
 
@@ -226,7 +226,7 @@ export class HttpClient {
       url,
       method,
       responseType: 'stream',
-      [abortToken]: options.abortToken?.createChild('set') ?? new CancellationToken(),
+      [abortToken]: options.abortToken?.createChild() ?? new CancellationToken(),
       ...options
     };
 

@@ -7,6 +7,7 @@ import type { LockProvider } from './lock';
 import type { Logger } from './logger';
 import { LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
+import { MessageBusProvider } from './message-bus';
 import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
@@ -33,6 +34,7 @@ let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThro
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
 let objectStorageProviderProvider: () => ObjectStorageProvider | Promise<ObjectStorageProvider> = deferThrow(new Error('ObjectStorageProvider not configured'));
 let imageServiceProvider: () => ImageService | Promise<ImageService> = deferThrow(new Error('ImageService not configured'));
+let messageBusProvider: () => MessageBusProvider | Promise<MessageBusProvider> = deferThrow(new Error('MessageBusProvider not configured'));
 
 let migrationLogPrefix = 'MIGRATION';
 let supressErrorLog: Type<Error>[] = [];
@@ -57,6 +59,7 @@ export function configureBaseInstanceProvider(
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
     objectStorageProviderProvider?: () => ObjectStorageProvider | Promise<ObjectStorageProvider>,
     imageServiceProvider?: () => ImageService | Promise<ImageService>,
+    messageBusProvider?: () => MessageBusProvider | Promise<MessageBusProvider>,
     webServerPort?: number,
     httpApiUrlPrefix?: string,
     httpApiBehindProxy?: boolean,
@@ -75,6 +78,7 @@ export function configureBaseInstanceProvider(
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
   objectStorageProviderProvider = options.objectStorageProviderProvider ?? objectStorageProviderProvider;
   imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
+  messageBusProvider = options.messageBusProvider ?? messageBusProvider;
   webServerPort = options.webServerPort ?? webServerPort;
   httpApiUrlPrefix = options.httpApiUrlPrefix ?? httpApiUrlPrefix;
   httpApiBehindProxy = options.httpApiBehindProxy ?? httpApiBehindProxy;
@@ -150,6 +154,10 @@ export async function getObjectStorage(module: string): Promise<ObjectStorage> {
 
 export async function getImageService(): Promise<ImageService> {
   return singleton(singletonScope, ImageService, imageServiceProvider);
+}
+
+export async function getMessageBusProvider(): Promise<MessageBusProvider> {
+  return singleton(singletonScope, MessageBusProvider, messageBusProvider);
 }
 
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {

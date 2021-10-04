@@ -1,5 +1,6 @@
 import type { StringMap } from '#/types';
-import { CancellationToken } from '#/utils/cancellation-token';
+import type { ReadonlyCancellationToken } from '#/utils';
+import { CancellationToken } from '#/utils';
 import type { Module, ModuleMetric } from './module';
 import { ModuleState } from './module';
 
@@ -52,5 +53,5 @@ export abstract class ModuleBase implements Module {
     await this.runPromise;
   }
 
-  protected abstract _run(cancellationToken: CancellationToken): Promise<void>;
+  protected abstract _run(cancellationToken: ReadonlyCancellationToken): Promise<void>;
 }

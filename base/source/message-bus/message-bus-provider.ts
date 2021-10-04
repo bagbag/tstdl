@@ -1,5 +1,5 @@
 import type { MessageBus } from './message-bus';
 
-export interface MessageBusProvider {
-  get<T>(channel: string): MessageBus<T>;
+export abstract class MessageBusProvider {
+  abstract get<T>(channel: string): MessageBus<T>;
 }

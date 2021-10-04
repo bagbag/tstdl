@@ -10,6 +10,10 @@ import { randomInt } from './math';
 import type { Comparator } from './sort';
 import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
+export function noop(): void {
+  // noop
+}
+
 export function toArray<T>(value: T | T[]): T[];
 export function toArray<T>(value: T | readonly T[]): readonly T[];
 export function toArray<T>(value: T | T[]): T[] {
