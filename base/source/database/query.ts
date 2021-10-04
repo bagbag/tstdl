@@ -73,7 +73,7 @@ export type ComparisonValueWithRegex<T> = T extends string
   : (T | Flatten<T>);
 
 export type ComparisonNotQuery<T = any> = {
-  $not: ComparisonValueWithRegex<T>
+  $not: ComparisonQuery<T>
 };
 
 export type ComparisonEqualsQuery<T = any> = {
