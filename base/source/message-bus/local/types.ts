@@ -1,4 +1,4 @@
-export type LocalMessageBusItem<T> = {
+export type LocalMessageBusItem<T = unknown> = {
   source: symbol,
   message: T
 };

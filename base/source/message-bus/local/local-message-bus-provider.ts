@@ -13,7 +13,7 @@ export class LocalMessageBusProvider implements MessageBusProvider {
 
   constructor(logger: Logger) {
     this.logger = logger;
-    this.channelSubjectsMap = new FactoryMap<string, Subject<LocalMessageBusItem<any>>>(() => new Subject(), WeakRefMap.supported ? new WeakRefMap() : undefined);
+    this.channelSubjectsMap = new FactoryMap<string, Subject<LocalMessageBusItem>>(() => new Subject(), WeakRefMap.supported ? new WeakRefMap() : undefined);
   }
 
   get<T>(channel: string): MessageBus<T> {

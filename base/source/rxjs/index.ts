@@ -6,3 +6,5 @@ export * from './performance-observer';
 export * from './resize-observer';
 export * from './retry-backoff';
 export * from './teardown';
+export * from './timing';
+export * from './touch';

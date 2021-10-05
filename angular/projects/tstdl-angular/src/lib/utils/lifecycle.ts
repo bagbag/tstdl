@@ -53,11 +53,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
     this.destroyToken = CancellationToken.fromObservable(this.destroySubject).readonly;
 
     this.destroy$.subscribe(() => {
-      this.initSubject.complete();
-      this.destroySubject.complete();
       this.changesSubject.complete();
-      this.viewInitSubject.complete();
-      this.contentInitSubject.complete();
       this.viewCheckedSubject.complete();
       this.contentCheckedSubject.complete();
     });
@@ -65,6 +61,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
 
   ngOnInit(): void {
     this.initSubject.next();
+    this.initSubject.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -73,14 +70,17 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
 
   ngOnDestroy(): void {
     this.destroySubject.next();
+    this.destroySubject.complete();
   }
 
   ngAfterViewInit(): void {
     this.viewInitSubject.next();
+    this.viewInitSubject.complete();
   }
 
   ngAfterContentInit(): void {
     this.contentInitSubject.next();
+    this.contentInitSubject.complete();
   }
 
   ngAfterViewChecked(): void {
