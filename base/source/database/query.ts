@@ -7,14 +7,11 @@ export type QueryOptions<T = any> = {
   limit?: number
 };
 
-export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
-
 export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
 export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & StringMap<ComparisonQueryOrValue>;
-
 export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | T | Flatten<T>;
 
 export type ComparisonQuery<T = any> = Partial<
@@ -41,6 +38,10 @@ export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$
 export type SpecialQuery<T = any> = Partial<TextSpanQuery<T>>;
 export type SpecialQueryTypes = keyof SpecialQuery;
 export const allSpecialQueryTypes: SpecialQueryTypes[] = ['$textSpan'];
+
+export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
+export type QueryTypes = LogicalQueryTypes | ComparisonQueryTypes | SpecialQueryTypes;
+export const allQueryTypes = [...allLogicalQueryTypes, ...allComparisonQueryTypes, ...allSpecialQueryTypes];
 
 export type Order = 'asc' | 'desc';
 export const allOrders: Order[] = ['asc', 'desc'];

@@ -102,6 +102,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
     return this._destroyToken.readonly;
   }
 
+  // eslint-disable-next-line max-statements
   constructor() {
     this.initSubject = new Subject();
     this.destroySubject = new Subject();
@@ -126,6 +127,11 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
     this.ionViewDidEnter$ = this.ionViewDidEnterSubject.asObservable();
     this.ionViewWillLeave$ = this.ionViewWillLeaveSubject.asObservable();
     this.ionViewDidLeave$ = this.ionViewDidLeaveSubject.asObservable();
+  }
+
+  ngOnInit(): void {
+    this.initSubject.next();
+    this.initSubject.complete();
 
     this.destroy$.subscribe(() => {
       this.changesSubject.complete();
@@ -136,11 +142,6 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
       this.ionViewWillLeaveSubject.complete();
       this.ionViewDidLeaveSubject.complete();
     });
-  }
-
-  ngOnInit(): void {
-    this.initSubject.next();
-    this.initSubject.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

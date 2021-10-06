@@ -1,65 +1,42 @@
-import type { Entity } from '#/database';
-import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonQueryTypes, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, LogicalQueryTypes, Query, Sort } from '#/database/query';
-import { allComparisonQueryTypes } from '#/database/query';
-import { isDefined, isObject, isPrimitive, isString, isUndefined } from '#/utils';
+import type { Entity, QueryTypes } from '#/database';
+import { allQueryTypes } from '#/database';
+import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
+import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils';
+import type { MappingItemTransformer } from './';
 import type { TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';
 
-// eslint-disable-next-line max-lines-per-function, max-statements, complexity
-export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb>, parentRawProperty?: string): Filter<TDb> {
-  const filterQuery: Filter<any> = {};
-  const innerMapping = mappingMap.get(parentRawProperty as keyof T);
+const operatorsSet = new Set(allQueryTypes);
 
-  for (const [rawProperty, rawValue] of Object.entries(query)) {
-    const mapping = mappingMap.get(rawProperty as keyof T);
+export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap = new Map(), transform?: MappingItemTransformer): Filter<TDb> {
+  let filterQuery: Filter<any> = {};
+  const entries = Object.entries(query);
 
-    const property = isDefined(mapping) ? getPropertyName(mapping.key as string) : getPropertyName(rawProperty);
-    const value = isDefined(mapping) ? mapping.transform(rawValue as T[keyof T]) : rawValue;
+  for (const [property, value] of (entries as unknown as [QueryTypes, any][])) {
+    const mapping = mappingMap.get(property);
 
-    const newProperty = getPropertyName(property);
-    const isPrimitiveValue = isPrimitive(value);
+    switch (property) {
+      case '$and':
+        filterQuery.$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        break;
 
-    if (isPrimitiveValue) {
-      filterQuery[newProperty] = value;
-    }
-    else if (property as LogicalQueryTypes == '$and') {
-      filterQuery.$and = convertLogicalAndQuery(value as LogicalAndQuery<T>['$and'], mappingMap);
-    }
-    else if (property as LogicalQueryTypes == '$or') {
-      filterQuery.$or = convertLogicalOrQuery(value as LogicalOrQuery<T>['$or'], mappingMap);
-    }
-    else if (property as LogicalQueryTypes == '$nor') {
-      filterQuery.$nor = convertLogicalNorQuery(value as LogicalNorQuery<T>['$nor'], mappingMap);
-    }
-    else if (property as ComparisonQueryTypes == '$regex') {
-      if (isString(value) || (value instanceof RegExp)) {
-        filterQuery['$regex'] = value;
-      }
-      else {
-        filterQuery['$regex'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).pattern;
-        filterQuery['$options'] = (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).flags;
-      }
-    }
-    else if (property as ComparisonQueryTypes == '$in') {
-      filterQuery['$in'] = isUndefined(innerMapping) ? value : (value as ComparisonInQuery).$in.map(innerMapping.transform);
-    }
-    else if (property as ComparisonQueryTypes == '$nin') {
-      filterQuery['$nin'] = isUndefined(innerMapping) ? value : (value as ComparisonNotInQuery).$nin.map(innerMapping.transform);
-    }
-    else if (property as ComparisonQueryTypes == '$all') {
-      filterQuery['$all'] = isUndefined(innerMapping) ? value : (value as ComparisonAllQuery).$all.map(innerMapping.transform);
-    }
-    else if (property as ComparisonQueryTypes == '$item') {
-      filterQuery['$elemMatch'] = isObject(value) ? convertQuery(value, mappingMap, rawProperty) : value;
-    }
-    else if ((allComparisonQueryTypes as string[]).includes(property)) {
-      filterQuery[newProperty] = value;
-    }
-    else if (isObject(value)) {
-      filterQuery[newProperty] = convertQuery(value, mappingMap, rawProperty);
-    }
-    else {
-      throw new Error(`unsupported query property ${property}`);
+      case '$or':
+        filterQuery.$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        break;
+
+      case '$nor':
+        filterQuery.$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        break;
+
+      default:
+        if (operatorsSet.has(property)) {
+          const operatorQuery = (convertOperator(property, value, mapping?.transform ?? transform, mappingMap) as Filter<any>);
+          filterQuery = { ...filterQuery, ...operatorQuery };
+        }
+        else {
+          const mappedPropertyName = getPropertyName((mapping?.key as string | undefined) ?? property);
+          filterQuery[mappedPropertyName] = convertInnerQuery(value, mapping?.transform ?? transform, mappingMap);
+        }
     }
   }
 
@@ -70,16 +47,61 @@ function getPropertyName(property: string): string {
   return (property == 'id') ? '_id' : property;
 }
 
-export function convertLogicalAndQuery<T extends Entity>(ands: LogicalAndQuery<T>['$and'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return ands.map((query) => convertQuery(query, mapping));
+function convertInnerQuery(query: object, transform?: MappingItemTransformer, mapping?: TransformerMappingMap): any {
+  if (isPrimitive(query)) {
+    debugger;
+    return transform?.(query) ?? query;
+  }
+
+  const queryEntries = Object.entries(query) as [QueryTypes, any][];
+
+  if (queryEntries.length > 1) {
+    const operators = queryEntries.map((entry) => entry[0]);
+    throw new Error(`only one operator allowed but got ${JSON.stringify(operators)}`);
+  }
+
+  const [operator, value] = assertDefinedPass(queryEntries[0], 'missing query body');
+
+  return convertOperator(operator, value, transform, mapping);
 }
 
-export function convertLogicalOrQuery<T extends Entity>(ors: LogicalOrQuery<T>['$or'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return ors.map((query) => convertQuery(query, mapping));
-}
+function convertOperator(operator: QueryTypes, value: any, transform?: MappingItemTransformer, mapping?: TransformerMappingMap): any {
+  switch (operator) {
+    case '$eq':
+    case '$not':
+    case '$gt':
+    case '$gte':
+    case '$lt':
+    case '$lte':
+      return { [operator]: convertInnerQuery(value, transform) };
 
-export function convertLogicalNorQuery<T extends Entity>(nors: LogicalNorQuery<T>['$nor'], mapping: TransformerMappingMap<T, any>): Filter<T>[] {
-  return nors.map((query) => convertQuery(query, mapping));
+    case '$neq':
+      return { $ne: convertInnerQuery(value, transform) };
+
+    case '$in':
+      return { $in: isDefined(transform) ? (value as ComparisonInQuery['$in']).map(transform) : value };
+
+    case '$nin':
+      return { $nin: isDefined(transform) ? (value as ComparisonNotInQuery['$nin']).map(transform) : value };
+
+    case '$all':
+      return { $all: isDefined(transform) ? (value as ComparisonAllQuery['$all']).map(transform) : value };
+
+    case '$item':
+      return { $elemMatch: isObject(value) ? convertQuery(value, mapping, transform) : transform?.(value) ?? value };
+
+    case '$regex':
+      if (isString(value) || isRegExp(value)) {
+        return { $regex: value };
+      }
+
+      return {
+        $regex: (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).pattern,
+        $options: (value as Exclude<ComparisonRegexQuery['$regex'], string | RegExp>).flags
+      };
+
+    default: throw new Error(`unsupported inner-operator ${operator}`);
+  }
 }
 
 export function convertSort<T extends Entity, TDb extends Entity>(sort: Sort<T>, mappingMap: TransformerMappingMap<T, TDb>): SortArrayItem<TDb> {

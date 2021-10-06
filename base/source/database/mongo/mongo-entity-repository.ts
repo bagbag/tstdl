@@ -12,8 +12,10 @@ type MongoEntityRepositoryOptions<T extends Entity> = {
   indexes?: TypedIndexDescription<T>[]
 }
 
+export type MappingItemTransformer<T extends Entity = any, TKey extends keyof T = any> = (value: T[TKey]) => any;
+
 export type MappingItem<T extends Entity, TDb extends Entity, TKey extends keyof T = keyof T, TDbKey extends keyof TDb = keyof TDb> =
-  { key: TDbKey, transform: (value: T[TKey]) => any };
+  { key: TDbKey, transform: MappingItemTransformer<T, TKey> };
 
 export function mapTo<T extends Entity, TDb extends Entity, TKey extends keyof T, TDbKey extends keyof TDb>(key: TDbKey, transform: (value: T[TKey]) => TDb[TDbKey]): MappingItem<T, TDb, TKey, TDbKey> {
   return { key, transform };
@@ -21,7 +23,7 @@ export function mapTo<T extends Entity, TDb extends Entity, TKey extends keyof T
 
 export type TransformerMapping<T extends Entity, TDb extends Entity> = { [P in keyof T]?: MappingItem<T, TDb, P> };
 
-export type TransformerMappingMap<T extends Entity, TDb extends Entity> = Map<keyof T, MappingItem<T, TDb>>;
+export type TransformerMappingMap<T extends Entity = any, TDb extends Entity = any> = Map<keyof T, MappingItem<T, TDb>>;
 
 export type EntityTransformer<T extends Entity, TDb extends Entity> = {
   /**
@@ -345,7 +347,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 
   private transformFilter<U extends T = T>(filter: Query<U>): Filter<TDb> {
-    return convertQuery(filter, this.transformerMappingMap as TransformerMappingMap<U, TDb>);
+    return convertQuery(filter, this.transformerMappingMap as TransformerMappingMap);
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateFilter<TDb> {
