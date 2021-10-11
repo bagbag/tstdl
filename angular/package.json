@@ -18,9 +18,9 @@
     "@angular/platform-browser": "12.2",
     "@angular/platform-browser-dynamic": "12.2",
     "@angular/router": "12.2",
-    "@tstdl/base": "^0.66.54",
+    "@tstdl/base": "^0.66.58",
     "luxon": "2",
-    "rxjs": "7.3",
+    "rxjs": "7.4",
     "tslib": "2",
     "zone.js": "~0.11.4"
   },
@@ -33,7 +33,7 @@
     "@types/node": "16",
     "@typescript-eslint/eslint-plugin": "4",
     "@typescript-eslint/parser": "4",
-    "eslint": "7",
+    "eslint": "8",
     "ng-packagr": "^12.2",
     "typescript": "4.3"
   }

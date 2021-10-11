@@ -15,6 +15,8 @@ export type MessageBoxAction<T = any> = {
   handler?: (value: T | undefined, inputs: StringMap) => any | Promise<any>
 };
 
+export type NotificationType = 'info' | 'success' | 'warning' | 'error';
+
 export type InputType =
   | 'checkbox'
   | 'color'
@@ -50,6 +52,7 @@ export type MessageBoxInput = {
 };
 
 export type MessageBoxData<T = any> = {
+  type?: NotificationType,
   header?: string | LocalizationKey,
   localizeHeader?: boolean,
   localizeHeaderParameters?: StringMap,
@@ -65,6 +68,7 @@ export type MessageBoxData<T = any> = {
 };
 
 export type NotifyData = {
+  type?: NotificationType,
   header?: string | LocalizationKey,
   message: string | LocalizationKey,
   localizeHeader?: boolean,
