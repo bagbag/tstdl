@@ -1,7 +1,26 @@
+export type CustomErrorOptions = {
+  /**
+   * name of error
+   *
+   * defaults to static {@link CustomErrorStatic.errorName} if set and constructor (class) name if unset.
+   */
+  name?: string,
+
+  /**
+   * error message
+   */
+  message?: string,
+
+  /**
+   * cause for error
+   */
+  cause?: Error
+};
+
 export class CustomError extends Error {
   readonly cause: Error | undefined;
 
-  constructor({ name, message, cause }: { name?: string, message?: string, cause?: Error }) {
+  constructor({ name, message, cause }: CustomErrorOptions) {
     const prototype = new.target.prototype;
     super(message);
 
@@ -16,7 +35,7 @@ export class CustomError extends Error {
 }
 
 export interface CustomErrorStatic<T extends CustomError = CustomError> {
-  errorName: string;
+  readonly errorName: string;
 
   new(...args: any[]): T;
 }

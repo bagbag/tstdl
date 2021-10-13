@@ -1,16 +1,11 @@
 import type { AnyIterable } from '../any-iterable-iterator';
+import { isFunction, isNotNullOrUndefined } from '../type-guards';
 
-export function isIterable<T>(anyIterable: unknown): anyIterable is Iterable<T> {
-  if (anyIterable == undefined) {
-    return false;
-  }
-
-  return typeof (anyIterable as Iterable<T>)[Symbol.iterator] == 'function';
+export function isIterable<T>(value: unknown): value is Iterable<T> {
+  return isNotNullOrUndefined(value) && isFunction((value as Iterable<T>)[Symbol.iterator]);
 }
 
-export function isIterableIterator<T>(anyIterable: AnyIterable<T>): anyIterable is IterableIterator<T> {
-  const typeIsIterable = isIterable(anyIterable);
-  const isIterator = typeof (anyIterable as Partial<IterableIterator<unknown>>).next == 'function';
-
-  return typeIsIterable && isIterator;
+export function isIterableIterator<T>(anyIterable: AnyIterable<T>): anyIterable is IterableIterator<T>;
+export function isIterableIterator<T = any>(value: any): value is IterableIterator<T> {
+  return isIterable(value) && isFunction((value as Partial<IterableIterator<any>>).next);
 }
