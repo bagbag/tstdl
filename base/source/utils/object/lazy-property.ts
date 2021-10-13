@@ -54,7 +54,3 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
     configurable
   });
 }
-
-lazyProperty(globalThis as any, 'name', () => 'Patrick', {});
-
-console.log(Object.entries(globalThis));

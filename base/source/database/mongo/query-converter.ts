@@ -49,7 +49,6 @@ function getPropertyName(property: string): string {
 
 function convertInnerQuery(query: object, transform?: MappingItemTransformer, mapping?: TransformerMappingMap): any {
   if (isPrimitive(query)) {
-    debugger;
     return transform?.(query) ?? query;
   }
 

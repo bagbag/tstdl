@@ -78,20 +78,22 @@ export class LocalizationService {
     this.availableLanguages$ = this.availableLanguagesSubject.asObservable();
   }
 
-  registerLocalization(localization: Localization): void {
-    if (this.localizations.has(localization.language.code)) {
-      throw new Error(`language ${localization.language.name} (${localization.language.code}) already registered`);
+  registerLocalization(...localizations: Localization[]): void {
+    for (const localization of localizations) {
+      if (this.localizations.has(localization.language.code)) {
+        throw new Error(`localization ${localization.language.name} (${localization.language.code}) already registered`);
+      }
+
+      const mappedLocalization = buildMappedLocalization(localization);
+      this.localizations.set(localization.language.code, mappedLocalization);
+
+      if (isUndefined(this.activeLanguage)) {
+        this.setLocalization(localization);
+      }
+
+      const availableLanguages = Enumerable.from(this.localizations).map(([, loc]) => loc.language).toArray();
+      this.availableLanguagesSubject.next(availableLanguages);
     }
-
-    const mappedLocalization = buildMappedLocalization(localization);
-    this.localizations.set(localization.language.code, mappedLocalization);
-
-    if (isUndefined(this.activeLanguage)) {
-      this.setLocalization(localization);
-    }
-
-    const availableLanguages = Enumerable.from(this.localizations).map(([, loc]) => loc.language).toArray();
-    this.availableLanguagesSubject.next(availableLanguages);
   }
 
   hasLanguage(languageCode: string): boolean {
