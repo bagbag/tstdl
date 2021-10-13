@@ -19,4 +19,9 @@ export interface SeededRandomNumberGenerator {
    * fork the rng based on the current state
    */
   fork(): SeededRandomNumberGenerator;
+
+  /**
+   * clone the rng with the current state
+   */
+  clone(): SeededRandomNumberGenerator;
 }
