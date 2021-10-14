@@ -104,6 +104,15 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
     }
   }
 
+  async delete(id: string): Promise<void> {
+    await this.client.delete({ index: this.indexName, id });
+  }
+
+  async deleteByQuery(query: Query<T>): Promise<void> {
+    const queryBody = convertQuery(query);
+    await this.client.deleteByQuery({ index: this.indexName, body: { query: queryBody } });
+  }
+
   // eslint-disable-next-line max-statements
   async search(searchQueryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
