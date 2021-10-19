@@ -78,7 +78,7 @@ export type NormalizedHttpClientRequest = {
     stream?: AsyncIterable<ArrayBuffer>
   },
   timeout?: number,
-  context?: HttpClientRequestContext
+  context: HttpClientRequestContext
 };
 
 export type HttpClientRequest = {
@@ -161,11 +161,12 @@ export type HttpClientRequest = {
    *
    * will not be used for actual request
    */
-  context?: HttpClientRequestContext
+  context: HttpClientRequestContext
 };
 
-export type HttpClientRequestOptions = TypedOmit<HttpClientRequest, 'url' | 'method' | 'responseType' | typeof abortToken> & {
-  abortToken?: ReadonlyCancellationToken
+export type HttpClientRequestOptions = TypedOmit<HttpClientRequest, 'url' | 'method' | 'responseType' | 'context' | typeof abortToken> & {
+  abortToken?: ReadonlyCancellationToken,
+  context?: HttpClientRequestContext
 };
 
 export type HttpClientResponse<T extends HttpBodyType = HttpBodyType> = {
@@ -209,7 +210,8 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
     url: request.url,
     method: request.method,
     responseType: request.responseType,
-    [abortToken]: request[abortToken]
+    [abortToken]: request[abortToken],
+    context: request.context
   };
 
   if (isDefined(request.headers)) {
@@ -232,10 +234,6 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
 
   if (isDefined(request.timeout)) {
     normalizedRequest.timeout = request.timeout;
-  }
-
-  if (isDefined(request.context)) {
-    normalizedRequest.context = request.context;
   }
 
   return normalizedRequest;

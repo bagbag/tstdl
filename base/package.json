@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.66.59",
+  "version": "0.66.60",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -17,7 +17,7 @@
     "luxon": "2.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "7.4",
-    "zod": "3.9"
+    "zod": "3.10"
   },
   "devDependencies": {
     "@types/koa__router": "8.0",
