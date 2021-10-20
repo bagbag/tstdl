@@ -23,13 +23,13 @@ export function toArray<T>(value: T | T[]): T[] {
 const supportsNotification = typeof Notification != 'undefined';
 
 /**
- * create an structural clone of an value
+ * create an structured clone of an value using Notification if available, otherwise history state (may alters history)
  *
  * may not work in every environment!
  * @param value value to clone
  * @returns clone of value
  */
-export function structuralClone<T>(value: T): T {
+export function structuredClone<T>(value: T): T {
   if (supportsNotification) {
     return new Notification('', { data: value, silent: true }).data as T;
   }
@@ -43,17 +43,17 @@ export function structuralClone<T>(value: T): T {
 }
 
 /**
- * create an structural clone of an value using a MessageChannel
+ * create an structured clone of an value using a MessageChannel
  *
  * should work in all environments
  * @param value value to clone
  * @returns clone of value
  */
-export async function structuralCloneAsync<T>(value: T): Promise<T> {
+export async function structuredCloneAsync<T>(value: T, options?: { transfer?: any[] }): Promise<T> {
   const { port1, port2 } = new MessageChannel();
 
   const promise = new Promise<T>((resolve) => (port2.onmessage = (event) => resolve(event.data as T)));
-  port1.postMessage(value);
+  port1.postMessage(value, options);
 
   return promise;
 }
