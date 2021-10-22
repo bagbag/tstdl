@@ -1,4 +1,4 @@
-import type { MonoTypeOperatorFunction, Observable } from 'rxjs';
+import { MonoTypeOperatorFunction, Observable, tap } from 'rxjs';
 import { map, of, switchMap, takeWhile, timer } from 'rxjs';
 
 export type SlowArrayOptions = {
@@ -43,9 +43,9 @@ export function persistentSlowArray<T>(options: SlowArrayOptions): MonoTypeOpera
 
     const observable = source.pipe(
       switchMap((array, index) => timer((index == 0) ? options.delay ?? 0 : 0, options.interval).pipe(
-        takeWhile(() => accumulation.length < array.length),
+        takeWhile((_, takeIndex) => (takeIndex == 0) || (accumulation.length < array.length)),
         map(() => {
-          accumulation = array.slice(0, Math.min(1, options.initialSize ?? 1, accumulation.length + options.size));
+          accumulation = array.slice(0, Math.max(1, options.initialSize ?? 1, accumulation.length + options.size));
           return accumulation;
         })
       ))
