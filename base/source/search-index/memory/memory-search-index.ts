@@ -74,7 +74,6 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
           }
         }
 
-        debugger;
         const innerEntries = and ? intersectSets(...innerSets) : unionSets(...innerSets);
         sets.push(new Set(innerEntries));
       }
