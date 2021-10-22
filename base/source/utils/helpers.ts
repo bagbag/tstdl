@@ -289,7 +289,7 @@ export function compareByValueSelectionDescending<T>(...selectors: ((item: T) =>
   };
 }
 
-export function compareByValueSelectionOrdered<T>(...selectors: [(item: T) => unknown, 1 | -1][]): (a: T, b: T) => number {
+export function compareByValueSelectionOrdered<T>(...selectors: (readonly [(item: T) => unknown, 1 | -1])[]): (a: T, b: T) => number {
   return (a: T, b: T) => {
     for (const [selector, order] of selectors) {
       const selectedA = selector(a);
