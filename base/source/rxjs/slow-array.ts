@@ -1,4 +1,4 @@
-import type { Observable } from 'rxjs';
+import type { MonoTypeOperatorFunction, Observable } from 'rxjs';
 import { map, of, switchMap, takeWhile, timer } from 'rxjs';
 
 export type SlowArrayOptions = {
@@ -29,7 +29,7 @@ export type SlowArrayOptions = {
  * @param options options
  */
 export function slowArray<T>(array: T[], options: SlowArrayOptions): Observable<T[]> {
-  return persistentSlowArray(of(array), options);
+  return of(array).pipe(persistentSlowArray(options));
 }
 
 /**
@@ -37,16 +37,20 @@ export function slowArray<T>(array: T[], options: SlowArrayOptions): Observable<
  * @param array array observable to take items from
  * @param options options
  */
-export function persistentSlowArray<T>(array$: Observable<T[]>, options: SlowArrayOptions): Observable<T[]> {
-  let accumulation: T[] = [];
+export function persistentSlowArray<T>(options: SlowArrayOptions): MonoTypeOperatorFunction<T[]> {
+  return (source: Observable<T[]>) => {
+    let accumulation: T[] = [];
 
-  return array$.pipe(
-    switchMap((array, index) => timer((index == 0) ? options.delay ?? 0 : 0, options.interval).pipe(
-      takeWhile(() => accumulation.length < array.length),
-      map(() => {
-        accumulation = array.slice(0, Math.min(1, options.initialSize ?? 1, accumulation.length + options.size));
-        return accumulation;
-      })
-    ))
-  );
+    const observable = source.pipe(
+      switchMap((array, index) => timer((index == 0) ? options.delay ?? 0 : 0, options.interval).pipe(
+        takeWhile(() => accumulation.length < array.length),
+        map(() => {
+          accumulation = array.slice(0, Math.min(1, options.initialSize ?? 1, accumulation.length + options.size));
+          return accumulation;
+        })
+      ))
+    );
+
+    return observable;
+  };
 }

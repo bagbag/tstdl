@@ -20,9 +20,8 @@ export function retryBackoff<T>(count: number, options: BackoffOptions): MonoTyp
 }
 
 export function retryBackoffHandled<T>(count: number, options: BackoffOptions, handler: (error: Error, count: number) => void | undefined | ObservableInput<void>): MonoTypeOperatorFunction<T> {
-  const helper = new BackoffHelper(options);
-
-  return (source: Observable<T>) => defer(() => {
+  return (source: Observable<T>) => {
+    const helper = new BackoffHelper(options);
     let counter = 0;
 
     const observable = source.pipe(
@@ -42,5 +41,5 @@ export function retryBackoffHandled<T>(count: number, options: BackoffOptions, h
     );
 
     return observable;
-  });
+  };
 }
