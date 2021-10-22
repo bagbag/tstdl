@@ -21,17 +21,14 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
   // eslint-disable-next-line @typescript-eslint/require-await
   async index(entities: T[]): Promise<void> {
     for (const entity of entities) {
+      this._delete(entity.id);
       this.indexEntity(entity);
     }
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async delete(id: string): Promise<void> {
-    const entity = this.idMap.get(id);
-
-    if (isDefined(entity)) {
-      this.deleteEntity(entity);
-    }
+    this._delete(id);
   }
 
   async deleteByQuery(query: Query<T>): Promise<void> {
@@ -89,10 +86,14 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
       items.sort(compareByValueSelectionOrdered(...options!.sort.map((sort) => [(item: T) => item[sort.field as keyof T], sort.order == 'desc' ? -1 : 1] as const)));
     }
 
+    if (isDefined(options?.skip) || isDefined(options?.limit)) {
+      items = items.slice(options?.skip, items.length - (options?.limit ?? 0));
+    }
+
     const resultItems = items.map((item): SearchResultItem<T> => ({ entity: item, score: 1 }));
 
     const result: SearchResult<T> = {
-      total: this.idMap.size,
+      total: resultItems.length,
       totalIsLowerBound: false,
       milliseconds: timer.milliseconds,
       items: resultItems
@@ -105,6 +106,14 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
   async drop(): Promise<void> {
     this.idMap.clear();
     this.indexMap.clear();
+  }
+
+  private _delete(id: string): void {
+    const entity = this.idMap.get(id);
+
+    if (isDefined(entity)) {
+      this.deleteEntity(entity);
+    }
   }
 
   private indexEntity(entity: T): void {
