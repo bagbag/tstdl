@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Entity } from '#/database';
-import type { ComparisonEqualsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
+import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
 import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils';
 import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/api/types';
-import type { ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
+import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
@@ -69,6 +69,19 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       };
 
       defaultBoolQueryBuilder.mustNot(termQuery);
+      canHandleProperty = true;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(value, '$exists')) {
+      const existsQuery: ElasticExistsQuery = { exists: { field: property } };
+
+      if ((value as ComparisonExistsQuery).$exists) {
+        defaultBoolQueryBuilder.must(existsQuery);
+      }
+      else {
+        defaultBoolQueryBuilder.mustNot(existsQuery);
+      }
+
       canHandleProperty = true;
     }
 

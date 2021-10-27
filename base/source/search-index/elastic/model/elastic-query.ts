@@ -18,6 +18,8 @@ export type ElasticTermsQuery = Required<Pick<QueryDslQueryContainer, 'terms'>>;
 
 export type ElasticMatchQuery = Required<Pick<QueryDslQueryContainer, 'match'>>;
 
+export type ElasticExistsQuery = Required<Pick<QueryDslQueryContainer, 'exists'>>;
+
 export type ElasticMultiMatchQuery = Required<Pick<QueryDslQueryContainer, 'multi_match'>>;
 
 export type ElasticGeoBoundingBoxQuery = Required<Pick<QueryDslQueryContainer, 'geo_bounding_box'>>;

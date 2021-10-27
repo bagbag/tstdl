@@ -85,6 +85,10 @@ export type ComparisonNotEqualsQuery<T = any> = {
   $neq: ComparisonValueWithRegex<T>
 };
 
+export type ComparisonExistsQuery = {
+  $exists: ComparisonValue<boolean>
+};
+
 export type ComparisonItemQuery<T = any> = {
   $item: T extends (infer U)[]
   ? U extends Record<any, any>
