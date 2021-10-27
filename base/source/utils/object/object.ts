@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { Record } from '#/types';
-import { isArray, isObject, isUndefined } from './type-guards';
+import type { Record } from '#/types';
+import { isArray, isObject, isUndefined } from '../type-guards';
 
-export function mapObject<T extends Record<any, any>, K extends string | number | symbol, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => [key: K, value: V]): Record<K, V> {
+export function mapObject<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => [key: K, value: V]): Record<K, V> {
   const mappedEntries = Object.entries(object).map(([key, value]) => mapper(key, value as T[keyof T]));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
-export function mapObjectValues<T extends Record<any, any>, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => V): Record<keyof T, V> {
+export function mapObjectValues<T extends Record, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => V): Record<keyof T, V> {
   return mapObject(object, (key, value) => [key, mapper(key, value)]);
 }
 
-export function filterObject<T extends Record<any, any>>(object: T, predicate: (key: keyof T, value: T[keyof T]) => boolean): Partial<T> {
+export function filterObject<T extends Record>(object: T, predicate: (key: keyof T, value: T[keyof T]) => boolean): Partial<T> {
   const mappedEntries = Object.entries(object).filter(([key, value]) => predicate(key, value as T[keyof T]));
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
