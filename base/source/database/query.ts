@@ -18,6 +18,7 @@ export type ComparisonQuery<T = any> = Partial<
   & ComparisonNotQuery<T>
   & ComparisonEqualsQuery<T>
   & ComparisonNotEqualsQuery<T>
+  & ComparisonExistsQuery
   & ComparisonItemQuery<T>
   & ComparisonInQuery<T>
   & ComparisonNotInQuery<T>
