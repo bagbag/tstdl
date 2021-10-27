@@ -1,3 +1,16 @@
+import type { Primitive } from '#/types';
+import { isFunction, isObject } from '../type-guards';
+
+export type LazyPropertyInitializer<T, K extends keyof T> = (key: K) => T[K];
+
+export type LazyInitializerItem<T extends object, P extends keyof T> =
+  | T[P] & Primitive
+  | LazyPropertyInitializer<T, P>
+  | {
+    initializer: LazyPropertyInitializer<T, P>,
+    descriptor?: LazyPropertyDescriptor
+  };
+
 export type LazyPropertyDescriptor = {
   /**
    * @default true
@@ -22,7 +35,7 @@ export type LazyPropertyDescriptor = {
  * @param initializer
  * @param descriptor
  */
-export function lazyProperty<T extends object, K extends keyof T>(object: T, propertyKey: K, initializer: (key: K) => T[K], descriptor: LazyPropertyDescriptor = {}): void {
+export function lazyProperty<T extends object, K extends keyof T>(object: T, propertyKey: K, initializer: LazyPropertyInitializer<T, K>, descriptor: LazyPropertyDescriptor = {}): void {
   const { configurable = true, enumerable = true, writable = true } = descriptor;
 
   let initialized = false;
@@ -53,4 +66,25 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
     enumerable,
     configurable
   });
+}
+
+export function lazyObject<T extends object>(initializers: { [P in keyof T]: LazyInitializerItem<T, P> }): T {
+  const object = {} as unknown as T;
+
+  for (const [key, value] of Object.entries(initializers) as [keyof T, LazyInitializerItem<T, any>][]) {
+    const valueIsFunction = isFunction(value);
+    const valueIsObject = isObject(value);
+
+    if (!valueIsFunction && !valueIsObject) {
+      object[key] = value;
+      continue;
+    }
+
+    const initializer = valueIsFunction ? value : value.initializer;
+    const descriptor = valueIsFunction ? {} : value.descriptor;
+
+    lazyProperty<T, keyof T>(object, key, initializer, descriptor);
+  }
+
+  return object;
 }
