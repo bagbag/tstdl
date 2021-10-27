@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/cjs/enumerable';
 import type { StringMap } from '@tstdl/base/cjs/types';
 import type { PropertyName } from '@tstdl/base/cjs/utils';
-import { assertDefinedPass, deepEntries, getPropertyNameProxy, isDefined, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
+import { assertDefinedPass, getPropertyNameProxy, isDefined, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
+import { deepEntries } from '@tstdl/base/cjs/utils/object';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -126,13 +127,7 @@ export class LocalizationService {
 
     const key = isString(keyOrPropertyName) ? keyOrPropertyName : keyOrPropertyName[propertyName];
 
-    const localization = this.localizations.get(this.activeLanguage.code);
-
-    if (isUndefined(localization)) {
-      return `__${key}__`;
-    }
-
-    const templateOrFunction = localization.keys.get(key);
+    const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
 
     if (isUndefined(templateOrFunction)) {
       return `__${key}__`;
