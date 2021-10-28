@@ -23,7 +23,7 @@ const tokenResponseStruct = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
-export class OidcService<Data = void> {
+export class OidcService<Data = any> {
   private readonly oidcConfigurationService: OidcConfigurationService;
   private readonly oidcStateRepository: OidcStateRepository;
 
