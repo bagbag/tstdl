@@ -23,7 +23,7 @@ const tokenResponseStruct = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
-export class OidcService {
+export class OidcService<Data = void> {
   private readonly oidcConfigurationService: OidcConfigurationService;
   private readonly oidcStateRepository: OidcStateRepository;
 
@@ -32,7 +32,7 @@ export class OidcService {
     this.oidcStateRepository = oidcStateRepository;
   }
 
-  async initAuthorization<Data = unknown>({ endpoint, clientId, clientSecret, scope, expiration, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
+  async initAuthorization({ endpoint, clientId, clientSecret, scope, expiration, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
     const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(endpoint);
 
     const state: NewOidcState = {
@@ -61,7 +61,11 @@ export class OidcService {
     return result;
   }
 
-  async validateState(state: string): Promise<OidcState> {
+  async getState(state: string): Promise<OidcState<Data>> {
+    return this.oidcStateRepository.loadByFilter({ value: state });
+  }
+
+  async validateState(state: string): Promise<OidcState<Data>> {
     const oidcState = await this.oidcStateRepository.tryLoadByFilterAndDelete({ value: state });
 
     if (isUndefined(oidcState)) {

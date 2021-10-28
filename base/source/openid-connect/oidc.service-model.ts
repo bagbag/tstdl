@@ -1,18 +1,14 @@
-export type OidcInitParameters<Data = unknown> = {
+export type OidcInitParameters<Data = void> = {
   endpoint: string,
   clientId: string,
   clientSecret: string,
   scope: string,
 
-  /**
-   * how long the login flow should be valid in milliseconds
-   */
+  /** how long the login flow should be valid in milliseconds */
   expiration: number,
 
-  /**
-   * custom data
-   */
-  data?: Data
+  /** custom data */
+  data: Data
 };
 
 export type OidcInitResult = {

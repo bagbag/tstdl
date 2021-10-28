@@ -1,6 +1,6 @@
 import type { Entity, NewEntity } from '#/database';
 
-export type OidcState<Data = unknown> = Entity & {
+export type OidcState<Data = any> = Entity & {
   value: string,
   codeVerifier: string,
   endpoint: string,
@@ -10,4 +10,4 @@ export type OidcState<Data = unknown> = Entity & {
   data: Data
 };
 
-export type NewOidcState = NewEntity<OidcState>;
+export type NewOidcState<Data = any> = NewEntity<OidcState<Data>>;
