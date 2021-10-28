@@ -65,6 +65,10 @@ export class OidcService<Data = any> {
     return this.oidcStateRepository.loadByFilter({ value: state });
   }
 
+  async deleteState(state: string): Promise<void> {
+    await this.oidcStateRepository.deleteByFilter({ value: state });
+  }
+
   async validateState(state: string): Promise<OidcState<Data>> {
     const oidcState = await this.oidcStateRepository.tryLoadByFilterAndDelete({ value: state });
 
