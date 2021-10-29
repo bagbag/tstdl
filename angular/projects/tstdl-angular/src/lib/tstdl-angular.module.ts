@@ -1,20 +1,19 @@
 import { NgModule } from '@angular/core';
-import { LazyListComponent } from './components';
-import { VisibleObserverDirective } from './directives';
+import { LazyListDirective, VisibleObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumericDateToDateTimePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
 
 const declarations = [
-  LazyListComponent,
-  VisibleObserverDirective,
   DateTimeLocalePipe,
   DateTimePipe,
   DateTimeToDatePipe,
   DurationPipe,
+  LazyListDirective,
   LocalizePipe,
   NumericDateToDateTimePipe,
   PadPipe,
   SafeUrlPipe,
-  TimestampToDateTimePipe
+  TimestampToDateTimePipe,
+  VisibleObserverDirective
 ];
 
 @NgModule({
