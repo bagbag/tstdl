@@ -25,7 +25,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   /**
    * items to lazily append to {@link lazyItems}
    */
-  @Input('appLazyList') items: T[];
+  @Input('tstdlLazyList') items: T[];
 
   /**
    * how many items to add at the first tick

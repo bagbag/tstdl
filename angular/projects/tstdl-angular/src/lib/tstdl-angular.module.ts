@@ -18,7 +18,6 @@ const declarations = [
 
 @NgModule({
   declarations,
-  imports: [],
   exports: declarations
 })
 export class TstdlAngularModule { }
