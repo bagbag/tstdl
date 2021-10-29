@@ -18,7 +18,7 @@
     "@angular/platform-browser": "12.2",
     "@angular/platform-browser-dynamic": "12.2",
     "@angular/router": "12.2",
-    "@tstdl/base": "^0.66.71",
+    "@tstdl/base": "^0.66.78",
     "luxon": "2",
     "rxjs": "7.4",
     "tslib": "2",
