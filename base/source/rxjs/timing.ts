@@ -1,22 +1,37 @@
-import type { Observable } from 'rxjs';
-import { fromEventPattern } from 'rxjs';
+import { Observable } from 'rxjs';
 
-export function timeout$(milliseconds: number = 0): Observable<void> {
-  return fromEventPattern((handler) => setTimeout(handler, milliseconds), (handle: any) => clearTimeout(handle));
+export const singleImmediate$ = singleCallback(setImmediate, clearImmediate);
+export const immediate$ = recursiveCallback(setImmediate, clearImmediate);
+
+export const singleNextTick$ = singleCallback((callback) => process.nextTick(callback));
+export const nextTick$ = recursiveCallback((callback) => process.nextTick(callback));
+
+export const singleIdle$ = singleCallback(requestIdleCallback, cancelIdleCallback);
+export const idle$ = recursiveCallback(requestIdleCallback, cancelIdleCallback);
+
+export const singleAnimationFrame$ = singleCallback(requestAnimationFrame, cancelAnimationFrame);
+export const animationFrame$ = recursiveCallback(requestAnimationFrame, cancelAnimationFrame);
+
+function singleCallback<T, H>(scheduler: (callback: (value: T) => void) => H, canceller?: (handle: H) => void): Observable<T> {
+  return new Observable<T>((subscriber) => {
+    const handle = scheduler((value) => subscriber.next(value));
+    return () => canceller?.(handle);
+  });
 }
 
-export function immediate$(): Observable<void> {
-  return fromEventPattern((handler) => setImmediate(handler), (handle: any) => clearImmediate(handle));
-}
+function recursiveCallback<T, H>(scheduler: (callback: (value: T) => void) => H, canceller?: (handle: H) => void): Observable<T> {
+  return new Observable<T>((subscriber) => {
+    let handle: H;
 
-export function nextTick$(): Observable<void> {
-  return fromEventPattern((handler) => process.nextTick(handler));
-}
+    function schedule(): void {
+      handle = scheduler((value: T) => {
+        schedule();
+        subscriber.next(value);
+      });
+    }
 
-export function animationFrame$(): Observable<number> {
-  return fromEventPattern((handler) => requestAnimationFrame(handler), (handle: any) => cancelAnimationFrame(handle));
-}
+    schedule();
 
-export function idle$(timeout?: number): Observable<IdleDeadline> {
-  return fromEventPattern((handler) => requestIdleCallback(handler, { timeout }), (handle: any) => cancelIdleCallback(handle));
+    return () => canceller?.(handle);
+  });
 }
