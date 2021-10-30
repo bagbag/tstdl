@@ -1,9 +1,9 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
-import { observeIntersections } from '@tstdl/base/cjs/rxjs';
+import { animationFrame$, observeIntersections } from '@tstdl/base/cjs/rxjs';
 import { isUndefined, timeout } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, takeWhile } from 'rxjs';
 import { LifecycleUtils } from '../utils';
 
 type MaybeWithNativeElement = HTMLElement & Partial<ElementRef<HTMLElement>>;
@@ -20,12 +20,12 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   private readonly scrollElement$: Observable<HTMLElement>;
   private readonly observeElement$: Observable<HTMLElement | undefined>;
 
-  lazyItems: T[];
+  items: T[];
 
   /**
-   * items to lazily append to {@link lazyItems}
+   * items to lazily append to {@link items}
    */
-  @Input('tstdlLazyList') items: T[];
+  @Input('tstdlLazyList') source: T[];
 
   /**
    * how many items to add at the first tick
@@ -62,8 +62,8 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     return (scrollHeight - scrollTop - clientHeight) <= threshold;
   }
 
-  get addedAllItems(): boolean {
-    return this.lazyItems.length == this.items.length;
+  get hasAll(): boolean {
+    return this.items.length == this.source.length;
   }
 
   constructor(elementRef: ElementRef<HTMLElement>, changeDetector: ChangeDetectorRef) {
@@ -72,17 +72,18 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.changeDetector = changeDetector;
     this.scrollElementSubject = new BehaviorSubject<HTMLElement>(elementRef.nativeElement);
 
-    this.items = [];
+    this.source = [];
     this.initialSize = 1;
     this.batchSize = 1;
     this.margin = 25;
-    this.lazyItems = [];
+    this.items = [];
 
     this.scrollElement$ = this.scrollElementSubject.asObservable();
     this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => observeElement?.nativeElement ?? observeElement));
 
     this.observe('items').subscribe(() => {
-      this.lazyItems = this.items.slice(0, Math.max(this.initialSize, this.lazyItems.length));
+      this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length));
+      changeDetector.markForCheck();
     });
 
     this.observe('scrollElement')
@@ -93,14 +94,20 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   override ngAfterViewInit(): void {
     super.ngAfterViewInit();
 
-    const scroll$ = this.scrollElement$.pipe(switchMap((element) => fromEvent(element, 'scroll')));
+    const scroll$ = this.scrollElement$.pipe(
+      switchMap((element) => fromEvent(element, 'scroll'))
+    );
 
     const intersect$ = combineLatest([this.scrollElement$, this.observeElement$]).pipe(
       switchMap(([scrollElement, observeElement]) => (isUndefined(observeElement) ? EMPTY : observeIntersections(observeElement, { root: scrollElement, rootMargin: `${this.margin}%` }))),
       filter((entries) => entries[0]!.isIntersecting)
     );
 
-    merge(this.observe('items'), scroll$, intersect$).subscribe(() => void this.check());
+    const initialize$ = animationFrame$.pipe(
+      takeWhile(() => !this.hasAll && this.thresholdReached)
+    );
+
+    merge(this.observe('items'), initialize$, scroll$, intersect$).subscribe(() => void this.check());
   }
 
   async check(): Promise<void> {
@@ -108,7 +115,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
       return;
     }
 
-    while (!this.addedAllItems && this.thresholdReached) {
+    while (!this.hasAll && this.thresholdReached) {
       this.addItems();
       await timeout(0);
       void this.check();
@@ -118,7 +125,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   }
 
   private addItems(): void {
-    this.lazyItems = this.items.slice(0, Math.max(this.initialSize, this.lazyItems.length + this.batchSize));
+    this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length + this.batchSize));
     this.changeDetector.markForCheck();
   }
 }
