@@ -1,9 +1,9 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
-import { animationFrame$, observeIntersections } from '@tstdl/base/cjs/rxjs';
+import { observeIntersections, observeResizes } from '@tstdl/base/cjs/rxjs';
 import { isUndefined, timeout } from '@tstdl/base/cjs/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, takeWhile } from 'rxjs';
+import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap } from 'rxjs';
 import { LifecycleUtils } from '../utils';
 
 type MaybeWithNativeElement = HTMLElement & Partial<ElementRef<HTMLElement>>;
@@ -94,6 +94,10 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   override ngAfterViewInit(): void {
     super.ngAfterViewInit();
 
+    const resize$ = this.scrollElement$.pipe(
+      switchMap((element) => observeResizes(element))
+    );
+
     const scroll$ = this.scrollElement$.pipe(
       switchMap((element) => fromEvent(element, 'scroll'))
     );
@@ -103,11 +107,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
       filter((entries) => entries[0]!.isIntersecting)
     );
 
-    const initialize$ = animationFrame$.pipe(
-      takeWhile(() => !this.hasAll && this.thresholdReached)
-    );
-
-    merge(this.observe('source'), initialize$, scroll$, intersect$).subscribe(() => void this.check());
+    merge(this.observe('source'), resize$, scroll$, intersect$).subscribe(() => void this.check());
   }
 
   async check(): Promise<void> {
