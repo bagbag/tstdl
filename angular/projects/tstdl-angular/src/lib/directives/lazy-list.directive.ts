@@ -81,7 +81,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.scrollElement$ = this.scrollElementSubject.asObservable();
     this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => observeElement?.nativeElement ?? observeElement));
 
-    this.observe('items').subscribe(() => {
+    this.observe('source').subscribe(() => {
       this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length));
       changeDetector.markForCheck();
     });
@@ -107,7 +107,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
       takeWhile(() => !this.hasAll && this.thresholdReached)
     );
 
-    merge(this.observe('items'), initialize$, scroll$, intersect$).subscribe(() => void this.check());
+    merge(this.observe('source'), initialize$, scroll$, intersect$).subscribe(() => void this.check());
   }
 
   async check(): Promise<void> {
