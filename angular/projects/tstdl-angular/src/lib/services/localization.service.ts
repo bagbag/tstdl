@@ -32,7 +32,7 @@ export type LocalizationKeys<T extends LocalizationTemplate> = {
 };
 
 export function isLocalizationKey(value: any): value is LocalizationKey {
-  return isDefined((value as LocalizationKey)[propertyName]);
+  return isDefined((value as LocalizationKey | undefined)?.[propertyName]);
 }
 
 /**
