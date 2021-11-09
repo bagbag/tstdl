@@ -1,11 +1,10 @@
-import { UnauthorizedError } from '../error';
+import { InvalidTokenError, UnauthorizedError } from '../error';
 import type { BinaryData, StringMap } from '../types';
 import { decodeBase64Url, encodeBase64Url } from './base64';
 import type { HashAlgorithm, Key } from './cryptography';
 import { importHmacKey, sign } from './cryptography';
 import { encodeUtf8 } from './encoding';
 import { binaryEquals } from './helpers';
-import { assert } from './type-guards';
 
 export enum JwtTokenAlgorithm {
   SHA256 = 'HS256',
@@ -45,7 +44,9 @@ export type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader,
 export function parseJwtTokenString<THeader extends JwtTokenHeader, TPayload = StringMap>(tokenString: string): JwtTokenParseResult<THeader, TPayload> {
   const splits = tokenString.split('.');
 
-  assert(splits.length == 3, 'invalid token');
+  if (splits.length != 3) {
+    throw new InvalidTokenError('invalid token format');
+  }
 
   const [encodedHeader, encodedPayload, encodedSignature] = splits;
 
