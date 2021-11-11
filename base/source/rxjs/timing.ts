@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
 
-export const singleIdle$ = singleCallback((callback) => requestIdleCallback(callback), (handle) => cancelIdleCallback(handle));
-export const idle$ = recursiveCallback((callback) => requestIdleCallback(callback), (handle) => cancelIdleCallback(handle));
+export const singleIdle$ = singleCallback((callback: IdleRequestCallback) => requestIdleCallback(callback), (handle) => cancelIdleCallback(handle));
+export const idle$ = recursiveCallback((callback: IdleRequestCallback) => requestIdleCallback(callback), (handle) => cancelIdleCallback(handle));
 
-export const singleAnimationFrame$ = singleCallback((callback) => requestAnimationFrame(callback), (handle) => cancelAnimationFrame(handle));
-export const animationFrame$ = recursiveCallback((callback) => requestAnimationFrame(callback), (handle) => cancelAnimationFrame(handle));
+export const singleAnimationFrame$ = singleCallback((callback: FrameRequestCallback) => requestAnimationFrame(callback), (handle) => cancelAnimationFrame(handle));
+export const animationFrame$ = recursiveCallback((callback: FrameRequestCallback) => requestAnimationFrame(callback), (handle) => cancelAnimationFrame(handle));
 
 export const singleImmediate$ = singleCallback((callback) => setImmediate(callback), (handle) => clearImmediate(handle));
 export const immediate$ = recursiveCallback((callback) => setImmediate(callback), (handle) => clearImmediate(handle));
