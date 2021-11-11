@@ -64,10 +64,12 @@ function convertInnerQuery(query: object, transform?: MappingItemTransformer, ma
   return convertOperator(operator, value, transform, mapping);
 }
 
+// eslint-disable-next-line complexity
 function convertOperator(operator: QueryTypes, value: any, transform?: MappingItemTransformer, mapping?: TransformerMappingMap): any {
   switch (operator) {
     case '$eq':
     case '$not':
+    case '$exists':
     case '$gt':
     case '$gte':
     case '$lt':

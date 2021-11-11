@@ -34,7 +34,7 @@ export type ComparisonQuery<T = any> = Partial<
 >;
 
 export type ComparisonQueryTypes = keyof ComparisonQuery;
-export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$eq', '$gt', '$gte', '$in', '$item', '$lt', '$lte', '$neq', '$nin', '$regex', '$text'];
+export const allComparisonQueryTypes: ComparisonQueryTypes[] = ['$all', '$not', '$eq', '$exists', '$gt', '$gte', '$in', '$item', '$lt', '$lte', '$neq', '$nin', '$regex', '$text', '$geoDistance', '$geoShape'];
 
 export type SpecialQuery<T = any> = Partial<TextSpanQuery<T>>;
 export type SpecialQueryTypes = keyof SpecialQuery;
