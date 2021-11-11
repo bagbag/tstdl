@@ -2,13 +2,13 @@ import { isDefined, toArray } from '#/utils';
 import type { Subscription } from 'rxjs';
 import { Observable } from 'rxjs';
 
-export type ObserveIntersectionsOptions = IntersectionObserverInit & {
+export type ObserveIntersectionOptions = IntersectionObserverInit & {
   takeRecordsTrigger?: Observable<any>,
   observeTrigger?: Observable<Element>,
   unobserveTrigger?: Observable<Element>
 };
 
-export function observeIntersections(elements: Element | Element[], options: ObserveIntersectionsOptions = {}): Observable<IntersectionObserverEntry[]> {
+export function observeIntersection(elements: Element | Element[], options: ObserveIntersectionOptions = {}): Observable<IntersectionObserverEntry[]> {
   const { takeRecordsTrigger, observeTrigger, unobserveTrigger, ...init } = options;
 
   return new Observable<IntersectionObserverEntry[]>((subscriber) => {

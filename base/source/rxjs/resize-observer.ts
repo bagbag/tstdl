@@ -2,12 +2,12 @@ import { isArray, isDefined, toArray } from '#/utils';
 import type { Subscription } from 'rxjs';
 import { Observable } from 'rxjs';
 
-export type ObserveResizesOptions = ResizeObserverOptions & {
+export type ObserveResizeOptions = ResizeObserverOptions & {
   observeTrigger?: Observable<Element>,
   unobserveTrigger?: Observable<Element>
 };
 
-export function observeResizes(elements: Element | (Element | [Element, ResizeObserverOptions])[], options: ObserveResizesOptions = {}): Observable<ResizeObserverEntry[]> {
+export function observeResize(elements: Element | (Element | [Element, ResizeObserverOptions])[], options: ObserveResizeOptions = {}): Observable<ResizeObserverEntry[]> {
   const { observeTrigger, unobserveTrigger, ...defaultOptions } = options;
 
   return new Observable<ResizeObserverEntry[]>((subscriber) => {

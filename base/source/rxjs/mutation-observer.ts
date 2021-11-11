@@ -2,12 +2,12 @@ import { isArray, isDefined, toArray } from '#/utils';
 import type { Subscription } from 'rxjs';
 import { Observable } from 'rxjs';
 
-export type ObserveMutationsOptions = MutationObserverInit & {
+export type ObserveMutationOptions = MutationObserverInit & {
   takeRecordsTrigger?: Observable<any>,
   observeTrigger?: Observable<Node | [Node, MutationObserverInit?]>
 };
 
-export function observeMutations(nodes: Node | (Node | [Node, MutationObserverInit?])[], options: ObserveMutationsOptions = {}): Observable<MutationRecord[]> {
+export function observeMutation(nodes: Node | (Node | [Node, MutationObserverInit?])[], options: ObserveMutationOptions = {}): Observable<MutationRecord[]> {
   const { takeRecordsTrigger, observeTrigger, ...defaultInit } = options;
 
   return new Observable<MutationRecord[]>((subscriber) => {
