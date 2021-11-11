@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/cjs/enumerable';
 import type { StringMap } from '@tstdl/base/cjs/types';
 import type { PropertyName } from '@tstdl/base/cjs/utils';
-import { assertDefinedPass, getPropertyNameProxy, isDefined, isFunction, isNotNull, isObject, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
+import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
 import { deepEntries } from '@tstdl/base/cjs/utils/object';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
@@ -13,10 +13,12 @@ export type Language = {
   name: string
 };
 
-export type LocalizeFunction<T = any> = (parameter: T) => string;
+export type LocalizeFunction<Parameters = any> = (parameters: Parameters) => string;
+
+export type LocalizeItem<Parameters = any> = string | LocalizeFunction<Parameters>;
 
 // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
-type LocalizationTemplate = { [key: string]: string | LocalizeFunction | LocalizationTemplate };
+type LocalizationTemplate = { [key: string]: LocalizeItem | LocalizationTemplate };
 
 export type Localization<T extends LocalizationTemplate = LocalizationTemplate> = {
   language: Language,
@@ -32,7 +34,7 @@ export type LocalizationKeys<T extends LocalizationTemplate> = {
 };
 
 export function isLocalizationKey(value: any): value is LocalizationKey {
-  return isDefined((value as LocalizationKey | undefined)?.[propertyName]);
+  return isPropertyName(value);
 }
 
 /**
@@ -120,12 +122,12 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(keyOrPropertyName: string | LocalizationKey, parameter?: any): string {
+  localize(keyOrPropertyName: string | LocalizationKey, parameters?: any): string {
     if (isUndefined(this.activeLanguage)) {
       throw new Error('language not set');
     }
 
-    const key = isString(keyOrPropertyName) ? keyOrPropertyName : keyOrPropertyName[propertyName];
+    const key = isLocalizationKey(keyOrPropertyName) ? keyOrPropertyName[propertyName] : keyOrPropertyName;
 
     const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
 
@@ -134,11 +136,11 @@ export class LocalizationService {
     }
 
     if (isFunction(templateOrFunction)) {
-      return templateOrFunction(parameter);
+      return templateOrFunction(parameters);
     }
 
     const template = templateOrFunction;
-    const templateParameters = ((isNotNull(parameter) && isObject(parameter)) ? parameter : {}) as StringMap;
+    const templateParameters = ((isNotNull(parameters) && isObject(parameters)) ? parameters : {}) as StringMap;
     const matches = template.matchAll(parametersPattern);
 
     let currentIndex = 0;
@@ -156,8 +158,8 @@ export class LocalizationService {
     return result;
   }
 
-  localize$(key: string | LocalizationKey, parameter?: any): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localize(key, parameter)));
+  localize$(key: string | LocalizationKey, parameters?: any): Observable<string> {
+    return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
   }
 }
 

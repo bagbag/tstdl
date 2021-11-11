@@ -358,11 +358,15 @@ export function compareByValueDescending<T>(a: T, b: T): number {
   throw new Error('objects not comparable');
 }
 
-export const propertyName = Symbol('PropertyKey');
+export const propertyName = Symbol('PropertyName');
 
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record<any, any>> = { [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> };
 export type PropertyNameProxyChild<T> = T extends Record<any, any> ? ({ [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
+
+export function isPropertyName(value: any): value is PropertyName {
+  return isDefined((value as PropertyName | undefined)?.[propertyName]);
+}
 
 /**
  * get the path to a property
