@@ -1,4 +1,3 @@
-import { DetailsError } from '#/error';
 import type { BinaryData, TypedExtract } from '#/types';
 import { zBase32Encode } from '#/utils';
 import type * as NodeCrypto from 'crypto';
@@ -56,19 +55,19 @@ try {
 }
 catch (error: unknown) {
   if (isUndefined(subtle!)) {
-    throw new DetailsError('could not find SubtleCrypto implementation', error);
+    console.error('could not find SubtleCrypto implementation', error);
   }
 }
 
-/* eslint-disable @typescript-eslint/unbound-method */
-export const deriveBits = subtle.deriveBits;
-export const deriveKey = subtle.deriveKey;
-export const exportKey = subtle.exportKey;
-export const generateKey = subtle.generateKey;
-export const importKey = subtle.importKey;
-export const unwrapKey = subtle.unwrapKey;
-export const wrapKey = subtle.wrapKey;
-/* eslint-enable @typescript-eslint/unbound-method */
+/* eslint-disable */
+export const deriveBits = (subtle! as SubtleCrypto | undefined)?.deriveBits!;
+export const deriveKey = (subtle! as SubtleCrypto | undefined)?.deriveKey!;
+export const exportKey = (subtle! as SubtleCrypto | undefined)?.exportKey!;
+export const generateKey = (subtle! as SubtleCrypto | undefined)?.generateKey!;
+export const importKey = (subtle! as SubtleCrypto | undefined)?.importKey!;
+export const unwrapKey = (subtle! as SubtleCrypto | undefined)?.unwrapKey!;
+export const wrapKey = (subtle! as SubtleCrypto | undefined)?.wrapKey!;
+/* eslint-enable */
 
 /**
  * encrypt data
