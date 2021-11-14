@@ -30,6 +30,7 @@ export * from './single-or-default';
 export * from './skip';
 export * from './sort';
 export * from './take';
+export * from './take-until';
 export * from './take-while';
 export * from './tap';
 export * from './types';

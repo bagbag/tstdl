@@ -33,6 +33,7 @@ export interface EnumerableMethods {
   sort(...args: any[]): any;
   sortToArray(...args: any[]): any;
   take(...args: any[]): any;
+  takeUntil(...args: any[]): any;
   takeWhile(...args: any[]): any;
   toArray(...args: any[]): any;
   toAsync(...args: any[]): any;

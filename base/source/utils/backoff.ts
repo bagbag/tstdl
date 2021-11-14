@@ -1,8 +1,8 @@
-import { isDefined } from '.';
 import type { ReadonlyCancellationToken } from './cancellation-token';
 import { CancellationToken } from './cancellation-token';
 import { noop } from './helpers';
 import { cancelableTimeout } from './timing';
+import { isDefined } from './type-guards';
 
 export type BackoffStrategy = 'linear' | 'exponential';
 

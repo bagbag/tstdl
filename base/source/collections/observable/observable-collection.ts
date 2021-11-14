@@ -1,5 +1,5 @@
 import type { Observable } from 'rxjs';
-import type { Collection } from '../';
+import type { Collection } from '../collection';
 
 export type ObservableCollectionChangeEvent<T> = {
   add?: T[],

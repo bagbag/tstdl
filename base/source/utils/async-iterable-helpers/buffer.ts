@@ -1,5 +1,7 @@
-import { ObservableArray } from '../../collections/observable';
+import { CircularBuffer } from '#/data-structures';
 import type { AnyIterable } from '../any-iterable-iterator';
+import { CancellationToken } from '../cancellation-token';
+import { takeUntilAsync } from './take-until';
 
 type BufferItem<T> =
   | { end: false, value: T }
@@ -7,27 +9,29 @@ type BufferItem<T> =
 
 // eslint-disable-next-line max-lines-per-function, max-statements
 export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): AsyncIterableIterator<T> {
-  const buffer = new ObservableArray<BufferItem<T>>();
+  const buffer = new CircularBuffer<BufferItem<T>>(Math.max(1, size));
 
-  let end = false;
-  let consumerError: Error | undefined;
+  const consumerEndedToken = new CancellationToken();
+  let consumerHasError = false;
+  let consumerError: any;
 
   void (async () => {
     try {
-      for await (const item of iterable) {
+      for await (const item of takeUntilAsync(iterable, consumerEndedToken)) {
         buffer.add({ end: false, value: item });
 
-        if (buffer.length >= size) {
-          await buffer.$remove;
+        if (buffer.isFull) {
+          await buffer.$freeSlots;
         }
 
-        if (consumerError != undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (consumerHasError) {
           throw consumerError;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (end) {
-          break;
+        if (consumerEndedToken.isSet) {
+          return;
         }
       }
 
@@ -39,16 +43,10 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   })();
 
   try {
-    while (true) {
-      if (buffer.length == 0) {
-        await buffer.$add;
-      }
-
-      const item = buffer.removeFirst();
-
+    for await (const item of buffer) {
       if (item.end) {
-        if (item.error != undefined) {
-          throw item.error;
+        if (Object.prototype.hasOwnProperty.call(item, 'error')) {
+          throw item.error!;
         }
 
         break;
@@ -58,11 +56,12 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
     }
   }
   catch (error: unknown) {
+    consumerHasError = true;
     consumerError = error as Error;
     throw error;
   }
   finally {
-    end = true;
+    consumerEndedToken.set();
     buffer.clear();
   }
 }

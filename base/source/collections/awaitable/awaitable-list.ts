@@ -53,6 +53,18 @@ export class AwaitableList<T> implements Iterable<T> {
     return this.backingArray[index]!;
   }
 
+  set(index: number, value: T): void {
+    if (index >= this.size || index < 0) {
+      throw new Error('index out of range');
+    }
+
+    const oldValue = this.backingArray[index]!;
+    this.backingArray[index] = value;
+
+    this._removed.next(oldValue);
+    this._added.next(value);
+  }
+
   append(...items: T[]): number {
     const result = this.backingArray.push(...items);
     this._added.next(items);

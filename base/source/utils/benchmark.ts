@@ -1,7 +1,8 @@
-import { getGetter } from './object';
+import { noop } from './helpers';
+import { clamp } from './math';
 import { Timer } from './timer';
 
-let millisecondsPerTimerRead = 0;
+let microsecondsPerTimerRead = 0;
 
 export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPerOperation: number };
 
@@ -10,31 +11,33 @@ export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPe
  *
  * only relevant for benchmarked functions with a execution time in the range of microseconds
  * @param duration fow how long to measure the overhead
- * @param warmupRounds how often to measure the overhead without counting its time
  */
-export function measureBenchmarkOverhead(duration: number = 500, warmupRounds: number = 1000): void {
-  const timer = new Timer(false);
-  const millisecondsGetter = getGetter(timer, 'milliseconds', true);
+export function measureBenchmarkOverhead(duration: number = 1000): void {
+  const timer = new Timer(true);
+  const warmupDuration = clamp(duration / 2, 50, 500);
+  const testDuration = Math.max(duration - warmupDuration, 50);
 
   let operations = 0;
+  let warmup = true;
 
-  // warmup
-  for (let i = 0; i < warmupRounds; i++) {
-    millisecondsGetter();
-  }
+  let warmupFunction = (): void => {
+    if (warmup && timer.milliseconds >= warmupDuration) {
+      warmup = false;
+      operations = 0;
+      warmupFunction = noop;
+      timer.restart();
+    }
+  };
 
   timer.start();
   do {
-    for (let i = 0; i < 1000; i++) {
-      void timer.milliseconds;
-    }
-
-    operations += 1000;
+    warmupFunction();
+    operations++;
   }
-  while (timer.milliseconds < duration);
+  while (timer.milliseconds < testDuration || warmup);
   timer.stop();
 
-  millisecondsPerTimerRead = timer.milliseconds / operations;
+  microsecondsPerTimerRead = timer.microseconds / operations;
 }
 
 /**
@@ -112,7 +115,7 @@ export async function timedBenchmarkAsync<F extends (...args: any[]) => Promise<
 }
 
 function calculateTimedResult(runs: number, time: number): BenchmarkResult {
-  const correctedTime = time - (millisecondsPerTimerRead * runs);
+  const correctedTime = time - (microsecondsPerTimerRead * runs / 1000);
   return calculateResult(runs, correctedTime);
 }
 

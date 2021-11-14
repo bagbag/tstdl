@@ -1,7 +1,7 @@
-import type { Comparator } from '../utils';
+import type { Comparator, ReadonlyCancellationToken } from '../utils';
 import { isNotNullOrUndefined } from '../utils';
 import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
@@ -189,9 +189,14 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
     return new Enumerable(taken);
   }
 
+  takeUntil(cancellationToken: ReadonlyCancellationToken): Enumerable<T> {
+    const taken = takeUntil(this.source, cancellationToken);
+    return new Enumerable(taken);
+  }
+
   takeWhile(yieldLastOnFalse: boolean, predicate: Predicate<T>): Enumerable<T> {
-    const skipped = takeWhile(this.source, yieldLastOnFalse, predicate);
-    return new Enumerable(skipped);
+    const taken = takeWhile(this.source, yieldLastOnFalse, predicate);
+    return new Enumerable(taken);
   }
 
   toArray(): T[] {

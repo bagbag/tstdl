@@ -1,7 +1,7 @@
 import { AssertionError } from '#/error';
 import type { BinaryData } from '#/types';
+import { createArray } from './array';
 import { toUint8Array } from './binary';
-import { createArray } from './helpers';
 import { isUndefined } from './type-guards';
 
 const byteToHex = createArray(2 ** 8, (i) => i).map((value) => value.toString(16).padStart(2, '0'));

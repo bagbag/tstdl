@@ -20,27 +20,23 @@ export function iterableToAsyncIterator<T>(iterable: AnyIterable<T>): AsyncItera
   return asyncIterator;
 }
 
-export function iteratorToAsyncIterator<T>(iterator: Iterator<T>): AsyncIterator<T> {
-  const asyncIterator: AsyncIterator<T> = {
-    async next(value?: any) { // eslint-disable-line @typescript-eslint/require-await
-      return iterator.next(value);
+export function iteratorToAsyncIterator<T, TReturn = any, TNext = undefined>(iterator: Iterator<T, TReturn, TNext>): AsyncIterator<T, TReturn, TNext> {
+  const asyncIterator: AsyncIterator<T, TReturn, TNext> = {
+    async next(...args: [] | [TNext]) { // eslint-disable-line @typescript-eslint/require-await
+      return iterator.next(...args);
     }
   };
 
   if (isDefined(iterator.return)) { // eslint-disable-line @typescript-eslint/unbound-method
-    asyncIterator.return = ({ // eslint-disable-line @typescript-eslint/unbound-method
-      async return(value: any) {
-        return iterator.return!(await value);
-      }
-    }).return;
+    asyncIterator.return = async function _return(value?: TReturn | PromiseLike<TReturn>) {
+      return iterator.return!(await value);
+    };
   }
 
   if (isDefined(iterator.throw)) { // eslint-disable-line @typescript-eslint/unbound-method
-    asyncIterator.throw = ({ // eslint-disable-line @typescript-eslint/unbound-method
-      async throw(error?: any) { // eslint-disable-line @typescript-eslint/require-await
-        return iterator.throw!(error);
-      }
-    }).throw;
+    asyncIterator.throw = async function _throw(error?: any) { // eslint-disable-line @typescript-eslint/require-await
+      return iterator.throw!(error);
+    };
   }
 
   return asyncIterator;
