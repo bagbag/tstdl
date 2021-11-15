@@ -18,10 +18,10 @@
     "@angular/platform-browser": "12.2",
     "@angular/platform-browser-dynamic": "12.2",
     "@angular/router": "12.2",
-    "@tstdl/base": "^0.66.83",
-    "luxon": "2",
+    "@tstdl/base": "^0.66.85",
+    "luxon": "2.1",
     "rxjs": "7.4",
-    "tslib": "2",
+    "tslib": "2.3",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {

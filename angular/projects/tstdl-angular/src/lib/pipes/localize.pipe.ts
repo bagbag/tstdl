@@ -4,7 +4,7 @@ import { ChangeDetectorRef, Pipe } from '@angular/core';
 import type { Observable } from 'rxjs';
 import { ReplaySubject } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import type { LocalizationKey } from '../services';
+import type { LocalizationData } from '../services';
 import { LocalizationService } from '../services';
 
 @Pipe({
@@ -14,7 +14,7 @@ import { LocalizationService } from '../services';
 export class LocalizePipe implements PipeTransform, OnDestroy {
   private readonly asyncPipe: AsyncPipe;
   private readonly localizationService: LocalizationService;
-  private readonly transform$: ReplaySubject<{ key: string | LocalizationKey, parameter: any }>;
+  private readonly transform$: ReplaySubject<LocalizationData>;
   private readonly localized$: Observable<string>;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
@@ -22,7 +22,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.localizationService = localizationService;
 
     this.transform$ = new ReplaySubject(1);
-    this.localized$ = this.transform$.pipe(switchMap(({ key, parameter }) => this.localizationService.localize$(key, parameter)));
+    this.localized$ = this.transform$.pipe(switchMap((data) => this.localizationService.localize$(data)));
   }
 
   ngOnDestroy(): void {
@@ -30,8 +30,8 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transform$.complete();
   }
 
-  transform(key: string | LocalizationKey, parameter?: any): any {
-    this.transform$.next({ key, parameter });
+  transform<Parameters>(localizationData: LocalizationData<Parameters>): string | null {
+    this.transform$.next(localizationData);
     return this.asyncPipe.transform(this.localized$);
   }
 }

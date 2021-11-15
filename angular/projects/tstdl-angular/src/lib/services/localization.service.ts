@@ -13,9 +13,9 @@ export type Language = {
   name: string
 };
 
-export type LocalizeFunction<Parameters = any> = (parameters: Parameters) => string;
+export type LocalizeFunction<Parameters = void> = (parameters: Parameters) => string;
 
-export type LocalizeItem<Parameters = any> = string | LocalizeFunction<Parameters>;
+export type LocalizeItem<Parameters = void> = string | LocalizeFunction<Parameters>;
 
 // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 type LocalizationTemplate = { [key: string]: LocalizeItem | LocalizationTemplate };
@@ -25,9 +25,14 @@ export type Localization<T extends LocalizationTemplate = LocalizationTemplate> 
   keys: T
 };
 
-declare const localizationKeySymbol: unique symbol;
+declare const parametersSymbol: unique symbol;
 
-export type LocalizationKey = PropertyName & { [localizationKeySymbol]?: undefined };
+export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]: Parameters };
+
+export type LocalizationData<Parameters = any> =
+  Parameters extends void
+  ? LocalizationKey<void> | { key: LocalizationKey<void>, parameters?: void }
+  : { key: LocalizationKey<Parameters>, parameters: Parameters };
 
 export type LocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
@@ -35,6 +40,15 @@ export type LocalizationKeys<T extends LocalizationTemplate> = {
 
 export function isLocalizationKey(value: any): value is LocalizationKey {
   return isPropertyName(value);
+}
+
+export function getLocalizationKey<Parameters = void>(key: string): LocalizationKey<Parameters> {
+  return { [propertyName]: key } as LocalizationKey<Parameters>;
+}
+
+/** helper function to ensure type safety */
+export function localizationData<T>(data: LocalizationData<T>): LocalizationData<T> {
+  return data;
 }
 
 /**
@@ -48,7 +62,7 @@ export function getLocalizationKeys<T extends Localization>(_localization?: T): 
 
 type MappedLocalization = {
   language: Language,
-  keys: Map<string, string | LocalizeFunction>
+  keys: Map<string, string | LocalizeFunction<unknown>>
 };
 
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
@@ -122,12 +136,14 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize(keyOrPropertyName: string | LocalizationKey, parameters?: any): string {
+  localize<Parameters>(data: LocalizationData<Parameters>): string {
     if (isUndefined(this.activeLanguage)) {
       throw new Error('language not set');
     }
 
-    const key = isLocalizationKey(keyOrPropertyName) ? keyOrPropertyName[propertyName] : keyOrPropertyName;
+    const dataIsLocalizationKey = isLocalizationKey(data);
+    const key = dataIsLocalizationKey ? (data as LocalizationKey)[propertyName] : (data as LocalizationData<unknown>).key[propertyName];
+    const parameters = dataIsLocalizationKey ? {} : (data as LocalizationData<unknown>).parameters;
 
     const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
 
@@ -158,8 +174,8 @@ export class LocalizationService {
     return result;
   }
 
-  localize$(key: string | LocalizationKey, parameters?: any): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localize(key, parameters)));
+  localize$<Parameters>(data: LocalizationData<Parameters>): Observable<string> {
+    return this.activeLanguage$.pipe(map(() => this.localize(data)));
   }
 }
 

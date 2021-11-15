@@ -1,5 +1,5 @@
 import type { StringMap } from '@tstdl/base/cjs/types';
-import type { LocalizationKey } from './localization.service';
+import type { LocalizationData } from './localization.service';
 
 export type MessageBoxResult<T = any> = {
   actionValue?: T,
@@ -7,9 +7,7 @@ export type MessageBoxResult<T = any> = {
 };
 
 export type MessageBoxAction<T = any> = {
-  text: string | LocalizationKey,
-  localizeText?: boolean,
-  localizeTextParameters?: StringMap,
+  text: string | LocalizationData,
   value?: T,
   disableOnInvalidInputs?: boolean,
   handler?: (value: T | undefined, inputs: StringMap) => any | Promise<any>
@@ -39,12 +37,8 @@ export type InputType =
 
 export type MessageBoxInput = {
   type: InputType,
-  label?: string | LocalizationKey,
-  localizeLabel?: boolean,
-  localizeLabelParameters?: StringMap,
-  placeholder?: string | LocalizationKey,
-  localizePlaceholder?: boolean,
-  localizePlaceholderParameters?: StringMap,
+  label?: string | LocalizationData,
+  placeholder?: string | LocalizationData,
   value?: any,
   min?: string | number,
   max?: string | number,
@@ -53,28 +47,18 @@ export type MessageBoxInput = {
 
 export type MessageBoxData<T = any> = {
   type?: NotificationType,
-  header?: string | LocalizationKey,
-  localizeHeader?: boolean,
-  localizeHeaderParameters?: StringMap,
-  subHeader?: string | LocalizationKey,
-  localizeSubHeader?: boolean,
-  localizeSubHeaderParameters?: StringMap,
-  message?: string | LocalizationKey,
-  localizeMessage?: boolean,
-  localizeMessageParameters?: StringMap,
-  actions: MessageBoxAction<T>[],
+  header?: string | LocalizationData,
+  subHeader?: string | LocalizationData,
+  message?: string | LocalizationData,
+  actions?: MessageBoxAction<T>[],
   inputs?: StringMap<MessageBoxInput>,
   backdropDismiss?: boolean
 };
 
 export type NotifyData = {
   type?: NotificationType,
-  header?: string | LocalizationKey,
-  message: string | LocalizationKey,
-  localizeHeader?: boolean,
-  localizeHeaderParameters?: StringMap,
-  localizeMessage?: boolean,
-  localizeMessageParameters?: StringMap,
+  header?: string | LocalizationData,
+  message: string | LocalizationData,
   duration?: number
 };
 
