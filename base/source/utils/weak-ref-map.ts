@@ -91,12 +91,12 @@ export class WeakRefMap<K, V extends object> implements Map<K, V> {
     return this[Symbol.iterator]();
   }
 
-  keys(): IterableIterator<K> {
-    return Enumerable.from(this).map(([key]) => key);
+  *keys(): IterableIterator<K> {
+    yield* Enumerable.from(this).map(([key]) => key);
   }
 
-  values(): IterableIterator<V> {
-    return Enumerable.from(this).map(([, value]) => value);
+  *values(): IterableIterator<V> {
+    yield* Enumerable.from(this).map(([, value]) => value);
   }
 
   cleanup(): void {

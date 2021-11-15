@@ -10,9 +10,8 @@ import { range } from '../utils/iterable-helpers';
 import { Enumerable } from './enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
-export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableIterator<T> {
+export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
   private readonly source: AnyIterable<T>;
-  private asyncIterator?: AsyncIterator<T>;
 
   constructor(source: AnyIterable<T>) {
     this.source = source;
@@ -277,15 +276,6 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterableItera
   parallelMap<TOut>(concurrency: number, keepOrder: boolean, func: ParallelizableIteratorFunction<T, TOut>): AsyncEnumerable<TOut> {
     const result = parallelMap(this.source, concurrency, keepOrder, func);
     return new AsyncEnumerable(result);
-  }
-
-  async next(value?: any): Promise<IteratorResult<T>> {
-    if (this.asyncIterator == undefined) {
-      this.asyncIterator = this.toIterator();
-    }
-
-    const result = await this.asyncIterator.next(value);
-    return result;
   }
 
   [Symbol.asyncIterator](): AsyncIterableIterator<T> {

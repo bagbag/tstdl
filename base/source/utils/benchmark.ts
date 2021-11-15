@@ -10,7 +10,7 @@ export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPe
  * measure the timer overhead for more precise benchmarks
  *
  * only relevant for benchmarked functions with a execution time in the range of microseconds
- * @param duration fow how long to measure the overhead
+ * @param duration fow how long to measure the overhead in milliseconds (default 1000)
  */
 export function measureBenchmarkOverhead(duration: number = 1000): void {
   const timer = new Timer(true);

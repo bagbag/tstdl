@@ -3,6 +3,9 @@ import { assertFunction } from './type-guards';
 
 type NodeCryptoType = typeof NodeCrypto;
 
+const bufferSize = 20480;
+const bufferBypassThreshold = (bufferSize / 2) + 1;
+
 let nodeCrypto: NodeCryptoType | undefined;
 
 try {
@@ -31,17 +34,30 @@ const randomBytes: (size: number) => Uint8Array
     ? getNodeCryptoRandomBytes
     : getBrowserCryptoRandomBytes;
 
-let randomBytesBufferIndex = 0;
 let randomBytesBuffer = new Uint8Array();
+let randomBytesBufferIndex = 0;
 
-export function getRandomBytes(count: number): Uint8Array {
+/**
+ * generate cryptographically strong random bytes
+ *
+ * if allowUnsafe is true a view on the underlying pool is returned. This can be dangerous as the underlying
+ * pool can be read and modified by other callers of {@link getRandomBytes} but improves performance as
+ * less memory allocations and system calls are required
+ * @param count number of bytes to get
+ * @param allowUnsafe whether to allow sharing the underlying pool
+ */
+export function getRandomBytes(count: number, allowUnsafe: boolean = false): Uint8Array {
+  if (!allowUnsafe || (count >= bufferBypassThreshold)) {
+    return randomBytes(count);
+  }
+
   if (count > (randomBytesBuffer.byteLength - randomBytesBufferIndex)) {
-    randomBytesBuffer = randomBytes(Math.max(count, 1024));
+    randomBytesBuffer = randomBytes(bufferSize);
     randomBytesBufferIndex = 0;
   }
 
   const end = randomBytesBufferIndex + count;
-  const bytes = randomBytesBuffer.slice(randomBytesBufferIndex, end);
+  const bytes = randomBytesBuffer.subarray(randomBytesBufferIndex, end);
   randomBytesBufferIndex = end;
 
   return bytes;
@@ -54,13 +70,12 @@ export function getRandomString(length: number, alphabet: string): string {
     return result;
   }
 
-  const bytes = getRandomBytes(length * 2);
-  const array = new Uint16Array(bytes.buffer);
-  const factor = alphabet.length / (2 ** (array.BYTES_PER_ELEMENT * 8));
+  const bytes = getRandomBytes(length * Uint16Array.BYTES_PER_ELEMENT, true);
+  const values = new Uint16Array(bytes.buffer, bytes.byteOffset, length);
+  const factor = alphabet.length / (2 ** (Uint16Array.BYTES_PER_ELEMENT * 8));
 
   for (let i = 0; i < length; i++) {
-    const value = array[i]!;
-    const index = Math.floor(value * factor);
+    const index = Math.floor(values[i]! * factor);
     result += alphabet[index];
   }
 

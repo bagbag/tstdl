@@ -5,13 +5,11 @@ import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, dist
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 
-export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
+export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   private readonly source: Iterable<T>;
-  private iterator: Iterator<T> | undefined;
 
   constructor(iterable: Iterable<T>) {
     this.source = iterable;
-    this.iterator = undefined;
   }
 
   static from<T>(source: Iterable<T>): Enumerable<T> {
@@ -219,14 +217,6 @@ export class Enumerable<T> implements EnumerableMethods, IterableIterator<T> {
 
   while(predicate: Predicate<T>): IterableIterator<T> {
     return whileSync(this.source, predicate);
-  }
-
-  next(value?: any): IteratorResult<T> {
-    if (this.iterator == undefined) {
-      this.iterator = this.toIterator();
-    }
-
-    return this.iterator.next(value);
   }
 
   *[Symbol.iterator](): IterableIterator<T> {

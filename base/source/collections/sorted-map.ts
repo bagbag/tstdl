@@ -24,13 +24,13 @@ export class SortedMap<K extends KComparator, V, KComparator = K> {
     return this.backingSortedArray[Symbol.iterator]();
   }
 
-  keys(): IterableIterator<K> {
-    return Enumerable.from(this.backingSortedArray)
+  *keys(): IterableIterator<K> {
+    yield* Enumerable.from(this.backingSortedArray)
       .map(([key]) => key);
   }
 
-  values(): IterableIterator<V> {
-    return Enumerable.from(this.backingSortedArray)
+  *values(): IterableIterator<V> {
+    yield* Enumerable.from(this.backingSortedArray)
       .map(([, value]) => value);
   }
 
