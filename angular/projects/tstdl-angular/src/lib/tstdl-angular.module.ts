@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { LazyListDirective, VisibleObserverDirective } from './directives';
+import { LetDirective } from './directives/let.directive';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumericDateToDateTimePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
 
 const declarations = [
@@ -8,6 +9,7 @@ const declarations = [
   DateTimeToDatePipe,
   DurationPipe,
   LazyListDirective,
+  LetDirective,
   LocalizePipe,
   NumericDateToDateTimePipe,
   PadPipe,

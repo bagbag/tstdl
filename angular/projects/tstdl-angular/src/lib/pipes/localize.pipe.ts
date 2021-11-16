@@ -36,8 +36,9 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transformSubject.complete();
   }
 
-  transform<Parameters>(localizationKey: LocalizationKey<void> | LocalizationData<Parameters>): string | null;
-  transform<Parameters>(localizationKey: LocalizationKey, parameters: Parameters): string | null;
+  transform(localizationKey: LocalizationKey<void>): string;
+  transform<Parameters>(localizationData: LocalizationData<Parameters>): string;
+  transform<Parameters>(localizationKey: LocalizationKey<Parameters>, parameters: Parameters): string;
   transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters>, parametersOrNothing?: Parameters): string | null {
     if (isLocalizationKey(localizationDataOrKey)) {
       this.transformSubject.next({ key: localizationDataOrKey, parameters: parametersOrNothing });
