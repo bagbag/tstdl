@@ -1,37 +1,51 @@
-import { AsyncPipe } from '@angular/common';
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
-import type { Observable } from 'rxjs';
-import { ReplaySubject } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import type { LocalizationData } from '../services';
-import { LocalizationService } from '../services';
+import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
+import type { LocalizationData, LocalizationKey } from '../services';
+import { isLocalizationKey, LocalizationService } from '../services';
 
 @Pipe({
   name: 'localize',
   pure: false
 })
 export class LocalizePipe implements PipeTransform, OnDestroy {
-  private readonly asyncPipe: AsyncPipe;
-  private readonly localizationService: LocalizationService;
-  private readonly transform$: ReplaySubject<LocalizationData>;
-  private readonly localized$: Observable<string>;
+  private readonly transformSubject: Subject<LocalizationData>;
+  private readonly destroySubject: Subject<void>;
+
+  private value: string;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
-    this.asyncPipe = new AsyncPipe(changeDetectorRef);
-    this.localizationService = localizationService;
+    this.destroySubject = new Subject();
+    this.transformSubject = new Subject();
 
-    this.transform$ = new ReplaySubject(1);
-    this.localized$ = this.transform$.pipe(switchMap((data) => this.localizationService.localize$(data)));
+    this.transformSubject
+      .pipe(
+        switchMap((data) => localizationService.localize$(data)),
+        distinctUntilChanged(),
+        takeUntil(this.destroySubject)
+      )
+      .subscribe((value) => {
+        this.value = value;
+        changeDetectorRef.markForCheck();
+      });
   }
 
   ngOnDestroy(): void {
-    this.asyncPipe.ngOnDestroy();
-    this.transform$.complete();
+    this.destroySubject.next();
+    this.destroySubject.complete();
+    this.transformSubject.complete();
   }
 
-  transform<Parameters>(localizationData: LocalizationData<Parameters>): string | null {
-    this.transform$.next(localizationData);
-    return this.asyncPipe.transform(this.localized$);
+  transform<Parameters>(localizationKey: LocalizationKey<void> | LocalizationData<Parameters>): string | null;
+  transform<Parameters>(localizationKey: LocalizationKey, parameters: Parameters): string | null;
+  transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters>, parametersOrNothing?: Parameters): string | null {
+    if (isLocalizationKey(localizationDataOrKey)) {
+      this.transformSubject.next({ key: localizationDataOrKey, parameters: parametersOrNothing });
+    }
+    else {
+      this.transformSubject.next(localizationDataOrKey);
+    }
+
+    return this.value;
   }
 }
