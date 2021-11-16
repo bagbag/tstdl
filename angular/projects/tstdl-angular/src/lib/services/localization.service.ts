@@ -30,9 +30,9 @@ declare const parametersSymbol: unique symbol;
 export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]: Parameters };
 
 export type LocalizationData<Parameters = any> =
-  Parameters extends void
-  ? LocalizationKey<void> | { key: LocalizationKey<void>, parameters?: void }
-  : { key: LocalizationKey<Parameters>, parameters: Parameters };
+  LocalizationKey<void>
+  | { key: LocalizationKey<void>, parameters?: void }
+  | { key: LocalizationKey<Parameters>, parameters: Parameters };
 
 export type LocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
