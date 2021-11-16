@@ -32,7 +32,12 @@ export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSym
 export type LocalizationData<Parameters = any> =
   LocalizationKey<void>
   | { key: LocalizationKey<void>, parameters?: void }
-  | { key: LocalizationKey<Parameters>, parameters: Parameters };
+  | LocalizationDataObject<Parameters>;
+
+export type LocalizationDataObject<Parameters> = {
+  key: LocalizationKey<Parameters>,
+  parameters: Parameters
+};
 
 export type LocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
@@ -142,8 +147,8 @@ export class LocalizationService {
     }
 
     const dataIsLocalizationKey = isLocalizationKey(data);
-    const key = dataIsLocalizationKey ? (data as LocalizationKey)[propertyName] : (data as LocalizationData<unknown>).key[propertyName];
-    const parameters = dataIsLocalizationKey ? {} : (data as LocalizationData<unknown>).parameters;
+    const key = dataIsLocalizationKey ? (data as LocalizationKey)[propertyName] : (data as LocalizationDataObject<unknown>).key[propertyName];
+    const parameters = dataIsLocalizationKey ? {} : (data as LocalizationDataObject<unknown>).parameters;
 
     const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
 
