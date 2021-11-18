@@ -18,7 +18,7 @@ export type LocalizeFunction<Parameters = void> = (parameters: Parameters) => st
 export type LocalizeItem<Parameters = void> = string | LocalizeFunction<Parameters>;
 
 // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
-type LocalizationTemplate = { [key: string]: LocalizeItem | LocalizationTemplate };
+type LocalizationTemplate = { [key: string]: LocalizeItem<any> | LocalizationTemplate };
 
 export type Localization<T extends LocalizationTemplate = LocalizationTemplate> = {
   language: Language,
