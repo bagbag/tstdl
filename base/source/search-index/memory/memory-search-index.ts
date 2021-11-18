@@ -122,6 +122,9 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
   }
 
   private indexEntity(entity: T): void {
+    this.allSet.add(entity);
+    this.idMap.set(entity.id, entity);
+
     for (const field of this.indexedFields) {
       const value = entity[field];
       const tokens = getTokens(value);
@@ -129,8 +132,6 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
       for (const token of tokens) {
         this.indexMap.get(field as string).get(token).add(entity);
       }
-
-      this.idMap.set(entity.id, entity);
     }
   }
 
