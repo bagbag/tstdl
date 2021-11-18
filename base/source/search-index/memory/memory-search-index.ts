@@ -68,7 +68,7 @@ export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
         const innerSets: Set<T>[] = [];
 
         if (isString(text)) {
-          const tokens = normalizeText(text).split(' ');
+          const tokens = normalizeText(text).split(' ').filter((token) => token.length > 0);
 
           if (tokens.length == 0) {
             innerSets.push(this.allSet);
