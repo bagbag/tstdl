@@ -4,6 +4,7 @@ export * from './date-time.pipe';
 export * from './duration.pipe';
 export * from './localize.pipe';
 export * from './numeric-date-to-date-time.pipe';
+export * from './optional-localize.pipe';
 export * from './pad.pipe';
 export * from './safe-url.pipe';
 export * from './timestamp-to-date-time.pipe';
