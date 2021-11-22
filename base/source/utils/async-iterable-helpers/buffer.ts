@@ -21,7 +21,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
         buffer.add({ end: false, value: item });
 
         if (buffer.isFull) {
-          await buffer.$freeSlots;
+          await buffer.$onFreeSlots;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -43,7 +43,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   })();
 
   try {
-    for await (const item of buffer) {
+    for await (const item of buffer.consumeAsync()) {
       if (item.end) {
         if (Object.prototype.hasOwnProperty.call(item, 'error')) {
           throw item.error!;
