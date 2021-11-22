@@ -76,7 +76,7 @@ function aggregate(aggregation: AggregationMode, values: number[]): number {
       return Math.max(...values);
 
     case AggregationMode.Mean:
-      return average(...values);
+      return average(values);
 
     case AggregationMode.Median:
       values.sort(compareByValue);
