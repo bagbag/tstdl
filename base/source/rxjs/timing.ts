@@ -9,6 +9,8 @@ export const animationFrame$ = recursiveCallback((callback: FrameRequestCallback
 export const singleImmediate$ = singleCallback((callback) => setImmediate(callback), (handle) => clearImmediate(handle));
 export const immediate$ = recursiveCallback((callback) => setImmediate(callback), (handle) => clearImmediate(handle));
 
+export const microtask$ = singleCallback((callback: (value: void) => void) => queueMicrotask(callback));
+
 export const singleNextTick$ = singleCallback((callback) => process.nextTick(callback));
 export const nextTick$ = recursiveCallback((callback) => process.nextTick(callback));
 
