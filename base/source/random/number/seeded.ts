@@ -1,17 +1,17 @@
 export interface SeededRandomNumberGenerator {
   /**
-   * maximum value the generate will generate for nextInt()
+   * maximum value the generator will generate for {@link nextInt}
    */
   readonly maxValue: number;
 
   /**
-   * generate a random integer. Maximum value depends on algorithm.
+   * generate a random integer between 0 and {@link maxValue}
    * @see maxValue
    */
   nextInt(): number;
 
   /**
-   * generate a random float in range [0, 1]
+   * generate a random float in interval [0, 1)
    */
   next(): number;
 
