@@ -9,10 +9,10 @@ const defaultRandomNumberGenerator: RandomNumberGenerator = () => Math.random();
  * generate a random float in interval [min, max)
  * @param min minimum value
  * @param max maximum value
- * @param generator random number generator to use, defaults to Math.random
+ * @param generator random number generator to use, defaults to `Math.random`. Must return a number in interval [0, 1)
  * @returns random number (float)
  */
-export function random(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
+export function randomFloat(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
   return linearInterpolateFloat(generator(), min, max);
 }
 
@@ -20,11 +20,11 @@ export function random(min: number, max: number, generator: RandomNumberGenerato
  * generate a random integer in interval [min, max]
  * @param min minimum value
  * @param max maximum value
- * @param generator random number generator to use, defaults to Math.random
+ * @param generator random number generator to use, defaults to `Math.random`.  Must return a number in interval [0, 1)
  * @returns random number (integer)
  */
 export function randomInt(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
-  return linearInterpolateInt(generator(), min, max);
+  return Math.floor(linearInterpolateFloat(generator(), min, max + 1));
 }
 
 /**
@@ -32,7 +32,7 @@ export function randomInt(min: number, max: number, generator: RandomNumberGener
  * @param values values to average
  * @returns average
  */
-export function average(...values: number[]): number {
+export function average(values: number[]): number {
   const total = values.reduce((previous, current) => previous + current, 0);
   return total / values.length;
 }
@@ -70,17 +70,6 @@ export function linearInterpolate(value: number, fromLow: number, fromHigh: numb
  */
 export function linearInterpolateFloat(value: number, low: number, high: number): number {
   return ((1 - value) * low) + (value * high);
-}
-
-/**
- * linearly interpolate [0, 1] into an interval
- * @param value value to interpolate in interval [0, 1]
- * @param low lower bound
- * @param high upper bound
- * @returns interpolated integer value
- */
-export function linearInterpolateInt(value: number, low: number, high: number): number {
-  return Math.floor(value * (high - low + 1)) + low;
 }
 
 /**
