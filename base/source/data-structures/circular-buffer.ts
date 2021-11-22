@@ -1,13 +1,11 @@
 import { firstValueFrom } from '#/rxjs/compat';
-import type { ReadonlyCancellationToken } from '#/utils';
-import { createArray } from '#/utils/array';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, NEVER, race, Subject } from 'rxjs';
+import { CancellationToken, isArray, isDefined, isUndefined, ReadonlyCancellationToken } from '#/utils';
+import { BehaviorSubject, distinctUntilChanged, filter, first, from, map, mapTo, Observable, race, Subject } from 'rxjs';
+import { Collection } from './collection';
 
-export class CircularBuffer<T> implements Iterable<T>, AsyncIterable<T> {
-  private readonly bufferSize: number;
+export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
+  private readonly maxBufferSizeSubject: BehaviorSubject<number | undefined>;
   private readonly overflowSubject: Subject<T>;
-  private readonly bufferedCountSubject: BehaviorSubject<number>;
 
   private backingArray: (T | undefined)[];
   private writeIndex: number;
@@ -16,140 +14,108 @@ export class CircularBuffer<T> implements Iterable<T>, AsyncIterable<T> {
   /** emits overwritten values */
   readonly overflow$: Observable<T>;
 
-  /** emits count of buffered items */
-  readonly bufferedCount$: Observable<number>;
-
   /** emits count of free slots in the buffer */
-  readonly freeSlotsCount$: Observable<number>;
-
-  /** emits when the buffer is empty */
-  readonly empty$: Observable<void>;
+  readonly freeSlots$: Observable<number>;
 
   /** emits when the buffer is full */
-  readonly full$: Observable<void>;
-
-  /** emits when the buffer has items */
-  readonly buffered$: Observable<void>;
+  readonly onFull$: Observable<void>;
 
   /** emits when the buffer has free slots */
-  readonly freeSlots$: Observable<void>;
-
-  /** emits whether the buffer is empty */
-  readonly isEmpty$: Observable<boolean>;
+  readonly onFreeSlots$: Observable<void>;
 
   /** emits whether the buffer is full */
   readonly isFull$: Observable<boolean>;
 
-  /** emits whether the buffer has items */
-  readonly hasBuffered$: Observable<boolean>;
-
   /** emits whether the buffer has free slots */
   readonly hasFreeSlots$: Observable<boolean>;
 
-  /** resolves when the buffer is empty */
-  get $empty(): Promise<void> {
-    return firstValueFrom(this.empty$);
-  }
-
   /** resolves when the buffer is full */
-  get $full(): Promise<void> {
-    return firstValueFrom(this.full$);
+  get $onFull(): Promise<void> {
+    return firstValueFrom(this.onFull$);
   }
 
   /** resolves when the buffer has items */
-  get $buffered(): Promise<void> {
-    return firstValueFrom(this.buffered$);
-  }
-
-  /** resolves when the buffer has items */
-  get $freeSlots(): Promise<void> {
-    return firstValueFrom(this.freeSlots$);
+  get $onFreeSlots(): Promise<void> {
+    return firstValueFrom(this.onFreeSlots$);
   }
 
   /** size of buffer */
-  get size(): number {
-    return this.bufferSize;
+  get bufferSize(): number {
+    return this.backingArray.length;
   }
 
-  /** count of buffered items */
-  get bufferedCount(): number {
-    return this.bufferedCountSubject.value;
+  /** size of buffer */
+  get maxBufferSize(): number {
+    return this.maxBufferSizeSubject.value ?? Infinity;
   }
 
   /** count of free slots in buffer */
-  get freeSlotsCount(): number {
-    return this.bufferSize - this.bufferedCount;
-  }
+  get freeSlots(): number {
+    if (isUndefined(this.maxBufferSize)) {
+      return Infinity;
+    }
 
-  /** whether the buffer is empty */
-  get isEmpty(): boolean {
-    return this.bufferedCount == 0;
+    return this.bufferSize - this.size;
   }
 
   /** whether the buffer is full */
   get isFull(): boolean {
-    return this.bufferedCount == this.bufferSize;
-  }
-
-  /** whether the buffer has items */
-  get hasBuffered(): boolean {
-    return this.bufferedCount > 0;
+    return this.freeSlots == 0;
   }
 
   /** whether the buffer has free slots */
   get hasFreeSlots(): boolean {
-    return this.bufferedCount < this.bufferSize;
+    return this.freeSlots > 0;
   }
 
-  constructor(bufferSize: number) {
-    this.bufferSize = bufferSize;
+  constructor(maxBufferSize?: number) {
+    super();
 
+    this.maxBufferSizeSubject = new BehaviorSubject<number | undefined>(maxBufferSize);
     this.overflowSubject = new Subject();
-    this.bufferedCountSubject = new BehaviorSubject<number>(0);
-
-    const distinctBufferedCount$ = this.bufferedCountSubject.pipe(distinctUntilChanged());
 
     this.overflow$ = this.overflowSubject.asObservable();
-    this.bufferedCount$ = distinctBufferedCount$;
-    this.freeSlotsCount$ = distinctBufferedCount$.pipe(map((count) => bufferSize - count));
+    this.freeSlots$ = this.change$.pipe(map(() => this.freeSlots));
 
-    this.isEmpty$ = distinctBufferedCount$.pipe(map((buffered) => buffered == 0), distinctUntilChanged());
-    this.isFull$ = distinctBufferedCount$.pipe(map((buffered) => buffered == bufferSize), distinctUntilChanged());
-    this.hasBuffered$ = distinctBufferedCount$.pipe(map((buffered) => buffered > 0), distinctUntilChanged());
-    this.hasFreeSlots$ = distinctBufferedCount$.pipe(map((buffered) => buffered < bufferSize), distinctUntilChanged());
+    this.isFull$ = this.change$.pipe(map(() => this.isFull), distinctUntilChanged());
+    this.hasFreeSlots$ = this.change$.pipe(map(() => this.hasFreeSlots), distinctUntilChanged());
 
-    this.empty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), mapTo(undefined));
-    this.full$ = this.isFull$.pipe(filter((isFull) => isFull), mapTo(undefined));
-    this.buffered$ = this.hasBuffered$.pipe(filter((hasBuffered) => hasBuffered), mapTo(undefined));
-    this.freeSlots$ = this.hasFreeSlots$.pipe(filter((hasFreeSlots) => hasFreeSlots), mapTo(undefined));
+    this.onFull$ = this.isFull$.pipe(filter((isFull) => isFull), mapTo(undefined));
+    this.onFreeSlots$ = this.hasFreeSlots$.pipe(filter((hasFreeSlots) => hasFreeSlots), mapTo(undefined));
 
     this.clear();
   }
 
   add(value: T): void {
+    this.increaseBufferSizeIfNeeded();
+
     const overwrite = this.isFull;
-    const overwrittenValue = this.backingArray[this.writeIndex]!;
+    const overwrittenValue = overwrite ? this.backingArray[this.writeIndex]! : undefined;
 
     this.backingArray[this.writeIndex] = value;
-    this.writeIndex = (this.writeIndex + 1) % this.backingArray.length;
+    this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
 
     if (overwrite) {
       this.readIndex = (this.readIndex + 1) % this.bufferSize;
-      this.overflowSubject.next(overwrittenValue);
+      this.overflowSubject.next(overwrittenValue!);
+      this.emitChange();
       return;
     }
 
-    this.bufferedCountSubject.next(this.bufferedCount + 1);
+    this.incrementSize();
   }
 
-  addMany(values: T[]): void {
+  addMany(values: Iterable<T>): void {
+    const increase = isArray(values) ? values.length : (values instanceof Collection) ? values.size : 1;
+    this.increaseBufferSizeIfNeeded(this.size + increase);
+
     for (const value of values) {
       this.add(value);
     }
   }
 
   remove(): T {
-    if (this.bufferedCount == 0) {
+    if (this.size == 0) {
       throw new Error('buffer is empty');
     }
 
@@ -157,48 +123,119 @@ export class CircularBuffer<T> implements Iterable<T>, AsyncIterable<T> {
   }
 
   tryRemove(): T | undefined {
-    if (this.bufferedCount == 0) {
+    if (this.size == 0) {
       return undefined;
     }
 
     const value = this.backingArray[this.readIndex]!;
     this.backingArray[this.readIndex] = undefined;
     this.readIndex = (this.readIndex + 1) % this.bufferSize;
-    this.bufferedCountSubject.next(this.bufferedCount - 1);
+    this.decrementSize();
 
     return value;
   }
 
   clear(): void {
-    this.backingArray = createArray(this.bufferSize, () => undefined);
+    this.backingArray = new Array(2);
     this.writeIndex = 0;
     this.readIndex = 0;
-    this.bufferedCountSubject.next(0);
+    this.setSize(0);
+  }
+
+  clone(newMaxBufferSize: number | undefined = this.maxBufferSize): CircularBuffer<T> {
+    if (isDefined(newMaxBufferSize) && (newMaxBufferSize < this.size)) {
+      throw new Error('newSize must be equal or larger to current size');
+    }
+
+    const cloned = new CircularBuffer<T>(newMaxBufferSize);
+    cloned.addMany(this);
+
+    return cloned;
+  }
+
+  *[Symbol.iterator](): IterableIterator<T> {
+    let size = this.size;
+    let readIndex = this.readIndex;
+    let modified = false;
+
+    const subscription = from(this.change$).pipe(first()).subscribe(() => (modified = true));
+
+    try {
+      for (let i = 0; i < size; i++) {
+        if (modified) {
+          throw new Error('buffer was modified while being iterated');
+        }
+
+        yield this.backingArray[readIndex]!;
+        readIndex = (readIndex + 1) % this.bufferSize;
+      }
+    }
+    finally {
+      subscription.unsubscribe();
+    }
   }
 
   /** yields all items from the buffer and removes them */
-  *[Symbol.iterator](): IterableIterator<T> {
-    while (this.bufferedCount > 0) {
-      yield this.remove();
+  *consume(): IterableIterator<T> {
+    while (this.size > 0) {
+      yield this.tryRemove()!;
     }
   }
 
   /** yields all items from the buffer, removes them and waits fore more */
-  async *[Symbol.asyncIterator](cancellationToken?: ReadonlyCancellationToken): AsyncIterator<T> {
-    const cancel$ = cancellationToken ?? NEVER;
-
+  async *consumeAsync(cancellationToken: ReadonlyCancellationToken = new CancellationToken()): AsyncIterable<T> {
     while (true) {
       if (this.isEmpty) {
-        await firstValueFrom(race([this.buffered$, cancel$]));
+        await firstValueFrom(race([this.onItems$, cancellationToken]));
       }
 
-      if (cancellationToken?.isSet == true) {
+      if (cancellationToken.isSet == true) {
         return;
       }
 
-      while (this.bufferedCount > 0) {
-        yield this.remove();
+      while (this.size > 0) {
+        yield this.tryRemove()!;
       }
     }
+  }
+
+  private increaseBufferSizeIfNeeded(requiredCapacity: number = this.size + 1): void {
+    if (requiredCapacity <= this.bufferSize) {
+      return;
+    }
+
+    const newSize = Math.min(2 ** Math.ceil(Math.log2(requiredCapacity)), this.maxBufferSize);
+
+    if (newSize != this.bufferSize) {
+      this.resize(newSize);
+    }
+  }
+
+  private resize(size: number): void {
+    console.log(size);
+    if (size < this.size) {
+      throw new Error('buffer has more items than it would have capacity after resize');
+    }
+
+    let newBackingArray: (T | undefined)[] = [];
+
+    if (this.size > 0) {
+      if (this.readIndex < this.writeIndex) {
+        newBackingArray = this.backingArray.slice(this.readIndex, this.writeIndex);
+      }
+      else {
+        const start = this.backingArray.slice(this.readIndex);
+        const end = this.backingArray.slice(0, this.writeIndex);
+        newBackingArray = start.concat(end);
+      }
+    }
+
+    newBackingArray.length = size;
+
+    this.backingArray = newBackingArray;
+    this.writeIndex = this.size % this.backingArray.length;
+    this.readIndex = 0;
+
+    this.emitChange();
   }
 }

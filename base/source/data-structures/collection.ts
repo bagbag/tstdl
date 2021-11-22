@@ -1,20 +1,23 @@
 import { Enumerable } from '#/enumerable';
 import { firstValueFrom } from '#/rxjs/compat';
-import type { Observable, Observer, Subscribable, Unsubscribable } from 'rxjs';
+import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, Subject } from 'rxjs';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T>, Subscribable<TThis> {
+export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T>{
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
+
+  /** emits collection on change */
+  readonly change$: Observable<TThis>;
 
   /** emits size of list */
   readonly size$: Observable<number>;
 
   /** emits when the list is empty */
-  readonly empty$: Observable<void>;
+  readonly onEmpty$: Observable<void>;
 
   /** emits when the list has items */
-  readonly items$: Observable<void>;
+  readonly onItems$: Observable<void>;
 
   /** emits whether the list is empty */
   readonly isEmpty$: Observable<boolean>;
@@ -23,13 +26,13 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
   readonly hasItems$: Observable<boolean>;
 
   /** resolves when the list is empty */
-  get $empty(): Promise<void> {
-    return firstValueFrom(this.empty$);
+  get $onEmpty(): Promise<void> {
+    return firstValueFrom(this.onEmpty$);
   }
 
   /** resolves when the list has items */
-  get $items(): Promise<void> {
-    return firstValueFrom(this.items$);
+  get $onItems(): Promise<void> {
+    return firstValueFrom(this.onItems$);
   }
 
   /** size of list */
@@ -51,17 +54,14 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
     this.sizeSubject = new BehaviorSubject(0);
     this.changeSubject = new Subject<TThis>();
 
+    this.change$ = this.changeSubject.asObservable();
     this.size$ = this.sizeSubject.asObservable();
 
-    this.isEmpty$ = this.size$.pipe(map((buffered) => buffered == 0), distinctUntilChanged());
-    this.hasItems$ = this.size$.pipe(map((buffered) => buffered > 0), distinctUntilChanged());
+    this.isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
+    this.hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
 
-    this.empty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), mapTo(undefined));
-    this.items$ = this.hasItems$.pipe(filter((isFull) => isFull), mapTo(undefined));
-  }
-
-  subscribe(observerOrNext: Partial<Observer<TThis>> | ((value: TThis) => void)): Unsubscribable {
-    return this.changeSubject.subscribe(observerOrNext as Partial<Observer<TThis>>);
+    this.onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), mapTo(undefined));
+    this.onItems$ = this.hasItems$.pipe(filter((isFull) => isFull), mapTo(undefined));
   }
 
   asEnumerable(): Enumerable<T> {
