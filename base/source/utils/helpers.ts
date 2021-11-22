@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import { HttpError } from '#/http';
+import { decodeJsonPath } from '#/json-path';
 import { DetailsError } from '../error';
-import type { BinaryData, DeepArray, StringMap } from '../types';
+import type { BinaryData, DeepArray, DeepFlatten, DeepNonNullable, StringMap } from '../types';
 import { toUint8Array } from './binary';
 import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
@@ -360,8 +361,8 @@ export function compareByValueDescending<T>(a: T, b: T): number {
 export const propertyName = Symbol('PropertyName');
 
 export type PropertyName = { [propertyName]: string };
-export type PropertyNameProxy<T extends Record<any, any>> = { [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> };
-export type PropertyNameProxyChild<T> = T extends Record<any, any> ? ({ [P in keyof Required<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
+export type PropertyNameProxy<T extends Record<any, any>> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
+export type PropertyNameProxyChild<T> = T extends Record<any, any> ? ({ [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
 
 export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
@@ -371,7 +372,7 @@ export function isPropertyName(value: any): value is PropertyName {
  * get the path to a property
  *
  * @param options.deep whether to return the whole path to the property or just the last property
- * @param options.skipArray ignore array accesses
+ * @param options.flat ignore array accesses (properties consiting only of numbers)
  * @param options.prefix name prefix
  *
  * @example
@@ -381,8 +382,8 @@ export function isPropertyName(value: any): value is PropertyName {
  *
  * name == 'foo.bar' // true
  */
-export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, skipArray?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
-  const { deep = true, skipArray = false, prefix } = options;
+export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, flat?: boolean, prefix?: string; } = {}): PropertyNameProxy<T> {
+  const { deep = true, flat = false, prefix } = options;
 
   const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
     get: (_target, property): any => {
@@ -392,17 +393,17 @@ export function getPropertyNameProxy<T extends Record<any, any> = Record<any, an
 
       assertString(property, `property must be a string, but was ${property.toString()}`);
 
-      const ignore = (skipArray && (/\d+/u).test(property));
+      const ignore = (flat && (/\d+/u).test(property));
 
       if (ignore) {
         return proxy;
       }
 
       if (deep) {
-        return getPropertyNameProxy({ deep, skipArray, prefix: isUndefined(prefix) ? property : `${prefix}.${property}` });
+        return getPropertyNameProxy({ deep, flat, prefix: isUndefined(prefix) ? property : `${prefix}.${property}` });
       }
 
-      return getPropertyNameProxy({ deep, skipArray, prefix: property });
+      return getPropertyNameProxy({ deep, flat, prefix: property });
     }
   });
 
@@ -413,29 +414,53 @@ export function getPropertyNameProxy<T extends Record<any, any> = Record<any, an
  * get the path to a property
  * @param expression property selection expression
  * @param options.deep whether to return the whole path to the property or just the last property
- * @param options.skipArray ignore array accesses
  * @returns property name
  */
-export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: T) => any, options: { deep?: boolean, skipArray?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy<T>(options) as T) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepNonNullable<T>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false })) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
-const dereferencePathPartsPattern = /[^.]+/ug;
+/**
+ * get the flat path to a property (flat = ignore array accesses (properties only consisting of numbers))
+ * @param expression property selection expression
+ * @param options.deep whether to return the whole path to the property or just the last property
+ * @returns property name
+ */
+export function flatPropertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepFlatten<DeepNonNullable<T>>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as any) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+  return assertStringPass(name, 'invalid expression');
+}
 
-export function dereference(value: object, reference: string): unknown {
-  const parts = reference.matchAll(dereferencePathPartsPattern);
+/**
+ *
+ * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @returns
+ */
+export function dereferencer(reference: string): (value: object) => unknown {
+  const nodes = decodeJsonPath(reference);
 
-  let target = value;
-  for (const [property] of parts) {
-    if (!Object.prototype.hasOwnProperty.call(target, property!)) {
-      throw new Error(`property ${property} not found`);
+  function compiledDereferencer(value: object): unknown {
+    let target = value;
+
+    for (let i = 0; i < nodes.length; i++) {
+      target = (target as StringMap)[nodes[i]!];
     }
 
-    target = (target as StringMap)[property!];
-  }
+    return target;
+  };
 
-  return target;
+  return compiledDereferencer;
+}
+
+/**
+ * dereference a pointer
+ * @param value
+ * @param reference
+ * @returns
+ */
+export function dereference(value: object, reference: string): unknown {
+  return dereferencer(reference)(value);
 }
 
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
@@ -626,7 +651,7 @@ export function deferThrow(value: any): () => never {
   };
 }
 
-export type Decycled<T> = { __type: T } & StringMap;
+export type Decycled<T> = { __type: T; } & StringMap;
 
 /**
  * replaces cycles (circular references) in objects with JSONPath
@@ -635,22 +660,24 @@ export type Decycled<T> = { __type: T } & StringMap;
  */
 export function decycle<T>(value: T, replacer?: (value: any) => any): Decycled<T>;
 export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<T> {
-  const mapping = new Map();
+  const mapping = new Map<any, string>();
+
+  const replacerFn = isDefined(replacer) ? replacer : (value: any) => value;
 
   function _decycle(__value: any, path: string): any {
-    const value = isDefined(replacer) ? replacer(__value) : __value;
+    const value = replacerFn(__value);
 
     if (isPrimitive(value) || isRegExp(value) || isDate(value) || isFunction(value)) {
       return value;
     }
 
-    const mappedPath = mapping.get(value as object);
+    const mappedPath = mapping.get(value);
 
     if (isDefined(mappedPath)) {
       return { $ref: mappedPath };
     }
 
-    mapping.set(value as object, path);
+    mapping.set(value, path);
 
     if (isArray(value)) {
       return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
@@ -669,7 +696,6 @@ const recyclePathPartsPattern = /\[(?:(\d+)|'(.*?)')\]/ug;
  * replaces JSONPath in objects with their reference
  * @param value object to recycle
  */
-
 export function recycle<T = any>(value: Decycled<T>, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow
 export function recycle<T = any>(value: any, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow, @typescript-eslint/unified-signatures
 export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T { // eslint-disable-line max-lines-per-function
