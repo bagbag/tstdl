@@ -1,12 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import type { ErrorHandler } from '@angular/core';
-import { Injectable } from '@angular/core';
-import { formatError } from '@tstdl/base/cjs/utils';
-import type { OperatorFunction } from 'rxjs';
-import { throwError } from 'rxjs';
+import { ErrorHandler, Inject, Injectable, InjectionToken, Optional } from '@angular/core';
+import { formatError, FormatErrorOptions } from '@tstdl/base/cjs/utils';
+import type { Observable, OperatorFunction } from 'rxjs';
+import { Subject, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Logger } from './logger.service';
 import { NotificationService } from './notification.service';
+
+export type ErrorHandlerServiceOptions = {
+  format: FormatErrorOptions
+};
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const ERROR_HANDLER_SERVICE_OPTIONS = new InjectionToken<ErrorHandlerServiceOptions>('ErrorHandlerServiceOptions');
+
+const defaultOptions: ErrorHandlerServiceOptions = { format: { includeRest: false, includeStack: false, handleBuiltInErrors: true } };
 
 @Injectable({
   providedIn: 'root'
@@ -14,10 +22,18 @@ import { NotificationService } from './notification.service';
 export class ErrorHandlerService implements ErrorHandler {
   private readonly notificationService: NotificationService;
   private readonly logger: Logger;
+  private readonly options: ErrorHandlerServiceOptions;
+  private readonly errorSubject: Subject<any>;
 
-  constructor(notificationService: NotificationService, logger: Logger) {
+  readonly error$: Observable<any>;
+
+  constructor(notificationService: NotificationService, logger: Logger, @Optional() @Inject(ERROR_HANDLER_SERVICE_OPTIONS) options: ErrorHandlerServiceOptions | null) {
     this.notificationService = notificationService;
     this.logger = logger;
+    this.options = options ?? defaultOptions;
+
+    this.errorSubject = new Subject();
+    this.error$ = this.errorSubject.asObservable();
   }
 
   handleError$<T>(): OperatorFunction<T, T> {
@@ -30,8 +46,9 @@ export class ErrorHandlerService implements ErrorHandler {
   // eslint-disable-next-line max-statements
   handleError(error: any): void {
     this.logger.error(error as Error, { includeRest: true, includeStack: true });
+    this.errorSubject.next(error);
 
-    const message = formatError(error, { includeRest: false, includeStack: false, handleBuiltInErrors: true });
+    const message = formatError(error, this.options.format);
     this.notificationService.notify({ message, type: 'error' });
   }
 }
