@@ -65,6 +65,11 @@ export type PickBy<T, V> = Pick<
   { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]
 >;
 
+/**
+ * makes optional properties required and removes null and undefined
+ */
+export type DeepNonNullable<T extends Record> = { [P in keyof T]-?: T extends Record ? DeepNonNullable<NonNullable<T[P]>> : NonNullable<T[P]> };
+
 export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
@@ -77,7 +82,7 @@ export type PropertiesOfType<T, U> = keyof ExtractPropertiesOfType<T, U>;
 
 export type Flatten<T> = T extends readonly (infer R)[] ? R : T;
 export type DeepFlatten<T> = T extends readonly (infer R)[]
-  ? R
+  ? DeepFlatten<R>
   : T extends Record ? { [P in keyof T]: DeepFlatten<T[P]> }
   : T;
 
