@@ -35,6 +35,6 @@ async function* async<T, TPredicate extends T = T>(iterable: AsyncIterable<T>, p
     }
 
     assertHelper(returnValue);
-    yield item as TPredicate;
+    yield item as Awaited<TPredicate>;
   }
 }

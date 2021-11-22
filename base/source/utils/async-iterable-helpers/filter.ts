@@ -35,7 +35,7 @@ async function* async<T, TNew extends T = T>(iterable: AsyncIterable<T>, predica
     }
 
     if (matches) {
-      yield item as TNew;
+      yield item as Awaited<TNew>;
     }
   }
 }

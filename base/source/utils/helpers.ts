@@ -382,7 +382,7 @@ export function isPropertyName(value: any): value is PropertyName {
  *
  * name == 'foo.bar' // true
  */
-export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, flat?: boolean, prefix?: string; } = {}): PropertyNameProxy<T> {
+export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
   const { deep = true, flat = false, prefix } = options;
 
   const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
@@ -417,7 +417,7 @@ export function getPropertyNameProxy<T extends Record<any, any> = Record<any, an
  * @returns property name
  */
 export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepNonNullable<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false })) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as DeepNonNullable<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
@@ -428,7 +428,7 @@ export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(ex
  * @returns property name
  */
 export function flatPropertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepFlatten<DeepNonNullable<T>>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as any) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as DeepFlatten<DeepNonNullable<T>>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
@@ -443,12 +443,13 @@ export function dereferencer(reference: string): (value: object) => unknown {
   function compiledDereferencer(value: object): unknown {
     let target = value;
 
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < nodes.length; i++) {
       target = (target as StringMap)[nodes[i]!];
     }
 
     return target;
-  };
+  }
 
   return compiledDereferencer;
 }
@@ -651,7 +652,7 @@ export function deferThrow(value: any): () => never {
   };
 }
 
-export type Decycled<T> = { __type: T; } & StringMap;
+export type Decycled<T> = { __type: T } & StringMap;
 
 /**
  * replaces cycles (circular references) in objects with JSONPath

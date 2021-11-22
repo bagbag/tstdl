@@ -8,7 +8,7 @@ export async function firstOrDefaultAsync<T, D, TPredicate extends T = T>(iterab
 
   // eslint-disable-next-line no-unreachable-loop
   for await (const item of source) {
-    return item as TPredicate;
+    return item as Awaited<TPredicate>;
   }
 
   return defaultValue;

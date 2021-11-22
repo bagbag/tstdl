@@ -8,7 +8,7 @@ export async function firstAsync<T, TPredicate extends T = T>(iterable: AnyItera
 
   // eslint-disable-next-line no-unreachable-loop
   for await (const item of source) {
-    return item as TPredicate;
+    return item as Awaited<TPredicate>;
   }
 
   throw new Error('iterable was either empty or no element matched predicate');

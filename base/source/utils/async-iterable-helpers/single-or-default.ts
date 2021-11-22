@@ -20,7 +20,7 @@ export async function singleOrDefaultAsync<T, D, TPredicate extends T = T>(itera
       }
 
       matched = true;
-      result = item as TPredicate;
+      result = item as Awaited<TPredicate>;
     }
   }
 
