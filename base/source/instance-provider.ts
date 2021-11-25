@@ -8,6 +8,7 @@ import type { Logger } from './logger';
 import { LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { MessageBusProvider } from './message-bus';
+import { LocalMessageBusProvider } from './message-bus/local';
 import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
@@ -114,6 +115,11 @@ export function getCoreLogger(): Logger {
     const logger = getLogger(coreLogPrefix);
     return logger;
   });
+}
+
+export function getLocalMessageBusProvider(): LocalMessageBusProvider {
+  const logger = getLogger('MESSAGE-BUS');
+  return new LocalMessageBusProvider(logger);
 }
 
 export async function getLockProvider(): Promise<LockProvider> {
