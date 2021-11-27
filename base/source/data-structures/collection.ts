@@ -6,12 +6,16 @@ import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, Subject } fr
 export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T> {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
+  private readonly clearSubject: Subject<TThis>;
+
+  /** emits size of list */
+  readonly size$: Observable<number>;
 
   /** emits collection on change */
   readonly change$: Observable<TThis>;
 
-  /** emits size of list */
-  readonly size$: Observable<number>;
+  /* emits collection on clear */
+  readonly clear$: Observable<TThis>;
 
   /** emits when the list is empty */
   readonly onEmpty$: Observable<void>;
@@ -53,9 +57,11 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
   constructor() {
     this.sizeSubject = new BehaviorSubject(0);
     this.changeSubject = new Subject<TThis>();
+    this.clearSubject = new Subject<TThis>();
 
-    this.change$ = this.changeSubject.asObservable();
     this.size$ = this.sizeSubject.asObservable();
+    this.change$ = this.changeSubject.asObservable();
+    this.clear$ = this.clearSubject.asObservable();
 
     this.isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
     this.hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
@@ -70,6 +76,7 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
 
   clear(): void {
     this._clear();
+    this.clearSubject.next(this as unknown as TThis);
     this.setSize(0);
   }
 

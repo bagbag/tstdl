@@ -39,5 +39,4 @@ export * from './type-guards';
 export * from './units';
 export * from './url-builder';
 export * from './validators';
-export * from './weak-ref-map';
 export * from './z-base32';

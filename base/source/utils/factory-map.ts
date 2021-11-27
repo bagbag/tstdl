@@ -1,7 +1,6 @@
-import { isDefined } from './type-guards';
+export type Factory<Key, Value> = (key: Key) => Value;
 
-type Factory<Key, Value> = (key: Key) => Value;
-
+/** same as {@link Map}, except that it will build the value with the provided factory on {@link get} if it doesnt exist */
 export class FactoryMap<K, V> implements Map<K, V> {
   private readonly factory: Factory<K, V>;
 
@@ -28,15 +27,16 @@ export class FactoryMap<K, V> implements Map<K, V> {
   }
 
   get(key: K): V {
-    const value = this.backingMap.get(key);
+    const has = this.backingMap.has(key);
 
-    if (isDefined(value)) {
-      return value;
+    if (has) {
+      return this.backingMap.get(key)!;
     }
 
-    const newValue = this.factory(key);
-    this.set(key, newValue);
-    return newValue;
+    const value = this.factory(key);
+    this.backingMap.set(key, value);
+
+    return value;
   }
 
   getWithoutBuild(key: K): V | undefined {
@@ -52,23 +52,24 @@ export class FactoryMap<K, V> implements Map<K, V> {
     return this.backingMap.delete(key);
   }
 
-  forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-    this.backingMap.forEach((value, key) => callbackfn(value, key, this), thisArg);
+  forEach(callback: (value: V, key: K, map: FactoryMap<K, V>) => void, thisArg?: any): void {
+    const boundCallback = callback.bind(thisArg);
+    this.backingMap.forEach((value, key) => boundCallback(value, key, this));
   }
 
-  [Symbol.iterator](): IterableIterator<[K, V]> {
-    return this.backingMap[Symbol.iterator]();
+  *[Symbol.iterator](): IterableIterator<[K, V]> {
+    yield* this.backingMap[Symbol.iterator]();
   }
 
-  entries(): IterableIterator<[K, V]> {
-    return this.backingMap.entries();
+  *entries(): IterableIterator<[K, V]> {
+    yield* this.backingMap.entries();
   }
 
-  keys(): IterableIterator<K> {
-    return this.backingMap.keys();
+  *keys(): IterableIterator<K> {
+    yield* this.backingMap.keys();
   }
 
-  values(): IterableIterator<V> {
-    return this.backingMap.values();
+  *values(): IterableIterator<V> {
+    yield* this.backingMap.values();
   }
 }

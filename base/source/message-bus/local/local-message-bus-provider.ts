@@ -1,6 +1,6 @@
+import { WeakRefMap } from '#/data-structures';
 import type { Logger } from '#/logger';
 import { FactoryMap, isUndefined } from '#/utils';
-import { WeakRefMap } from '#/utils/weak-ref-map';
 import { Subject } from 'rxjs';
 import type { MessageBus } from '../message-bus';
 import type { MessageBusProvider } from '../message-bus-provider';

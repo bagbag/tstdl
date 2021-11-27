@@ -95,6 +95,13 @@ export function assertNotPrimitive<T>(value: T, message: string = 'expected valu
 export function assertPrimitivePass(value: any, message?: string): InferIsType<typeof isPrimitive> { assertPrimitive(value, message); return value; }
 export function assertNotPrimitivePass<T>(value: T, message?: string): InferIsNotType<T, typeof isPrimitive> { assertNotPrimitive(value, message); return value; }
 
+export function isJsonPrimitive(value: any): value is string | number | boolean | null { const type = typeof value; return type == 'string' || type == 'number' || type == 'boolean' || value === null; }
+export function isNotJsonPrimitive<T>(value: T): value is InferIsNotType<T, typeof isJsonPrimitive> { return !isJsonPrimitive(value); }
+export function assertJsonPrimitive(value: any, message: string = 'expected value to be json-primitive'): asserts value is InferIsType<typeof isJsonPrimitive> { assert(isJsonPrimitive(value), message); }
+export function assertNotJsonPrimitive<T>(value: T, message: string = 'expected value to not be json-primitive'): asserts value is InferIsNotType<T, typeof isJsonPrimitive> { assert(isNotJsonPrimitive(value), message); }
+export function assertJsonPrimitivePass(value: any, message?: string): InferIsType<typeof isJsonPrimitive> { assertJsonPrimitive(value, message); return value; }
+export function assertNotJsonPrimitivePass<T>(value: T, message?: string): InferIsNotType<T, typeof isJsonPrimitive> { assertNotJsonPrimitive(value, message); return value; }
+
 export function isDate(value: any): value is Date { return (value instanceof Date); }
 export function isNotDate<T>(value: T): value is InferIsNotType<T, typeof isDate> { return !isDate(value); }
 export function assertDate(value: any, message: string = 'expected value to be Date'): asserts value is InferIsType<typeof isDate> { assert(isDate(value), message); }

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { MultiKeyMap } from '#/data-structures';
 import { HttpError } from '#/http';
 import { decodeJsonPath } from '#/json-path';
 import { DetailsError } from '../error';
@@ -433,35 +434,96 @@ export function flatPropertyNameOf<T extends Record<any, any> = Record<any, any>
 }
 
 /**
- *
+ * compiles a dereferencer for a specific reference
+ * @param object object to dereference
  * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
- * @returns
+ * @returns referenced value
  */
-export function dereferencer(reference: string): (value: object) => unknown {
+export function compileDereferencer(reference: string): (object: object) => unknown {
   const nodes = decodeJsonPath(reference);
 
-  function compiledDereferencer(value: object): unknown {
-    let target = value;
+  function dereferencer(object: object): unknown {
+    let target = object;
 
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
-    for (let i = 0; i < nodes.length; i++) {
+    for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
       target = (target as StringMap)[nodes[i]!];
     }
 
     return target;
   }
 
-  return compiledDereferencer;
+  return dereferencer;
 }
 
 /**
- * dereference a pointer
- * @param value
- * @param reference
- * @returns
+ * dereference a reference
+ *
+ * @description useful if you dereference a reference a few times at most
+ *
+ * also take a look at {@link getCachedDereference} and {@link compileDereferencer} if you need to dereference multiple times
+ * @param object object to dereference
+ * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @returns referenced value
  */
-export function dereference(value: object, reference: string): unknown {
-  return dereferencer(reference)(value);
+export function dereference(object: object, reference: string): unknown {
+  return compileDereferencer(reference)(object);
+}
+
+/**
+ * cached version of {@link dereference}. It caches the internally used dereferencer, but it does *not* cache the referenced value
+ *
+ * @description
+ * useful if you dereference multiple references, each multiple times
+ *
+ * also take a look at {@link dereference} and {@link compileDereferencer} for other use cases
+ * @param object object to dereference
+ * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @returns referenced value
+ */
+export function getCachedDereference(): typeof dereference {
+  const memoizedDereferencer = memoizeSingle(compileDereferencer);
+
+  function cachedDereference(object: object, reference: string): unknown {
+    return memoizedDereferencer(reference)(object);
+  }
+
+  return cachedDereference;
+}
+
+/** memoizes a function with an arbitrary number of parameters. If you only need a single parameter, {@link memoizeSingle} is faster */
+export function memoize<Fn extends (...parameters: any[]) => T, T>(fn: Fn): Fn {
+  const cache = new MultiKeyMap<any, T>();
+
+  function memoized(...parameters: Parameters<Fn>): T {
+    if (cache.has(parameters)) {
+      return cache.get(parameters)!;
+    }
+
+    const result = fn(...parameters);
+    cache.set(parameters, result);
+
+    return result;
+  }
+
+  return memoized as Fn;
+}
+
+/** memoizes a function with a single parameter. Faster than {@link memoize} */
+export function memoizeSingle<Fn extends (parameters: any) => T, T>(fn: Fn): Fn {
+  const cache = new Map<any, T>();
+
+  function memoized(parameters: Parameters<Fn>): T {
+    if (cache.has(parameters)) {
+      return cache.get(parameters)!;
+    }
+
+    const result = fn(parameters);
+    cache.set(parameters, result);
+
+    return result;
+  }
+
+  return memoized as Fn;
 }
 
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;

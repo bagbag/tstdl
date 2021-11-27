@@ -46,11 +46,11 @@ export function measureBenchmarkOverhead(duration: number = 1000): void {
  * @param func the function to benchmark
  * @param parameters parameters passed to the function
  */
-export function benchmark<F extends (...args: any[]) => any>(runs: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
+export function benchmark(runs: number, func: (run: number) => any): BenchmarkResult {
   const timer = new Timer(true);
 
-  for (let i = 0; i < runs; i++) {
-    func(...parameters);
+  for (let run = 1; run <= runs; run++) {
+    func(run);
   }
 
   return calculateResult(runs, timer.milliseconds);
@@ -64,13 +64,13 @@ export function benchmark<F extends (...args: any[]) => any>(runs: number, func:
  * @param func the function to benchmark
  * @param parameters parameters passed to the function
  */
-export function timedBenchmark<F extends (...args: any[]) => any>(milliseconds: number, func: F, ...parameters: Parameters<F>): BenchmarkResult {
+export function timedBenchmark(milliseconds: number, func: (run: number) => any): BenchmarkResult {
   const timer = new Timer(true);
 
   let runs = 0;
   do {
-    func(...parameters);
     runs++;
+    func(runs);
   }
   while (timer.milliseconds < milliseconds);
 
@@ -83,11 +83,11 @@ export function timedBenchmark<F extends (...args: any[]) => any>(milliseconds: 
  * @param func the function to benchmark
  * @param parameters parameters passed to the function
  */
-export async function benchmarkAsync<F extends (...args: any[]) => Promise<any>>(runs: number, func: F, ...parameters: Parameters<F>): Promise<BenchmarkResult> {
+export async function benchmarkAsync(runs: number, func: (run: number) => Promise<void>): Promise<BenchmarkResult> {
   const timer = new Timer(true);
 
-  for (let i = 0; i < runs; i++) {
-    await func(...parameters);
+  for (let run = 1; run <= runs; run++) {
+    await func(run);
   }
 
   return calculateResult(runs, timer.milliseconds);
@@ -101,13 +101,13 @@ export async function benchmarkAsync<F extends (...args: any[]) => Promise<any>>
  * @param func the function to benchmark
  * @param parameters parameters passed to the function
  */
-export async function timedBenchmarkAsync<F extends (...args: any[]) => Promise<any>>(milliseconds: number, func: F, ...parameters: Parameters<F>): Promise<BenchmarkResult> {
+export async function timedBenchmarkAsync(milliseconds: number, func: (run: number) => Promise<void>): Promise<BenchmarkResult> {
   const timer = new Timer(true);
 
   let runs = 0;
   do {
-    await func(...parameters);
     runs++;
+    await func(runs);
   }
   while (timer.milliseconds < milliseconds);
 

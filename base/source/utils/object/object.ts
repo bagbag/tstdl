@@ -3,6 +3,10 @@
 import type { Record } from '#/types';
 import { isArray, isObject, isUndefined } from '../type-guards';
 
+export function hasOwnProperty<T extends object>(obj: T, key: keyof T): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
 export function mapObject<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (key: keyof T, value: T[keyof T]) => [key: K, value: V]): Record<K, V> {
   const mappedEntries = Object.entries(object).map(([key, value]) => mapper(key, value as T[keyof T]));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
@@ -24,7 +28,7 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
 
   let objOrPrototype = obj as object;
 
-  while (!Object.prototype.hasOwnProperty.call(objOrPrototype, property)) {
+  while (!hasOwnProperty<Record>(objOrPrototype, property)) {
     objOrPrototype = Object.getPrototypeOf(objOrPrototype) as object;
   }
 
