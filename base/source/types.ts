@@ -70,6 +70,12 @@ export type PickBy<T, V> = Pick<
  */
 export type DeepNonNullable<T extends Record> = { [P in keyof T]-?: T extends Record ? DeepNonNullable<NonNullable<T[P]>> : NonNullable<T[P]> };
 
+export type IfAny<T, Then, Else = never> = true extends (false & T) ? Then : Else;
+export type IfUnknown<T, Then, Else = never> = unknown extends T ? Then : Else;
+
+export type IsAny<T> = IfAny<T, true, false>;
+export type IsUnknown<T> = IfUnknown<T, true, false>;
+
 export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
