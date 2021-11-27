@@ -48,8 +48,9 @@ export class ObservableMap<K, V> implements Map<K, V> {
   }
 
 
-  forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-    this.backingMap.forEach(callbackfn, thisArg);
+  forEach(callback: (value: V, key: K, map: ObservableMap<K, V>) => void, thisArg?: any): void {
+    const boundCallback = callback.bind(thisArg);
+    this.backingMap.forEach((value, key) => boundCallback(value, key, this));
   }
 
   has(key: K): boolean {

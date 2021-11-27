@@ -81,8 +81,9 @@ export class AwaitableMap<K, V> implements Map<K, V> {
     return success;
   }
 
-  forEach(callbackfn: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
-    this.backingMap.forEach(callbackfn, thisArg);
+  forEach(callback: (value: V, key: K, map: AwaitableMap<K, V>) => void, thisArg?: any): void {
+    const boundCallback = callback.bind(thisArg);
+    this.backingMap.forEach((value, key) => boundCallback(value, key, this));
   }
 
   get(key: K): V | undefined {

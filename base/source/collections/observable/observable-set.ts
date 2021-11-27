@@ -78,8 +78,9 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
     return this.remove(value);
   }
 
-  forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
-    this.backingSet.forEach(callbackfn, thisArg);
+  forEach(callback: (value: T, value2: T, set: ObservableSet<T>) => void, thisArg?: any): void {
+    const boundCallback = callback.bind(thisArg);
+    this.backingSet.forEach((value, value2) => boundCallback(value, value2, this));
   }
 
   has(value: T): boolean {

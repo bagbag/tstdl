@@ -1,4 +1,4 @@
-import { Alphabet, benchmark, getRandomString, isDefined, isUndefined } from '#/utils';
+import { isDefined, isUndefined } from '#/utils';
 import { Collection } from './collection';
 
 export type LinkedListNode<T> = {
@@ -252,12 +252,6 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> {
     return node;
   }
 
-  clear(): void {
-    this.head = undefined;
-    this.tail = undefined;
-    this.setSize(0);
-  }
-
   clone(): LinkedList<T> {
     return new LinkedList(this);
   }
@@ -280,5 +274,10 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> {
       yield node;
       node = node.next;
     }
+  }
+
+  protected _clear(): void {
+    this.head = undefined;
+    this.tail = undefined;
   }
 }

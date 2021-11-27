@@ -77,7 +77,7 @@ export function decodeJsonPath(path: string): (string | number)[] {
       throw new Error(`unexpected '${error[0]}' at index ${match.index}`);
     }
 
-    const node = dot ?? bracket ?? (isDefined(index) ? parseInt(index) : undefined);
+    const node = dot ?? bracket ?? (isDefined(index) ? parseInt(index, 10) : undefined);
 
     if (isDefined(node)) {
       nodes.push(node);

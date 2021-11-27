@@ -1,6 +1,8 @@
 import { firstValueFrom } from '#/rxjs/compat';
-import { CancellationToken, isArray, isDefined, isUndefined, ReadonlyCancellationToken } from '#/utils';
-import { BehaviorSubject, distinctUntilChanged, filter, first, from, map, mapTo, Observable, race, Subject } from 'rxjs';
+import type { ReadonlyCancellationToken } from '#/utils';
+import { CancellationToken, isArray, isDefined, isUndefined } from '#/utils';
+import type { Observable } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, first, from, map, mapTo, race, Subject } from 'rxjs';
 import { Collection } from './collection';
 
 export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
@@ -135,13 +137,6 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     return value;
   }
 
-  clear(): void {
-    this.backingArray = new Array(2);
-    this.writeIndex = 0;
-    this.readIndex = 0;
-    this.setSize(0);
-  }
-
   clone(newMaxBufferSize: number | undefined = this.maxBufferSize): CircularBuffer<T> {
     if (isDefined(newMaxBufferSize) && (newMaxBufferSize < this.size)) {
       throw new Error('newSize must be equal or larger to current size');
@@ -199,6 +194,12 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     }
   }
 
+  protected _clear(): void {
+    this.backingArray = new Array(2);
+    this.writeIndex = 0;
+    this.readIndex = 0;
+  }
+
   private increaseBufferSizeIfNeeded(requiredCapacity: number = this.size + 1): void {
     if (requiredCapacity <= this.bufferSize) {
       return;
@@ -212,7 +213,6 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   }
 
   private resize(size: number): void {
-    console.log(size);
     if (size < this.size) {
       throw new Error('buffer has more items than it would have capacity after resize');
     }

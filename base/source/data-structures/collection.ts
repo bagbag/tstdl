@@ -3,7 +3,7 @@ import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, Subject } from 'rxjs';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T>{
+export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T> {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
 
@@ -68,6 +68,11 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
     return Enumerable.from(this);
   }
 
+  clear(): void {
+    this._clear();
+    this.setSize(0);
+  }
+
   /** sets collection size */
   protected setSize(size: number): void {
     if (size != this.size) {
@@ -95,9 +100,10 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
 
   abstract addMany(values: Iterable<T>): void;
 
-  abstract clear(): void;
-
   abstract clone(): TThis;
 
   abstract [Symbol.iterator](): IterableIterator<T>;
+
+  /** clear all data - size is set to 0 automatically */
+  protected abstract _clear(): void;
 }

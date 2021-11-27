@@ -47,13 +47,9 @@ export class KeyedSet<T> implements Set<T> {
     return this.backingMap.delete(key);
   }
 
-  forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {
-    const set = this as Set<T>;
-
-    // eslint-disable-next-line prefer-arrow-callback
-    this.backingMap.forEach(function mapForEachWrapper(value, _key, _map) {
-      callbackfn(value, value, set);
-    }, thisArg);
+  forEach(callback: (value: T, value2: T, set: KeyedSet<T>) => void, thisArg?: any): void {
+    const boundCallback = callback.bind(thisArg);
+    this.backingMap.forEach((value) => boundCallback(value, value, this));
   }
 
   has(value: T): boolean {
