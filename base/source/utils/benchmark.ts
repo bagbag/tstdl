@@ -10,19 +10,19 @@ export type BenchmarkResult = { operationsPerMillisecond: number, millisecondsPe
  * measure the timer overhead for more precise benchmarks
  *
  * only relevant for benchmarked functions with a execution time in the range of microseconds
- * @param duration fow how long to measure the overhead in milliseconds (default 1000)
+ * @param duration fow how long to measure the overhead in milliseconds (default 250)
  */
-export function measureBenchmarkOverhead(duration: number = 1000): void {
+export function measureBenchmarkOverhead(duration: number = 250): void {
   const timer = new Timer(true);
   const warmupDuration = clamp(duration / 2, 50, 500);
   const testDuration = Math.max(duration - warmupDuration, 50);
 
   let operations = 0;
-  let warmup = true;
+  let warmupPhase = true;
 
   let warmupFunction = (): void => {
-    if (warmup && timer.milliseconds >= warmupDuration) {
-      warmup = false;
+    if (warmupPhase && timer.milliseconds >= warmupDuration) {
+      warmupPhase = false;
       operations = 0;
       warmupFunction = noop;
       timer.restart();
@@ -34,7 +34,7 @@ export function measureBenchmarkOverhead(duration: number = 1000): void {
     warmupFunction();
     operations++;
   }
-  while (timer.milliseconds < testDuration || warmup);
+  while (timer.milliseconds < testDuration || warmupPhase);
   timer.stop();
 
   microsecondsPerTimerRead = timer.microseconds / operations;
@@ -43,14 +43,16 @@ export function measureBenchmarkOverhead(duration: number = 1000): void {
 /**
  * benchmarks a function for a number of times
  * @param runs how often to run the benchmarked function
- * @param func the function to benchmark
- * @param parameters parameters passed to the function
+ * @param fn the function to benchmark
+ * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export function benchmark(runs: number, func: (run: number) => any): BenchmarkResult {
+export function benchmark(runs: number, fn: (run: number) => any, warmupDuration: number = 500): BenchmarkResult {
+  warmup(fn, warmupDuration);
+
   const timer = new Timer(true);
 
   for (let run = 1; run <= runs; run++) {
-    func(run);
+    fn(run);
   }
 
   return calculateResult(runs, timer.milliseconds);
@@ -61,16 +63,18 @@ export function benchmark(runs: number, func: (run: number) => any): BenchmarkRe
  *
  * hint: run measureTimerOverhead before benchmark for more precise results
  * @param milliseconds for how long to benchmark the function
- * @param func the function to benchmark
- * @param parameters parameters passed to the function
+ * @param fn the function to benchmark
+ * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export function timedBenchmark(milliseconds: number, func: (run: number) => any): BenchmarkResult {
+export function timedBenchmark(milliseconds: number, fn: (run: number) => any, warmupDuration: number = 500): BenchmarkResult {
+  warmup(fn, warmupDuration);
+
   const timer = new Timer(true);
 
   let runs = 0;
   do {
     runs++;
-    func(runs);
+    fn(runs);
   }
   while (timer.milliseconds < milliseconds);
 
@@ -80,14 +84,16 @@ export function timedBenchmark(milliseconds: number, func: (run: number) => any)
 /**
  * benchmarks an async function for a number of times
  * @param runs how often to run the benchmarked function
- * @param func the function to benchmark
- * @param parameters parameters passed to the function
+ * @param fn the function to benchmark
+ * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export async function benchmarkAsync(runs: number, func: (run: number) => Promise<void>): Promise<BenchmarkResult> {
+export async function benchmarkAsync(runs: number, fn: (run: number) => Promise<void>, warmupDuration: number = 500): Promise<BenchmarkResult> {
+  await warmupAsync(fn, warmupDuration);
+
   const timer = new Timer(true);
 
   for (let run = 1; run <= runs; run++) {
-    await func(run);
+    await fn(run);
   }
 
   return calculateResult(runs, timer.milliseconds);
@@ -98,16 +104,18 @@ export async function benchmarkAsync(runs: number, func: (run: number) => Promis
  *
  * hint: run measureTimerOverhead before benchmark for more precise results
  * @param milliseconds for how long to benchmark the function
- * @param func the function to benchmark
- * @param parameters parameters passed to the function
+ * @param fn the function to benchmark
+ * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export async function timedBenchmarkAsync(milliseconds: number, func: (run: number) => Promise<void>): Promise<BenchmarkResult> {
+export async function timedBenchmarkAsync(milliseconds: number, fn: (run: number) => Promise<void>, warmupDuration: number = 500): Promise<BenchmarkResult> {
+  await warmupAsync(fn, warmupDuration);
+
   const timer = new Timer(true);
 
   let runs = 0;
   do {
     runs++;
-    await func(runs);
+    await fn(runs);
   }
   while (timer.milliseconds < milliseconds);
 
@@ -127,4 +135,30 @@ function calculateResult(runs: number, time: number): BenchmarkResult {
     operationsPerMillisecond,
     millisecondsPerOperation
   };
+}
+
+function warmup(fn: (runs: number) => void, duration: number): void {
+  if (duration <= 0) {
+    return;
+  }
+
+  const timer = new Timer(true);
+
+  let runs = 0;
+  while (timer.milliseconds < duration) {
+    fn(++runs);
+  }
+}
+
+async function warmupAsync(fn: (runs: number) => Promise<void>, duration: number): Promise<void> {
+  if (duration <= 0) {
+    return;
+  }
+
+  const timer = new Timer(true);
+
+  let runs = 0;
+  while (timer.milliseconds < duration) {
+    await fn(++runs);
+  }
 }
