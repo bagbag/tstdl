@@ -225,7 +225,7 @@ export class MongoBaseRepository<T extends Entity> {
       return undefined;
     }
 
-    return toEntity(document as MongoDocument<U>);
+    return toEntity(document) as U;
   }
 
   async loadManyById<U extends T = T>(ids: string[], options?: LoadManyOptions<U>): Promise<U[]> {

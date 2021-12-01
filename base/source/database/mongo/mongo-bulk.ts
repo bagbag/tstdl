@@ -66,21 +66,21 @@ export class MongoBulk<T extends Entity> {
     return documents.map(toEntity);
   }
 
-  update<U extends T>(filter: Filter<U>, update: UpdateFilter<U>, options?: UpdateOptions): MongoBulk<T> {
+  update<U extends T>(filter: Filter<U>, update: UpdateFilter<U>, options?: UpdateOptions): this {
     const operation = updateOneOperation(filter, update, options);
     this.operations.push(operation);
 
     return this;
   }
 
-  updateMany<U extends T>(filter: Filter<U>, update: UpdateFilter<U>, options?: UpdateOptions): MongoBulk<T> {
+  updateMany<U extends T>(filter: Filter<U>, update: UpdateFilter<U>, options?: UpdateOptions): this {
     const operation = updateManyOperation(filter, update, options);
     this.operations.push(operation);
 
     return this;
   }
 
-  replace<U extends T>(entity: U, options?: ReplaceOptions): MongoBulk<T> {
+  replace<U extends T>(entity: U, options?: ReplaceOptions): this {
     const document = toMongoDocument(entity);
     const operation = replaceOneOperation(document, options);
     this.operations.push(operation);
@@ -88,7 +88,7 @@ export class MongoBulk<T extends Entity> {
     return this;
   }
 
-  replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): MongoBulk<T> {
+  replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): this {
     const documents = entities.map(toMongoDocument);
     const operations = documents.map((document) => replaceOneOperation(document, options));
     this.operations.push(...operations);
@@ -96,25 +96,25 @@ export class MongoBulk<T extends Entity> {
     return this;
   }
 
-  delete<U extends T>(entity: U): MongoBulk<T> {
+  delete<U extends T>(entity: U): this {
     const filter: Filter = { _id: entity.id };
-    return this.deleteByFilter(filter);
+    return this.deleteByFilter(filter as Filter<U>);
   }
 
-  deleteMany<U extends T>(entities: U[]): MongoBulk<T> {
+  deleteMany<U extends T>(entities: U[]): this {
     const ids = entities.map((entity) => entity.id);
     const filter: Filter = { _id: { $in: ids } };
-    return this.deleteManyByFilter(filter);
+    return this.deleteManyByFilter(filter as Filter<U>);
   }
 
-  deleteByFilter<U extends T>(filter: Filter<U>): MongoBulk<T> {
+  deleteByFilter<U extends T>(filter: Filter<U>): this {
     const operation = deleteOneOperation(filter);
     this.operations.push(operation);
 
     return this;
   }
 
-  deleteManyByFilter<U extends T>(filter: Filter<U>): MongoBulk<T> {
+  deleteManyByFilter<U extends T>(filter: Filter<U>): this {
     const operation = deleteManyOperation(filter);
     this.operations.push(operation);
 

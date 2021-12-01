@@ -1,5 +1,6 @@
 import type { Entity, MaybeNewEntity, NewEntity } from '#/database';
 import { getNewId } from '#/database';
+import type { WithId } from 'mongodb';
 import type { ProjectedEntity, Projection } from '../mongo-base.repository';
 import { ProjectionMode } from '../mongo-base.repository';
 
@@ -13,7 +14,7 @@ export type MongoDocumentWithPartialId<T extends MaybeNewEntity> = Omit<T, 'id'>
 
 export type MongoDocumentWithoutId<T extends MaybeNewEntity> = Omit<T, 'id'>;
 
-export function toEntity<T extends Entity>(document: MongoDocument<T>): T {
+export function toEntity<T extends Entity>(document: WithId<MongoDocument<T>> | MongoDocument<T>): T {
   const { _id, ...entityRest } = document;
 
   const entity: T = {

@@ -8,7 +8,7 @@ import type { Filter, SortArrayItem } from './types';
 const operatorsSet = new Set(allQueryTypes);
 
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap = new Map(), transform?: MappingItemTransformer): Filter<TDb> {
-  let filterQuery: Filter<any> = {};
+  let filterQuery: Filter = {};
   const entries = Object.entries(query);
 
   for (const [property, value] of (entries as unknown as [QueryTypes, any][])) {
@@ -39,7 +39,7 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
     }
   }
 
-  return filterQuery;
+  return filterQuery as Filter<TDb>;
 }
 
 function getPropertyName(property: string): string {

@@ -368,7 +368,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   }
 }
 
-function normalizeIndex(index: TypedIndexDescription<any> & { v?: any, background?: any, ns?: any }): TypedIndexDescription<any> {
+function normalizeIndex<T extends Entity>(index: TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }): TypedIndexDescription<T> {
   const { name: providedName, v, background, ns, ...indexRest } = index;
   const name = providedName ?? Object.keys(index.key).join('_');
 
