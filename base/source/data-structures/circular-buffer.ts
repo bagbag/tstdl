@@ -149,7 +149,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   }
 
   *[Symbol.iterator](): IterableIterator<T> {
-    let size = this.size;
+    const size = this.size;
     let readIndex = this.readIndex;
     let modified = false;
 
@@ -177,19 +177,24 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     }
   }
 
-  /** yields all items from the buffer, removes them and waits fore more */
-  async *consumeAsync(cancellationToken: ReadonlyCancellationToken = new CancellationToken()): AsyncIterable<T> {
+  /**
+   * yields all items from the buffer, removes them and waits fore more
+   * @param cancellationToken token to cancel iteration
+   * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately
+   * @returns
+   */
+  async *consumeAsync(cancellationToken: ReadonlyCancellationToken = new CancellationToken(), yieldOutstandingItems: boolean = true): AsyncIterable<T> {
     while (true) {
       if (this.isEmpty) {
         await firstValueFrom(race([this.onItems$, cancellationToken]));
       }
 
-      if (cancellationToken.isSet == true) {
-        return;
+      while ((this.size > 0) && (cancellationToken.isUnset || yieldOutstandingItems)) {
+        yield this.tryRemove()!;
       }
 
-      while (this.size > 0) {
-        yield this.tryRemove()!;
+      if (cancellationToken.isSet) {
+        return;
       }
     }
   }

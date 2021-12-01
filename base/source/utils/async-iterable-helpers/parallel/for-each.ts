@@ -15,7 +15,7 @@ export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: 
 
     const run = func(item, index++);
     running.add(run);
-    run.finally(() => running.delete(run)).catch((error) => errors.push(error as Error));
+    run.catch((error) => errors.push(error as Error)).finally(() => running.delete(run));
 
     if (running.length >= concurrency) {
       await running.$length;

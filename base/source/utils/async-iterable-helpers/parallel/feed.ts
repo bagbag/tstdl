@@ -4,7 +4,7 @@ import { OrderedFeedableAsyncIterable } from '../../ordered-feedable-async-itera
 import { parallelForEach } from './for-each';
 import type { FeedFunction, ParallelFeedIteratorFunction } from './types';
 
-export function parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency: number, keepOrder: boolean, func: ParallelFeedIteratorFunction<TIn, TOut>): AsyncIterable<TOut> {
+export async function* parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency: number, keepOrder: boolean, func: ParallelFeedIteratorFunction<TIn, TOut>): AsyncIterable<TOut> {
   let out: FeedableAsyncIterable<TOut> | OrderedFeedableAsyncIterable<TOut>;
   let feed: FeedFunction<TOut>;
 
@@ -17,11 +17,16 @@ export function parallelFeed<TIn, TOut>(iterable: AnyIterable<TIn>, concurrency:
     feed = (item: TOut) => (out as FeedableAsyncIterable<TOut>).feed(item);
   }
 
-  parallelForEach(iterable, concurrency, async (item, index) => {
-    await func(item, index, feed);
-  })
-    .then(() => out.end())
-    .catch((error) => out.throw(error as Error));
+  try {
+    await parallelForEach(iterable, concurrency, async (item, index) => {
+      await func(item, index, feed);
+    });
 
-  return out;
+    out.end();
+  }
+  catch (error) {
+    out.throw(error as Error);
+  }
+
+  yield* out;
 }

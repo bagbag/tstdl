@@ -1,20 +1,19 @@
-import { merge, Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
-import { ObservableArray } from '../collections/observable';
+import { CircularBuffer } from '#/data-structures';
+import { firstValueFrom } from '#/rxjs/compat';
+import { Subject } from 'rxjs';
 import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   private readonly readSubject: Subject<void>;
-  private readonly emptySubject: Subject<void>;
   private readonly closedToken: CancellationToken;
-  private readonly buffer: ObservableArray<{ item: T, error: undefined } | { item: undefined, error: Error }>;
+  private readonly buffer: CircularBuffer<{ item: T, error: undefined } | { item: undefined, error: Error }>;
 
   get $read(): Promise<void> {
-    return this.readSubject.pipe(take(1)).toPromise();
+    return firstValueFrom(this.readSubject);
   }
 
   get $empty(): Promise<void> {
-    return this.emptySubject.pipe(take(1)).toPromise();
+    return this.buffer.$onEmpty;
   }
 
   get closed(): boolean {
@@ -22,14 +21,13 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   get bufferSize(): number {
-    return this.buffer.length;
+    return this.buffer.size;
   }
 
   constructor() {
     this.readSubject = new Subject();
-    this.emptySubject = new Subject();
     this.closedToken = new CancellationToken();
-    this.buffer = new ObservableArray();
+    this.buffer = new CircularBuffer();
   }
 
   feed(item: T): void {
@@ -54,25 +52,15 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
   }
 
   async *[Symbol.asyncIterator](): AsyncIterableIterator<T> {
-    while (!this.closed || this.buffer.length > 0) {
-      if (this.buffer.length == 0) {
-        await merge(this.closedToken.set$, this.buffer.add$).pipe(take(1)).toPromise();
+    const consumer = this.buffer.consumeAsync(this.closedToken, true);
+
+    for await (const entry of consumer) {
+      if (entry.error != undefined) {
+        throw entry.error;
       }
 
-      while (this.buffer.length > 0) {
-        const entry = this.buffer.removeFirst();
-
-        if (entry.error != undefined) {
-          throw entry.error;
-        }
-
-        yield entry.item;
-        this.readSubject.next();
-
-        if (this.buffer.length == 0) {
-          this.emptySubject.next();
-        }
-      }
+      yield entry.item;
+      this.readSubject.next();
     }
   }
 }
