@@ -94,8 +94,8 @@ export function numericDateTimeToTimestamp({ date, time }: NumericDateTime): num
   return numericDateToTimestamp(date) + time;
 }
 
-export function zonedDateToDateTime(zonedDate: ZonedDate, unitsAndOptions: DateObjectUnits & DateTimeJSOptions): DateTime {
-  return DateTime.fromObject({ ...zonedDate, ...unitsAndOptions }, unitsAndOptions);
+export function zonedDateToDateTime(zonedDate: ZonedDate, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
+  return DateTime.fromObject({ ...zonedDate, ...units }, options);
 }
 
 export function dateTimeToNumericDate(dateTime: DateTime): number {
@@ -103,9 +103,9 @@ export function dateTimeToNumericDate(dateTime: DateTime): number {
   return timestampToNumericDate(timestamp);
 }
 
-export function numericDateToDateTime(numericDate: number, unitsAndOptions?: DateObjectUnits & DateTimeJSOptions): DateTime {
+export function numericDateToDateTime(numericDate: number, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
   const date = numericDateToDate(numericDate);
-  return DateTime.fromObject({ ...date, ...unitsAndOptions }, unitsAndOptions);
+  return DateTime.fromObject({ ...date, ...units }, options);
 }
 
 export function dateTimeToTime(dateTime: DateTime): number {
@@ -113,5 +113,5 @@ export function dateTimeToTime(dateTime: DateTime): number {
 }
 
 export function numericDateTimeToDateTime(date: number, time: number, zone: string): DateTime {
-  return numericDateToDateTime(date, { zone }).set({ millisecond: time });
+  return numericDateToDateTime(date, undefined, { zone }).set({ millisecond: time });
 }
