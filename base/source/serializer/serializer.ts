@@ -4,7 +4,7 @@ import { CircularBuffer } from '#/data-structures/circular-buffer';
 import type { Constructor, StringMap } from '#/types';
 import { isDefined, isUndefined } from '#/utils';
 import { ForwardRef, getRef, setRef } from '#/utils/object/forward-ref';
-import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, TypeField, UndefinedNonPrimitive } from './types';
+import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
 import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
 import type { DereferenceCallback } from './_internal';
 import { getSerializerByTypeName, getTypeNameByConstructor } from './_internal';
@@ -12,6 +12,16 @@ export { registerSerializable, registerSerializer, Serializable, serializable } 
 export type { DereferenceCallback, TryDereference } from './_internal';
 
 type QueueItem = () => void;
+
+export function stringSerialize<T>(value: T, options?: SerializationOptions): StringSerialized<T> {
+  const serialized = serialize(value, options);
+  return JSON.stringify(serialized) as StringSerialized<T>;
+}
+
+export function stringDeserialize<T = unknown>(serialized: string, options?: SerializationOptions): T {
+  const parsedStringSerialized = JSON.parse(serialized) as Serialized<T>;
+  return deserialize(parsedStringSerialized, options);
+}
 
 /**
  * serializes a value using decycling and deserialization of registered types
