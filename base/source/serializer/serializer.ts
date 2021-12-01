@@ -1,173 +1,327 @@
-import type { Json, JsonPrimitive, StringMap, Type, UndefinableJson } from '../types';
-import { isArray, isDefined, isObject, isUndefined } from '../utils';
-import type { SerializableStatic } from './serializable';
-import { deserializeSymbol, isSerializable, serializeSymbol } from './serializable';
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, max-lines-per-function, max-statements, complexity */
 
-declare const serializedSymbol: unique symbol; // eslint-disable-line init-declarations
-declare const stringSerializedSymbol: unique symbol; // eslint-disable-line init-declarations
+import { CircularBuffer } from '#/data-structures/circular-buffer';
+import type { Constructor, StringMap } from '#/types';
+import { isDefined, isUndefined } from '#/utils';
+import { ForwardRef, getRef, setRef } from '#/utils/object/forward-ref';
+import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, TypeField, UndefinedNonPrimitive } from './types';
+import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
+import type { DereferenceCallback } from './_internal';
+import { getSerializerByTypeName, getTypeNameByConstructor } from './_internal';
+export { registerSerializable, registerSerializer, Serializable, serializable } from './_internal';
+export type { DereferenceCallback, TryDereference } from './_internal';
 
-export type Serialized<T = unknown> = { [serializedSymbol]?: T };
-export type StringSerialized<T = unknown> = string & { [stringSerializedSymbol]?: T };
+type QueueItem = () => void;
 
-export type SerializerFunction<Type, Data> = (instance: Type) => Data;
-export type DeserializerFunction<Type, Data> = (data: Data) => Type;
+/**
+ * serializes a value using decycling and deserialization of registered types
+ * @param value value to serialize
+ * @param options serialization options
+ * @returns serialized representation of `value` which is safe to {@link JSON.stringify}
+ */
+export function serialize<T>(value: T, options?: SerializationOptions): Serialized<T>;
+/**
+ * for internal use only
+ * @deprecated
+ */
+export function serialize<T>(value: T, options: SerializationOptions, references: Map<any, string>, queue: CircularBuffer<QueueItem>, path: string): Serialized<T>;
+export function serialize(value: any, options: SerializationOptions = {}, references: Map<any, string> = new Map(), queue: CircularBuffer<QueueItem> = new CircularBuffer(), path: string = '$'): SerializedData {
+  const type = typeof value;
 
-type TypeField<T extends string> = `<${T}>`;
-
-type NonPrimitive<Type extends string = string, Data = unknown> = Record<TypeField<Type>, Data>;
-
-type UndefinedNonPrimitive = NonPrimitive<'undefined', null>;
-type CustomNonPrimitive<Type extends string> = NonPrimitive<TypeField<Type>, Json>;
-
-type CustomTypesMap = Map<string, { type: SerializableStatic, serializer?: undefined, deserializer?: undefined } | { type?: undefined, serializer: SerializerFunction<any, any>, deserializer: DeserializerFunction<any, any> }>;
-
-const customTypes: CustomTypesMap = new Map();
-
-export function registerSerializationType(type: SerializableStatic): void;
-export function registerSerializationType<T, D extends UndefinableJson>(type: Type<T>, serializer: SerializerFunction<T, D>, deserializer: DeserializerFunction<T, D>): void;
-export function registerSerializationType<T, D extends UndefinableJson>(type: SerializableStatic | Type<T>, serializer?: SerializerFunction<T, D>, deserializer?: DeserializerFunction<T, D>): void {
-  if (serializer != undefined && deserializer != undefined) {
-    customTypes.set(type.name, { serializer, deserializer });
-  }
-  else {
-    customTypes.set(type.name, { type: type as SerializableStatic });
-  }
-}
-
-export function hasSerializationType(object: any): boolean {
-  const objectConstructorName = object.constructor.name as string; // eslint-disable-line @typescript-eslint/no-unsafe-member-access
-  const customType = customTypes.get(objectConstructorName);
-
-  return isDefined(customType);
-}
-
-export function rawSerialize<T>(object: T): Serialized<T> {
-  return _rawSerialize(object) as Serialized<T>;
-}
-
-export function serialize<T>(object: T, space?: string | number): StringSerialized<T> {
-  const serializedElement = rawSerialize(object);
-  const serializedString = JSON.stringify(serializedElement, undefined, space);
-
-  return serializedString;
-}
-
-export function rawDeserialize<T = unknown>(serialized: Serialized<T>): T {
-  return _rawDeserialize(serialized) as T;
-}
-
-export function deserialize<T = unknown>(serialized: StringSerialized<T> | string): T {
-  const parsed = JSON.parse(serialized) as Serialized<T>;
-  const deserialized = rawDeserialize(parsed);
-
-  return deserialized;
-}
-
-// eslint-disable-next-line max-statements
-function _rawSerialize(object: unknown): UndefinableJson {
-  const type = typeof object;
-  if (object === null || type == 'string' || type == 'number' || type == 'boolean') {
-    return object as JsonPrimitive;
+  if (type == 'boolean' || type == 'number' || value === null) {
+    return value;
   }
 
-  if (object === undefined) {
+  if (type == 'undefined') {
     return { '<undefined>': null } as UndefinedNonPrimitive;
   }
 
-  if (isArray(object)) {
-    return object.map((item) => _rawSerialize(item));
+  if ((path == '$') && isDefined(options.context)) {
+    for (const entry of Object.entries(options.context)) {
+      references.set(entry[1], `$['__context__']['${entry[0]}']`);
+    }
   }
 
-  if (isObject(object)) {
-    const serializedObject: StringMap<UndefinableJson> = {};
-    const properties = Object.getOwnPropertyNames(object);
-
-    for (const property of properties) {
-      const value = (object as StringMap)[property];
-      const serialized = _rawSerialize(value);
-
-      serializedObject[property] = serialized;
-    }
-
-    return serializedObject;
+  const reference = references.get(value);
+  if (reference !== undefined) {
+    return { '<ref>': reference } as RefNonPrimitive;
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  const objectConstructorName = (object as object).constructor.name;
-  const customType = customTypes.get(objectConstructorName);
-
-  if (customType != undefined) {
-    let data: Json;
-
-    if (customType.serializer != undefined) {
-      data = customType.serializer(object);
+  if (type == 'string') {
+    if ((value as string).length > (path.length + 50)) {
+      references.set(value, path);
     }
-    else if (isSerializable(object)) {
-      data = object[serializeSymbol]();
+
+    return value;
+  }
+
+  if (type == 'bigint') {
+    const stringValue = (value as bigint).toString(10);
+
+    if (stringValue.length > (path.length + 50)) {
+      references.set(value, path);
+    }
+
+    return { '<bigint>': stringValue } as BigintNonPrimitive;
+  }
+
+  if (type == 'symbol') {
+    const key = Symbol.keyFor(value as symbol);
+
+    if (key === undefined) {
+      throw new Error('only global symbols from Symbol.for(<key>) are supported');
+    }
+
+    return { '<global-symbol>': key } as GlobalSymbolNonPrimitive;
+  }
+
+  if (type == 'function') {
+    if (options.allowUnsafe !== true) {
+      throw new Error('functions are only allowed if allowUnsafe option is true');
+    }
+
+    references.set(value, path);
+
+    const source = (value as Function).toString();
+    return { '<function>': source } as FunctionNonPrimitive;
+  }
+
+  if (type == 'object') { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+    let result: SerializedData;
+
+    references.set(value, path);
+
+    const constructor = (value as object).constructor as Constructor;
+
+    if (constructor == Array) {
+      const target: SerializedData[] = [];
+      target.length = (value as any[]).length;
+
+      const queueItems = (value as any[]).map((innerValue, index): QueueItem => () => (target[index] = serialize(innerValue, options, references, queue, `${path}[${index}]`)));
+      queue.addMany(queueItems);
+
+      result = target as SerializedData;
+    }
+    else if (constructor == Object) {
+      const target: StringMap = {};
+      const entries = Object.entries(value as object);
+
+      const queueItems = entries.map(([key, innerValue]): QueueItem => () => (target[key] = serialize(innerValue, options, references, queue, `${path}['${key}']`)));
+      queue.addMany(queueItems);
+
+      result = target;
     }
     else {
-      throw new Error(`neither Serializable implemented nor serialize method provided for ${objectConstructorName}`);
+      const serializableType = getTypeNameByConstructor(constructor);
+
+      if (isUndefined(serializableType)) {
+        throw new Error(`constructor ${constructor.name} has no serializer registered`);
+      }
+
+      const registration = getSerializerByTypeName(serializableType);
+
+      const typeString = getTypeString(serializableType);
+      const nonPrimitive: CustomNonPrimitive<string> = { [typeString]: null };
+
+      queue.add(() => {
+        const data = registration!.serializer.call(value, value);
+        return (nonPrimitive[typeString] = serialize(data, options, references, queue, `${path}['${typeString}']`));
+      });
+
+      result = nonPrimitive;
     }
 
-    return { [`<${objectConstructorName}>`]: data } as CustomNonPrimitive<typeof objectConstructorName>;
+    if (path == '$') {
+      for (const fn of queue.consume()) {
+        fn();
+      }
+    }
+
+    return result;
   }
 
-  throw new Error(`no suitable handler for ${objectConstructorName} available`);
+  throw new Error(`unsupported type '${type as string}'`);
 }
 
-// eslint-disable-next-line max-statements, max-lines-per-function, no-underscore-dangle
-function _rawDeserialize(object: unknown): unknown {
-  const type = typeof object;
-  if (object === null || type == 'string' || type == 'number' || type == 'boolean') {
-    return object as JsonPrimitive;
+export function deserialize<T>(serialized: Serialized<T>, options?: SerializationOptions): T;
+export function deserialize(serialized: unknown, options?: SerializationOptions): unknown;
+/**
+ * for internal use only
+ * @deprecated
+ */
+export function deserialize(serialized: unknown, options: SerializationOptions, serializedRoot: unknown, references: Map<string, any>, deserializeQueue: CircularBuffer<QueueItem>, derefQueue: CircularBuffer<QueueItem>, path: string, isFirst: boolean): unknown;
+export function deserialize(serialized: unknown, options: SerializationOptions = {}, serializedRoot: unknown = serialized, references: Map<string, any> = new Map(), deserializeQueue: CircularBuffer<QueueItem> = new CircularBuffer(), derefQueue: CircularBuffer<QueueItem> = new CircularBuffer(), path = '$', isFirst: boolean = true): unknown {
+  const type = typeof serialized;
+
+  if ((type == 'number') || (type == 'boolean') || (serialized === null)) {
+    return serialized;
   }
 
-  if (isObject(object)) {
-    const properties = Object.getOwnPropertyNames(object);
-    const firstProperty = properties[0];
+  if (type == 'string') {
+    references.set(path, serialized);
+    return serialized;
+  }
 
-    if (properties.length == 1 && firstProperty!.startsWith('<') && firstProperty!.endsWith('>')) {
-      const fieldType = firstProperty!.slice(1, -1);
-      const data = (object as StringMap)[firstProperty!];
+  if (type == 'undefined') {
+    return { '<undefined>': null } as UndefinedNonPrimitive;
+  }
 
-      if (fieldType == 'undefined') {
-        return undefined;
+  if (type == 'object') {
+    if (isFirst && isDefined(options.context)) {
+      for (const entry of Object.entries(options.context)) {
+        references.set(`$['__context__']['${entry[0]}']`, entry[1]);
       }
-
-      const customType = customTypes.get(fieldType);
-
-      if (isUndefined(customType)) {
-        throw new Error(`type ${fieldType} not registered`);
-      }
-
-      const deserializer = customType.deserializer ?? customType.type[deserializeSymbol];
-
-      if (isUndefined(deserializer)) {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        throw new Error(`neither SerializableStatic implemented nor deserialize method provided for ${object.constructor.name}`);
-      }
-
-      const instance = deserializer(data);
-      return instance; // eslint-disable-line @typescript-eslint/no-unsafe-return
     }
 
-    const deserializedObject: StringMap<unknown> = {};
+    const entries = Object.entries(serialized as object);
+    const isNonPrimitive = (entries.length == 1) && entries[0]![0].startsWith('<') && entries[0]![0].endsWith('>');
 
-    for (const property of properties) {
-      const value = (object as StringMap)[property];
-      const deserialized = _rawDeserialize(value);
+    if (isNonPrimitive) {
+      const nonPrimitiveData = entries[0]![1];
+      const nonPrimitiveType = entries[0]![0].slice(1, -1);
 
-      deserializedObject[property] = deserialized;
+      switch (nonPrimitiveType) {
+        case undefinedNonPrimitiveType: {
+          return undefined;
+        }
+
+        case bigintNonPrimitiveType: {
+          const bigint = BigInt(nonPrimitiveData as BigintNonPrimitive['<bigint>']);
+          references.set(path, bigint);
+
+          return bigint;
+        }
+
+        case globalSymbolNonPrimitiveType: {
+          const symbol = Symbol.for(nonPrimitiveData as GlobalSymbolNonPrimitive['<global-symbol>']);
+          references.set(path, symbol);
+
+          return symbol;
+        }
+
+        case functionNonPrimitiveType: {
+          if (options.allowUnsafe !== true) {
+            throw new Error('functions are only allowed if allowUnsafe option is true');
+          }
+
+          const fn = eval(nonPrimitiveData as FunctionNonPrimitive['<function>']); // eslint-disable-line no-eval
+          references.set(path, fn);
+
+          return fn;
+        }
+
+        case refNonPrimitiveType: {
+          const dereferenced = references.get(nonPrimitiveData as RefNonPrimitive['<ref>']);
+
+          if (dereferenced == undefined) {
+            throw new Error(`reference ${nonPrimitiveData as RefNonPrimitive['<ref>']} not found`);
+          }
+
+          return dereferenced;
+        }
+
+        default: {
+          const registration = getSerializerByTypeName(nonPrimitiveType);
+
+          if (registration == undefined) {
+            throw new Error(`non-primitive type ${nonPrimitiveType} not registered`);
+          }
+
+          const forwardRef = new ForwardRef();
+          references.set(path, forwardRef);
+
+          deserializeQueue.add(() => {
+            const deserializedData = deserialize(nonPrimitiveData, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}['<${nonPrimitiveType}>']`, false);
+
+            deserializeQueue.add(() => {
+              const deserialized = registration.deserializer(deserializedData, tryAddToDerefQueue);
+              forwardRef[setRef](deserialized as object);
+            });
+          });
+
+          if (isFirst) {
+            drainQueues(deserializeQueue, derefQueue);
+            return forwardRef[getRef]();
+          }
+
+          return forwardRef;
+        }
+      }
     }
 
-    return deserializedObject;
+    let result: unknown;
+    const constructor = (serialized as object).constructor as Constructor;
+
+    if (constructor == Array) {
+      const deserializedArray: unknown[] = [];
+      deserializedArray.length = (serialized as any[]).length;
+      references.set(path, deserializedArray);
+
+      const queueItems = (serialized as any[]).map((innerValue, index): QueueItem => () => {
+        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}[${index}]`, false);
+        deserializedArray[index] = deserialized;
+
+        tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedArray[index] = dereferenced));
+
+        return deserialized;
+      });
+      deserializeQueue.addMany(queueItems);
+
+      result = deserializedArray;
+    }
+    else if (constructor == Object) {
+      const deserializedObject: StringMap = {};
+      references.set(path, deserializedObject);
+
+      const queueItems = entries.map(([key, innerValue]): QueueItem => () => {
+        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}['${key}']`, false);
+        deserializedObject[key] = deserialized;
+
+        tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedObject[key] = dereferenced));
+
+        return deserialized;
+      });
+      deserializeQueue.addMany(queueItems);
+
+      result = deserializedObject;
+    }
+    else {
+      throw new Error(`unsupported constructor ${constructor.name}`);
+    }
+
+    if (isFirst) {
+      drainQueues(deserializeQueue, derefQueue);
+    }
+
+    return result;
   }
 
-  if (isArray(object)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return object.map((item) => _rawDeserialize(item));
-  }
+  throw new Error(`unsupported type '${type}'`);
 
-  throw new Error('no suitable handler available');
+  function tryAddToDerefQueue(value: unknown, callback: DereferenceCallback): boolean {
+    if (!ForwardRef.isForwardRef(value) || (options.doNotDereferenceForwardRefs == true)) {
+      return false;
+    }
+
+    derefQueue.add(() => {
+      const dereferenced = value[getRef]();
+      callback(dereferenced);
+    });
+
+    return true;
+  }
 }
-/* eslint-enable @typescript-eslint/no-unsafe-member-access */
+
+function drainQueues(deserializeQueue: CircularBuffer<QueueItem>, derefQueue: CircularBuffer<QueueItem>): void {
+  for (const fn of deserializeQueue.consume()) {
+    fn();
+  }
+
+  for (const fn of derefQueue.consume()) {
+    fn();
+  }
+}
+
+function getTypeString<T extends string>(type: T): TypeField<T> {
+  return `<${type}>`;
+}

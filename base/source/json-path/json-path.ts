@@ -1,7 +1,60 @@
-import { isDefined, isUndefined } from '#/utils';
+import { isArray, isDefined, isString, isUndefined } from '#/utils';
 
 const numberPattern = /^\d+$/u;
 const parsePattern = /(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+))\]|(?<error>.+?)/ug;
+
+export type JsonPathNode = string | number;
+
+export class JsonPath<T = any> {
+  private readonly _options: JsonPathOptions;
+  private _path: string | undefined;
+  private _nodes: JsonPathNode[] | undefined;
+
+  get path(): string {
+    if (isUndefined(this._path)) {
+      this._path = encodeJsonPath(this._nodes!);
+    }
+
+    return this._path;
+  }
+
+  get nodes(): JsonPathNode[] {
+    if (isUndefined(this._nodes)) {
+      this._nodes = decodeJsonPath(this._path!);
+    }
+
+    return this._nodes;
+  }
+
+  constructor(options?: JsonPathOptions);
+  constructor(path: string, options?: JsonPathOptions);
+  constructor(nodes: JsonPathNode[], options?: JsonPathOptions);
+  constructor(pathOrNodesOrOptions: string | JsonPathNode[] | JsonPathOptions = [], options: JsonPathOptions = {}) {
+    this._options = options;
+
+    if (isString(pathOrNodesOrOptions)) {
+      this._path = pathOrNodesOrOptions;
+    }
+    else if (isArray(pathOrNodesOrOptions)) {
+      this._nodes = pathOrNodesOrOptions;
+    }
+    else {
+      this._options = pathOrNodesOrOptions;
+    }
+  }
+
+  property<K extends keyof T & string>(propertyName: K): JsonPath<T[K]> {
+    return new JsonPath([...this.nodes, propertyName as string], this._options);
+  }
+
+  index<K extends keyof T & number>(index: K): JsonPath<T[K]> {
+    return new JsonPath([...this.nodes, index as number], this._options);
+  }
+
+  options(options: JsonPathOptions): JsonPath {
+    return new JsonPath(this.nodes, options);
+  }
+}
 
 export type JsonPathOptions = {
   /** encode as array.0 instead of array[0] */
@@ -23,7 +76,7 @@ export type JsonPathOptions = {
  * const path = encodeJsonPath(['foo', 'bar', 5]);
  * path == '$.foo.bar[5]'; // true
  */
-export function encodeJsonPath(nodes: (string | number)[], options: JsonPathOptions = {}): string {
+export function encodeJsonPath(nodes: JsonPathNode[], options: JsonPathOptions = {}): string {
   const { treatArrayAsObject = false, forceBrackets = false, noDollar = false } = options;
 
   let path = '';
@@ -36,7 +89,7 @@ export function encodeJsonPath(nodes: (string | number)[], options: JsonPathOpti
       path += `[${node}]`;
     }
     else {
-      const encodeAsBracket = forceBrackets || nodeString.includes('.');
+      const encodeAsBracket = forceBrackets || (nodeString == '$') || nodeString.includes('.');
 
       if (encodeAsBracket) {
         path += `['${node}']`;
@@ -65,11 +118,12 @@ export function encodeJsonPath(nodes: (string | number)[], options: JsonPathOpti
  * @example
  * decodeJsonPath('$.foo[2].bar[\'baz\']'); // ['foo', 2, 'bar', 'baz']
  */
-export function decodeJsonPath(path: string): (string | number)[] {
+export function decodeJsonPath(path: string): JsonPathNode[] {
   const matches = (path.trim()).matchAll(parsePattern);
 
-  const nodes: (string | number)[] = [];
+  const nodes: JsonPathNode[] = [];
 
+  let matchIndex = 0;
   for (const match of matches) {
     const { root, dot, bracket, index, error } = match.groups!;
 
@@ -80,11 +134,17 @@ export function decodeJsonPath(path: string): (string | number)[] {
     const node = dot ?? bracket ?? (isDefined(index) ? parseInt(index, 10) : undefined);
 
     if (isDefined(node)) {
+      if ((matchIndex == 0) && (node == '$')) {
+        continue;
+      }
+
       nodes.push(node);
     }
     else if (isUndefined(root)) {
       throw new Error(`something is wrong at index ${match.index}`);
     }
+
+    matchIndex++;
   }
 
   if ((nodes.length == 0) && (path != '$')) {

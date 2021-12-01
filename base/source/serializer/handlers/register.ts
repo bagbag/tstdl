@@ -1,39 +1,38 @@
-import { registerBinaryTypes } from './binary';
-import { registerDateType } from './date';
-import { registerErrorType } from './error';
-import { registerFunctionType } from './function';
-import { registerMapType } from './map';
-import { registerRegExpType } from './regex';
-import { registerSetType } from './set';
+import { isDefined } from '#/utils/type-guards';
+import type { registerSerializer } from '../serializer';
+import { deserializeBuffer, getTypedArrayDeserializer, serializeBuffer, serializeTypedArray } from './binary';
+import { deserializeDate, serializeDate } from './date';
+import { deserializeError, serializeError } from './error';
+import { deserializeMap, serializeMap } from './map';
+import { deserializeRegExp, serializeRegExp } from './regex';
+import { deserializeSet, serializeSet } from './set';
 
-type DefaultSerializationTypesRegistrationOptions = {
-  /**
-   * !!! DANGEROUS !!!
-   *
-   * register handler for functions
-   *
-   * remote code execution possible, source must be trusted!
-   *
-   * !!! DANGEROUS !!!
-   */
-  registerFunctionsSerializer?: boolean
-};
+const typedArrays = [
+  globalThis.Int8Array,
+  globalThis.Uint8Array,
+  globalThis.Uint8ClampedArray,
+  globalThis.Int16Array,
+  globalThis.Uint16Array,
+  globalThis.Int32Array,
+  globalThis.Uint32Array,
+  globalThis.Float32Array,
+  globalThis.Float64Array,
+  globalThis.BigInt64Array,
+  globalThis.BigUint64Array
+].filter(isDefined);
 
-/**
- * registers serializers for Date, RegExp, binary types (ArrayBuffer, Uint8Array etc.), Map, Set, Error and optionally functions
- *
- * read warning before registering functions serializer
- * @param options
- */
-export function registerDefaultSerializationTypes(options?: DefaultSerializationTypesRegistrationOptions): void {
-  registerDateType();
-  registerRegExpType();
-  registerBinaryTypes();
-  registerMapType();
-  registerSetType();
-  registerErrorType();
+export function registerDefaultSerializers(register: typeof registerSerializer): void {
+  register(Set, 'Set', serializeSet, deserializeSet);
+  register(Map, 'Map', serializeMap, deserializeMap);
+  register(RegExp, 'RegExp', serializeRegExp, deserializeRegExp);
+  register(Date, 'Date', serializeDate, deserializeDate);
+  register(Error, 'Error', serializeError, deserializeError);
 
-  if (options?.registerFunctionsSerializer == true) {
-    registerFunctionType();
+  for (const typedArray of typedArrays) {
+    register(typedArray, typedArray.name, serializeTypedArray, getTypedArrayDeserializer(typedArray));
+  }
+
+  if (typeof Buffer != 'undefined') {
+    register(Buffer, 'Buffer', serializeBuffer, deserializeBuffer);
   }
 }

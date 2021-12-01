@@ -1,13 +1,13 @@
-import { registerSerializationType } from '../serializer';
+type ErrorData = Pick<Error, 'name' | 'message' | 'stack'>;
 
-export function registerErrorType(): void {
-  registerSerializationType(Error, ({ name, message, stack }) => ({ name, message, stack }), deserializeError);
+export function serializeError(error: Error): ErrorData {
+  return { name: error.name, message: error.message, stack: error.stack };
 }
 
-function deserializeError({ name, message, stack }: Pick<Error, 'name' | 'message' | 'stack'>): Error {
-  const error = new Error(message);
-  error.name = name;
-  error.stack = stack;
+export function deserializeError(data: ErrorData): Error {
+  const error = new Error(data.message);
+  error.name = data.name;
+  error.stack = data.stack;
 
   return error;
 }

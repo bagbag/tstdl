@@ -1,18 +1,25 @@
-import type { Serialized } from '../serializer';
-import { rawDeserialize, rawSerialize, registerSerializationType } from '../serializer';
+import type { Serialized } from '../types';
+import type { TryDereference } from '../_internal';
 
 type SetData = Serialized<any>[];
 
-export function registerSetType(): void {
-  registerSerializationType(Set, serializeSet, deserializeSet);
-}
-
-function serializeSet(set: Set<any>): SetData {
-  const data: SetData = [...set.values()].map((value) => rawSerialize(value));
+export function serializeSet(set: Set<any>): SetData {
+  const data: SetData = [...set.values()];
   return data;
 }
 
-function deserializeSet(data: SetData): Set<any> {
-  const values = data.map(rawDeserialize);
-  return new Set(values);
+export function deserializeSet(data: SetData, tryDereference: TryDereference): Set<any> {
+  const set = new Set<unknown>();
+
+  for (const item of data) {
+    const has = tryDereference(item, (dereferenced) => {
+      set.add(dereferenced);
+    });
+
+    if (!has) {
+      set.add(item);
+    }
+  }
+
+  return set;
 }

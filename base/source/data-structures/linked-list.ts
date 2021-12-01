@@ -1,3 +1,5 @@
+// eslint-disable-next-line max-classes-per-file
+import { Serializable, serializable } from '#/serializer/_internal';
 import { isDefined, isUndefined } from '#/utils';
 import { Collection } from './collection';
 
@@ -7,7 +9,8 @@ export type LinkedListNode<T> = {
   next: LinkedListNode<T> | undefined
 };
 
-export class LinkedList<T> extends Collection<T, LinkedList<T>> {
+@serializable('LinkedList')
+export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Serializable<LinkedList<T>, T[]> {
   private head: LinkedListNode<T> | undefined;
   private tail: LinkedListNode<T> | undefined;
 
@@ -27,6 +30,21 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> {
     if (isDefined(values)) {
       this.addEndMany(values);
     }
+  }
+
+  [Serializable.serialize](instance: LinkedList<T>): T[] {
+    return [...instance];
+  }
+
+  [Serializable.deserialize](data: T[], tryAddToDerefQueue: (value: unknown, callback: (dereferenced: unknown) => void) => boolean): LinkedList<T> {
+    const linkedList = new LinkedList<T>();
+
+    for (const item of data) {
+      const node = linkedList.add(item);
+      tryAddToDerefQueue(item, (dereferenced) => (node.value = dereferenced as T));
+    }
+
+    return linkedList;
   }
 
   /** get value at index */

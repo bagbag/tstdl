@@ -1,19 +1,31 @@
-import type { StringMap } from '#/types';
-import type { Serialized } from '../serializer';
-import { deserialize, rawDeserialize, rawSerialize, registerSerializationType, serialize } from '../serializer';
+import type { TryDereference } from '../serializer';
 
-type MapData = StringMap<Serialized<any>>;
+type MapData = [any, any][];
 
-export function registerMapType(): void {
-  registerSerializationType(Map, serializeMap, deserializeMap);
+export function serializeMap(map: Map<any, any>): MapData {
+  return [...map.entries()];
 }
 
-function serializeMap(map: Map<any, any>): MapData {
-  const entries = [...map.entries()].map(([key, value]) => [serialize(key), rawSerialize(value)] as const);
-  return Object.fromEntries(entries) as MapData;
-}
+export function deserializeMap(data: MapData, tryDereference: TryDereference): Map<any, any> {
+  const map = new Map(data);
 
-function deserializeMap(data: MapData): Map<any, any> {
-  const entries = Object.entries(data).map(([key, serialized]) => [deserialize(key), rawDeserialize(serialized)] as const);
-  return new Map(entries);
+  for (const entry of data) {
+    let [key] = entry;
+
+    const hasKey = tryDereference(key, (dereferenced) => {
+      key = dereferenced;
+
+      if (!hasValue) { // eslint-disable-line @typescript-eslint/no-use-before-define
+        map.set(key, entry[1]);
+      }
+    });
+
+    const hasValue = tryDereference(entry[1], (dereferenced) => map.set(key, dereferenced));
+
+    if (!hasKey && !hasValue) {
+      map.set(entry[0], entry[1]);
+    }
+  }
+
+  return map;
 }
