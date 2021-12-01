@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.66.90",
+  "version": "0.66.91",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -14,31 +14,31 @@
     "pub": "npm run build:prod && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "2.1",
-    "reflect-metadata": "^0.1.13",
-    "rxjs": "7.4",
-    "zod": "3.11"
+    "luxon": "^2.1",
+    "reflect-metadata": "^0.1",
+    "rxjs": "^7.4",
+    "zod": "^3.11"
   },
   "devDependencies": {
-    "@types/koa__router": "8.0",
-    "@types/luxon": "2.0",
-    "@types/minio": "7.0",
-    "@types/node": "16",
+    "@types/koa__router": "^8.0",
+    "@types/luxon": "^2.0",
+    "@types/minio": "^7.0",
+    "@types/node": ">=16",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "5",
-    "@typescript-eslint/parser": "5",
-    "eslint": "8",
-    "ttypescript": "1.5",
-    "typescript": "4.5",
-    "typescript-transform-paths": "3.3"
+    "@typescript-eslint/eslint-plugin": "^5.5",
+    "@typescript-eslint/parser": "^5.5",
+    "eslint": "^8.3",
+    "ttypescript": "^1.5",
+    "typescript": "^4.5",
+    "typescript-transform-paths": "^3.3"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "7.15",
-    "@koa/router": "10.1",
-    "got": "11.8",
-    "koa": "2.13",
-    "minio": "7.0",
-    "mongodb": "4.1",
+    "@elastic/elasticsearch": "^7.15",
+    "@koa/router": "^10.1",
+    "got": "^11.8",
+    "koa": "^2.13",
+    "minio": "^7.0",
+    "mongodb": "^4.2",
     "superstruct": "0.15"
   }
 }
