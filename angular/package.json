@@ -18,11 +18,11 @@
     "@angular/platform-browser": "12.2",
     "@angular/platform-browser-dynamic": "12.2",
     "@angular/router": "12.2",
-    "@tstdl/base": "^0.66.89",
-    "luxon": "2.1",
-    "rxjs": "7.4",
-    "tslib": "2.3",
-    "zone.js": "0.11"
+    "@tstdl/base": "^0.66.91",
+    "luxon": "^2.1",
+    "rxjs": "^7.4",
+    "tslib": "^2.3",
+    "zone.js": "^0.11"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "12.2",
@@ -33,7 +33,7 @@
     "@types/node": "16",
     "@typescript-eslint/eslint-plugin": "5",
     "@typescript-eslint/parser": "5",
-    "eslint": "8",
+    "eslint": "^8.3",
     "ng-packagr": "12.2",
     "typescript": "4.3"
   }
