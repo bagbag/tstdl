@@ -2,39 +2,40 @@ import type { Entity, QueryTypes } from '#/database';
 import { allQueryTypes } from '#/database';
 import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
 import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils';
+import type { MongoDocument } from './model';
 import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';
 
 const operatorsSet = new Set(allQueryTypes);
 
-export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap = new Map(), transform?: MappingItemTransformer): Filter<TDb> {
+export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb> = new Map(), transform?: MappingItemTransformer): Filter<TDb> {
   let filterQuery: Filter = {};
-  const entries = Object.entries(query);
+  const entries = Object.entries(query) as [QueryTypes, any][];
 
-  for (const [property, value] of (entries as unknown as [QueryTypes, any][])) {
-    const mapping = mappingMap.get(property);
+  for (const [property, value] of entries) {
+    const mapping = mappingMap.get(property as keyof T);
 
     switch (property) {
       case '$and':
-        filterQuery.$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        filterQuery.$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
         break;
 
       case '$or':
-        filterQuery.$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        filterQuery.$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
         break;
 
       case '$nor':
-        filterQuery.$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform));
+        filterQuery.$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
         break;
 
       default:
         if (operatorsSet.has(property)) {
-          const operatorQuery = (convertOperator(property, value, mapping?.transform ?? transform, mappingMap) as Filter<any>);
+          const operatorQuery = (convertOperator(property, value, mapping?.transform ?? transform, mappingMap as TransformerMappingMap) as Filter<any>);
           filterQuery = { ...filterQuery, ...operatorQuery };
         }
         else {
           const mappedPropertyName = getPropertyName((mapping?.key as string | undefined) ?? property);
-          filterQuery[mappedPropertyName] = convertInnerQuery(value, mapping?.transform ?? transform, mappingMap);
+          filterQuery[mappedPropertyName] = convertInnerQuery(value as object, mapping?.transform ?? transform, mappingMap as TransformerMappingMap);
         }
     }
   }
@@ -73,10 +74,10 @@ function convertOperator(operator: QueryTypes, value: any, transform?: MappingIt
     case '$gte':
     case '$lt':
     case '$lte':
-      return { [operator]: convertInnerQuery(value, transform) };
+      return { [operator]: convertInnerQuery(value as object, transform) };
 
     case '$neq':
-      return { $ne: convertInnerQuery(value, transform) };
+      return { $ne: convertInnerQuery(value as object, transform) };
 
     case '$in':
       return { $in: isDefined(transform) ? (value as ComparisonInQuery['$in']).map(transform) : value };
