@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { Enumerable } from '@tstdl/base/cjs/enumerable';
-import type { StringMap } from '@tstdl/base/cjs/types';
-import type { PropertyName } from '@tstdl/base/cjs/utils';
-import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/cjs/utils';
-import { deepEntries } from '@tstdl/base/cjs/utils/object';
+import { Enumerable } from '@tstdl/base/enumerable';
+import type { StringMap } from '@tstdl/base/types';
+import type { PropertyName } from '@tstdl/base/utils';
+import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/utils';
+import { deepEntries } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';

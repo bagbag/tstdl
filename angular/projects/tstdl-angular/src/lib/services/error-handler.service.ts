@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ErrorHandler } from '@angular/core';
 import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
-import type { FormatErrorOptions } from '@tstdl/base/cjs/utils';
-import { formatError } from '@tstdl/base/cjs/utils';
+import type { FormatErrorOptions } from '@tstdl/base/utils';
+import { formatError } from '@tstdl/base/utils';
 import type { Observable, OperatorFunction } from 'rxjs';
 import { Subject, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';

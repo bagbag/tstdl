@@ -1,4 +1,4 @@
-import type { StringMap } from '@tstdl/base/cjs/types';
+import type { StringMap } from '@tstdl/base/types';
 import type { LocalizationData } from './localization.service';
 
 export type MessageBoxResult<T = any> = {

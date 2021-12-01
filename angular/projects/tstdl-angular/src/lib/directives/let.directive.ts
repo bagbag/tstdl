@@ -1,6 +1,6 @@
 import type { EmbeddedViewRef, OnDestroy } from '@angular/core';
 import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { isNullOrUndefined, isUndefined } from '@tstdl/base/cjs/utils';
+import { isNullOrUndefined, isUndefined } from '@tstdl/base/utils';
 import type { Observable, ObservableInput, Subscription } from 'rxjs';
 import { BehaviorSubject, catchError, distinctUntilChanged, EMPTY, from, of, switchMap, tap } from 'rxjs';
 

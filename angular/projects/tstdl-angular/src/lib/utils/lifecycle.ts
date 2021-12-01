@@ -1,8 +1,8 @@
 import type { AfterContentChecked, AfterContentInit, AfterViewChecked, AfterViewInit, OnChanges, OnDestroy, OnInit, SimpleChange, SimpleChanges } from '@angular/core';
 import { Injectable } from '@angular/core';
-import type { TypedOmit } from '@tstdl/base/cjs/types';
-import type { ReadonlyCancellationToken } from '@tstdl/base/cjs/utils';
-import { CancellationToken, isUndefined } from '@tstdl/base/cjs/utils';
+import type { TypedOmit } from '@tstdl/base/types';
+import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
+import { CancellationToken, isUndefined } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
 import { defer, filter, map, startWith, Subject } from 'rxjs';
 

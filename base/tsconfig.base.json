@@ -7,7 +7,7 @@
     "target": "es2017",
     "baseUrl": "./",
     "rootDir": "source/",
-    "outDir": "dist/cjs",
+    "outDir": "dist/",
     "declaration": true,
     "forceConsistentCasingInFileNames": true,
     "newLine": "lf",

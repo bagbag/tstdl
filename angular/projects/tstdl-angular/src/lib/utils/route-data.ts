@@ -1,5 +1,5 @@
 import type { Resolve } from '@angular/router';
-import type { StringMap, Type } from '@tstdl/base/cjs/types';
+import type { StringMap, Type } from '@tstdl/base/types';
 
 export type RouteDataDefinition<T extends StringMap> = {
   [P in keyof T]: T[P] | Type<Resolve<T[P]>>

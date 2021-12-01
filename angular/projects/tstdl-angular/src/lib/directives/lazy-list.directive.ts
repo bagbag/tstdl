@@ -1,7 +1,7 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
-import { animationFrame$, observeIntersection, observeResize } from '@tstdl/base/cjs/rxjs';
-import { isUndefined, timeout } from '@tstdl/base/cjs/utils';
+import { animationFrame$, observeIntersection, observeResize } from '@tstdl/base/rxjs';
+import { isUndefined, timeout } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, take } from 'rxjs';
 import { LifecycleUtils } from '../utils';

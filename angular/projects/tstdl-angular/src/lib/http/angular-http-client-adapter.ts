@@ -1,10 +1,12 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
-import { abortToken, HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, NormalizedHttpClientRequest } from '@tstdl/base/cjs/http';
-import { firstValueFrom } from '@tstdl/base/cjs/rxjs/compat';
-import type { StringMap } from '@tstdl/base/cjs/types';
-import { isDefined, isUndefined, toArray } from '@tstdl/base/cjs/utils';
-import { Observable, race, switchMapTo, throwError } from 'rxjs';
+import type { HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
+import { abortToken, HttpError, HttpErrorReason } from '@tstdl/base/http';
+import { firstValueFrom } from '@tstdl/base/rxjs/compat';
+import type { StringMap } from '@tstdl/base/types';
+import { isDefined, isUndefined, toArray } from '@tstdl/base/utils';
+import type { Observable } from 'rxjs';
+import { race, switchMapTo, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
 

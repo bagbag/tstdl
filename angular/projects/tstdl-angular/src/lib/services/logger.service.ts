@@ -1,6 +1,6 @@
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import type { LogErrorOptions } from '@tstdl/base/cjs/logger';
-import { Logger as TstdlLogger } from '@tstdl/base/cjs/logger';
+import type { LogErrorOptions } from '@tstdl/base/logger';
+import { Logger as TstdlLogger } from '@tstdl/base/logger';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const LOGGER = new InjectionToken<Logger>('Logger');
