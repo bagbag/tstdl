@@ -4,7 +4,7 @@ import type { TypedOmit } from '@tstdl/base/types';
 import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
 import { CancellationToken, isUndefined } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { defer, filter, map, startWith, Subject } from 'rxjs';
+import { defer, filter, map, shareReplay, startWith, Subject } from 'rxjs';
 
 export type TypedSimpleChange<T> = TypedOmit<SimpleChange, 'previousValue' | 'currentValue'> & {
   previousValue: T,
@@ -30,7 +30,13 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   private _destroyToken: CancellationToken | undefined;
 
   /**
-   * emits on `ngOnInit`. Completes afterwards
+   * emits on `ngOnInit`
+   * @see {@link OnInit}
+   */
+  readonly onInit$: Observable<void>;
+
+  /**
+   * emits on `ngOnInit`. Also emits if subscribed afterwards
    * @see {@link OnInit}
    */
   readonly init$: Observable<void>;
@@ -42,19 +48,37 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   readonly changes$: Observable<SimpleChanges>;
 
   /**
-   * emits on `ngOnDestroy`. Completes afterwards
+   * emits on `ngOnDestroy`
+   * @see {@link OnDestroy}
+   */
+  readonly onDestroy$: Observable<void>;
+
+  /**
+   * emits on `ngOnDestroy`. Also emits if subscribed afterwards
    * @see {@link OnDestroy}
    */
   readonly destroy$: Observable<void>;
 
   /**
-   * emits on `ngAfterViewInit`. Completes afterwards
+   * emits on `ngAfterViewInit`
+   * @see {@link AfterViewInit}
+   */
+  readonly onViewInit$: Observable<void>;
+
+  /**
+   * emits on `ngAfterViewInit`. Also emits if subscribed afterwards
    * @see {@link AfterViewInit}
    */
   readonly viewInit$: Observable<void>;
 
   /**
-   * emits on `ngAfterContentInit`. Completes afterwards
+   * emits on `ngAfterContentInit`
+   * @see {@link AfterContentInit}
+   */
+  readonly onContentInit$: Observable<void>;
+
+  /**
+   * emits on `ngAfterContentInit`. Also emits if subscribed afterwards
    * @see {@link AfterContentInit}
    */
   readonly contentInit$: Observable<void>;
@@ -92,7 +116,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   readonly ionViewDidLeave$: Observable<void>;
 
   /**
-   * CancellationToken bound to {@link destroy$}
+   * {@link CancellationToken} bound to {@link destroy$}
    */
   get destroyToken(): ReadonlyCancellationToken {
     if (isUndefined(this._destroyToken)) {
@@ -116,11 +140,15 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
     this.ionViewWillLeaveSubject = new Subject();
     this.ionViewDidLeaveSubject = new Subject();
 
-    this.init$ = this.initSubject.asObservable();
+    this.onInit$ = this.initSubject.asObservable();
+    this.init$ = this.initSubject.pipe(shareReplay(1));
     this.changes$ = this.changesSubject.asObservable();
-    this.destroy$ = this.destroySubject.asObservable();
-    this.viewInit$ = this.viewInitSubject.asObservable();
-    this.contentInit$ = this.contentInitSubject.asObservable();
+    this.onDestroy$ = this.destroySubject.asObservable();
+    this.destroy$ = this.destroySubject.pipe(shareReplay(1));
+    this.onViewInit$ = this.viewInitSubject.asObservable();
+    this.viewInit$ = this.viewInitSubject.pipe(shareReplay(1));
+    this.onContentInit$ = this.contentInitSubject.asObservable();
+    this.contentInit$ = this.contentInitSubject.pipe(shareReplay(1));
     this.viewChecked$ = this.viewCheckedSubject.asObservable();
     this.contentChecked$ = this.contentCheckedSubject.asObservable();
     this.ionViewWillEnter$ = this.ionViewWillEnterSubject.asObservable();
