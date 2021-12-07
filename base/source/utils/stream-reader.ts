@@ -16,6 +16,10 @@ export async function readStream(readable: TypedReadable<NonObjectBufferMode>, m
     }
   }
 
+  if (chunks.length == 0) {
+    return Buffer.alloc(0);
+  }
+
   const buffer = concatArrayBufferViews(chunks, totalLength);
   return buffer;
 }
