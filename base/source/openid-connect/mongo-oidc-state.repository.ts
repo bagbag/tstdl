@@ -12,7 +12,7 @@ const indexes: TypedIndexDescription<MongoOidcState>[] = [
   { key: { expiration: 1 }, expireAfterSeconds: 1 }
 ];
 
-export const transformer: EntityTransformer<OidcState, MongoOidcState> = {
+const transformer: EntityTransformer<OidcState, MongoOidcState> = {
   transform: (state) => ({ ...state, expiration: new Date(state.expiration) }),
   untransform: (state) => ({ ...state, expiration: state.expiration.getTime() }),
   mapping: {
