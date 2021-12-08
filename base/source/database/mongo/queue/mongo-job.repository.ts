@@ -38,7 +38,7 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
         ? { $setOnInsert: { _id: getNewId(), ...rest } }
         : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
-      bulk.update({ tag }, updateQuery);
+      bulk.update({ tag }, updateQuery, { upsert: true });
     }
 
     await bulk.execute(false);

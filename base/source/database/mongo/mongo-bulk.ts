@@ -27,6 +27,10 @@ export class MongoBulk<T extends Entity> {
     this.executed = false;
   }
 
+  /**
+   * execute operations
+   * @param ordered whether operations must be executed in order (slower) (default: false)
+   */
   async execute(ordered: boolean = false): Promise<BulkResult> {
     if (this.executed) {
       throw new Error('already executed');
