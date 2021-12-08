@@ -298,11 +298,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async replace<U extends T>(entity: U, options: ReplaceOptions = {}): Promise<boolean> {
-    const document = toMongoDocument(entity);
-    const { replaceOne: { filter, replacement } } = replaceOneOperation(document, options);
-    const result = await this.collection.replaceOne(filter as Filter<T>, replacement, options);
-
-    return ((result.matchedCount as number) + (result.upsertedCount as number)) > 0;
+    return this.replaceByFilter({ _id: entity.id } as Filter<U>, entity, options);
   }
 
   async replaceByFilter<U extends T>(filter: Filter<U>, entity: U, options: ReplaceOptions = {}): Promise<boolean> {
@@ -318,7 +314,7 @@ export class MongoBaseRepository<T extends Entity> {
     }
 
     const documents = entities.map(toMongoDocument);
-    const operations = documents.map((document) => replaceOneOperation<T>(document, options));
+    const operations = documents.map((document) => replaceOneOperation<T>({ _id: document._id } as Filter<T>, document, options));
     const result = await this.collection.bulkWrite(operations);
 
     if (result.matchedCount + result.upsertedCount != entities.length) {
@@ -404,11 +400,11 @@ export function insertOneOperation<T extends Entity>(document: MongoDocument<T>)
   return operation;
 }
 
-export function replaceOneOperation<T extends Entity>(document: MongoDocument<T>, options: ReplaceOptions = {}): ReplaceOneBulkWriteOperation<T> {
+export function replaceOneOperation<T extends Entity>(filter: Filter<T>, replacement: MongoDocument<T>, options: ReplaceOptions = {}): ReplaceOneBulkWriteOperation<T> {
   const operation: ReplaceOneBulkWriteOperation<T> = {
     replaceOne: {
-      filter: { _id: document._id } as Filter<T>,
-      replacement: { ...document },
+      filter,
+      replacement,
       upsert: options.upsert
     }
   };

@@ -81,17 +81,21 @@ export class MongoBulk<T extends Entity> {
   }
 
   replace<U extends T>(entity: U, options?: ReplaceOptions): this {
-    const document = toMongoDocument(entity);
-    const operation = replaceOneOperation(document, options);
-    this.operations.push(operation);
-
-    return this;
+    return this.replaceByFilter({ _id: entity.id } as Filter<U>, entity, options);
   }
 
   replaceMany<U extends T>(entities: U[], options?: ReplaceOptions): this {
     const documents = entities.map(toMongoDocument);
-    const operations = documents.map((document) => replaceOneOperation(document, options));
+    const operations = documents.map((document) => replaceOneOperation({ _id: document._id } as Filter<U>, document, options));
     this.operations.push(...operations);
+
+    return this;
+  }
+
+  replaceByFilter<U extends T>(filter: Filter<U>, entity: U, options?: ReplaceOptions): this {
+    const document = toMongoDocument(entity);
+    const operation = replaceOneOperation(filter, document, options);
+    this.operations.push(operation);
 
     return this;
   }
