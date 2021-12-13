@@ -1,5 +1,7 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { DateTime, DateTimeOptions } from 'luxon';
+import type { PipeTransform } from '@angular/core';
+import { Pipe } from '@angular/core';
+import type { DateTimeOptions } from 'luxon';
+import { DateTime } from 'luxon';
 
 @Pipe({
   name: 'timestampToDateTime'

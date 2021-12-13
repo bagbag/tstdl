@@ -1,12 +1,15 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import type { DateTime, DateTimeFormatOptions } from 'luxon';
+import { isNumber } from '@tstdl/base/utils';
+import type { DateTimeFormatOptions } from 'luxon';
+import { DateTime } from 'luxon';
 
 @Pipe({
   name: 'dateTime'
 })
 export class DateTimePipe implements PipeTransform {
-  transform(dateTime: DateTime, format: string, options?: DateTimeFormatOptions): string {
+  transform(dateTimeOrTimestamp: DateTime | number, format: string, options?: DateTimeFormatOptions): string {
+    const dateTime = isNumber(dateTimeOrTimestamp) ? DateTime.fromMillis(dateTimeOrTimestamp) : dateTimeOrTimestamp;
     return dateTime.toFormat(format, options);
   }
 }
