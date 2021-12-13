@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
-import type { StringMap } from '@tstdl/base/types';
+import type { DeepNonNullable, StringMap } from '@tstdl/base/types';
 import type { PropertyName } from '@tstdl/base/utils';
 import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/utils';
 import { deepEntries } from '@tstdl/base/utils/object';
@@ -62,7 +62,7 @@ export function localizationData<T>(data: LocalizationData<T>): LocalizationData
  * @returns
  */
 export function getLocalizationKeys<T extends Localization>(_localization?: T): LocalizationKeys<T['keys']> {
-  return getPropertyNameProxy();
+  return getPropertyNameProxy() as unknown as LocalizationKeys<T['keys']>;
 }
 
 type MappedLocalization = {
