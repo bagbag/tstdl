@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/ban-types */
 
 import type { Entity, MaybeNewEntity } from '#/database';
-import { getNewId } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
-import { assertDefined, assertDefinedPass, isNullOrUndefined, isUndefined } from '#/utils';
+import { assertDefined, isNullOrUndefined } from '#/utils';
 import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
@@ -346,17 +345,14 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
+  /*
   async replaceByFilterOrInsert<U extends T>(filter: Filter<U>, entity: MaybeNewEntity<U>): Promise<U> {
     const document = mongoDocumentFromMaybeNewEntity(entity);
-    const update: UpdateFilter<U> = { $set: document };
+    const result = await this.collection.findOneAndReplace(filter as Filter<T>, document, { upsert: true, returnDocument: 'after' });
 
-    if (isUndefined(entity.id)) {
-      update.$setOnInsert = { _id: getNewId() } as MongoDocument<U>;
-    }
-
-    const result = await this.collection.findOneAndReplace(filter as Filter<T>, update, { upsert: true, returnDocument: 'after' });
     return toEntity<U>(assertDefinedPass(result.value as MongoDocument<U>));
   }
+  */
 
   async has(id: string): Promise<boolean> {
     return this.hasByFilter({ _id: id } as Filter<T>);

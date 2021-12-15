@@ -134,7 +134,7 @@ export type ComparisonTextQuery = {
   $text: string | { text: string, operator?: Operator }
 };
 
-export type GeoShapeRelation = 'intersect' | 'within' | 'disjoint' | 'contains';
+export type GeoShapeRelation = 'intersects' | 'within' | 'disjoint' | 'contains';
 
 export type ComparisonGeoShapeQuery = {
   $geoShape: {
