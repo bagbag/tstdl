@@ -11,8 +11,8 @@ export type MergeObjectsOptions = {
   array?: 'merge' | 'merge-unique' | 'equals' | 'equals-sorted'
 };
 
-export function mergeObjects(objects: object[], options: MergeObjectsOptions = {}): object {
-  return objects.reduce((merged, object) => _mergeObjects(merged, object, options), {});
+export function mergeObjects<T extends object>(objects: T[], options: MergeObjectsOptions = {}): T {
+  return objects.reduce((merged, object) => _mergeObjects(merged, object, options), {}) as T;
 }
 
 function _mergeObjects(a: object, b: object, options: MergeObjectsOptions, path: string = '$'): object {
