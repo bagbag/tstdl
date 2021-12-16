@@ -2,6 +2,7 @@
 
 import type { Entity } from '#/database';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
+import { mergeObjects } from '#/utils/object';
 import type { ElasticGeoPoint } from './geo-point';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = ElasticNestedIndexMapping<TypedOmit<T, 'id'>> & {
@@ -97,3 +98,7 @@ export type ElasticIndexMappingItem<T = any> =
   | ElasticGeoPointIndexMappingItem
   | ElasticObjectIndexMappingItem<T>
   | ElasticNestedIndexMappingItem<T>;
+
+export function mergeElasticSearchMappings<T extends Entity>(mappings: ElasticIndexMapping<T>[]): ElasticIndexMapping<T> {
+  return mergeObjects(mappings);
+}
