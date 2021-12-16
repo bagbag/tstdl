@@ -12,5 +12,5 @@ export function getParameterTypes(target: object, propertyKey?: string | symbol)
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function getReturnType(target: object, propertyKey?: string | symbol): any {
-  return Reflect.getMetadata('design:paramtypes', target, propertyKey as string);
+  return Reflect.getMetadata('design:returntype', target, propertyKey as string);
 }
