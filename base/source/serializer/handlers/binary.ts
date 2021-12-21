@@ -4,6 +4,14 @@ import { decodeBase64, encodeBase64 } from '../../utils';
 
 type TypedArrayConstructor = new (arrayOrArrayBuffer: ArrayBufferLike) => TypedArray;
 
+export function serializeArrayBuffer(buffer: ArrayBuffer): string {
+  return encodeBase64(buffer);
+}
+
+export function deserializeArrayBuffer(data: string): ArrayBuffer {
+  return decodeBase64(data);
+}
+
 export function serializeTypedArray(array: TypedArray): string {
   return encodeBase64(array);
 }

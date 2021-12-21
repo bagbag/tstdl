@@ -1,6 +1,6 @@
 import { isDefined } from '#/utils/type-guards';
 import type { registerSerializer } from '../serializer';
-import { deserializeBuffer, getTypedArrayDeserializer, serializeBuffer, serializeTypedArray } from './binary';
+import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary';
 import { deserializeDate, serializeDate } from './date';
 import { deserializeError, serializeError } from './error';
 import { deserializeMap, serializeMap } from './map';
@@ -27,6 +27,7 @@ export function registerDefaultSerializers(register: typeof registerSerializer):
   register(RegExp, 'RegExp', serializeRegExp, deserializeRegExp);
   register(Date, 'Date', serializeDate, deserializeDate);
   register(Error, 'Error', serializeError, deserializeError);
+  register(ArrayBuffer, 'ArrayBuffer', serializeArrayBuffer, deserializeArrayBuffer);
 
   for (const typedArray of typedArrays) {
     register(typedArray, typedArray.name, serializeTypedArray, getTypedArrayDeserializer(typedArray));
