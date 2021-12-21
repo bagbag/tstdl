@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import type { PickBy, Record } from '#/types';
 import { isArray, isObject, isUndefined } from '../type-guards';
 
@@ -17,7 +15,7 @@ export function mapObjectValues<T extends Record, V>(object: T, mapper: (value: 
 }
 
 export function filterObject<T extends Record, U extends T[keyof T]>(object: T, predicate: (value: T[keyof T], key: keyof T) => value is U): PickBy<T, U>;
-// export function filterObject<T extends Record>(object: T, predicate: (key: keyof T, value: T[keyof T]) => boolean): Partial<T>;
+export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T>;
 export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T> {
   const mappedEntries = Object.entries(object).filter(([key, value]) => predicate(value as T[keyof T], key));
   return Object.fromEntries(mappedEntries) as Partial<T>;
