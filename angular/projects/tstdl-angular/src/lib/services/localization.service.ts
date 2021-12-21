@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
-import type { DeepNonNullable, StringMap } from '@tstdl/base/types';
+import type { StringMap } from '@tstdl/base/types';
 import type { PropertyName } from '@tstdl/base/utils';
 import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/utils';
 import { deepEntries } from '@tstdl/base/utils/object';
@@ -40,7 +40,11 @@ export type LocalizationDataObject<Parameters> = {
 };
 
 export type LocalizationKeys<T extends LocalizationTemplate> = {
-  [P in keyof T]: T[P] extends LocalizationTemplate ? LocalizationKeys<T[P]> : LocalizationKey;
+  [P in keyof T]: T[P] extends LocalizationTemplate
+  ? LocalizationKeys<T[P]>
+  : T[P] extends LocalizeItem<infer R>
+  ? LocalizationKey<R>
+  : LocalizationKey;
 };
 
 export function isLocalizationKey(value: any): value is LocalizationKey {
