@@ -42,16 +42,12 @@ export type TypedExtract<T, U extends T> = T extends U ? T : never;
 /**
  * omit properties from a type that extend from a specific type.
  */
-export type OmitBy<T, V> = Omit<
-  T,
-  { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]
->;
+export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]>;
 
 /**
  * normalize properties of a type that allow `undefined` to make them optional.
  */
-export type Optionalize<S extends object> = OmitBy<S, undefined> &
-  Partial<PickBy<S, undefined>>;
+export type Optionalize<S extends object> = OmitBy<S, undefined> & Partial<PickBy<S, undefined>>;
 
 /**
  * remove nested type information
@@ -64,10 +60,11 @@ export type Simplify<T> = T extends (Primitive | Date | RegExp) ? T
 /**
  * pick properties from a type that extend from a specific type.
  */
-export type PickBy<T, V> = Pick<
-  T,
-  { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]
->;
+export type PickBy<T, V> = Pick<T, { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]>;
+
+export type NonNullable<T> = T extends null ? never : T;
+export type NonUndefinable<T> = T extends undefined ? never : T;
+export type NonNullOrUndefinable<T> = T extends null | undefined ? never : T;
 
 /**
  * makes optional properties required and removes null and undefined
@@ -87,8 +84,7 @@ export type TypeOf<T extends object, P extends keyof T> = T[P];
 export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
 export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
-export type ExtractPropertiesOfType<T, U> = { [P in keyof T]: T[P] extends U ? T[P] : never };
-export type PropertiesOfType<T, U> = keyof ExtractPropertiesOfType<T, U>;
+export type PropertiesOfType<T, U> = keyof PickBy<T, U>;
 
 export type Flatten<T> = T extends readonly (infer R)[] ? R : T;
 export type DeepFlatten<T> = T extends readonly (infer R)[]

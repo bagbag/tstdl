@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.67.14",
+  "version": "0.67.15",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,7 @@
     "build:watch": "ttsc --watch",
     "build:prod": "rm -rf dist && npm run build && cp package.json package-lock.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build:prod && npm publish dist/"
+    "pub": "npm run build:prod && rm -v dist/test* && npm publish dist/"
   },
   "dependencies": {
     "luxon": "^2.2",
@@ -24,9 +24,9 @@
     "@types/minio": "^7.0",
     "@types/node": ">=16",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "^5.7",
-    "@typescript-eslint/parser": "^5.7",
-    "eslint": "^8.4",
+    "@typescript-eslint/eslint-plugin": "^5.8",
+    "@typescript-eslint/parser": "^5.8",
+    "eslint": "^8.5",
     "ttypescript": "^1.5",
     "typescript": "^4.5",
     "typescript-transform-paths": "^3.3"
