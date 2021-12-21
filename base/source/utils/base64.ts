@@ -74,7 +74,7 @@ function encodeBase64Fallback(data: ArrayBuffer | TypedArray | DataView): string
     }
   }
 
-  return base64.substr(0, base64.length - 2 + nMod3) + (nMod3 === 2 ? '' : nMod3 === 1 ? '=' : '==');
+  return base64.substring(0, base64.length - 2 + nMod3) + (nMod3 == 2 ? '' : nMod3 == 1 ? '=' : '==');
 }
 
 function decodeBase64Fallback(base64: string, blockSize?: number): Uint8Array {

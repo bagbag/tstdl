@@ -345,15 +345,6 @@ export class MongoBaseRepository<T extends Entity> {
     return updateResult;
   }
 
-  /*
-  async replaceByFilterOrInsert<U extends T>(filter: Filter<U>, entity: MaybeNewEntity<U>): Promise<U> {
-    const document = mongoDocumentFromMaybeNewEntity(entity);
-    const result = await this.collection.findOneAndReplace(filter as Filter<T>, document, { upsert: true, returnDocument: 'after' });
-
-    return toEntity<U>(assertDefinedPass(result.value as MongoDocument<U>));
-  }
-  */
-
   async has(id: string): Promise<boolean> {
     return this.hasByFilter({ _id: id } as Filter<T>);
   }
