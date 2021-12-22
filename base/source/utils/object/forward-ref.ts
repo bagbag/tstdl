@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 
 import { noop } from '../helpers';
-import { isDefined, isFunction } from '../type-guards';
+import { assert, isDefined, isFunction, isNullOrUndefined } from '../type-guards';
 
+export const hasRef: unique symbol = Symbol('ForwardRef.hasRef');
 export const getRef: unique symbol = Symbol('ForwardRef.getRef');
 export const setRef = Symbol('ForwardRef.setRef');
 
@@ -14,6 +15,10 @@ export type ForwardRefOptions<T extends object> = {
 };
 
 export class ForwardRef<T extends object> {
+  get [hasRef](): boolean {
+    throw new Error('that\'s a bug or invalid usage! This should not happen...');
+  }
+
   constructor(options?: ForwardRefOptions<T>) {
     // eslint-disable-next-line no-constructor-return
     return getForwardRefProxy(options);
@@ -28,7 +33,22 @@ export class ForwardRef<T extends object> {
     return isFunction(value) && (isForwardRef in value);
   }
 
-  [getRef](): this {
+  static deref<T extends object>(forwardRef: ForwardRef<T>): T;
+  static deref<T extends object>(forwardRef: T): T;
+  static deref<T extends object>(forwardRef: ForwardRef<T>): T {
+    assert(ForwardRef.isForwardRef(forwardRef), 'object is not a ForwardRef');
+    assert(forwardRef[hasRef], 'ForwardRef is not initialized');
+    return forwardRef[getRef]() as T;
+  }
+
+  static tryDeref<T extends object>(forwardRef: ForwardRef<T>): T | undefined;
+  static tryDeref<T extends object>(forwardRef: T): T | undefined;
+  static tryDeref<T extends object>(forwardRef: ForwardRef<T>): T | undefined {
+    assert(ForwardRef.isForwardRef(forwardRef), 'object is not a ForwardRef');
+    return forwardRef[getRef]() as T | undefined;
+  }
+
+  [getRef](): this | undefined {
     throw new Error('that\'s a bug or invalid usage! This should not happen...');
   }
 
@@ -53,9 +73,9 @@ function getForwardRefProxy<T extends object>(options: ForwardRefOptions<T> = {}
     initialize = noop;
   };
 
-  function forwardRefProxy(): void { /* noop */ }
+  function forwardRef(): void { /* noop */ }
 
-  const proxy = new Proxy(forwardRefProxy as any, {
+  const proxy = new Proxy(forwardRef as any, {
     apply(_target: T, _thisArg: any, args: any[]): any {
       initialize();
       return new reference(...args);
@@ -80,6 +100,9 @@ function getForwardRefProxy<T extends object>(options: ForwardRefOptions<T> = {}
       initialize();
 
       switch (property) {
+        case hasRef:
+          return initialized;
+
         case getRef:
           return refGetter;
 
@@ -96,7 +119,7 @@ function getForwardRefProxy<T extends object>(options: ForwardRefOptions<T> = {}
     },
     getPrototypeOf(_target: T): object | null {
       initialize();
-      return Object.getPrototypeOf(reference);
+      return isNullOrUndefined(reference) ? null : Object.getPrototypeOf(reference);
     },
     has(_target: T, property: string | symbol): boolean {
       initialize();
