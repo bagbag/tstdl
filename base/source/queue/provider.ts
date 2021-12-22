@@ -1,5 +1,5 @@
 import type { Queue } from './queue';
 
-export interface QueueProvider {
-  get<T>(key: string, retryAfterMilliseconds: number): Queue<T>;
+export abstract class QueueProvider {
+  abstract get<T>(key: string, retryAfterMilliseconds: number): Queue<T>;
 }

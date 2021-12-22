@@ -1,15 +1,13 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
+import { inject, injectionToken, singleton } from '#/container';
 import type { UndefinableJson } from '../types';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
 import { buildUrl, CancellationToken, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
+import { HttpClientAdapter } from './client.adapter';
 import { HttpError, HttpErrorReason } from './http.error';
-import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue, NormalizedHttpClientRequest } from './types';
+import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue } from './types';
 import { abortToken, normalizedHttpClientRequest, normalizeHttpValue } from './types';
-
-export interface HttpClientAdapter {
-  call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>>;
-  callStream(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>>;
-}
+export { HttpClientAdapter } from './client.adapter';
 
 export type HttpClientOptions = {
   /**
@@ -27,7 +25,9 @@ export type HttpClientHandler = AsyncMiddlerwareHandler<HttpClientRequest, HttpC
 
 export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export const HTTP_CLIENT_OPTIONS = injectionToken(Symbol('HttpClientOptions'));
+
+@singleton()
 export class HttpClient {
   private static _instance?: HttpClient;
 
@@ -48,7 +48,7 @@ export class HttpClient {
     return this._instance;
   }
 
-  constructor(adapter: HttpClientAdapter, options: HttpClientOptions = {}) {
+  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;
 

@@ -1,9 +1,10 @@
-import type { EntityRepository } from '#/database';
+import { injectable } from '#/container';
 import { getNewId } from '#/database';
-import type { Logger } from '#/logger';
+import { Logger } from '#/logger';
 import { UniqueTagStrategy } from '#/queue';
 import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
-import type { Collection, TypedIndexDescription } from '../types';
+import type { TypedIndexDescription } from '../types';
+import { Collection } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [
@@ -13,7 +14,8 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
   { key: { batch: 1 } }
 ];
 
-export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> implements EntityRepository<MongoJob<T>> {
+@injectable()
+export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> {
   constructor(collection: Collection<MongoJob<T>>, logger: Logger) {
     super(collection, noopTransformer, { indexes, logger });
   }

@@ -24,28 +24,28 @@ export type EnqueueManyItem<T> = EnqueueOptions & {
   data: T
 };
 
-export interface Queue<T> {
-  enqueue(data: T, options?: EnqueueOptions): Promise<Job<T>>;
-  enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
-  enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
+export abstract class Queue<T> {
+  abstract enqueue(data: T, options?: EnqueueOptions): Promise<Job<T>>;
+  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
+  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
 
-  has(id: string): Promise<boolean>;
+  abstract has(id: string): Promise<boolean>;
 
-  countByTag(tag: JobTag): Promise<number>;
+  abstract countByTag(tag: JobTag): Promise<number>;
 
-  get(id: string): Promise<Job<T> | undefined>;
-  getByTag(tag: JobTag): Promise<Job<T>[]>;
+  abstract get(id: string): Promise<Job<T> | undefined>;
+  abstract getByTag(tag: JobTag): Promise<Job<T>[]>;
 
-  cancel(id: string): Promise<void>;
-  cancelMany(ids: string[]): Promise<void>;
-  cancelByTag(tag: JobTag): Promise<void>;
+  abstract cancel(id: string): Promise<void>;
+  abstract cancelMany(ids: string[]): Promise<void>;
+  abstract cancelByTag(tag: JobTag): Promise<void>;
 
-  dequeue(): Promise<Job<T> | undefined>;
-  dequeueMany(count: number): Promise<Job<T>[]>;
+  abstract dequeue(): Promise<Job<T> | undefined>;
+  abstract dequeueMany(count: number): Promise<Job<T>[]>;
 
-  acknowledge(job: Job<T>): Promise<void>;
-  acknowledgeMany(jobs: Job<T>[]): Promise<void>;
+  abstract acknowledge(job: Job<T>): Promise<void>;
+  abstract acknowledgeMany(jobs: Job<T>[]): Promise<void>;
 
-  getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>>;
-  getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]>;
+  abstract getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>>;
+  abstract getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]>;
 }

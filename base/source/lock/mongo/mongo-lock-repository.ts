@@ -1,8 +1,9 @@
-import type { EntityRepository } from '#/database';
+import { injectable } from '#/container';
 import { getNewId } from '#/database';
 import { MongoEntityRepository, noopTransformer } from '#/database/mongo/mongo-entity-repository';
-import type { Collection, Filter, TypedIndexDescription } from '#/database/mongo/types';
-import type { Logger } from '#/logger';
+import type { Filter, TypedIndexDescription } from '#/database/mongo/types';
+import { Collection } from '#/database/mongo/types';
+import { Logger } from '#/logger';
 import { now } from '#/utils';
 import { MongoError } from 'mongodb';
 import type { MongoLockEntity } from './model';
@@ -12,7 +13,8 @@ const indexes: TypedIndexDescription<MongoLockEntity>[] = [
   { key: { expiration: 1 }, expireAfterSeconds: 1 }
 ];
 
-export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements EntityRepository<MongoLockEntity> {
+@injectable()
+export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> {
   constructor(collection: Collection<MongoLockEntity>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }

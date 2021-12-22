@@ -1,3 +1,4 @@
+import { singleton } from '#/container';
 import { ForbiddenError } from '#/error';
 import { HttpClient } from '#/http';
 import type { Json } from '#/types';
@@ -5,9 +6,9 @@ import { Alphabet, assertNumberPass, currentTimestamp, digest, getRandomString, 
 import type { JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { object, optional, string } from 'superstruct';
-import type { OidcConfigurationService } from './oidc-configuration.service';
+import { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
-import type { OidcStateRepository } from './oidc-state.repository';
+import { OidcStateRepository } from './oidc-state.repository';
 import type { OidcGetTokenParameters, OidcInitParameters, OidcInitResult, OidcRefreshTokenParameters, OidcToken } from './oidc.service-model';
 
 type OidcJwtTokenPayload = {
@@ -23,6 +24,7 @@ const tokenResponseStruct = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
+@singleton()
 export class OidcService<Data = any> {
   private readonly oidcConfigurationService: OidcConfigurationService;
   private readonly oidcStateRepository: OidcStateRepository;

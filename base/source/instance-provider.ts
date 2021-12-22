@@ -1,6 +1,7 @@
 import { HttpApi } from './api/http-api';
 import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
+import { HttpClient } from './http';
 import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
@@ -15,7 +16,7 @@ import { WebServerModule } from './module/modules';
 import type { ObjectStorage } from './object-storage';
 import { ObjectStorageProvider } from './object-storage';
 import type { OidcStateRepository } from './openid-connect';
-import { CachedOidcConfigurationService, OidcConfigurationService, OidcService } from './openid-connect';
+import { CachedOidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
 import { deferThrow, millisecondsPerMinute, singleton, timeout } from './utils';
 
@@ -187,8 +188,7 @@ export function getHttpApi(): HttpApi {
 export async function getOidcService(): Promise<OidcService> {
   return singleton(singletonScope, OidcService, async () => {
     const oidcStateRepository = await oidcStateRepositoryProvider();
-    const oidcConfigurationService = new OidcConfigurationService();
-    const cachedOidcConfigurationService = new CachedOidcConfigurationService(oidcConfigurationService, 5 * millisecondsPerMinute);
+    const cachedOidcConfigurationService = new CachedOidcConfigurationService(HttpClient.instance, 5 * millisecondsPerMinute);
 
     return new OidcService(cachedOidcConfigurationService, oidcStateRepository);
   });

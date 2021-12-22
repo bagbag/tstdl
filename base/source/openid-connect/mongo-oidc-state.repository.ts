@@ -1,6 +1,7 @@
-import type { Collection, EntityTransformer, TypedIndexDescription } from '#/database/mongo';
-import { mapTo, MongoEntityRepository } from '#/database/mongo';
-import type { Logger } from '#/logger';
+import { injectable } from '#/container';
+import type { EntityTransformer, TypedIndexDescription } from '#/database/mongo';
+import { Collection, mapTo, MongoEntityRepository } from '#/database/mongo';
+import { Logger } from '#/logger';
 import type { TypedOmit } from '#/types';
 import type { OidcState } from './oidc-state.model';
 import type { OidcStateRepository } from './oidc-state.repository';
@@ -20,6 +21,7 @@ const transformer: EntityTransformer<OidcState, MongoOidcState> = {
   }
 };
 
+@injectable()
 export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository {
   constructor(collection: Collection<MongoOidcState>, logger: Logger) {
     super(collection, transformer, { logger, indexes });

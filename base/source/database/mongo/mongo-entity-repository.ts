@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/semi */
-import type { Entity, EntityPatch, EntityRepository, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
+import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
+import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
 import { equals, isDefined, isUndefined, _throw } from '#/utils';
 import type { LoadOptions } from './mongo-base.repository';
@@ -56,10 +57,7 @@ export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<
   return noopTransformer;
 }
 
-
-export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> implements EntityRepository<T> {
-  readonly _type: T;
-
+export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> extends EntityRepository<T> {
   readonly collection: Collection<TDb>;
   readonly transformer: EntityTransformer<T, TDb>;
   readonly logger: Logger;
@@ -68,6 +66,8 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> imp
   readonly transformerMappingMap: TransformerMappingMap<T, TDb>;
 
   constructor(collection: Collection<TDb>, transformer: EntityTransformer<T, TDb>, { logger, indexes }: MongoEntityRepositoryOptions<TDb>) {
+    super();
+
     this.collection = collection;
     this.transformer = transformer;
     this.logger = logger.prefix(`${collection.collectionName}: `);

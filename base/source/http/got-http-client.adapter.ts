@@ -1,10 +1,11 @@
+import { singleton } from '#/container';
 import { isArrayBuffer, isDefined, isUndefined, toArray } from '#/utils';
 import type { CancelableRequest, Options as GotOptions, Response, ResponseType } from 'got';
 import Got, { CancelError, HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
-import type { HttpClientAdapter } from './client';
+import { HttpClientAdapter } from './client.adapter';
 import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
 import { abortToken } from './types';
@@ -14,7 +15,8 @@ const defaultGotOptions: GotOptions = {
   followRedirect: true
 };
 
-export class GotHttpClientAdapter implements HttpClientAdapter {
+@singleton()
+export class GotHttpClientAdapter extends HttpClientAdapter {
   async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     switch (request.responseType) {
       case 'stream':

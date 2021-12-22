@@ -2,8 +2,8 @@
 import type { Entity, Query, QueryOptions } from '#/database';
 import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
-import type { SearchIndex, SearchResult, SearchResultItem } from '#/search-index';
-import { SearchIndexError } from '#/search-index';
+import type { SearchResult, SearchResultItem } from '#/search-index';
+import { SearchIndex, SearchIndexError } from '#/search-index';
 import type { TypedOmit } from '#/types';
 import { decodeBase64, decodeText, encodeBase64, encodeUtf8, isDefined, isString } from '#/utils';
 import type { Client } from '@elastic/elasticsearch';
@@ -20,10 +20,8 @@ type CursorData<T extends Entity = Entity> = {
   searchAfter: any
 };
 
-export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
+export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> {
   private readonly logger: Logger;
-
-  readonly _type: T;
 
   readonly client: Client;
   readonly indexName: string;
@@ -32,6 +30,8 @@ export class ElasticSearchIndex<T extends Entity> implements SearchIndex<T> {
   readonly sortKeywordRewrites: Set<string>;
 
   constructor(client: Client, indexName: string, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
+    super();
+
     this.client = client;
     this.indexName = indexName;
     this.indexSettings = indexSettings;

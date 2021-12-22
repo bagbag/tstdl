@@ -1,17 +1,17 @@
 import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/database';
 import { compareByValueSelectionOrdered, FactoryMap, intersectSets, isDefined, isNullOrUndefined, isString, normalizeText, Timer, unionSets } from '#/utils';
-import type { SearchIndex } from '../search-index';
+import { SearchIndex } from '../search-index';
 import type { SearchResult, SearchResultItem } from '../search-result';
 
-export class MemorySearchIndex<T extends Entity> implements SearchIndex<T> {
+export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
   private readonly indexedFields: (keyof T)[];
   private readonly allSet: Set<T>;
   private readonly idMap: Map<string, T>;
   private readonly indexMap: FactoryMap<PropertyKey, FactoryMap<string | null | undefined, Set<T>>>;
 
-  readonly _type: T;
-
   constructor(indexedFields: (keyof T)[]) {
+    super();
+
     this.indexedFields = indexedFields;
 
     this.allSet = new Set();

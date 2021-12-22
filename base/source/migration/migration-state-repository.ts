@@ -1,4 +1,4 @@
-import type { EntityRepository } from '#/database';
+import { EntityRepository } from '#/database';
 import type { MigrationState } from './migration-state';
 
-export interface MigrationStateRepository extends EntityRepository<MigrationState> { }
+export abstract class MigrationStateRepository extends EntityRepository<MigrationState> { }

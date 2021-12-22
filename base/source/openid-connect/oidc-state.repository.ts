@@ -1,4 +1,4 @@
-import type { EntityRepository } from '#/database';
+import { EntityRepository } from '#/database';
 import type { OidcState } from './oidc-state.model';
 
-export interface OidcStateRepository extends EntityRepository<OidcState> { }
+export abstract class OidcStateRepository extends EntityRepository<OidcState> { }

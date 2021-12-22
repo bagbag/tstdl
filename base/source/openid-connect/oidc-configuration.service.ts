@@ -1,3 +1,4 @@
+import { singleton } from '#/container';
 import { HttpClient } from '#/http';
 import { object, optional, string } from 'superstruct';
 
@@ -17,11 +18,18 @@ const oidcConfigurationStruct = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
+@singleton()
 export class OidcConfigurationService {
+  private readonly httpClient: HttpClient;
+
+  constructor(httpClient: HttpClient) {
+    this.httpClient = httpClient;
+  }
+
   async getConfiguration(endpoint: string): Promise<OidcConfiguration> {
     const wellKnownUrl = `${endpoint}/.well-known/openid-configuration`;
 
-    const configurationResponse = await HttpClient.instance.getJson(wellKnownUrl);
+    const configurationResponse = await this.httpClient.getJson(wellKnownUrl);
     const { authorization_endpoint, token_endpoint, revocation_endpoint, userinfo_endpoint } = oidcConfigurationStruct.mask(configurationResponse); // eslint-disable-line @typescript-eslint/naming-convention
 
     const oidcConfiguration: OidcConfiguration = {
