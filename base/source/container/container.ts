@@ -6,7 +6,7 @@ import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
 import { assertDefinedPass, isDefined, isFunction, isObject, isPromise, isUndefined } from '#/utils/type-guards';
 import type { InjectionToken, Provider } from './types';
-import { isAsyncFactoryProvider, isClassProvider, isConstructorInjectionToken, isFactoryProvider, isParameterizedInjectionToken, isStringInjectionToken, isTokenProvider, isValueProvider } from './types';
+import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isFunctionOrConstructorInjectionToken, isParameterizedInjectionToken, isStringInjectionToken, isTokenProvider, isValueProvider } from './types';
 
 type ResolveChainParameterNode = {
   parametersCount: number,
@@ -315,7 +315,7 @@ export class Container {
 function getTokenName(token: InjectionToken | undefined): string {
   return isUndefined(token)
     ? 'undefined'
-    : isConstructorInjectionToken(token)
+    : isFunctionOrConstructorInjectionToken(token)
       ? token.name
       : isStringInjectionToken(token)
         ? `"${token}"`

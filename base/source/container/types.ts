@@ -8,7 +8,7 @@ export type ParameterizedInjectionToken<T, P> = {
   parameter: P
 };
 
-export type SimpleInjectionToken<T> = Constructor<T> | string | symbol;
+export type SimpleInjectionToken<T> = Constructor<T> | Function | string | symbol;
 
 export type InjectionToken<T = any, P = any> = SimpleInjectionToken<T> | ParameterizedInjectionToken<T, P>;
 
@@ -67,7 +67,7 @@ export function asyncFactoryProvider<T, P>(factory: AsyncFactory<T, P>): AsyncFa
   return { useAsyncFactory: factory };
 }
 
-export function isConstructorInjectionToken<T, P>(token: InjectionToken<T, P>): token is Constructor<T> {
+export function isFunctionOrConstructorInjectionToken<T, P>(token: InjectionToken<T, P>): token is Function | Constructor<T> {
   return isFunction(token);
 }
 
