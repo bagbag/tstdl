@@ -1,6 +1,7 @@
 import type { JsonPrimitive, StringMap, TypedOmit, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
-import type { CancellationToken, ReadonlyCancellationToken } from '#/utils';
-import { isArray, isDefined, isNull, isObject, isUndefined, stripPropertyWhenUndefined } from '#/utils';
+import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import { filterObject } from '#/utils/object';
+import { isArray, isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards';
 
 export const abortToken: unique symbol = Symbol('abortToken');
 
@@ -223,13 +224,13 @@ export function normalizedHttpClientRequest(request: HttpClientRequest): Normali
   }
 
   if (isDefined(request.body)) {
-    normalizedRequest.body = stripPropertyWhenUndefined({
+    normalizedRequest.body = filterObject({
       form: normalizeHttpParameters(request.body.form),
       json: request.body.json,
       text: request.body.text,
       buffer: request.body.buffer,
       stream: request.body.stream
-    });
+    }, isDefined);
   }
 
   if (isDefined(request.timeout)) {

@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
 
 import { Enumerable } from '#/enumerable';
-import type { MetricAggregation, MetricAggregationOptions, ReadonlyCancellationToken } from '#/utils';
-import { cancelableTimeout, MovingMetric } from '#/utils';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import type { MetricAggregation, MetricAggregationOptions } from '#/utils/moving-metric';
+import { MovingMetric } from '#/utils/moving-metric';
+import { cancelableTimeout } from '#/utils/timing';
 import type { ModuleMetric } from './module';
 
 type MetricReport<Aggregation extends MetricAggregation> = {

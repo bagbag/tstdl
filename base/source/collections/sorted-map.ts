@@ -1,6 +1,6 @@
+import { compareByValue } from '#/utils/comparison';
 import { Enumerable } from '../enumerable';
-import type { Comparator } from '../utils';
-import { compareByValue } from '../utils';
+import type { Comparator } from '../utils/sort';
 import { SortedArrayList } from './sorted-array-list';
 
 export class SortedMap<K extends KComparator, V, KComparator = K> {

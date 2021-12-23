@@ -4,7 +4,7 @@ import { MongoEntityRepository, noopTransformer } from '#/database/mongo/mongo-e
 import type { Filter, TypedIndexDescription } from '#/database/mongo/types';
 import { Collection } from '#/database/mongo/types';
 import { Logger } from '#/logger';
-import { now } from '#/utils';
+import { now } from '#/utils/date-time';
 import { MongoError } from 'mongodb';
 import type { MongoLockEntity } from './model';
 

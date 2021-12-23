@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 
-import { noop } from '../helpers';
+import { noop } from '../noop';
 import { assert, isDefined, isFunction, isNullOrUndefined } from '../type-guards';
 
 export const hasRef: unique symbol = Symbol('ForwardRef.hasRef');

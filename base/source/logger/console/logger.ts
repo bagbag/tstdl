@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import { formatError } from '../../utils';
+import { formatError } from '#/utils/helpers';
 import { LogLevel } from '../level';
 import type { LogEntry, LogErrorOptions, Logger } from '../logger';
 
@@ -42,7 +42,7 @@ export class ConsoleLogger implements Logger {
     this.log(console.debug, entry, LogLevel.Trace);
   }
 
-  private log(func: (...parameters: any[]) => void, entry: any, level: LogLevel): void {
+  private log(func: (...parameters: any[]) => void, entry: string, level: LogLevel): void {
     if (this.level < level) {
       return;
     }

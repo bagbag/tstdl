@@ -1,8 +1,8 @@
 import { MultiError } from '../error/multi.error';
 import { DeferredPromise } from '../promise';
-import type { ReadonlyCancellationToken } from '../utils';
-import { CancellationToken } from '../utils';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
+import { CancellationToken } from '../utils/cancellation-token';
 import type { AsyncDisposable, Disposable } from './disposable';
 import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
 

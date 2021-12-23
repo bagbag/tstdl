@@ -1,10 +1,10 @@
 import type { BinaryData, TypedExtract } from '#/types';
-import { zBase32Encode } from '#/utils';
 import type * as NodeCrypto from 'crypto';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { getRandomBytes } from './random';
 import { isDefined, isString, isUndefined } from './type-guards';
+import { zBase32Encode } from './z-base32';
 
 export type AesMode = 'CBC' | 'CTR' | 'GCM' | 'KW';
 export type EcdsaCurve = 'P-256' | 'P-384' | 'P-521';

@@ -1,5 +1,7 @@
-import type { Comparator } from '../utils';
-import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller, compareByValue, isDefined, isUndefined } from '../utils';
+import { compareByValue } from '#/utils/comparison';
+import type { Comparator } from '#/utils/sort';
+import { isDefined, isUndefined } from '#/utils/type-guards';
+import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '../utils/binary-search';
 import type { SortedList } from './sorted-list';
 
 export class SortedArrayList<T extends TComparator, TComparator = T> implements SortedList<T> {

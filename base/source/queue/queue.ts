@@ -1,4 +1,4 @@
-import type { ReadonlyCancellationToken } from '../utils';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
 
 export type JobTag = string | number | null;
 

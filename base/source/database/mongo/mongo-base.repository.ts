@@ -3,7 +3,7 @@
 import type { Entity, MaybeNewEntity } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
-import { assertDefined, isNullOrUndefined } from '#/utils';
+import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
 import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';

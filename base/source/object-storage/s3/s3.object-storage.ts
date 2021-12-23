@@ -1,9 +1,10 @@
 import { AsyncEnumerable } from '#/enumerable';
 import type { ObjectInformation, ObjectStorage } from '#/object-storage';
-import { isObject, now } from '#/utils';
+import { now } from '#/utils/date-time';
+import type { NonObjectBufferMode } from '#/utils/stream-helper-types';
+import { readStream } from '#/utils/stream-reader';
+import { isObject } from '#/utils/type-guards';
 import type { BucketItem, Client } from 'minio';
-import type { NonObjectBufferMode } from '../../utils';
-import { readStream } from '../../utils';
 import type { TypedReadable } from '../../utils/typed-readable';
 import type { S3Object, S3ObjectInformation } from './s3.object';
 

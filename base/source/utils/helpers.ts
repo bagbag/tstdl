@@ -4,22 +4,15 @@ import { MultiKeyMap } from '#/data-structures';
 import { HttpError } from '#/http';
 import { decodeJsonPath } from '#/json-path';
 import { DetailsError } from '../error';
-import type { BinaryData, DeepArray, DeepFlatten, DeepNonNullable, StringMap } from '../types';
+import type { BinaryData, DeepArray, DeepFlatten, DeepNonNullable, Record, StringMap } from '../types';
+import { toArray } from './array';
 import { toUint8Array } from './binary';
+import { compareByValue } from './comparison';
 import { currentTimestamp } from './date-time';
 import { sort } from './iterable-helpers';
+import { hasOwnProperty } from './object';
 import type { Comparator } from './sort';
-import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
-
-export function noop(): void {
-  // noop
-}
-
-export function toArray<T>(value: T | T[]): T[];
-export function toArray<T>(value: T | readonly T[]): readonly T[];
-export function toArray<T>(value: T | T[]): T[] {
-  return Array.isArray(value) ? value : [value];
-}
+import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
 
@@ -254,116 +247,15 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   return `${name ?? 'Error'}: ${message}${restString}${extraInfoString}${stackString}`;
 }
 
-export function select<T extends Record<any, any>, K extends keyof T>(key: K): (item: T) => T[K] {
+export function select<T extends Record, K extends keyof T>(key: K): (item: T) => T[K] {
   return (item: T) => item[key];
-}
-
-export function compareByValueSelection<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
-  return (a: T, b: T) => {
-    for (const selector of selectors) {
-      const selectedA = selector(a);
-      const selectedB = selector(b);
-      const comparison = compareByValue(selectedA, selectedB);
-
-      if (comparison != 0) {
-        return comparison;
-      }
-    }
-
-    return 0;
-  };
-}
-
-export function compareByValueSelectionDescending<T>(...selectors: ((item: T) => unknown)[]): (a: T, b: T) => number {
-  return (a: T, b: T) => {
-    for (const selector of selectors) {
-      const selectedA = selector(a);
-      const selectedB = selector(b);
-      const comparison = compareByValueDescending(selectedA, selectedB);
-
-      if (comparison != 0) {
-        return comparison;
-      }
-    }
-
-    return 0;
-  };
-}
-
-export function compareByValueSelectionOrdered<T>(...selectors: (readonly [(item: T) => unknown, 1 | -1])[]): (a: T, b: T) => number {
-  return (a: T, b: T) => {
-    for (const [selector, order] of selectors) {
-      const selectedA = selector(a);
-      const selectedB = selector(b);
-      const comparison = (order == 1)
-        ? compareByValue(selectedA, selectedB)
-        : compareByValueDescending(selectedA, selectedB);
-
-      if (comparison != 0) {
-        return comparison;
-      }
-    }
-
-    return 0;
-  };
-}
-
-export function compareByValueToOrder<T>(order: T[]): (a: T, b: T) => number {
-  return compareByValueSelectionToOrder(order, (item) => item);
-}
-
-export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], selector: (item: T) => TSelect): (a: T, b: T) => number {
-  const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as const);
-  const indexMap = new Map(indexMapEntries);
-
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  return function compareByValueSelectionToOrder(a: T, b: T): number {
-    const selectedA = selector(a);
-    const selectedB = selector(b);
-    const indexA = indexMap.get(selectedA);
-    const indexB = indexMap.get(selectedB);
-
-    if (indexA == undefined || indexB == undefined) {
-      throw new Error('value not defined in order');
-    }
-
-    return compareByValue(indexA, indexB);
-  };
-}
-
-export function compareByValue<T>(a: T, b: T): number {
-  if (a === b) {
-    return 0;
-  }
-  else if (a > b) {
-    return 1;
-  }
-  else if (b > a) {
-    return -1;
-  }
-
-  throw new Error('objects not comparable');
-}
-
-export function compareByValueDescending<T>(a: T, b: T): number {
-  if (a === b) {
-    return 0;
-  }
-  else if (a > b) {
-    return -1;
-  }
-  else if (b > a) {
-    return 1;
-  }
-
-  throw new Error('objects not comparable');
 }
 
 export const propertyName = Symbol('PropertyName');
 
 export type PropertyName = { [propertyName]: string };
-export type PropertyNameProxy<T extends Record<any, any>> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
-export type PropertyNameProxyChild<T> = T extends Record<any, any> ? ({ [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
+export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
+export type PropertyNameProxyChild<T> = T extends Record ? ({ [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
 
 export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
@@ -383,7 +275,7 @@ export function isPropertyName(value: any): value is PropertyName {
  *
  * name == 'foo.bar' // true
  */
-export function getPropertyNameProxy<T extends Record<any, any> = Record<any, any>>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
+export function getPropertyNameProxy<T extends Record = Record>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
   const { deep = true, flat = false, prefix } = options;
 
   const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
@@ -417,7 +309,7 @@ export function getPropertyNameProxy<T extends Record<any, any> = Record<any, an
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepNonNullable<T>) => any, options: { deep?: boolean } = {}): string {
+export function propertyNameOf<T extends Record = Record>(expression: (instance: DeepNonNullable<T>) => any, options: { deep?: boolean } = {}): string {
   const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as DeepNonNullable<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
@@ -428,7 +320,7 @@ export function propertyNameOf<T extends Record<any, any> = Record<any, any>>(ex
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function flatPropertyNameOf<T extends Record<any, any> = Record<any, any>>(expression: (instance: DeepFlatten<DeepNonNullable<T>>) => any, options: { deep?: boolean } = {}): string {
+export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: DeepFlatten<DeepNonNullable<T>>) => any, options: { deep?: boolean } = {}): string {
   const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as DeepFlatten<DeepNonNullable<T>>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
@@ -526,167 +418,6 @@ export function memoizeSingle<Fn extends (parameters: any) => T, T>(fn: Fn): Fn 
   return memoized as Fn;
 }
 
-const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
-
-type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
-
-type ArrayEqualsOptions<A, B> = {
-  sort?: Comparator<A | B>,
-  comparator?: ArrayEqualsComparator<A, B>
-};
-
-export function arrayEquals<A, B>(a: readonly A[], b: readonly B[], options?: ArrayEqualsOptions<A, B>): boolean {
-  const _sort = options?.sort ?? false;
-  const comparator = options?.comparator ?? defaultArrayEqualsComparator;
-
-  if (a.length != b.length) {
-    return false;
-  }
-
-  const c = _sort != false ? toArray(sort(a, _sort)) : a;
-  const d = _sort != false ? toArray(sort(b, _sort)) : b;
-
-  for (let i = 0; i < c.length; i++) {
-    const itemEquals = comparator(c[i]!, d[i]!);
-
-    if (!itemEquals) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-export type EqualsOptions = {
-  deep?: boolean,
-  arrayDeep?: boolean,
-  sortArray?: boolean,
-  coerceStrings?: boolean
-};
-
-const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];
-
-export function equals(a: any, b: any, options?: EqualsOptions): boolean;
-export function equals(a: any, b: any, options?: EqualsOptions, __internal?: any): boolean; // eslint-disable-line @typescript-eslint/unified-signatures
-export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes: Set<any> = new Set()): boolean { // eslint-disable-line max-statements, complexity, max-lines-per-function
-  if (a === b) {
-    return true;
-  }
-
-  const aType = typeof a;
-  const bType = typeof b;
-
-  if (aType != bType) {
-    if (isDefined(options.coerceStrings) && allowedEqualsCoerceStringsTypes.includes(aType) && allowedEqualsCoerceStringsTypes.includes(bType)) {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      return (a as object).toString() == (b as object).toString();
-    }
-
-    return false;
-  }
-
-  switch (aType) {
-    case 'function':
-      return (options.deep == true)
-        ? (a as Function).toString() == (b as Function).toString()
-        : false; // eslint-disable-line @typescript-eslint/ban-types
-
-    case 'object':
-      if (a === null || b === null) { // hasn't passed equals check at top, so one must be a true object
-        return false;
-      }
-
-      if (visitedNodes.has(a)) {
-        return true;
-      }
-
-      visitedNodes.add(a);
-
-      const aPrototype = Object.getPrototypeOf(a);
-      const bPrototype = Object.getPrototypeOf(b);
-
-      if (aPrototype !== bPrototype) {
-        return false;
-      }
-
-      if (Array.isArray(a)) {
-        return (options.arrayDeep != false && (options.deep == true || options.arrayDeep == true))
-          ? arrayEquals(a, b as any[], { sort: (options.sortArray == true) ? compareByValue : undefined, comparator: (x, y) => equals(x, y, options, visitedNodes) })
-          : a === b;
-      }
-
-      if (aPrototype != Object.prototype && aPrototype !== null) { // checking a is enough, because b must have equal prototype (checked above)
-        throw new Error('equals only supports plain objects, arrays and primitives');
-      }
-
-      if (options.deep == false) {
-        return false;
-      }
-
-      return objectEquals(a as Record<any, any>, b as Record<any, any>, options, visitedNodes);
-
-    default:
-      return a === b;
-  }
-}
-
-// eslint-disable-next-line max-statements, max-lines-per-function
-function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, options: EqualsOptions, visitedNodes: Set<any>): boolean {
-  const aProperties = Object.getOwnPropertyNames(a);
-  const bProperties = Object.getOwnPropertyNames(b);
-
-  if (!arrayEquals(aProperties, bProperties, { sort: compareByValue })) {
-    return false;
-  }
-
-  for (const property of aProperties) {
-    const eq = equals(a[property], b[property], options, visitedNodes);
-
-    if (!eq) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * compares to binary types for equal content
- */
-export function binaryEquals(bufferA: BinaryData, bufferB: BinaryData): boolean {
-  const a = toUint8Array(bufferA, false);
-  const b = toUint8Array(bufferB, false);
-
-  if (a.length != b.length) {
-    return false;
-  }
-
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-export function stripPropertyWhen<T extends object, S>(obj: T, predicate: (value: unknown) => value is S): { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] } {
-  const filtered = Object.entries(obj).filter(([, value]) => !predicate(value));
-  return Object.fromEntries(filtered) as { [P in keyof T]: T[P] extends S ? T[P] | undefined : T[P] };
-}
-
-export function stripPropertyWhenUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, isUndefined);
-}
-
-export function stripPropertyWhenNull<T extends object>(obj: T): { [P in keyof T]: T[P] extends null ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, isNull);
-}
-
-export function stripPropertyWhenNullOrUndefined<T extends object>(obj: T): { [P in keyof T]: T[P] extends undefined | null ? T[P] | undefined : T[P] } {
-  return stripPropertyWhen(obj, isNullOrUndefined);
-}
-
 export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {
   if (name.includes(',')) {
     const [familyName, firstName] = name.split(',').map((part) => part.trim());
@@ -771,7 +502,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
     for (const [, index, property] of parts) {
       const key = index ?? property;
 
-      if (!Object.prototype.hasOwnProperty.call(target, key!)) {
+      if (!hasOwnProperty(target, key!)) {
         throw new Error(`reference ${ref} not found`);
       }
 
@@ -782,7 +513,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   }
 
   function getRef(node: any): string | undefined {
-    if (isObject(node) && Object.prototype.hasOwnProperty.call(node, '$ref')) {
+    if (isObject(node) && hasOwnProperty<Record>(node, '$ref')) {
       const ref = (node as StringMap)['$ref'];
 
       if (isString(ref) && recyclePathPattern.test(ref)) {

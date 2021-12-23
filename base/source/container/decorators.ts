@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import type { Constructor, OneOrMany, Simplify, TypedOmit } from '#/types';
-import { isDefined, toArray } from '#/utils';
+import { toArray } from '#/utils/array';
+import { isDefined } from '#/utils/type-guards';
 import type { ForwardRefInjectionToken, RegistrationOptions } from './container';
 import { container, defineParameterForwarded, defineParameterInjectionToken, setTypeInfo } from './container';
 import type { InjectionToken } from './types';
@@ -33,7 +34,7 @@ export function singleton<T>(options: Simplify<TypedOmit<InjectableOptions<T>, '
   return injectable({ ...options, lifecycle: 'singleton' });
 }
 
-export function inject<T>(token: InjectionToken<T>): ParameterDecorator {
+export function inject<T, P>(token: InjectionToken<T, P>): ParameterDecorator {
   function injectDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     defineParameterInjectionToken(target as Constructor, parameterIndex, token);
   }

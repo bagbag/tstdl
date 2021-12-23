@@ -1,7 +1,7 @@
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { bufferCount, filter, map } from 'rxjs/operators';
-import { compareByValue } from './helpers';
+import { compareByValue } from './comparison';
 import { average } from './math';
 import { timeout } from './timing';
 

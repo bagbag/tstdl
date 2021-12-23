@@ -2,8 +2,8 @@
 
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import type { Constructor, StringMap } from '#/types';
-import { isDefined, isUndefined } from '#/utils';
 import { ForwardRef, getRef, setRef } from '#/utils/object/forward-ref';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
 import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
 import type { DereferenceCallback } from './_internal';

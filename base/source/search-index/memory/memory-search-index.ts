@@ -1,5 +1,10 @@
 import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/database';
-import { compareByValueSelectionOrdered, FactoryMap, intersectSets, isDefined, isNullOrUndefined, isString, normalizeText, Timer, unionSets } from '#/utils';
+import { compareByValueSelectionOrdered } from '#/utils/comparison';
+import { FactoryMap } from '#/utils/factory-map';
+import { normalizeText } from '#/utils/helpers';
+import { intersectSets, unionSets } from '#/utils/set';
+import { Timer } from '#/utils/timer';
+import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards';
 import { SearchIndex } from '../search-index';
 import type { SearchResult, SearchResultItem } from '../search-result';
 

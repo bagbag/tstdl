@@ -1,4 +1,5 @@
-import { Alphabet, getRandomString } from '#/utils';
+import { Alphabet } from '#/utils/alphabet';
+import { getRandomString } from '#/utils/random';
 
 let idLength = 15;
 let idAlphabet: string = Alphabet.LowerUpperCaseNumbers;

@@ -1,13 +1,13 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "publishConfig": {
     "access": "public"
   },
   "peerDependencies": {
     "@angular/common": ">=13.1",
     "@angular/core": ">=13.1",
-    "@tstdl/base": "^0.67.11",
+    "@tstdl/base": "^0.67.19",
     "luxon": "^2.2",
     "tslib": "^2.3"
   }

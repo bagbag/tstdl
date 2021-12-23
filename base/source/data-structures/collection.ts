@@ -1,4 +1,3 @@
-import { Enumerable } from '#/enumerable';
 import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, Subject } from 'rxjs';
@@ -68,10 +67,6 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
 
     this.onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), mapTo(undefined));
     this.onItems$ = this.hasItems$.pipe(filter((isFull) => isFull), mapTo(undefined));
-  }
-
-  asEnumerable(): Enumerable<T> {
-    return Enumerable.from(this);
   }
 
   clear(): void {

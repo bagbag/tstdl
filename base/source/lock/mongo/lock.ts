@@ -1,5 +1,10 @@
-import type { Logger } from '../../logger';
-import { Alphabet, cancelableTimeout, CancellationToken, currentTimestamp, getRandomString, timeout as utilsTimeout, Timer } from '../../utils';
+import type { Logger } from '#/logger';
+import { Alphabet } from '#/utils/alphabet';
+import { CancellationToken } from '#/utils/cancellation-token';
+import { currentTimestamp } from '#/utils/date-time';
+import { getRandomString } from '#/utils/random';
+import { Timer } from '#/utils/timer';
+import { cancelableTimeout, timeout as utilsTimeout } from '../../utils/timing';
 import type { AcquireResult, Lock, LockController, LockedFunction, UsingResult } from '../lock';
 import type { MongoLockRepository } from './mongo-lock-repository';
 
@@ -62,8 +67,8 @@ export class MongoLock implements Lock {
 
       while (!releaseToken.isSet && !controller.lost) {
         try {
-          const result = await this.tryRefresh(this.resource, key);
-          expiration = (result == false) ? new Date(0) : result;
+          const refreshResult = await this.tryRefresh(this.resource, key);
+          expiration = (refreshResult == false) ? new Date(0) : refreshResult;
         }
         catch (error: unknown) {
           this.logger.error(error as Error);

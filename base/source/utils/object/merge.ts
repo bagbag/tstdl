@@ -1,5 +1,6 @@
 import type { Record } from '#/types';
-import { arrayEquals, compareByValue } from '../helpers';
+import { compareByValue } from '../comparison';
+import { arrayEquals } from '../equals';
 import { isArray, isPrimitive, isUndefined } from '../type-guards';
 import { hasOwnProperty } from './object';
 

@@ -1,4 +1,4 @@
-import { isArray, isDefined, isString, isUndefined } from '#/utils';
+import { isArray, isDefined, isString, isUndefined } from '#/utils/type-guards';
 
 const numberPattern = /^\d+$/u;
 const parsePattern = /(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+))\]|(?<error>.+?)/ug;

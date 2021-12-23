@@ -1,4 +1,4 @@
-import { MonoTypeOperatorFunction, Observable, tap } from 'rxjs';
+import type { MonoTypeOperatorFunction, Observable } from 'rxjs';
 import { map, of, switchMap, takeWhile, timer } from 'rxjs';
 
 export type SlowArrayOptions = {

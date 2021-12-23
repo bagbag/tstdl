@@ -1,6 +1,8 @@
+import { AnyIterable, isAnyIterable } from '#/utils/any-iterable-iterator';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import type { AsyncComparator } from '#/utils/sort';
+import { isNotNullOrUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
-import type { AnyIterable, AsyncComparator, ReadonlyCancellationToken } from '../utils';
-import { isAnyIterable, isNotNullOrUndefined } from '../utils';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
 import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
@@ -236,7 +238,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     return toArrayAsync(this.source);
   }
 
-  toAsync(): AsyncEnumerable<T> {
+  toAsync(): this {
     return this;
   }
 

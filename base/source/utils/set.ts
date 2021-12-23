@@ -1,6 +1,6 @@
 /* eslint-disable max-statements */
 
-import { compareByValueSelectionDescending } from './helpers';
+import { compareByValueSelectionDescending } from './comparison';
 
 export function intersectSets<T>(...sets: Set<T>[]): T[] {
   if (sets.length == 0) {

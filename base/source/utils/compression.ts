@@ -1,7 +1,7 @@
-import { encodeUtf8, zBase32Encode } from '#/utils';
 import * as Zlib from 'zlib';
 import { encodeBase64, encodeBase64Url } from './base64';
-import { decodeText, encodeHex } from './encoding';
+import { decodeText, encodeHex, encodeUtf8 } from './encoding';
+import { zBase32Encode } from './z-base32';
 
 export interface CompressionResult {
   toBuffer(): Promise<ArrayBuffer>;

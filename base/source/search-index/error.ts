@@ -1,5 +1,5 @@
 import { CustomError } from '#/error';
-import { isDefined } from '#/utils';
+import { isDefined } from '#/utils/type-guards';
 
 export class SearchIndexError extends CustomError {
   static readonly errorName = 'SearchIndexError';

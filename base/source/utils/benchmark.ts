@@ -1,5 +1,5 @@
-import { noop } from './helpers';
 import { clamp } from './math';
+import { noop } from './noop';
 import { Timer } from './timer';
 
 let microsecondsPerTimerRead = 0;

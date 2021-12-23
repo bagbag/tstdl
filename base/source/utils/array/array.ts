@@ -1,6 +1,12 @@
 import { randomInt } from '../math';
 import { isDefined } from '../type-guards';
 
+export function toArray<T>(value: T | T[]): T[];
+export function toArray<T>(value: T | readonly T[]): readonly T[];
+export function toArray<T>(value: T | T[]): T[] {
+  return Array.isArray(value) ? value : [value];
+}
+
 /**
  * creates a new array of specified length and fills it with values from the specified value provider function
  * @param length length of the new array

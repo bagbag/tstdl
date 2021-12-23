@@ -18,7 +18,10 @@ import { ObjectStorageProvider } from './object-storage';
 import type { OidcStateRepository } from './openid-connect';
 import { CachedOidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
-import { deferThrow, millisecondsPerMinute, singleton, timeout } from './utils';
+import { deferThrow } from './utils/helpers';
+import { singleton } from './utils/singleton';
+import { timeout } from './utils/timing';
+import { millisecondsPerMinute } from './utils/units';
 
 const singletonScope = Symbol('singletons');
 const coreLoggerToken = Symbol('core-logger');

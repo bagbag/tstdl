@@ -1,4 +1,4 @@
-import { compareByValue } from './helpers';
+import { compareByValue } from './comparison';
 import type { Comparator } from './sort';
 
 enum Position {

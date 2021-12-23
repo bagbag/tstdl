@@ -1,10 +1,12 @@
 import { CircularBuffer } from '#/data-structures';
 import type { Constructor, Record } from '#/types';
-import { assertDefinedPass, getParameterTypes, isDefined, isFunction, isPromise, isString, isSymbol, isUndefined } from '#/utils';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
+import { hasOwnProperty } from '#/utils/object';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
+import { getParameterTypes } from '#/utils/reflection';
+import { assertDefinedPass, isDefined, isFunction, isObject, isPromise, isUndefined } from '#/utils/type-guards';
 import type { InjectionToken, Provider } from './types';
-import { isAsyncFactoryProvider, isClassProvider, isConstructorInjectionToken, isFactoryProvider, isStringInjectionToken, isTokenProvider, isValueProvider } from './types';
+import { isAsyncFactoryProvider, isClassProvider, isConstructorInjectionToken, isFactoryProvider, isParameterizedInjectionToken, isStringInjectionToken, isTokenProvider, isValueProvider } from './types';
 
 type ResolveChainParameterNode = {
   parametersCount: number,
@@ -22,7 +24,7 @@ type ResolveChainNode = InjectionToken | ResolveChainParameterNode | undefined;
 
 type ResolveChain = ResolveChainNode[];
 
-export type ForwardRefInjectionToken<T = any> = Exclude<InjectionToken<T>, Function> | (() => InjectionToken<T>);
+export type ForwardRefInjectionToken<T = any, P = any> = Exclude<InjectionToken<T, P>, Function> | (() => InjectionToken<T, P>); // eslint-disable-line @typescript-eslint/ban-types
 
 export type Lifecycle = 'transient' | 'singleton' | 'resolution';
 
@@ -83,7 +85,7 @@ export class Container {
     this.registrations = new Map();
   }
 
-  register<T>(token: InjectionToken<T>, provider: Provider<T>, options?: RegistrationOptions<T>): void {
+  register<T, P>(token: InjectionToken<T, P>, provider: Provider<T, P>, options?: RegistrationOptions<T>): void {
     if (isClassProvider(provider)) {
       if (!typeInfos.has(provider.useClass)) {
         throw new Error(`${provider.useClass.name} is not injectable`);
@@ -93,7 +95,7 @@ export class Container {
     this.registrations.set(token, { provider, options: { lifecycle: 'transient', ...options } });
   }
 
-  resolve<T>(token: InjectionToken<T>): T {
+  resolve<T, P>(token: InjectionToken<T, P>): T {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
@@ -103,7 +105,7 @@ export class Container {
     return this._resolve(token, context, [token], true);
   }
 
-  async resolveAsync<T>(token: InjectionToken<T>): Promise<T> {
+  async resolveAsync<T, P>(token: InjectionToken<T, P>): Promise<T> {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
@@ -113,11 +115,14 @@ export class Container {
     return this._resolveAsync(token, context, [token], true);
   }
 
-  // eslint-disable-next-line max-statements, max-lines-per-function
-  private _resolve<T>(token: InjectionToken<T>, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
-    if (isUndefined(token)) {
+  // eslint-disable-next-line max-statements, max-lines-per-function, complexity
+  private _resolve<T, P>(_token: InjectionToken<T, P>, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
+    if (isUndefined(_token)) {
       throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
     }
+
+    const token = isParameterizedInjectionToken(_token) ? _token.token : _token;
+    const parameterizedTokenParameters = isParameterizedInjectionToken(_token) ? _token.parameter : undefined;
 
     const registration = this.registrations.get(token);
 
@@ -142,7 +147,7 @@ export class Container {
         throw new Error(`${registration.provider.useClass.name} is not injectable - chain: ${getChainString(chain)}`);
       }
 
-      const parameters = typeInfo.parameters.map((parameter, index): any => {
+      const parameters = typeInfo.parameters.map((parameter, index): unknown => {
         const parameterToken = typeInfo.parameterInjectionTokens[index] ?? (parameter as Constructor);
 
         if (typeInfo.forwardedParameters.has(index)) {
@@ -170,11 +175,11 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      instance = this._resolve<T>(registration.provider.useToken, context, [...chain, registration.provider.useToken], false);
+      instance = this._resolve<T, P>(registration.provider.useToken, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      instance = registration.provider.useFactory(this) as T;
+      instance = registration.provider.useFactory(this, parameterizedTokenParameters) as T;
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
@@ -210,11 +215,14 @@ export class Container {
     return instance;
   }
 
-  // eslint-disable-next-line max-statements, max-lines-per-function
-  private async _resolveAsync<T>(token: InjectionToken<T>, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
-    if (isUndefined(token)) {
+  // eslint-disable-next-line max-statements, max-lines-per-function, complexity
+  private async _resolveAsync<T, P>(_token: InjectionToken<T, P>, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
+    if (isUndefined(_token)) {
       throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
     }
+
+    const token = isParameterizedInjectionToken(_token) ? _token.token : _token;
+    const parameterizedTokenParameters = isParameterizedInjectionToken(_token) ? _token.parameter : undefined;
 
     const registration = this.registrations.get(token);
 
@@ -239,7 +247,7 @@ export class Container {
         throw new Error(`${registration.provider.useClass.name} is not injectable - chain: ${getChainString(chain)}`);
       }
 
-      const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameter, index) => {
+      const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameter, index): Promise<unknown> => {
         const parameterToken = typeInfo.parameterInjectionTokens[index] ?? (parameter as Constructor);
 
         if (typeInfo.forwardedParameters.has(index)) {
@@ -267,15 +275,15 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      instance = await this._resolveAsync<T>(registration.provider.useToken, context, [...chain, registration.provider.useToken], false);
+      instance = await this._resolveAsync<T, P>(registration.provider.useToken, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      instance = registration.provider.useFactory(this) as T;
+      instance = registration.provider.useFactory(this, parameterizedTokenParameters) as T;
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      instance = await registration.provider.useAsyncFactory(this) as T;
+      instance = await registration.provider.useAsyncFactory(this, parameterizedTokenParameters) as T;
     }
 
     context.instances.set(token, instance);
@@ -311,22 +319,31 @@ function getTokenName(token: InjectionToken | undefined): string {
       ? token.name
       : isStringInjectionToken(token)
         ? `"${token}"`
-        : token.toString();
+        : isParameterizedInjectionToken(token)
+          ? getTokenName(token.token)
+          : token.toString();
 }
 
 function getChainString(chain: ResolveChain): string {
   let chainString = '';
 
   for (const node of chain) {
-    if (isFunction(node) || isString(node) || isSymbol(node) || isUndefined(node)) {
-      chainString += `\n  -> ${getTokenName(node)}`;
+    if (isResolveChainParameterNode(node)) {
+      chainString += `(${'_, '.repeat(node.index)}${getTokenName(node.token)}${', _'.repeat(node.parametersCount - node.index - 1)})`;
     }
     else {
-      chainString += `(${'_, '.repeat(node.index)}${getTokenName(node.token)}${', _'.repeat(node.parametersCount - node.index - 1)})`;
+      chainString += `\n  -> ${getTokenName(node)}`;
     }
   }
 
   return chainString;
+}
+
+function isResolveChainParameterNode(node: ResolveChainNode): node is ResolveChainParameterNode {
+  return isObject(node)
+    && hasOwnProperty(node as ResolveChainParameterNode, 'token')
+    && hasOwnProperty(node as ResolveChainParameterNode, 'index')
+    && hasOwnProperty(node as ResolveChainParameterNode, 'parametersCount');
 }
 
 export const container = new Container();

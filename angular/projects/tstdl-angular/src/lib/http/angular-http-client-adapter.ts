@@ -1,10 +1,12 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
-import type { HttpBody, HttpBodyType, HttpClientAdapter, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
+import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
 import { abortToken, HttpError, HttpErrorReason } from '@tstdl/base/http';
+import type { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
 import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { StringMap } from '@tstdl/base/types';
-import { isDefined, isUndefined, toArray } from '@tstdl/base/utils';
+import { isDefined, isUndefined } from '@tstdl/base/utils';
+import { toArray } from '@tstdl/base/utils/array';
 import type { Observable } from 'rxjs';
 import { race, switchMapTo, throwError } from 'rxjs';
 

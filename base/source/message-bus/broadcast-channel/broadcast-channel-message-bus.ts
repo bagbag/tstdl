@@ -1,7 +1,7 @@
 import type { Logger } from '#/logger';
 import type { Observable } from 'rxjs';
 import { defer, fromEvent, map, of, switchMap } from 'rxjs';
-import { isUndefined } from '../../utils';
+import { isUndefined } from '../../utils/type-guards';
 import type { MessageBus } from '../message-bus';
 import { MessageBusBase } from '../message-bus-base';
 

@@ -1,13 +1,16 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
 import { inject, injectionToken, singleton } from '#/container';
+import { CancellationToken } from '#/utils/cancellation-token';
+import { toArray } from '#/utils/array';
+import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '#/utils/middleware';
+import { composeAsyncMiddleware } from '#/utils/middleware';
+import { buildUrl } from '#/utils/url-builder';
 import type { UndefinableJson } from '../types';
-import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '../utils';
-import { buildUrl, CancellationToken, composeAsyncMiddleware, isArray, isDefined, isObject, isUndefined, toArray } from '../utils';
+import { isArray, isDefined, isObject, isUndefined } from '../utils/type-guards';
 import { HttpClientAdapter } from './client.adapter';
 import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBodyType, HttpClientRequest, HttpClientRequestOptions, HttpClientResponse, HttpHeaders, HttpMethod, HttpValue } from './types';
 import { abortToken, normalizedHttpClientRequest, normalizeHttpValue } from './types';
-export { HttpClientAdapter } from './client.adapter';
 
 export type HttpClientOptions = {
   /**
@@ -25,7 +28,7 @@ export type HttpClientHandler = AsyncMiddlerwareHandler<HttpClientRequest, HttpC
 
 export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
 
-export const HTTP_CLIENT_OPTIONS = injectionToken(Symbol('HttpClientOptions'));
+export const HTTP_CLIENT_OPTIONS = injectionToken<HttpClientOptions>(Symbol('HttpClientOptions'));
 
 @singleton()
 export class HttpClient {

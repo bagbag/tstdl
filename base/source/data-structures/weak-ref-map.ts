@@ -1,7 +1,7 @@
-import { Collection } from '#/data-structures';
 import { ObservableFinalizationRegistry } from '#/memory';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { takeUntil } from 'rxjs';
+import { Collection } from './collection';
 
 export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefMap<K, V>> implements Map<K, V> {
   private readonly backingMapProvider: () => Map<K, WeakRef<V>>;

@@ -1,5 +1,6 @@
 import { singleton } from '#/container';
-import { isArrayBuffer, isDefined, isUndefined, toArray } from '#/utils';
+import { toArray } from '#/utils/array';
+import { isArrayBuffer, isDefined, isUndefined } from '#/utils/type-guards';
 import type { CancelableRequest, Options as GotOptions, Response, ResponseType } from 'got';
 import Got, { CancelError, HTTPError, TimeoutError } from 'got';
 import type { IncomingMessage } from 'http';

@@ -1,7 +1,6 @@
 import type { IfUnknown } from '#/types';
-import { stripPropertyWhenUndefined } from '../helpers';
-import { isFunction, isObject } from '../type-guards';
-import { hasOwnProperty } from './object';
+import { isDefined, isFunction, isObject } from '../type-guards';
+import { filterObject, hasOwnProperty } from './object';
 
 const lazyObjectValueSymbol = Symbol('LazyObjectValue');
 
@@ -136,7 +135,7 @@ export function lazyObject<T extends object>(initializers: { [P in keyof T]: Laz
     }
 
     if (hasGetOrSet) {
-      Object.defineProperty(object, key, { get: definition.get, set: definition.set, configurable: true, enumerable: true, ...stripPropertyWhenUndefined(descriptor) });
+      Object.defineProperty(object, key, { get: definition.get, set: definition.set, configurable: true, enumerable: true, ...filterObject(descriptor, isDefined) });
       continue;
     }
   }

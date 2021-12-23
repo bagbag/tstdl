@@ -1,6 +1,6 @@
 // eslint-disable-next-line max-classes-per-file
-import { Serializable, serializable } from '#/serializer/_internal';
-import { isDefined, isUndefined } from '#/utils';
+import { Serializable, serializable } from '#/serializer';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import { Collection } from './collection';
 
 export type LinkedListNode<T> = {

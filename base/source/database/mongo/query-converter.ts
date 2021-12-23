@@ -1,7 +1,7 @@
 import type { Entity, QueryTypes } from '#/database';
 import { allQueryTypes } from '#/database';
 import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
-import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils';
+import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
 import type { MongoDocument } from './model';
 import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';

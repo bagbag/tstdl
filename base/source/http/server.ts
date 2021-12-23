@@ -1,8 +1,10 @@
+import { Timer } from '#/utils/timer';
+import { cancelableTimeout } from '#/utils/timing';
 import * as Http from 'http';
 import type { Socket } from 'net';
 import { bindNodeCallback, share } from 'rxjs';
 import type { Logger } from '../logger';
-import { cancelableTimeout, CancellationToken, Timer } from '../utils';
+import { CancellationToken } from '../utils/cancellation-token';
 
 export class HttpServer {
   private readonly logger: Logger;

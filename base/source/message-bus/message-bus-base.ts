@@ -3,7 +3,7 @@ import type { Observable } from 'rxjs';
 import { defer, merge, Subject } from 'rxjs';
 import { share, takeUntil } from 'rxjs/operators';
 import { disposeAsync } from '../disposable';
-import { CancellationToken } from '../utils';
+import { CancellationToken } from '../utils/cancellation-token';
 import type { MessageBus } from './message-bus';
 
 

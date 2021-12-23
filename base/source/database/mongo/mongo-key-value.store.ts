@@ -1,7 +1,8 @@
+import { getNewId } from '#/database';
 import type { KeyValueStore } from '#/key-value';
 import type { StringMap } from '#/types';
-import { currentTimestamp, isUndefined } from '#/utils';
-import { getNewId } from '#/database';
+import { currentTimestamp } from '#/utils/date-time';
+import { isUndefined } from '#/utils/type-guards';
 import type { MongoKeyValue } from './model';
 import type { MongoEntityRepository } from './mongo-entity-repository';
 import type { MongoKeyValueRepository } from './mongo-key-value.repository';

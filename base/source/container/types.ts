@@ -1,20 +1,27 @@
 import type { Constructor } from '#/types';
-import { isFunction, isString, isSymbol } from '#/utils';
 import { hasOwnProperty } from '#/utils/object';
+import { isFunction, isObject, isString, isSymbol } from '#/utils/type-guards';
 import type { Container } from './container';
 
-export type InjectionToken<T = any> = Constructor<T> | string | symbol;
+export type ParameterizedInjectionToken<T, P> = {
+  token: SimpleInjectionToken<T>,
+  parameter: P
+};
 
-export type Factory<T> = (container: Container) => T;
+export type SimpleInjectionToken<T> = Constructor<T> | string | symbol;
 
-export type AsyncFactory<T> = (container: Container) => Promise<T>;
+export type InjectionToken<T = any, P = any> = SimpleInjectionToken<T> | ParameterizedInjectionToken<T, P>;
 
-export type Provider<T = any> =
+export type Factory<T, P = any> = (container: Container, parameter: P) => T;
+
+export type AsyncFactory<T, P = any> = (container: Container, parameter: P) => Promise<T>;
+
+export type Provider<T = any, P = any> =
   | ClassProvider<T>
   | ValueProvider<T>
   | TokenProvider<T>
-  | FactoryProvider<T>
-  | AsyncFactoryProvider<T>;
+  | FactoryProvider<T, P>
+  | AsyncFactoryProvider<T, P>;
 
 export type ClassProvider<T = any> = {
   useClass: Constructor<T>
@@ -24,19 +31,19 @@ export type ValueProvider<T = any> = {
   useValue: T
 };
 
-export type TokenProvider<T = any> = {
-  useToken: InjectionToken<T>
+export type TokenProvider<T = any, P = any> = {
+  useToken: InjectionToken<T, P>
 };
 
-export type FactoryProvider<T = any> = {
-  useFactory: Factory<T>
+export type FactoryProvider<T = any, P = unknown> = {
+  useFactory: Factory<T, P>
 };
 
-export type AsyncFactoryProvider<T = any> = {
-  useAsyncFactory: AsyncFactory<T>
+export type AsyncFactoryProvider<T = any, P = unknown> = {
+  useAsyncFactory: AsyncFactory<T, P>
 };
 
-export function injectionToken<T>(token: InjectionToken<T>): InjectionToken<T> {
+export function injectionToken<T, P = any>(token: InjectionToken<T, P>): InjectionToken<T, P> {
   return token;
 }
 
@@ -48,28 +55,32 @@ export function valueProvider<T>(value: T): ValueProvider<T> {
   return { useValue: value };
 }
 
-export function tokenProvider<T>(token: InjectionToken<T>): TokenProvider<T> {
+export function tokenProvider<T, P>(token: InjectionToken<T, P>): TokenProvider<T> {
   return { useToken: token };
 }
 
-export function factoryProvider<T>(factory: Factory<T>): FactoryProvider<T> {
+export function factoryProvider<T, P>(factory: Factory<T, P>): FactoryProvider<T, P> {
   return { useFactory: factory };
 }
 
-export function asyncFactoryProvider<T>(factory: AsyncFactory<T>): AsyncFactoryProvider<T> {
+export function asyncFactoryProvider<T, P>(factory: AsyncFactory<T, P>): AsyncFactoryProvider<T, P> {
   return { useAsyncFactory: factory };
 }
 
-export function isConstructorInjectionToken<T>(token: InjectionToken<T>): token is Constructor<T> {
+export function isConstructorInjectionToken<T, P>(token: InjectionToken<T, P>): token is Constructor<T> {
   return isFunction(token);
 }
 
-export function isStringInjectionToken<T>(token: InjectionToken<T>): token is string {
+export function isStringInjectionToken<T, P>(token: InjectionToken<T, P>): token is string {
   return isString(token);
 }
 
-export function isSymbolInjectionToken<T>(token: InjectionToken<T>): token is symbol {
+export function isSymbolInjectionToken<T, P>(token: InjectionToken<T, P>): token is symbol {
   return isSymbol(token);
+}
+
+export function isParameterizedInjectionToken<T, P>(token: InjectionToken<T, P>): token is ParameterizedInjectionToken<T, P> {
+  return isObject(token) && !isFunction(token);
 }
 
 export function isClassProvider<T>(provider: Provider<T>): provider is ClassProvider<T> {
@@ -84,10 +95,10 @@ export function isTokenProvider<T>(provider: Provider<T>): provider is TokenProv
   return hasOwnProperty((provider as TokenProvider<T>), 'useToken');
 }
 
-export function isFactoryProvider<T>(provider: Provider<T>): provider is FactoryProvider<T> {
-  return hasOwnProperty((provider as FactoryProvider<T>), 'useFactory');
+export function isFactoryProvider<T, P>(provider: Provider<T, P>): provider is FactoryProvider<T, P> {
+  return hasOwnProperty((provider as FactoryProvider<T, P>), 'useFactory');
 }
 
-export function isAsyncFactoryProvider<T>(provider: Provider<T>): provider is AsyncFactoryProvider<T> {
-  return hasOwnProperty((provider as AsyncFactoryProvider<T>), 'useAsyncFactory');
+export function isAsyncFactoryProvider<T, P>(provider: Provider<T, P>): provider is AsyncFactoryProvider<T, P> {
+  return hasOwnProperty((provider as AsyncFactoryProvider<T, P>), 'useAsyncFactory');
 }

@@ -1,8 +1,7 @@
-import { noopOperator } from '#/rxjs';
-import { firstValueFrom } from '#/rxjs/compat';
+import { noopOperator } from '#/rxjs/noop';
 import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, from, map, mapTo, skip, take } from 'rxjs';
-import { noop } from './helpers';
+import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, from, map, mapTo, skip, take } from 'rxjs';
+import { noop } from './noop';
 import { isBoolean } from './type-guards';
 
 export type ConnectConfig = {

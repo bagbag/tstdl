@@ -1,6 +1,11 @@
 import type { LockProvider } from '#/lock';
 import type { Logger } from '#/logger';
-import { CancellationToken, compareByValueSelectionDescending, isDefined, round, Timer, toArray } from '#/utils';
+import { toArray } from '#/utils/array';
+import { CancellationToken } from '#/utils/cancellation-token';
+import { compareByValueSelectionDescending } from '#/utils/comparison';
+import { round } from '#/utils/math';
+import { Timer } from '#/utils/timer';
+import { isDefined } from '#/utils/type-guards';
 import type { NewMigrationState } from './migration-state';
 import type { MigrationStateRepository } from './migration-state-repository';
 

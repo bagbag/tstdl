@@ -1,6 +1,6 @@
 
 import type { TypedArray } from '#/types';
-import { decodeBase64, encodeBase64 } from '../../utils';
+import { decodeBase64, encodeBase64 } from '#/utils/base64';
 
 type TypedArrayConstructor = new (arrayOrArrayBuffer: ArrayBufferLike) => TypedArray;
 

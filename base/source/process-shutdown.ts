@@ -2,8 +2,8 @@
 
 import { getCoreLogger } from '#/instance-provider';
 import type { Logger } from '#/logger';
-import { isDefined } from '#/utils';
 import { CancellationToken } from '#/utils/cancellation-token';
+import { isDefined } from '#/utils/type-guards';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';

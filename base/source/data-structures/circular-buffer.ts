@@ -1,6 +1,7 @@
 import { firstValueFrom } from '#/rxjs/compat';
-import type { ReadonlyCancellationToken } from '#/utils';
-import { CancellationToken, isArray, isDefined, isUndefined } from '#/utils';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import { CancellationToken } from '#/utils/cancellation-token';
+import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, first, from, map, mapTo, race, Subject } from 'rxjs';
 import { Collection } from './collection';

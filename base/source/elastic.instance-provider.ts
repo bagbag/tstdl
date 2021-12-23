@@ -2,10 +2,11 @@ import type { Entity } from '#/database';
 import { connect, disposer, getLogger } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import type { Type } from '#/types';
-import { assert, isDefined, singleton } from '#/utils';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 import type { ElasticSearchIndex } from './search-index/elastic/search-index';
+import { singleton } from './utils/singleton';
+import { assert, isDefined } from './utils/type-guards';
 
 type ElasticSearchIndexStatic<T extends Entity> = Type<ElasticSearchIndex<T>, [Client, string, Logger]>;
 

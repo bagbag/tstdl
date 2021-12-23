@@ -1,5 +1,5 @@
 import type { ObjectStorageProvider } from '#/object-storage';
-import { assertDefinedPass, assertStringPass, isDefined } from '#/utils';
+import { assertDefinedPass, assertStringPass, isDefined } from '#/utils/type-guards';
 import { Client } from 'minio';
 import { S3ObjectStorage } from './s3.object-storage';
 

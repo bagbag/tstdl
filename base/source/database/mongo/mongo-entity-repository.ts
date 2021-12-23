@@ -2,7 +2,9 @@
 import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
 import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
-import { equals, isDefined, isUndefined, _throw } from '#/utils';
+import { equals } from '#/utils/equals';
+import { _throw } from '#/utils/helpers';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { LoadOptions } from './mongo-base.repository';
 import { MongoBaseRepository } from './mongo-base.repository';
 import { convertQuery, convertSort } from './query-converter';

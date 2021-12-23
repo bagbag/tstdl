@@ -1,6 +1,6 @@
 import type { StringMap } from '#/types';
-import type { ReadonlyCancellationToken } from '#/utils';
-import { CancellationToken } from '#/utils';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import { CancellationToken } from '#/utils/cancellation-token';
 import type { Module, ModuleMetric } from './module';
 import { ModuleState } from './module';
 

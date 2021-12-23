@@ -1,7 +1,8 @@
-import type { Comparator, ReadonlyCancellationToken } from '../utils';
-import { isNotNullOrUndefined } from '../utils';
+import { Comparator } from '#/utils/sort';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
 import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
 import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
+import { isNotNullOrUndefined } from '../utils/type-guards';
 import { AsyncEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
 

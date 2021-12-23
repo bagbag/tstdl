@@ -11,12 +11,14 @@ import { connect, disposer, getLogger, getMessageBusProvider } from '#/instance-
 import type { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
-import { assertDefined, FactoryMap, singleton } from '#/utils';
 import * as Mongo from 'mongodb';
 import type { MongoLockEntity } from './lock/mongo';
 import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
 import type { MongoOidcState, OidcState } from './openid-connect';
 import { MongoOidcStateRepository } from './openid-connect';
+import { FactoryMap } from './utils/factory-map';
+import { singleton } from './utils/singleton';
+import { assertDefined } from './utils/type-guards';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 

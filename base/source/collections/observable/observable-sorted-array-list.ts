@@ -1,5 +1,7 @@
-import type { Comparator } from '../../utils';
-import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller, compareByValue, isDefined, isUndefined } from '../../utils';
+import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '#/utils/binary-search';
+import { compareByValue } from '#/utils/comparison';
+import type { Comparator } from '#/utils/sort';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { ObservableListIndexedEvent, ObservableSortedList } from './observable-list';
 import { ObservableListBase } from './observable-list-base';
 
@@ -8,7 +10,7 @@ export class ObservableSortedArrayList<T extends TComparator, TComparator = T> e
 
   backingArray: T[];
 
-  get self(): ObservableSortedArrayList<T> {
+  get self(): this {
     return this;
   }
 

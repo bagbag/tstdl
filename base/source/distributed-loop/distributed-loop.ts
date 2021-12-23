@@ -1,6 +1,8 @@
 import type { LockProvider } from '#/lock';
 import { DeferredPromise } from '#/promise';
-import { cancelableTimeout, CancellationToken, Timer } from '#/utils';
+import { CancellationToken } from '#/utils/cancellation-token';
+import { Timer } from '#/utils/timer';
+import { cancelableTimeout } from '#/utils/timing';
 import type { LoopController } from './controller';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;

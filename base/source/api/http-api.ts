@@ -6,15 +6,19 @@ import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMe
 import { normalizeHttpValue } from '#/http';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
-import { decodeText, isDefined, isObject, isUndefined, round, Timer, toArray } from '#/utils';
+import { toArray } from '#/utils/array';
+import { decodeText } from '#/utils/encoding';
+import { round } from '#/utils/math';
+import type { NonObjectBufferMode } from '#/utils/stream-helper-types';
+import { readStream } from '#/utils/stream-reader';
+import { Timer } from '#/utils/timer';
+import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
 import * as KoaRouter from '@koa/router';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import type { Readable } from 'stream';
 import type { HttpServer } from '../http/server';
-import type { NonObjectBufferMode } from '../utils';
-import { readStream } from '../utils';
 import type { TypedReadable } from '../utils/typed-readable';
 import type { ApiEndpoint } from './endpoint';
 

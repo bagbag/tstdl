@@ -1,4 +1,5 @@
-import { emailRegex, isDefined } from '#/utils';
+import { isDefined } from '#/utils/type-guards';
+import { emailRegex } from '#/utils/validators';
 import type { Failure, Struct, StructError } from 'superstruct';
 import { boolean, coerce, literal, number, pattern, string, union } from 'superstruct';
 import type { SyncEndpointParametersValidator, ValidationResult } from '../types';

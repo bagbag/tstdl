@@ -2,7 +2,8 @@
 
 import type { Entity } from '#/database';
 import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
-import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils';
+import { hasOwnProperty } from '#/utils/object';
+import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
 import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/api/types';
 import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
 import { BoolQueryBuilder } from './query-builder';
@@ -54,7 +55,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (isPrimitiveValue || Object.prototype.hasOwnProperty.call(value, '$eq')) {
+    if (isPrimitiveValue || hasOwnProperty(value, '$eq')) {
       const termQuery: ElasticTermQuery = {
         term: { [property]: isPrimitiveValue ? value : (value as ComparisonEqualsQuery).$eq }
       };
@@ -63,7 +64,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$neq')) {
+    if (hasOwnProperty(value, '$neq')) {
       const termQuery: ElasticTermQuery = {
         term: { [property]: (value as ComparisonNotEqualsQuery).$neq }
       };
@@ -72,7 +73,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$exists')) {
+    if (hasOwnProperty(value, '$exists')) {
       const existsQuery: ElasticExistsQuery = { exists: { field: property } };
 
       if ((value as ComparisonExistsQuery).$exists) {
@@ -85,7 +86,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$in')) {
+    if (hasOwnProperty(value, '$in')) {
       const termQuery: ElasticTermsQuery = {
         terms: { [property]: (value as ComparisonInQuery).$in }
       };
@@ -94,7 +95,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$nin')) {
+    if (hasOwnProperty(value, '$nin')) {
       const termQuery: ElasticTermsQuery = {
         terms: { [property]: (value as ComparisonNotInQuery).$nin }
       };
@@ -103,22 +104,22 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$lt')) {
+    if (hasOwnProperty(value, '$lt')) {
       range.lt = (value as ComparisonLessThanQuery).$lt;
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$lte')) {
+    if (hasOwnProperty(value, '$lte')) {
       range.lte = (value as ComparisonLessThanOrEqualsQuery).$lte;
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$gt')) {
+    if (hasOwnProperty(value, '$gt')) {
       range.gt = (value as ComparisonGreaterThanQuery).$gt;
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$gte')) {
+    if (hasOwnProperty(value, '$gte')) {
       range.gte = (value as ComparisonGreaterThanOrEqualsQuery).$gte;
       canHandleProperty = true;
     }
@@ -128,7 +129,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       defaultBoolQueryBuilder.must(rangeQuery);
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$regex')) {
+    if (hasOwnProperty(value, '$regex')) {
       const regex = (value as ComparisonRegexQuery).$regex;
 
       const regexp: ElasticRegexQuery['regexp'][any] = isString(regex)
@@ -145,7 +146,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$text')) {
+    if (hasOwnProperty(value, '$text')) {
       let matchQuery: ElasticMatchQuery;
       const textQueryValue = (value as ComparisonTextQuery).$text;
 
@@ -160,7 +161,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$geoShape')) {
+    if (hasOwnProperty(value, '$geoShape')) {
       const geoShapeQuery: ElasticGeoShapeQuery = {
         geo_shape: {
           [property]: {
@@ -174,7 +175,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.prototype.hasOwnProperty.call(value, '$geoDistance')) {
+    if (hasOwnProperty(value, '$geoDistance')) {
       const distance = assertDefinedPass((value as ComparisonGeoDistanceQuery).$geoDistance.maxDistance, 'maxDistance required');
 
       const geoShapeQuery: ElasticGeoDistanceQuery = {

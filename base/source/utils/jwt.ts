@@ -4,7 +4,7 @@ import { decodeBase64Url, encodeBase64Url } from './base64';
 import type { HashAlgorithm, Key } from './cryptography';
 import { importHmacKey, sign } from './cryptography';
 import { encodeUtf8 } from './encoding';
-import { binaryEquals } from './helpers';
+import { binaryEquals } from './equals';
 
 export enum JwtTokenAlgorithm {
   SHA256 = 'HS256',
