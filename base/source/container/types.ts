@@ -1,25 +1,24 @@
 import type { Constructor } from '#/types';
 import { hasOwnProperty } from '#/utils/object';
-import { isFunction, isObject, isString, isSymbol } from '#/utils/type-guards';
+import { isFunction, isString, isSymbol } from '#/utils/type-guards';
 import type { Container } from './container';
 
-export type ParameterizedInjectionToken<T, P> = {
-  token: SimpleInjectionToken<T>,
-  parameter: P
-};
+declare const parameter: unique symbol;
+
+export type ParameterizedInjectionToken<T, P> = SimpleInjectionToken<T> & { [parameter]?: P };
 
 export type SimpleInjectionToken<T> = Constructor<T> | Function | string | symbol;
 
 export type InjectionToken<T = any, P = any> = SimpleInjectionToken<T> | ParameterizedInjectionToken<T, P>;
 
-export type Factory<T, P = any> = (container: Container, parameter: P) => T;
+export type Factory<T, P = any> = (container: Container, argument?: P) => T;
 
-export type AsyncFactory<T, P = any> = (container: Container, parameter: P) => Promise<T>;
+export type AsyncFactory<T, P = any> = (container: Container, argument?: P) => Promise<T>;
 
 export type Provider<T = any, P = any> =
   | ClassProvider<T>
   | ValueProvider<T>
-  | TokenProvider<T>
+  | TokenProvider<T, P>
   | FactoryProvider<T, P>
   | AsyncFactoryProvider<T, P>;
 
@@ -32,7 +31,8 @@ export type ValueProvider<T = any> = {
 };
 
 export type TokenProvider<T = any, P = any> = {
-  useToken: InjectionToken<T, P>
+  useToken: InjectionToken<T, P>,
+  argument?: P
 };
 
 export type FactoryProvider<T = any, P = unknown> = {
@@ -55,8 +55,8 @@ export function valueProvider<T>(value: T): ValueProvider<T> {
   return { useValue: value };
 }
 
-export function tokenProvider<T, P>(token: InjectionToken<T, P>): TokenProvider<T> {
-  return { useToken: token };
+export function tokenProvider<T, P>(token: InjectionToken<T, P>, argument?: P): TokenProvider<T> {
+  return { useToken: token, argument };
 }
 
 export function factoryProvider<T, P>(factory: Factory<T, P>): FactoryProvider<T, P> {
@@ -77,10 +77,6 @@ export function isStringInjectionToken<T, P>(token: InjectionToken<T, P>): token
 
 export function isSymbolInjectionToken<T, P>(token: InjectionToken<T, P>): token is symbol {
   return isSymbol(token);
-}
-
-export function isParameterizedInjectionToken<T, P>(token: InjectionToken<T, P>): token is ParameterizedInjectionToken<T, P> {
-  return isObject(token) && !isFunction(token);
 }
 
 export function isClassProvider<T>(provider: Provider<T>): provider is ClassProvider<T> {
