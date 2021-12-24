@@ -3,33 +3,33 @@ import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
-import { container, setParameterForwardRefToken, setParameterInjectionToken, setParameterInjectArgument, registerTypeInfo } from './container';
-import type { InjectionToken } from './types';
+import { container, registerTypeInfo, setParameterForwardRefToken, setParameterInjectArgument, setParameterInjectionToken, setParameterOptional } from './container';
+import type { InjectionToken, Provider } from './types';
 
-export type InjectableOptions<T> = RegistrationOptions<T> & {
+export type InjectableOptions<T, P> = RegistrationOptions<T> & {
   /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
-  alias?: OneOrMany<InjectionToken>
+  alias?: OneOrMany<InjectionToken>,
+  provider?: Provider<T, P>
 };
 
 /**
  * registers the class in the global container. Decorated class is not modified in any way
  * @param options registration options
  */
-export function injectable<T = any>(options: InjectableOptions<T> = {}): ClassDecorator {
-  function injectableDecorator<U extends Constructor>(target: U): U {
+export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = {}): ClassDecorator {
+  function injectableDecorator<U extends T>(target: Constructor<U>): void {
+    const { alias: aliases, provider, ...registrationOptions } = options;
+
     registerTypeInfo(target);
 
-    const { alias: aliases, ...registrationOptions } = options;
-
-    container.register(target, { useClass: target }, registrationOptions);
+    const targetProvider: Provider = provider ?? { useClass: target };
+    container.register(target, targetProvider, registrationOptions);
 
     if (isDefined(aliases)) {
       for (const alias of toArray(aliases)) {
         container.register(alias, { useToken: target }, registrationOptions);
       }
     }
-
-    return target;
   }
 
   return injectableDecorator as ClassDecorator;
@@ -39,7 +39,7 @@ export function injectable<T = any>(options: InjectableOptions<T> = {}): ClassDe
  * registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function singleton<T>(options: Simplify<TypedOmit<InjectableOptions<T>, 'lifecycle'>> = {}): ClassDecorator {
+export function singleton<T extends Constructor = Constructor, P = any>(options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle: 'singleton' });
 }
 
@@ -47,7 +47,7 @@ export function singleton<T>(options: Simplify<TypedOmit<InjectableOptions<T>, '
  * registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function scoped<T>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: Simplify<TypedOmit<InjectableOptions<T>, 'lifecycle'>> = {}): ClassDecorator {
+export function scoped<T extends Constructor = Constructor, P = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle });
 }
 
@@ -78,6 +78,18 @@ export function injectArg<P>(argument: P): ParameterDecorator {
   }
 
   return injectArgDecorator;
+}
+
+/**
+ * marks the argument as optional
+ * @param argument
+ */
+export function optional(): ParameterDecorator {
+  function optionalDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
+    setParameterOptional(target as Constructor, parameterIndex);
+  }
+
+  return optionalDecorator;
 }
 
 /**
