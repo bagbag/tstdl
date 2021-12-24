@@ -1,54 +1,46 @@
 /* eslint-disable no-console */
 
+import { inject, injectable, optional } from '#/container';
+import type { Record } from '#/types';
+import { isDefined, isString } from '#/utils';
+import { now } from '#/utils/date-time';
 import { formatError } from '#/utils/helpers';
 import { LogLevel } from '../level';
-import type { LogEntry, LogErrorOptions, Logger } from '../logger';
+import type { LogErrorOptions, LoggerParameters } from '../logger';
+import { Logger } from '../logger';
 
-export class ConsoleLogger implements Logger {
-  private readonly level: LogLevel;
-  private readonly logPrefix: string;
+const levelFuncMap: Record<LogLevel, (message: string) => void> = {
+  [LogLevel.Error]: console.error,
+  [LogLevel.Warn]: console.warn,
+  [LogLevel.Info]: console.info,
+  [LogLevel.Verbose]: console.info,
+  [LogLevel.Debug]: console.debug,
+  [LogLevel.Trace]: console.debug
+};
 
-  constructor(level: LogLevel, prefix: string = '') {
-    this.level = level;
-    this.logPrefix = prefix;
+@injectable<ConsoleLogger, LoggerParameters>({ provider: { useFactory: (parameters, container) => new ConsoleLogger(parameters?.level ?? container.resolve(LogLevel), parameters?.module, parameters?.prefix) } })
+export class ConsoleLogger extends Logger {
+  private readonly entryPrefix: string;
+
+  constructor(@inject(LogLevel) level: LogLevel, @optional() module?: string | string[], @optional() prefix?: string) {
+    super(level, module, prefix);
+
+    const modulePrefix = isDefined(this.module) ? this.module.map((m) => `[${m}]`).join(' ') : '';
+    this.entryPrefix = `${modulePrefix}${modulePrefix.length > 0 ? ' ' : ''}${this.logPrefix ?? ''}`;
   }
 
-  prefix(prefix: string): Logger {
-    return new ConsoleLogger(this.level, this.logPrefix + prefix);
+  fork(subModule: string): ConsoleLogger {
+    return new ConsoleLogger(this.level, [...(this.module ?? []), subModule]);
   }
 
-  error(error: any, options?: LogErrorOptions): void {
-    const entry = formatError(error, options);
-    this.log(console.error, entry, LogLevel.Error);
+  prefix(prefix: string): ConsoleLogger {
+    return new ConsoleLogger(this.level, this.module, `${prefix}${this.logPrefix}`);
   }
 
-  warn(entry: LogEntry): void {
-    this.log(console.warn, entry, LogLevel.Warn);
-  }
+  protected log(level: LogLevel, entryOrError: string | Error, errorOptions?: LogErrorOptions): void {
+    const entry = isString(entryOrError) ? entryOrError : formatError(entryOrError, errorOptions);
 
-  info(entry: LogEntry): void {
-    this.log(console.info, entry, LogLevel.Info);
-  }
-
-  verbose(entry: LogEntry): void {
-    this.log(console.info, entry, LogLevel.Verbose);
-  }
-
-  debug(entry: LogEntry): void {
-    this.log(console.debug, entry, LogLevel.Debug);
-  }
-
-  trace(entry: LogEntry): void {
-    this.log(console.debug, entry, LogLevel.Trace);
-  }
-
-  private log(func: (...parameters: any[]) => void, entry: string, level: LogLevel): void {
-    if (this.level < level) {
-      return;
-    }
-
-    const now = new Date();
-
-    func(`[${now.toISOString()}] - ${this.logPrefix}${entry}`);
+    const dateString = now().toISOString();
+    levelFuncMap[level](`${dateString} - ${this.entryPrefix}${entry}`);
   }
 }

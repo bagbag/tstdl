@@ -8,9 +8,10 @@ import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
-import type { Collection, DeleteManyBulkWriteOperation, DeleteOneBulkWriteOperation, Filter, InsertOneBulkWriteOperation, ReplaceOneBulkWriteOperation, Sort, TypedIndexDescription, UpdateFilter, UpdateManyBulkWriteOperation, UpdateOneBulkWriteOperation } from './types';
+import { replaceOneOperation, updateOneOperation } from './operations';
+import type { Collection, Filter, Sort, TypedIndexDescription, UpdateFilter, UpdateOneOperation } from './types';
 
-export enum ProjectionMode {
+export const enum ProjectionMode {
   Include = 0,
   Exclude = 1
 }
@@ -132,7 +133,7 @@ export class MongoBaseRepository<T extends Entity> {
       .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
       .toArray();
 
-    const operations = mapped.map((o) => o.operation as UpdateOneBulkWriteOperation<T>);
+    const operations = mapped.map((o) => o.operation as UpdateOneOperation<T>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
     assertDefined(result.upsertedIds);
     const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number]!.document));
@@ -375,72 +376,6 @@ export class MongoBaseRepository<T extends Entity> {
   async drop(): Promise<void> {
     await this.collection.drop();
   }
-}
-
-export function insertOneOperation<T extends Entity>(document: MongoDocument<T>): InsertOneBulkWriteOperation<T> {
-  const operation: InsertOneBulkWriteOperation<T> = {
-    insertOne: {
-      document: document as any
-    }
-  };
-
-  return operation;
-}
-
-export function replaceOneOperation<T extends Entity>(filter: Filter<T>, replacement: MongoDocument<T>, options: ReplaceOptions = {}): ReplaceOneBulkWriteOperation<T> {
-  const operation: ReplaceOneBulkWriteOperation<T> = {
-    replaceOne: {
-      filter,
-      replacement,
-      upsert: options.upsert
-    }
-  };
-
-  return operation;
-}
-
-export function updateOneOperation<T extends Entity>(filter: Filter<T>, update: UpdateFilter<T>, options: UpdateOptions = {}): UpdateOneBulkWriteOperation<T> {
-  const operation: UpdateOneBulkWriteOperation<T> = {
-    updateOne: {
-      filter,
-      update,
-      upsert: options.upsert
-    }
-  };
-
-  return operation;
-}
-
-export function updateManyOperation<T extends Entity>(filter: Filter<T>, update: UpdateFilter<T>, options: UpdateOptions = {}): UpdateManyBulkWriteOperation<T> {
-  const operation: UpdateManyBulkWriteOperation<T> = {
-    updateMany: {
-      filter,
-      update,
-      upsert: options.upsert
-    }
-  };
-
-  return operation;
-}
-
-export function deleteOneOperation<T extends Entity>(filter: Filter<T>): DeleteOneBulkWriteOperation<T> {
-  const operation: DeleteOneBulkWriteOperation<T> = {
-    deleteOne: {
-      filter
-    }
-  };
-
-  return operation;
-}
-
-export function deleteManyOperation<T extends Entity>(filter: Filter<T>): DeleteManyBulkWriteOperation<T> {
-  const operation: DeleteManyBulkWriteOperation<T> = {
-    deleteMany: {
-      filter
-    }
-  };
-
-  return operation;
 }
 
 function throwIfUndefinedElsePass<T>(value: T | undefined, collectionName: string): T {

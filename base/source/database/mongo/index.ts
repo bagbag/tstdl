@@ -5,6 +5,7 @@ export * from './mongo-entity-repository';
 export * from './mongo-key-value-store.provider';
 export * from './mongo-key-value.repository';
 export * from './mongo-key-value.store';
+export * from './operations';
 export * from './query-converter';
 export * from './simple-entity-repository';
 export * from './types';

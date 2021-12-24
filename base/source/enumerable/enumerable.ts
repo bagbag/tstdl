@@ -1,10 +1,15 @@
-import { Comparator } from '#/utils/sort';
+import type { AnyIterable } from '#/utils/any-iterable-iterator';
+import type { Comparator } from '#/utils/sort';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
 import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
 import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { isNotNullOrUndefined } from '../utils/type-guards';
-import { AsyncEnumerable } from './async-enumerable';
+import { AsyncEnumerable, setEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
+
+let asyncEnumerable: undefined | (<T>(source: AnyIterable<T>) => AsyncEnumerable<T>);
+
+export const setAsyncEnumerable: undefined | ((fn: typeof asyncEnumerable) => any) = (fn: typeof asyncEnumerable): any => (asyncEnumerable = fn);
 
 export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   private readonly source: Iterable<T>;
@@ -204,7 +209,7 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   }
 
   toAsync(): AsyncEnumerable<T> {
-    return AsyncEnumerable.from(this.source);
+    return (asyncEnumerable ?? AsyncEnumerable.from)(this.source);
   }
 
   toIterator(): Iterator<T> {
@@ -212,7 +217,7 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
     return iterator;
   }
 
-  toSync(): Enumerable<T> {
+  toSync(): this {
     return this;
   }
 
@@ -224,3 +229,6 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
     yield* this.source;
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+setEnumerable?.(Enumerable.from);

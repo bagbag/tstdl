@@ -1,7 +1,7 @@
 import { getNewId } from '#/database/id';
 import type { MessageBus, MessageBusProvider } from '#/message-bus';
-import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, Queue } from '#/queue';
-import { UniqueTagStrategy } from '#/queue';
+import type { EnqueueManyItem, EnqueueOptions, Job, JobTag } from '#/queue';
+import { Queue, UniqueTagStrategy } from '#/queue';
 import { Alphabet } from '#/utils/alphabet';
 import type { BackoffOptions } from '#/utils/backoff';
 import { backoffGenerator } from '#/utils/backoff';
@@ -20,13 +20,15 @@ const backoffOptions: BackoffOptions = {
   maximumDelay: 5000
 };
 
-export class MongoQueue<T> implements Queue<T> {
+export class MongoQueue<T> extends Queue<T> {
   private readonly repository: MongoJobRepository<T>;
   private readonly processTimeout: number;
   private readonly maxTries: number;
   private readonly messageBus: MessageBus<void>;
 
   constructor(repository: MongoJobRepository<T>, messageBusProvider: MessageBusProvider, processTimeout: number, maxTries: number) {
+    super();
+
     this.repository = repository;
     this.processTimeout = processTimeout;
     this.maxTries = maxTries;

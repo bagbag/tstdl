@@ -1,5 +1,4 @@
-import { firstValueFrom } from '#/rxjs/compat';
-import { mapTo, race, timer } from 'rxjs';
+import { firstValueFrom, mapTo, race, timer } from 'rxjs';
 import type { ReadonlyCancellationToken } from './cancellation-token';
 
 export async function timeout(milliseconds: number = 0): Promise<void> {

@@ -6,19 +6,20 @@ import { MongoKeyValueStoreProvider } from '#/database/mongo/mongo-key-value-sto
 import { MongoKeyValueRepository } from '#/database/mongo/mongo-key-value.repository';
 import type { MongoJob } from '#/database/mongo/queue';
 import { MongoJobRepository, MongoQueue } from '#/database/mongo/queue';
-import type { Collection } from '#/database/mongo/types';
+import { Collection } from '#/database/mongo/types';
 import { connect, disposer, getLogger, getMessageBusProvider } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
 import * as Mongo from 'mongodb';
+import { container } from './container';
 import type { MongoLockEntity } from './lock/mongo';
 import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
 import type { MongoOidcState, OidcState } from './openid-connect';
 import { MongoOidcStateRepository } from './openid-connect';
 import { FactoryMap } from './utils/factory-map';
 import { singleton } from './utils/singleton';
-import { assertDefined } from './utils/type-guards';
+import { assertDefined, assertDefinedPass } from './utils/type-guards';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 
@@ -205,7 +206,6 @@ export async function getMongoQueue<T>(config: MongoQueueConfig<T>): Promise<Mon
   return new MongoQueue(repository, messageBusProvider, config.processTimeout, config.maxTries);
 }
 
-// eslint-disable-next-line @typescript-eslint/unified-signatures
 export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>({ connection = defaultConnection, database = defaultDatabase, collection }: { connection?: MongoConnection, database?: string, collection: string }): MongoRepositoryConfig<T, TDb> {
   return { connection, database, collection, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
 }
@@ -213,3 +213,15 @@ export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = 
 export function getMongoQueueConfig<T>(repositoryConfig: MongoRepositoryConfig<MongoJob<T>>, processTimeout: number, maxTries: number): MongoQueueConfig<T> {
   return { repositoryConfig, processTimeout, maxTries };
 }
+
+container.register<Mongo.MongoClient, MongoConnection>(Mongo.MongoClient, {
+  useAsyncFactory: async (connection) => getMongoClient(connection)
+}, { defaultArgumentProvider: () => defaultConnection });
+
+container.register<Collection, MongoRepositoryConfig<any, any>>(Collection, {
+  useAsyncFactory: async (config) => getMongoCollection(assertDefinedPass(config, 'repository config argument not provided'))
+});
+
+container.register<MongoQueue<any>, MongoQueueConfig<any>>(MongoQueue, {
+  useAsyncFactory: async (config) => getMongoQueue(assertDefinedPass(config, 'queue config argument not provided'))
+});

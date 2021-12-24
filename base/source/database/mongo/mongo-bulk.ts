@@ -2,8 +2,8 @@ import type { Entity, MaybeNewEntity } from '#/database';
 import type { BulkWriteResult } from 'mongodb';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model';
 import type { ReplaceOptions, UpdateOptions } from './mongo-base.repository';
-import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './mongo-base.repository';
-import type { BulkWriteOperation, Collection, Filter, UpdateFilter } from './types';
+import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './operations';
+import type { BulkOperation, Collection, Filter, UpdateFilter } from './types';
 
 export type BulkResult = {
   insertedCount: number,
@@ -16,7 +16,7 @@ export type BulkResult = {
 
 export class MongoBulk<T extends Entity> {
   private readonly collection: Collection<T>;
-  private readonly operations: BulkWriteOperation<any>[];
+  private readonly operations: BulkOperation<any>[];
 
   private executed: boolean;
 

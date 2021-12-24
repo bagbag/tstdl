@@ -1,3 +1,5 @@
+import { isFunction, isObject } from '#/utils/type-guards';
+
 export const dispose: unique symbol = Symbol('dispose');
 export const disposeAsync: unique symbol = Symbol('disposeAsync');
 
@@ -10,9 +12,9 @@ export interface AsyncDisposable {
 }
 
 export function isDisposable(object: any): object is Disposable {
-  return (typeof object == 'object') && (typeof (object as Disposable)[dispose] == 'function');
+  return isObject(object) && isFunction((object as Disposable)[dispose]);
 }
 
 export function isAsyncDisposable(object: any): object is AsyncDisposable {
-  return (typeof object == 'object') && (typeof (object as AsyncDisposable)[disposeAsync] == 'function');
+  return isObject(object) && isFunction((object as AsyncDisposable)[disposeAsync]);
 }

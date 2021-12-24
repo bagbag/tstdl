@@ -1,4 +1,5 @@
-import { AnyIterable, isAnyIterable } from '#/utils/any-iterable-iterator';
+import type { AnyIterable } from '#/utils/any-iterable-iterator';
+import { isAnyIterable } from '#/utils/any-iterable-iterator';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import type { AsyncComparator } from '#/utils/sort';
 import { isNotNullOrUndefined } from '#/utils/type-guards';
@@ -9,8 +10,12 @@ import { observableAsyncIterable } from '../utils/async-iterable-helpers/observa
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
 import { range } from '../utils/iterable-helpers';
-import { Enumerable } from './enumerable';
+import { Enumerable, setAsyncEnumerable } from './enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
+
+let enumerable: undefined | (<T>(source: Iterable<T>) => Enumerable<T>);
+
+export const setEnumerable: undefined | ((fn: typeof enumerable) => any) = (fn: typeof enumerable): any => (enumerable = fn);
 
 export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
   private readonly source: AnyIterable<T>;
@@ -249,7 +254,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
 
   async toSync(): Promise<Enumerable<T>> {
     const syncIterable = await toSync(this.source);
-    return new Enumerable(syncIterable);
+    return (enumerable ?? Enumerable.from)(syncIterable);
   }
 
   while(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
@@ -292,3 +297,6 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     throw new Error('source is neither iterable nor async-iterable');
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/unbound-method
+setAsyncEnumerable?.(AsyncEnumerable.from);

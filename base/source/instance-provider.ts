@@ -1,12 +1,14 @@
 import { HttpApi } from './api/http-api';
+import type { InjectionToken } from './container';
+import { container } from './container';
 import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
 import { HttpClient } from './http';
 import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
-import type { Logger } from './logger';
-import { LogLevel } from './logger';
+import type { LoggerParameters } from './logger';
+import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { MessageBusProvider } from './message-bus';
 import { LocalMessageBusProvider } from './message-bus/local';
@@ -25,7 +27,6 @@ import { millisecondsPerMinute } from './utils/units';
 
 const singletonScope = Symbol('singletons');
 const coreLoggerToken = Symbol('core-logger');
-const loggerProviderToken = Symbol('logger-provider');
 const lockProviderToken = Symbol('lock-provider');
 const keyValueStoreProviderToken = Symbol('key-value-store-provider');
 const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
@@ -33,7 +34,7 @@ const objectStorageScopeToken = Symbol('object-storages');
 
 let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
-let loggerProvider: () => Logger = () => new ConsoleLogger(logLevel);
+let loggerToken: InjectionToken<Logger, LoggerParameters> = ConsoleLogger;
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
@@ -59,7 +60,7 @@ export function configureBaseInstanceProvider(
   options: {
     coreLoggerPrefix?: string,
     logLevel?: LogLevel,
-    loggerProvider?: () => Logger,
+    loggerToken?: typeof loggerToken,
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
     objectStorageProviderProvider?: () => ObjectStorageProvider | Promise<ObjectStorageProvider>,
@@ -78,7 +79,7 @@ export function configureBaseInstanceProvider(
 ): void {
   coreLogPrefix = options.coreLoggerPrefix ?? coreLogPrefix;
   logLevel = options.logLevel ?? logLevel;
-  loggerProvider = options.loggerProvider ?? loggerProvider;
+  loggerToken = options.loggerToken ?? loggerToken;
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
   objectStorageProviderProvider = options.objectStorageProviderProvider ?? objectStorageProviderProvider;
@@ -101,16 +102,11 @@ export async function disposeInstances(): Promise<void> {
 }
 
 function getLoggerInstance(): Logger {
-  return singleton(singletonScope, loggerProviderToken, () => {
-    const logger = loggerProvider();
-    return logger;
-  });
+  return container.resolve(Logger);
 }
 
-export function getLogger(prefix: string, autoFormat: boolean = true): Logger {
-  const formattedPrefix = autoFormat ? `[${prefix}] ` : prefix;
-  const logger = getLoggerInstance().prefix(formattedPrefix);
-
+export function getLogger(module: string): Logger {
+  const logger = getLoggerInstance().fork(module);
   return logger;
 }
 
@@ -209,11 +205,14 @@ export function getWebServerModule(): WebServerModule {
 export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 3): Promise<void> {
   let triesLeft = maxTries;
   let success = false;
+
   while (!success && !disposer.disposing && triesLeft-- > 0) {
     try {
       logger.verbose(`connecting to ${name}...`);
+
       await connectFunction();
       success = true;
+
       logger.info(`connected to ${name}`);
     }
     catch (error: unknown) {
@@ -227,3 +226,11 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
     }
   }
 }
+
+container.register<LogLevel, LogLevel>(
+  LogLevel,
+  { useFactory: (level) => level ?? LogLevel.Trace },
+  { defaultArgumentProvider: () => logLevel }
+);
+
+container.register(Logger, { useTokenProvider: () => loggerToken });
