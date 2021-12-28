@@ -4,14 +4,9 @@ import { MultiKeyMap } from '#/data-structures';
 import { HttpError } from '#/http';
 import { decodeJsonPath } from '#/json-path';
 import { DetailsError } from '../error';
-import type { BinaryData, DeepArray, DeepFlatten, DeepNonNullable, Record, StringMap } from '../types';
-import { toArray } from './array';
-import { toUint8Array } from './binary';
-import { compareByValue } from './comparison';
+import type { DeepArray, DeepFlatten, DeepNonNullable, Record, StringMap } from '../types';
 import { currentTimestamp } from './date-time';
-import { sort } from './iterable-helpers';
 import { hasOwnProperty } from './object';
-import type { Comparator } from './sort';
 import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
@@ -252,10 +247,13 @@ export function select<T extends Record, K extends keyof T>(key: K): (item: T) =
 }
 
 export const propertyName = Symbol('PropertyName');
+export const cast = Symbol('cast');
 
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
-export type PropertyNameProxyChild<T> = T extends Record ? ({ [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> } & PropertyName) : PropertyName;
+export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]: <U extends T>() => PropertyNameProxyChild<U> };
+export type PropertyNameOfInstance<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfInstance<T[P]> & { [cast]: <U extends T[P]>() => PropertyNameOfInstance<U> } };
+export type FlatPropertyNameOfInstance<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfInstance<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfInstance<U> } };
 
 export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
@@ -284,6 +282,10 @@ export function getPropertyNameProxy<T extends Record = Record>(options: { deep?
         return prefix;
       }
 
+      if (property == cast) {
+        return () => proxy;
+      }
+
       assertString(property, `property must be a string, but was ${property.toString()}`);
 
       const ignore = (flat && (/\d+/u).test(property));
@@ -309,8 +311,8 @@ export function getPropertyNameProxy<T extends Record = Record>(options: { deep?
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function propertyNameOf<T extends Record = Record>(expression: (instance: DeepNonNullable<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as DeepNonNullable<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+export function propertyNameOf<T extends Record = Record>(expression: (instance: PropertyNameOfInstance<T>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as PropertyNameOfInstance<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
@@ -320,8 +322,8 @@ export function propertyNameOf<T extends Record = Record>(expression: (instance:
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: DeepFlatten<DeepNonNullable<T>>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as DeepFlatten<DeepNonNullable<T>>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: FlatPropertyNameOfInstance<T>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as FlatPropertyNameOfInstance<T>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
