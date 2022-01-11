@@ -2,9 +2,9 @@
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
-import type { ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
+import type { ForwardRefInjectionToken, Lifecycle, RegistrationOptions, ForwardArgumentMapper } from './container';
 import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgument, setParameterInjectionToken, setParameterOptional } from './container';
-import type { ForwardArgumentMapper, InjectionToken, Provider } from './types';
+import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
   /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */

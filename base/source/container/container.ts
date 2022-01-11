@@ -5,7 +5,7 @@ import { hasOwnProperty } from '#/utils/object';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
 import { assertDefinedPass, isDefined, isFunction, isObject, isPromise, isString, isUndefined } from '#/utils/type-guards';
-import type { ForwardArgumentMapper, InjectionToken, Provider } from './types';
+import type { InjectionToken, Provider } from './types';
 import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
 
 type ResolveContext = {
@@ -24,6 +24,10 @@ type ResolveChainParameterNode = {
 type ResolveChainNode = InjectionToken | ResolveChainParameterNode | undefined;
 
 type ResolveChain = ResolveChainNode[];
+
+export type ForwardArgumentMapper<T = unknown, U = any> = (argument: T) => U;
+
+export type ArgumentProvider<T> = (container: Container) => T;
 
 export type ForwardRefInjectionToken<T = any, P = any> = Exclude<InjectionToken<T, P>, Function> | (() => InjectionToken<T, P>); // eslint-disable-line @typescript-eslint/ban-types
 
@@ -55,7 +59,7 @@ export type RegistrationOptions<T, P = any> = {
   defaultArgument?: P,
 
   /** default resolve argument used when neither token nor explizit resolve argument is provided */
-  defaultArgumentProvider?: () => P,
+  defaultArgumentProvider?: ArgumentProvider<P>,
 
   /** function which gets called after a resolve */
   initializer?: (instance: T) => any | Promise<any>
@@ -251,14 +255,14 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.();
+      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
       instance = this._resolve<T, P>(innerToken, false, resolveArgument, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.();
+      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = registration.provider.useFactory(resolveArgument, this);
     }
 
@@ -362,19 +366,19 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.();
+      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
       instance = await this._resolveAsync<T, P>(innerToken, false, resolveArgument, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.();
+      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = registration.provider.useFactory(resolveArgument, this);
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.();
+      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = await registration.provider.useAsyncFactory(resolveArgument, this);
     }
 
