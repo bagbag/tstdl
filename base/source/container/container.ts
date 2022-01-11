@@ -5,7 +5,7 @@ import { hasOwnProperty } from '#/utils/object';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
 import { assertDefinedPass, isDefined, isFunction, isObject, isPromise, isString, isUndefined } from '#/utils/type-guards';
-import type { InjectionToken, Provider } from './types';
+import type { ForwardArgumentMapper, InjectionToken, Provider } from './types';
 import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
 
 type ResolveContext = {
@@ -39,6 +39,7 @@ export type ParameterTypeInfo = {
   optional?: boolean,
   injectToken?: InjectionToken,
   injectArgument?: any,
+  forwardArgumentMapper?: ForwardArgumentMapper,
   forwardRefToken?: ForwardRefInjectionToken
 };
 
@@ -108,6 +109,11 @@ export function setParameterForwardRefToken(constructor: Constructor, parameterI
 export function setParameterInjectArgument(constructor: Constructor, parameterIndex: number, argument: any): void {
   const registration = getOrCreateRegistration(constructor);
   assertDefinedPass(registration.parameters[parameterIndex]).injectArgument = argument;
+}
+
+export function setParameterForwardArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: ForwardArgumentMapper): void {
+  const registration = getOrCreateRegistration(constructor);
+  assertDefinedPass(registration.parameters[parameterIndex]).forwardArgumentMapper = mapper;
 }
 
 export function setParameterOptional(constructor: Constructor, parameterIndex: number): void {
@@ -218,7 +224,7 @@ export class Container {
       }
 
       const parameters = typeInfo.parameters.map((parameterInfo, index): unknown => {
-        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        const injectArgument = parameterInfo.forwardArgumentMapper?.(argument) ?? parameterInfo.injectArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -226,14 +232,15 @@ export class Container {
 
           context.forwardRefQueue.add(() => {
             const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
-            const resolved = this._resolve(forwardToken, parameterInfo.optional, parameterInfo.injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
+            const resolved = this._resolve(forwardToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
             forwardRef[setRef](resolved as object);
           });
 
           return forwardRef;
         }
 
-        return this._resolve(parameterToken, parameterInfo.optional, parameterInfo.injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
+        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        return this._resolve(parameterToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
       });
 
       instance = new typeInfo.constructor(...parameters) as T;
@@ -328,7 +335,7 @@ export class Container {
       }
 
       const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameterInfo, index): Promise<unknown> => {
-        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        const injectArgument = parameterInfo.forwardArgumentMapper?.(argument) ?? parameterInfo.injectArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -336,14 +343,15 @@ export class Container {
 
           context.forwardRefQueue.add(async () => {
             const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
-            const resolved = await this._resolveAsync(forwardToken, parameterInfo.optional, parameterInfo.injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
+            const resolved = await this._resolveAsync(forwardToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
             forwardRef[setRef](resolved as object);
           });
 
           return forwardRef;
         }
 
-        return this._resolveAsync(parameterToken, parameterInfo.optional, parameterInfo.injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
+        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        return this._resolveAsync(parameterToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
       }));
 
       instance = new typeInfo.constructor(...parameters) as T;

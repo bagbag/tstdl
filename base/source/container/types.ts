@@ -4,6 +4,8 @@ import type { Container } from './container';
 
 declare const parameter: unique symbol;
 
+export type ForwardArgumentMapper<T = unknown, U = any> = (argument: T) => U;
+
 export type ParameterizedInjectionToken<T, P> = SimpleInjectionToken<T> & { [parameter]?: P };
 
 export type SimpleInjectionToken<T> = Constructor<T> | Function | object | string | symbol;
