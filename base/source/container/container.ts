@@ -191,7 +191,7 @@ export class Container {
   }
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
-  private _resolve<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
+  private _resolve<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, _argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
     if (isUndefined(token)) {
       throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
     }
@@ -210,12 +210,14 @@ export class Container {
       throw new Error(`no provider for ${getTokenName(token)} registered - chain: ${getChainString(chain)}`);
     }
 
-    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, argument])) {
-      return context.instances.get([token, argument]) as T;
+    const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
+
+    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, resolveArgument])) {
+      return context.instances.get([token, resolveArgument]) as T;
     }
 
-    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argument)) {
-      return registration.instances.get(argument)!;
+    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(resolveArgument)) {
+      return registration.instances.get(resolveArgument)!;
     }
 
     let instance!: T;
@@ -228,7 +230,7 @@ export class Container {
       }
 
       const parameters = typeInfo.parameters.map((parameterInfo, index): unknown => {
-        const injectArgument = parameterInfo.forwardArgumentMapper?.(argument) ?? parameterInfo.injectArgument;
+        const injectArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.injectArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -255,14 +257,13 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
+      const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = this._resolve<T, P>(innerToken, false, resolveArgument, context, [...chain, registration.provider.useToken], false);
+      instance = this._resolve<T, P>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = registration.provider.useFactory(resolveArgument, this);
     }
 
@@ -271,11 +272,11 @@ export class Container {
     }
 
     if (registration.options.lifecycle == 'resolution') {
-      context.instances.set([token, argument], instance);
+      context.instances.set([token, resolveArgument], instance);
     }
 
     if (registration.options.lifecycle == 'singleton') {
-      registration.instances.set(argument, instance);
+      registration.instances.set(resolveArgument, instance);
     }
 
     context.resolutions.push({ instance, registration });
@@ -302,7 +303,7 @@ export class Container {
   }
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
-  private async _resolveAsync<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
+  private async _resolveAsync<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, _argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
     if (isUndefined(token)) {
       throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
     }
@@ -321,12 +322,14 @@ export class Container {
       throw new Error(`no provider for ${getTokenName(token)} registered - chain: ${getChainString(chain)}`);
     }
 
-    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, argument])) {
-      return context.instances.get([token, argument]) as T;
+    const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
+
+    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, resolveArgument])) {
+      return context.instances.get([token, resolveArgument]) as T;
     }
 
-    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argument)) {
-      return registration.instances.get(argument)!;
+    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(resolveArgument)) {
+      return registration.instances.get(resolveArgument)!;
     }
 
     let instance!: T;
@@ -339,7 +342,7 @@ export class Container {
       }
 
       const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameterInfo, index): Promise<unknown> => {
-        const injectArgument = parameterInfo.forwardArgumentMapper?.(argument) ?? parameterInfo.injectArgument;
+        const injectArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.injectArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -366,28 +369,26 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.provider.argument ?? registration.provider.argumentProvider?.() ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
+      const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = await this._resolveAsync<T, P>(innerToken, false, resolveArgument, context, [...chain, registration.provider.useToken], false);
+      instance = await this._resolveAsync<T, P>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = registration.provider.useFactory(resolveArgument, this);
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
       instance = await registration.provider.useAsyncFactory(resolveArgument, this);
     }
 
     if (registration.options.lifecycle == 'resolution') {
-      context.instances.set([token, argument], instance);
+      context.instances.set([token, resolveArgument], instance);
     }
 
     if (registration.options.lifecycle == 'singleton') {
-      registration.instances.set(argument, instance);
+      registration.instances.set(resolveArgument, instance);
     }
 
     context.resolutions.push({ instance, registration });
