@@ -13,9 +13,9 @@
     "pub": "npm run build:prod && rm -v dist/test* && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "^2.2",
+    "luxon": "^2",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7.4",
+    "rxjs": "^7",
     "zod": "^3.11"
   },
   "devDependencies": {
@@ -24,9 +24,9 @@
     "@types/minio": "^7.0",
     "@types/node": ">=16",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "^5.8",
-    "@typescript-eslint/parser": "^5.8",
-    "eslint": "^8.5",
+    "@typescript-eslint/eslint-plugin": "^5.9",
+    "@typescript-eslint/parser": "^5.9",
+    "eslint": "^8.6",
     "ttypescript": "^1.5",
     "typescript": "^4.5",
     "typescript-transform-paths": "^3.3"
@@ -37,7 +37,7 @@
     "got": "^11.8",
     "koa": "^2.13",
     "minio": "^7.0",
-    "mongodb": "^4.2",
+    "mongodb": "4.2",
     "superstruct": "0.15"
   }
 }

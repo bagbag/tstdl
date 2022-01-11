@@ -252,8 +252,8 @@ export const cast = Symbol('cast');
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
 export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]: <U extends T>() => PropertyNameProxyChild<U> };
-export type PropertyNameOfInstance<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfInstance<T[P]> & { [cast]: <U extends T[P]>() => PropertyNameOfInstance<U> } };
-export type FlatPropertyNameOfInstance<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfInstance<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfInstance<U> } };
+export type PropertyNameOfExpressionObject<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfExpressionObject<T[P]> & { [cast]: <U extends T[P]>() => PropertyNameOfExpressionObject<U> } };
+export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfExpressionObject<U> } };
 
 export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
@@ -311,8 +311,8 @@ export function getPropertyNameProxy<T extends Record = Record>(options: { deep?
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function propertyNameOf<T extends Record = Record>(expression: (instance: PropertyNameOfInstance<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as PropertyNameOfInstance<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+export function propertyNameOf<T extends Record = Record>(expression: (instance: PropertyNameOfExpressionObject<T>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as PropertyNameOfExpressionObject<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
@@ -322,8 +322,8 @@ export function propertyNameOf<T extends Record = Record>(expression: (instance:
  * @param options.deep whether to return the whole path to the property or just the last property
  * @returns property name
  */
-export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: FlatPropertyNameOfInstance<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as FlatPropertyNameOfInstance<T>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
+export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: FlatPropertyNameOfExpressionObject<T>) => any, options: { deep?: boolean } = {}): string {
+  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as FlatPropertyNameOfExpressionObject<T>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
   return assertStringPass(name, 'invalid expression');
 }
 
