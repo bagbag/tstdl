@@ -8,10 +8,10 @@ import { LocalizePipe } from './localize.pipe';
   pure: false
 })
 export class OptionalLocalizePipe extends LocalizePipe {
-  override transform(localizationKeyOrString: LocalizationKey<void> | string): string;
-  override transform<Parameters>(localizationDataOrString: LocalizationData<Parameters> | string): string;
-  override transform<Parameters>(localizationKeyOrString: LocalizationKey<Parameters> | string, parameters: Parameters): string;
-  override transform<Parameters>(localizationDataOrKeyOrString: LocalizationData<Parameters> | string, parametersOrNothing?: Parameters): string | null {
+  override transform(localizationKeyOrString: LocalizationKey<void> | string | null): string | null;
+  override transform<Parameters>(localizationDataOrString: LocalizationData<Parameters> | string | null): string | null;
+  override transform<Parameters>(localizationKeyOrString: LocalizationKey<Parameters> | string | null, parameters: Parameters): string | null;
+  override transform<Parameters>(localizationDataOrKeyOrString: LocalizationData<Parameters> | string | null, parametersOrNothing?: Parameters): string | null {
     if (isString(localizationDataOrKeyOrString)) {
       return localizationDataOrKeyOrString;
     }

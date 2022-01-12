@@ -1,5 +1,6 @@
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
+import { isNull } from '@tstdl/base/utils';
 import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
 import type { LocalizationData, LocalizationKey } from '../services';
 import { isLocalizationKey, LocalizationService } from '../services';
@@ -36,10 +37,14 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transformSubject.complete();
   }
 
-  transform(localizationKey: LocalizationKey<void>): string;
-  transform<Parameters>(localizationData: LocalizationData<Parameters>): string;
-  transform<Parameters>(localizationKey: LocalizationKey<Parameters>, parameters: Parameters): string;
-  transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters>, parametersOrNothing?: Parameters): string | null {
+  transform(localizationKey: LocalizationKey<void> | null): string | null;
+  transform<Parameters>(localizationData: LocalizationData<Parameters> | null): string | null;
+  transform<Parameters>(localizationKey: LocalizationKey<Parameters> | null, parameters: Parameters): string | null;
+  transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters> | null, parametersOrNothing?: Parameters): string | null {
+    if (isNull(localizationDataOrKey)) {
+      return null;
+    }
+
     if (isLocalizationKey(localizationDataOrKey)) {
       this.transformSubject.next({ key: localizationDataOrKey, parameters: parametersOrNothing });
     }

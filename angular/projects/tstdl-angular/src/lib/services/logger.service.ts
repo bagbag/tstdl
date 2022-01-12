@@ -1,5 +1,5 @@
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import type { LogErrorOptions } from '@tstdl/base/logger';
+import type { LogEntryOrProvider, LogErrorOptions } from '@tstdl/base/logger';
 import { Logger as TstdlLogger } from '@tstdl/base/logger';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -8,40 +8,51 @@ export const LOGGER = new InjectionToken<Logger>('Logger');
 @Injectable({
   providedIn: 'root'
 })
-export class Logger implements TstdlLogger {
+export class Logger extends TstdlLogger {
   private readonly logger: TstdlLogger;
 
   constructor(@Inject(LOGGER) logger: TstdlLogger) {
+    super(logger.level, logger.module, logger.logPrefix);
+
     this.logger = logger;
   }
 
+  fork(subModule: string): TstdlLogger {
+    return new Logger(this.logger.fork(subModule));
+  }
+
   prefix(prefix: string): TstdlLogger {
-    return this.logger.prefix(prefix);
+    return new Logger(this.logger.prefix(prefix));
   }
 
-  error(error: Error, options?: LogErrorOptions): void;
-  error(entry: string): void;
-  error(error: Error | string, options?: LogErrorOptions): void {
-    this.logger.error(error as Error, options);
+  override error(error: Error, options?: LogErrorOptions): void;
+  override error(entry: LogEntryOrProvider): void;
+  override error(error: any, options?: LogErrorOptions): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    this.logger.error(error, options);
   }
 
-  warn(entry: string): void {
+  override warn(entry: LogEntryOrProvider): void {
     this.logger.warn(entry);
   }
 
-  info(entry: string): void {
+  override info(entry: LogEntryOrProvider): void {
     this.logger.info(entry);
   }
 
-  verbose(entry: string): void {
+  override verbose(entry: LogEntryOrProvider): void {
     this.logger.verbose(entry);
   }
 
-  debug(entry: string): void {
+  override debug(entry: LogEntryOrProvider): void {
     this.logger.debug(entry);
   }
 
-  trace(entry: string): void {
+  override trace(entry: LogEntryOrProvider): void {
     this.logger.trace(entry);
+  }
+
+  protected log(): void {
+    throw new Error('Method not implemented.');
   }
 }
