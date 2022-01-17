@@ -41,6 +41,17 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
     this.emitChange();
   }
 
+  remove(value: T): boolean {
+    const index = this.backingArray.indexOf(value);
+
+    if (index == -1) {
+      return false;
+    }
+
+    this.removeAt(index);
+    return true;
+  }
+
   removeAt(index: number, count: number = 1): void {
     this.backingArray.splice(index, count);
     this.updateSize();
