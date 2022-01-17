@@ -12,7 +12,8 @@ export type LogErrorOptions = {
   includeStack?: boolean
 };
 
-export type LoggerParameters = {
+/** either string as a module shorthand or object */
+export type LoggerArguments = string | {
   level?: LogLevel,
   module?: string | string[],
   prefix?: string

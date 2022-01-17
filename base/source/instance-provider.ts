@@ -7,7 +7,7 @@ import { HttpClient } from './http';
 import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
-import type { LoggerParameters } from './logger';
+import type { LoggerArguments } from './logger';
 import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { MessageBusProvider } from './message-bus';
@@ -34,7 +34,7 @@ const objectStorageScopeToken = Symbol('object-storages');
 
 let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
-let loggerToken: InjectionToken<Logger, LoggerParameters> = ConsoleLogger;
+let loggerToken: InjectionToken<Logger, LoggerArguments> = ConsoleLogger;
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));

@@ -1,7 +1,7 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
-import { inject, injectionToken, singleton } from '#/container';
-import { CancellationToken } from '#/utils/cancellation-token';
+import { inject, injectionToken, optional, singleton } from '#/container';
 import { toArray } from '#/utils/array';
+import { CancellationToken } from '#/utils/cancellation-token';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { buildUrl } from '#/utils/url-builder';
@@ -51,7 +51,7 @@ export class HttpClient {
     return this._instance;
   }
 
-  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) options: HttpClientOptions = {}) {
+  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) @optional() options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;
 

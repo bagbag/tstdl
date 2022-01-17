@@ -41,7 +41,7 @@ export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = 
  * registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function singleton<T extends Constructor = Constructor, P = any>(options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
+export function singleton<T = any, P = any>(options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle: 'singleton' });
 }
 
@@ -49,7 +49,7 @@ export function singleton<T extends Constructor = Constructor, P = any>(options:
  * registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function scoped<T extends Constructor = Constructor, P = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
+export function scoped<T = any, P = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle });
 }
 

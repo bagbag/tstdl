@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 
-import { inject, injectable, optional } from '#/container';
+import { singleton } from '#/container';
 import type { Record } from '#/types';
-import { isDefined, isString } from '#/utils';
+import { isDefined, isObject, isString } from '#/utils';
 import { now } from '#/utils/date-time';
 import { formatError } from '#/utils/helpers';
 import { LogLevel } from '../level';
-import type { LogErrorOptions, LoggerParameters } from '../logger';
+import type { LogErrorOptions, LoggerArguments } from '../logger';
 import { Logger } from '../logger';
 
 const levelFuncMap: Record<LogLevel, (message: string) => void> = {
@@ -18,11 +18,19 @@ const levelFuncMap: Record<LogLevel, (message: string) => void> = {
   [LogLevel.Trace]: console.debug
 };
 
-@injectable<ConsoleLogger, LoggerParameters>({ provider: { useFactory: (parameters, container) => new ConsoleLogger(parameters?.level ?? container.resolve(LogLevel), parameters?.module, parameters?.prefix) } })
+@singleton<ConsoleLogger, LoggerArguments>({
+  provider: {
+    useFactory: (parameters, container) => new ConsoleLogger(
+      (isObject(parameters) ? parameters.level : undefined) ?? container.resolve(LogLevel),
+      isObject(parameters) ? parameters.module : parameters,
+      isObject(parameters) ? parameters.prefix : undefined
+    )
+  }
+})
 export class ConsoleLogger extends Logger {
   private readonly entryPrefix: string;
 
-  constructor(@inject(LogLevel) level: LogLevel, @optional() module?: string | string[], @optional() prefix?: string) {
+  constructor(level: LogLevel, module?: string | string[], prefix?: string) {
     super(level, module, prefix);
 
     const modulePrefix = isDefined(this.module) ? this.module.map((m) => `[${m}]`).join(' ') : '';
