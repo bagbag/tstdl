@@ -57,6 +57,16 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
     this.updateSize();
   }
 
+  indexOf(value: T): number | undefined {
+    const index = this.backingArray.indexOf(value);
+
+    if (index == -1) {
+      return undefined;
+    }
+
+    return index;
+  }
+
   clone(): ArrayList<T> {
     return new ArrayList(this.backingArray);
   }
