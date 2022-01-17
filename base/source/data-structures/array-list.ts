@@ -7,6 +7,7 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
     super();
 
     this.backingArray = [...items];
+    this.updateSize();
   }
 
   /**
@@ -16,7 +17,7 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
   static fromArray<T>(array: T[]): ArrayList<T> {
     const arrayList = new ArrayList<T>();
     arrayList.backingArray = array;
-    arrayList.setSize(array.length);
+    arrayList.updateSize();
 
     return arrayList;
   }
@@ -27,12 +28,12 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
 
   add(value: T): void {
     this.backingArray.push(value);
-    super.incrementSize();
+    this.updateSize();
   }
 
   addMany(values: Iterable<T>): void {
     this.backingArray.push(...values);
-    this.setSize(this.backingArray.length);
+    this.updateSize();
   }
 
   set(index: number, value: T): void {
@@ -42,7 +43,7 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
 
   removeAt(index: number, count: number = 1): void {
     this.backingArray.splice(index, count);
-    this.setSize(this.backingArray.length);
+    this.updateSize();
   }
 
   clone(): ArrayList<T> {
@@ -55,5 +56,9 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
 
   protected _clear(): void {
     this.backingArray.splice(0, this.backingArray.length);
+  }
+
+  private updateSize(): void {
+    this.setSize(this.backingArray.length);
   }
 }
