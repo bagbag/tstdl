@@ -40,6 +40,11 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
     this.emitChange();
   }
 
+  removeAt(index: number, count: number = 1): void {
+    this.backingArray.splice(index, count);
+    this.setSize(this.backingArray.length);
+  }
+
   clone(): ArrayList<T> {
     return new ArrayList(this.backingArray);
   }
