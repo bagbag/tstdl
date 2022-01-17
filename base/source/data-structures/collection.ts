@@ -1,11 +1,14 @@
 import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, startWith, Subject } from 'rxjs';
 
 export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T> {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
   private readonly clearSubject: Subject<TThis>;
+
+  /** emits collection on subscribe and change */
+  readonly observe$: Observable<TThis>;
 
   /** emits size of list */
   readonly size$: Observable<number>;
@@ -61,6 +64,7 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
     this.size$ = this.sizeSubject.asObservable();
     this.change$ = this.changeSubject.asObservable();
     this.clear$ = this.clearSubject.asObservable();
+    this.observe$ = this.change$.pipe(startWith(this as unknown as TThis));
 
     this.isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
     this.hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
