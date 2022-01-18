@@ -75,7 +75,7 @@ const typeInfos = new Map<Constructor, TypeInfo>();
 
 function getOrCreateRegistration(constructor: Constructor): TypeInfo {
   if (!typeInfos.has(constructor)) {
-    const parameterTypes = assertDefinedPass(getParameterTypes(constructor), 'could not reflect parameter types') as any[];
+    const parameterTypes: any[] = getParameterTypes(constructor) ?? [];
 
     const registration: TypeInfo = {
       constructor,
