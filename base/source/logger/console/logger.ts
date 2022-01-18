@@ -34,7 +34,7 @@ export class ConsoleLogger extends Logger {
     super(level, module, prefix);
 
     const modulePrefix = isDefined(this.module) ? this.module.map((m) => `[${m}]`).join(' ') : '';
-    this.entryPrefix = `${modulePrefix}${modulePrefix.length > 0 ? ' ' : ''}${this.logPrefix ?? ''}`;
+    this.entryPrefix = `${modulePrefix}${modulePrefix.length > 0 ? ' ' : ''}${this.logPrefix}`;
   }
 
   fork(subModule: string): ConsoleLogger {

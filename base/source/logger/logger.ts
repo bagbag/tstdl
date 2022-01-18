@@ -22,9 +22,9 @@ export type LoggerArguments = string | {
 export abstract class Logger {
   readonly level: LogLevel;
   readonly module?: string[];
-  readonly logPrefix: string | undefined;
+  readonly logPrefix: string;
 
-  constructor(level: LogLevel, module?: string | string[], prefix?: string) {
+  constructor(level: LogLevel, module?: string | string[], prefix: string = '') {
     this.level = level;
     this.module = isDefined(module) ? toArray(module) : undefined;
     this.logPrefix = prefix;
