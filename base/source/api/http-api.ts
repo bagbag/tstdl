@@ -304,6 +304,7 @@ async function getBody<B extends HttpBodyType>(request: Koa.Request, bodyType: B
 
 async function readJsonBody(request: Koa.Request, maxBytes: number): Promise<Json> {
   const body = await readBody(request, maxBytes);
+
   try {
     const json = JSON.parse(body) as Json;
     return json;
@@ -410,6 +411,6 @@ function contentTypeToBodyType(contentType: string): HttpBodyType {
       return 'none';
 
     default:
-      throw new BadRequestError('unknown HttpBodyType');
+      throw new BadRequestError('unsupported Content-Type');
   }
 }

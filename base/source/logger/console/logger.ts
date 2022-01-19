@@ -6,7 +6,7 @@ import { isDefined, isObject, isString } from '#/utils';
 import { now } from '#/utils/date-time';
 import { formatError } from '#/utils/helpers';
 import { LogLevel } from '../level';
-import type { LogErrorOptions, LoggerArguments } from '../logger';
+import type { LogErrorOptions, LoggerArgument } from '../logger';
 import { Logger } from '../logger';
 
 const levelFuncMap: Record<LogLevel, (message: string) => void> = {
@@ -18,7 +18,7 @@ const levelFuncMap: Record<LogLevel, (message: string) => void> = {
   [LogLevel.Trace]: console.debug
 };
 
-@singleton<ConsoleLogger, LoggerArguments>({
+@singleton<ConsoleLogger, LoggerArgument>({
   provider: {
     useFactory: (parameters, container) => new ConsoleLogger(
       (isObject(parameters) ? parameters.level : undefined) ?? container.resolve(LogLevel),

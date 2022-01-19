@@ -7,7 +7,7 @@ import { HttpClient } from './http';
 import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
-import type { LoggerArguments } from './logger';
+import type { LoggerArgument } from './logger';
 import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { MessageBusProvider } from './message-bus';
@@ -15,8 +15,7 @@ import { LocalMessageBusProvider } from './message-bus/local';
 import type { MigrationStateRepository } from './migration';
 import { Migrator } from './migration';
 import { WebServerModule } from './module/modules';
-import type { ObjectStorage } from './object-storage';
-import { ObjectStorageProvider } from './object-storage';
+import { ObjectStorage, ObjectStorageProvider } from './object-storage';
 import type { OidcStateRepository } from './openid-connect';
 import { CachedOidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
@@ -30,15 +29,13 @@ const coreLoggerToken = Symbol('core-logger');
 const lockProviderToken = Symbol('lock-provider');
 const keyValueStoreProviderToken = Symbol('key-value-store-provider');
 const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
-const objectStorageScopeToken = Symbol('object-storages');
 
 let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
-let loggerToken: InjectionToken<Logger, LoggerArguments> = ConsoleLogger;
+let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
-let objectStorageProviderProvider: () => ObjectStorageProvider | Promise<ObjectStorageProvider> = deferThrow(new Error('ObjectStorageProvider not configured'));
 let imageServiceProvider: () => ImageService | Promise<ImageService> = deferThrow(new Error('ImageService not configured'));
 let messageBusProvider: () => MessageBusProvider | Promise<MessageBusProvider> = deferThrow(new Error('MessageBusProvider not configured'));
 
@@ -82,7 +79,6 @@ export function configureBaseInstanceProvider(
   loggerToken = options.loggerToken ?? loggerToken;
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
-  objectStorageProviderProvider = options.objectStorageProviderProvider ?? objectStorageProviderProvider;
   imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
   messageBusProvider = options.messageBusProvider ?? messageBusProvider;
   webServerPort = options.webServerPort ?? webServerPort;
@@ -148,14 +144,11 @@ export async function getMigrator(): Promise<Migrator> {
 }
 
 export async function getObjectStorageProvider(): Promise<ObjectStorageProvider> {
-  return singleton(singletonScope, ObjectStorageProvider, objectStorageProviderProvider);
+  return container.resolveAsync(ObjectStorageProvider);
 }
 
 export async function getObjectStorage(module: string): Promise<ObjectStorage> {
-  return singleton(objectStorageScopeToken, module, async () => {
-    const objectStorageProvider = await getObjectStorageProvider();
-    return objectStorageProvider.get(module);
-  });
+  return container.resolveAsync(ObjectStorage, module);
 }
 
 export async function getImageService(): Promise<ImageService> {

@@ -1,25 +1,33 @@
+import { singleton } from '#/container';
 import { AsyncEnumerable } from '#/enumerable';
-import type { ObjectInformation, ObjectStorage } from '#/object-storage';
+import type { ObjectInformation } from '#/object-storage';
+import { ObjectStorage } from '#/object-storage';
 import { now } from '#/utils/date-time';
 import type { NonObjectBufferMode } from '#/utils/stream-helper-types';
 import { readStream } from '#/utils/stream-reader';
-import { isObject } from '#/utils/type-guards';
-import type { BucketItem, Client } from 'minio';
+import { assertStringPass, isObject } from '#/utils/type-guards';
+import type { BucketItem } from 'minio';
+import { Client } from 'minio';
 import type { TypedReadable } from '../../utils/typed-readable';
 import type { S3Object, S3ObjectInformation } from './s3.object';
+import { S3ObjectStorageProvider } from './s3.object-storage-provider';
 
-export class S3ObjectStorage implements ObjectStorage<S3ObjectInformation, S3Object> {
+@singleton({
+  provider: {
+    useFactory: (argument, container) => container.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
+  }
+})
+export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object> {
   private readonly client: Client;
   private readonly bucket: string;
   private readonly prefix: string;
 
-  readonly module: string;
+  constructor(client: Client, bucket: string, module: string, keyPrefix: string) {
+    super(module);
 
-  constructor(client: Client, bucket: string, module: string, transparentKeyPrefix: string) {
     this.client = client;
     this.bucket = bucket;
-    this.module = module;
-    this.prefix = transparentKeyPrefix;
+    this.prefix = keyPrefix;
   }
 
   async ensureBucketExists(region: string): Promise<void> {

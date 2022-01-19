@@ -1,3 +1,4 @@
+import { Injectable, injectArgumentType } from '#/container';
 import { isDefined, isFunction } from '#/utils';
 import { toArray } from '#/utils/array';
 import { LogLevel } from './level';
@@ -13,16 +14,18 @@ export type LogErrorOptions = {
 };
 
 /** either string as a module shorthand or object */
-export type LoggerArguments = string | {
+export type LoggerArgument = string | {
   level?: LogLevel,
   module?: string | string[],
   prefix?: string
 };
 
-export abstract class Logger {
+export abstract class Logger implements Injectable<LoggerArgument> {
   readonly level: LogLevel;
   readonly module?: string[];
   readonly logPrefix: string;
+
+  [injectArgumentType]: LoggerArgument;
 
   constructor(level: LogLevel, module?: string | string[], prefix: string = '') {
     this.level = level;

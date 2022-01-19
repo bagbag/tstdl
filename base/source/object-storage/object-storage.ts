@@ -1,70 +1,80 @@
+import type { Injectable } from '#/container';
+import { injectArgumentType } from '#/container';
 import type { ObjectInformation, ObjectStorageObject } from './object';
 
-export interface ObjectStorage<OI extends ObjectInformation = ObjectInformation, O extends ObjectStorageObject<OI> = ObjectStorageObject<OI>> {
+export type ObjectStorageArgument = string;
+
+export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInformation, O extends ObjectStorageObject<OI> = ObjectStorageObject<OI>> implements Injectable<ObjectStorageArgument> {
   /**
    * object storage module
    */
   readonly module: string;
 
+  [injectArgumentType]: ObjectStorageArgument;
+
+  constructor(module: string) {
+    this.module = module;
+  }
+
   /**
    * checks if an object exists
    * @param key object key
    */
-  exists(key: string): Promise<boolean>;
+  abstract exists(key: string): Promise<boolean>;
 
   /**
    * uploads an object
    * @param key object key
    * @param content content of object
    */
-  uploadObject(key: string, content: ArrayBuffer): Promise<void>;
+  abstract uploadObject(key: string, content: ArrayBuffer): Promise<void>;
 
   /**
    * gets an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */
-  getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
+  abstract getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
 
   /**
    * gets all objects
    */
-  getObjects(): Promise<OI[]>;
+  abstract getObjects(): Promise<OI[]>;
 
   /**
    * gets object
    * @param key object key
    */
-  getObject(key: string): Promise<O>;
+  abstract getObject(key: string): Promise<O>;
 
   /**
    * gets object information
    * @param key object key
    */
-  getObjectInformation(key: string): Promise<OI>;
+  abstract getObjectInformation(key: string): Promise<OI>;
 
   /**
    * gets object resource uri
    * @param key object key
    */
-  getResourceUri(key: string): Promise<string>;
+  abstract getResourceUri(key: string): Promise<string>;
 
   /**
    * gets an url which can be used to download the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */
-  getDownloadUrl(key: string, expirationTimestamp: number): Promise<string>;
+  abstract getDownloadUrl(key: string, expirationTimestamp: number): Promise<string>;
 
   /**
    * deletes an object
    * @param key object key
    */
-  deleteObject(key: string): Promise<void>;
+  abstract deleteObject(key: string): Promise<void>;
 
   /**
    * deletes objects
    * @param keys object key
    */
-  deleteObjects(keys: string[]): Promise<void>;
+  abstract deleteObjects(keys: string[]): Promise<void>;
 }

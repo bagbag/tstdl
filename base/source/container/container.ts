@@ -1,12 +1,13 @@
 import { CircularBuffer, MultiKeyMap } from '#/data-structures';
 import type { Constructor } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
-import { hasOwnProperty } from '#/utils/object';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
-import { assertDefinedPass, isDefined, isFunction, isObject, isPromise, isString, isUndefined } from '#/utils/type-guards';
-import type { InjectionToken, Provider } from './types';
+import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
+import { ResolveError } from './resolve.error';
+import type { Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
 import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
+import { getTokenName } from './utils';
 
 type ResolveContext = {
   forwardRefQueue: CircularBuffer<() => void | Promise<void>>,
@@ -15,21 +16,11 @@ type ResolveContext = {
   instances: MultiKeyMap<[InjectionToken, any], any>
 };
 
-type ResolveChainParameterNode = {
-  parametersCount: number,
-  index: number,
-  token: InjectionToken
-};
-
-type ResolveChainNode = InjectionToken | ResolveChainParameterNode | undefined;
-
-type ResolveChain = ResolveChainNode[];
-
 export type ForwardArgumentMapper<T = unknown, U = any> = (argument: T) => U;
 
 export type ArgumentProvider<T> = (container: Container) => T;
 
-export type ForwardRefInjectionToken<T = any, P = any> = Exclude<InjectionToken<T, P>, Function> | (() => InjectionToken<T, P>); // eslint-disable-line @typescript-eslint/ban-types
+export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>); // eslint-disable-line @typescript-eslint/ban-types
 
 /**
  * transient: a new instance will be created with each resolve
@@ -52,22 +43,22 @@ export type TypeInfo = {
   parameters: ParameterTypeInfo[]
 };
 
-export type RegistrationOptions<T, P = any> = {
+export type RegistrationOptions<T, A = any> = {
   lifecycle?: Lifecycle,
 
   /** default resolve argument used when neither token nor explizit resolve argument is provided */
-  defaultArgument?: P,
+  defaultArgument?: InjectableArgument<T, A>,
 
   /** default resolve argument used when neither token nor explizit resolve argument is provided */
-  defaultArgumentProvider?: ArgumentProvider<P>,
+  defaultArgumentProvider?: ArgumentProvider<InjectableArgument<T, A>>,
 
   /** function which gets called after a resolve */
   initializer?: (instance: T) => any | Promise<any>
 };
 
-export type Registration<T = any, P = any> = {
-  provider: Provider<T, P>,
-  options: RegistrationOptions<T, P>,
+export type Registration<T = any, A = any> = {
+  provider: Provider<T, A>,
+  options: RegistrationOptions<T, A>,
   instances: Map<any, T>
 };
 
@@ -138,7 +129,7 @@ export class Container {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  register<T, P = any>(token: InjectionToken<T, P>, provider: Provider<T, P>, options?: RegistrationOptions<T>): void {
+  register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options?: RegistrationOptions<T, A>): void {
     if (isClassProvider(provider)) {
       if (!typeInfos.has(provider.useClass)) {
         throw new Error(`${provider.useClass.name} is not injectable`);
@@ -162,7 +153,7 @@ export class Container {
    * @param argument argument used for resolving (overrides token and default arguments)
    * @returns
    */
-  resolve<T, P = any>(token: InjectionToken<T, P>, argument?: P, instances?: [InjectionToken, any][]): T {
+  resolve<T, A = T extends Injectable<infer AInject> ? AInject : any>(token: InjectionToken<T, A>, argument?: T extends Injectable<infer AInject> ? AInject : A, instances?: [InjectionToken, any][]): T {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
@@ -179,7 +170,7 @@ export class Container {
    * @param argument argument used for resolving (overrides token and default arguments)
    * @returns
    */
-  async resolveAsync<T, P = any>(token: InjectionToken<T, P>, argument?: P, instances?: [InjectionToken, any][]): Promise<T> {
+  async resolveAsync<T, A = T extends Injectable<infer AInject> ? AInject : any>(token: InjectionToken<T, A>, argument?: T extends Injectable<infer AInject> ? AInject : A, instances?: [InjectionToken, any][]): Promise<T> {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
@@ -191,23 +182,23 @@ export class Container {
   }
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
-  private _resolve<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, _argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
+  private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
     if (isUndefined(token)) {
-      throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
+      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
     }
 
     if (context.providedInstances.has(token)) {
       return context.providedInstances.get(token) as T;
     }
 
-    const registration = this.registrations.get(token) as Registration<T, P>;
+    const registration = this.registrations.get(token) as Registration<T, A>;
 
     if (isUndefined(registration)) {
       if (optional == true) {
         return undefined as unknown as T;
       }
 
-      throw new Error(`no provider for ${getTokenName(token)} registered - chain: ${getChainString(chain)}`);
+      throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
     }
 
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
@@ -226,7 +217,7 @@ export class Container {
       const typeInfo = typeInfos.get(registration.provider.useClass);
 
       if (isUndefined(typeInfo)) {
-        throw new Error(`${registration.provider.useClass.name} is not injectable - chain: ${getChainString(chain)}`);
+        throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
       }
 
       const parameters = typeInfo.parameters.map((parameterInfo, index): unknown => {
@@ -260,15 +251,20 @@ export class Container {
       const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = this._resolve<T, P>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
+      instance = this._resolve<T, A>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      instance = registration.provider.useFactory(resolveArgument, this);
+      try {
+        instance = registration.provider.useFactory(resolveArgument, this);
+      }
+      catch (error) {
+        throw new ResolveError('error in factory', chain, error as Error);
+      }
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      throw new Error(`cannot resolve async provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead - chain: ${getChainString(chain)}`);
+      throw new ResolveError(`cannot resolve async provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
     if (registration.options.lifecycle == 'resolution') {
@@ -293,7 +289,7 @@ export class Container {
           const returnValue = resolution.registration.options.initializer(resolution.instance);
 
           if (isPromise(returnValue)) {
-            throw new Error(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead - chain: ${getChainString(chain)}`);
+            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
           }
         }
       }
@@ -303,23 +299,23 @@ export class Container {
   }
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
-  private async _resolveAsync<T, P>(token: InjectionToken<T, P>, optional: boolean | undefined, _argument: P | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
+  private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
     if (isUndefined(token)) {
-      throw new Error(`token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case - chain: ${getChainString(chain)}`);
+      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
     }
 
     if (context.providedInstances.has(token)) {
       return context.providedInstances.get(token) as T;
     }
 
-    const registration = this.registrations.get(token) as Registration<T, P>;
+    const registration = this.registrations.get(token) as Registration<T, A>;
 
     if (isUndefined(registration)) {
       if (optional == true) {
         return undefined as unknown as T;
       }
 
-      throw new Error(`no provider for ${getTokenName(token)} registered - chain: ${getChainString(chain)}`);
+      throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
     }
 
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
@@ -338,7 +334,7 @@ export class Container {
       const typeInfo = typeInfos.get(registration.provider.useClass);
 
       if (isUndefined(typeInfo)) {
-        throw new Error(`${registration.provider.useClass.name} is not injectable - chain: ${getChainString(chain)}`);
+        throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
       }
 
       const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameterInfo, index): Promise<unknown> => {
@@ -372,15 +368,25 @@ export class Container {
       const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = await this._resolveAsync<T, P>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
+      instance = await this._resolveAsync<T, A>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
-      instance = registration.provider.useFactory(resolveArgument, this);
+      try {
+        instance = registration.provider.useFactory(resolveArgument, this);
+      }
+      catch (error) {
+        throw new ResolveError('error in factory', chain, error as Error);
+      }
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      instance = await registration.provider.useAsyncFactory(resolveArgument, this);
+      try {
+        instance = await registration.provider.useAsyncFactory(resolveArgument, this);
+      }
+      catch (error) {
+        throw new ResolveError('error in factory', chain, error as Error);
+      }
     }
 
     if (registration.options.lifecycle == 'resolution') {
@@ -405,7 +411,7 @@ export class Container {
           const returnValue = resolution.registration.options.initializer(resolution.instance);
 
           if (isPromise(returnValue)) {
-            throw new Error(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead - chain: ${getChainString(chain)}`);
+            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
           }
         }
       }
@@ -413,36 +419,6 @@ export class Container {
 
     return instance;
   }
-}
-
-function getTokenName(token: InjectionToken | undefined): string {
-  return isFunction(token)
-    ? token.name
-    : isString(token)
-      ? `"${token}"`
-      : String(token);
-}
-
-function getChainString(chain: ResolveChain): string {
-  let chainString = '';
-
-  for (const node of chain) {
-    if (isResolveChainParameterNode(node)) {
-      chainString += `(${'_, '.repeat(node.index)}${getTokenName(node.token)}${', _'.repeat(node.parametersCount - node.index - 1)})`;
-    }
-    else {
-      chainString += `\n  -> ${getTokenName(node)}`;
-    }
-  }
-
-  return chainString;
-}
-
-function isResolveChainParameterNode(node: ResolveChainNode): node is ResolveChainParameterNode {
-  return isObject(node)
-    && hasOwnProperty(node as ResolveChainParameterNode, 'token')
-    && hasOwnProperty(node as ResolveChainParameterNode, 'index')
-    && hasOwnProperty(node as ResolveChainParameterNode, 'parametersCount');
 }
 
 export const container = new Container();
