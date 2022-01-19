@@ -12,6 +12,7 @@ const defaultRetryDelay = 10000;
 export type PatchWorkerOptions<T extends StringMap> = {
   debounceTime?: number,
   retryDelay?: number,
+  handleOn?: Observable<any>,
   completeOn?: Observable<any>,
   handler: (patch: Partial<T>) => void | Promise<void>,
   errorHandler?: (error: Error) => void | Promise<void>
@@ -33,11 +34,23 @@ export class PatchWorker<T extends Record> {
     this.completeToken = new CancellationToken();
     this.patch = undefined;
 
+    if (isDefined(options.handleOn)) {
+      this.handleOn(options.handleOn);
+    }
+
     if (isDefined(options.completeOn)) {
       this.completeOn(options.completeOn);
     }
 
     void this.handleLoop();
+  }
+
+  handleOn(observable: Observable<any>): void {
+    observable.pipe(takeUntil(this.completeToken)).subscribe(() => this.handle());
+  }
+
+  completeOn(observable: Observable<any>): void {
+    observable.pipe(takeUntil(this.completeToken)).subscribe(() => this.complete());
   }
 
   add(patch: Partial<T>): void;
@@ -66,10 +79,6 @@ export class PatchWorker<T extends Record> {
     this.handleSubject.next();
     this.handleSubject.complete();
     this.completeToken.set();
-  }
-
-  completeOn(observable: Observable<any>): void {
-    observable.pipe(takeUntil(this.completeToken)).subscribe(() => this.completeToken.set());
   }
 
   private async handleLoop(): Promise<void> {
