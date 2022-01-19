@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { Record } from '#/types';
+import type { BinaryData, Record } from '#/types';
 import { toArray } from './array';
 import { toUint8Array } from './binary';
 import { compareByValue } from './comparison';

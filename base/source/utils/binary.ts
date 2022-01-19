@@ -1,4 +1,4 @@
-import type { TypedArray } from '#/types';
+import type { BinaryData, TypedArray } from '#/types';
 import { assert, isArrayBuffer } from './type-guards';
 
 /**
