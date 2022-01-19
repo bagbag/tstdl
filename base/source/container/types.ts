@@ -4,9 +4,21 @@ import type { Container } from './container';
 
 declare const parameter: unique symbol;
 export declare const injectArgumentType: unique symbol;
+export const afterResolve: unique symbol = Symbol('after resolve');
 
-export interface Injectable<T> {
-  [injectArgumentType]: T;
+export interface Injectable<T = unknown> {
+  /**
+   * type of resolve argument
+   * @deprecated only used for type inference
+   */
+  [injectArgumentType]?: T;
+}
+
+export interface AfterResolve {
+  /**
+   * function called after resolve
+   */
+  [afterResolve]: () => void | Promise<void>;
 }
 
 export type InjectableArgument<T, Fallback> = T extends Injectable<infer A> ? A : Fallback;

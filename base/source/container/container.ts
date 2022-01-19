@@ -1,12 +1,12 @@
 import { CircularBuffer, MultiKeyMap } from '#/data-structures';
-import type { Constructor } from '#/types';
+import type { Constructor, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
 import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
 import { ResolveError } from './resolve.error';
-import type { Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
-import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
+import type { AfterResolve, Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
+import { afterResolve, isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
 import { getTokenName } from './utils';
 
 type ResolveContext = {
@@ -140,6 +140,16 @@ export class Container {
   }
 
   /**
+   * register a provider for a token as a singleton. Alias for {@link register} with `singleton` lifecycle
+   * @param token token to register
+   * @param provider provider used to resolve the token
+   * @param options registration options
+   */
+  registerSingleton<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options?: TypedOmit<RegistrationOptions<T, A>, 'lifecycle'>): void {
+    this.register(token, provider, { ...options, lifecycle: 'singleton' });
+  }
+
+  /**
    * check if token has a registered provider
    * @param token token check
    */
@@ -267,15 +277,17 @@ export class Container {
       throw new ResolveError(`cannot resolve async provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
-    if (registration.options.lifecycle == 'resolution') {
-      context.instances.set([token, resolveArgument], instance);
-    }
+    if (!isTokenProvider(registration.provider)) {
+      if (registration.options.lifecycle == 'resolution') {
+        context.instances.set([token, resolveArgument], instance);
+      }
 
-    if (registration.options.lifecycle == 'singleton') {
-      registration.instances.set(resolveArgument, instance);
-    }
+      if (registration.options.lifecycle == 'singleton') {
+        registration.instances.set(resolveArgument, instance);
+      }
 
-    context.resolutions.push({ instance, registration });
+      context.resolutions.push({ instance, registration });
+    }
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
@@ -284,6 +296,15 @@ export class Container {
 
       for (let i = context.resolutions.length - 1; i >= 0; i--) {
         const resolution = context.resolutions[i]!;
+
+
+        if (isFunction((resolution.instance as AfterResolve | undefined)?.[afterResolve])) {
+          const returnValue = (resolution.instance as AfterResolve)[afterResolve]!();
+
+          if (isPromise(returnValue)) {
+            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+          }
+        }
 
         if (isDefined(resolution.registration.options.initializer)) {
           const returnValue = resolution.registration.options.initializer(resolution.instance);
@@ -389,15 +410,17 @@ export class Container {
       }
     }
 
-    if (registration.options.lifecycle == 'resolution') {
-      context.instances.set([token, resolveArgument], instance);
-    }
+    if (!isTokenProvider(registration.provider)) {
+      if (registration.options.lifecycle == 'resolution') {
+        context.instances.set([token, resolveArgument], instance);
+      }
 
-    if (registration.options.lifecycle == 'singleton') {
-      registration.instances.set(resolveArgument, instance);
-    }
+      if (registration.options.lifecycle == 'singleton') {
+        registration.instances.set(resolveArgument, instance);
+      }
 
-    context.resolutions.push({ instance, registration });
+      context.resolutions.push({ instance, registration });
+    }
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
@@ -407,12 +430,12 @@ export class Container {
       for (let i = context.resolutions.length - 1; i >= 0; i--) {
         const resolution = context.resolutions[i]!;
 
-        if (isDefined(resolution.registration.options.initializer)) {
-          const returnValue = resolution.registration.options.initializer(resolution.instance);
+        if (isFunction((resolution.instance as AfterResolve | undefined)?.[afterResolve])) {
+          await (resolution.instance as AfterResolve)[afterResolve]!();
+        }
 
-          if (isPromise(returnValue)) {
-            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
-          }
+        if (isDefined(resolution.registration.options.initializer)) {
+          await resolution.registration.options.initializer(resolution.instance);
         }
       }
     }

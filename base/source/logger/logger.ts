@@ -1,4 +1,5 @@
-import { Injectable, injectArgumentType } from '#/container';
+import type { Injectable } from '#/container';
+import { injectArgumentType } from '#/container';
 import { isDefined, isFunction } from '#/utils';
 import { toArray } from '#/utils/array';
 import { LogLevel } from './level';

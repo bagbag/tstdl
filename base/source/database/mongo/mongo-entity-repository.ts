@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/semi */
+import type { AfterResolve } from '#/container';
+import { afterResolve } from '#/container';
 import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
 import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
@@ -59,7 +61,7 @@ export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<
   return noopTransformer;
 }
 
-export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> extends EntityRepository<T> {
+export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> extends EntityRepository<T> implements AfterResolve {
   readonly collection: Collection<TDb>;
   readonly transformer: EntityTransformer<T, TDb>;
   readonly logger: Logger;
@@ -77,6 +79,10 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> ext
 
     this.baseRepository = new MongoBaseRepository(collection);
     this.transformerMappingMap = new Map(Object.entries(transformer.mapping ?? {}) as [keyof T, MappingItem<T, TDb>][]);
+  }
+
+  async [afterResolve](): Promise<void> {
+    await this.initialize();
   }
 
   async initialize(): Promise<void> {

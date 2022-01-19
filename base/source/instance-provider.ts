@@ -60,7 +60,6 @@ export function configureBaseInstanceProvider(
     loggerToken?: typeof loggerToken,
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
-    objectStorageProviderProvider?: () => ObjectStorageProvider | Promise<ObjectStorageProvider>,
     imageServiceProvider?: () => ImageService | Promise<ImageService>,
     messageBusProvider?: () => MessageBusProvider | Promise<MessageBusProvider>,
     webServerPort?: number,
