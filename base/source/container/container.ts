@@ -1,5 +1,5 @@
 import { CircularBuffer, MultiKeyMap } from '#/data-structures';
-import type { Constructor, TypedOmit } from '#/types';
+import type { Constructor, Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
@@ -7,11 +7,12 @@ import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from
 import { ResolveError } from './resolve.error';
 import type { AfterResolve, Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
 import { afterResolve, isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
-import { getTokenName } from './utils';
+import { getTokenName, truncateChain } from './utils';
 
 type ResolveContext = {
   forwardRefQueue: CircularBuffer<() => void | Promise<void>>,
   resolutions: { instance: any, registration: Registration }[],
+  forwardRefs: Set<ForwardRef>,
   providedInstances: Map<InjectionToken, any>,
   instances: MultiKeyMap<[InjectionToken, any], any>
 };
@@ -167,6 +168,7 @@ export class Container {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
+      forwardRefs: new Set(),
       providedInstances: new Map(instances),
       instances: new MultiKeyMap()
     };
@@ -184,6 +186,7 @@ export class Container {
     const context: ResolveContext = {
       forwardRefQueue: new CircularBuffer(),
       resolutions: [],
+      forwardRefs: new Set(),
       providedInstances: new Map(instances),
       instances: new MultiKeyMap()
     };
@@ -193,6 +196,10 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
+    if (chain.length > 10000) {
+      throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
+    }
+
     if (isUndefined(token)) {
       throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
     }
@@ -243,6 +250,7 @@ export class Container {
             forwardRef[setRef](resolved as object);
           });
 
+          context.forwardRefs.add(forwardRef);
           return forwardRef;
         }
 
@@ -274,7 +282,7 @@ export class Container {
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      throw new ResolveError(`cannot resolve async provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+      throw new ResolveError(`cannot resolve async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
     if (!isTokenProvider(registration.provider)) {
@@ -294,15 +302,16 @@ export class Container {
         (fn as () => void)();
       }
 
+      derefForwardRefs(context);
+
       for (let i = context.resolutions.length - 1; i >= 0; i--) {
         const resolution = context.resolutions[i]!;
-
 
         if (isFunction((resolution.instance as AfterResolve | undefined)?.[afterResolve])) {
           const returnValue = (resolution.instance as AfterResolve)[afterResolve]!();
 
           if (isPromise(returnValue)) {
-            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+            throw new ResolveError(`cannot execute async [afterResolve] for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
           }
         }
 
@@ -321,6 +330,10 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
+    if (chain.length > 10000) {
+      throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
+    }
+
     if (isUndefined(token)) {
       throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
     }
@@ -371,6 +384,7 @@ export class Container {
             forwardRef[setRef](resolved as object);
           });
 
+          context.forwardRefs.add(forwardRef);
           return forwardRef;
         }
 
@@ -424,8 +438,10 @@ export class Container {
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
-        (fn as () => void)();
+        await fn();
       }
+
+      derefForwardRefs(context);
 
       for (let i = context.resolutions.length - 1; i >= 0; i--) {
         const resolution = context.resolutions[i]!;
@@ -441,6 +457,22 @@ export class Container {
     }
 
     return instance;
+  }
+}
+
+function derefForwardRefs(context: ResolveContext): void {
+  for (const resolution of context.resolutions) {
+    if (!(typeof resolution.instance == 'object')) {
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(resolution.instance as Record)) {
+      if (!context.forwardRefs.has(value as ForwardRef)) {
+        continue;
+      }
+
+      (resolution.instance as Record)[key] = ForwardRef.deref(value);
+    }
   }
 }
 

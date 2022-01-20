@@ -16,9 +16,9 @@ export interface Injectable<T = unknown> {
 
 export interface AfterResolve {
   /**
-   * function called after resolve
+   * called after resolve through container
    */
-  [afterResolve]: () => void | Promise<void>;
+  [afterResolve](): void | Promise<void>;
 }
 
 export type InjectableArgument<T, Fallback> = T extends Injectable<infer A> ? A : Fallback;

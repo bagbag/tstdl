@@ -10,6 +10,21 @@ export function getTokenName(token: InjectionToken | undefined): string {
       : String(token);
 }
 
+export function truncateChain(chain: ResolveChain, tokenCount: number): ResolveChain {
+  const truncatedChain: ResolveChain = [];
+
+  let counter = 0;
+  for (let i = chain.length - 1; (i >= 0) && (counter < tokenCount); i--) {
+    truncatedChain.unshift(chain[i]);
+
+    if (!isResolveChainParameterNode(chain[i])) {
+      counter++;
+    }
+  }
+
+  return truncatedChain;
+}
+
 export function getChainString(chain: ResolveChain): string {
   let chainString = '';
 

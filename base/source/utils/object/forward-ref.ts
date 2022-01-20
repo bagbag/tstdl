@@ -14,7 +14,7 @@ export type ForwardRefOptions<T extends object> = {
   initializer?: () => T
 };
 
-export class ForwardRef<T extends object> {
+export class ForwardRef<T extends object = any> {
   get [hasRef](): boolean {
     throw new Error('that\'s a bug or invalid usage! This should not happen...');
   }
