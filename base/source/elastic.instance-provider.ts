@@ -5,18 +5,12 @@ import type { Type } from '#/types';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 import { container } from './container';
-import type { ElasticSearchIndex } from './search-index/elastic/search-index';
+import type { ElasticSearchIndex, ElasticSearchIndexConfig } from './search-index/elastic/search-index';
+import { ELASTIC_SEARCH_INDEX_CONFIG } from './search-index/elastic/search-index';
 import { singleton } from './utils/singleton';
 import { assert, isDefined } from './utils/type-guards';
 
-type ElasticSearchIndexStatic<T extends Entity> = Type<ElasticSearchIndex<T>, [Client, string, Logger]>;
-
-declare const elasticSearchIndexConfigType: unique symbol;
-
-export type ElasticSearchIndexConfig<T extends Entity> = {
-  indexName: string,
-  [elasticSearchIndexConfigType]?: T
-};
+type ElasticSearchIndexStatic<T extends Entity> = Type<ElasticSearchIndex<T>, [Client, ElasticSearchIndexConfig<T>, Logger]>;
 
 const singletonScope = Symbol('singletons');
 const clientSingletonScope = Symbol('client singletons');
@@ -71,7 +65,7 @@ export async function getElasticSearchIndex<T extends Entity, C extends ElasticS
   return singleton(singletonScope, ctor, async () => {
     const logger = getLogger(searchIndexLogPrefix);
     const client = await getElasticClient();
-    const searchIndex = new ctor(client, config.indexName, logger) as InstanceType<C>;
+    const searchIndex = new ctor(client, config, logger) as InstanceType<C>;
 
     await searchIndex.initialize();
 
@@ -80,7 +74,7 @@ export async function getElasticSearchIndex<T extends Entity, C extends ElasticS
 }
 
 export function getElasticSearchIndexConfig<T extends Entity>(indexName: string): ElasticSearchIndexConfig<T> {
-  return { indexName };
+  return container.resolve(ELASTIC_SEARCH_INDEX_CONFIG, indexName) as ElasticSearchIndexConfig<T>;
 }
 
 container.register<Client, ClientOptions>(Client, {

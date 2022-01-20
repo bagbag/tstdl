@@ -34,7 +34,7 @@ export type ParameterTypeInfo = {
   token: InjectionToken,
   optional?: boolean,
   injectToken?: InjectionToken,
-  injectArgument?: any,
+  resolveArgument?: any,
   forwardArgumentMapper?: ForwardArgumentMapper,
   forwardRefToken?: ForwardRefInjectionToken
 };
@@ -47,10 +47,10 @@ export type TypeInfo = {
 export type RegistrationOptions<T, A = any> = {
   lifecycle?: Lifecycle,
 
-  /** default resolve argument used when neither token nor explizit resolve argument is provided */
+  /** default resolve argument used when neither token nor explicit resolve argument is provided */
   defaultArgument?: InjectableArgument<T, A>,
 
-  /** default resolve argument used when neither token nor explizit resolve argument is provided */
+  /** default resolve argument used when neither token nor explicit resolve argument is provided */
   defaultArgumentProvider?: ArgumentProvider<InjectableArgument<T, A>>,
 
   /** function which gets called after a resolve */
@@ -102,9 +102,9 @@ export function setParameterForwardRefToken(constructor: Constructor, parameterI
   assertDefinedPass(registration.parameters[parameterIndex]).forwardRefToken = forwardRefToken;
 }
 
-export function setParameterInjectArgument(constructor: Constructor, parameterIndex: number, argument: any): void {
+export function setParameterResolveArgument(constructor: Constructor, parameterIndex: number, argument: any): void {
   const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).injectArgument = argument;
+  assertDefinedPass(registration.parameters[parameterIndex]).resolveArgument = argument;
 }
 
 export function setParameterForwardArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: ForwardArgumentMapper): void {
@@ -238,7 +238,7 @@ export class Container {
       }
 
       const parameters = typeInfo.parameters.map((parameterInfo, index): unknown => {
-        const injectArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.injectArgument;
+        const parameterResolveArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.resolveArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -246,7 +246,7 @@ export class Container {
 
           context.forwardRefQueue.add(() => {
             const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
-            const resolved = this._resolve(forwardToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
+            const resolved = this._resolve(forwardToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
             forwardRef[setRef](resolved as object);
           });
 
@@ -255,7 +255,7 @@ export class Container {
         }
 
         const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
-        return this._resolve(parameterToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
+        return this._resolve(parameterToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
       });
 
       instance = new typeInfo.constructor(...parameters) as T;
@@ -269,7 +269,7 @@ export class Container {
       const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = this._resolve<T, A>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
+      instance = this._resolve<T, A>(innerToken, false, arg, context, [...chain, innerToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {
@@ -372,7 +372,7 @@ export class Container {
       }
 
       const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameterInfo, index): Promise<unknown> => {
-        const injectArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.injectArgument;
+        const parameterResolveArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.resolveArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
           const forwardRef = ForwardRef.create();
@@ -380,7 +380,7 @@ export class Container {
 
           context.forwardRefQueue.add(async () => {
             const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
-            const resolved = await this._resolveAsync(forwardToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
+            const resolved = await this._resolveAsync(forwardToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
             forwardRef[setRef](resolved as object);
           });
 
@@ -389,7 +389,7 @@ export class Container {
         }
 
         const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
-        return this._resolveAsync(parameterToken, parameterInfo.optional, injectArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
+        return this._resolveAsync(parameterToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
       }));
 
       instance = new typeInfo.constructor(...parameters) as T;
@@ -403,7 +403,7 @@ export class Container {
       const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
-      instance = await this._resolveAsync<T, A>(innerToken, false, arg, context, [...chain, registration.provider.useToken], false);
+      instance = await this._resolveAsync<T, A>(innerToken, false, arg, context, [...chain, innerToken], false);
     }
 
     if (isFactoryProvider(registration.provider)) {

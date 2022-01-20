@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container';
-import { injectArgumentType } from '#/container';
+import { resolveArgumentType } from '#/container';
 import type { ObjectInformation, ObjectStorageObject } from './object';
 
 export type ObjectStorageArgument = string;
@@ -10,7 +10,7 @@ export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInforma
    */
   readonly module: string;
 
-  [injectArgumentType]: ObjectStorageArgument;
+  [resolveArgumentType]: ObjectStorageArgument;
 
   constructor(module: string) {
     this.module = module;

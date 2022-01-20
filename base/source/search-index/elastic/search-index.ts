@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/semi */
+import type { AfterResolve } from '#/container';
+import { afterResolve, container, injectionToken } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
 import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
@@ -7,13 +8,24 @@ import { SearchIndex, SearchIndexError } from '#/search-index';
 import type { TypedOmit } from '#/types';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
 import { decodeText, encodeUtf8 } from '#/utils/encoding';
-import { isDefined, isString } from '#/utils/type-guards';
+import { assertStringPass, isDefined, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
 import type { BulkResponse, ErrorCause, QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
+
+declare const elasticSearchIndexConfigType: unique symbol;
+
+export type ElasticSearchIndexConfig<T extends Entity> = {
+  indexName: string,
+  [elasticSearchIndexConfigType]?: T
+};
+
+export type ElasticSearchIndexConfigArgument = string;
+
+export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig<Entity>, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
@@ -22,7 +34,7 @@ type CursorData<T extends Entity = Entity> = {
   searchAfter: any
 };
 
-export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> {
+export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> implements AfterResolve {
   private readonly logger: Logger;
 
   readonly client: Client;
@@ -31,15 +43,19 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> {
   readonly indexMapping: ElasticIndexMapping<T>;
   readonly sortKeywordRewrites: Set<string>;
 
-  constructor(client: Client, indexName: string, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
+  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
     super();
 
     this.client = client;
-    this.indexName = indexName;
+    this.indexName = config.indexName;
     this.indexSettings = indexSettings;
     this.indexMapping = indexMapping;
     this.sortKeywordRewrites = sortKeywordRewrites;
     this.logger = logger;
+  }
+
+  async [afterResolve](): Promise<void> {
+    await this.initialize();
   }
 
   async initialize(): Promise<void> {
@@ -88,7 +104,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> {
     };
 
     const result = await this.client.bulk(request);
-    const body = (result.body as BulkResponse)
+    const body = (result.body as BulkResponse);
 
     if (body.errors) {
       const errorItems = body.items
@@ -189,5 +205,7 @@ function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
 
 function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
   const cause = (isDefined(error.caused_by)) ? convertError(error.caused_by) : undefined;
-  return new SearchIndexError(error.type, error.reason, { raw, cause })
+  return new SearchIndexError(error.type, error.reason, { raw, cause });
 }
+
+container.register(ELASTIC_SEARCH_INDEX_CONFIG, { useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') }) });

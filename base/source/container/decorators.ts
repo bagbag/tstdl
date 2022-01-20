@@ -3,7 +3,7 @@ import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { ForwardRefInjectionToken, Lifecycle, RegistrationOptions, ForwardArgumentMapper } from './container';
-import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgument, setParameterInjectionToken, setParameterOptional } from './container';
+import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterResolveArgument, setParameterInjectionToken, setParameterOptional } from './container';
 import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
@@ -56,14 +56,14 @@ export function scoped<T = any, P = any>(lifecycle: Simplify<TypedExtract<Lifecy
 /**
  * sets the token used to resolve the parameter
  * @param token token used for resolving
- * @param parameter resolve parameter
+ * @param argument resolve parameter
  */
-export function inject<T, P>(token: InjectionToken<T, P>, parameter?: P): ParameterDecorator {
+export function inject<T, A>(token: InjectionToken<T, A>, argument?: A): ParameterDecorator {
   function injectDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     setParameterInjectionToken(target as Constructor, parameterIndex, token);
 
-    if (isDefined(parameter)) {
-      setParameterInjectArgument(target as Constructor, parameterIndex, parameter);
+    if (isDefined(argument)) {
+      setParameterResolveArgument(target as Constructor, parameterIndex, argument);
     }
   }
 
@@ -76,7 +76,7 @@ export function inject<T, P>(token: InjectionToken<T, P>, parameter?: P): Parame
  */
 export function injectArg<T>(argument: T): ParameterDecorator {
   function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
-    setParameterInjectArgument(target as Constructor, parameterIndex, argument);
+    setParameterResolveArgument(target as Constructor, parameterIndex, argument);
   }
 
   return injectArgDecorator;
@@ -118,7 +118,7 @@ export function forwardRef<T, A>(token: ForwardRefInjectionToken<T>, argument?: 
     setParameterForwardRefToken(target as Constructor, parameterIndex, token);
 
     if (isDefined(argument)) {
-      setParameterInjectArgument(target as Constructor, parameterIndex, argument);
+      setParameterResolveArgument(target as Constructor, parameterIndex, argument);
     }
   }
 

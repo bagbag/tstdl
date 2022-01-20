@@ -3,7 +3,7 @@ import { hasOwnProperty } from '#/utils/object';
 import type { Container } from './container';
 
 declare const parameter: unique symbol;
-export declare const injectArgumentType: unique symbol;
+export declare const resolveArgumentType: unique symbol;
 export const afterResolve: unique symbol = Symbol('after resolve');
 
 export interface Injectable<T = unknown> {
@@ -11,7 +11,7 @@ export interface Injectable<T = unknown> {
    * type of resolve argument
    * @deprecated only used for type inference
    */
-  [injectArgumentType]?: T;
+  [resolveArgumentType]?: T;
 }
 
 export interface AfterResolve {
