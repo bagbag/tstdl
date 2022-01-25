@@ -1,10 +1,24 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
+export type PrimitiveTypeMap = {
+  'string': string,
+  'number': number,
+  'boolean': boolean,
+  'bigint': bigint,
+  'symbol': symbol,
+  'object': object,
+  'function': Function,
+  'undefined': undefined
+};
+
+export type PrimitiveTypeString<T extends PrimitiveTypeMap[keyof PrimitiveTypeMap] = PrimitiveTypeMap[keyof PrimitiveTypeMap]> = Simplify<keyof PickBy<PrimitiveTypeMap, T>>;
+export type PrimitiveType<T extends keyof PrimitiveTypeMap = keyof PrimitiveTypeMap> = Simplify<PrimitiveTypeMap[T]>;
+
 export type Nested<T> = T | NestedObject<T> | NestedArray<T>;
 export type NestedObject<T> = { [key: string]: Nested<T> };
 export type NestedArray<T> = T[];
 
-export type Primitive = string | number | boolean | null | undefined | symbol;
+export type Primitive = string | number | boolean | bigint | null | undefined | symbol;
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export type PrimitiveArray = PrimitiveValue[];
@@ -52,7 +66,7 @@ export type Optionalize<S extends object> = OmitBy<S, undefined> & Partial<PickB
 /**
  * remove nested type information
  */
-export type Simplify<T> = T extends (Primitive | Date | RegExp) ? T
+export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
   : T extends (infer AT)[] ? Simplify<AT>[]
   : T extends readonly (infer AT)[] ? readonly Simplify<AT>[]
   : { [K in keyof T]: T[K] } & {};
@@ -94,7 +108,7 @@ export type DeepFlatten<T> = T extends readonly (infer R)[]
 
 export type DeepArray<T> = (T | DeepArray<T>)[];
 
-export type DeepReadonly<T> = T extends Primitive ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : T extends Function ? T : DeepReadonlyObject<T>;
+export type DeepReadonly<T> = T extends (Primitive | Function) ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : DeepReadonlyObject<T>;
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 export type DeepReadonlyArray<T> = readonly DeepReadonly<T>[];
 

@@ -1,7 +1,8 @@
 import type { PickBy, Record } from '#/types';
 import { isArray, isObject, isUndefined } from '../type-guards';
 
-export function hasOwnProperty<T extends object>(obj: T, key: keyof T): boolean {
+export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
+  // eslint-disable-next-line prefer-object-has-own
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 

@@ -10,6 +10,7 @@ export class JsonPath<T = any> {
   private _path: string | undefined;
   private _nodes: JsonPathNode[] | undefined;
 
+  /** json path as encoded string */
   get path(): string {
     if (isUndefined(this._path)) {
       this._path = encodeJsonPath(this._nodes!);
@@ -18,6 +19,7 @@ export class JsonPath<T = any> {
     return this._path;
   }
 
+  /** json path as decoded array */
   get nodes(): JsonPathNode[] {
     if (isUndefined(this._nodes)) {
       this._nodes = decodeJsonPath(this._path!);
@@ -43,14 +45,29 @@ export class JsonPath<T = any> {
     }
   }
 
-  property<K extends keyof T & string>(propertyName: K): JsonPath<T[K]> {
-    return new JsonPath([...this.nodes, propertyName as string], this._options);
+  /**
+   * add a property to current path
+   * @param property
+   * @returns new JsonPath instance
+   */
+  property<K extends keyof T & string>(property: K): JsonPath<T[K]> {
+    return new JsonPath([...this.nodes, property as string], this._options);
   }
 
+  /**
+   * add an array index to current path
+   * @param index
+   * @returns new JsonPath instance
+   */
   index<K extends keyof T & number>(index: K): JsonPath<T[K]> {
     return new JsonPath([...this.nodes, index as number], this._options);
   }
 
+  /**
+   * updates options
+   * @param options
+   * @returns new JsonPath instance
+   */
   options(options: JsonPathOptions): JsonPath {
     return new JsonPath(this.nodes, options);
   }

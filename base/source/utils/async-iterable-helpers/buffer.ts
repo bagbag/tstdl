@@ -1,6 +1,7 @@
 import { CircularBuffer } from '#/data-structures';
 import type { AnyIterable } from '../any-iterable-iterator';
 import { CancellationToken } from '../cancellation-token';
+import { hasOwnProperty } from '../object';
 import { takeUntilAsync } from './take-until';
 
 type BufferItem<T> =
@@ -45,7 +46,7 @@ export async function* bufferAsync<T>(iterable: AnyIterable<T>, size: number): A
   try {
     for await (const item of buffer.consumeAsync()) {
       if (item.end) {
-        if (Object.prototype.hasOwnProperty.call(item, 'error')) {
+        if (hasOwnProperty(item, 'error')) {
           throw item.error!;
         }
 

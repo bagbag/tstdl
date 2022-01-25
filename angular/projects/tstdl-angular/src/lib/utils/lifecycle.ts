@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import type { TypedOmit } from '@tstdl/base/types';
 import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
 import { CancellationToken, isUndefined } from '@tstdl/base/utils';
+import { hasOwnProperty } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
 import { defer, filter, map, ReplaySubject, startWith, Subject } from 'rxjs';
 
@@ -189,7 +190,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
 
   observeChanges<Property extends ParentProperties<Parent>>(property: Property): Observable<TypedSimpleChange<Parent[Property]>> {
     return this.changes$.pipe(
-      filter((changes) => Object.prototype.hasOwnProperty.call(changes, property)),
+      filter((changes) => hasOwnProperty(changes, property)),
       map((changes) => changes[property as string]!)
     );
   }
