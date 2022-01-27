@@ -1,20 +1,18 @@
 /* eslint-disable no-bitwise */
-import type { SeededRandomNumberGenerator } from './seeded';
+import { SeededRandomNumberGenerator } from './seeded';
 
 const maxValue = (2 ** 32) - 1;
 const nextDivisor = 2 ** 32;
 
-export class Sfc32 implements SeededRandomNumberGenerator {
+export class Sfc32 extends SeededRandomNumberGenerator {
   private state1: number;
   private state2: number;
   private state3: number;
   private state4: number;
 
-  get maxValue(): number {
-    return maxValue;
-  }
-
   constructor(seed1: number, seed2: number, seed3: number, seed4: number) {
+    super(maxValue);
+
     this.state1 = seed1;
     this.state2 = seed2;
     this.state3 = seed3;

@@ -1,17 +1,15 @@
 /* eslint-disable no-bitwise */
-import type { SeededRandomNumberGenerator } from './seeded';
+import { SeededRandomNumberGenerator } from './seeded';
 
 const maxValue = (2 ** 32) - 1;
 const nextDivisor = 2 ** 32;
 
-class Mulberry32 implements SeededRandomNumberGenerator {
+export class Mulberry32 extends SeededRandomNumberGenerator {
   private state: number;
 
-  get maxValue(): number {
-    return maxValue;
-  }
-
   constructor(seed: number) {
+    super(maxValue);
+
     this.state = seed;
   }
 
