@@ -1,9 +1,16 @@
+import type { Injectable } from '#/container';
+import { resolveArgumentType } from '#/container';
 import type { Entity } from '#/database';
+import type { MongoRepositoryConfig } from '#/mongo.instance-provider';
 import type * as Mongo from 'mongodb';
 import { Collection as MongoCollection } from 'mongodb';
 import type { MongoDocument } from './model';
 
-export class Collection<T extends Entity = Entity> extends MongoCollection<MongoDocument<T>> { }
+export type CollectionArgument<T extends Entity = Entity, TDb extends Entity = T> = MongoRepositoryConfig<T, TDb>;
+
+export class Collection<T extends Entity = Entity, TDb extends Entity = T> extends MongoCollection<MongoDocument<T>> implements Injectable<CollectionArgument<T, TDb>> {
+  readonly [resolveArgumentType]?: CollectionArgument<T, TDb>;
+}
 
 export type Filter<T extends Entity = Entity> = Mongo.Filter<MongoDocument<T>>;
 export type UpdateFilter<T extends Entity = Entity> = Mongo.UpdateFilter<MongoDocument<T>>;

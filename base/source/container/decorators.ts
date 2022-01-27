@@ -84,7 +84,7 @@ export function injectArg<T>(argument: T): ParameterDecorator {
 
 /**
  * sets the argument used for resolving the decorated parameter to the the argument provided for parent resolve
- * @param mapper map the argument (for example to select a property instead of passing whole object)
+ * @param mapper map the argument (for example to select a property instead of forwarding the whole object)
  */
 export function forwardArg(): ParameterDecorator;
 export function forwardArg<T, U>(mapper: ForwardArgumentMapper<T, U>): ParameterDecorator;

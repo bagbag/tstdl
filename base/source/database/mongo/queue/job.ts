@@ -1,8 +1,9 @@
+import type { Entity, NewEntity } from '#/database';
 import type { Job } from '#/queue';
 import type { TypedOmit } from '#/types';
-import type { Entity, NewEntity } from '#/database';
 
-export type MongoJob<T> = Entity & TypedOmit<Job<T>, 'id'> & {
+export type MongoJob<T = unknown> = Entity & TypedOmit<Job<T>, 'id'> & {
+  queue: string,
   jobId: string,
   enqueueTimestamp: number,
   tries: number,

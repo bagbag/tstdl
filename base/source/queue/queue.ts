@@ -1,3 +1,6 @@
+import type { Injectable } from '#/container';
+import { resolveArgumentType } from '#/container';
+import { millisecondsPerMinute } from '#/utils';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
 
 export type JobTag = string | number | null;
@@ -24,7 +27,23 @@ export type EnqueueManyItem<T> = EnqueueOptions & {
   data: T
 };
 
-export abstract class Queue<T> {
+export type QueueConfig = {
+  processTimeout?: number,
+  maxTries?: number
+};
+
+export type QueueArgument = string | QueueConfig & {
+  key: string
+};
+
+export const defaultQueueConfig: Required<QueueConfig> = {
+  processTimeout: millisecondsPerMinute,
+  maxTries: 3
+};
+
+export abstract class Queue<T> implements Injectable<QueueArgument> {
+  readonly [resolveArgumentType]?: QueueArgument;
+
   abstract enqueue(data: T, options?: EnqueueOptions): Promise<Job<T>>;
   abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
   abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;

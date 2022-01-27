@@ -1,7 +1,9 @@
+import { singleton } from '#/container';
 import { getNewId } from '#/database/id';
-import type { MessageBus, MessageBusProvider } from '#/message-bus';
-import type { EnqueueManyItem, EnqueueOptions, Job, JobTag } from '#/queue';
-import { Queue, UniqueTagStrategy } from '#/queue';
+import type { MessageBus } from '#/message-bus';
+import { MessageBusProvider } from '#/message-bus';
+import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue';
+import { defaultQueueConfig, Queue, QueueConfig, UniqueTagStrategy } from '#/queue';
 import { Alphabet } from '#/utils/alphabet';
 import type { BackoffOptions } from '#/utils/backoff';
 import { backoffGenerator } from '#/utils/backoff';
@@ -9,9 +11,11 @@ import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestamp } from '#/utils/date-time';
 import { getRandomString } from '#/utils/random';
+import { assertDefined, isString } from '#/utils/type-guards';
 import type { Filter, UpdateFilter } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
-import type { MongoJobRepository } from './mongo-job.repository';
+import { MongoJobRepository } from './mongo-job.repository';
+import { MongoQueueProvider } from './queue.provider';
 
 const backoffOptions: BackoffOptions = {
   strategy: 'exponential',
@@ -20,26 +24,44 @@ const backoffOptions: BackoffOptions = {
   maximumDelay: 5000
 };
 
-export class MongoQueue<T> extends Queue<T> {
+@singleton<MongoQueue, QueueArgument>({
+  provider: {
+    useAsyncFactory: async (argument, container) => {
+      const provider = await container.resolveAsync(MongoQueueProvider);
+
+      assertDefined(argument, 'queue resolve argument is missing');
+
+      if (isString(argument)) {
+        return provider.get(argument, defaultQueueConfig);
+      }
+
+      return provider.get(argument.key, { ...defaultQueueConfig, ...argument });
+    }
+  }
+})
+export class MongoQueue<T = unknown> extends Queue<T> {
   private readonly repository: MongoJobRepository<T>;
+  private readonly queueKey: string;
   private readonly processTimeout: number;
   private readonly maxTries: number;
   private readonly messageBus: MessageBus<void>;
 
-  constructor(repository: MongoJobRepository<T>, messageBusProvider: MessageBusProvider, processTimeout: number, maxTries: number) {
+  constructor(repository: MongoJobRepository<T>, messageBusProvider: MessageBusProvider, key: string, config?: QueueConfig) {
     super();
 
     this.repository = repository;
-    this.processTimeout = processTimeout;
-    this.maxTries = maxTries;
+    this.queueKey = key;
+    this.processTimeout = config?.processTimeout ?? defaultQueueConfig.processTimeout;
+    this.maxTries = config?.maxTries ?? defaultQueueConfig.maxTries;
 
-    this.messageBus = messageBusProvider.get(`MongoQueue:${repository.collection.collectionName}`);
+    this.messageBus = messageBusProvider.get(`MongoQueue:${repository.collection.collectionName}:${key}`);
   }
 
   async enqueue(data: T, options: EnqueueOptions = {}): Promise<Job<T>> {
     const { tag = null, uniqueTag, priority = 0 } = options;
 
     const newJob: NewMongoJob<T> = {
+      queue: this.queueKey,
       jobId: getNewId(),
       tag,
       priority,
@@ -68,6 +90,7 @@ export class MongoQueue<T> extends Queue<T> {
 
     for (const { data, tag = null, uniqueTag, priority = 0 } of items) {
       const newMongoJob: NewMongoJob<T> = {
+        queue: this.queueKey,
         jobId: getNewId(),
         tag,
         priority,
@@ -106,7 +129,7 @@ export class MongoQueue<T> extends Queue<T> {
       const keepOldTags = keepOld.map((job) => job.tag);
       const takeNewTags = takeNew.map((job) => job.tag);
 
-      const uniqueTagJobs = await this.repository.loadManyByFilter({ tag: { $in: [...keepOldTags, ...takeNewTags] } });
+      const uniqueTagJobs = await this.repository.loadManyByFilter({ queue: this.queueKey, tag: { $in: [...keepOldTags, ...takeNewTags] } });
 
       return [...nonUniqueJobs, ...uniqueTagJobs].map(toModelJob);
     }
@@ -115,35 +138,35 @@ export class MongoQueue<T> extends Queue<T> {
   }
 
   async has(id: string): Promise<boolean> {
-    return this.repository.hasByFilter({ jobId: id });
+    return this.repository.hasByFilter({ queue: this.queueKey, jobId: id });
   }
 
   async countByTag(tag: JobTag): Promise<number> {
-    return this.repository.countByFilter({ tag });
+    return this.repository.countByFilter({ queue: this.queueKey, tag });
   }
 
   async get(id: string): Promise<Job<T> | undefined> {
-    return this.repository.tryLoadByFilter({ jobId: id });
+    return this.repository.tryLoadByFilter({ queue: this.queueKey, jobId: id });
   }
 
   async getByTag(tag: JobTag): Promise<Job<T>[]> {
-    return this.repository.loadManyByFilter({ tag });
+    return this.repository.loadManyByFilter({ queue: this.queueKey, tag });
   }
 
   async cancel(id: string): Promise<void> {
-    await this.repository.deleteByFilter({ jobId: id });
+    await this.repository.deleteByFilter({ queue: this.queueKey, jobId: id });
   }
 
   async cancelMany(ids: string[]): Promise<void> {
-    await this.repository.deleteManyByFilter({ jobId: { $in: ids } });
+    await this.repository.deleteManyByFilter({ queue: this.queueKey, jobId: { $in: ids } });
   }
 
   async cancelByTag(tag: JobTag): Promise<void> {
-    await this.repository.deleteManyByFilter({ tag });
+    await this.repository.deleteManyByFilter({ queue: this.queueKey, tag });
   }
 
   async dequeue(): Promise<Job<T> | undefined> {
-    const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout);
+    const { filter, update } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout);
 
     const job = await this.repository.baseRepository.tryLoadByFilterAndUpdate(
       filter,
@@ -159,7 +182,7 @@ export class MongoQueue<T> extends Queue<T> {
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
     const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
-    const { filter, update } = getDequeueFindParameters(this.maxTries, this.processTimeout, batch);
+    const { filter, update } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
 
     const bulk = this.repository.baseRepository.bulk();
 
@@ -169,7 +192,7 @@ export class MongoQueue<T> extends Queue<T> {
 
     await bulk.execute();
 
-    const jobs = await this.repository.loadManyByFilter({ batch });
+    const jobs = await this.repository.loadManyByFilter({ queue: this.queueKey, batch });
 
     return jobs.map(toModelJob);
   }
@@ -230,11 +253,12 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-function getDequeueFindParameters(maxTries: number, processTimeout: number, batch: null | string = null) {
+function getDequeueFindParameters(queueKey: string, maxTries: number, processTimeout: number, batch: null | string = null) {
   const now = currentTimestamp();
   const maximumLastDequeueTimestamp = now - processTimeout;
 
   const filter: Filter<MongoJob<any>> = {
+    queue: queueKey,
     tries: { $lt: maxTries },
     lastDequeueTimestamp: { $lte: maximumLastDequeueTimestamp }
   };
