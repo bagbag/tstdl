@@ -1,10 +1,23 @@
-import type { Logger } from '#/logger';
-import type { Observable, Subject } from 'rxjs';
-import { filter, map } from 'rxjs';
+import { singleton } from '#/container';
+import { Logger } from '#/logger';
+import { assertStringPass } from '#/utils';
+import type { Observable } from 'rxjs';
+import { filter, map, Subject } from 'rxjs';
 import type { MessageBus } from '../message-bus';
 import { MessageBusBase } from '../message-bus-base';
+import { LocalMessageBusProvider } from './local-message-bus-provider';
 import type { LocalMessageBusItem } from './types';
 
+@singleton({
+  provider: {
+    useFactory: (argument, container) => {
+      const provider = container.resolve(LocalMessageBusProvider);
+      const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');
+
+      return provider.get(channel);
+    }
+  }
+})
 export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
   private readonly subject: Subject<LocalMessageBusItem<T>>;
   private readonly source: symbol;
@@ -15,7 +28,6 @@ export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<
     super(logger);
 
     this.subject = subject;
-
     this.source = Symbol('LocalMessageBus source');
 
     this._messages$ = subject.pipe(

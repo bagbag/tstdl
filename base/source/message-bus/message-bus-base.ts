@@ -4,10 +4,10 @@ import { defer, merge, Subject } from 'rxjs';
 import { share, takeUntil } from 'rxjs/operators';
 import { disposeAsync } from '../disposable';
 import { CancellationToken } from '../utils/cancellation-token';
-import type { MessageBus } from './message-bus';
+import { MessageBus } from './message-bus';
 
 
-export abstract class MessageBusBase<T> implements MessageBus<T> {
+export abstract class MessageBusBase<T> extends MessageBus<T> {
   private readonly logger: Logger;
   private readonly publishSubject: Subject<T>;
   protected readonly disposeToken: CancellationToken;
@@ -15,9 +15,14 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
   readonly messages$: Observable<T>;
   readonly allMessages$: Observable<T>;
 
+  /**
+   * observable which emits all messages from *other* instances, but *none* published from itself
+   */
   protected abstract _messages$: Observable<T>;
 
   constructor(logger: Logger) {
+    super();
+
     this.logger = logger;
 
     this.publishSubject = new Subject();
@@ -60,6 +65,10 @@ export abstract class MessageBusBase<T> implements MessageBus<T> {
     }
   }
 
+  /**
+   * publish messages to other instances
+   * @param message message to send to other instances
+   */
   protected abstract _publish(message: T): void | Promise<void>;
 
   protected abstract _disposeAsync(): void | Promise<void>;
