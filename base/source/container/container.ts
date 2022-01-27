@@ -277,7 +277,7 @@ export class Container {
         instance = registration.provider.useFactory(resolveArgument, this);
       }
       catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
+        throw new ResolveError('error in factory (see cause for details)', chain, error as Error);
       }
     }
 
@@ -411,7 +411,7 @@ export class Container {
         instance = registration.provider.useFactory(resolveArgument, this);
       }
       catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
+        throw new ResolveError('error in factory (see cause for details)', chain, error as Error);
       }
     }
 
@@ -420,7 +420,7 @@ export class Container {
         instance = await registration.provider.useAsyncFactory(resolveArgument, this);
       }
       catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
+        throw new ResolveError('error in factory (see cause for details)', chain, error as Error);
       }
     }
 
