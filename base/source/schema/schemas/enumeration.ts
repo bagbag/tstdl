@@ -5,12 +5,12 @@ import { isString } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, Schema, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
 type Enumeration = readonly [string | number, ...(string | number)[]];
 
-export type EnumerationSchema<T extends Enumeration = Enumeration> = Schema<'enumeration', unknown, T[number]> & {
+export type EnumerationSchema<T extends Enumeration = Enumeration> = Schema<'enumeration', unknown, T[number]> & Coercible & {
   values: T
 };
 
@@ -33,7 +33,7 @@ export class EnumerationSchemaValidator<T extends Enumeration> extends SchemaVal
       return { valid: true, value: value as T[number] };
     }
 
-    if (options.coerce) {
+    if (this.schema.coerce ?? options.coerce) {
       let coercedValue: string | number | undefined;
 
       switch (typeof value) {

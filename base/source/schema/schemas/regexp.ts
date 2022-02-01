@@ -3,15 +3,15 @@ import { isRegExp, isString } from '#/utils/type-guards';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions } from '../types';
+import type { Coercible, Schema, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
-export type RegExpSchema = Schema<'regexp', unknown, RegExp>;
+export type RegExpSchema = Schema<'regexp', unknown, RegExp> & Coercible;
 
 export class RegExpSchemaValidator extends SchemaValidator<RegExpSchema> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<RegExp> {
     if (!isRegExp(value)) {
-      if (options.coerce && isString(value)) {
+      if ((this.schema.coerce ?? options.coerce) && isString(value)) {
         try {
           return { valid: true, value: RegExp(value, 'u') };
         }

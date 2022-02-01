@@ -3,11 +3,11 @@ import { isArray, isDefined, isNumber } from '#/utils/type-guards';
 import { schemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, Schema, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 import { instance } from './instance';
 
-export type ArrayBufferSchema = Schema<'arrayBuffer', unknown, ArrayBuffer> & {
+export type ArrayBufferSchema = Schema<'arrayBuffer', unknown, ArrayBuffer> & Coercible & {
   min?: number,
   max?: number
 };
@@ -23,7 +23,7 @@ export class ArrayBufferSchemaValidator extends SchemaValidator<ArrayBufferSchem
     if (instanceTestResult.valid) {
       buffer = instanceTestResult.value;
     }
-    else if (options.coerce && isArray(value) && value.every((v) => isNumber(v) && Number.isInteger(v) && (v >= 0) && (v <= 255))) {
+    else if ((this.schema.coerce ?? options.coerce) && isArray(value) && value.every((v) => isNumber(v) && Number.isInteger(v) && (v >= 0) && (v <= 255))) {
       buffer = Uint8Array.from(value).buffer;
     }
     else {

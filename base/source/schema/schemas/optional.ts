@@ -2,10 +2,10 @@ import type { JsonPath } from '#/json-path';
 import { isNull, isUndefined } from '#/utils/type-guards';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type OptionalSchema<T extends Schema = Schema> = Schema<'optional', SchemaInput<T> | undefined, SchemaOutput<T> | undefined> & {
+export type OptionalSchema<T extends Schema = Schema> = Schema<'optional', SchemaInput<T> | undefined, SchemaOutput<T> | undefined> & Coercible & {
   schema: T
 };
 
@@ -23,7 +23,7 @@ export class OptionalSchemaValidator<T extends Schema> extends SchemaValidator<O
       return { valid: true, value };
     }
 
-    if (options.coerce && isNull(value)) {
+    if ((this.schema.coerce ?? options.coerce) && isNull(value)) {
       return { valid: true, value: undefined };
     }
 

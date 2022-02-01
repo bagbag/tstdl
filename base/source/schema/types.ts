@@ -14,10 +14,18 @@ export type SchemaInput<T extends Schema> = T extends Schema<string, infer I, an
 export type SchemaOutput<T extends Schema> = T extends Schema<string, any, infer O> ? O : never;
 
 export type Coercible = {
+  /**
+   * try to convert wrong input into desired output.
+   * Can be specified on definition and validation. If specified on both, definition has higher priority
+   */
   coerce?: boolean
 };
 
 export type Maskable = {
+  /**
+   * remove unspecified fields on input data instead of raising an error.
+   * Can be specified on definition and validation. If specified on both, definition has higher priority
+   */
   mask?: boolean
 };
 

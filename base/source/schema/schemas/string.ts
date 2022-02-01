@@ -3,7 +3,7 @@ import { isDefined, isRegExp } from '#/utils/type-guards';
 import { schemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions } from '../types';
+import type { Coercible, Schema, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<string> = {
@@ -12,7 +12,7 @@ const coercerMap: CoercerMap<string> = {
   bigint: (bigint) => ({ valid: true, value: bigint.toString() })
 };
 
-export type StringSchema = Schema<'string', unknown, string> & {
+export type StringSchema = Schema<'string', unknown, string> & Coercible & {
   /** trim */
   trim?: boolean,
 
@@ -48,7 +48,7 @@ export class StringSchemaValidator extends SchemaValidator<StringSchema> {
   }
 
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<string> {
-    const result = super.ensureType('string', value, options, path, coercerMap);
+    const result = super.ensureType('string', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
 
     if (!result.valid) {
       return result;

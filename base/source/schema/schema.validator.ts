@@ -19,6 +19,8 @@ export type ValidationTestResult<T> =
   | { valid: true, value: T, error?: undefined }
   | { valid: false, value?: undefined, error: SchemaError };
 
+export type EnsureTypeOptions = Coercible;
+
 export abstract class SchemaValidator<T extends Schema = Schema> {
   readonly schema: T;
 
@@ -64,14 +66,14 @@ export abstract class SchemaValidator<T extends Schema = Schema> {
     return this[testAsync](value, convertOptions(options), new JsonPath());
   }
 
-  protected ensureType<U extends PrimitiveType>(type: PrimitiveTypeString<U>, value: unknown, options: DefinedValidationOptions, path: JsonPath, coercers?: CoercerMap<U>): ValidationTestResult<U> {
+  protected ensureType<U extends PrimitiveType>(type: PrimitiveTypeString<U>, value: unknown, path: JsonPath, options?: EnsureTypeOptions, coercers?: CoercerMap<U>): ValidationTestResult<U> {
     const valueType = typeof value;
 
     if (valueType == type) {
       return { valid: true, value: value as U };
     }
 
-    const coercer: CoercerFunction<any, any> | undefined = options.coerce ? coercers?.[valueType] : undefined;
+    const coercer: CoercerFunction<any, any> | undefined = (options?.coerce ?? false) ? coercers?.[valueType] : undefined;
 
     if (isUndefined(coercer)) {
       return { valid: false, error: SchemaError.expectedButGot(type, valueType, path) };

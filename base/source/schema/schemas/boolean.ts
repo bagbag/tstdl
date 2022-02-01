@@ -2,7 +2,7 @@ import type { JsonPath } from '#/json-path';
 import { SchemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions } from '../types';
+import type { Coercible, Schema, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<boolean> = {
@@ -31,11 +31,11 @@ const coercerMap: CoercerMap<boolean> = {
   )
 };
 
-export type BooleanSchema = Schema<'boolean', unknown, boolean>;
+export type BooleanSchema = Schema<'boolean', unknown, boolean> & Coercible;
 
 export class BooleanSchemaValidator extends SchemaValidator<BooleanSchema> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<boolean> {
-    const result = super.ensureType('boolean', value, options, path, coercerMap);
+    const result = super.ensureType('boolean', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
 
     if (!result.valid) {
       return result;

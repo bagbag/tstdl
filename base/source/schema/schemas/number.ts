@@ -4,7 +4,7 @@ import { isDefined } from '#/utils/type-guards';
 import { SchemaError, schemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions } from '../types';
+import type { Coercible, Schema, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<number> = {
@@ -30,7 +30,7 @@ const coercerMap: CoercerMap<number> = {
   }
 };
 
-export type NumberSchema = Schema<'number', unknown, number> & {
+export type NumberSchema = Schema<'number', unknown, number> & Coercible & {
   /** integer */
   integer?: boolean,
 
@@ -43,7 +43,7 @@ export type NumberSchema = Schema<'number', unknown, number> & {
 
 export class NumberSchemaValidator extends SchemaValidator<NumberSchema> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<number> {
-    const result = super.ensureType('number', value, options, path, coercerMap);
+    const result = super.ensureType('number', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
 
     if (!result.valid) {
       return result;

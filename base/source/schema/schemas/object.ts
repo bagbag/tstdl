@@ -89,8 +89,8 @@ export class ObjectSchemaValidator<T extends StringMap<Schema>> extends SchemaVa
     return { valid: true, value: resultObject as ObjectOutputType<T> };
   }
 
-  private _testBase(value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<string, any>> {
-    const typeResult = this.ensureType('object', value, options, path);
+  private _testBase(value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<string, any>> {
+    const typeResult = this.ensureType('object', value, path);
 
     if (!typeResult.valid) {
       return typeResult;
