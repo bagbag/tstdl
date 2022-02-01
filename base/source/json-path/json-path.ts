@@ -46,21 +46,12 @@ export class JsonPath<T = any> {
   }
 
   /**
-   * add a property to current path
-   * @param property
+   * add a property or index to current path
+   * @param key
    * @returns new JsonPath instance
    */
-  property<K extends keyof T & string>(property: K): JsonPath<T[K]> {
-    return new JsonPath([...this.nodes, property as string], this._options);
-  }
-
-  /**
-   * add an array index to current path
-   * @param index
-   * @returns new JsonPath instance
-   */
-  index<K extends keyof T & number>(index: K): JsonPath<T[K]> {
-    return new JsonPath([...this.nodes, index as number], this._options);
+  add<K extends Extract<keyof T, string | number>>(key: K): JsonPath<T[K]> {
+    return new JsonPath([...this.nodes, key], this._options);
   }
 
   /**

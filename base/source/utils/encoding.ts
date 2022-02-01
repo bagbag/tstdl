@@ -54,7 +54,7 @@ export function decodeHex(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
 
   for (let i = 0; i < hex.length; i += 2) {
-    const hexPart = hex.substr(i, 2);
+    const hexPart = hex.substring(i, i + 2);
     const byte = hexToByte.get(hexPart);
 
     if (isUndefined(byte)) {

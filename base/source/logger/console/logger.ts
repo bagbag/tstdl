@@ -2,9 +2,9 @@
 
 import { singleton } from '#/container';
 import type { Record } from '#/types';
-import { isDefined, isObject, isString } from '#/utils';
 import { now } from '#/utils/date-time';
 import { formatError } from '#/utils/helpers';
+import { isDefined, isObject, isString } from '#/utils/type-guards';
 import { LogLevel } from '../level';
 import type { LogErrorOptions, LoggerArgument } from '../logger';
 import { Logger } from '../logger';

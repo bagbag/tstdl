@@ -39,6 +39,10 @@ export class AwaitableMap<K, V> implements Map<K, V> {
       return new AwaitableMap(map);
     }
 
+    return AwaitableMap.fromIterable(map);
+  }
+
+  static fromIterable<K, V>(map: Iterable<[K, V]>): AwaitableMap<K, V> {
     const awaitableMap = new AwaitableMap<K, V>();
 
     for (const [key, value] of map) {
@@ -105,12 +109,12 @@ export class AwaitableMap<K, V> implements Map<K, V> {
 
   intersect(...maps: Map<K, V>[]): Map<K, V> {
     const intersection = intersectMaps(this.backingMap, ...maps);
-    return AwaitableMap.from(intersection, false);
+    return AwaitableMap.fromIterable(intersection);
   }
 
   difference(...maps: Map<K, V>[]): Map<K, V> {
     const difference = differenceMaps(this.backingMap, ...maps);
-    return AwaitableMap.from(difference, false);
+    return AwaitableMap.fromIterable(difference);
   }
 
   union(...maps: Map<K, V>[]): Map<K, V> {

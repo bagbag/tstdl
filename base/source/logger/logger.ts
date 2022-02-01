@@ -1,7 +1,7 @@
 import type { Injectable } from '#/container';
 import { resolveArgumentType } from '#/container';
-import { isDefined, isFunction } from '#/utils';
 import { toArray } from '#/utils/array';
+import { isDefined, isFunction } from '#/utils/type-guards';
 import { LogLevel } from './level';
 
 export type LogEntry = string;
