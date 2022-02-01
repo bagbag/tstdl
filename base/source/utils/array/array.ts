@@ -28,7 +28,7 @@ export function createArray<T>(length: number, valueProvider: (index: number) =>
  * @param items items to shuffle
  * @returns shuffled items
  */
-export function shuffle<T>(items: T[]): T[] {
+export function shuffle<T>(items: readonly T[]): T[] {
   const cloned = [...items];
 
   for (let i = 0; i < cloned.length; i++) {
@@ -45,7 +45,7 @@ export function shuffle<T>(items: T[]): T[] {
  * @param options options
  * @returns random item
  */
-export function randomItem<T>(array: T[], { min, max }: { min?: number, max?: number } = {}): T {
+export function randomItem<T>(array: readonly T[], { min, max }: { min?: number, max?: number } = {}): T {
   const _min = isDefined(min) ? Math.max(min, 0) : 0;
   const _max = isDefined(max) ? Math.min(max, array.length - 1) : array.length - 1;
   const index = randomInt(_min, _max);
@@ -60,7 +60,7 @@ export function randomItem<T>(array: T[], { min, max }: { min?: number, max?: nu
  * @param allowDuplicates allow picking an item multiple times - required when count is larger than array length
  * @returns random items
  */
-export function randomItems<T>(array: T[], count: number, allowDuplicates: boolean = false): T[] {
+export function randomItems<T>(array: readonly T[], count: number, allowDuplicates: boolean = false): T[] {
   if (allowDuplicates) {
     return createArray(count, () => array[randomInt(0, array.length - 1)]!);
   }
