@@ -11,7 +11,7 @@ import { decodeText, encodeUtf8 } from '#/utils/encoding';
 import { assertStringPass, isDefined, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
-import type { BulkResponse, ErrorCause, QueryDslQueryContainer, SearchSort, SearchSortCombinations } from '@elastic/elasticsearch/api/types';
+import type { BulkResponse, ErrorCause, QueryDslQueryContainer, Sort as ElasticSort, SortCombinations as ElasticSortCombinations } from '@elastic/elasticsearch/api/types';
 import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -29,7 +29,7 @@ export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConf
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
-  sort: SearchSortCombinations[] | undefined,
+  sort: ElasticSortCombinations[] | undefined,
   options?: QueryOptions<T>,
   searchAfter: any
 };
@@ -160,9 +160,9 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
       querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
     }
 
-    const sort: SearchSortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort: ElasticSortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
-    (search.sort as SearchSort | undefined) = sort;
+    (search.sort as ElasticSort | undefined) = sort;
     search.from = options?.skip;
     search.size = options?.limit ?? cursorData?.options?.limit;
     search.body!.search_after = cursorData?.searchAfter;
@@ -194,7 +194,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SearchSortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
+function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: ElasticSortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
   return encodeBase64(encodeUtf8(JSON.stringify(data)));
 }

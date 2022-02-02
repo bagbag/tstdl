@@ -1,4 +1,4 @@
 export interface LoopController {
-  stopped: Promise<void>;
+  $stopped: Promise<void>;
   stop(): Promise<void>;
 }

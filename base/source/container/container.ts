@@ -17,7 +17,7 @@ type ResolveContext = {
   instances: MultiKeyMap<[InjectionToken, any], any>
 };
 
-export type ForwardArgumentMapper<T = unknown, U = any> = (argument: T) => U;
+export type ArgumentMapper<T = unknown, U = any> = (argument: T) => U;
 
 export type ArgumentProvider<T> = (container: Container) => T;
 
@@ -35,7 +35,8 @@ export type ParameterTypeInfo = {
   optional?: boolean,
   injectToken?: InjectionToken,
   resolveArgument?: any,
-  forwardArgumentMapper?: ForwardArgumentMapper,
+  injectArgumentMapper?: ArgumentMapper,
+  forwardArgumentMapper?: ArgumentMapper,
   forwardRefToken?: ForwardRefInjectionToken
 };
 
@@ -107,7 +108,12 @@ export function setParameterResolveArgument(constructor: Constructor, parameterI
   assertDefinedPass(registration.parameters[parameterIndex]).resolveArgument = argument;
 }
 
-export function setParameterForwardArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: ForwardArgumentMapper): void {
+export function setParameterInjectArgument(constructor: Constructor, parameterIndex: number, mapper: ArgumentMapper): void {
+  const registration = getOrCreateRegistration(constructor);
+  assertDefinedPass(registration.parameters[parameterIndex]).injectArgumentMapper = mapper;
+}
+
+export function setParameterForwardArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: ArgumentMapper): void {
   const registration = getOrCreateRegistration(constructor);
   assertDefinedPass(registration.parameters[parameterIndex]).forwardArgumentMapper = mapper;
 }
@@ -238,6 +244,10 @@ export class Container {
       }
 
       const parameters = typeInfo.parameters.map((parameterInfo, index): unknown => {
+        if (isDefined(parameterInfo.injectArgumentMapper)) {
+          return parameterInfo.injectArgumentMapper(resolveArgument);
+        }
+
         const parameterResolveArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.resolveArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {
@@ -372,6 +382,10 @@ export class Container {
       }
 
       const parameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (parameterInfo, index): Promise<unknown> => {
+        if (isDefined(parameterInfo.injectArgumentMapper)) {
+          return parameterInfo.injectArgumentMapper(resolveArgument);
+        }
+
         const parameterResolveArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.resolveArgument;
 
         if (isDefined(parameterInfo.forwardRefToken)) {

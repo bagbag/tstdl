@@ -1,24 +1,46 @@
-import type { Logger } from '#/logger';
+import { injectable } from '#/container';
+import { Logger } from '#/logger';
 import { Alphabet } from '#/utils/alphabet';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestamp } from '#/utils/date-time';
 import { getRandomString } from '#/utils/random';
 import { Timer } from '#/utils/timer';
+import { assertStringPass, isDefined, isObject } from '#/utils/type-guards';
 import { cancelableTimeout, timeout as utilsTimeout } from '../../utils/timing';
-import type { AcquireResult, Lock, LockController, LockedFunction, UsingResult } from '../lock';
-import type { MongoLockRepository } from './mongo-lock-repository';
+import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock';
+import { Lock } from '../lock';
+import { MongoLockRepository } from './mongo-lock-repository';
+import { MongoLockProvider } from './provider';
 
-const expirationTime = 30000;
+const expirationTime = 10000;
 
-export class MongoLock implements Lock {
+@injectable({
+  provider: {
+    useAsyncFactory: async (argument, container) => {
+      const provider = await container.resolveAsync(MongoLockProvider);
+
+      const arg = argument as LockArgument;
+
+      const prefix = isObject(arg) ? assertStringPass(arg.prefix, 'invalid lock argument') : undefined;
+      const resource = assertStringPass(isObject(arg) ? arg.resource : arg, 'invalid lock argument');
+
+      if (isDefined(prefix)) {
+        return provider.prefix(prefix).get(resource);
+      }
+
+      return provider.get(resource);
+    }
+  }
+})
+export class MongoLock extends Lock {
   private readonly lockRepository: MongoLockRepository;
   private readonly logger: Logger;
-  private readonly resource: string;
 
-  constructor(lockRepository: MongoLockRepository, logger: Logger, resource: string) {
+  constructor(lockRepository: MongoLockRepository, resource: string, logger: Logger) {
+    super(resource);
+
     this.lockRepository = lockRepository;
     this.logger = logger;
-    this.resource = resource;
   }
 
   async acquire<Throw extends boolean>(timeout: number, throwOnFail: Throw): Promise<AcquireResult<Throw>> { // eslint-disable-line max-lines-per-function, max-statements

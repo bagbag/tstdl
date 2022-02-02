@@ -13,8 +13,7 @@ import type { MigrationState } from '#/migration';
 import type { Type } from '#/types';
 import * as Mongo from 'mongodb';
 import { container } from './container';
-import type { MongoLockEntity } from './lock/mongo';
-import { MongoLockProvider, MongoLockRepository } from './lock/mongo';
+import { MongoLockProvider } from './lock/mongo';
 import type { MongoOidcState, OidcState } from './openid-connect';
 import { MongoOidcStateRepository } from './openid-connect';
 import type { QueueConfig } from './queue';
@@ -34,8 +33,7 @@ export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
   connection: MongoConnection,
   database: string,
   collection: string,
-  type: T,
-  databaseType?: TDb
+  types?: { entity: T, database?: TDb }
 };
 
 const singletonScope = Symbol('singletons');
@@ -51,9 +49,6 @@ let mongoLogPrefix = 'MONGO';
 
 let repositoryLogPrefix = 'REPO';
 
-let mongoLockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity> | undefined;
-let mongoLockProviderLog = 'LOCK';
-
 let mongoMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined;
 
 let mongoKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined;
@@ -65,8 +60,6 @@ export function configureMongoInstanceProvider(
     defaultConnection?: MongoConnection,
     mongoLogPrefix?: string,
     repositoryLogPrefix?: string,
-    mongoLockRepositoryConfig?: MongoRepositoryConfig<MongoLockEntity>,
-    mongoLockProviderLog?: string,
     mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
     mongoKeyValueRepositoryConfig?: MongoRepositoryConfig<MongoKeyValue>,
     mongoOidcStateRepositoryConfig?: MongoRepositoryConfig<OidcState, MongoOidcState>
@@ -76,8 +69,6 @@ export function configureMongoInstanceProvider(
   defaultConnection = options.defaultConnection ?? defaultConnection;
   mongoLogPrefix = options.mongoLogPrefix ?? mongoLogPrefix;
   repositoryLogPrefix = options.repositoryLogPrefix ?? repositoryLogPrefix;
-  mongoLockRepositoryConfig = options.mongoLockRepositoryConfig ?? mongoLockRepositoryConfig;
-  mongoLockProviderLog = options.mongoLockProviderLog ?? mongoLockProviderLog;
   mongoMigrationStateRepositoryConfig = options.mongoMigrationStateRepositoryConfig ?? mongoMigrationStateRepositoryConfig;
   mongoKeyValueRepositoryConfig = options.mongoKeyValueRepositoryConfig ?? mongoKeyValueRepositoryConfig;
   mongoOidcStateRepositoryConfig = options.mongoOidcStateRepositoryConfig ?? mongoOidcStateRepositoryConfig;
@@ -156,14 +147,7 @@ export async function getMongoRepository<T extends Entity, TDb extends Entity = 
 }
 
 export async function getMongoLockProvider(): Promise<MongoLockProvider> {
-  return singleton(singletonScope, MongoLockProvider, async () => {
-    assertDefined(mongoLockRepositoryConfig, 'mongoLockRepositoryConfig must be configured');
-
-    const repository = await getMongoRepository(MongoLockRepository, mongoLockRepositoryConfig);
-    const logger = getLogger(mongoLockProviderLog);
-
-    return new MongoLockProvider(repository, logger);
-  });
+  return container.resolveAsync(MongoLockProvider);
 }
 
 export async function getMongoMigrationStateRepository(): Promise<MongoMigrationStateRepository> {
@@ -203,7 +187,7 @@ export async function getMongoQueue<T>(key: string, config?: QueueConfig): Promi
 }
 
 export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>({ connection = defaultConnection, database = defaultDatabase, collection }: { connection?: MongoConnection, database?: string, collection: string }): MongoRepositoryConfig<T, TDb> {
-  return { connection, database, collection, type: undefined as unknown as T, databaseType: undefined as unknown as TDb };
+  return { connection, database, collection };
 }
 
 container.register<Mongo.MongoClient, MongoConnection>(Mongo.MongoClient, {

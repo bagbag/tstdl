@@ -1,7 +1,8 @@
-import { injectable } from '#/container';
+import type { Injectable } from '#/container';
+import { forwardArg, resolveArgumentType, singleton } from '#/container';
 import { getNewId } from '#/database';
 import { MongoEntityRepository, noopTransformer } from '#/database/mongo/mongo-entity-repository';
-import type { Filter, TypedIndexDescription } from '#/database/mongo/types';
+import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo/types';
 import { Collection } from '#/database/mongo/types';
 import { Logger } from '#/logger';
 import { now } from '#/utils/date-time';
@@ -13,9 +14,11 @@ const indexes: TypedIndexDescription<MongoLockEntity>[] = [
   { key: { expiration: 1 }, expireAfterSeconds: 1 }
 ];
 
-@injectable()
-export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> {
-  constructor(collection: Collection<MongoLockEntity>, logger: Logger) {
+@singleton()
+export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements Injectable<CollectionArgument> {
+  [resolveArgumentType]: CollectionArgument<MongoLockEntity>;
+
+  constructor(@forwardArg() collection: Collection<MongoLockEntity>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 

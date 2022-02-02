@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container';
-import { forwardArg, injectArg, resolveArgumentType, singleton } from '#/container';
+import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { getNewId } from '#/database';
 import { Logger } from '#/logger';
 import { UniqueTagStrategy } from '#/queue';
@@ -19,7 +19,7 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
 export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> implements Injectable<CollectionArgument<MongoJob<T>>> {
   readonly [resolveArgumentType]?: CollectionArgument<MongoJob<T>>;
 
-  constructor(@forwardArg() collection: Collection<MongoJob<T>>, @injectArg(MongoJobRepository.name) logger: Logger) {
+  constructor(@forwardArg() collection: Collection<MongoJob<T>>, @resolveArg(MongoJobRepository.name) logger: Logger) {
     super(collection, noopTransformer, { indexes, logger });
   }
 

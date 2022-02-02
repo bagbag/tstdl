@@ -1,4 +1,4 @@
-import { container, injectArg, singleton } from '#/container';
+import { container, resolveArg, singleton } from '#/container';
 import { WeakRefMap } from '#/data-structures';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
@@ -15,7 +15,7 @@ export class LocalMessageBusProvider extends MessageBusProvider {
   private readonly logger: Logger;
   private readonly channelSubjectsMap: FactoryMap<string, Subject<LocalMessageBusItem<any>>>;
 
-  constructor(@injectArg<LoggerArgument>('LocalMessageBus') logger: Logger) {
+  constructor(@resolveArg<LoggerArgument>('LocalMessageBus') logger: Logger) {
     super();
 
     this.logger = logger;

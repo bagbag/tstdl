@@ -17,7 +17,7 @@ export class DistributedLoop {
   }
 
   run(interval: number, accuracy: number, func: LoopFunction): LoopController {
-    const stopped = new DeferredPromise();
+    const $stopped = new DeferredPromise();
     const stopToken = new CancellationToken();
 
     const stopFunction = async (): Promise<void> => {
@@ -25,12 +25,12 @@ export class DistributedLoop {
         stopToken.set();
       }
 
-      await stopped;
+      await $stopped;
     };
 
     const controller: LoopController = {
       stop: stopFunction,
-      stopped
+      $stopped
     };
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -55,7 +55,7 @@ export class DistributedLoop {
         }
       }
       finally {
-        stopped.resolve();
+        $stopped.resolve();
       }
     })();
 

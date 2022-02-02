@@ -2,8 +2,8 @@
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
-import type { ForwardRefInjectionToken, Lifecycle, RegistrationOptions, ForwardArgumentMapper } from './container';
-import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterResolveArgument, setParameterInjectionToken, setParameterOptional } from './container';
+import type { ArgumentMapper, ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
+import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgument, setParameterInjectionToken, setParameterOptional, setParameterResolveArgument } from './container';
 import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
@@ -71,12 +71,26 @@ export function inject<T, A>(token: InjectionToken<T, A>, argument?: A): Paramet
 }
 
 /**
- * sets the argument used for resolving
+ * sets the argument used for resolving the parameter
  * @param argument
  */
-export function injectArg<T>(argument: T): ParameterDecorator {
-  function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
+export function resolveArg<T>(argument: T): ParameterDecorator {
+  function resolveArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     setParameterResolveArgument(target as Constructor, parameterIndex, argument);
+  }
+
+  return resolveArgDecorator;
+}
+
+/**
+ * injects the argument used for resolving the class
+ * @param argument
+ */
+export function injectArg(): ParameterDecorator;
+export function injectArg<T, U>(mapper: ArgumentMapper<T, U>): ParameterDecorator;
+export function injectArg(mapper: ArgumentMapper = (value) => value): ParameterDecorator {
+  function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
+    setParameterInjectArgument(target as Constructor, parameterIndex, mapper);
   }
 
   return injectArgDecorator;
@@ -87,8 +101,8 @@ export function injectArg<T>(argument: T): ParameterDecorator {
  * @param mapper map the argument (for example to select a property instead of forwarding the whole object)
  */
 export function forwardArg(): ParameterDecorator;
-export function forwardArg<T, U>(mapper: ForwardArgumentMapper<T, U>): ParameterDecorator;
-export function forwardArg(mapper: ForwardArgumentMapper = (value) => value): ParameterDecorator {
+export function forwardArg<T, U>(mapper: ArgumentMapper<T, U>): ParameterDecorator;
+export function forwardArg(mapper: ArgumentMapper = (value) => value): ParameterDecorator {
   function forwardArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     setParameterForwardArgumentMapper(target as Constructor, parameterIndex, mapper);
   }
