@@ -1,9 +1,10 @@
 import type { Entity, MaybeNewEntity } from '#/database';
 import type { BulkWriteResult } from 'mongodb';
+import type { Collection } from './classes';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model';
 import type { ReplaceOptions, UpdateOptions } from './mongo-base.repository';
 import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './operations';
-import type { BulkOperation, Collection, Filter, UpdateFilter } from './types';
+import type { BulkOperation, Filter, UpdateFilter } from './types';
 
 export type BulkResult = {
   insertedCount: number,

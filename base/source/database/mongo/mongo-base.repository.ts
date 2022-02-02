@@ -5,11 +5,12 @@ import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
 import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
 import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
+import type { Collection } from './classes';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
 import { MongoBulk } from './mongo-bulk';
 import { replaceOneOperation, updateOneOperation } from './operations';
-import type { Collection, Filter, Sort, TypedIndexDescription, UpdateFilter, UpdateOneOperation } from './types';
+import type { Filter, Sort, TypedIndexDescription, UpdateFilter, UpdateOneOperation } from './types';
 
 export const enum ProjectionMode {
   Include = 0,

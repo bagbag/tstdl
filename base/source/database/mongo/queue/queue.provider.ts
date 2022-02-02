@@ -1,10 +1,10 @@
 import type { Injectable } from '#/container';
 import { container, forwardArg, resolveArgumentType, singleton } from '#/container';
 import { MessageBusProvider } from '#/message-bus';
-import type { MongoRepositoryConfig } from '#/mongo.instance-provider';
 import type { QueueConfig } from '#/queue';
 import { Queue, QueueProvider } from '#/queue';
-import type { CollectionArgument } from '../types';
+import type { CollectionArgument } from '../classes';
+import type { MongoRepositoryConfig } from '../types';
 import type { MongoJob } from './job';
 import { MongoJobRepository } from './mongo-job.repository';
 import { MongoQueue } from './queue';
@@ -16,7 +16,7 @@ export class MongoQueueProvider extends QueueProvider implements Injectable<Coll
   private readonly repository: MongoJobRepository<any>;
   private readonly messageBusProvider: MessageBusProvider;
 
-  readonly [resolveArgumentType]?: CollectionArgument<MongoJob>;
+  readonly [resolveArgumentType]: CollectionArgument<MongoJob>;
 
   constructor(@forwardArg() repository: MongoJobRepository<any>, messageBusProvider: MessageBusProvider) {
     super();

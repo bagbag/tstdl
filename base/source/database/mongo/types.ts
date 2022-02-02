@@ -1,16 +1,18 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
 import type { Entity } from '#/database';
-import type { MongoRepositoryConfig } from '#/mongo.instance-provider';
 import type * as Mongo from 'mongodb';
-import { Collection as MongoCollection } from 'mongodb';
 import type { MongoDocument } from './model';
+import { mongoModuleConfig } from './module';
 
-export type CollectionArgument<T extends Entity = Entity, TDb extends Entity = T> = MongoRepositoryConfig<T, TDb>;
+export type MongoConnection = {
+  url: string
+} & Mongo.MongoClientOptions;
 
-export class Collection<T extends Entity = Entity, TDb extends Entity = T> extends MongoCollection<MongoDocument<T>> implements Injectable<CollectionArgument<T, TDb>> {
-  readonly [resolveArgumentType]?: CollectionArgument<T, TDb>;
-}
+export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
+  connection: MongoConnection,
+  database: string,
+  collection: string,
+  types?: { entity: T, database?: TDb }
+};
 
 export type Filter<T extends Entity = Entity> = Mongo.Filter<MongoDocument<T>>;
 export type UpdateFilter<T extends Entity = Entity> = Mongo.UpdateFilter<MongoDocument<T>>;
@@ -32,3 +34,7 @@ export type TypedIndexDescription<T extends Entity = Entity> = Omit<Mongo.IndexD
   key: { [P in keyof T]?: 1 | -1 | 'text' | 'hashed' },
   partialFilterExpression?: Filter<T>
 };
+
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>({ connection = mongoModuleConfig.defaultConnection, database = mongoModuleConfig.defaultDatabase, collection }: { connection?: MongoConnection, database?: string, collection: string }): MongoRepositoryConfig<T, TDb> {
+  return { connection, database, collection };
+}

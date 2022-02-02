@@ -1,7 +1,8 @@
 import type { Logger } from '#/logger';
 import type { MigrationState, MigrationStateRepository } from '#/migration/';
+import type { Collection } from '../classes';
 import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
-import type { Collection, TypedIndexDescription } from '../types';
+import type { TypedIndexDescription } from '../types';
 
 const indexes: TypedIndexDescription<MigrationState>[] = [
   { key: { name: 1 }, unique: true }

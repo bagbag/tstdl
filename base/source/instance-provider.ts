@@ -1,15 +1,11 @@
 import { HttpApi } from './api/http-api';
-import type { InjectionToken } from './container';
 import { container } from './container';
-import { AsyncDisposer, disposeAsync } from './disposable';
 import { DistributedLoopProvider } from './distributed-loop';
 import { HttpClient } from './http';
 import { ImageService } from './image-service';
 import type { KeyValueStore, KeyValueStoreProvider } from './key-value';
 import type { LockProvider } from './lock';
-import type { LoggerArgument } from './logger';
-import { Logger, LogLevel } from './logger';
-import { ConsoleLogger } from './logger/console';
+import { Logger } from './logger';
 import { MessageBusProvider } from './message-bus';
 import { LocalMessageBusProvider } from './message-bus/local';
 import type { MigrationStateRepository } from './migration';
@@ -21,18 +17,14 @@ import { CachedOidcConfigurationService, OidcService } from './openid-connect';
 import type { StringMap, Type } from './types';
 import { deferThrow } from './utils/helpers';
 import { singleton } from './utils/singleton';
-import { timeout } from './utils/timing';
 import { millisecondsPerMinute } from './utils/units';
 
 const singletonScope = Symbol('singletons');
-const coreLoggerToken = Symbol('core-logger');
 const lockProviderToken = Symbol('lock-provider');
 const keyValueStoreProviderToken = Symbol('key-value-store-provider');
 const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
 
 let coreLogPrefix = 'CORE';
-let logLevel = LogLevel.Debug;
-let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
@@ -51,13 +43,9 @@ let httpApiLogPrefix = 'HTTP';
 let webServerPort = 8080;
 let webServerLogPrefix = 'WEBSERVER';
 
-export const disposer: AsyncDisposer = new AsyncDisposer();
-
 export function configureBaseInstanceProvider(
   options: {
     coreLoggerPrefix?: string,
-    logLevel?: LogLevel,
-    loggerToken?: typeof loggerToken,
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
     imageServiceProvider?: () => ImageService | Promise<ImageService>,
@@ -74,8 +62,6 @@ export function configureBaseInstanceProvider(
   }
 ): void {
   coreLogPrefix = options.coreLoggerPrefix ?? coreLogPrefix;
-  logLevel = options.logLevel ?? logLevel;
-  loggerToken = options.loggerToken ?? loggerToken;
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
   imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
@@ -91,11 +77,6 @@ export function configureBaseInstanceProvider(
   oidcStateRepositoryProvider = options.oidcStateRepositoryProvider ?? oidcStateRepositoryProvider;
 }
 
-export async function disposeInstances(): Promise<void> {
-  getCoreLogger().debug('dispose instances');
-  await disposer[disposeAsync]();
-}
-
 function getLoggerInstance(): Logger {
   return container.resolve(Logger);
 }
@@ -106,10 +87,7 @@ export function getLogger(module: string): Logger {
 }
 
 export function getCoreLogger(): Logger {
-  return singleton(singletonScope, coreLoggerToken, () => {
-    const logger = getLogger(coreLogPrefix);
-    return logger;
-  });
+  return container.resolve(Logger, coreLogPrefix);
 }
 
 export function getLocalMessageBusProvider(): LocalMessageBusProvider {
@@ -193,36 +171,3 @@ export function getWebServerModule(): WebServerModule {
     return new WebServerModule(httpApi, webServerPort, logger);
   });
 }
-
-export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 3): Promise<void> {
-  let triesLeft = maxTries;
-  let success = false;
-
-  while (!success && !disposer.disposing && triesLeft-- > 0) {
-    try {
-      logger.verbose(`connecting to ${name}...`);
-
-      await connectFunction();
-      success = true;
-
-      logger.info(`connected to ${name}`);
-    }
-    catch (error: unknown) {
-      logger.verbose(`error connecting to ${name} (${(error as Error).message})${triesLeft > 0 ? ', trying again...' : ''}`);
-
-      if (triesLeft == 0) {
-        throw new Error(`failed to connect to ${name} - no tries left`);
-      }
-
-      await timeout(2000);
-    }
-  }
-}
-
-container.register<LogLevel, LogLevel>(
-  LogLevel,
-  { useFactory: (level) => level ?? LogLevel.Trace },
-  { defaultArgumentProvider: () => logLevel }
-);
-
-container.register(Logger, { useTokenProvider: () => loggerToken });

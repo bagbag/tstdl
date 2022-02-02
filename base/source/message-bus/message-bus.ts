@@ -7,7 +7,7 @@ import { disposeAsync } from '../disposable';
 export type MessageBusArgument = string;
 
 export abstract class MessageBus<T> implements AsyncDisposable, Injectable<MessageBusArgument> {
-  readonly [resolveArgumentType]?: string | undefined;
+  readonly [resolveArgumentType]: string;
 
   /** messages from other instances */
   abstract readonly messages$: Observable<T>;

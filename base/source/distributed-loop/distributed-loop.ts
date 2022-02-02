@@ -1,4 +1,6 @@
-import type { LockProvider } from '#/lock';
+import type { Injectable } from '#/container';
+import { injectArg, resolveArgumentType } from '#/container';
+import { LockProvider } from '#/lock';
 import { DeferredPromise } from '#/promise';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { Timer } from '#/utils/timer';
@@ -7,11 +9,16 @@ import type { LoopController } from './controller';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;
 
-export class DistributedLoop {
+/** loop key */
+export type DistributedLoopArgument = string;
+
+export class DistributedLoop implements Injectable<DistributedLoopArgument> {
   private readonly key: string;
   private readonly lockProvider: LockProvider;
 
-  constructor(key: string, lockProvider: LockProvider) {
+  [resolveArgumentType]: string;
+
+  constructor(@injectArg() key: string, lockProvider: LockProvider) {
     this.key = key;
     this.lockProvider = lockProvider.prefix('loop:');
   }

@@ -3,9 +3,10 @@ import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/contai
 import { getNewId } from '#/database';
 import { Logger } from '#/logger';
 import { UniqueTagStrategy } from '#/queue';
+import type { CollectionArgument } from '../classes';
+import { Collection } from '../classes';
 import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
-import type { CollectionArgument, TypedIndexDescription } from '../types';
-import { Collection } from '../types';
+import type { TypedIndexDescription } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [
@@ -17,7 +18,7 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
 
 @singleton()
 export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> implements Injectable<CollectionArgument<MongoJob<T>>> {
-  readonly [resolveArgumentType]?: CollectionArgument<MongoJob<T>>;
+  readonly [resolveArgumentType]: CollectionArgument<MongoJob<T>>;
 
   constructor(@forwardArg() collection: Collection<MongoJob<T>>, @resolveArg(MongoJobRepository.name) logger: Logger) {
     super(collection, noopTransformer, { indexes, logger });

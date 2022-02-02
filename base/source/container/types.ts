@@ -11,7 +11,7 @@ export interface Injectable<T = unknown> {
    * type of resolve argument
    * @deprecated only used for type inference
    */
-  [resolveArgumentType]?: T;
+  readonly [resolveArgumentType]: T;
 }
 
 export interface AfterResolve {

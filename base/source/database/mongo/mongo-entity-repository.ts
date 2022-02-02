@@ -7,10 +7,11 @@ import type { Logger } from '#/logger';
 import { equals } from '#/utils/equals';
 import { _throw } from '#/utils/helpers';
 import { isDefined, isUndefined } from '#/utils/type-guards';
+import type { Collection } from './classes';
 import type { LoadOptions } from './mongo-base.repository';
 import { MongoBaseRepository } from './mongo-base.repository';
 import { convertQuery, convertSort } from './query-converter';
-import type { Collection, Filter, TypedIndexDescription, UpdateFilter } from './types';
+import type { Filter, TypedIndexDescription, UpdateFilter } from './types';
 
 type MongoEntityRepositoryOptions<T extends Entity> = {
   logger: Logger,

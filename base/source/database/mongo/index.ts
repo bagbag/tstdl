@@ -1,4 +1,6 @@
+export * from './classes';
 export * from './model';
+export * from './module';
 export * from './mongo-base.repository';
 export * from './mongo-bulk';
 export * from './mongo-entity-repository';

@@ -1,9 +1,8 @@
 import type { Injectable } from '#/container';
 import { forwardArg, resolveArgumentType, singleton } from '#/container';
 import { getNewId } from '#/database';
-import { MongoEntityRepository, noopTransformer } from '#/database/mongo/mongo-entity-repository';
-import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo/types';
-import { Collection } from '#/database/mongo/types';
+import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
 import { Logger } from '#/logger';
 import { now } from '#/utils/date-time';
 import { MongoError } from 'mongodb';

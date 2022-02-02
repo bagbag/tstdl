@@ -1,22 +1,21 @@
-import { container, forwardArg, injectArg, resolveArg, singleton } from '#/container';
-import type { CollectionArgument } from '#/database/mongo';
+import { container, injectArg, resolveArg, resolveArgProvider, singleton } from '#/container';
+import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo';
 import { Lock, LockProvider } from '#/lock';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import type { MongoRepositoryConfig } from '#/mongo.instance-provider';
 import { MongoLock } from './lock';
 import type { MongoLockEntity } from './model';
 import { MongoLockRepository } from './mongo-lock-repository';
 
-let defaultLockEntityRepositoryConfig: CollectionArgument<MongoLockEntity>;
+let lockEntityRepositoryConfig: CollectionArgument<MongoLockEntity>;
 
-@singleton({ defaultArgumentProvider: () => defaultLockEntityRepositoryConfig })
+@singleton()
 export class MongoLockProvider extends LockProvider {
   private readonly lockRepository: MongoLockRepository;
   private readonly logger: Logger;
   private readonly _prefix: string;
 
-  constructor(@forwardArg() lockRepository: MongoLockRepository, @resolveArg<LoggerArgument>('MongoLock') logger: Logger, @injectArg() prefix: string = '') {
+  constructor(@resolveArgProvider<CollectionArgument>(() => lockEntityRepositoryConfig) lockRepository: MongoLockRepository, @resolveArg<LoggerArgument>('MongoLock') logger: Logger, @injectArg() prefix: string = '') {
     super();
 
     this.lockRepository = lockRepository;
@@ -39,7 +38,7 @@ export class MongoLockProvider extends LockProvider {
  * @param register whether to register for {@link Lock} and {@link LockProvider}
  */
 export function configureMongoLock(lockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity>, register: boolean): void {
-  defaultLockEntityRepositoryConfig = lockRepositoryConfig;
+  lockEntityRepositoryConfig = lockRepositoryConfig;
 
   if (register) {
     container.register(LockProvider, { useToken: MongoLockProvider });

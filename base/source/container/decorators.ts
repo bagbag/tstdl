@@ -2,8 +2,8 @@
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
-import type { ArgumentMapper, ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
-import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgument, setParameterInjectionToken, setParameterOptional, setParameterResolveArgument } from './container';
+import type { ArgumentMapper, ArgumentProvider, ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
+import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgumentMapper, setParameterInjectionToken, setParameterOptional, setParameterResolveArgumentProvider } from './container';
 import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
@@ -13,6 +13,19 @@ export type InjectableOptions<T, P> = RegistrationOptions<T> & {
   /** custom provider. Useful for example if initialization is required */
   provider?: Provider<T, P>
 };
+
+/**
+ * helper decorator to replace a class definition with an other
+ * can be used for example to type external classes with the {@link Injectable} interface
+ * @param constructor class to replace with
+ */
+export function replaceClass<T>(constructor: Constructor<T>): ClassDecorator {
+  function replaceDecorator(_target: Constructor<T>): Constructor<T> {
+    return constructor;
+  }
+
+  return replaceDecorator as ClassDecorator;
+}
 
 /**
  * registers the class in the global container. Decorated class is not modified in any way
@@ -63,7 +76,7 @@ export function inject<T, A>(token: InjectionToken<T, A>, argument?: A): Paramet
     setParameterInjectionToken(target as Constructor, parameterIndex, token);
 
     if (isDefined(argument)) {
-      setParameterResolveArgument(target as Constructor, parameterIndex, argument);
+      setParameterResolveArgumentProvider(target as Constructor, parameterIndex, () => argument);
     }
   }
 
@@ -76,7 +89,19 @@ export function inject<T, A>(token: InjectionToken<T, A>, argument?: A): Paramet
  */
 export function resolveArg<T>(argument: T): ParameterDecorator {
   function resolveArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
-    setParameterResolveArgument(target as Constructor, parameterIndex, argument);
+    setParameterResolveArgumentProvider(target as Constructor, parameterIndex, () => argument);
+  }
+
+  return resolveArgDecorator;
+}
+
+/**
+ * sets the argument provider used for resolving the parameter
+ * @param argumentProvider
+ */
+export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): ParameterDecorator {
+  function resolveArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
+    setParameterResolveArgumentProvider(target as Constructor, parameterIndex, argumentProvider);
   }
 
   return resolveArgDecorator;
@@ -90,7 +115,7 @@ export function injectArg(): ParameterDecorator;
 export function injectArg<T, U>(mapper: ArgumentMapper<T, U>): ParameterDecorator;
 export function injectArg(mapper: ArgumentMapper = (value) => value): ParameterDecorator {
   function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
-    setParameterInjectArgument(target as Constructor, parameterIndex, mapper);
+    setParameterInjectArgumentMapper(target as Constructor, parameterIndex, mapper);
   }
 
   return injectArgDecorator;
@@ -132,7 +157,7 @@ export function forwardRef<T, A>(token: ForwardRefInjectionToken<T>, argument?: 
     setParameterForwardRefToken(target as Constructor, parameterIndex, token);
 
     if (isDefined(argument)) {
-      setParameterResolveArgument(target as Constructor, parameterIndex, argument);
+      setParameterResolveArgumentProvider(target as Constructor, parameterIndex, () => argument);
     }
   }
 

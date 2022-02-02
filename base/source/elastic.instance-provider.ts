@@ -1,10 +1,10 @@
 import type { Entity } from '#/database';
-import { connect, disposer, getLogger } from '#/instance-provider';
-import type { Logger } from '#/logger';
+import { Logger } from '#/logger';
 import type { Type } from '#/types';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 import { container } from './container';
+import { connect, disposer } from './core';
 import type { ElasticSearchIndex, ElasticSearchIndexConfig } from './search-index/elastic/search-index';
 import { ELASTIC_SEARCH_INDEX_CONFIG } from './search-index/elastic/search-index';
 import { singleton } from './utils/singleton';
@@ -43,7 +43,7 @@ export function configureElasticInstanceProvider(
 
 export async function getElasticClient(options: ClientOptions = clientOptions): Promise<Client> {
   return singleton(clientSingletonScope, options, async () => {
-    const logger = getLogger(elasticLogPrefix);
+    const logger = await container.resolveAsync(Logger, elasticLogPrefix);
 
     const client: Client = new Client(options);
 
@@ -63,7 +63,7 @@ export async function getElasticClient(options: ClientOptions = clientOptions): 
 
 export async function getElasticSearchIndex<T extends Entity, C extends ElasticSearchIndexStatic<T> = ElasticSearchIndexStatic<T>>(ctor: C, config: ElasticSearchIndexConfig<T>): Promise<InstanceType<C>> {
   return singleton(singletonScope, ctor, async () => {
-    const logger = getLogger(searchIndexLogPrefix);
+    const logger = await container.resolveAsync(Logger, searchIndexLogPrefix);
     const client = await getElasticClient();
     const searchIndex = new ctor(client, config, logger) as InstanceType<C>;
 
