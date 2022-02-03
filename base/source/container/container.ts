@@ -14,7 +14,8 @@ type ResolveContext = {
   resolutions: { instance: any, registration: Registration }[],
   forwardRefs: Set<ForwardRef>,
   providedInstances: Map<InjectionToken, any>,
-  instances: MultiKeyMap<[InjectionToken, any], any>
+  instances: MultiKeyMap<[InjectionToken, any], any>,
+  resolving: Set<InjectionToken>
 };
 
 export type ArgumentMapper<T = unknown, U = any> = (argument: T) => U | Promise<U>;
@@ -187,7 +188,8 @@ export class Container {
       resolutions: [],
       forwardRefs: new Set(),
       providedInstances: new Map(instances),
-      instances: new MultiKeyMap()
+      instances: new MultiKeyMap(),
+      resolving: new Set()
     };
 
     return this._resolve(token, false, argument, context, [token], true);
@@ -205,7 +207,8 @@ export class Container {
       resolutions: [],
       forwardRefs: new Set(),
       providedInstances: new Map(instances),
-      instances: new MultiKeyMap()
+      instances: new MultiKeyMap(),
+      resolving: new Set()
     };
 
     return this._resolveAsync(token, false, argument, context, [token], true);
@@ -213,6 +216,12 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
+    if (context.resolving.has(token)) {
+      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
+    }
+
+    context.resolving.add(token);
+
     if (chain.length > 10000) {
       throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
     }
@@ -340,6 +349,8 @@ export class Container {
       context.resolutions.push({ instance, registration });
     }
 
+    context.resolving.delete(token);
+
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
         (fn as () => void)();
@@ -373,6 +384,12 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
+    if (context.resolving.has(token)) {
+      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
+    }
+
+    context.resolving.add(token);
+
     if (chain.length > 10000) {
       throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
     }
@@ -486,6 +503,8 @@ export class Container {
 
       context.resolutions.push({ instance, registration });
     }
+
+    context.resolving.delete(token);
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
