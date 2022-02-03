@@ -1,7 +1,7 @@
 import type { Entity } from '#/database';
+import type { TypedOmit } from '#/types';
 import type * as Mongo from 'mongodb';
 import type { MongoDocument } from './model';
-import { mongoModuleConfig } from './module';
 
 export type MongoConnection = {
   url: string
@@ -11,7 +11,7 @@ export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
   connection: MongoConnection,
   database?: string,
   collection: string,
-  types?: { entity: T, database?: TDb }
+  types?: { entity: T, database: TDb }
 };
 
 export type Filter<T extends Entity = Entity> = Mongo.Filter<MongoDocument<T>>;
@@ -35,6 +35,6 @@ export type TypedIndexDescription<T extends Entity = Entity> = Omit<Mongo.IndexD
   partialFilterExpression?: Filter<T>
 };
 
-export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>({ connection = mongoModuleConfig.defaultConnection, database = mongoModuleConfig.defaultDatabase, collection }: { connection?: MongoConnection, database?: string, collection: string }): MongoRepositoryConfig<T, TDb> {
-  return { connection, database, collection };
+export function getMongoRepositoryConfig<T extends Entity, TDb extends Entity = T>(config: TypedOmit<MongoRepositoryConfig<T, TDb>, 'types'>): MongoRepositoryConfig<T, TDb> {
+  return config;
 }

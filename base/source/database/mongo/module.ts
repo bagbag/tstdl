@@ -4,6 +4,7 @@ import { Logger } from '#/logger';
 import { assertDefined, isObject, isString } from '#/utils/type-guards';
 import * as Mongo from 'mongodb';
 import type { Entity } from '../entity';
+import type { DatabaseArgument, MongoClientArgument } from './classes';
 import { Collection, Database, MongoClient } from './classes';
 import type { MongoDocument } from './model';
 import type { MongoConnection } from './types';
@@ -53,16 +54,22 @@ container.registerSingleton(MongoClient, {
 
     return client;
   }
-}, { defaultArgumentProvider: () => mongoModuleConfig.defaultConnection });
+}, {
+  defaultArgumentProvider: (): MongoClientArgument => mongoModuleConfig.defaultConnection,
+  argumentIdentityProvider: JSON.stringify
+});
 
 container.registerSingleton(Database, {
   useAsyncFactory: async (argument, resolveContainer) => {
     const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
-    const name = isString(argument) ? argument : isObject(argument) ? argument.database : undefined;
+    const name = (isString(argument) ? argument : isObject(argument) ? argument.database : undefined) ?? mongoModuleConfig.defaultDatabase;
 
     const client = await resolveContainer.resolveAsync(MongoClient, connection);
     return client.db(name) as any;
   }
+}, {
+  defaultArgumentProvider: (): DatabaseArgument => ({ database: mongoModuleConfig.defaultDatabase, connection: mongoModuleConfig.defaultConnection }),
+  argumentIdentityProvider: JSON.stringify
 });
 
 container.registerSingleton(Collection, {
@@ -80,4 +87,6 @@ container.registerSingleton(Collection, {
 
     return database.createCollection<MongoDocument<Entity>>(config.collection) as any;
   }
+}, {
+  argumentIdentityProvider: JSON.stringify
 });

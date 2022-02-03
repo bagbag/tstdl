@@ -45,7 +45,7 @@ export type TypeInfo = {
   parameters: ParameterTypeInfo[]
 };
 
-export type RegistrationOptions<T, A = any> = {
+export type RegistrationOptions<T, A = unknown> = {
   lifecycle?: Lifecycle,
 
   /** default resolve argument used when neither token nor explicit resolve argument is provided */
@@ -53,6 +53,17 @@ export type RegistrationOptions<T, A = any> = {
 
   /** default resolve argument used when neither token nor explicit resolve argument is provided */
   defaultArgumentProvider?: ArgumentProvider<InjectableArgument<T, A>>,
+
+  /**
+   * value to distinguish scoped and singleton instances based on argument
+   * by default it uses strict equality (===) on the original argument,
+   * so modifications to argument objects and literal objects in the call
+   * may not yield the expected result
+   *
+   * hint: {@link JSON.stringify} is a simple solution for many use cases,
+   * but will fail if properties have different order
+   */
+  argumentIdentityProvider?: ArgumentMapper<InjectableArgument<T, A> | undefined>,
 
   /** function which gets called after a resolve */
   initializer?: (instance: T) => any | Promise<any>
@@ -227,15 +238,23 @@ export class Container {
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this);
 
     if (isPromise(resolveArgument)) {
-      throw new ResolveError(`cannot resolve async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+      throw new ResolveError(`cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
-    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, resolveArgument])) {
-      return context.instances.get([token, resolveArgument]) as T;
+    const argumentIdentity = (isDefined(registration.options.argumentIdentityProvider) && ((registration.options.lifecycle == 'resolution') || (registration.options.lifecycle == 'singleton')))
+      ? registration.options.argumentIdentityProvider(resolveArgument)
+      : resolveArgument;
+
+    if (isPromise(argumentIdentity)) {
+      throw new ResolveError(`cannot evaluate async argument identity provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
-    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(resolveArgument)) {
-      return registration.instances.get(resolveArgument)!;
+    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, argumentIdentity])) {
+      return context.instances.get([token, argumentIdentity]) as T;
+    }
+
+    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argumentIdentity)) {
+      return registration.instances.get(argumentIdentity)!;
     }
 
     let instance!: T;
@@ -252,7 +271,7 @@ export class Container {
           const mapped = parameterInfo.injectArgumentMapper(resolveArgument);
 
           if (isPromise(mapped)) {
-            throw new ResolveError(`cannot resolve async argument mapper for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterInfo.injectToken ?? parameterInfo.token }]);
+            throw new ResolveError(`cannot evaluate async argument mapper for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterInfo.injectToken ?? parameterInfo.token }]);
           }
 
           return mapped;
@@ -261,7 +280,7 @@ export class Container {
         const parameterResolveArgument = parameterInfo.forwardArgumentMapper?.(resolveArgument) ?? parameterInfo.resolveArgumentProvider?.(this);
 
         if (isPromise(parameterResolveArgument)) {
-          throw new ResolveError(`cannot resolve async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterInfo.injectToken ?? parameterInfo.token }]);
+          throw new ResolveError(`cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterInfo.injectToken ?? parameterInfo.token }]);
         }
 
         if (isDefined(parameterInfo.forwardRefToken)) {
@@ -306,16 +325,16 @@ export class Container {
     }
 
     if (isAsyncFactoryProvider(registration.provider)) {
-      throw new ResolveError(`cannot resolve async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+      throw new ResolveError(`cannot evaluate async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
     if (!isTokenProvider(registration.provider)) {
       if (registration.options.lifecycle == 'resolution') {
-        context.instances.set([token, resolveArgument], instance);
+        context.instances.set([token, argumentIdentity], instance);
       }
 
       if (registration.options.lifecycle == 'singleton') {
-        registration.instances.set(resolveArgument, instance);
+        registration.instances.set(argumentIdentity, instance);
       }
 
       context.resolutions.push({ instance, registration });
@@ -378,12 +397,16 @@ export class Container {
 
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? (await registration.options.defaultArgumentProvider?.(this));
 
-    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, resolveArgument])) {
-      return context.instances.get([token, resolveArgument]) as T;
+    const argumentIdentity = (isDefined(registration.options.argumentIdentityProvider) && ((registration.options.lifecycle == 'resolution') || (registration.options.lifecycle == 'singleton')))
+      ? await registration.options.argumentIdentityProvider(resolveArgument)
+      : resolveArgument;
+
+    if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, argumentIdentity])) {
+      return context.instances.get([token, argumentIdentity]) as T;
     }
 
-    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(resolveArgument)) {
-      return registration.instances.get(resolveArgument)!;
+    if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argumentIdentity)) {
+      return registration.instances.get(argumentIdentity)!;
     }
 
     let instance!: T;
@@ -454,11 +477,11 @@ export class Container {
 
     if (!isTokenProvider(registration.provider)) {
       if (registration.options.lifecycle == 'resolution') {
-        context.instances.set([token, resolveArgument], instance);
+        context.instances.set([token, argumentIdentity], instance);
       }
 
       if (registration.options.lifecycle == 'singleton') {
-        registration.instances.set(resolveArgument, instance);
+        registration.instances.set(argumentIdentity, instance);
       }
 
       context.resolutions.push({ instance, registration });
