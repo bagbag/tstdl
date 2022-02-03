@@ -5,7 +5,7 @@ import { ForwardRef, setRef } from '#/utils/object/forward-ref';
 import { getParameterTypes } from '#/utils/reflection';
 import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
 import { ResolveError } from './resolve.error';
-import type { AfterResolve, Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
+import type { AfterResolve, FactoryContext, Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain } from './types';
 import { afterResolve, isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
 import { getTokenName, truncateChain } from './utils';
 
@@ -317,7 +317,7 @@ export class Container {
 
     if (isFactoryProvider(registration.provider)) {
       try {
-        instance = registration.provider.useFactory(resolveArgument, this);
+        instance = registration.provider.useFactory(resolveArgument, this.getFactoryContext(context, chain));
       }
       catch (error) {
         throw new ResolveError('error in factory', chain, error as Error);
@@ -459,7 +459,7 @@ export class Container {
 
     if (isFactoryProvider(registration.provider)) {
       try {
-        instance = registration.provider.useFactory(resolveArgument, this);
+        instance = registration.provider.useFactory(resolveArgument, this.getFactoryContext(context, chain));
       }
       catch (error) {
         throw new ResolveError('error in factory', chain, error as Error);
@@ -468,7 +468,7 @@ export class Container {
 
     if (isAsyncFactoryProvider(registration.provider)) {
       try {
-        instance = await registration.provider.useAsyncFactory(resolveArgument, this);
+        instance = await registration.provider.useAsyncFactory(resolveArgument, this.getFactoryContext(context, chain));
       }
       catch (error) {
         throw new ResolveError('error in factory', chain, error as Error);
@@ -508,6 +508,31 @@ export class Container {
     }
 
     return instance;
+  }
+
+  private getFactoryContext(resolveContext: ResolveContext, chain: ResolveChain): FactoryContext {
+    const context: FactoryContext = {
+      resolve: (token, argument, instances) => {
+        this.addInstancesToResolveContext(instances, resolveContext);
+        return this._resolve(token, false, argument, resolveContext, [...chain, token], false);
+      },
+      resolveAsync: async (token, argument, instances) => {
+        this.addInstancesToResolveContext(instances, resolveContext);
+        return this._resolveAsync(token, false, argument, resolveContext, [...chain, token], false);
+      }
+    };
+
+    return context;
+  }
+
+  private addInstancesToResolveContext(instances: [InjectionToken, any][] | undefined, resolveContext: ResolveContext): void {
+    if (isUndefined(instances)) {
+      return;
+    }
+
+    for (const [instanceToken, instance] of instances) {
+      resolveContext.providedInstances.set(instanceToken, instance);
+    }
   }
 }
 

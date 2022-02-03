@@ -10,9 +10,9 @@ import type { LocalMessageBusItem } from './types';
 
 @injectable({
   provider: {
-    useFactory: (argument, container) => {
+    useFactory: (argument, context) => {
       const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');
-      return container.resolve(LocalMessageBusProvider).get(channel);
+      return context.resolve(LocalMessageBusProvider).get(channel);
     }
   }
 })

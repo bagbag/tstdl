@@ -39,9 +39,11 @@ export type SimpleInjectionToken<T> = Constructor<T> | Function | object | strin
 
 export type InjectionToken<T = any, A = any> = SimpleInjectionToken<T> | ParameterizedInjectionToken<T, A>;
 
-export type Factory<T, A = any> = (argument: InjectableArgument<T, A> | undefined, container: Container) => T;
+export type FactoryContext = Pick<Container, 'resolve' | 'resolveAsync'>;
 
-export type AsyncFactory<T, A = any> = (argument: InjectableArgument<T, A> | undefined, container: Container) => Promise<T>;
+export type Factory<T, A = any> = (argument: InjectableArgument<T, A> | undefined, context: FactoryContext) => T;
+
+export type AsyncFactory<T, A = any> = (argument: InjectableArgument<T, A> | undefined, context: FactoryContext) => Promise<T>;
 
 export type Provider<T = any, A = any> =
   | ClassProvider<T>

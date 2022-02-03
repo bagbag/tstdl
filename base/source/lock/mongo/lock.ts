@@ -16,8 +16,8 @@ const expirationTime = 10000;
 
 @injectable({
   provider: {
-    useAsyncFactory: async (argument, container) => {
-      const provider = await container.resolveAsync(MongoLockProvider);
+    useAsyncFactory: async (argument, context) => {
+      const provider = await context.resolveAsync(MongoLockProvider);
 
       const arg = argument as LockArgument;
 

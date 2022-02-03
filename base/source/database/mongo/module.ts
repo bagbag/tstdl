@@ -34,12 +34,12 @@ export function configureMongo(config: Partial<MongoModuleConfig>): void {
 Mongo.Logger.setCurrentLogger((message, parameters) => mongoLogger.verbose(JSON.stringify({ message, parameters }, undefined, 2)));
 
 container.registerSingleton(MongoClient, {
-  useAsyncFactory: async (argument, resolveContainer) => {
+  useAsyncFactory: async (argument, context) => {
     assertDefined(argument, 'mongo connection resolve argument missing');
 
     const { url, ...options } = argument;
 
-    const logger = resolveContainer.resolve(Logger, mongoModuleConfig.logPrefix);
+    const logger = context.resolve(Logger, mongoModuleConfig.logPrefix);
     const client = new MongoClient(url, options);
 
     client
@@ -60,11 +60,11 @@ container.registerSingleton(MongoClient, {
 });
 
 container.registerSingleton(Database, {
-  useAsyncFactory: async (argument, resolveContainer) => {
+  useAsyncFactory: async (argument, context) => {
     const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
     const name = (isString(argument) ? argument : isObject(argument) ? argument.database : undefined) ?? mongoModuleConfig.defaultDatabase;
 
-    const client = await resolveContainer.resolveAsync(MongoClient, connection);
+    const client = await context.resolveAsync(MongoClient, connection);
     return client.db(name) as any;
   }
 }, {
@@ -73,10 +73,10 @@ container.registerSingleton(Database, {
 });
 
 container.registerSingleton(Collection, {
-  useAsyncFactory: async (config, resolveContainer) => {
+  useAsyncFactory: async (config, context) => {
     assertDefined(config, 'mongo repository config resolve argument missing');
 
-    const database = await resolveContainer.resolveAsync(Database, config);
+    const database = await context.resolveAsync(Database, config);
     const existingCollections = await database.collections();
 
     for (const collection of existingCollections) {

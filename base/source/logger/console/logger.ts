@@ -20,8 +20,8 @@ const levelFuncMap: Record<LogLevel, (message: string) => void> = {
 
 @singleton<ConsoleLogger, LoggerArgument>({
   provider: {
-    useFactory: (parameters, container) => new ConsoleLogger(
-      (isObject(parameters) ? parameters.level : undefined) ?? container.resolve(LogLevel),
+    useFactory: (parameters, context) => new ConsoleLogger(
+      (isObject(parameters) ? parameters.level : undefined) ?? context.resolve(LogLevel),
       isObject(parameters) ? parameters.module : parameters,
       isObject(parameters) ? parameters.prefix : undefined
     )

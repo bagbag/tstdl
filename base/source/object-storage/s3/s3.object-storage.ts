@@ -14,7 +14,7 @@ import { S3ObjectStorageProvider } from './s3.object-storage-provider';
 
 @singleton({
   provider: {
-    useFactory: (argument, container) => container.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
+    useFactory: (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
   }
 })
 export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object> {

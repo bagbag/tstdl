@@ -26,8 +26,8 @@ const backoffOptions: BackoffOptions = {
 
 @singleton<MongoQueue, QueueArgument>({
   provider: {
-    useAsyncFactory: async (argument, container) => {
-      const provider = await container.resolveAsync(MongoQueueProvider);
+    useAsyncFactory: async (argument, context) => {
+      const provider = await context.resolveAsync(MongoQueueProvider);
 
       assertDefined(argument, 'queue resolve argument is missing');
 
