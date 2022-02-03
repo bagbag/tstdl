@@ -37,8 +37,6 @@ let mongoOidcStateRepositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcSt
 
 export function configureMongoInstanceProvider(
   options: {
-    defaultDatabase?: string,
-    defaultConnection?: MongoConnection,
     mongoLogPrefix?: string,
     repositoryLogPrefix?: string,
     mongoMigrationStateRepositoryConfig?: MongoRepositoryConfig<MigrationState>,
