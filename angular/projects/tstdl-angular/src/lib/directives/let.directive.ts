@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewCon
 import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
 import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable, Subscription } from 'rxjs';
-import { BehaviorSubject, catchError, distinctUntilChanged, EMPTY, from, isObservable, of, switchMap, tap } from 'rxjs';
+import { catchError, distinctUntilChanged, EMPTY, from, isObservable, of, ReplaySubject, switchMap, tap } from 'rxjs';
 
 export interface LetContext<T> {
   $implicit: LetOutput<T>;
@@ -19,11 +19,7 @@ type LetAsyncInput<T> =
   | PromiseLike<T>
   | ReadableStream<T>;
 
-type LetInput<T> =
-  | null
-  | undefined
-  | LetAsyncInput<T>
-  | T;
+type LetInput<T> = LetAsyncInput<T> | T;
 
 type LetOutput<T> = T extends LetAsyncInput<infer U> ? U : T;
 
@@ -36,11 +32,11 @@ export class LetDirective<T> implements OnDestroy {
   private readonly template: TemplateRef<LetContext<T>>;
   private readonly viewContainer: ViewContainerRef;
   private readonly changeDetector: ChangeDetectorRef;
-  private readonly inputSubject: BehaviorSubject<LetInput<T>>;
+  private readonly inputSubject: ReplaySubject<LetInput<T>>;
   private readonly subscription: Subscription;
-  private readonly viewContext: LetContext<T | null | undefined>;
+  private readonly viewContext: LetContext<T>;
 
-  private embeddedView: EmbeddedViewRef<LetContext<T | null | undefined>> | undefined;
+  private embeddedView: EmbeddedViewRef<LetContext<T>> | undefined;
 
   @Input() // eslint-disable-line accessor-pairs
   set tslLet(observableInput: LetInput<T>) {
@@ -52,11 +48,11 @@ export class LetDirective<T> implements OnDestroy {
     this.viewContainer = viewContainer;
     this.changeDetector = changeDetector;
 
-    this.inputSubject = new BehaviorSubject<LetInput<T>>(undefined);
+    this.inputSubject = new ReplaySubject<LetInput<T>>(1);
 
     this.viewContext = {
-      $implicit: undefined,
-      tslLet: undefined,
+      $implicit: undefined as any,
+      tslLet: undefined as any,
       isComplete: false,
       hasError: false,
       error: undefined
