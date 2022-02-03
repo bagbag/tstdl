@@ -120,7 +120,10 @@ export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): Pa
  */
 export function injectArg<T>(mapperOrKey?: Mapper<T> | keyof T): ParameterDecorator {
   function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
-    const mapperFunction: Mapper = isFunction(mapperOrKey) ? mapperOrKey : ((value: any) => (value as Record<any, unknown>)[mapperOrKey]);
+    const mapperFunction: Mapper = isFunction(mapperOrKey) ? mapperOrKey
+      : isDefined(mapperOrKey) ? ((value: T) => (value as Record<any, unknown>)[mapperOrKey])
+        : (value: T) => value;
+
     setParameterInjectArgumentMapper(target as Constructor, parameterIndex, mapperFunction);
   }
 

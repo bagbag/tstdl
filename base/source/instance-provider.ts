@@ -27,7 +27,6 @@ const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
 
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
-let imageServiceProvider: () => ImageService | Promise<ImageService> = deferThrow(new Error('ImageService not configured'));
 let messageBusProvider: () => MessageBusProvider | Promise<MessageBusProvider> = deferThrow(new Error('MessageBusProvider not configured'));
 
 let migrationLogPrefix = 'MIGRATION';
@@ -46,7 +45,6 @@ export function configureBaseInstanceProvider(
   options: {
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
-    imageServiceProvider?: () => ImageService | Promise<ImageService>,
     messageBusProvider?: () => MessageBusProvider | Promise<MessageBusProvider>,
     webServerPort?: number,
     httpApiUrlPrefix?: string,
@@ -61,7 +59,6 @@ export function configureBaseInstanceProvider(
 ): void {
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
-  imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
   messageBusProvider = options.messageBusProvider ?? messageBusProvider;
   webServerPort = options.webServerPort ?? webServerPort;
   httpApiUrlPrefix = options.httpApiUrlPrefix ?? httpApiUrlPrefix;
@@ -126,11 +123,11 @@ export async function getObjectStorage(module: string): Promise<ObjectStorage> {
 }
 
 export async function getImageService(): Promise<ImageService> {
-  return singleton(singletonScope, ImageService, imageServiceProvider);
+  return container.resolveAsync(ImageService);
 }
 
 export async function getMessageBusProvider(): Promise<MessageBusProvider> {
-  return singleton(singletonScope, MessageBusProvider, messageBusProvider);
+  return container.resolveAsync(MessageBusProvider);
 }
 
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {
