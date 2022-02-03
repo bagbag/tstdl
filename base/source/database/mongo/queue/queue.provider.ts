@@ -39,7 +39,7 @@ export function configureMongoQueue(jobRepositoryConfig: MongoRepositoryConfig<M
   defaultJobRepositoryConfig = jobRepositoryConfig;
 
   if (register) {
-    container.register(QueueProvider, { useToken: MongoQueueProvider });
-    container.register(Queue, { useToken: MongoQueue });
+    container.registerSingleton(QueueProvider, { useToken: MongoQueueProvider });
+    container.registerSingleton(Queue, { useToken: MongoQueue });
   }
 }

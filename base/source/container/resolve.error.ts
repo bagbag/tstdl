@@ -5,10 +5,10 @@ import { getChainString } from './utils';
 
 export class ResolveError extends CustomError {
   constructor(message: string, chain: ResolveChain, cause?: Error) {
-    const causeMessage = isDefined(cause) ? ` (cause: ${cause.message})` : '';
+    const causeMessage = isDefined(cause) ? `\n  cause: ${cause.message}` : '';
 
     super({
-      message: `${message}${causeMessage} - chain: ${getChainString(chain)}`,
+      message: `${message}${causeMessage}\n  chain: ${getChainString(chain)}`,
       cause
     });
   }

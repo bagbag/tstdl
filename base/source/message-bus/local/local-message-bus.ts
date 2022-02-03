@@ -1,4 +1,4 @@
-import { singleton } from '#/container';
+import { injectable } from '#/container';
 import { Logger } from '#/logger';
 import { assertStringPass } from '#/utils';
 import type { Observable } from 'rxjs';
@@ -8,13 +8,11 @@ import { MessageBusBase } from '../message-bus-base';
 import { LocalMessageBusProvider } from './local-message-bus-provider';
 import type { LocalMessageBusItem } from './types';
 
-@singleton({
+@injectable({
   provider: {
     useFactory: (argument, container) => {
-      const provider = container.resolve(LocalMessageBusProvider);
       const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');
-
-      return provider.get(channel);
+      return container.resolve(LocalMessageBusProvider).get(channel);
     }
   }
 })

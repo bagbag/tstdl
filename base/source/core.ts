@@ -53,10 +53,10 @@ export function configureTstdl(config: CoreConfiguration): void {
   loggerToken = config.loggerToken ?? loggerToken;
 }
 
-container.register<LogLevel, LogLevel>(
+container.registerSingleton<LogLevel, LogLevel>(
   LogLevel,
   { useFactory: (level) => level ?? LogLevel.Trace },
   { defaultArgumentProvider: () => logLevel }
 );
 
-container.register(Logger, { useTokenProvider: () => loggerToken });
+container.registerSingleton(Logger, { useTokenProvider: () => loggerToken });

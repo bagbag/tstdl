@@ -81,7 +81,7 @@ export function configureS3ObjectStorage(config: S3ObjectStorageProviderConfig, 
   container.register(S3_OBJECT_STORAGE_PROVIDER_CONFIG, { useValue: config });
 
   if (register) {
-    container.register(ObjectStorage, { useToken: S3ObjectStorage });
-    container.register(ObjectStorageProvider, { useToken: S3ObjectStorageProvider });
+    container.registerSingleton(ObjectStorageProvider, { useToken: S3ObjectStorageProvider });
+    container.registerSingleton(ObjectStorage, { useToken: S3ObjectStorage });
   }
 }

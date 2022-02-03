@@ -77,6 +77,6 @@ export function getElasticSearchIndexConfig<T extends Entity>(indexName: string)
   return container.resolve(ELASTIC_SEARCH_INDEX_CONFIG, indexName) as ElasticSearchIndexConfig<T>;
 }
 
-container.register<Client, ClientOptions>(Client, {
+container.registerSingleton<Client, ClientOptions>(Client, {
   useAsyncFactory: async (options) => getElasticClient(options)
 }, { defaultArgumentProvider: () => clientOptions });

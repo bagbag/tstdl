@@ -33,7 +33,7 @@ export function getChainString(chain: ResolveChain): string {
       chainString += `(${'_, '.repeat(node.index)}${getTokenName(node.token)}${', _'.repeat(node.parametersCount - node.index - 1)})`;
     }
     else {
-      chainString += `\n  -> ${getTokenName(node)}`;
+      chainString += `\n    -> ${getTokenName(node)}`;
     }
   }
 

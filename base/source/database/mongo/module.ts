@@ -32,7 +32,7 @@ export function configureMongo(config: Partial<MongoModuleConfig>): void {
 
 Mongo.Logger.setCurrentLogger((message, parameters) => mongoLogger.verbose(JSON.stringify({ message, parameters }, undefined, 2)));
 
-container.register(MongoClient, {
+container.registerSingleton(MongoClient, {
   useAsyncFactory: async (argument, resolveContainer) => {
     assertDefined(argument, 'mongo connection resolve argument missing');
 
@@ -55,7 +55,7 @@ container.register(MongoClient, {
   }
 }, { defaultArgumentProvider: () => mongoModuleConfig.defaultConnection });
 
-container.register(Database, {
+container.registerSingleton(Database, {
   useAsyncFactory: async (argument, resolveContainer) => {
     const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
     const name = isString(argument) ? argument : isObject(argument) ? argument.database : undefined;
@@ -65,7 +65,7 @@ container.register(Database, {
   }
 });
 
-container.register(Collection, {
+container.registerSingleton(Collection, {
   useAsyncFactory: async (config, resolveContainer) => {
     assertDefined(config, 'mongo repository config resolve argument missing');
 

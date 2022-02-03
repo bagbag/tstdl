@@ -208,4 +208,6 @@ function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
   return new SearchIndexError(error.type, error.reason, { raw, cause });
 }
 
-container.register(ELASTIC_SEARCH_INDEX_CONFIG, { useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') }) });
+container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
+  useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') })
+});

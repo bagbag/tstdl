@@ -41,7 +41,7 @@ export function configureMongoLock(lockRepositoryConfig: MongoRepositoryConfig<M
   lockEntityRepositoryConfig = lockRepositoryConfig;
 
   if (register) {
-    container.register(LockProvider, { useToken: MongoLockProvider });
+    container.registerSingleton(LockProvider, { useToken: MongoLockProvider });
     container.register(Lock, { useToken: MongoLock });
   }
 }

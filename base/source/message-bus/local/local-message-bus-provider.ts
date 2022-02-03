@@ -40,7 +40,7 @@ export class LocalMessageBusProvider extends MessageBusProvider {
  */
 export function configureLocalMessageBus(register: boolean): void {
   if (register) {
-    container.register(MessageBusProvider, { useToken: LocalMessageBusProvider });
+    container.registerSingleton(MessageBusProvider, { useToken: LocalMessageBusProvider });
     container.register(MessageBus, { useToken: LocalMessageBus });
   }
 }
