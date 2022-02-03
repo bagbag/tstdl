@@ -1,6 +1,12 @@
 import { firstValueFrom, mapTo, race, timer } from 'rxjs';
 import type { ReadonlyCancellationToken } from './cancellation-token';
 
+/** compatibility for consumers with typescript version less than 4.4 */
+interface IdleDeadline {
+  readonly didTimeout: boolean;
+  timeRemaining(): DOMHighResTimeStamp;
+}
+
 export async function timeout(milliseconds: number = 0): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
