@@ -1,9 +1,9 @@
 /* eslint-disable max-classes-per-file */
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
-import { isDefined } from '#/utils/type-guards';
-import type { ArgumentMapper, ArgumentProvider, ForwardRefInjectionToken, Lifecycle, RegistrationOptions } from './container';
-import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgumentMapper, setParameterInjectionToken, setParameterOptional, setParameterResolveArgumentProvider } from './container';
+import { isDefined, isFunction } from '#/utils/type-guards';
+import type { ArgumentProvider, ForwardRefInjectionToken, Lifecycle, Mapper, RegistrationOptions } from './container';
+import { container, registerTypeInfo, setParameterForwardArgumentMapper, setParameterForwardRefToken, setParameterInjectArgumentMapper, setParameterInjectionToken, setParameterMapper, setParameterOptional, setParameterResolveArgumentProvider } from './container';
 import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
@@ -69,14 +69,20 @@ export function scoped<T = any, P = any>(lifecycle: Simplify<TypedExtract<Lifecy
 /**
  * sets the token used to resolve the parameter
  * @param token token used for resolving
- * @param argument resolve parameter
+ * @param argument resolve argument
+ * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
  */
-export function inject<T, A>(token: InjectionToken<T, A>, argument?: A): ParameterDecorator {
+export function inject<T, A>(token: InjectionToken<T, A>, argument?: A, mapperOrKey?: Mapper<T> | keyof T): ParameterDecorator {
   function injectDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     setParameterInjectionToken(target as Constructor, parameterIndex, token);
 
     if (isDefined(argument)) {
       setParameterResolveArgumentProvider(target as Constructor, parameterIndex, () => argument);
+    }
+
+    if (isDefined(mapperOrKey)) {
+      const mapperFunction: Mapper = isFunction(mapperOrKey) ? mapperOrKey : ((value: any) => (value as Record<any, unknown>)[mapperOrKey]);
+      setParameterMapper(target as Constructor, parameterIndex, mapperFunction);
     }
   }
 
@@ -110,12 +116,12 @@ export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): Pa
 /**
  * injects the argument used for resolving the class
  * @param argument
+ * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
  */
-export function injectArg(): ParameterDecorator;
-export function injectArg<T, U>(mapper: ArgumentMapper<T, U>): ParameterDecorator;
-export function injectArg(mapper: ArgumentMapper = (value) => value): ParameterDecorator {
+export function injectArg<T>(mapperOrKey?: Mapper<T> | keyof T): ParameterDecorator {
   function injectArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
-    setParameterInjectArgumentMapper(target as Constructor, parameterIndex, mapper);
+    const mapperFunction: Mapper = isFunction(mapperOrKey) ? mapperOrKey : ((value: any) => (value as Record<any, unknown>)[mapperOrKey]);
+    setParameterInjectArgumentMapper(target as Constructor, parameterIndex, mapperFunction);
   }
 
   return injectArgDecorator;
@@ -126,8 +132,8 @@ export function injectArg(mapper: ArgumentMapper = (value) => value): ParameterD
  * @param mapper map the argument (for example to select a property instead of forwarding the whole object)
  */
 export function forwardArg(): ParameterDecorator;
-export function forwardArg<T, U>(mapper: ArgumentMapper<T, U>): ParameterDecorator;
-export function forwardArg(mapper: ArgumentMapper = (value) => value): ParameterDecorator {
+export function forwardArg<T, U>(mapper: Mapper<T, U>): ParameterDecorator;
+export function forwardArg(mapper: Mapper = (value) => value): ParameterDecorator {
   function forwardArgDecorator(target: object, _propertyKey: string | symbol, parameterIndex: number): void {
     setParameterForwardArgumentMapper(target as Constructor, parameterIndex, mapper);
   }
