@@ -1,13 +1,16 @@
 import type { InjectionToken } from './container';
-import { container } from './container';
+import { container, injectionToken } from './container';
 import { AsyncDisposer } from './disposable';
 import type { LoggerArgument } from './logger';
 import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { timeout } from './utils/timing';
 
+let coreLogPrefix = 'CORE';
 let logLevel = LogLevel.Debug;
 let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
+
+export const CORE_LOGGER = injectionToken<Logger>('CORE_LOGGER');
 
 export const disposer: AsyncDisposer = new AsyncDisposer();
 
@@ -37,21 +40,25 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
 }
 
 export async function disposeInstances(): Promise<void> {
-  const logger = await container.resolveAsync(Logger);
+  const logger = await container.resolveAsync(CORE_LOGGER);
 
   logger.info('shutting down');
   await disposer.dispose();
 }
 
 export type CoreConfiguration = {
+  coreLogPrefix?: string,
   logLevel?: LogLevel,
   loggerToken?: InjectionToken<Logger, LoggerArgument>
 };
 
 export function configureTstdl(config: CoreConfiguration): void {
+  coreLogPrefix = config.coreLogPrefix ?? coreLogPrefix;
   logLevel = config.logLevel ?? logLevel;
   loggerToken = config.loggerToken ?? loggerToken;
 }
+
+container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => coreLogPrefix });
 
 container.registerSingleton<LogLevel, LogLevel>(
   LogLevel,

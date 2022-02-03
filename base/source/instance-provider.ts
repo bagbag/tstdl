@@ -1,5 +1,6 @@
 import { HttpApi } from './api/http-api';
 import { container } from './container';
+import { CORE_LOGGER } from './core';
 import { DistributedLoopProvider } from './distributed-loop';
 import { HttpClient } from './http';
 import { ImageService } from './image-service';
@@ -24,8 +25,6 @@ const lockProviderToken = Symbol('lock-provider');
 const keyValueStoreProviderToken = Symbol('key-value-store-provider');
 const keyValueStoreSingletonScopeToken = Symbol('key-value-stores');
 
-let coreLogPrefix = 'CORE';
-
 let lockProviderProvider: () => LockProvider | Promise<LockProvider> = deferThrow(new Error('LockProvider not configured'));
 let keyValueStoreProviderProvider: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider> = deferThrow(new Error('KeyValueStoreProvider not configured'));
 let imageServiceProvider: () => ImageService | Promise<ImageService> = deferThrow(new Error('ImageService not configured'));
@@ -45,7 +44,6 @@ let webServerLogPrefix = 'WEBSERVER';
 
 export function configureBaseInstanceProvider(
   options: {
-    coreLoggerPrefix?: string,
     lockProviderProvider?: () => LockProvider | Promise<LockProvider>,
     keyValueStoreProviderProvider?: () => KeyValueStoreProvider | Promise<KeyValueStoreProvider>,
     imageServiceProvider?: () => ImageService | Promise<ImageService>,
@@ -61,7 +59,6 @@ export function configureBaseInstanceProvider(
     oidcStateRepositoryProvider?: () => OidcStateRepository | Promise<OidcStateRepository>
   }
 ): void {
-  coreLogPrefix = options.coreLoggerPrefix ?? coreLogPrefix;
   lockProviderProvider = options.lockProviderProvider ?? lockProviderProvider;
   keyValueStoreProviderProvider = options.keyValueStoreProviderProvider ?? keyValueStoreProviderProvider;
   imageServiceProvider = options.imageServiceProvider ?? imageServiceProvider;
@@ -87,7 +84,7 @@ export function getLogger(module: string): Logger {
 }
 
 export function getCoreLogger(): Logger {
-  return container.resolve(Logger, coreLogPrefix);
+  return container.resolve(CORE_LOGGER);
 }
 
 export function getLocalMessageBusProvider(): LocalMessageBusProvider {
