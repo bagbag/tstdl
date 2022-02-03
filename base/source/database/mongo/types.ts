@@ -8,7 +8,7 @@ export type MongoConnection = {
 } & Mongo.MongoClientOptions;
 
 export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
-  connection: MongoConnection,
+  connection?: MongoConnection,
   database?: string,
   collection: string,
   types?: { entity: T, database: TDb }
