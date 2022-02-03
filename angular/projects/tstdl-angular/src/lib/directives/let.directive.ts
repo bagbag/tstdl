@@ -1,18 +1,31 @@
 import type { EmbeddedViewRef, OnDestroy } from '@angular/core';
 import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { isNullOrUndefined, isUndefined } from '@tstdl/base/utils';
-import type { Observable, ObservableInput, Subscription } from 'rxjs';
-import { BehaviorSubject, catchError, distinctUntilChanged, EMPTY, from, of, switchMap, tap } from 'rxjs';
+import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
+import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
+import type { Observable, Subscription } from 'rxjs';
+import { BehaviorSubject, catchError, distinctUntilChanged, EMPTY, from, isObservable, of, switchMap, tap } from 'rxjs';
 
 export interface LetContext<T> {
-  $implicit: T;
-  tslLet: T;
+  $implicit: LetOutput<T>;
+  tslLet: LetOutput<T>;
   isComplete: boolean;
   hasError: boolean;
   error: any;
 }
 
-type LetInput<T> = ObservableInput<T> | null | undefined;
+type LetAsyncInput<T> =
+  | Observable<T>
+  | AsyncIterable<T>
+  | PromiseLike<T>
+  | ReadableStream<T>;
+
+type LetInput<T> =
+  | null
+  | undefined
+  | LetAsyncInput<T>
+  | T;
+
+type LetOutput<T> = T extends LetAsyncInput<infer U> ? U : T;
 
 @Directive({
   selector: '[tslLet]'
@@ -30,7 +43,7 @@ export class LetDirective<T> implements OnDestroy {
   private embeddedView: EmbeddedViewRef<LetContext<T | null | undefined>> | undefined;
 
   @Input() // eslint-disable-line accessor-pairs
-  set tslLet(observableInput: ObservableInput<T> | null | undefined) {
+  set tslLet(observableInput: LetInput<T>) {
     this.inputSubject.next(observableInput);
   }
 
@@ -55,7 +68,7 @@ export class LetDirective<T> implements OnDestroy {
         this.viewContext.hasError = false;
         this.viewContext.error = undefined;
 
-        return ((isNullOrUndefined(input) ? of(input) : from(input)) as Observable<T | null | undefined>).pipe(
+        return ((isAsyncInput(input) ? from(input) : of(input)) as Observable<LetOutput<T>>).pipe(
           tap({
             next: (value) => this.next(value),
             error: (error) => this.error(error),
@@ -78,7 +91,7 @@ export class LetDirective<T> implements OnDestroy {
     return true;
   }
 
-  next(value: T | null | undefined): void {
+  next(value: LetOutput<T>): void {
     this.viewContext.$implicit = value;
     this.viewContext.tslLet = value;
     this.updateEmbeddedView();
@@ -107,4 +120,11 @@ export class LetDirective<T> implements OnDestroy {
     this.inputSubject.complete();
     this.subscription.unsubscribe();
   }
+}
+
+function isAsyncInput<T>(value: any): value is LetAsyncInput<T> {
+  return isObservable(value)
+    || isAsyncIterable(value)
+    || isFunction((value as PromiseLike<any> | undefined)?.then) // eslint-disable-line @typescript-eslint/unbound-method
+    || isFunction((value as ReadableStream | undefined)?.getReader); // eslint-disable-line @typescript-eslint/unbound-method
 }
