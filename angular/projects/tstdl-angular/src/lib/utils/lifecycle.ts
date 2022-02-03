@@ -100,7 +100,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
       this._destroyToken = CancellationToken.fromObservable(this.destroySubject);
     }
 
-    return this._destroyToken.readonly;
+    return this._destroyToken.asReadonly;
   }
 
   // eslint-disable-next-line max-statements
@@ -190,7 +190,7 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
 
   observeChanges<Property extends ParentProperties<Parent>>(property: Property): Observable<TypedSimpleChange<Parent[Property]>> {
     return this.changes$.pipe(
-      filter((changes) => hasOwnProperty(changes, property)),
+      filter((changes) => hasOwnProperty(changes, property as keyof SimpleChanges)),
       map((changes) => changes[property as string]!)
     );
   }
