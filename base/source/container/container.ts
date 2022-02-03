@@ -15,7 +15,7 @@ type ResolveContext = {
   forwardRefs: Set<ForwardRef>,
   providedInstances: Map<InjectionToken, any>,
   instances: MultiKeyMap<[InjectionToken, any], any>,
-  resolving: Set<InjectionToken>
+  resolving: MultiKeyMap<[InjectionToken, any], true>
 };
 
 export type ArgumentMapper<T = unknown, U = any> = (argument: T) => U | Promise<U>;
@@ -189,7 +189,7 @@ export class Container {
       forwardRefs: new Set(),
       providedInstances: new Map(instances),
       instances: new MultiKeyMap(),
-      resolving: new Set()
+      resolving: new MultiKeyMap()
     };
 
     return this._resolve(token, false, argument, context, [token], true);
@@ -208,7 +208,7 @@ export class Container {
       forwardRefs: new Set(),
       providedInstances: new Map(instances),
       instances: new MultiKeyMap(),
-      resolving: new Set()
+      resolving: new MultiKeyMap()
     };
 
     return this._resolveAsync(token, false, argument, context, [token], true);
@@ -216,12 +216,6 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): T {
-    if (context.resolving.has(token)) {
-      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
-    }
-
-    context.resolving.add(token);
-
     if (chain.length > 10000) {
       throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
     }
@@ -265,6 +259,12 @@ export class Container {
     if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argumentIdentity)) {
       return registration.instances.get(argumentIdentity)!;
     }
+
+    if (context.resolving.has([token, argumentIdentity])) {
+      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
+    }
+
+    context.resolving.set([token, argumentIdentity], true);
 
     let instance!: T;
 
@@ -349,7 +349,7 @@ export class Container {
       context.resolutions.push({ instance, registration });
     }
 
-    context.resolving.delete(token);
+    context.resolving.delete([token, argumentIdentity]);
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
@@ -384,12 +384,6 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: ResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
-    if (context.resolving.has(token)) {
-      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
-    }
-
-    context.resolving.add(token);
-
     if (chain.length > 10000) {
       throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', truncateChain(chain, 15));
     }
@@ -425,6 +419,12 @@ export class Container {
     if ((registration.options.lifecycle == 'singleton') && registration.instances.has(argumentIdentity)) {
       return registration.instances.get(argumentIdentity)!;
     }
+
+    if (context.resolving.has([token, argumentIdentity])) {
+      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', truncateChain(chain, 15));
+    }
+
+    context.resolving.set([token, argumentIdentity], true);
 
     let instance!: T;
 
@@ -504,7 +504,7 @@ export class Container {
       context.resolutions.push({ instance, registration });
     }
 
-    context.resolving.delete(token);
+    context.resolving.delete([token, argumentIdentity]);
 
     if (isFirst) {
       for (const fn of context.forwardRefQueue.consume()) {
