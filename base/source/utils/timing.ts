@@ -1,8 +1,11 @@
 import { firstValueFrom, mapTo, race, timer } from 'rxjs';
 import type { ReadonlyCancellationToken } from './cancellation-token';
 
-/** compatibility for consumers with typescript version less than 4.4 */
-interface IdleDeadline {
+/**
+ * compatibility for consumers with typescript version less than 4.4
+ * @deprecated will be removed as it is available in typescripts dom lib
+ */
+export interface IdleDeadline {
   readonly didTimeout: boolean;
   timeRemaining(): DOMHighResTimeStamp;
 }
