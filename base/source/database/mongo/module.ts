@@ -1,7 +1,7 @@
 import { container } from '#/container';
 import { connect, disposer } from '#/core';
 import { Logger } from '#/logger';
-import { assertDefined, isString } from '#/utils/type-guards';
+import { assertDefined, isObject, isString } from '#/utils/type-guards';
 import * as Mongo from 'mongodb';
 import type { Entity } from '../entity';
 import { Collection, Database, MongoClient } from './classes';
@@ -10,13 +10,13 @@ import type { MongoConnection } from './types';
 
 export type MongoModuleConfig = {
   defaultConnection: MongoConnection,
-  defaultDatabase: string,
+  defaultDatabase: string | undefined,
   logPrefix: string
 };
 
 export const mongoModuleConfig: MongoModuleConfig = {
-  defaultConnection: { url: 'mongodb://localhost:27017' },
-  defaultDatabase: 'test-database',
+  defaultConnection: { url: 'mongodb://localhost:27017/test-db' },
+  defaultDatabase: undefined,
   logPrefix: 'MONGO'
 };
 
@@ -57,10 +57,8 @@ container.register(MongoClient, {
 
 container.register(Database, {
   useAsyncFactory: async (argument, resolveContainer) => {
-    assertDefined(argument, 'mongo database resolve argument missing');
-
-    const connection = isString(argument) ? mongoModuleConfig.defaultConnection : argument.connection;
-    const name = isString(argument) ? argument : argument.database;
+    const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
+    const name = isString(argument) ? argument : isObject(argument) ? argument.database : undefined;
 
     const client = await resolveContainer.resolveAsync(MongoClient, connection);
     return client.db(name) as any;

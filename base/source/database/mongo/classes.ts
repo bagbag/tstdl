@@ -9,7 +9,7 @@ import type { MongoConnection, MongoRepositoryConfig } from './types';
 export type MongoClientArgument = MongoConnection;
 
 /** database name */
-export type DatabaseArgument = string | { connection?: MongoConnection, database: string };
+export type DatabaseArgument = undefined | string | { connection?: MongoConnection, database?: string };
 
 export type CollectionArgument<T extends Entity = Entity, TDb extends Entity = T> = MongoRepositoryConfig<T, TDb>;
 

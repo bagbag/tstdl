@@ -9,7 +9,7 @@ export type MongoConnection = {
 
 export type MongoRepositoryConfig<T extends Entity, TDb extends Entity = T> = {
   connection: MongoConnection,
-  database: string,
+  database?: string,
   collection: string,
   types?: { entity: T, database?: TDb }
 };

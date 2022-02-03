@@ -57,7 +57,7 @@ export async function getMongoClient(connection?: MongoConnection): Promise<Mong
   return container.resolveAsync(MongoClient, connection);
 }
 
-export async function getMongoDatabase(database: string = mongoModuleConfig.defaultDatabase, connection: MongoConnection = mongoModuleConfig.defaultConnection): Promise<Mongo.Db> {
+export async function getMongoDatabase(database: string | undefined = mongoModuleConfig.defaultDatabase, connection: MongoConnection = mongoModuleConfig.defaultConnection): Promise<Mongo.Db> {
   return container.resolveAsync(Database, { connection, database });
 }
 
