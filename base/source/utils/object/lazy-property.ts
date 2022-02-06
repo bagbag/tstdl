@@ -1,5 +1,5 @@
 import type { IfUnknown } from '#/types';
-import { isDefined, isFunction, isObject } from '../type-guards';
+import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards';
 import { filterObject, hasOwnProperty } from './object';
 
 const lazyObjectValueSymbol = Symbol('LazyObjectValue');
@@ -96,7 +96,7 @@ export function lazyObject<T extends object>(initializers: { [P in keyof T]: Laz
     const valueIsFunction = isFunction(value);
     const valueIsObject = isObject(value);
 
-    if (!valueIsFunction && !valueIsObject) {
+    if ((!valueIsFunction && !valueIsObject) || isNullOrUndefined(value)) {
       object[key] = value;
       continue;
     }
@@ -115,7 +115,7 @@ export function lazyObject<T extends object>(initializers: { [P in keyof T]: Laz
     const hasValue = hasOwnProperty(definition, 'value');
 
     if ((Number(hasGetOrSet) + Number(hasInitializer) + Number(hasValue)) != 1) {
-      throw new Error(`at key "${key as string}": exactly one of value, initializer or get/set must be provided, but got none or multiple`);
+      throw new Error(`exactly one of value, initializer or get/set must be provided for key "${key as string}", but got none or multiple`);
     }
 
     const descriptor: LazyPropertyDescriptor = {

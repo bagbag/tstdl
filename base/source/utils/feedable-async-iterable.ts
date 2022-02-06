@@ -32,7 +32,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
 
   feed(item: T): void {
     if (this.closed) {
-      throw new Error('closed');
+      throw new Error('feedable is already closed');
     }
 
     this.buffer.add({ item, error: undefined });
@@ -44,7 +44,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
 
   throw(error: Error): void {
     if (this.closed) {
-      throw new Error('closed');
+      throw new Error('feedable is already closed');
     }
 
     this.buffer.add({ item: undefined, error });

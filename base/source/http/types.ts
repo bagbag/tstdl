@@ -182,7 +182,6 @@ export type HttpServerRequest<B extends HttpBodyType = HttpBodyType> = {
   url: URL,
   method: HttpMethod,
   headers: NormalizedHttpHeaders,
-  urlParameters: NormalizedHttpUrlParameters,
   query: NormalizedHttpQuery,
   ip: string,
   body: HttpBody<B>

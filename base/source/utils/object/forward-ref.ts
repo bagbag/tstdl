@@ -1,170 +1,116 @@
-/* eslint-disable @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-types */
 
-import { noop } from '../noop';
-import { assert, isDefined, isFunction, isNullOrUndefined } from '../type-guards';
+import type { Record } from '#/types';
+import { assert, isDefined, isUndefined } from '../type-guards';
+import type { LazyInitializerItem } from './lazy-property';
+import { lazyObject } from './lazy-property';
 
-export const hasRef: unique symbol = Symbol('ForwardRef.hasRef');
-export const getRef: unique symbol = Symbol('ForwardRef.getRef');
-export const setRef = Symbol('ForwardRef.setRef');
+declare const isForwardRef: unique symbol;
 
-const isForwardRef = Symbol('ForwardRef.isForwardRef');
+type ForwardRefContext<T extends object = object> = {
+  reference: T | undefined
+};
 
-export type ForwardRefOptions<T extends object> = {
+const contexts = new WeakMap<any, ForwardRefContext>();
+
+export type ForwardRefOptions<T extends object = object> = {
   reference?: T,
   initializer?: () => T
 };
 
-export class ForwardRef<T extends object = any> {
-  get [hasRef](): boolean {
-    throw new Error('that\'s a bug or invalid usage! This should not happen...');
+export type ForwardRef<T extends object = object> = T & { [isForwardRef]: true };
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
+export const ForwardRef = {
+  create<T extends object>(options?: ForwardRefOptions<T>): ForwardRef<T> {
+    const context = getContext(options);
+    const forwardRef = getForwardRefProxy<T>(context);
+    contexts.set(forwardRef, context);
+
+    return forwardRef;
+  },
+
+  isForwardRef<T extends object = object>(value: any): value is ForwardRef<T> {
+    return contexts.has(value);
+  },
+
+  hasRef<T extends object>(forwardRef: ForwardRef<T> | T): boolean {
+    const reference = contexts.get(forwardRef)?.reference;
+    return isDefined(reference);
+  },
+
+  deref<T extends object>(forwardRef: ForwardRef<T> | T): T {
+    assert(ForwardRef.isForwardRef(forwardRef), 'provided value is not a ForwardRef');
+    assert(ForwardRef.hasRef(forwardRef), 'ForwardRef has no reference');
+
+    return contexts.get(forwardRef)!.reference as T;
+  },
+
+  tryDeref<T extends object>(forwardRef: ForwardRef<T> | T): T | undefined {
+    assert(ForwardRef.isForwardRef(forwardRef), 'provided value is not a ForwardRef');
+
+    return contexts.get(forwardRef) as T | undefined;
+  },
+
+  setRef<T extends object>(forwardRef: ForwardRef<T> | T, reference: T | undefined): void {
+    assert(ForwardRef.isForwardRef(forwardRef), 'provided value is not a ForwardRef');
+
+    contexts.get(forwardRef)!.reference = reference;
   }
+};
 
-  constructor(options?: ForwardRefOptions<T>) {
-    // eslint-disable-next-line no-constructor-return
-    return getForwardRefProxy(options);
-  }
+const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
+  apply: true,
+  construct: true,
+  defineProperty: true,
+  deleteProperty: true,
+  get: true,
+  getOwnPropertyDescriptor: true,
+  getPrototypeOf: true,
+  has: true,
+  isExtensible: true,
+  ownKeys: true,
+  preventExtensions: true,
+  set: true,
+  setPrototypeOf: true
+};
 
-  static create<T extends object>(options?: ForwardRefOptions<T>): ForwardRef<T> & T {
-    const forwardReference = new ForwardRef(options) as (ForwardRef<T> & T);
-    return forwardReference;
-  }
+const reflectMethods = Object.keys(reflectMethodsMap) as unknown as (keyof typeof reflectMethodsMap)[];
+const propertyReflectMethods = new Set<keyof ProxyHandler<object>>(['defineProperty', 'deleteProperty', 'get', 'getOwnPropertyDescriptor', 'has', 'set']);
 
-  static isForwardRef<T extends object = object>(value: any): value is (ForwardRef<T> & T) {
-    return isFunction(value) && (isForwardRef in value);
-  }
-
-  static deref<T extends object>(forwardRef: ForwardRef<T>): T;
-  static deref<T extends object>(forwardRef: T): T;
-  static deref<T extends object>(forwardRef: ForwardRef<T>): T {
-    assert(ForwardRef.isForwardRef(forwardRef), 'object is not a ForwardRef');
-    assert(forwardRef[hasRef], 'ForwardRef is not initialized');
-    return forwardRef[getRef]() as T;
-  }
-
-  static tryDeref<T extends object>(forwardRef: ForwardRef<T>): T | undefined;
-  static tryDeref<T extends object>(forwardRef: T): T | undefined;
-  static tryDeref<T extends object>(forwardRef: ForwardRef<T>): T | undefined {
-    assert(ForwardRef.isForwardRef(forwardRef), 'object is not a ForwardRef');
-    return forwardRef[getRef]() as T | undefined;
-  }
-
-  [getRef](): this | undefined {
-    throw new Error('that\'s a bug or invalid usage! This should not happen...');
-  }
-
-  [setRef](reference: T): this;
-  [setRef](): this {
-    throw new Error('that\'s a bug or invalid usage! This should not happen...');
-  }
-}
-
-// eslint-disable-next-line max-lines-per-function
-function getForwardRefProxy<T extends object>(options: ForwardRefOptions<T> = {}): ForwardRef<T> {
-  const { reference: initialReference, initializer } = options;
-
-  let reference: any;
-  let initialized = false;
-
-  let initialize = (): void => {
-    if (!initialized && isDefined(initializer)) {
-      refSetter(initializer());
-    }
-
-    initialize = noop;
-  };
-
+function getForwardRefProxy<T extends object>(context: ForwardRefContext): ForwardRef<T> {
   function forwardRef(): void { /* noop */ }
 
-  const proxy = new Proxy(forwardRef as any, {
-    apply(_target: T, _thisArg: any, args: any[]): any {
-      initialize();
-      return new reference(...args);
-    },
-    construct(_target: T, args: any[], newTarget: Function): object {
-      initialize();
+  const handler: ProxyHandler<T> = {};
 
-      const instance = new reference(...args);
-      Object.setPrototypeOf(instance, newTarget.prototype);
+  for (const method of reflectMethods) {
+    handler[method] = {
+      [method](_originalTarget: T, ...args: any[]): any { // eslint-disable-line @typescript-eslint/no-loop-func
+        if (isUndefined(context.reference)) {
+          const message = propertyReflectMethods.has(method)
+            ? `cannot forward "${method}" to property "${(args[0] as PropertyKey).toString()}" on a ForwardRef which has no reference`
+            : `cannot forward "${method}" on a ForwardRef which has no reference`;
 
-      return instance;
-    },
-    defineProperty(_target: T, property: string | symbol, attributes: PropertyDescriptor): boolean {
-      initialize();
-      return Object.defineProperty(reference, property, attributes);
-    },
-    deleteProperty(_target: T, property: string | symbol): boolean {
-      initialize();
-      return (delete reference[property]);
-    },
-    get(_target: T, property: string | symbol, _receiver: any): any {
-      initialize();
+          throw new Error(message);
+        }
 
-      switch (property) {
-        case hasRef:
-          return initialized;
-
-        case getRef:
-          return refGetter;
-
-        case setRef:
-          return refSetter;
-
-        default:
-          return reference?.[property];
+        return (Reflect[method] as Function)(context.reference, ...args);
       }
-    },
-    getOwnPropertyDescriptor(_target: T, property: string | symbol): PropertyDescriptor | undefined {
-      initialize();
-      return Object.getOwnPropertyDescriptor(reference, property);
-    },
-    getPrototypeOf(_target: T): object | null {
-      initialize();
-      return isNullOrUndefined(reference) ? null : Object.getPrototypeOf(reference);
-    },
-    has(_target: T, property: string | symbol): boolean {
-      initialize();
+    }[method];
+  }
 
-      if (property == isForwardRef) {
-        return true;
-      }
+  return new Proxy(forwardRef as any, handler) as ForwardRef<T>;
+}
 
-      return property in reference;
-    },
-    isExtensible(_target: T): boolean {
-      initialize();
-      return Object.isExtensible(reference);
-    },
-    ownKeys(_target: T): ArrayLike<string | symbol> {
-      initialize();
-      return Reflect.ownKeys(reference);
-    },
-    preventExtensions(_target: T): boolean {
-      initialize();
-      return Object.preventExtensions(reference);
-    },
-    set(_target: T, property: string | symbol, value: any, _receiver: any): boolean {
-      initialize();
-      return (reference[property] = value);
-    },
-    setPrototypeOf(_target: T, value: object | null): boolean {
-      initialize();
-      return Object.setPrototypeOf(reference, value);
-    }
+function getContext(options?: ForwardRefOptions): ForwardRefContext {
+  const reference: LazyInitializerItem<ForwardRefContext, 'reference'> = isDefined(options?.reference)
+    ? { value: options?.reference }
+    : isDefined(options?.initializer)
+      ? { initializer: options?.initializer }
+      : { value: undefined };
+
+
+  return lazyObject<ForwardRefContext>({
+    reference
   });
-
-  function refGetter(): any {
-    return reference;
-  }
-
-  function refSetter(newReference: T): ForwardRef<T> {
-    reference = newReference;
-    initialized = true;
-    return proxy;
-  }
-
-  if (isDefined(initialReference)) {
-    refSetter(initialReference);
-  }
-
-  return proxy;
 }

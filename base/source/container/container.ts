@@ -1,8 +1,7 @@
 import { CircularBuffer, MultiKeyMap } from '#/data-structures';
 import type { Constructor, Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
-import { ForwardRef, setRef } from '#/utils/object/forward-ref';
-import { getParameterTypes } from '#/utils/reflection';
+import { ForwardRef } from '#/utils/object/forward-ref';
 import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
 import { ResolveError } from './resolve.error';
 import type { AfterResolve, Injectable, InjectableArgument, InjectionToken, Provider, ResolveChain, ResolveContext } from './types';
@@ -32,20 +31,36 @@ export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<
  */
 export type Lifecycle = 'transient' | 'singleton' | 'resolution';
 
-export type ParameterTypeInfo = {
-  token: InjectionToken,
-  optional?: boolean,
+export type InjectMetadata = {
+  /** token from reflection metadata */
+  token?: InjectionToken,
+
+  /** token overwrite by inject decorator */
   injectToken?: InjectionToken,
+
+  /** if defined, resolve the ForwardRefToken using ForwardRef strategy instead resolving the token */
+  forwardRefToken?: ForwardRefInjectionToken,
+
+  /** whether injection is optional if token is not registered. Set by optional decorator */
+  optional?: boolean,
+
+  /** mapper to map resolved value */
   mapper?: Mapper,
+
+  /** provider to get resolve argument */
   resolveArgumentProvider?: ArgumentProvider,
+
+  /** if defined, map the resolve argument and use the returned value as the value to inject */
   injectArgumentMapper?: Mapper,
-  forwardArgumentMapper?: Mapper,
-  forwardRefToken?: ForwardRefInjectionToken
+
+  /** if defined, use the provided argument, map it and pass it to the resolution of the token */
+  forwardArgumentMapper?: Mapper
 };
 
 export type TypeInfo = {
   constructor: Constructor,
-  parameters: ParameterTypeInfo[]
+  parameters: InjectMetadata[],
+  properties: Record<PropertyKey, InjectMetadata>
 };
 
 export type RegistrationOptions<T, A = unknown> = {
@@ -78,68 +93,43 @@ export type Registration<T = any, A = any> = {
   instances: Map<any, T>
 };
 
-const typeInfos = new Map<Constructor, TypeInfo>();
+export const typeInfos = new Map<Constructor, TypeInfo>();
 
-function getOrCreateRegistration(constructor: Constructor): TypeInfo {
-  if (!typeInfos.has(constructor)) {
-    const parameterTypes: any[] = getParameterTypes(constructor) ?? [];
-
-    const registration: TypeInfo = {
-      constructor,
-      parameters: parameterTypes.map((type): ParameterTypeInfo => ({ token: type }))
-    };
-
-    typeInfos.set(constructor, registration);
-  }
-
-  return typeInfos.get(constructor)!;
-}
-
-export function registerTypeInfo(constructor: Constructor): TypeInfo {
-  return getOrCreateRegistration(constructor);
-}
-
-export function getTypeInfo(constructor: Constructor): TypeInfo {
-  return assertDefinedPass(typeInfos.get(constructor), 'constructor not registered');
+export function hasTypeInfo(constructor: Constructor): boolean {
+  return typeInfos.has(constructor);
 }
 
 export function setTypeInfo(constructor: Constructor, typeInfo: TypeInfo): void {
   typeInfos.set(constructor, typeInfo);
 }
 
-export function setParameterInjectionToken(constructor: Constructor, parameterIndex: number, token: InjectionToken): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).injectToken = token;
+export function getTypeInfo(constructor: Constructor, createIfMissing: boolean = false): TypeInfo {
+  if (createIfMissing && !typeInfos.has(constructor)) {
+    const typeInfo: TypeInfo = {
+      constructor,
+      parameters: [],
+      properties: {}
+    };
+
+    typeInfos.set(constructor, typeInfo);
+  }
+
+  return assertDefinedPass(typeInfos.get(constructor), 'constructor not registered');
 }
 
-export function setParameterForwardRefToken(constructor: Constructor, parameterIndex: number, forwardRefToken: ForwardRefInjectionToken): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).forwardRefToken = forwardRefToken;
-}
+export function getInjectMetadata(target: object, propertyKey: PropertyKey | undefined, parameterIndex: number | undefined, createIfMissing: boolean = false): InjectMetadata {
+  const constructor = (((target as Constructor).prototype ?? target) as { constructor: Constructor }).constructor;
+  const typeInfo = getTypeInfo(constructor, createIfMissing); // getOrCreateRegistration(constructor as Constructor);
 
-export function setParameterResolveArgumentProvider(constructor: Constructor, parameterIndex: number, argumentProvider: ArgumentProvider): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).resolveArgumentProvider = argumentProvider;
-}
+  if (isDefined(propertyKey)) {
+    return (typeInfo.properties[propertyKey] ?? (typeInfo.properties[propertyKey] = {}));
+  }
 
-export function setParameterMapper(constructor: Constructor, parameterIndex: number, mapper: Mapper): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).mapper = mapper;
-}
+  if (isDefined(parameterIndex)) {
+    return (typeInfo.parameters[parameterIndex] ?? (typeInfo.parameters[parameterIndex] = {}));
+  }
 
-export function setParameterInjectArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: Mapper): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).injectArgumentMapper = mapper;
-}
-
-export function setParameterForwardArgumentMapper(constructor: Constructor, parameterIndex: number, mapper: Mapper): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).forwardArgumentMapper = mapper;
-}
-
-export function setParameterOptional(constructor: Constructor, parameterIndex: number): void {
-  const registration = getOrCreateRegistration(constructor);
-  assertDefinedPass(registration.parameters[parameterIndex]).optional = true;
+  throw new Error('neither propertyKey nor parameterIndex provided');
 }
 
 export class Container {
@@ -313,14 +303,14 @@ export class Container {
             }
 
             const resolved = this._resolve(forwardToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
-            forwardRef[setRef](resolved as object);
+            ForwardRef.setRef(forwardRef, resolved);
           });
 
           context.forwardRefs.add(forwardRef);
           return forwardRef;
         }
 
-        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        const parameterToken = (parameterInfo.injectToken ?? parameterInfo.token)!;
         const resolved = this._resolve(parameterToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
         return isDefined(parameterInfo.mapper) ? parameterInfo.mapper(resolved) : resolved;
       });
@@ -469,14 +459,14 @@ export class Container {
             }
 
             const resolved = await this._resolveAsync(forwardToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: forwardToken }, forwardToken], false);
-            forwardRef[setRef](resolved as object);
+            ForwardRef.setRef(forwardRef, resolved);
           });
 
           context.forwardRefs.add(forwardRef);
           return forwardRef;
         }
 
-        const parameterToken = parameterInfo.injectToken ?? parameterInfo.token;
+        const parameterToken = (parameterInfo.injectToken ?? parameterInfo.token)!;
         const resolved = this._resolveAsync(parameterToken, parameterInfo.optional, parameterResolveArgument, context, [...chain, { parametersCount: typeInfo.parameters.length, index, token: parameterToken }, parameterToken], false);
         return isDefined(parameterInfo.mapper) ? parameterInfo.mapper(resolved) : resolved;
       }));

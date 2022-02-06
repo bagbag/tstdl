@@ -227,7 +227,6 @@ export class HttpApi {
       url: context.URL,
       method: convertMethod(context.request.method),
       headers: context.req.headers as NormalizedHttpHeaders,
-      urlParameters: params,
       query: query as NormalizedHttpQuery,
       ip: context.request.ip,
       body

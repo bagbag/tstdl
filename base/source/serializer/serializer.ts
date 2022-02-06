@@ -2,7 +2,7 @@
 
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import type { Constructor, StringMap } from '#/types';
-import { ForwardRef, getRef, setRef } from '#/utils/object/forward-ref';
+import { ForwardRef } from '#/utils/object/forward-ref';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
 import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
@@ -237,7 +237,7 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
             throw new Error(`non-primitive type ${nonPrimitiveType} not registered`);
           }
 
-          const forwardRef = new ForwardRef();
+          const forwardRef = ForwardRef.create();
           references.set(path, forwardRef);
 
           deserializeQueue.add(() => {
@@ -245,13 +245,13 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
 
             deserializeQueue.add(() => {
               const deserialized = registration.deserializer(deserializedData, tryAddToDerefQueue);
-              forwardRef[setRef](deserialized as object);
+              ForwardRef.setRef(forwardRef, deserialized);
             });
           });
 
           if (isFirst) {
             drainQueues(deserializeQueue, derefQueue);
-            return forwardRef[getRef]();
+            return ForwardRef.deref(forwardRef);
           }
 
           return forwardRef;
@@ -314,7 +314,7 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
     }
 
     derefQueue.add(() => {
-      const dereferenced = value[getRef]();
+      const dereferenced = ForwardRef.deref(value);
       callback(dereferenced);
     });
 

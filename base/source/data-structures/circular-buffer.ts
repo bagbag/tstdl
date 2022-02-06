@@ -181,7 +181,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   /**
    * yields all items from the buffer, removes them and waits fore more
    * @param cancellationToken token to cancel iteration
-   * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately
+   * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately when {@link cancellationToken} is set
    * @returns
    */
   async *consumeAsync(cancellationToken: ReadonlyCancellationToken = new CancellationToken(), yieldOutstandingItems: boolean = true): AsyncIterable<T> {

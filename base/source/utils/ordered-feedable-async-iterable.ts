@@ -29,7 +29,7 @@ export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterab
 
   feed(item: T, index: number): void {
     if (this.out.closed) {
-      throw new Error('closed');
+      throw new Error('feedable is already closed');
     }
 
     this.inBuffer.set(index, item);

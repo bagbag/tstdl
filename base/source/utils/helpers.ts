@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { MultiKeyMap } from '#/data-structures';
-import { HttpError } from '#/http';
-import { decodeJsonPath } from '#/json-path';
+import { HttpError } from '#/http/http.error';
 import { DetailsError } from '../error';
-import type { DeepArray, DeepFlatten, DeepNonNullable, Record, StringMap } from '../types';
-import { currentTimestamp } from './date-time';
+import type { DeepArray, Record, StringMap } from '../types';
 import { hasOwnProperty } from './object';
-import { assertString, assertStringPass, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
+import { isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
 
@@ -91,40 +88,6 @@ export function clone<T>(object: T, deep: boolean): T {
   }
 
   return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, clone(value, true)] as const)) as T;
-}
-
-type DidNotRun = symbol;
-export const didNotRun: DidNotRun = Symbol('did-not-run');
-
-export function throttleFunction<Args extends any[], ReturnValue>(func: (...args: Args) => ReturnValue, interval: number, queue: boolean = false): (...args: Args) => (ReturnValue | DidNotRun) {
-  let lastCall = 0;
-  let pending = false;
-  let nextArgs: Args;
-
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const throttled = (...args: Args) => {
-    const nextAllowedCall = lastCall + interval;
-    const now = currentTimestamp(); // eslint-disable-line no-shadow
-
-    if (now >= nextAllowedCall) {
-      pending = false;
-      lastCall = now;
-      return func(...args);
-    }
-    else if (queue) {
-      nextArgs = args;
-
-      if (!pending) {
-        const delay = nextAllowedCall - now;
-        setTimeout(() => throttled(...nextArgs), delay);
-        pending = true;
-      }
-    }
-
-    return didNotRun;
-  };
-
-  return throttled;
 }
 
 export function formatDuration(milliseconds: number, precision: number): string {
@@ -244,180 +207,6 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
 
 export function select<T extends Record, K extends keyof T>(key: K): (item: T) => T[K] {
   return (item: T) => item[key];
-}
-
-export const propertyName = Symbol('PropertyName');
-export const cast = Symbol('cast');
-
-export type PropertyName = { [propertyName]: string };
-export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
-export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]: <U extends T>() => PropertyNameProxyChild<U> };
-export type PropertyNameOfExpressionObject<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfExpressionObject<T[P]> & { [cast]: <U extends T[P]>() => PropertyNameOfExpressionObject<U> } };
-export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfExpressionObject<U> } };
-
-export function isPropertyName(value: any): value is PropertyName {
-  return isDefined((value as PropertyName | undefined)?.[propertyName]);
-}
-
-/**
- * get the path to a property
- *
- * @param options.deep whether to return the whole path to the property or just the last property
- * @param options.flat ignore array accesses (properties consiting only of numbers)
- * @param options.prefix name prefix
- *
- * @example
- * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils';
- *
- * const name = getPropertyNameProxy<MyType>().foo.bar[propertyName];
- *
- * name == 'foo.bar' // true
- */
-export function getPropertyNameProxy<T extends Record = Record>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
-  const { deep = true, flat = false, prefix } = options;
-
-  const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
-    get: (_target, property): any => {
-      if (property == propertyName) {
-        return prefix;
-      }
-
-      if (property == cast) {
-        return () => proxy;
-      }
-
-      assertString(property, `property must be a string, but was ${property.toString()}`);
-
-      const ignore = (flat && (/\d+/u).test(property));
-
-      if (ignore) {
-        return proxy;
-      }
-
-      if (deep) {
-        return getPropertyNameProxy({ deep, flat, prefix: isUndefined(prefix) ? property : `${prefix}.${property}` });
-      }
-
-      return getPropertyNameProxy({ deep, flat, prefix: property });
-    }
-  });
-
-  return proxy;
-}
-
-/**
- * get the path to a property
- * @param expression property selection expression
- * @param options.deep whether to return the whole path to the property or just the last property
- * @returns property name
- */
-export function propertyNameOf<T extends Record = Record>(expression: (instance: PropertyNameOfExpressionObject<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy<T>({ deep: options.deep, flat: false }) as PropertyNameOfExpressionObject<T>) as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
-  return assertStringPass(name, 'invalid expression');
-}
-
-/**
- * get the flat path to a property (flat = ignore array accesses (properties only consisting of numbers))
- * @param expression property selection expression
- * @param options.deep whether to return the whole path to the property or just the last property
- * @returns property name
- */
-export function flatPropertyNameOf<T extends Record = Record>(expression: (instance: FlatPropertyNameOfExpressionObject<T>) => any, options: { deep?: boolean } = {}): string {
-  const name = (expression(getPropertyNameProxy({ deep: options.deep, flat: true }) as FlatPropertyNameOfExpressionObject<T>) as unknown as (PropertyNameProxyChild<any> | undefined))?.[propertyName];
-  return assertStringPass(name, 'invalid expression');
-}
-
-/**
- * compiles a dereferencer for a specific reference
- * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
- * @returns referenced value
- */
-export function compileDereferencer(reference: string): (object: object) => unknown {
-  const nodes = decodeJsonPath(reference);
-
-  function dereferencer(object: object): unknown {
-    let target = object;
-
-    for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
-      target = (target as StringMap)[nodes[i]!];
-    }
-
-    return target;
-  }
-
-  return dereferencer;
-}
-
-/**
- * dereference a reference
- *
- * @description useful if you dereference a reference a few times at most
- *
- * also take a look at {@link getCachedDereference} and {@link compileDereferencer} if you need to dereference multiple times
- * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
- * @returns referenced value
- */
-export function dereference(object: object, reference: string): unknown {
-  return compileDereferencer(reference)(object);
-}
-
-/**
- * cached version of {@link dereference}. It caches the internally used dereferencer, but it does *not* cache the referenced value
- *
- * @description
- * useful if you dereference multiple references, each multiple times
- *
- * also take a look at {@link dereference} and {@link compileDereferencer} for other use cases
- * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
- * @returns referenced value
- */
-export function getCachedDereference(): typeof dereference {
-  const memoizedDereferencer = memoizeSingle(compileDereferencer);
-
-  function cachedDereference(object: object, reference: string): unknown {
-    return memoizedDereferencer(reference)(object);
-  }
-
-  return cachedDereference;
-}
-
-/** memoizes a function with an arbitrary number of parameters. If you only need a single parameter, {@link memoizeSingle} is faster */
-export function memoize<Fn extends (...parameters: any[]) => T, T>(fn: Fn): Fn {
-  const cache = new MultiKeyMap<any, T>();
-
-  function memoized(...parameters: Parameters<Fn>): T {
-    if (cache.has(parameters)) {
-      return cache.get(parameters)!;
-    }
-
-    const result = fn(...parameters);
-    cache.set(parameters, result);
-
-    return result;
-  }
-
-  return memoized as Fn;
-}
-
-/** memoizes a function with a single parameter. Faster than {@link memoize} */
-export function memoizeSingle<Fn extends (parameters: any) => T, T>(fn: Fn): Fn {
-  const cache = new Map<any, T>();
-
-  function memoized(parameters: Parameters<Fn>): T {
-    if (cache.has(parameters)) {
-      return cache.get(parameters)!;
-    }
-
-    const result = fn(parameters);
-    cache.set(parameters, result);
-
-    return result;
-  }
-
-  return memoized as Fn;
 }
 
 export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {

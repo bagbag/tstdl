@@ -24,6 +24,12 @@ export type EnsureTypeOptions = Coercible;
 export abstract class SchemaValidator<T extends Schema = Schema> {
   readonly schema: T;
 
+  /** used for type inference only */
+  readonly inputType: SchemaInput<T>;
+
+  /** used for type inference only */
+  readonly outputType: SchemaOutput<T>;
+
   constructor(schema: T) {
     this.schema = schema;
   }

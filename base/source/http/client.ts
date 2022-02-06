@@ -333,7 +333,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
     url = new URL(request.url, baseUrl);
   }
   else {
-    const { parsedUrl, parametersRest } = buildUrl(request.url, request.parameters, { separator: request.urlParametersSeparator });
+    const { parsedUrl, parametersRest } = buildUrl(request.url, request.parameters, { arraySeparator: request.urlParametersSeparator });
 
     url = new URL(parsedUrl, baseUrl);
     parameterEntries = new Set(Object.entries(parametersRest));

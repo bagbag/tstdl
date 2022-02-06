@@ -1,8 +1,8 @@
-import type { UndefinableJsonObject, UndefinableJsonPrimitive } from '../types';
-import { singleton } from './singleton';
+import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types';
+import { memoizeSingle } from './function/memoize';
 import { isArray, isDefined, isNull, isObject, isUndefined } from './type-guards';
 
-enum UrlBuilderPartType {
+const enum UrlBuilderPartType {
   Literal = 0,
   Parameter = 1
 }
@@ -14,10 +14,9 @@ type UrlBuilderPart = {
 
 export type UrlBuilderParameterValue = UndefinableJsonPrimitive;
 export type UrlBuilderParameters = UndefinableJsonObject;
-export type UrlBuilderOptions = { separator?: string };
+export type UrlBuilderOptions = { arraySeparator?: string };
 export type UrlBuilderResult = { parsedUrl: string, parametersRest: UrlBuilderParameters };
 
-const builderScope = Symbol('url-builder cache');
 const urlParseRegex = /([^:]+|:\/+)|:([\w-]+)/ug;
 const isFullUrlRegex = /^\w+:\/\//u;
 
@@ -43,14 +42,11 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
     else if (isDefined(parameter)) {
       parts.push({ type: UrlBuilderPartType.Parameter, value: parameter });
     }
-    else {
-      throw new Error('something went wrong');
-    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  return function buildUrl(parameters: UrlBuilderParameters = {}, { separator = ',' }: UrlBuilderOptions = {}): UrlBuilderResult {
+  function buildUrlCompiled(parameters: UrlBuilderParameters = {}, { arraySeparator = ',' }: UrlBuilderOptions = {}): UrlBuilderResult {
     let parsedUrl = '';
+    let value: UndefinableJson | undefined;
     let parametersRest = parameters;
 
     for (const part of parts) {
@@ -58,8 +54,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
         parsedUrl += part.value;
       }
       else {
-        const { [part.value]: value, ...rest } = parametersRest;
-        parametersRest = rest;
+        ({ [part.value]: value, ...parametersRest } = parametersRest);
 
         if (isUndefined(value)) {
           throw new Error(`url parameter ${part.value} not provided`);
@@ -69,15 +64,19 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
           throw new Error(`url parameter ${part.value} is a object`);
         }
 
-        parsedUrl += isArray(value) ? value.join(separator) : (isNull(value) ? '[[null]]' : value.toString());
+        parsedUrl += isArray(value) ? value.join(arraySeparator) : (isNull(value) ? '[[null]]' : value.toString());
       }
     }
 
     return { parsedUrl, parametersRest };
-  };
+  }
+
+  return buildUrlCompiled;
 }
 
+const memoizedCompileUrlBuilder = memoizeSingle(compileUrlBuilder);
+
 export function buildUrl(url: string, parameters: UrlBuilderParameters = {}, options?: UrlBuilderOptions): UrlBuilderResult {
-  const builder = singleton(builderScope, url, () => compileUrlBuilder(url));
+  const builder = memoizedCompileUrlBuilder(url);
   return builder(parameters, options);
 }
