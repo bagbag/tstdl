@@ -23,16 +23,6 @@ export interface AfterResolve {
 
 export type InjectableArgument<T, Fallback> = T extends Injectable<infer A> ? A : Fallback;
 
-export type ResolveChainParameterNode = {
-  parametersCount: number,
-  index: number,
-  token: InjectionToken
-};
-
-export type ResolveChainNode = InjectionToken | ResolveChainParameterNode | undefined;
-
-export type ResolveChain = ResolveChainNode[];
-
 export type ParameterizedInjectionToken<T, A> = SimpleInjectionToken<T> & { [parameter]?: A };
 
 export type SimpleInjectionToken<T> = Constructor<T> | Function | object | string | symbol;

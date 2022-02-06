@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
 import type { StringMap } from '@tstdl/base/types';
-import type { PropertyName } from '@tstdl/base/utils';
-import { assertDefinedPass, getPropertyNameProxy, isFunction, isNotNull, isObject, isPropertyName, isString, isUndefined, propertyName } from '@tstdl/base/utils';
-import { deepEntries } from '@tstdl/base/utils/object';
+import { assertDefinedPass, isFunction, isNotNull, isObject, isString, isUndefined } from '@tstdl/base/utils';
+import type { PropertyName } from '@tstdl/base/utils/object';
+import { deepEntries, getPropertyNameProxy, isPropertyName, propertyName } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -30,8 +30,8 @@ declare const parametersSymbol: unique symbol;
 export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]: Parameters };
 
 export type LocalizationData<Parameters = any> =
-  LocalizationKey<void>
-  | { key: LocalizationKey<void>, parameters?: void }
+  LocalizationKey
+  | { key: LocalizationKey, parameters?: void }
   | LocalizationDataObject<Parameters>;
 
 export type LocalizationDataObject<Parameters> = {
@@ -151,7 +151,7 @@ export class LocalizationService {
     }
 
     const dataIsLocalizationKey = isLocalizationKey(data);
-    const key = dataIsLocalizationKey ? (data as LocalizationKey)[propertyName] : (data as LocalizationDataObject<unknown>).key[propertyName];
+    const key = dataIsLocalizationKey ? data[propertyName] : (data as LocalizationDataObject<unknown>).key[propertyName];
     const parameters = dataIsLocalizationKey ? {} : (data as LocalizationDataObject<unknown>).parameters;
 
     const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);

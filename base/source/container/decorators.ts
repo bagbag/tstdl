@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
-import { getParameterTypes } from '#/utils/reflection';
+import { getDesignType, getParameterTypes } from '#/utils/reflection';
 import { isDefined, isFunction } from '#/utils/type-guards';
 import type { ArgumentProvider, ForwardRefInjectionToken, Lifecycle, Mapper, RegistrationOptions } from './container';
 import { container, getInjectMetadata } from './container';
@@ -82,8 +82,12 @@ export function inject<T, A>(token?: InjectionToken<T, A>, argument?: A, mapperO
   function injectDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
 
+    if (metadata.type == 'property') {
+      metadata.token = getDesignType(target, propertyKey) as InjectionToken;
+    }
+
     if (isDefined(token)) {
-      metadata.token = token;
+      metadata.injectToken = token;
     }
 
     if (isDefined(argument)) {
@@ -102,8 +106,8 @@ export function inject<T, A>(token?: InjectionToken<T, A>, argument?: A, mapperO
  * sets the argument used for resolving the parameter
  * @param argument
  */
-export function resolveArg<T>(argument: T): ParameterDecorator {
-  function resolveArgDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function resolveArg<T>(argument: T): PropertyDecorator & ParameterDecorator {
+  function resolveArgDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.resolveArgumentProvider = () => argument;
   }
@@ -115,8 +119,8 @@ export function resolveArg<T>(argument: T): ParameterDecorator {
  * sets the argument provider used for resolving the parameter
  * @param argumentProvider
  */
-export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): ParameterDecorator {
-  function resolveArgDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): PropertyDecorator & ParameterDecorator {
+  function resolveArgDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.resolveArgumentProvider = () => argumentProvider;
   }
@@ -129,8 +133,8 @@ export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): Pa
  * @param argument
  * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
  */
-export function injectArg<T>(mapperOrKey?: Mapper<T> | keyof T): ParameterDecorator {
-  function injectArgDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function injectArg<T>(mapperOrKey?: Mapper<T> | keyof T): PropertyDecorator & ParameterDecorator {
+  function injectArgDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.injectArgumentMapper = isFunction(mapperOrKey)
       ? mapperOrKey
@@ -146,10 +150,10 @@ export function injectArg<T>(mapperOrKey?: Mapper<T> | keyof T): ParameterDecora
  * sets the argument used for resolving the decorated parameter to the the argument provided for parent resolve
  * @param mapper map the argument (for example to select a property instead of forwarding the whole object)
  */
-export function forwardArg(): ParameterDecorator;
-export function forwardArg<T, U>(mapper: Mapper<T, U>): ParameterDecorator;
-export function forwardArg(mapper: Mapper = (value): unknown => value): ParameterDecorator {
-  function forwardArgDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function forwardArg(): PropertyDecorator & ParameterDecorator;
+export function forwardArg<T, U>(mapper: Mapper<T, U>): PropertyDecorator & ParameterDecorator;
+export function forwardArg(mapper: Mapper = (value): unknown => value): PropertyDecorator & ParameterDecorator {
+  function forwardArgDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.forwardArgumentMapper = mapper;
   }
@@ -161,8 +165,8 @@ export function forwardArg(mapper: Mapper = (value): unknown => value): Paramete
  * marks the argument as optional
  * @param argument
  */
-export function optional(): ParameterDecorator {
-  function optionalDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function optional(): PropertyDecorator & ParameterDecorator {
+  function optionalDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.optional = true;
   }
@@ -175,8 +179,8 @@ export function optional(): ParameterDecorator {
  * @param token token to resolve
  * @param argument resolve argument
  */
-export function forwardRef<T, A>(token: ForwardRefInjectionToken<T>, argument?: A): ParameterDecorator {
-  function injectDecorator(target: object, propertyKey: string | symbol, parameterIndex: number): void {
+export function forwardRef<T, A>(token: ForwardRefInjectionToken<T>, argument?: A): PropertyDecorator & ParameterDecorator {
+  function injectDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
     metadata.forwardRefToken = token;
 

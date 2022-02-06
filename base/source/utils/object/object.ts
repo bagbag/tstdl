@@ -1,4 +1,5 @@
 import type { PickBy, Record } from '#/types';
+import { filterAsync, mapAsync, toArrayAsync } from '../async-iterable-helpers';
 import { isArray, isObject, isUndefined } from '../type-guards';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
@@ -11,14 +12,30 @@ export function mapObject<T extends Record, K extends string | number | symbol, 
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
+export async function mapObjectAsync<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<[key: K, value: V]>): Promise<Record<K, V>> {
+  const entries = Object.entries(object);
+  const mappedEntries = await toArrayAsync(mapAsync(entries, async ([key, value]) => mapper(value as T[keyof T], key)));
+  return Object.fromEntries(mappedEntries) as Record<K, V>;
+}
+
 export function mapObjectValues<T extends Record, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => V): Record<keyof T, V> {
   return mapObject(object, (value, key) => [key, mapper(value, key)]);
+}
+
+export async function mapObjectValuesAsync<T extends Record, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<V>): Promise<Record<keyof T, V>> {
+  return mapObjectAsync(object, async (value, key) => [key, await mapper(value, key)]);
 }
 
 export function filterObject<T extends Record, U extends T[keyof T]>(object: T, predicate: (value: T[keyof T], key: keyof T) => value is U): PickBy<T, U>;
 export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T>;
 export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T> {
   const mappedEntries = Object.entries(object).filter(([key, value]) => predicate(value as T[keyof T], key));
+  return Object.fromEntries(mappedEntries) as Partial<T>;
+}
+
+export async function filterObjectAsync<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => Promise<boolean>): Promise<Partial<T>> {
+  const entries = Object.entries(object);
+  const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => predicate(value as T[keyof T], key)));
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 
