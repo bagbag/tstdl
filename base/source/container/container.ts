@@ -120,7 +120,7 @@ export function getTypeInfo(constructor: Constructor, createIfMissing: boolean =
     typeInfos.set(constructor, typeInfo);
   }
 
-  return assertDefinedPass(typeInfos.get(constructor), 'constructor not registered');
+  return assertDefinedPass(typeInfos.get(constructor), `type information for constructor ${(constructor as Constructor | undefined)?.name} not available`);
 }
 
 export function getInjectMetadata(target: object, propertyKey: PropertyKey | undefined, parameterIndex: number | undefined, createIfMissing: boolean = false): InjectMetadata {

@@ -39,7 +39,7 @@ export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = 
     const parameterTypes = getParameterTypes(constructor) ?? [];
 
     for (let i = 0; i < parameterTypes.length; i++) {
-      const metadata = getInjectMetadata(constructor, undefined, i);
+      const metadata = getInjectMetadata(constructor, undefined, i, true);
       metadata.token = parameterTypes[i] as InjectionToken;
     }
 
