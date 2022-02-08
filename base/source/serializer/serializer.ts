@@ -159,8 +159,18 @@ export function deserialize(serialized: unknown, options?: SerializationOptions)
  * for internal use only
  * @deprecated
  */
-export function deserialize(serialized: unknown, options: SerializationOptions, serializedRoot: unknown, references: Map<string, any>, deserializeQueue: CircularBuffer<QueueItem>, derefQueue: CircularBuffer<QueueItem>, path: string, isFirst: boolean): unknown;
-export function deserialize(serialized: unknown, options: SerializationOptions = {}, serializedRoot: unknown = serialized, references: Map<string, any> = new Map(), deserializeQueue: CircularBuffer<QueueItem> = new CircularBuffer(), derefQueue: CircularBuffer<QueueItem> = new CircularBuffer(), path = '$', isFirst: boolean = true): unknown {
+export function deserialize(serialized: unknown, options: SerializationOptions, serializedRoot: unknown, references: Map<string, any>, deserializeQueues: CircularBuffer<QueueItem>[], derefQueue: CircularBuffer<QueueItem>, path: string, depth: number): unknown;
+export function deserialize(serialized: unknown, options: SerializationOptions = {}, serializedRoot: unknown = serialized, references: Map<string, any> = new Map(), deserializeQueues: CircularBuffer<QueueItem>[] = [], derefQueue: CircularBuffer<QueueItem> = new CircularBuffer(), path = '$', depth: number = 0): unknown {
+  const addToDeserializeQueue: CircularBuffer<QueueItem>['add'] = (value) => {
+    const queue = deserializeQueues[depth] ?? (deserializeQueues[depth] = new CircularBuffer());
+    queue.add(value);
+  };
+
+  const addManyToDeserializeQueue: CircularBuffer<QueueItem>['addMany'] = (values) => {
+    const queue = deserializeQueues[depth] ?? (deserializeQueues[depth] = new CircularBuffer());
+    queue.addMany(values);
+  };
+
   const type = typeof serialized;
 
   if ((type == 'number') || (type == 'boolean') || (serialized === null)) {
@@ -177,7 +187,7 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
   }
 
   if (type == 'object') {
-    if (isFirst && isDefined(options.context)) {
+    if ((depth == 0) && isDefined(options.context)) {
       for (const entry of Object.entries(options.context)) {
         references.set(`$['__context__']['${entry[0]}']`, entry[1]);
       }
@@ -240,17 +250,17 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
           const forwardRef = ForwardRef.create();
           references.set(path, forwardRef);
 
-          deserializeQueue.add(() => {
-            const deserializedData = deserialize(nonPrimitiveData, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}['<${nonPrimitiveType}>']`, false);
+          addToDeserializeQueue(() => {
+            const deserializedData = deserialize(nonPrimitiveData, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}['<${nonPrimitiveType}>']`, depth + 1);
 
-            deserializeQueue.add(() => {
+            addToDeserializeQueue(() => {
               const deserialized = registration.deserializer(deserializedData, tryAddToDerefQueue);
               ForwardRef.setRef(forwardRef, deserialized);
             });
           });
 
-          if (isFirst) {
-            drainQueues(deserializeQueue, derefQueue);
+          if (depth == 0) {
+            drainQueues(deserializeQueues, derefQueue);
             return ForwardRef.deref(forwardRef);
           }
 
@@ -268,14 +278,15 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
       references.set(path, deserializedArray);
 
       const queueItems = (serialized as any[]).map((innerValue, index): QueueItem => () => {
-        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}[${index}]`, false);
+        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}[${index}]`, depth + 1);
         deserializedArray[index] = deserialized;
 
         tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedArray[index] = dereferenced));
 
         return deserialized;
       });
-      deserializeQueue.addMany(queueItems);
+
+      addManyToDeserializeQueue(queueItems);
 
       result = deserializedArray;
     }
@@ -284,14 +295,15 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
       references.set(path, deserializedObject);
 
       const queueItems = entries.map(([key, innerValue]): QueueItem => () => {
-        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueue, derefQueue, `${path}['${key}']`, false);
+        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}['${key}']`, depth + 1);
         deserializedObject[key] = deserialized;
 
         tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedObject[key] = dereferenced));
 
         return deserialized;
       });
-      deserializeQueue.addMany(queueItems);
+
+      addManyToDeserializeQueue(queueItems);
 
       result = deserializedObject;
     }
@@ -299,8 +311,8 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
       throw new Error(`unsupported constructor ${constructor.name}`);
     }
 
-    if (isFirst) {
-      drainQueues(deserializeQueue, derefQueue);
+    if (depth == 0) {
+      drainQueues(deserializeQueues, derefQueue);
     }
 
     return result;
@@ -322,9 +334,23 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
   }
 }
 
-function drainQueues(deserializeQueue: CircularBuffer<QueueItem>, derefQueue: CircularBuffer<QueueItem>): void {
-  for (const fn of deserializeQueue.consume()) {
-    fn();
+function drainQueues(deserializeQueue: CircularBuffer<QueueItem>[], derefQueue: CircularBuffer<QueueItem>): void {
+  while (true) {
+    let doBreak = true;
+
+    for (let i = deserializeQueue.length - 1; i >= 0; i--) {
+      const queue = deserializeQueue[i]!;
+
+      if (queue.hasItems) {
+        queue.remove()();
+        doBreak = false;
+        break;
+      }
+    }
+
+    if (doBreak) {
+      break;
+    }
   }
 
   for (const fn of derefQueue.consume()) {
