@@ -415,8 +415,8 @@ export class Container {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
       }
 
-      const parameters = (await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(token, context, typeInfo, metadata, resolveArgument, chain))))
-        .map((box) => box.resolved);
+      const boxedParameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(token, context, typeInfo, metadata, resolveArgument, chain)));
+      const parameters = boxedParameters.map((box) => box.resolved);
 
       instance = new typeInfo.constructor(...parameters) as T;
 
@@ -568,7 +568,7 @@ export class Container {
       return { resolved: forwardRef };
     }
 
-    const resolved = this._resolveAsync(injectToken, metadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
+    const resolved = await this._resolveAsync(injectToken, metadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
     return { resolved: isDefined(metadata.mapper) ? metadata.mapper(resolved) : resolved };
   }
 
