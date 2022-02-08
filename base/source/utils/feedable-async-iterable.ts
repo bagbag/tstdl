@@ -1,4 +1,4 @@
-import { CircularBuffer } from '#/data-structures';
+import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { firstValueFrom } from '#/rxjs/compat';
 import { Subject } from 'rxjs';
 import { CancellationToken } from './cancellation-token';

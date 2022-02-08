@@ -66,4 +66,4 @@ container.registerSingleton<LogLevel, LogLevel>(
   { defaultArgumentProvider: () => logLevel }
 );
 
-container.registerSingleton(Logger, { useTokenProvider: () => loggerToken });
+container.register(Logger, { useTokenProvider: () => loggerToken });

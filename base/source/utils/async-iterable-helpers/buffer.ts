@@ -1,4 +1,4 @@
-import { CircularBuffer } from '#/data-structures';
+import { CircularBuffer } from '#/data-structures/circular-buffer';
 import type { AnyIterable } from '../any-iterable-iterator';
 import { CancellationToken } from '../cancellation-token';
 import { hasOwnProperty } from '../object';

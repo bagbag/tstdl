@@ -1,5 +1,5 @@
 import { container, resolveArg, singleton } from '#/container';
-import { WeakRefMap } from '#/data-structures';
+import { WeakRefMap } from '#/data-structures/weak-ref-map';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import { FactoryMap } from '#/utils/factory-map';

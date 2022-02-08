@@ -1,4 +1,5 @@
-import { CircularBuffer, MultiKeyMap } from '#/data-structures';
+import { CircularBuffer } from '#/data-structures/circular-buffer';
+import { MultiKeyMap } from '#/data-structures/multi-key-map';
 import type { Constructor, Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef } from '#/utils/object/forward-ref';
