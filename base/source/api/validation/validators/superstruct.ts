@@ -1,4 +1,4 @@
-import { emailRegex } from '#/utils/patterns';
+import { emailPattern } from '#/utils/patterns';
 import { isDefined } from '#/utils/type-guards';
 import type { Failure, Struct, StructError } from 'superstruct';
 import { boolean, coerce, literal, number, pattern, string, union } from 'superstruct';
@@ -24,7 +24,7 @@ const coerceBooleanTrueLiterals = [true, 1, 'true', '1', 'yes'];
 const numberStruct = number();
 const numberStringStruct = pattern(string(), /^[+-]?(?:\d*\.)?\d+$/u);
 
-export const email = (): Struct<string, null> => pattern(string(), emailRegex);
+export const email = (): Struct<string, null> => pattern(string(), emailPattern);
 export const coerceNumber = (struct: Struct<number, null> = numberStruct): Struct<number, null> => coerce(struct, numberStringStruct, (value) => parseFloat(value));
 export const coerceBoolean = (): Struct<boolean, null> => coerce(boolean(), coerceBooleanLiteralsStruct, (value) => coerceBooleanTrueLiterals.includes(value));
 export const lowercased = <T, S>(struct: Struct<T, S>): Struct<T, S> => coerce(struct, string(), (x) => x.toLowerCase());

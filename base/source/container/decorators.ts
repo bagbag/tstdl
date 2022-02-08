@@ -122,7 +122,7 @@ export function resolveArg<T>(argument: T): PropertyDecorator & ParameterDecorat
 export function resolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): PropertyDecorator & ParameterDecorator {
   function resolveArgDecorator(target: object, propertyKey: string | symbol, parameterIndex?: number): void {
     const metadata = getInjectMetadata(target, propertyKey, parameterIndex, true);
-    metadata.resolveArgumentProvider = () => argumentProvider;
+    metadata.resolveArgumentProvider = argumentProvider;
   }
 
   return resolveArgDecorator;

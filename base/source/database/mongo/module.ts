@@ -21,17 +21,14 @@ export const mongoModuleConfig: MongoModuleConfig = {
   logPrefix: 'MONGO'
 };
 
-let mongoLogger: Logger = container.resolve(Logger, mongoModuleConfig.logPrefix);
-
 export function configureMongo(config: Partial<MongoModuleConfig>): void {
   mongoModuleConfig.defaultDatabase = config.defaultDatabase ?? mongoModuleConfig.defaultDatabase;
   mongoModuleConfig.defaultConnection = config.defaultConnection ?? mongoModuleConfig.defaultConnection;
   mongoModuleConfig.logPrefix = config.logPrefix ?? mongoModuleConfig.logPrefix;
 
-  mongoLogger = container.resolve(Logger, mongoModuleConfig.logPrefix);
+  const mongoLogger = container.resolve(Logger, mongoModuleConfig.logPrefix);
+  Mongo.Logger.setCurrentLogger((message, parameters) => mongoLogger.verbose(JSON.stringify({ message, parameters }, undefined, 2)));
 }
-
-Mongo.Logger.setCurrentLogger((message, parameters) => mongoLogger.verbose(JSON.stringify({ message, parameters }, undefined, 2)));
 
 container.registerSingleton(MongoClient, {
   useAsyncFactory: async (argument, context) => {
