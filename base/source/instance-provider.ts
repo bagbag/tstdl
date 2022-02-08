@@ -85,8 +85,7 @@ export function getCoreLogger(): Logger {
 }
 
 export function getLocalMessageBusProvider(): LocalMessageBusProvider {
-  const logger = getLogger('MESSAGE-BUS');
-  return new LocalMessageBusProvider(logger);
+  return container.resolve(LocalMessageBusProvider);
 }
 
 export async function getLockProvider(): Promise<LockProvider> {
@@ -131,10 +130,7 @@ export async function getMessageBusProvider(): Promise<MessageBusProvider> {
 }
 
 export async function getDistributedLoopProvider(): Promise<DistributedLoopProvider> {
-  return singleton(singletonScope, DistributedLoopProvider, async () => {
-    const lockProvider = await getLockProvider();
-    return new DistributedLoopProvider(lockProvider);
-  });
+  return container.resolveAsync(DistributedLoopProvider);
 }
 
 export function getHttpApi(): HttpApi {

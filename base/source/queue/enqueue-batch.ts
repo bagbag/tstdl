@@ -8,7 +8,8 @@ interface QueueEnqueueBatchMethods<T> {
 export class QueueEnqueueBatch<T> implements QueueEnqueueBatchMethods<T> {
   private readonly queue: Queue<T>;
 
-  private items: EnqueueManyItem<T>[];
+  /** added items */
+  items: EnqueueManyItem<T>[];
 
   constructor(queue: Queue<T>) {
     this.queue = queue;
@@ -16,10 +17,12 @@ export class QueueEnqueueBatch<T> implements QueueEnqueueBatchMethods<T> {
     this.items = [];
   }
 
+  /** add data to items */
   add(data: T, options?: EnqueueOptions): void {
     this.items.push({ data, ...options });
   }
 
+  /** enqueues all added items */
   async enqueue(returnJobs?: false): Promise<void>;
   async enqueue(returnJobs: true): Promise<Job<T>[]>;
   async enqueue(returnJobs?: boolean): Promise<void | Job<T>[]> {
