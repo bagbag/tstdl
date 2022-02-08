@@ -1,10 +1,9 @@
 import type { Injectable } from '#/container';
 import { container, forwardArg, resolveArgumentType, singleton } from '#/container';
+import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo';
 import { MessageBusProvider } from '#/message-bus';
 import type { QueueConfig } from '#/queue';
 import { Queue, QueueProvider } from '#/queue';
-import type { CollectionArgument } from '../classes';
-import type { MongoRepositoryConfig } from '../types';
 import type { MongoJob } from './job';
 import { MongoJobRepository } from './mongo-job.repository';
 import { MongoQueue } from './queue';

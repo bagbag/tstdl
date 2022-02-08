@@ -1,12 +1,10 @@
 import type { Injectable } from '#/container';
 import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { getNewId } from '#/database';
+import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
 import { Logger } from '#/logger';
 import { UniqueTagStrategy } from '#/queue';
-import type { CollectionArgument } from '../classes';
-import { Collection } from '../classes';
-import { MongoEntityRepository, noopTransformer } from '../mongo-entity-repository';
-import type { TypedIndexDescription } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [

@@ -1,5 +1,6 @@
 import { singleton } from '#/container';
 import { getNewId } from '#/database/id';
+import type { Filter, UpdateFilter } from '#/database/mongo';
 import type { MessageBus } from '#/message-bus';
 import { MessageBusProvider } from '#/message-bus';
 import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue';
@@ -13,7 +14,6 @@ import { currentTimestamp } from '#/utils/date-time';
 import { propertyNameOf } from '#/utils/object/property-name';
 import { getRandomString } from '#/utils/random';
 import { assertDefined, isString } from '#/utils/type-guards';
-import type { Filter, UpdateFilter } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 import { MongoJobRepository } from './mongo-job.repository';
 import { MongoQueueProvider } from './queue.provider';
@@ -88,7 +88,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
 
   async enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
   async enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
-  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: boolean): Promise<void | Job<T>[]> { // eslint-disable-line max-lines-per-function
+  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs: boolean = false): Promise<void | Job<T>[]> { // eslint-disable-line max-lines-per-function
     const now = currentTimestamp();
 
     const nonUnique: NewMongoJob<T>[] = [];
@@ -132,7 +132,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
       (takeNew.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(takeNew, UniqueTagStrategy.TakeNew) : undefined
     ]);
 
-    if (returnJobs == true) {
+    if (returnJobs) {
       const keepOldTags = keepOld.map((job) => job.tag);
       const takeNewTags = takeNew.map((job) => job.tag);
 
@@ -242,7 +242,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async *getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>> {
-    const continueToken = CancellationToken.fromObservable(this.messageBus.messages$);
+    const continueToken = CancellationToken.fromObservable(this.messageBus.allMessages$);
 
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const job = await this.dequeue();
@@ -259,7 +259,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async *getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]> {
-    const continueToken = CancellationToken.fromObservable(this.messageBus.messages$);
+    const continueToken = CancellationToken.fromObservable(this.messageBus.allMessages$);
 
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const jobs = await this.dequeueMany(size);

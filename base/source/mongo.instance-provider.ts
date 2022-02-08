@@ -1,3 +1,4 @@
+import { container } from '#/container';
 import type { Entity } from '#/database';
 import type { MongoConnection, MongoRepositoryConfig } from '#/database/mongo';
 import { Collection, Database, MongoClient, mongoModuleConfig } from '#/database/mongo';
@@ -6,20 +7,19 @@ import type { MongoKeyValue } from '#/database/mongo/model';
 import type { MongoEntityRepository } from '#/database/mongo/mongo-entity-repository';
 import { MongoKeyValueStoreProvider } from '#/database/mongo/mongo-key-value-store.provider';
 import { MongoKeyValueRepository } from '#/database/mongo/mongo-key-value.repository';
-import type { MongoJob } from '#/database/mongo/queue';
-import { MongoQueue, MongoQueueProvider } from '#/database/mongo/queue';
+import { MongoLockProvider } from '#/lock/mongo';
 import { Logger } from '#/logger';
 import type { MigrationState } from '#/migration';
+import type { MongoOidcState, OidcState } from '#/openid-connect';
+import { MongoOidcStateRepository } from '#/openid-connect';
+import type { QueueConfig } from '#/queue';
+import type { MongoJob } from '#/queue/mongo';
+import { MongoQueue, MongoQueueProvider } from '#/queue/mongo';
 import type { Type } from '#/types';
+import { FactoryMap } from '#/utils/factory-map';
+import { singleton } from '#/utils/singleton';
+import { assertDefined } from '#/utils/type-guards';
 import type * as Mongo from 'mongodb';
-import { container } from './container';
-import { MongoLockProvider } from './lock/mongo';
-import type { MongoOidcState, OidcState } from './openid-connect';
-import { MongoOidcStateRepository } from './openid-connect';
-import type { QueueConfig } from './queue';
-import { FactoryMap } from './utils/factory-map';
-import { singleton } from './utils/singleton';
-import { assertDefined } from './utils/type-guards';
 
 type MongoRepositoryStatic<T extends Entity, TDb extends Entity> = Type<MongoEntityRepository<T, TDb>, [Collection<TDb>, Logger]>;
 

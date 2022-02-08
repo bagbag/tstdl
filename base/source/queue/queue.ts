@@ -2,6 +2,7 @@ import type { Injectable } from '#/container';
 import { resolveArgumentType } from '#/container';
 import { millisecondsPerMinute } from '#/utils/units';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
+import { QueueEnqueueBatch } from './enqueue-batch';
 
 export type JobTag = string | number | null;
 
@@ -44,9 +45,14 @@ export const defaultQueueConfig: Required<QueueConfig> = {
 export abstract class Queue<T> implements Injectable<QueueArgument> {
   readonly [resolveArgumentType]: QueueArgument;
 
+  batch(): QueueEnqueueBatch<T> {
+    return new QueueEnqueueBatch(this);
+  }
+
   abstract enqueue(data: T, options?: EnqueueOptions): Promise<Job<T>>;
   abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
   abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
+  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: boolean): Promise<void | Job<T>[]>;
 
   abstract has(id: string): Promise<boolean>;
 
