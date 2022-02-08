@@ -13,7 +13,8 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
   { key: { queue: 1, jobId: 1 }, unique: true },
   { key: { queue: 1, priority: 1, enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
   { key: { queue: 1, tag: 1 } },
-  { key: { queue: 1, batch: 1 } }
+  { key: { queue: 1, batch: 1 } },
+  { key: { queue: 1, tries: 1 } }
 ];
 
 @singleton()
@@ -27,11 +28,11 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
   async insertWithUniqueTagStrategy(newJob: NewMongoJob<T>, uniqueTagStrategy: UniqueTagStrategy): Promise<MongoJob<T>> {
     const { queue, tag, ...rest } = newJob;
 
-    if (uniqueTagStrategy == UniqueTagStrategy.KeepOld) {
-      return this.baseRepository.loadByFilterAndUpdate({ queue, tag }, { $setOnInsert: { _id: getNewId(), ...rest } }, { upsert: true, returnDocument: 'after' });
-    }
+    const updateQuery = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
+      ? { $setOnInsert: { _id: getNewId(), ...rest } }
+      : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
-    return this.baseRepository.loadByFilterAndUpdate({ queue, tag }, { $set: rest, $setOnInsert: { _id: getNewId() } }, { upsert: true, returnDocument: 'after' });
+    return this.baseRepository.loadByFilterAndUpdate({ queue, tag }, updateQuery, { upsert: true, returnDocument: 'after' });
   }
 
   async bulkInsertWithUniqueTagStrategy(newJobs: NewMongoJob<T>[], uniqueTagStrategy: UniqueTagStrategy): Promise<void> {

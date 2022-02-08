@@ -58,6 +58,7 @@ export abstract class Queue<T> implements Injectable<QueueArgument> {
   abstract cancel(id: string): Promise<void>;
   abstract cancelMany(ids: string[]): Promise<void>;
   abstract cancelByTag(tag: JobTag): Promise<void>;
+  abstract cancelByTags(tags: JobTag[]): Promise<void>;
 
   abstract dequeue(): Promise<Job<T> | undefined>;
   abstract dequeueMany(count: number): Promise<Job<T>[]>;

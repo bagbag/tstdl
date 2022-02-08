@@ -10,12 +10,19 @@ import { backoffGenerator } from '#/utils/backoff';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestamp } from '#/utils/date-time';
+import { propertyNameOf } from '#/utils/object/property-name';
 import { getRandomString } from '#/utils/random';
 import { assertDefined, isString } from '#/utils/type-guards';
 import type { Filter, UpdateFilter } from '../types';
 import type { MongoJob, NewMongoJob } from './job';
 import { MongoJobRepository } from './mongo-job.repository';
 import { MongoQueueProvider } from './queue.provider';
+
+const triesProperty = propertyNameOf<MongoJob>((e) => e.tries);
+const lastDequeueTimestampProperty = propertyNameOf<MongoJob>((e) => e.lastDequeueTimestamp);
+const enqueueTimestampProperty = propertyNameOf<MongoJob>((e) => e.enqueueTimestamp);
+const priorityProperty = propertyNameOf<MongoJob>((e) => e.priority);
+const batchProperty = propertyNameOf<MongoJob>((e) => e.batch);
 
 const backoffOptions: BackoffOptions = {
   strategy: 'exponential',
@@ -165,6 +172,10 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     await this.repository.deleteManyByFilter({ queue: this.queueKey, tag });
   }
 
+  async cancelByTags(tags: JobTag[]): Promise<void> {
+    await this.repository.deleteManyByFilter({ queue: this.queueKey, tag: { $in: tags } });
+  }
+
   async dequeue(): Promise<Job<T> | undefined> {
     const { filter, update } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout);
 
@@ -173,7 +184,12 @@ export class MongoQueue<T = unknown> extends Queue<T> {
       update,
       {
         returnDocument: 'after',
-        sort: [['priority', 1], ['enqueueTimestamp', 1], ['lastDequeueTimestamp', 1], ['tries', 1]]
+        sort: {
+          priority: 1,
+          enqueueTimestamp: 1,
+          lastDequeueTimestamp: 1,
+          tries: 1
+        }
       }
     );
 
@@ -182,18 +198,37 @@ export class MongoQueue<T = unknown> extends Queue<T> {
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
     const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
-    const { filter, update } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
+    const { filter } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
 
-    const bulk = this.repository.baseRepository.bulk();
-
-    for (let i = 0; i < count; i++) {
-      bulk.update(filter, update);
-    }
-
-    await bulk.execute();
+    await this.repository.baseRepository.collection.aggregate([
+      { $match: filter },
+      {
+        $sort: {
+          [priorityProperty]: 1,
+          [enqueueTimestampProperty]: 1,
+          [lastDequeueTimestampProperty]: 1,
+          [triesProperty]: 1
+        }
+      },
+      { $limit: count },
+      {
+        $merge: {
+          into: this.repository.baseRepository.collection.collectionName,
+          whenMatched: [
+            {
+              $set: {
+                [triesProperty]: { $add: [`$${triesProperty}`, 1] },
+                [lastDequeueTimestampProperty]: currentTimestamp(),
+                [batchProperty]: batch
+              }
+            }
+          ],
+          whenNotMatched: 'discard'
+        }
+      }
+    ]).next();
 
     const jobs = await this.repository.loadManyByFilter({ queue: this.queueKey, batch });
-
     return jobs.map(toModelJob);
   }
 
