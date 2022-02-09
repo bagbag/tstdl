@@ -14,7 +14,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   private writeIndex: number;
   private readIndex: number;
 
-  /** emits overwritten values */
+  /** emits overwritten items */
   readonly overflow$: Observable<T>;
 
   /** emits count of free slots in the buffer */
@@ -89,18 +89,18 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     this.clear();
   }
 
-  add(value: T): void {
+  add(item: T): void {
     this.increaseBufferSizeIfNeeded();
 
     const overwrite = this.isFull;
-    const overwrittenValue = overwrite ? this.backingArray[this.writeIndex]! : undefined;
+    const overwrittenItem = overwrite ? this.backingArray[this.writeIndex]! : undefined;
 
-    this.backingArray[this.writeIndex] = value;
+    this.backingArray[this.writeIndex] = item;
     this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
 
     if (overwrite) {
       this.readIndex = (this.readIndex + 1) % this.bufferSize;
-      this.overflowSubject.next(overwrittenValue!);
+      this.overflowSubject.next(overwrittenItem!);
       this.emitChange();
       return;
     }
@@ -108,12 +108,12 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     this.incrementSize();
   }
 
-  addMany(values: Iterable<T>): void {
-    const increase = isArray(values) ? values.length : (values instanceof Collection) ? values.size : 1;
+  addMany(items: Iterable<T>): void {
+    const increase = isArray(items) ? items.length : (items instanceof Collection) ? items.size : 1;
     this.increaseBufferSizeIfNeeded(this.size + increase);
 
-    for (const value of values) {
-      this.add(value);
+    for (const item of items) {
+      this.add(item);
     }
   }
 
@@ -130,12 +130,12 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
       return undefined;
     }
 
-    const value = this.backingArray[this.readIndex]!;
+    const item = this.backingArray[this.readIndex]!;
     this.backingArray[this.readIndex] = undefined;
     this.readIndex = (this.readIndex + 1) % this.bufferSize;
     this.decrementSize();
 
-    return value;
+    return item;
   }
 
   clone(newMaxBufferSize: number | undefined = this.maxBufferSize): CircularBuffer<T> {
@@ -149,7 +149,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     return cloned;
   }
 
-  *[Symbol.iterator](): IterableIterator<T> {
+  *items(): IterableIterator<T> {
     const size = this.size;
     let readIndex = this.readIndex;
     let modified = false;

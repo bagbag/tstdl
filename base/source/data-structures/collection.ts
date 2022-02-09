@@ -2,7 +2,7 @@ import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, startWith, Subject } from 'rxjs';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis>> implements Iterable<T> {
+export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T> {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
   private readonly clearSubject: Subject<TThis>;
@@ -73,6 +73,11 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
     this.onItems$ = this.hasItems$.pipe(filter((isFull) => isFull), mapTo(undefined));
   }
 
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.items();
+  }
+
+  /** remove all items */
   clear(): void {
     this._clear();
     this.clearSubject.next(this as unknown as TThis);
@@ -97,18 +102,21 @@ export abstract class Collection<T, TThis extends Collection<T, TThis>> implemen
     this.setSize(this.size - amount);
   }
 
-  /**  */
   protected emitChange(): void {
     this.changeSubject.next(this as unknown as TThis);
   }
 
-  abstract add(value: T): void;
+  /** add item to collection */
+  abstract add(item: T): void;
 
-  abstract addMany(values: Iterable<T>): void;
+  /** add many items to collection */
+  abstract addMany(items: Iterable<T>): void;
 
+  /** clone collection */
   abstract clone(): TThis;
 
-  abstract [Symbol.iterator](): IterableIterator<T>;
+  /** yields all items from the collection */
+  abstract items(): IterableIterator<T>;
 
   /** clear all data - size is set to 0 automatically */
   protected abstract _clear(): void;

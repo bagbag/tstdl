@@ -118,8 +118,8 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefM
     }
   }
 
-  *entries(): IterableIterator<[K, V]> {
-    yield* this;
+  entries(): IterableIterator<[K, V]> {
+    return this.items();
   }
 
   *keys(): IterableIterator<K> {
@@ -134,7 +134,7 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefM
     }
   }
 
-  *[Symbol.iterator](): IterableIterator<[K, V]> {
+  *items(): IterableIterator<[K, V]> {
     for (const [key, ref] of this.backingMap) {
       const value = ref.deref();
 

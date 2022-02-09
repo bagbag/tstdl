@@ -1,6 +1,7 @@
-import { Collection } from './collection';
+import type { Predicate } from '#/utils/iterable-helpers';
+import { List } from './list';
 
-export class ArrayList<T> extends Collection<T, ArrayList<T>> {
+export class ArrayList<T> extends List<T, ArrayList<T>> {
   private backingArray: T[];
 
   constructor(items: Iterable<T> = []) {
@@ -23,26 +24,72 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
   }
 
   at(index: number): T {
+    this.ensureBounds(index);
     return this.backingArray[index]!;
   }
 
-  add(value: T): void {
-    this.backingArray.push(value);
+  indexOf(item: T, fromIndex?: number): number | undefined {
+    const index = this.backingArray.indexOf(item, fromIndex);
+
+    if (index == -1) {
+      return undefined;
+    }
+
+    return index;
+  }
+
+  findIndex(predicate: Predicate<T>): number | undefined {
+    return this.backingArray.findIndex((item, index) => predicate(item, index));
+  }
+
+  lastIndexOf(item: T, fromIndex?: number): number | undefined {
+    const index = this.backingArray.lastIndexOf(item, fromIndex);
+
+    if (index == -1) {
+      return undefined;
+    }
+
+    return index;
+  }
+
+  findLastIndex(predicate: Predicate<T>): number | undefined {
+    for (let i = this.size - 1; i >= 0; i--) {
+      if (predicate(this.backingArray[i]!, i)) {
+        return i;
+      }
+    }
+
+    return undefined;
+  }
+
+  prepend(item: T): void {
+    this.backingArray.unshift(item);
     this.updateSize();
   }
 
-  addMany(values: Iterable<T>): void {
-    this.backingArray.push(...values);
+  prependMany(items: Iterable<T>): void {
+    this.backingArray.unshift(...items);
     this.updateSize();
   }
 
-  set(index: number, value: T): void {
-    this.backingArray[index] = value;
+  add(item: T): void {
+    this.backingArray.push(item);
+    this.updateSize();
+  }
+
+  addMany(items: Iterable<T>): void {
+    this.backingArray.push(...items);
+    this.updateSize();
+  }
+
+  set(index: number, item: T): void {
+    this.ensureBounds(index);
+    this.backingArray[index] = item;
     this.emitChange();
   }
 
-  remove(value: T): boolean {
-    const index = this.backingArray.indexOf(value);
+  remove(item: T): boolean {
+    const index = this.backingArray.indexOf(item);
 
     if (index == -1) {
       return false;
@@ -52,27 +99,32 @@ export class ArrayList<T> extends Collection<T, ArrayList<T>> {
     return true;
   }
 
-  removeAt(index: number, count: number = 1): void {
-    this.backingArray.splice(index, count);
-    this.updateSize();
+  removeAt(index: number): T {
+    this.ensureBounds(index);
+    return this.removeManyAt(index, 1)[0]!;
   }
 
-  indexOf(value: T): number | undefined {
-    const index = this.backingArray.indexOf(value);
+  removeManyAt(index: number, count: number): T[] {
+    this.ensureBounds(index, count);
 
-    if (index == -1) {
-      return undefined;
-    }
+    const removed = this.backingArray.splice(index, count);
+    this.updateSize();
 
-    return index;
+    return removed;
   }
 
   clone(): ArrayList<T> {
     return new ArrayList(this.backingArray);
   }
 
-  *[Symbol.iterator](): IterableIterator<T> {
+  *items(): IterableIterator<T> {
     yield* this.backingArray;
+  }
+
+  *itemsReverse(): IterableIterator<T> {
+    for (let i = this.size - 1; i >= 0; i--) {
+      yield this.backingArray[i]!;
+    }
   }
 
   protected _clear(): void {

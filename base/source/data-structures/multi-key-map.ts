@@ -99,8 +99,8 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     }
   }
 
-  *entries(): IterableIterator<[K, T]> {
-    yield* this;
+  entries(): IterableIterator<[K, T]> {
+    return this.items();
   }
 
   *keys(): IterableIterator<K> {
@@ -115,7 +115,7 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     }
   }
 
-  *[Symbol.iterator](): IterableIterator<[K, T]> {
+  *items(): IterableIterator<[K, T]> {
     const queue = new CircularBuffer<[any[], Node]>();
     queue.add([[], this.rootNode]);
 

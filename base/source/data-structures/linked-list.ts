@@ -1,34 +1,40 @@
 // eslint-disable-next-line max-classes-per-file
 import { Serializable, serializable } from '#/serializer';
+import type { Predicate } from '#/utils/iterable-helpers';
 import { isDefined, isUndefined } from '#/utils/type-guards';
-import { Collection } from './collection';
+import { List } from './list';
 
 export type LinkedListNode<T> = {
-  value: T,
+  /** item of node */
+  item: T,
+
+  /** previous node. Warning: it is not safe to use this reference on a removed node */
   previous: LinkedListNode<T> | undefined,
+
+  /** next node. Warning: it is not safe to use this reference on a removed node */
   next: LinkedListNode<T> | undefined
 };
 
 @serializable('LinkedList')
-export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Serializable<LinkedList<T>, T[]> {
+export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializable<LinkedList<T>, T[]> {
   private head: LinkedListNode<T> | undefined;
   private tail: LinkedListNode<T> | undefined;
 
-  get first(): LinkedListNode<T> | undefined {
+  get firstNode(): LinkedListNode<T> | undefined {
     return this.head;
   }
 
-  get last(): LinkedListNode<T> | undefined {
+  get lastNode(): LinkedListNode<T> | undefined {
     return this.tail;
   }
 
-  constructor(values?: Iterable<T>) {
+  constructor(items?: Iterable<T>) {
     super();
 
     this.clear();
 
-    if (isDefined(values)) {
-      this.addEndMany(values);
+    if (isDefined(items)) {
+      this.addMany(items);
     }
   }
 
@@ -36,54 +42,142 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     return [...instance];
   }
 
-  [Serializable.deserialize](data: T[], tryAddToDerefQueue: (value: unknown, callback: (dereferenced: unknown) => void) => boolean): LinkedList<T> {
+  [Serializable.deserialize](data: T[], tryAddToDerefQueue: (item: unknown, callback: (dereferenced: unknown) => void) => boolean): LinkedList<T> {
     const linkedList = new LinkedList<T>();
 
     for (const item of data) {
       const node = linkedList.add(item);
-      tryAddToDerefQueue(item, (dereferenced) => (node.value = dereferenced as T));
+      tryAddToDerefQueue(item, (dereferenced) => (node.item = dereferenced as T));
     }
 
     return linkedList;
   }
 
-  /** get value at index */
-  at(index: number): LinkedListNode<T> {
-    if ((index < 0) || (index > (this.size - 1))) {
-      throw new Error('index out of bounds');
-    }
+  /** get item at index */
+  at(index: number): T {
+    const node = this.nodeAt(index);
+    return node.item;
+  }
+
+  /** get node at index */
+  nodeAt(index: number): LinkedListNode<T> {
+    this.ensureBounds(index);
 
     const indexFromEnd = (this.size - 1) - index;
 
-    let node: LinkedListNode<T> | undefined;
+    let node: LinkedListNode<T>;
 
     if (index <= indexFromEnd) {
-      node = this.head;
+      node = this.head!;
 
       for (let i = 0; i < index; i++) {
-        node = node!.next;
+        node = node!.next!;
       }
     }
     else {
-      node = this.tail;
+      node = this.tail!;
 
       for (let i = 0; i < indexFromEnd; i++) {
-        node = node!.previous;
+        node = node!.previous!;
       }
     }
 
-    return node!;
+    return node;
   }
 
-  /** add value at the end. Alias for {@link addEnd} */
-  add(value: T): LinkedListNode<T> {
-    return this.addEnd(value);
+  indexOf(item: T, fromIndex: number = 0): number | undefined {
+    let index = 0;
+
+    for (const node of this.nodes()) {
+      if (index < fromIndex) {
+        continue;
+      }
+
+      if (node.item == item) {
+        return index;
+      }
+
+      index++;
+    }
+
+    return undefined;
   }
 
-  /** add value at the end */
-  addEnd(value: T): LinkedListNode<T> {
+  nodeOf(item: T): LinkedListNode<T> | undefined {
+    for (const node of this.nodes()) {
+      if (node.item == item) {
+        return node;
+      }
+    }
+
+    return undefined;
+  }
+
+  findIndex(predicate: Predicate<T>): number | undefined {
+    let index = 0;
+
+    for (const node of this.nodes()) {
+      if (predicate(node.item, index)) {
+        return index;
+      }
+
+      index++;
+    }
+
+    return undefined;
+  }
+
+  lastIndexOf(item: T, fromIndex: number = (this.size - 1)): number | undefined {
+    let index = this.size - 1;
+
+    for (const node of this.nodesReverse()) {
+      if (index > fromIndex) {
+        continue;
+      }
+
+      if (node.item == item) {
+        return index;
+      }
+
+      index--;
+    }
+
+    return undefined;
+  }
+
+  findLastIndex(predicate: Predicate<T>): number | undefined {
+    let index = this.size - 1;
+
+    for (const node of this.nodesReverse()) {
+      if (predicate(node.item, index)) {
+        return index;
+      }
+
+      index++;
+    }
+
+    return undefined;
+  }
+
+  lastNodeOf(item: T): LinkedListNode<T> | undefined {
+    for (const node of this.nodesReverse()) {
+      if (node.item == item) {
+        return node;
+      }
+    }
+
+    return undefined;
+  }
+
+  set(index: number, item: T): void {
+    const node = this.nodeAt(index);
+    node.item = item;
+    this.emitChange();
+  }
+
+  add(item: T): LinkedListNode<T> {
     const node: LinkedListNode<T> = {
-      value,
+      item,
       previous: undefined,
       next: undefined
     };
@@ -102,10 +196,9 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     return node;
   }
 
-  /** add value at the start */
-  addStart(value: T): LinkedListNode<T> {
+  prepend(item: T): LinkedListNode<T> {
     const node: LinkedListNode<T> = {
-      value,
+      item,
       previous: undefined,
       next: this.head
     };
@@ -123,10 +216,10 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     return node;
   }
 
-  /** add value after node */
-  addAfter(node: LinkedListNode<T>, value: T): LinkedListNode<T> {
+  /** add item after node */
+  addAfterNode(node: LinkedListNode<T>, item: T): LinkedListNode<T> {
     const newNode: LinkedListNode<T> = {
-      value,
+      item,
       previous: node,
       next: node.next
     };
@@ -144,10 +237,10 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     return newNode;
   }
 
-  /** add value before node */
-  addBefore(node: LinkedListNode<T>, value: T): LinkedListNode<T> {
+  /** add item before node */
+  addBeforeNode(node: LinkedListNode<T>, item: T): LinkedListNode<T> {
     const newNode: LinkedListNode<T> = {
-      value,
+      item,
       previous: node.previous,
       next: node
     };
@@ -165,19 +258,13 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     return newNode;
   }
 
-  /** add many values at the end. Alias for {@link addEndMany} */
-  addMany(values: Iterable<T>): void {
-    this.addEndMany(values);
-  }
-
-  /** add many values at the end */
-  addEndMany(values: Iterable<T>): void {
+  addMany(items: Iterable<T>): void {
     let count = 0;
     let node = this.tail;
 
-    for (const value of values) {
+    for (const item of items) {
       node = {
-        value,
+        item,
         previous: node,
         next: undefined
       };
@@ -204,16 +291,16 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     }
   }
 
-  /** add many values at the start */
-  addStartMany(values: Iterable<T>): void {
+  /** add many items at the start */
+  prependMany(items: Iterable<T>): void {
     const oldHead = this.head;
 
     let count = 0;
     let node: LinkedListNode<T> | undefined;
 
-    for (const value of values) {
+    for (const item of items) {
       node = {
-        value,
+        item,
         previous: node,
         next: undefined
       };
@@ -241,8 +328,39 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     }
   }
 
+  remove(item: T): boolean {
+    const node = this.nodeOf(item);
+
+    if (isDefined(node)) {
+      this.removeNode(node);
+      return true;
+    }
+
+    return false;
+  }
+
+  removeAt(index: number): T {
+    const node = this.removeNodeAt(index);
+    return node.item;
+  }
+
+  removeManyAt(index: number, count: number): T[] {
+    const nodes = this.removeManyNodesAt(index, count);
+    return nodes.map((node) => node.item);
+  }
+
+  /** remove node at index */
+  removeNodeAt(index: number): LinkedListNode<T> {
+    this.ensureBounds(index);
+
+    const node = this.nodeAt(index);
+    this.removeNode(node);
+
+    return node;
+  }
+
   /** remove node */
-  remove(node: LinkedListNode<T>): void {
+  removeNode(node: LinkedListNode<T>): void {
     if (isDefined(node.previous)) {
       node.previous.next = node.next;
     }
@@ -262,35 +380,80 @@ export class LinkedList<T> extends Collection<T, LinkedList<T>> implements Seria
     this.decrementSize();
   }
 
-  /** remove node at index */
-  removeAt(index: number): LinkedListNode<T> {
-    const node = this.at(index);
-    this.remove(node);
+  removeManyNodesAt(index: number, count: number): LinkedListNode<T>[] {
+    this.ensureBounds(index, count);
 
-    return node;
+    if (count <= 0) {
+      return [];
+    }
+
+    const firstNode = this.nodeAt(index);
+    const nodes: LinkedListNode<T>[] = [firstNode];
+    let lastNode = firstNode;
+
+    for (let i = 1; i < count; i++) {
+      lastNode = lastNode.next!;
+      nodes.push(lastNode);
+    }
+
+    if (isDefined(firstNode.previous)) {
+      firstNode.previous.next = lastNode.next;
+    }
+    else {
+      this.head = lastNode.next;
+    }
+
+    if (isDefined(lastNode.next)) {
+      lastNode.next.previous = firstNode.previous;
+    }
+    else {
+      this.tail = firstNode.previous;
+    }
+
+    this.decrementSize(count);
+
+    return nodes;
   }
 
   clone(): LinkedList<T> {
     return new LinkedList(this);
   }
 
-  /** yields all items from the buffer and removes them */
-  *[Symbol.iterator](): IterableIterator<T> {
+  *items(): IterableIterator<T> {
     let node = this.head;
 
     while (isDefined(node)) {
-      yield node.value;
+      yield node.item;
       node = node.next;
     }
   }
 
-  /** yields all items from the buffer and removes them */
+  *itemsReverse(): IterableIterator<T> {
+    let node = this.tail;
+
+    while (isDefined(node)) {
+      yield node.item;
+      node = node.previous;
+    }
+  }
+
+  /** yields all nodes from the list */
   *nodes(): IterableIterator<LinkedListNode<T>> {
     let node = this.head;
 
     while (isDefined(node)) {
       yield node;
       node = node.next;
+    }
+  }
+
+  /** yields all nodes from the list in reverse */
+  *nodesReverse(): IterableIterator<LinkedListNode<T>> {
+    let node = this.tail;
+
+    while (isDefined(node)) {
+      yield node;
+      node = node.previous;
     }
   }
 
