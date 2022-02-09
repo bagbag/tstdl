@@ -3,7 +3,7 @@ import { isPromise } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
 export type RefineResult =
@@ -12,15 +12,15 @@ export type RefineResult =
 
 export type Refiner<T> = (value: T, path: JsonPath) => RefineResult | Promise<RefineResult>;
 
-export type RefineSchema<S extends Schema = Schema> = Schema<'refine', SchemaInput<S>, SchemaOutput<S>> & {
+export type RefineSchemaDefinition<S extends SchemaDefinition = SchemaDefinition> = SchemaDefinition<'refine', SchemaInput<S>, SchemaOutput<S>> & {
   inputSchema: S,
   refiner: Refiner<SchemaOutput<S>>
 };
 
-export class RefineSchemaValidator<T extends Schema> extends SchemaValidator<RefineSchema<T>> {
+export class RefineSchemaValidator<T extends SchemaDefinition> extends SchemaValidator<RefineSchemaDefinition<T>> {
   private readonly inputValidator: SchemaValidator<T>;
 
-  constructor(schema: RefineSchema<T>, inputValidator: SchemaValidator<T>) {
+  constructor(schema: RefineSchemaDefinition<T>, inputValidator: SchemaValidator<T>) {
     super(schema);
 
     this.inputValidator = inputValidator;
@@ -65,8 +65,8 @@ export class RefineSchemaValidator<T extends Schema> extends SchemaValidator<Ref
   }
 }
 
-export function refine<T extends Schema>(inputSchemaValidator: SchemaValidator<T>, refiner: Refiner<SchemaOutput<T>>, options?: SchemaOptions<RefineSchema<T>, 'inputSchema' | 'refiner'>): RefineSchemaValidator<T> {
-  const schema = schemaHelper<RefineSchema<T>>({
+export function refine<T extends SchemaDefinition>(inputSchemaValidator: SchemaValidator<T>, refiner: Refiner<SchemaOutput<T>>, options?: SchemaOptions<RefineSchemaDefinition<T>, 'inputSchema' | 'refiner'>): RefineSchemaValidator<T> {
+  const schema = schemaHelper<RefineSchemaDefinition<T>>({
     type: 'refine',
     inputSchema: inputSchemaValidator.schema,
     refiner,

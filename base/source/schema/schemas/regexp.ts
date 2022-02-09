@@ -3,12 +3,12 @@ import { isRegExp, isString } from '#/utils/type-guards';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaOptions } from '../types';
+import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
-export type RegExpSchema = Schema<'regexp', unknown, RegExp> & Coercible;
+export type RegExpSchemaDefinition = SchemaDefinition<'regexp', unknown, RegExp> & Coercible;
 
-export class RegExpSchemaValidator extends SchemaValidator<RegExpSchema> {
+export class RegExpSchemaValidator extends SchemaValidator<RegExpSchemaDefinition> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<RegExp> {
     if (!isRegExp(value)) {
       if ((this.schema.coerce ?? options.coerce) && isString(value)) {
@@ -27,8 +27,8 @@ export class RegExpSchemaValidator extends SchemaValidator<RegExpSchema> {
   }
 }
 
-export function regexp(options?: SchemaOptions<RegExpSchema>): RegExpSchemaValidator {
-  const schema = schemaHelper<RegExpSchema>({
+export function regexp(options?: SchemaOptions<RegExpSchemaDefinition>): RegExpSchemaValidator {
+  const schema = schemaHelper<RegExpSchemaDefinition>({
     type: 'regexp',
     ...options
   });

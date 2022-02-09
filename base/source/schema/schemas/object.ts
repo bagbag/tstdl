@@ -1,25 +1,25 @@
 import type { JsonPath } from '#/json-path';
-import type { Optionalize, Record, StringMap } from '#/types';
+import type { Optionalize, Record, Simplify, StringMap } from '#/types';
 import { differenceMaps } from '#/utils/map';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 import { NeverSchemaValidator } from './never';
 
-type ObjectOutputType<T extends StringMap<Schema>> = Optionalize<{ [P in keyof T]: SchemaOutput<T[P]> }>;
+type ObjectOutputType<T extends StringMap<SchemaDefinition>> = Simplify<Optionalize<{ [P in keyof T]: SchemaOutput<T[P]> }>>;
 
-type ObjectSchemaValidatorEntries<T extends StringMap<Schema>> = { [P in keyof T]: SchemaValidator<T[P]> };
+type ObjectSchemaValidatorEntries<T extends StringMap<SchemaDefinition>> = { [P in keyof T]: SchemaValidator<T[P]> };
 
-export type ObjectSchema<T extends StringMap<Schema> = StringMap<Schema>> = Schema<'object', unknown, ObjectOutputType<T>> & {
+export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = StringMap<SchemaDefinition>> = SchemaDefinition<'object', unknown, ObjectOutputType<T>> & {
   entries: T
 };
 
-export class ObjectSchemaValidator<T extends StringMap<Schema>> extends SchemaValidator<ObjectSchema<T>> {
+export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extends SchemaValidator<ObjectSchemaDefinition<T>> {
   private readonly validatorEntries: Map<PropertyKey, SchemaValidator>;
 
-  constructor(validators: ObjectSchemaValidatorEntries<T>, schema: ObjectSchema<T>) {
+  constructor(validators: ObjectSchemaValidatorEntries<T>, schema: ObjectSchemaDefinition<T>) {
     super(schema);
 
     this.validatorEntries = new Map(Object.entries(validators));
@@ -111,11 +111,11 @@ export class ObjectSchemaValidator<T extends StringMap<Schema>> extends SchemaVa
   }
 }
 
-export function object<T extends StringMap<Schema>>(entries: ObjectSchemaValidatorEntries<T>, options?: SchemaOptions<ObjectSchema<T>, 'entries'>): ObjectSchemaValidator<T> {
+export function object<T extends StringMap<SchemaDefinition>>(entries: ObjectSchemaValidatorEntries<T>, options?: SchemaOptions<ObjectSchemaDefinition<T>, 'entries'>): ObjectSchemaValidator<T> {
   const validatorEntries = Object.entries(entries) as [PropertyKey, SchemaValidator][];
   const mappedValidatorEntries = validatorEntries.map(([key, value]) => [key, value.schema] as const);
 
-  const schema = schemaHelper<ObjectSchema<T>>({
+  const schema = schemaHelper<ObjectSchemaDefinition<T>>({
     type: 'object',
     entries: Object.fromEntries(mappedValidatorEntries) as T,
     ...options

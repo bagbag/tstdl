@@ -4,23 +4,23 @@ import { mapAsync } from '#/utils/async-iterable-helpers/map';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type AsyncIterableSchema<T extends Schema> = Schema<'asyncIterable', AsyncIterable<SchemaInput<T>>, AsyncIterable<SchemaOutput<T>>> & {
+export type AsyncIterableSchemaDefinition<T extends SchemaDefinition> = SchemaDefinition<'asyncIterable', AsyncIterable<SchemaInput<T>>, AsyncIterable<SchemaOutput<T>>> & {
   schema: T
 };
 
-export class AsyncIterableSchemaValidator<T extends Schema> extends SchemaValidator<AsyncIterableSchema<T>> {
+export class AsyncIterableSchemaValidator<T extends SchemaDefinition> extends SchemaValidator<AsyncIterableSchemaDefinition<T>> {
   private readonly innerValidator: SchemaValidator<T>;
 
-  constructor(innerValidator: SchemaValidator<T>, schema: AsyncIterableSchema<T>) {
+  constructor(innerValidator: SchemaValidator<T>, schema: AsyncIterableSchemaDefinition<T>) {
     super(schema);
 
     this.innerValidator = innerValidator;
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<AsyncIterableSchema<T>>> {
+  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<AsyncIterableSchemaDefinition<T>>> {
     if (!isAnyIterable(value)) {
       return { valid: false, error: SchemaError.expectedButGot('iterable or async-iterable', typeof value, path) };
     }
@@ -41,8 +41,8 @@ export class AsyncIterableSchemaValidator<T extends Schema> extends SchemaValida
   }
 }
 
-export function asyncIterable<T extends Schema>(schemaValidator: SchemaValidator<T>, options?: SchemaOptions<AsyncIterableSchema<T>, 'schema'>): AsyncIterableSchemaValidator<T> {
-  const schema = schemaHelper<AsyncIterableSchema<T>>({
+export function asyncIterable<T extends SchemaDefinition>(schemaValidator: SchemaValidator<T>, options?: SchemaOptions<AsyncIterableSchemaDefinition<T>, 'schema'>): AsyncIterableSchemaValidator<T> {
+  const schema = schemaHelper<AsyncIterableSchemaDefinition<T>>({
     type: 'asyncIterable',
     schema: schemaValidator.schema,
     ...options

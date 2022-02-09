@@ -3,7 +3,7 @@ import { isDefined, isRegExp } from '#/utils/type-guards';
 import { schemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaOptions } from '../types';
+import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<string> = {
@@ -12,7 +12,7 @@ const coercerMap: CoercerMap<string> = {
   bigint: (bigint) => ({ valid: true, value: bigint.toString() })
 };
 
-export type StringSchema = Schema<'string', unknown, string> & Coercible & {
+export type StringSchemaDefinition = SchemaDefinition<'string', unknown, string> & Coercible & {
   /** trim */
   trim?: boolean,
 
@@ -35,10 +35,10 @@ export type StringSchema = Schema<'string', unknown, string> & Coercible & {
   patternFlags?: string
 };
 
-export class StringSchemaValidator extends SchemaValidator<StringSchema> {
+export class StringSchemaValidator extends SchemaValidator<StringSchemaDefinition> {
   private readonly regexp: RegExp | undefined;
 
-  constructor(schema: StringSchema) {
+  constructor(schema: StringSchemaDefinition) {
     const pattern = isRegExp(schema.pattern) ? schema.pattern.source : schema.pattern;
     const patternFlags = isRegExp(schema.pattern) ? (schema.patternFlags ?? schema.pattern.flags) : schema.patternFlags;
 
@@ -84,8 +84,8 @@ export class StringSchemaValidator extends SchemaValidator<StringSchema> {
   }
 }
 
-export function string(options?: SchemaOptions<StringSchema>): StringSchemaValidator {
-  const schema = schemaHelper<StringSchema>({
+export function string(options?: SchemaOptions<StringSchemaDefinition>): StringSchemaValidator {
+  const schema = schemaHelper<StringSchemaDefinition>({
     type: 'string',
     ...options
   });

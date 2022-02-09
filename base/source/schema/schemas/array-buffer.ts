@@ -3,19 +3,19 @@ import { isArray, isDefined, isNumber } from '#/utils/type-guards';
 import { schemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 import { instance } from './instance';
 
-export type ArrayBufferSchema = Schema<'arrayBuffer', unknown, ArrayBuffer> & Coercible & {
+export type ArrayBufferSchemaDefinition = SchemaDefinition<'arrayBuffer', unknown, ArrayBuffer> & Coercible & {
   min?: number,
   max?: number
 };
 
 const arrayBufferInstanceSchema = instance(ArrayBuffer);
 
-export class ArrayBufferSchemaValidator extends SchemaValidator<ArrayBufferSchema> {
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArrayBufferSchema>> {
+export class ArrayBufferSchemaValidator extends SchemaValidator<ArrayBufferSchemaDefinition> {
+  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArrayBufferSchemaDefinition>> {
     const instanceTestResult = arrayBufferInstanceSchema[test](value, options, path);
 
     let buffer: ArrayBuffer;
@@ -42,8 +42,8 @@ export class ArrayBufferSchemaValidator extends SchemaValidator<ArrayBufferSchem
   }
 }
 
-export function arrayBuffer(options?: SchemaOptions<ArrayBufferSchema>): ArrayBufferSchemaValidator {
-  const schema = schemaHelper<ArrayBufferSchema>({
+export function arrayBuffer(options?: SchemaOptions<ArrayBufferSchemaDefinition>): ArrayBufferSchemaValidator {
+  const schema = schemaHelper<ArrayBufferSchemaDefinition>({
     type: 'arrayBuffer',
     ...options
   });

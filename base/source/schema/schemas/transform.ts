@@ -2,20 +2,20 @@ import type { JsonPath } from '#/json-path';
 import { isPromise } from '#/utils/type-guards';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type Transformer<T extends Schema, Output> = (value: SchemaOutput<T>) => Output | Promise<Output>;
+export type Transformer<T extends SchemaDefinition, Output> = (value: SchemaOutput<T>) => Output | Promise<Output>;
 
-export type TransformSchema<T extends Schema = Schema, Output = unknown> = Schema<'transform', SchemaInput<T>, Output> & {
+export type TransformSchemaDefinition<T extends SchemaDefinition = SchemaDefinition, Output = unknown> = SchemaDefinition<'transform', SchemaInput<T>, Output> & {
   inputSchema: T,
   transformer: Transformer<T, Output>
 };
 
-export class TransformSchemaValidator<T extends Schema, Output> extends SchemaValidator<TransformSchema<T, Output>> {
+export class TransformSchemaValidator<T extends SchemaDefinition, Output> extends SchemaValidator<TransformSchemaDefinition<T, Output>> {
   private readonly inputValidator: SchemaValidator<T>;
 
-  constructor(schema: TransformSchema<T, Output>, inputValidator: SchemaValidator<T>) {
+  constructor(schema: TransformSchemaDefinition<T, Output>, inputValidator: SchemaValidator<T>) {
     super(schema);
 
     this.inputValidator = inputValidator;
@@ -50,8 +50,8 @@ export class TransformSchemaValidator<T extends Schema, Output> extends SchemaVa
   }
 }
 
-export function transform<T extends Schema, Output>(inputSchemaValidator: SchemaValidator<T>, transformer: Transformer<T, Output>, options?: SchemaOptions<TransformSchema<T, Output>, 'inputSchema' | 'transformer'>): TransformSchemaValidator<T, Output> {
-  const schema = schemaHelper<TransformSchema<T, Output>>({
+export function transform<T extends SchemaDefinition, Output>(inputSchemaValidator: SchemaValidator<T>, transformer: Transformer<T, Output>, options?: SchemaOptions<TransformSchemaDefinition<T, Output>, 'inputSchema' | 'transformer'>): TransformSchemaValidator<T, Output> {
+  const schema = schemaHelper<TransformSchemaDefinition<T, Output>>({
     type: 'transform',
     inputSchema: inputSchemaValidator.schema,
     transformer,

@@ -4,7 +4,7 @@ import { isDefined } from '#/utils/type-guards';
 import { SchemaError, schemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaOptions } from '../types';
+import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<number> = {
@@ -30,7 +30,7 @@ const coercerMap: CoercerMap<number> = {
   }
 };
 
-export type NumberSchema = Schema<'number', unknown, number> & Coercible & {
+export type NumberSchemaDefinition = SchemaDefinition<'number', unknown, number> & Coercible & {
   /** integer */
   integer?: boolean,
 
@@ -41,7 +41,7 @@ export type NumberSchema = Schema<'number', unknown, number> & Coercible & {
   max?: number
 };
 
-export class NumberSchemaValidator extends SchemaValidator<NumberSchema> {
+export class NumberSchemaValidator extends SchemaValidator<NumberSchemaDefinition> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<number> {
     const result = super.ensureType('number', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
 
@@ -65,8 +65,8 @@ export class NumberSchemaValidator extends SchemaValidator<NumberSchema> {
   }
 }
 
-export function number(options?: SchemaOptions<NumberSchema>): NumberSchemaValidator {
-  const schema = schemaHelper<NumberSchema>({
+export function number(options?: SchemaOptions<NumberSchemaDefinition>): NumberSchemaValidator {
+  const schema = schemaHelper<NumberSchemaDefinition>({
     type: 'number',
     ...options
   });

@@ -2,7 +2,7 @@ import type { JsonPath } from '#/json-path';
 import { SchemaError } from '../schema.error';
 import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaOptions } from '../types';
+import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
 import { schemaHelper } from '../types';
 
 const coercerMap: CoercerMap<boolean> = {
@@ -31,9 +31,9 @@ const coercerMap: CoercerMap<boolean> = {
   )
 };
 
-export type BooleanSchema = Schema<'boolean', unknown, boolean> & Coercible;
+export type BooleanSchemaDefinition = SchemaDefinition<'boolean', unknown, boolean> & Coercible;
 
-export class BooleanSchemaValidator extends SchemaValidator<BooleanSchema> {
+export class BooleanSchemaValidator extends SchemaValidator<BooleanSchemaDefinition> {
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<boolean> {
     const result = super.ensureType('boolean', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
 
@@ -45,8 +45,8 @@ export class BooleanSchemaValidator extends SchemaValidator<BooleanSchema> {
   }
 }
 
-export function boolean(options?: SchemaOptions<BooleanSchema>): BooleanSchemaValidator {
-  const schema = schemaHelper<BooleanSchema>({
+export function boolean(options?: SchemaOptions<BooleanSchemaDefinition>): BooleanSchemaValidator {
+  const schema = schemaHelper<BooleanSchemaDefinition>({
     type: 'boolean',
     ...options
   });

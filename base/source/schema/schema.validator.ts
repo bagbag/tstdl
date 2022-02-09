@@ -2,7 +2,7 @@ import { JsonPath } from '#/json-path';
 import type { PrimitiveType, PrimitiveTypeString } from '#/types';
 import { isUndefined } from '#/utils/type-guards';
 import { SchemaError } from './schema.error';
-import type { Coercible, Maskable, Schema, SchemaInput, SchemaOutput } from './types';
+import type { Coercible, Maskable, SchemaDefinition, SchemaInput, SchemaOutput } from './types';
 
 export const test: unique symbol = Symbol('test');
 export const testAsync: unique symbol = Symbol('testAsync');
@@ -21,30 +21,30 @@ export type ValidationTestResult<T> =
 
 export type EnsureTypeOptions = Coercible;
 
-export abstract class SchemaValidator<T extends Schema = Schema> {
-  readonly schema: T;
+export abstract class SchemaValidator<S extends SchemaDefinition = SchemaDefinition> {
+  readonly schema: S;
 
   /** used for type inference only */
-  readonly inputType: SchemaInput<T>;
+  readonly inputType: SchemaInput<S>;
 
   /** used for type inference only */
-  readonly outputType: SchemaOutput<T>;
+  readonly outputType: SchemaOutput<S>;
 
-  constructor(schema: T) {
+  constructor(schema: S) {
     this.schema = schema;
   }
 
-  is(value: any, options?: ValidationOptions): value is SchemaOutput<T> {
-    const result = this.test(value as SchemaInput<T>, options);
+  is(value: any, options?: ValidationOptions): value is SchemaOutput<S> {
+    const result = this.test(value as SchemaInput<S>, options);
     return result.valid;
   }
 
-  async isAsync(value: SchemaInput<T>, options?: ValidationOptions): Promise<boolean> {
+  async isAsync(value: SchemaInput<S>, options?: ValidationOptions): Promise<boolean> {
     const result = await this.testAsync(value, options);
     return result.valid;
   }
 
-  parse(value: SchemaInput<T>, options?: ValidationOptions): SchemaOutput<T> {
+  parse(value: SchemaInput<S>, options?: ValidationOptions): SchemaOutput<S> {
     const result = this.test(value, options);
 
     if (result.valid) {
@@ -54,7 +54,7 @@ export abstract class SchemaValidator<T extends Schema = Schema> {
     throw result.error;
   }
 
-  async parseAsync(value: SchemaInput<T>, options?: ValidationOptions): Promise<SchemaOutput<T>> {
+  async parseAsync(value: SchemaInput<S>, options?: ValidationOptions): Promise<SchemaOutput<S>> {
     const result = await this.testAsync(value, options);
 
     if (result.valid) {
@@ -64,11 +64,11 @@ export abstract class SchemaValidator<T extends Schema = Schema> {
     throw result.error;
   }
 
-  test(value: SchemaInput<T>, options?: ValidationOptions): ValidationTestResult<SchemaOutput<T>> {
+  test(value: SchemaInput<S>, options?: ValidationOptions): ValidationTestResult<SchemaOutput<S>> {
     return this[test](value, convertOptions(options), new JsonPath());
   }
 
-  async testAsync(value: SchemaInput<T>, options?: ValidationOptions): Promise<ValidationTestResult<SchemaOutput<T>>> {
+  async testAsync(value: SchemaInput<S>, options?: ValidationOptions): Promise<ValidationTestResult<SchemaOutput<S>>> {
     return this[testAsync](value, convertOptions(options), new JsonPath());
   }
 
@@ -89,11 +89,11 @@ export abstract class SchemaValidator<T extends Schema = Schema> {
   }
 
   // eslint-disable-next-line @typescript-eslint/adjacent-overload-signatures, @typescript-eslint/require-await
-  protected async [testAsync](value: SchemaInput<T>, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<T>>> {
+  protected async [testAsync](value: SchemaInput<S>, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<S>>> {
     return this[test](value, options, path);
   }
 
-  protected abstract [test](value: SchemaInput<T>, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<T>>;
+  protected abstract [test](value: SchemaInput<S>, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<S>>;
 }
 
 function convertOptions(options?: ValidationOptions): DefinedValidationOptions {

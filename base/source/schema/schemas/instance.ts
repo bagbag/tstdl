@@ -4,15 +4,15 @@ import { isNull } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Schema, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type InstanceSchema<T = unknown> = Schema<'instance', T, T> & {
+export type InstanceSchemaDefinition<T = unknown> = SchemaDefinition<'instance', T, T> & {
   constructor: Type<T>
 };
 
-export class InstanceSchemaValidator<T> extends SchemaValidator<InstanceSchema<T>> {
-  [test](value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<InstanceSchema<T>>> {
+export class InstanceSchemaValidator<T> extends SchemaValidator<InstanceSchemaDefinition<T>> {
+  [test](value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<InstanceSchemaDefinition<T>>> {
     if (value instanceof this.schema.constructor) {
       return { valid: true, value: value as T };
     }
@@ -29,8 +29,8 @@ export class InstanceSchemaValidator<T> extends SchemaValidator<InstanceSchema<T
   }
 }
 
-export function instance<T>(constructor: Type<T>, options?: SchemaOptions<InstanceSchema<T>, 'constructor'>): InstanceSchemaValidator<T> {
-  const schema = schemaHelper<InstanceSchema<T>>({
+export function instance<T>(constructor: Type<T>, options?: SchemaOptions<InstanceSchemaDefinition<T>, 'constructor'>): InstanceSchemaValidator<T> {
+  const schema = schemaHelper<InstanceSchemaDefinition<T>>({
     type: 'instance',
     constructor,
     ...options

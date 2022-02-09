@@ -2,20 +2,20 @@ import type { JsonPath } from '#/json-path';
 import { isPromise } from '#/utils/type-guards';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type Preprocessor<S extends Schema, Input> = (value: Input) => SchemaInput<S> | Promise<SchemaInput<S>>;
+export type Preprocessor<S extends SchemaDefinition, Input> = (value: Input) => SchemaInput<S> | Promise<SchemaInput<S>>;
 
-export type PreprocessSchema<S extends Schema = Schema, Input = never> = Schema<'preprocess', Input, SchemaOutput<S>> & {
+export type PreprocessSchemaDefinition<S extends SchemaDefinition = SchemaDefinition, Input = never> = SchemaDefinition<'preprocess', Input, SchemaOutput<S>> & {
   outputSchema: S,
   preprocessor: Preprocessor<S, Input>
 };
 
-export class PreprocessSchemaValidator<T extends Schema, Input = never> extends SchemaValidator<PreprocessSchema<T, Input>> {
+export class PreprocessSchemaValidator<T extends SchemaDefinition, Input = never> extends SchemaValidator<PreprocessSchemaDefinition<T, Input>> {
   private readonly outputValidator: SchemaValidator<T>;
 
-  constructor(schema: PreprocessSchema<T, Input>, outputValidator: SchemaValidator<T>) {
+  constructor(schema: PreprocessSchemaDefinition<T, Input>, outputValidator: SchemaValidator<T>) {
     super(schema);
 
     this.outputValidator = outputValidator;
@@ -37,8 +37,8 @@ export class PreprocessSchemaValidator<T extends Schema, Input = never> extends 
   }
 }
 
-export function preprocess<T extends Schema, Input>(outputSchemaValidator: SchemaValidator<T>, preprocessor: Preprocessor<T, Input>, options?: SchemaOptions<PreprocessSchema<T, Input>, 'outputSchema' | 'preprocessor'>): PreprocessSchemaValidator<T, Input> {
-  const schema = schemaHelper<PreprocessSchema<T, Input>>({
+export function preprocess<T extends SchemaDefinition, Input>(outputSchemaValidator: SchemaValidator<T>, preprocessor: Preprocessor<T, Input>, options?: SchemaOptions<PreprocessSchemaDefinition<T, Input>, 'outputSchema' | 'preprocessor'>): PreprocessSchemaValidator<T, Input> {
+  const schema = schemaHelper<PreprocessSchemaDefinition<T, Input>>({
     type: 'preprocess',
     outputSchema: outputSchemaValidator.schema,
     preprocessor,

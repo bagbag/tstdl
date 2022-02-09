@@ -3,23 +3,23 @@ import { isArray } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type ArraySchema<T extends Schema = Schema> = Schema<'array', unknown, SchemaOutput<T>[]> & {
+export type ArraySchemaDefinition<T extends SchemaDefinition = SchemaDefinition> = SchemaDefinition<'array', unknown, SchemaOutput<T>[]> & {
   schema: T
 };
 
-export class ArraySchemaValidator<T extends Schema> extends SchemaValidator<ArraySchema<T>> {
+export class ArraySchemaValidator<T extends SchemaDefinition> extends SchemaValidator<ArraySchemaDefinition<T>> {
   private readonly innerValidator: SchemaValidator<T>;
 
-  constructor(innerValidator: SchemaValidator<T>, schema: ArraySchema<T>) {
+  constructor(innerValidator: SchemaValidator<T>, schema: ArraySchemaDefinition<T>) {
     super(schema);
 
     this.innerValidator = innerValidator;
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArraySchema<T>>> {
+  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>> {
     if (!isArray(value)) {
       return { valid: false, error: SchemaError.expectedButGot('array', typeof value, path) };
     }
@@ -39,7 +39,7 @@ export class ArraySchemaValidator<T extends Schema> extends SchemaValidator<Arra
     return { valid: true, value: validatedArray };
   }
 
-  async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<ArraySchema<T>>>> {
+  async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>>> {
     if (!isArray(value)) {
       return { valid: false, error: SchemaError.expectedButGot('array', typeof value, path) };
     }
@@ -60,8 +60,8 @@ export class ArraySchemaValidator<T extends Schema> extends SchemaValidator<Arra
   }
 }
 
-export function array<T extends Schema>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<ArraySchema<T>, 'schema'>): ArraySchemaValidator<T> {
-  const schema = schemaHelper<ArraySchema<T>>({
+export function array<T extends SchemaDefinition>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<ArraySchemaDefinition<T>, 'schema'>): ArraySchemaValidator<T> {
+  const schema = schemaHelper<ArraySchemaDefinition<T>>({
     type: 'array',
     schema: innerValidator.schema,
     ...options

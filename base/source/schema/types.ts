@@ -1,17 +1,26 @@
 import type { Simplify, TypedOmit } from '#/types';
+import type { SchemaValidator } from './schema.validator';
 
 declare const schemaTypes: unique symbol;
 
-export type Schema<Type extends string = string, Input = unknown, Output = unknown> = {
+export type SchemaDefinition<Type extends string = string, Input = unknown, Output = unknown> = {
   type: Type,
   [schemaTypes]?: { input: Input, output: Output }
 };
 
-export type SchemaOptions<T extends Schema, K extends keyof T = never> = Simplify<Partial<TypedOmit<T, keyof Schema | K>>>;
+export type Schema<T> = SchemaValidator<SchemaDefinition<string, unknown, T>>;
 
-export type SchemaInput<T extends Schema> = T extends Schema<string, infer I, any> ? I : never;
+export type SchemaOptions<T extends SchemaDefinition, K extends keyof T = never> = Simplify<Partial<TypedOmit<T, keyof SchemaDefinition | K>>>;
 
-export type SchemaOutput<T extends Schema> = T extends Schema<string, any, infer O> ? O : never;
+export type SchemaInput<T extends SchemaDefinition | SchemaValidator> =
+  T extends SchemaDefinition<string, infer I, any> ? I
+  : T extends SchemaValidator ? T['inputType']
+  : never;
+
+export type SchemaOutput<T extends SchemaDefinition | SchemaValidator> =
+  T extends SchemaDefinition<string, any, infer O> ? O
+  : T extends SchemaValidator ? T['outputType']
+  : never;
 
 export type Coercible = {
   /**
@@ -29,6 +38,6 @@ export type Maskable = {
   mask?: boolean
 };
 
-export function schemaHelper<T extends Schema>(schema: TypedOmit<T, typeof schemaTypes>): T {
+export function schemaHelper<T extends SchemaDefinition>(schema: TypedOmit<T, typeof schemaTypes>): T {
   return schema as T;
 }

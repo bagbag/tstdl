@@ -2,23 +2,23 @@ import type { JsonPath } from '#/json-path';
 import { isNull, isUndefined } from '#/utils/type-guards';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type NullableSchema<T extends Schema = Schema> = Schema<'nullable', SchemaInput<T> | null, SchemaOutput<T> | null> & Coercible & {
+export type NullableSchemaDefinition<T extends SchemaDefinition = SchemaDefinition> = SchemaDefinition<'nullable', SchemaInput<T> | null, SchemaOutput<T> | null> & Coercible & {
   schema: T
 };
 
-export class NullableSchemaValidator<T extends Schema> extends SchemaValidator<NullableSchema<T>> {
+export class NullableSchemaValidator<T extends SchemaDefinition> extends SchemaValidator<NullableSchemaDefinition<T>> {
   private readonly innerValidator: SchemaValidator<T>;
 
-  constructor(innerValidator: SchemaValidator<T>, schema: NullableSchema<T>) {
+  constructor(innerValidator: SchemaValidator<T>, schema: NullableSchemaDefinition<T>) {
     super(schema);
 
     this.innerValidator = innerValidator;
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<NullableSchema<T>>> {
+  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<NullableSchemaDefinition<T>>> {
     if (isNull(value)) {
       return { valid: true, value };
     }
@@ -31,8 +31,8 @@ export class NullableSchemaValidator<T extends Schema> extends SchemaValidator<N
   }
 }
 
-export function nullable<T extends Schema>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<NullableSchema<T>, 'schema'>): NullableSchemaValidator<T> {
-  const schema = schemaHelper<NullableSchema<T>>({
+export function nullable<T extends SchemaDefinition>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<NullableSchemaDefinition<T>, 'schema'>): NullableSchemaValidator<T> {
+  const schema = schemaHelper<NullableSchemaDefinition<T>>({
     type: 'nullable',
     schema: innerValidator.schema,
     ...options

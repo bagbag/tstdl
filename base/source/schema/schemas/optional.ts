@@ -2,23 +2,23 @@ import type { JsonPath } from '#/json-path';
 import { isNull, isUndefined } from '#/utils/type-guards';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, Schema, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
+import type { Coercible, SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-export type OptionalSchema<T extends Schema = Schema> = Schema<'optional', SchemaInput<T> | undefined, SchemaOutput<T> | undefined> & Coercible & {
+export type OptionalSchemaDefinition<T extends SchemaDefinition = SchemaDefinition> = SchemaDefinition<'optional', SchemaInput<T> | undefined, SchemaOutput<T> | undefined> & Coercible & {
   schema: T
 };
 
-export class OptionalSchemaValidator<T extends Schema> extends SchemaValidator<OptionalSchema<T>> {
+export class OptionalSchemaValidator<T extends SchemaDefinition> extends SchemaValidator<OptionalSchemaDefinition<T>> {
   private readonly innerValidator: SchemaValidator<T>;
 
-  constructor(innerValidator: SchemaValidator<T>, schema: OptionalSchema<T>) {
+  constructor(innerValidator: SchemaValidator<T>, schema: OptionalSchemaDefinition<T>) {
     super(schema);
 
     this.innerValidator = innerValidator;
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<OptionalSchema<T>>> {
+  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<OptionalSchemaDefinition<T>>> {
     if (isUndefined(value)) {
       return { valid: true, value };
     }
@@ -31,8 +31,8 @@ export class OptionalSchemaValidator<T extends Schema> extends SchemaValidator<O
   }
 }
 
-export function optional<T extends Schema>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<OptionalSchema<T>, 'schema'>): OptionalSchemaValidator<T> {
-  const schema = schemaHelper<OptionalSchema<T>>({
+export function optional<T extends SchemaDefinition>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<OptionalSchemaDefinition<T>, 'schema'>): OptionalSchemaValidator<T> {
+  const schema = schemaHelper<OptionalSchemaDefinition<T>>({
     type: 'optional',
     schema: innerValidator.schema,
     ...options
