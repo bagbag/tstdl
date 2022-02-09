@@ -7,23 +7,21 @@ export function serializeMap(map: Map<any, any>): MapData {
 }
 
 export function deserializeMap(data: MapData, tryDereference: TryDereference): Map<any, any> {
-  const map = new Map(data);
+  const map = new Map();
 
-  for (const entry of data) {
-    let [key] = entry;
-
+  for (let [key, value] of data) {
     const hasKey = tryDereference(key, (dereferenced) => {
       key = dereferenced;
 
       if (!hasValue) { // eslint-disable-line @typescript-eslint/no-use-before-define
-        map.set(key, entry[1]);
+        map.set(key, value);
       }
     });
 
-    const hasValue = tryDereference(entry[1], (dereferenced) => map.set(key, dereferenced));
+    const hasValue = tryDereference(value, (dereferenced) => map.set(key, dereferenced));
 
     if (!hasKey && !hasValue) {
-      map.set(entry[0], entry[1]);
+      map.set(key, value);
     }
   }
 
