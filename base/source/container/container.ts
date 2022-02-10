@@ -111,17 +111,25 @@ export function setTypeInfo(constructor: Constructor, typeInfo: TypeInfo): void 
 }
 
 export function getTypeInfo(constructor: Constructor, createIfMissing: boolean = false): TypeInfo {
-  if (createIfMissing && !typeInfos.has(constructor)) {
-    const typeInfo: TypeInfo = {
-      constructor,
-      parameters: [],
-      properties: {}
-    };
-
-    typeInfos.set(constructor, typeInfo);
+  if (createIfMissing) {
+    buildTypeInfoIfNeeded(constructor);
   }
 
   return assertDefinedPass(typeInfos.get(constructor), `type information for constructor ${(constructor as Constructor | undefined)?.name} not available`);
+}
+
+export function buildTypeInfoIfNeeded(constructor: Constructor): void {
+  if (typeInfos.has(constructor)) {
+    return;
+  }
+
+  const typeInfo: TypeInfo = {
+    constructor,
+    parameters: [],
+    properties: {}
+  };
+
+  setTypeInfo(constructor, typeInfo);
 }
 
 export function getInjectMetadata(target: object, propertyKey: PropertyKey | undefined, parameterIndex: number | undefined, createIfMissing: boolean = false): InjectMetadata {

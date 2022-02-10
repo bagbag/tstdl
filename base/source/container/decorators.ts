@@ -4,7 +4,7 @@ import { toArray } from '#/utils/array';
 import { getDesignType, getParameterTypes } from '#/utils/reflection';
 import { isDefined, isFunction } from '#/utils/type-guards';
 import type { ArgumentProvider, ForwardRefInjectionToken, Lifecycle, Mapper, RegistrationOptions } from './container';
-import { container, getInjectMetadata } from './container';
+import { buildTypeInfoIfNeeded, container, getInjectMetadata } from './container';
 import type { InjectionToken, Provider } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
@@ -35,6 +35,8 @@ export function replaceClass<T>(constructor: Constructor<T>): ClassDecorator {
 export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = {}): ClassDecorator {
   function injectableDecorator<U extends T>(constructor: Constructor<U>): void {
     const { alias: aliases, provider, ...registrationOptions } = options;
+
+    buildTypeInfoIfNeeded(constructor);
 
     const parameterTypes = getParameterTypes(constructor) ?? [];
 
