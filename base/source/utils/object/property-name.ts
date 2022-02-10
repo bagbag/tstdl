@@ -22,7 +22,7 @@ export function isPropertyName(value: any): value is PropertyName {
  * @param options.prefix name prefix
  *
  * @example
- * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils';
+ * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils/object';
  *
  * const name = getPropertyNameProxy<MyType>().foo.bar[propertyName];
  *

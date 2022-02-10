@@ -1,6 +1,6 @@
 import { injectable } from '#/container';
 import { Logger } from '#/logger';
-import { assertStringPass } from '#/utils';
+import { assertStringPass } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { filter, map, Subject } from 'rxjs';
 import type { MessageBus } from '../message-bus';

@@ -1,5 +1,7 @@
-import type { LockProvider } from '#/lock';
-import type { Logger } from '#/logger';
+import { resolveArg, singleton } from '#/container';
+import { LockProvider } from '#/lock';
+import type { LoggerArgument } from '#/logger';
+import { Logger } from '#/logger';
 import { toArray } from '#/utils/array';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { compareByValueSelectionDescending } from '#/utils/comparison';
@@ -7,7 +9,7 @@ import { round } from '#/utils/math';
 import { Timer } from '#/utils/timer';
 import { isDefined } from '#/utils/type-guards';
 import type { NewMigrationState } from './migration-state';
-import type { MigrationStateRepository } from './migration-state-repository';
+import { MigrationStateRepository } from './migration-state-repository';
 
 export type MigrationDefinition<T = void> = {
   name: string,
@@ -32,12 +34,13 @@ export type MigrationResult<T> = {
   restartRequested: boolean
 };
 
+@singleton()
 export class Migrator {
   private readonly migrationStateRepository: MigrationStateRepository;
   private readonly lockProvider: LockProvider;
   private readonly logger: Logger;
 
-  constructor(migrationStateRepository: MigrationStateRepository, lockProvider: LockProvider, logger: Logger) {
+  constructor(migrationStateRepository: MigrationStateRepository, lockProvider: LockProvider, @resolveArg<LoggerArgument>(Migrator.name) logger: Logger) {
     this.migrationStateRepository = migrationStateRepository;
     this.lockProvider = lockProvider;
     this.logger = logger;

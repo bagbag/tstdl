@@ -1,12 +1,16 @@
-import { injectable } from '#/container';
-import type { EntityTransformer, TypedIndexDescription } from '#/database/mongo';
+import type { Injectable } from '#/container';
+import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
+import type { CollectionArgument, EntityTransformer, MongoRepositoryConfig, TypedIndexDescription } from '#/database/mongo';
 import { Collection, mapTo, MongoEntityRepository } from '#/database/mongo';
+import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { TypedOmit } from '#/types';
 import type { OidcState } from './oidc-state.model';
-import type { OidcStateRepository } from './oidc-state.repository';
+import { OidcStateRepository } from './oidc-state.repository';
 
 export type MongoOidcState = TypedOmit<OidcState, 'expiration'> & { expiration: Date };
+
+let repositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcState> | undefined;
 
 const indexes: TypedIndexDescription<MongoOidcState>[] = [
   { key: { value: 1 }, unique: true },
@@ -21,9 +25,24 @@ const transformer: EntityTransformer<OidcState, MongoOidcState> = {
   }
 };
 
-@injectable()
-export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository {
-  constructor(collection: Collection<MongoOidcState>, logger: Logger) {
+@singleton({ defaultArgumentProvider: () => repositoryConfig })
+export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository, Injectable<CollectionArgument<MongoOidcState>> {
+  readonly [resolveArgumentType]: CollectionArgument<MongoOidcState, MongoOidcState>;
+
+  constructor(@forwardArg() collection: Collection<MongoOidcState>, @resolveArg<LoggerArgument>(MongoOidcStateRepository.name) logger: Logger) {
     super(collection, transformer, { logger, indexes });
+  }
+}
+
+/**
+ * configure mongo oidc state repository module
+ * @param mongoOidcStateRepositoryConfig repository configuration for states
+ * @param register whether to register for {@link OidcStateRepository}
+ */
+export function configureMongoOidcStateRepository(mongoOidcStateRepositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcState>, register: boolean): void {
+  repositoryConfig = mongoOidcStateRepositoryConfig;
+
+  if (register) {
+    container.registerSingleton(OidcStateRepository, { useToken: MongoOidcStateRepository });
   }
 }

@@ -1,7 +1,7 @@
 import type { Entity } from '#/database';
 
 export type MongoKeyValue<T = unknown> = Entity & {
-  scope: string,
+  module: string,
   key: string,
   value: T
 };

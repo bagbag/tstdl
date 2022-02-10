@@ -1,4 +1,4 @@
-import { singleton } from '#/container';
+import { container, singleton } from '#/container';
 import { toArray } from '#/utils/array';
 import { isArrayBuffer, isDefined, isUndefined } from '#/utils/type-guards';
 import type { CancelableRequest, Options as GotOptions, Response, ResponseType } from 'got';
@@ -174,5 +174,15 @@ function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): ResponseType | u
 
     default:
       return undefined;
+  }
+}
+
+/**
+ *
+ * @param register whether to register for {@link HttpClientAdapter}
+ */
+export function configureGotHttpClientAdapter(register: boolean): void {
+  if (register) {
+    container.register(HttpClientAdapter, { useToken: GotHttpClientAdapter });
   }
 }

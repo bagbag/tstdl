@@ -4,7 +4,7 @@ import type { Lock } from '#/lock';
 import { LockProvider } from '#/lock';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import { assertDefinedPass } from '#/utils';
+import { assertDefinedPass } from '#/utils/type-guards';
 import { MongoLock } from './lock';
 import { mongoLockModuleConfig } from './module';
 import { MongoLockRepository } from './mongo-lock-repository';
