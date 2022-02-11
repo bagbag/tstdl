@@ -1,7 +1,7 @@
 import type { Constructor } from '#/types';
-import { getTypeInfo } from './container';
-import type { InjectionToken } from './types';
-import { getTokenName } from './utils';
+import type { InjectionToken } from './token';
+import { getTokenName } from './token';
+import { getTypeInfo } from './type-info';
 
 export type ResolveChainNodeBase<Type extends string> = {
   type: Type

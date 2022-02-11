@@ -6,11 +6,7 @@ import { importHmacKey, sign } from './cryptography';
 import { encodeUtf8 } from './encoding';
 import { binaryEquals } from './equals';
 
-export enum JwtTokenAlgorithm {
-  SHA256 = 'HS256',
-  SHA384 = 'HS384',
-  SHA512 = 'HS512'
-}
+export type JwtTokenAlgorithm = 'HS256' | 'HS384' | 'HS512';
 
 export type JwtTokenHeader<T extends StringMap = StringMap> = {
   alg: JwtTokenAlgorithm,

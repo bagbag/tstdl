@@ -1,14 +1,22 @@
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { MultiKeyMap } from '#/data-structures/multi-key-map';
-import type { Constructor, Record, TypedOmit } from '#/types';
+import type { Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef } from '#/utils/object/forward-ref';
-import { assertDefinedPass, isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
+import { isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
+import type { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
+import type { AfterResolve, Injectable, InjectableArgument } from './interfaces';
+import { afterResolve } from './interfaces';
+import type { Provider } from './provider';
+import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './provider';
 import { ResolveChain } from './resolve-chain';
 import { ResolveError } from './resolve.error';
-import type { AfterResolve, Injectable, InjectableArgument, InjectionToken, Provider, ResolveContext } from './types';
-import { afterResolve, isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './types';
-import { getTokenName } from './utils';
+import type { InjectionToken } from './token';
+import { getTokenName } from './token';
+import type { InjectMetadata, TypeInfo } from './type-info';
+import { typeInfos } from './type-info';
+import type { ArgumentProvider, Mapper, ResolveContext } from './types';
 
 type InternalResolveContext = {
   isAsync: boolean,
@@ -21,54 +29,12 @@ type InternalResolveContext = {
   resolving: MultiKeyMap<[InjectionToken, any], true>
 };
 
-export type Mapper<T = any, U = unknown> = (value: T) => U | Promise<U>;
-
-export type ArgumentProvider<T = unknown> = (context: ResolveContext) => T | Promise<T>;
-
-export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>); // eslint-disable-line @typescript-eslint/ban-types
-
 /**
  * transient: a new instance will be created with each resolve
  * singleton: each resolve will return the same instance
  * resolution: the same instance will be resolved for each resolution of this dependency during a single resolution chain
  */
 export type Lifecycle = 'transient' | 'singleton' | 'resolution';
-
-export type InjectMetadata =
-  (
-    | { type: 'parameter', parameterIndex: number }
-    | { type: 'property', propertyKey: PropertyKey }
-  ) & {
-    /** token from reflection metadata */
-    token?: InjectionToken,
-
-    /** token overwrite by inject decorator */
-    injectToken?: InjectionToken,
-
-    /** if defined, resolve the ForwardRefToken using ForwardRef strategy instead resolving the token */
-    forwardRefToken?: ForwardRefInjectionToken,
-
-    /** whether injection is optional if token is not registered. Set by optional decorator */
-    optional?: boolean,
-
-    /** mapper to map resolved value */
-    mapper?: Mapper,
-
-    /** provider to get resolve argument */
-    resolveArgumentProvider?: ArgumentProvider,
-
-    /** if defined, map the resolve argument and use the returned value as the value to inject */
-    injectArgumentMapper?: Mapper,
-
-    /** if defined, use the provided argument, map it and pass it to the resolution of the token */
-    forwardArgumentMapper?: Mapper
-  };
-
-export type TypeInfo = {
-  constructor: Constructor,
-  parameters: InjectMetadata[],
-  properties: Record<PropertyKey, InjectMetadata>
-};
 
 export type RegistrationOptions<T, A = unknown> = {
   lifecycle?: Lifecycle,
@@ -100,58 +66,23 @@ export type Registration<T = any, A = any> = {
   instances: Map<any, T>
 };
 
-export const typeInfos = new Map<Constructor, TypeInfo>();
-
-export function hasTypeInfo(constructor: Constructor): boolean {
-  return typeInfos.has(constructor);
-}
-
-export function setTypeInfo(constructor: Constructor, typeInfo: TypeInfo): void {
-  typeInfos.set(constructor, typeInfo);
-}
-
-export function getTypeInfo(constructor: Constructor, createIfMissing: boolean = false): TypeInfo {
-  if (createIfMissing) {
-    buildTypeInfoIfNeeded(constructor);
-  }
-
-  return assertDefinedPass(typeInfos.get(constructor), `type information for constructor ${(constructor as Constructor | undefined)?.name} not available`);
-}
-
-export function buildTypeInfoIfNeeded(constructor: Constructor): void {
-  if (typeInfos.has(constructor)) {
-    return;
-  }
-
-  const typeInfo: TypeInfo = {
-    constructor,
-    parameters: [],
-    properties: {}
-  };
-
-  setTypeInfo(constructor, typeInfo);
-}
-
-export function getInjectMetadata(target: object, propertyKey: PropertyKey | undefined, parameterIndex: number | undefined, createIfMissing: boolean = false): InjectMetadata {
-  const constructor = (((target as Constructor).prototype ?? target) as { constructor: Constructor }).constructor;
-  const typeInfo = getTypeInfo(constructor, createIfMissing); // getOrCreateRegistration(constructor as Constructor);
-
-  if (isDefined(propertyKey)) {
-    return (typeInfo.properties[propertyKey] ?? (typeInfo.properties[propertyKey] = { type: 'property', propertyKey }));
-  }
-
-  if (isDefined(parameterIndex)) {
-    return (typeInfo.parameters[parameterIndex] ?? (typeInfo.parameters[parameterIndex] = { type: 'parameter', parameterIndex }));
-  }
-
-  throw new Error('neither property nor parameterIndex provided');
-}
-
 export class Container {
-  private readonly registrations: Map<InjectionToken, Registration>;
+  private readonly registrationMap: Map<InjectionToken, Registration>;
+  private readonly registrationSubject: Subject<Registration>;
+
+  /** emits on new registration */
+  readonly registration$: Observable<Registration>;
+
+  /** all registrations */
+  get registrations(): Iterable<Registration> {
+    return this.registrationMap.values();
+  }
 
   constructor() {
-    this.registrations = new Map();
+    this.registrationMap = new Map();
+    this.registrationSubject = new Subject();
+
+    this.registration$ = this.registrationSubject.asObservable();
   }
 
   /**
@@ -160,14 +91,21 @@ export class Container {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options?: RegistrationOptions<T, A>): void {
+  register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options: RegistrationOptions<T, A> = {}): void {
     if (isClassProvider(provider)) {
       if (!typeInfos.has(provider.useClass)) {
         throw new Error(`${provider.useClass.name} is not injectable`);
       }
     }
 
-    this.registrations.set(token, { provider, options: { lifecycle: 'transient', ...options }, instances: new Map() });
+    const registration: Registration = {
+      provider,
+      options,
+      instances: new Map()
+    };
+
+    this.registrationMap.set(token, registration);
+    this.registrationSubject.next(registration);
   }
 
   /**
@@ -185,7 +123,30 @@ export class Container {
    * @param token token check
    */
   hasRegistration(token: InjectionToken): boolean {
-    return this.registrations.has(token);
+    return this.registrationMap.has(token);
+  }
+
+  /**
+   * get registration
+   * @param token token to get registration for
+   */
+  getRegistration<T, A>(token: InjectionToken<T, A>): Registration<T, A> {
+    const registration = this.registrationMap.get(token);
+
+    if (isUndefined(registration)) {
+      const tokenName = getTokenName(token);
+      throw new Error(`no provider for ${tokenName} registered`);
+    }
+
+    return registration;
+  }
+
+  /**
+   * try to get registration
+   * @param token token to get registration for
+   */
+  tryGetRegistration<T, A>(token: InjectionToken<T, A>): Registration<T, A> | undefined {
+    return this.registrationMap.get(token);
   }
 
   /**
@@ -246,7 +207,7 @@ export class Container {
       return context.providedInstances.get(token) as T;
     }
 
-    const registration = this.registrations.get(token) as Registration<T, A>;
+    const registration = this.tryGetRegistration(token);
 
     if (isUndefined(registration)) {
       if (optional == true) {
@@ -385,7 +346,7 @@ export class Container {
       return context.providedInstances.get(token) as T;
     }
 
-    const registration = this.registrations.get(token) as Registration<T, A>;
+    const registration = this.tryGetRegistration(token);
 
     if (isUndefined(registration)) {
       if (optional == true) {

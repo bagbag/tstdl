@@ -3,9 +3,12 @@ import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '
 import { toArray } from '#/utils/array';
 import { getDesignType, getParameterTypes } from '#/utils/reflection';
 import { isDefined, isFunction } from '#/utils/type-guards';
-import type { ArgumentProvider, ForwardRefInjectionToken, Lifecycle, Mapper, RegistrationOptions } from './container';
-import { buildTypeInfoIfNeeded, container, getInjectMetadata } from './container';
-import type { InjectionToken, Provider } from './types';
+import type { Lifecycle, RegistrationOptions } from './container';
+import { container } from './container';
+import type { Provider } from './provider';
+import type { InjectionToken } from './token';
+import { buildTypeInfoIfNeeded, getInjectMetadata } from './type-info';
+import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types';
 
 export type InjectableOptions<T, P> = RegistrationOptions<T> & {
   /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
@@ -21,7 +24,7 @@ export type InjectableOptions<T, P> = RegistrationOptions<T> & {
  * @param constructor class to replace with
  */
 export function replaceClass<T>(constructor: Constructor<T>): ClassDecorator {
-  function replaceDecorator(_target: Constructor<T>): Constructor<T> {
+  function replaceDecorator(): Constructor<T> {
     return constructor;
   }
 
