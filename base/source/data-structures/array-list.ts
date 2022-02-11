@@ -100,11 +100,10 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   removeAt(index: number): T {
-    this.ensureBounds(index);
     return this.removeManyAt(index, 1)[0]!;
   }
 
-  removeManyAt(index: number, count?: number): T[] {
+  removeManyAt(index: number, count: number = this.size - index): T[] {
     this.ensureBounds(index, count);
 
     const removed = this.backingArray.splice(index, count);

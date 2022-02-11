@@ -6,14 +6,18 @@ import { IndexOutOfBoundsError } from './index-out-of-bounds.error';
 export abstract class List<T, TThis extends Collection<T, TThis>> extends Collection<T, TThis> {
   protected ensureBounds(index: number, count?: number): void {
     if ((index < 0) || (index > (this.size - 1))) {
-      throw new IndexOutOfBoundsError(index, this.size);
+      throw new IndexOutOfBoundsError({ index, count, size: this.size });
+    }
+
+    if (isDefined(count) && (count < 0)) {
+      throw new Error('count can\'t be negative');
     }
 
     if (isDefined(count)) {
       const endIndex = index + (count - 1);
 
       if ((endIndex < 0) || (endIndex > (this.size - 1))) {
-        throw new IndexOutOfBoundsError(endIndex, this.size);
+        throw new IndexOutOfBoundsError({ index, count, size: this.size });
       }
     }
   }
