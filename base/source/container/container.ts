@@ -61,6 +61,7 @@ export type RegistrationOptions<T, A = unknown> = {
 };
 
 export type Registration<T = any, A = any> = {
+  token: InjectionToken<T, A>,
   provider: Provider<T, A>,
   options: RegistrationOptions<T, A>,
   instances: Map<any, T>
@@ -99,6 +100,7 @@ export class Container {
     }
 
     const registration: Registration = {
+      token,
       provider,
       options,
       instances: new Map()
