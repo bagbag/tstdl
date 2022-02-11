@@ -344,7 +344,7 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return node.item;
   }
 
-  removeManyAt(index: number, count: number): T[] {
+  removeManyAt(index: number, count?: number): T[] {
     const nodes = this.removeManyNodesAt(index, count);
     return nodes.map((node) => node.item);
   }
@@ -380,7 +380,7 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     this.decrementSize();
   }
 
-  removeManyNodesAt(index: number, count: number): LinkedListNode<T>[] {
+  removeManyNodesAt(index: number, count: number = this.size - index): LinkedListNode<T>[] {
     this.ensureBounds(index, count);
 
     if (count <= 0) {

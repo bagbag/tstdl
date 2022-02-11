@@ -57,8 +57,12 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
   /** remove item at index */
   abstract removeAt(index: number): T;
 
-  /** remove many items at index */
-  abstract removeManyAt(index: number, count: number): T[];
+  /**
+   * remove many items at index
+   * @param index index to start removing at
+   * @param count how many items to remove. If not defined, all items starting at `index` are removed
+   */
+  abstract removeManyAt(index: number, count?: number): T[];
 
   /** yields all items from the list in reverse */
   abstract itemsReverse(): IterableIterator<T>;
