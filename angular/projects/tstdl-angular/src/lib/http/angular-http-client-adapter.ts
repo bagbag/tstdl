@@ -1,6 +1,6 @@
-import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
-import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
-import { container } from '@tstdl/base/container';
+import type { HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
+import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
+import { container, singleton } from '@tstdl/base/container';
 import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
 import { abortToken, HttpError, HttpErrorReason } from '@tstdl/base/http';
 import { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
@@ -13,6 +13,7 @@ import { race, switchMapTo, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
 
+@singleton()
 export class AngularHttpClientAdapter implements HttpClientAdapter {
   private readonly angularHttpClient: AngularHttpClient;
 

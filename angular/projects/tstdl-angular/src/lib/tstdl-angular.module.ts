@@ -1,9 +1,9 @@
-import { ApplicationRef, NgModule } from '@angular/core';
+import { ApplicationRef, Injector, NgModule } from '@angular/core';
 import type { Registration } from '@tstdl/base/container';
 import { container, getTokenName } from '@tstdl/base/container';
 import { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
 import { Logger } from '@tstdl/base/logger';
-import { from, merge } from 'rxjs';
+import { filter, from, merge } from 'rxjs';
 import { LazyListDirective, VisibleObserverDirective } from './directives';
 import { LetDirective } from './directives/let.directive';
 import { configureAngularHttpClientAdapter } from './http';
@@ -34,10 +34,12 @@ const declarations = [
 })
 export class TstdlAngularModule {
   private readonly privateApplicationRef: PrivateApplicationRef;
+  private readonly injector: Injector;
   private readonly logger: Logger;
 
-  constructor(applicationRef: ApplicationRef) {
+  constructor(applicationRef: ApplicationRef, injector: Injector) {
     this.privateApplicationRef = applicationRef as unknown as PrivateApplicationRef;
+    this.injector = injector;
     this.logger = container.resolve(Logger);
 
     this.initialize();
@@ -48,7 +50,14 @@ export class TstdlAngularModule {
       configureAngularHttpClientAdapter(true);
     }
 
-    merge(from(container.registrations), container.registration$)
+    container.register(Injector, { useValue: this.injector });
+
+    merge(
+      from(container.registrations).pipe(
+        filter((registration) => registration.token != Injector)
+      ),
+      container.registration$
+    )
       .subscribe((registration) => this.injectRegistration(registration));
   }
 
