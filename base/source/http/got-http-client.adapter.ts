@@ -178,7 +178,6 @@ function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): ResponseType | u
 }
 
 /**
- *
  * @param register whether to register for {@link HttpClientAdapter}
  */
 export function configureGotHttpClientAdapter(register: boolean): void {

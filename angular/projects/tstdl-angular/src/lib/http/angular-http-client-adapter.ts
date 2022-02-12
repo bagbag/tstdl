@@ -1,8 +1,9 @@
 import type { HttpClient as AngularHttpClient, HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
+import { container } from '@tstdl/base/container';
 import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
 import { abortToken, HttpError, HttpErrorReason } from '@tstdl/base/http';
-import type { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
+import { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
 import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { StringMap } from '@tstdl/base/types';
 import { isDefined, isUndefined } from '@tstdl/base/utils';
@@ -124,5 +125,14 @@ function getAngularHttpRequestResponseType(responseType: HttpBodyType): AngularH
 
     default:
       throw new Error(`HttpResponseType "${responseType}" not supported`);
+  }
+}
+
+/**
+ * @param register whether to register for {@link HttpClientAdapter}
+ */
+export function configureAngularHttpClientAdapter(register: boolean): void {
+  if (register) {
+    container.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
   }
 }

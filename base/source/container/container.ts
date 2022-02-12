@@ -387,13 +387,13 @@ export class Container {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
       }
 
-      const boxedParameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(token, context, typeInfo, metadata, resolveArgument, chain)));
+      const boxedParameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(context, typeInfo, metadata, resolveArgument, chain)));
       const parameters = boxedParameters.map((box) => box.resolved);
 
       instance = new typeInfo.constructor(...parameters) as T;
 
       for (const [property, metadata] of Object.entries(typeInfo.properties)) {
-        (instance as Record)[property] = (await this.resolveInjectionAsync(token, context, typeInfo, metadata, resolveArgument, chain)).resolved;
+        (instance as Record)[property] = (await this.resolveInjectionAsync(context, typeInfo, metadata, resolveArgument, chain)).resolved;
       }
     }
 
@@ -465,8 +465,8 @@ export class Container {
 
   private resolveInjection(token: InjectionToken, context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): unknown {
     const getChain = metadata.type == 'parameter'
-      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(token)
-      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(token);
+      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(injectToken!)
+      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(injectToken!);
 
     const injectToken = (metadata.injectToken ?? metadata.token)!;
 
@@ -509,14 +509,14 @@ export class Container {
     return isDefined(metadata.mapper) ? metadata.mapper(resolved) : resolved;
   }
 
-  private async resolveInjectionAsync(token: InjectionToken, context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
+  private async resolveInjectionAsync(context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
     if (isDefined(metadata.injectArgumentMapper)) {
       return { resolved: metadata.injectArgumentMapper(resolveArgument) };
     }
 
     const getChain = metadata.type == 'parameter'
-      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(token)
-      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(token);
+      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(injectToken!)
+      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(injectToken!);
 
     const injectToken = (metadata.injectToken ?? metadata.token)!;
     const parameterResolveArgument = await (metadata.forwardArgumentMapper?.(resolveArgument) ?? metadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken))));
