@@ -4,3 +4,4 @@ export * from './http-client.service';
 export * from './localization.service';
 export * from './logger.service';
 export * from './notification.service';
+export * from './tstdl-bridge.service';

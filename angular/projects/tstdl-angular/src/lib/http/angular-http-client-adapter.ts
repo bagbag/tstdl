@@ -1,5 +1,6 @@
 import type { HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
+import { Injector } from '@angular/core';
 import { container, singleton } from '@tstdl/base/container';
 import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest } from '@tstdl/base/http';
 import { abortToken, HttpError, HttpErrorReason } from '@tstdl/base/http';
@@ -135,5 +136,6 @@ function getAngularHttpRequestResponseType(responseType: HttpBodyType): AngularH
 export function configureAngularHttpClientAdapter(register: boolean): void {
   if (register) {
     container.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
+    container.register(AngularHttpClient, { useFactory: (_, context) => context.resolve(Injector).get(AngularHttpClient) }, { metadata: { skipAngularInjection: true } });
   }
 }
