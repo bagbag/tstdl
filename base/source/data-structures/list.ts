@@ -4,6 +4,77 @@ import { Collection } from './collection';
 import { IndexOutOfBoundsError } from './index-out-of-bounds.error';
 
 export abstract class List<T, TThis extends Collection<T, TThis>> extends Collection<T, TThis> {
+  /** get item at index */
+  at(index: number): T {
+    return this._at(this.normalizeIndex(index));
+  }
+
+  /**
+   * find index of first occurrence of item
+   * @param item item to search for
+   * @param fromIndex index to start search at
+   */
+  indexOf(item: T, fromIndex?: number): number | undefined {
+    return this.indexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
+  }
+
+  /** index of item (last occurrence) */
+  /**
+   * find index of last occurrence of item
+   * @param item item to search for
+   * @param fromIndex index to start from (backwards)
+   */
+  lastIndexOf(item: T, fromIndex?: number): number | undefined {
+    return this.lastIndexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
+  }
+
+  /** set item at index */
+  set(index: number, item: T): void {
+    this._set(this.normalizeIndex(index), item);
+  }
+
+  /** remove item at index */
+  removeAt(index: number): T {
+    return this._removeAt(this.normalizeIndex(index));
+  }
+
+  /** remove first item */
+  removeFirst(): T {
+    return this.removeAt(0);
+  }
+
+  /** remove last item */
+  removeLast(): T {
+    return this.removeAt(-1);
+  }
+
+  /**
+   * remove many items at index
+   * @param index index to start removing at
+   * @param count how many items to remove. If not defined, all items starting at `index` are removed
+   */
+  removeManyAt(index: number, count?: number): T[] {
+    return this._removeManyAt(this.normalizeIndex(index), count);
+  }
+
+  /**
+   * remove range of items at `fromIndex` to `toIndex`
+   * @param fromIndex index to start removing at
+   * @param toIndex index to remove to
+   */
+  removeRange(fromIndex: number, toIndex: number): T[] {
+    const from = this.normalizeIndex(fromIndex);
+    const to = this.normalizeIndex(toIndex);
+
+    const count = 1 + (to - from);
+
+    if (count < 1) {
+      throw new Error('toIndex can\'t be less than fromIndex');
+    }
+
+    return this._removeManyAt(from, count);
+  }
+
   protected ensureBounds(index: number, count?: number): void {
     if ((index < 0) || (index > (this.size - 1))) {
       throw new IndexOutOfBoundsError({ index, count, size: this.size });
@@ -22,18 +93,29 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     }
   }
 
+  protected normalizeIndex(index: number): number {
+    if (index < 0) {
+      return this.size + index;
+    }
+
+    return index;
+  }
+
+  /** yields all items from the list in reverse */
+  abstract itemsReverse(): IterableIterator<T>;
+
   /** get item at index */
-  abstract at(index: number): T;
+  protected abstract _at(index: number): T;
 
   /**
    * find index of first occurrence of item
    * @param item item to search for
    * @param fromIndex index to start search at
    */
-  abstract indexOf(item: T, fromIndex?: number): number | undefined;
+  protected abstract _indexOf(item: T, fromIndex?: number): number | undefined;
 
   /** index of match (first occurrence) */
-  abstract findIndex(predicate: Predicate<T>): number | undefined;
+  protected abstract findIndex(predicate: Predicate<T>): number | undefined;
 
   /** index of item (last occurrence) */
   /**
@@ -41,33 +123,30 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
    * @param item item to search for
    * @param fromIndex index to start from (backwards)
    */
-  abstract lastIndexOf(item: T, fromIndex?: number): number | undefined;
+  protected abstract _lastIndexOf(item: T, fromIndex?: number): number | undefined;
 
   /** index of match (last occurrence) */
-  abstract findLastIndex(predicate: Predicate<T>): number | undefined;
+  protected abstract findLastIndex(predicate: Predicate<T>): number | undefined;
 
   /** set item at index */
-  abstract set(index: number, item: T): void;
+  protected abstract _set(index: number, item: T): void;
 
   /** add item to start of list */
-  abstract prepend(item: T): void;
+  protected abstract prepend(item: T): void;
 
   /** add many items to start of list */
-  abstract prependMany(items: Iterable<T>): void;
+  protected abstract prependMany(items: Iterable<T>): void;
 
   /** remove item */
-  abstract remove(item: T): boolean;
+  protected abstract remove(item: T): boolean;
 
   /** remove item at index */
-  abstract removeAt(index: number): T;
+  protected abstract _removeAt(index: number): T;
 
   /**
    * remove many items at index
    * @param index index to start removing at
    * @param count how many items to remove. If not defined, all items starting at `index` are removed
    */
-  abstract removeManyAt(index: number, count?: number): T[];
-
-  /** yields all items from the list in reverse */
-  abstract itemsReverse(): IterableIterator<T>;
+  protected abstract _removeManyAt(index: number, count?: number): T[];
 }

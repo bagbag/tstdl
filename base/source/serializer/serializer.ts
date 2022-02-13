@@ -1,17 +1,35 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, max-lines-per-function, max-statements, complexity */
 
 import { CircularBuffer } from '#/data-structures/circular-buffer';
+import { SortedArrayList } from '#/data-structures/sorted-array-list';
 import type { Constructor, StringMap } from '#/types';
+import { compareByValueSelection } from '#/utils/comparison';
 import { ForwardRef } from '#/utils/object/forward-ref';
 import { isDefined, isUndefined } from '#/utils/type-guards';
+import type { DereferenceCallback } from './serializable';
+import { getSerializerByTypeName, getTypeNameByConstructor } from './serializable';
 import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
 import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
-import type { DereferenceCallback } from './_internal';
-import { getSerializerByTypeName, getTypeNameByConstructor } from './_internal';
-export { registerSerializable, registerSerializer, Serializable, serializable } from './_internal';
-export type { DereferenceCallback, TryDereference } from './_internal';
 
 type QueueItem = () => void;
+
+type DeserializeQueueItem = {
+  depth: number,
+  counter: number,
+  fn: () => void
+};
+
+type DeserializeContext = {
+  serializedRoot: unknown,
+  options: SerializationOptions,
+  references: Map<string, any>,
+  deserializeQueue: SortedArrayList<DeserializeQueueItem>,
+  derefQueue: CircularBuffer<QueueItem>,
+  deserializeCounter: number,
+  addToDeserializeQueue: (item: QueueItem, depth: number) => void,
+  addManyToDeserializeQueue: (items: QueueItem[], depth: number) => void,
+  tryAddToDerefQueue: (value: unknown, callback: DereferenceCallback) => boolean
+};
 
 export function stringSerialize<T>(value: T, options?: SerializationOptions): StringSerialized<T> {
   const serialized = serialize(value, options);
@@ -155,22 +173,12 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
 
 export function deserialize<T>(serialized: Serialized<T>, options?: SerializationOptions): T;
 export function deserialize(serialized: unknown, options?: SerializationOptions): unknown;
-/**
- * for internal use only
- * @deprecated
- */
-export function deserialize(serialized: unknown, options: SerializationOptions, serializedRoot: unknown, references: Map<string, any>, deserializeQueues: CircularBuffer<QueueItem>[], derefQueue: CircularBuffer<QueueItem>, path: string, depth: number): unknown;
-export function deserialize(serialized: unknown, options: SerializationOptions = {}, serializedRoot: unknown = serialized, references: Map<string, any> = new Map(), deserializeQueues: CircularBuffer<QueueItem>[] = [], derefQueue: CircularBuffer<QueueItem> = new CircularBuffer(), path = '$', depth: number = 0): unknown {
-  const addToDeserializeQueue: CircularBuffer<QueueItem>['add'] = (value) => {
-    const queue = deserializeQueues[depth] ?? (deserializeQueues[depth] = new CircularBuffer());
-    queue.add(value);
-  };
+export function deserialize(serialized: unknown, options?: SerializationOptions): unknown {
+  const context = getDeserializeContext(serialized, options);
+  return _deserialize(serialized, context, '$', 0);
+}
 
-  const addManyToDeserializeQueue: CircularBuffer<QueueItem>['addMany'] = (values) => {
-    const queue = deserializeQueues[depth] ?? (deserializeQueues[depth] = new CircularBuffer());
-    queue.addMany(values);
-  };
-
+function _deserialize(serialized: unknown, context: DeserializeContext, path: string, depth: number): unknown {
   const type = typeof serialized;
 
   if ((type == 'number') || (type == 'boolean') || (serialized === null)) {
@@ -178,7 +186,7 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
   }
 
   if (type == 'string') {
-    references.set(path, serialized);
+    context.references.set(path, serialized);
     return serialized;
   }
 
@@ -187,9 +195,9 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
   }
 
   if (type == 'object') {
-    if ((depth == 0) && isDefined(options.context)) {
-      for (const entry of Object.entries(options.context)) {
-        references.set(`$['__context__']['${entry[0]}']`, entry[1]);
+    if ((depth == 0) && isDefined(context.options.context)) {
+      for (const entry of Object.entries(context.options.context)) {
+        context.references.set(`$['__context__']['${entry[0]}']`, entry[1]);
       }
     }
 
@@ -207,31 +215,31 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
 
         case bigintNonPrimitiveType: {
           const bigint = BigInt(nonPrimitiveData as BigintNonPrimitive['<bigint>']);
-          references.set(path, bigint);
+          context.references.set(path, bigint);
 
           return bigint;
         }
 
         case globalSymbolNonPrimitiveType: {
           const symbol = Symbol.for(nonPrimitiveData as GlobalSymbolNonPrimitive['<global-symbol>']);
-          references.set(path, symbol);
+          context.references.set(path, symbol);
 
           return symbol;
         }
 
         case functionNonPrimitiveType: {
-          if (options.allowUnsafe !== true) {
+          if (context.options.allowUnsafe !== true) {
             throw new Error('functions are only allowed if allowUnsafe option is true');
           }
 
           const fn = eval(nonPrimitiveData as FunctionNonPrimitive['<function>']); // eslint-disable-line no-eval
-          references.set(path, fn);
+          context.references.set(path, fn);
 
           return fn;
         }
 
         case refNonPrimitiveType: {
-          const dereferenced = references.get(nonPrimitiveData as RefNonPrimitive['<ref>']);
+          const dereferenced = context.references.get(nonPrimitiveData as RefNonPrimitive['<ref>']);
 
           if (dereferenced == undefined) {
             throw new Error(`reference ${nonPrimitiveData as RefNonPrimitive['<ref>']} not found`);
@@ -248,19 +256,19 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
           }
 
           const forwardRef = ForwardRef.create();
-          references.set(path, forwardRef);
+          context.references.set(path, forwardRef);
 
-          addToDeserializeQueue(() => {
-            const deserializedData = deserialize(nonPrimitiveData, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}['<${nonPrimitiveType}>']`, depth + 1);
+          context.addToDeserializeQueue(() => {
+            const deserializedData = _deserialize(nonPrimitiveData, context, `${path}['<${nonPrimitiveType}>']`, depth + 1);
 
-            addToDeserializeQueue(() => {
-              const deserialized = registration.deserializer(deserializedData, tryAddToDerefQueue);
+            context.addToDeserializeQueue(() => {
+              const deserialized = registration.deserializer(deserializedData, context.tryAddToDerefQueue);
               ForwardRef.setRef(forwardRef, deserialized);
-            });
-          });
+            }, depth);
+          }, depth);
 
           if (depth == 0) {
-            drainQueues(deserializeQueues, derefQueue);
+            drainQueues(context);
             return ForwardRef.deref(forwardRef);
           }
 
@@ -275,35 +283,35 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
     if (constructor == Array) {
       const deserializedArray: unknown[] = [];
       deserializedArray.length = (serialized as any[]).length;
-      references.set(path, deserializedArray);
+      context.references.set(path, deserializedArray);
 
       const queueItems = (serialized as any[]).map((innerValue, index): QueueItem => () => {
-        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}[${index}]`, depth + 1);
+        const deserialized = _deserialize(innerValue, context, `${path}[${index}]`, depth + 1);
         deserializedArray[index] = deserialized;
 
-        tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedArray[index] = dereferenced));
+        context.tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedArray[index] = dereferenced));
 
         return deserialized;
       });
 
-      addManyToDeserializeQueue(queueItems);
+      context.addManyToDeserializeQueue(queueItems, depth);
 
       result = deserializedArray;
     }
     else if (constructor == Object) {
       const deserializedObject: StringMap = {};
-      references.set(path, deserializedObject);
+      context.references.set(path, deserializedObject);
 
       const queueItems = entries.map(([key, innerValue]): QueueItem => () => {
-        const deserialized = deserialize(innerValue, options, serializedRoot, references, deserializeQueues, derefQueue, `${path}['${key}']`, depth + 1);
+        const deserialized = _deserialize(innerValue, context, `${path}['${key}']`, depth + 1);
         deserializedObject[key] = deserialized;
 
-        tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedObject[key] = dereferenced));
+        context.tryAddToDerefQueue(deserialized, (dereferenced) => (deserializedObject[key] = dereferenced));
 
         return deserialized;
       });
 
-      addManyToDeserializeQueue(queueItems);
+      context.addManyToDeserializeQueue(queueItems, depth);
 
       result = deserializedObject;
     }
@@ -312,52 +320,59 @@ export function deserialize(serialized: unknown, options: SerializationOptions =
     }
 
     if (depth == 0) {
-      drainQueues(deserializeQueues, derefQueue);
+      drainQueues(context);
     }
 
     return result;
   }
 
   throw new Error(`unsupported type '${type}'`);
-
-  function tryAddToDerefQueue(value: unknown, callback: DereferenceCallback): boolean {
-    if (!ForwardRef.isForwardRef(value) || (options.doNotDereferenceForwardRefs == true)) {
-      return false;
-    }
-
-    derefQueue.add(() => {
-      const dereferenced = ForwardRef.deref(value);
-      callback(dereferenced);
-    });
-
-    return true;
-  }
 }
 
-function drainQueues(deserializeQueue: CircularBuffer<QueueItem>[], derefQueue: CircularBuffer<QueueItem>): void {
-  while (true) {
-    let doBreak = true;
+function getTypeString<T extends string>(type: T): TypeField<T> {
+  return `<${type}>`;
+}
 
-    for (let i = deserializeQueue.length - 1; i >= 0; i--) {
-      const queue = deserializeQueue[i]!;
-
-      if (queue.hasItems) {
-        queue.remove()();
-        doBreak = false;
-        break;
+function getDeserializeContext(serializedRoot: unknown, options?: SerializationOptions): DeserializeContext {
+  const context: DeserializeContext = {
+    serializedRoot,
+    options: options ?? {},
+    references: new Map(),
+    deserializeCounter: 0,
+    deserializeQueue: new SortedArrayList<DeserializeQueueItem>(undefined, compareByValueSelection((item) => item.depth, (item) => item.counter)),
+    derefQueue: new CircularBuffer(),
+    addToDeserializeQueue(fn: QueueItem, depth: number) {
+      context.deserializeQueue.add({ depth, counter: context.deserializeCounter++, fn });
+    },
+    addManyToDeserializeQueue(fns: QueueItem[], depth: number) {
+      for (const fn of fns) {
+        context.deserializeQueue.add({ depth, counter: context.deserializeCounter++, fn });
       }
-    }
+    },
+    tryAddToDerefQueue(value: unknown, callback: DereferenceCallback): boolean {
+      if (!ForwardRef.isForwardRef(value) || (context.options.doNotDereferenceForwardRefs == true)) {
+        return false;
+      }
 
-    if (doBreak) {
-      break;
+      context.derefQueue.add(() => {
+        const dereferenced = ForwardRef.deref(value);
+        callback(dereferenced);
+      });
+
+      return true;
     }
+  };
+
+  return context;
+}
+
+function drainQueues({ deserializeQueue, derefQueue }: DeserializeContext): void {
+  while (deserializeQueue.size > 0) {
+    const item = deserializeQueue.removeLast();
+    item.fn();
   }
 
   for (const fn of derefQueue.consume()) {
     fn();
   }
-}
-
-function getTypeString<T extends string>(type: T): TypeField<T> {
-  return `<${type}>`;
 }

@@ -1,5 +1,5 @@
 import { isDefined } from '#/utils/type-guards';
-import type { registerSerializer } from '../serializer';
+import type { registerSerializer } from '../serializable';
 import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary';
 import { deserializeDate, serializeDate } from './date';
 import { deserializeError, serializeError } from './error';

@@ -1,8 +1,9 @@
+import type { ToJson } from '#/interfaces';
 import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, startWith, Subject } from 'rxjs';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T> {
+export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
   private readonly clearSubject: Subject<TThis>;
@@ -75,6 +76,10 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
 
   [Symbol.iterator](): IterableIterator<T> {
     return this.items();
+  }
+
+  toJSON(): any {
+    return [...this];
   }
 
   /** remove all items */

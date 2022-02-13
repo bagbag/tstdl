@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 // eslint-disable-next-line max-classes-per-file
-import { Serializable, serializable } from '#/serializer';
+import type { TryDereference } from '#/serializer/serializable';
+import { Serializable, serializable } from '#/serializer/serializable';
 import type { Predicate } from '#/utils/iterable-helpers';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { List } from './list';
@@ -42,35 +44,35 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return [...instance];
   }
 
-  [Serializable.deserialize](data: T[], tryAddToDerefQueue: (item: unknown, callback: (dereferenced: unknown) => void) => boolean): LinkedList<T> {
+  [Serializable.deserialize](data: T[], tryDereference: TryDereference): LinkedList<T> {
     const linkedList = new LinkedList<T>();
 
     for (const item of data) {
       const node = linkedList.add(item);
-      tryAddToDerefQueue(item, (dereferenced) => (node.item = dereferenced as T));
+      tryDereference(item, (dereferenced) => (node.item = dereferenced as T));
     }
 
     return linkedList;
   }
 
-  /** get item at index */
-  at(index: number): T {
+  protected _at(index: number): T {
     const node = this.nodeAt(index);
     return node.item;
   }
 
   /** get node at index */
   nodeAt(index: number): LinkedListNode<T> {
-    this.ensureBounds(index);
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex);
 
-    const indexFromEnd = (this.size - 1) - index;
+    const indexFromEnd = (this.size - 1) - normalizedIndex;
 
     let node: LinkedListNode<T>;
 
-    if (index <= indexFromEnd) {
+    if (normalizedIndex <= indexFromEnd) {
       node = this.head!;
 
-      for (let i = 0; i < index; i++) {
+      for (let i = 0; i < normalizedIndex; i++) {
         node = node!.next!;
       }
     }
@@ -85,7 +87,7 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return node;
   }
 
-  indexOf(item: T, fromIndex: number = 0): number | undefined {
+  protected _indexOf(item: T, fromIndex: number = 0): number | undefined {
     let index = 0;
 
     for (const node of this.nodes()) {
@@ -127,7 +129,7 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return undefined;
   }
 
-  lastIndexOf(item: T, fromIndex: number = (this.size - 1)): number | undefined {
+  protected _lastIndexOf(item: T, fromIndex: number = (this.size - 1)): number | undefined {
     let index = this.size - 1;
 
     for (const node of this.nodesReverse()) {
@@ -169,7 +171,7 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return undefined;
   }
 
-  set(index: number, item: T): void {
+  protected _set(index: number, item: T): void {
     const node = this.nodeAt(index);
     node.item = item;
     this.emitChange();
@@ -339,21 +341,22 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     return false;
   }
 
-  removeAt(index: number): T {
+  protected _removeAt(index: number): T {
     const node = this.removeNodeAt(index);
     return node.item;
   }
 
-  removeManyAt(index: number, count?: number): T[] {
+  protected _removeManyAt(index: number, count?: number): T[] {
     const nodes = this.removeManyNodesAt(index, count);
     return nodes.map((node) => node.item);
   }
 
   /** remove node at index */
   removeNodeAt(index: number): LinkedListNode<T> {
-    this.ensureBounds(index);
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex);
 
-    const node = this.nodeAt(index);
+    const node = this.nodeAt(normalizedIndex);
     this.removeNode(node);
 
     return node;
@@ -381,13 +384,14 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
   }
 
   removeManyNodesAt(index: number, count: number = this.size - index): LinkedListNode<T>[] {
-    this.ensureBounds(index, count);
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex, count);
 
     if (count <= 0) {
       return [];
     }
 
-    const firstNode = this.nodeAt(index);
+    const firstNode = this.nodeAt(normalizedIndex);
     const nodes: LinkedListNode<T>[] = [firstNode];
     let lastNode = firstNode;
 

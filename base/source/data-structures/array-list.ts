@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import type { Predicate } from '#/utils/iterable-helpers';
 import { List } from './list';
 
@@ -23,12 +24,12 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
     return arrayList;
   }
 
-  at(index: number): T {
+  protected _at(index: number): T {
     this.ensureBounds(index);
     return this.backingArray[index]!;
   }
 
-  indexOf(item: T, fromIndex?: number): number | undefined {
+  protected _indexOf(item: T, fromIndex?: number): number | undefined {
     const index = this.backingArray.indexOf(item, fromIndex);
 
     if (index == -1) {
@@ -42,7 +43,7 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
     return this.backingArray.findIndex((item, index) => predicate(item, index));
   }
 
-  lastIndexOf(item: T, fromIndex?: number): number | undefined {
+  protected _lastIndexOf(item: T, fromIndex?: number): number | undefined {
     const index = this.backingArray.lastIndexOf(item, fromIndex);
 
     if (index == -1) {
@@ -82,7 +83,7 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
     this.updateSize();
   }
 
-  set(index: number, item: T): void {
+  protected _set(index: number, item: T): void {
     this.ensureBounds(index);
     this.backingArray[index] = item;
     this.emitChange();
@@ -99,11 +100,11 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
     return true;
   }
 
-  removeAt(index: number): T {
+  protected _removeAt(index: number): T {
     return this.removeManyAt(index, 1)[0]!;
   }
 
-  removeManyAt(index: number, count: number = this.size - index): T[] {
+  protected _removeManyAt(index: number, count: number = this.size - index): T[] {
     this.ensureBounds(index, count);
 
     const removed = this.backingArray.splice(index, count);

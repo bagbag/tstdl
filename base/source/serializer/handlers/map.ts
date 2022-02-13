@@ -1,4 +1,4 @@
-import type { TryDereference } from '../serializer';
+import type { TryDereference } from '../serializable';
 
 type MapData = [any, any][];
 

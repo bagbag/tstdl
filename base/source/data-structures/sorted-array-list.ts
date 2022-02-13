@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import { NotImplementedError } from '#/error';
+import type { TryDereference } from '#/serializer';
+import { Serializable, serializable } from '#/serializer';
 import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySearchLast } from '#/utils/binary-search';
-import { compareByValue, compareByValueSelection } from '#/utils/comparison';
+import { compareByValue } from '#/utils/comparison';
 import type { Predicate } from '#/utils/iterable-helpers';
-import type { Comparator } from '#/utils/sort';
+import { Comparator } from '#/utils/sort';
 import { isUndefined } from '#/utils/type-guards';
 import { List } from './list';
 
 export type RangeType = 'inclusive' | 'exclusive';
 
-export class SortedArrayList<T extends TComparator, TComparator = T> extends List<T, SortedArrayList<T, TComparator>> {
+@serializable('SortedArrayList')
+export class SortedArrayList<T extends TComparator, TComparator = T> extends List<T, SortedArrayList<T, TComparator>> implements Serializable<SortedArrayList<T, TComparator>, T[]> {
   private readonly comparator: Comparator<TComparator>;
 
   private backingArray: T[];
@@ -34,7 +38,19 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     return sortedArrayList;
   }
 
-  at(index: number): T {
+  [Serializable.serialize](instance: SortedArrayList<T, TComparator>): T[] {
+    return instance.backingArray;
+  }
+
+  [Serializable.deserialize](data: T[], tryDereference: TryDereference): SortedArrayList<T, TComparator> {
+    for (let i = 0; i < data.length; i++) {
+      tryDereference(data[i], (dereferenced) => (data[i] = dereferenced as T));
+    }
+
+    return SortedArrayList.fromSortedArray(data);
+  }
+
+  protected _at(index: number): T {
     this.ensureBounds(index);
     return this.backingArray[index]!;
   }
@@ -44,7 +60,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     return binarySearch(this.backingArray, item, this.comparator, { min: fromIndex });
   }
 
-  indexOf(item: TComparator, fromIndex?: number): number | undefined {
+  protected _indexOf(item: TComparator, fromIndex?: number): number | undefined {
     return binarySearchFirst(this.backingArray, item, this.comparator, { min: fromIndex });
   }
 
@@ -52,7 +68,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     return this.backingArray.findIndex((item, index) => predicate(item, index));
   }
 
-  lastIndexOf(item: TComparator, fromIndex?: number): number | undefined {
+  protected _lastIndexOf(item: TComparator, fromIndex?: number): number | undefined {
     return binarySearchLast(this.backingArray, item, this.comparator, { max: fromIndex });
   }
 
@@ -92,7 +108,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
   }
 
   /** same as `removeAt(index); add(item);` as it is sorted */
-  set(index: number, item: T): void {
+  protected _set(index: number, item: T): void {
     this.ensureBounds(index);
     this.backingArray.splice(index, 1);
     this.add(item);
@@ -109,11 +125,11 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     return true;
   }
 
-  removeAt(index: number): T {
+  protected _removeAt(index: number): T {
     return this.removeManyAt(index, 1)[0]!;
   }
 
-  removeManyAt(index: number, count: number = this.size - index): T[] {
+  protected _removeManyAt(index: number, count: number = this.size - index): T[] {
     this.ensureBounds(index, count);
 
     const removed = this.backingArray.splice(index, count);
@@ -153,13 +169,3 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     this.setSize(this.backingArray.length);
   }
 }
-
-const arr = new SortedArrayList<{ value: number, value2: number }>(undefined, compareByValueSelection((x) => x.value, (x) => x.value2));
-
-
-arr.add({ value: 3, value2: 7 });
-arr.add({ value: 3, value2: 9 });
-arr.add({ value: 3, value2: 3 });
-arr.add({ value: 3, value2: 4 });
-
-console.log([...arr])

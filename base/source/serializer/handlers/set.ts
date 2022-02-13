@@ -1,5 +1,5 @@
+import type { TryDereference } from '../serializable';
 import type { Serialized } from '../types';
-import type { TryDereference } from '../_internal';
 
 type SetData = Serialized<any>[];
 
