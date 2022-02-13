@@ -57,7 +57,10 @@ export type RegistrationOptions<T, A = unknown> = {
   argumentIdentityProvider?: Mapper<InjectableArgument<T, A> | undefined>,
 
   /** function which gets called after a resolve */
-  initializer?: (instance: T) => any | Promise<any>
+  initializer?: (instance: T) => any | Promise<any>,
+
+  /** custom metadata */
+  metadata?: Record
 };
 
 export type Registration<T = any, A = any> = {
