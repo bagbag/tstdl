@@ -12,8 +12,8 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   /**
-   * creates a new ArrayCollection from existing array without copying data
-   * @param array array to use as new backing array for this ArrayCollection
+   * creates a new {@link ArrayList} from existing array without copying data
+   * @param array array to use as new backing array for this {@link ArrayList}
    */
   static fromArray<T>(array: T[]): ArrayList<T> {
     const arrayList = new ArrayList<T>();
