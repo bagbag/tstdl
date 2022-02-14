@@ -15,7 +15,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
    * @param fromIndex index to start search at
    */
   indexOf(item: T, fromIndex?: number): number | undefined {
-    return this.indexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
+    return this._indexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
   }
 
   /** index of item (last occurrence) */
@@ -25,7 +25,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
    * @param fromIndex index to start from (backwards)
    */
   lastIndexOf(item: T, fromIndex?: number): number | undefined {
-    return this.lastIndexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
+    return this._lastIndexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
   }
 
   /** set item at index */
