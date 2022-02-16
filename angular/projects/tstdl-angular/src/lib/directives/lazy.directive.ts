@@ -21,12 +21,12 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
 
   private intersectionTracker: HTMLDivElement | undefined;
 
-  @Input() root: Element | Document | null | undefined;
-  @Input() rootMargin: string | undefined;
-  @Input() threshold: number | number[] | undefined;
+  @Input() tslLazyRoot: Element | Document | null | undefined;
+  @Input() tslLazyRootMargin: string | undefined;
+  @Input() tslLazyThreshold: number | number[] | undefined;
 
-  @Input() intrinsicWidth: string;
-  @Input() intrinsicHeight: string;
+  @Input() tslLazyIntrinsicWidth: string;
+  @Input() tslLazyIntrinsicHeight: string;
 
   constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, elementRef: ElementRef<Node>, renderer: Renderer2) {
     super();
@@ -36,23 +36,23 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
     this.elementRef = elementRef;
     this.renderer = renderer;
 
-    this.rootMargin = '10%';
+    this.tslLazyRootMargin = '10%';
   }
 
   override ngAfterViewInit(): void {
     this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
 
-    if (isDefined(this.intrinsicWidth)) {
-      this.renderer.setStyle(this.intersectionTracker, 'width', this.intrinsicWidth);
+    if (isDefined(this.tslLazyIntrinsicWidth)) {
+      this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicWidth);
     }
 
-    if (isDefined(this.intrinsicHeight)) {
-      this.renderer.setStyle(this.intersectionTracker, 'width', this.intrinsicHeight);
+    if (isDefined(this.tslLazyIntrinsicHeight)) {
+      this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicHeight);
     }
 
     this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
 
-    observeIntersection(this.intersectionTracker, { root: this.root, rootMargin: this.rootMargin, threshold: this.threshold })
+    observeIntersection(this.intersectionTracker, { root: this.tslLazyRoot, rootMargin: this.tslLazyRootMargin, threshold: this.tslLazyThreshold })
       .pipe(
         filter((intersections) => intersections.some((intersection) => intersection.isIntersecting)),
         take(1),
