@@ -47,7 +47,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
     }
 
     if (isDefined(this.tslLazyIntrinsicHeight)) {
-      this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicHeight);
+      this.renderer.setStyle(this.intersectionTracker, 'height', this.tslLazyIntrinsicHeight);
     }
 
     this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
