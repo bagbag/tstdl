@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path';
-import type { Optionalize, Record, Simplify, StringMap } from '#/types';
+import type { Optionalize, Record, Simplify, SimplifyObject, StringMap } from '#/types';
 import { differenceMaps } from '#/utils/map';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
@@ -16,6 +16,8 @@ export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = Strin
   entries: T
 };
 
+type ObjectAssign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>> = SimplifyObject<Omit<A, keyof B> & B>;
+
 export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extends SchemaValidator<ObjectSchemaDefinition<T>> {
   private readonly validatorEntries: Map<PropertyKey, SchemaValidator>;
 
@@ -23,6 +25,17 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
     super(schema);
 
     this.validatorEntries = new Map(Object.entries(validators));
+  }
+
+  static assign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>>(a: ObjectSchemaValidator<A>, b: ObjectSchemaValidator<B>): ObjectSchemaValidator<ObjectAssign<A, B>> {
+    const validatorEntries = Object.fromEntries([...a.validatorEntries.entries(), ...b.validatorEntries.entries()]) as ObjectSchemaValidatorEntries<A & B>;
+
+    const schema: ObjectSchemaDefinition<ObjectAssign<A, B>> = {
+      type: 'object',
+      entries: { ...a.schema.entries, ...b.schema.entries }
+    };
+
+    return new ObjectSchemaValidator(validatorEntries, schema);
   }
 
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<ObjectOutputType<T>> {
@@ -122,4 +135,8 @@ export function object<T extends StringMap<SchemaDefinition>>(entries: ObjectSch
   });
 
   return new ObjectSchemaValidator(entries, schema);
+}
+
+export function assign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>>(a: ObjectSchemaValidator<A>, b: ObjectSchemaValidator<B>): ObjectSchemaValidator<ObjectAssign<A, B>> {
+  return ObjectSchemaValidator.assign(a, b);
 }

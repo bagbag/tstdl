@@ -72,6 +72,11 @@ export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
   : { [K in keyof T]: T[K] } & {};
 
 /**
+ * remove type information on object
+ */
+export type SimplifyObject<T extends Record> = { [K in keyof T]: T[K] } & {};
+
+/**
  * pick properties from a type that extend from a specific type.
  */
 export type PickBy<T, V> = Pick<T, { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]>;
