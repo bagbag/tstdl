@@ -39,7 +39,6 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
     this.elementRef = elementRef;
     this.renderer = renderer;
     this.changeDetector = changeDetector;
-    this.zone = zone;
 
     this.tslLazyRootMargin = '10%';
   }
