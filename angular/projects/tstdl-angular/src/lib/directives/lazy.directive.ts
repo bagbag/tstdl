@@ -1,10 +1,9 @@
 import type { AfterViewInit, OnDestroy } from '@angular/core';
-import { ChangeDetectorRef, Directive, ElementRef, Input, NgZone, Renderer2, TemplateRef, ViewContainerRef } from '@angular/core';
+import { ChangeDetectorRef, Directive, ElementRef, Input, Renderer2, TemplateRef, ViewContainerRef } from '@angular/core';
 import { observeIntersection } from '@tstdl/base/rxjs';
 import { isDefined } from '@tstdl/base/utils';
 import { filter, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils';
-import { runInZone } from '../utils/rxjs';
 
 /**
  * lazily render the element when it intersects the viewport (default) or specified {@link root} element.
@@ -20,7 +19,6 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
   private readonly elementRef: ElementRef<Node>;
   private readonly renderer: Renderer2;
   private readonly changeDetector: ChangeDetectorRef;
-  private readonly zone: NgZone;
 
   private intersectionTracker: HTMLDivElement | undefined;
 
@@ -33,7 +31,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
   @Input() tslLazyIntrinsicWidth: string;
   @Input() tslLazyIntrinsicHeight: string;
 
-  constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, elementRef: ElementRef<Node>, renderer: Renderer2, changeDetector: ChangeDetectorRef, zone: NgZone) {
+  constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, elementRef: ElementRef<Node>, renderer: Renderer2, changeDetector: ChangeDetectorRef) {
     super();
 
     this.templateRef = templateRef;
@@ -63,8 +61,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
       .pipe(
         filter((intersections) => intersections.some((intersection) => intersection.isIntersecting)),
         take(1),
-        takeUntil(this.destroy$),
-        runInZone(this.zone)
+        takeUntil(this.destroy$)
       )
       .subscribe(() => {
         this.removeTracker();
