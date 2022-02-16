@@ -21,10 +21,12 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
 
   private intersectionTracker: HTMLDivElement | undefined;
 
+  /** unused */
+  @Input() tslLazy: any;
+
   @Input() tslLazyRoot: Element | Document | null | undefined;
   @Input() tslLazyRootMargin: string | undefined;
   @Input() tslLazyThreshold: number | number[] | undefined;
-
   @Input() tslLazyIntrinsicWidth: string;
   @Input() tslLazyIntrinsicHeight: string;
 
