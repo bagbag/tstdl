@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path';
 import type { Type } from '#/types';
-import { isNull } from '#/utils/type-guards';
+import { typeOf } from '#/utils/type-of';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
@@ -17,15 +17,7 @@ export class InstanceSchemaValidator<T> extends SchemaValidator<InstanceSchemaDe
       return { valid: true, value: value as T };
     }
 
-    const type = typeof value;
-
-    const got = type == 'object'
-      ? isNull(value)
-        ? 'null'
-        : (value as object).constructor.name
-      : type;
-
-    return { valid: false, error: SchemaError.expectedButGot(`instance of ${this.schema.constructor.name}`, got, path) };
+    return { valid: false, error: SchemaError.expectedButGot(`instance of ${this.schema.constructor.name}`, typeOf(value), path) };
   }
 }
 

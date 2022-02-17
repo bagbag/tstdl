@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path';
 import { isArray } from '#/utils/type-guards';
+import { typeOf } from '#/utils/type-of';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
@@ -21,7 +22,7 @@ export class ArraySchemaValidator<T extends SchemaDefinition> extends SchemaVali
 
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>> {
     if (!isArray(value)) {
-      return { valid: false, error: SchemaError.expectedButGot('array', typeof value, path) };
+      return { valid: false, error: SchemaError.expectedButGot('array', typeOf(value), path) };
     }
 
     const validatedArray: SchemaOutput<T>[] = [];
@@ -41,7 +42,7 @@ export class ArraySchemaValidator<T extends SchemaDefinition> extends SchemaVali
 
   async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>>> {
     if (!isArray(value)) {
-      return { valid: false, error: SchemaError.expectedButGot('array', typeof value, path) };
+      return { valid: false, error: SchemaError.expectedButGot('array', typeOf(value), path) };
     }
 
     const validatedArray: SchemaOutput<T>[] = [];

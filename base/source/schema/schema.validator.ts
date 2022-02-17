@@ -1,6 +1,7 @@
 import { JsonPath } from '#/json-path';
 import type { PrimitiveType, PrimitiveTypeString } from '#/types';
 import { isUndefined } from '#/utils/type-guards';
+import { typeOf } from '#/utils/type-of';
 import { SchemaError } from './schema.error';
 import type { Coercible, Maskable, SchemaDefinition, SchemaInput, SchemaOutput } from './types';
 
@@ -82,7 +83,7 @@ export abstract class SchemaValidator<S extends SchemaDefinition = SchemaDefinit
     const coercer: CoercerFunction<any, any> | undefined = (options?.coerce ?? false) ? coercers?.[valueType] : undefined;
 
     if (isUndefined(coercer)) {
-      return { valid: false, error: SchemaError.expectedButGot(type, valueType, path) };
+      return { valid: false, error: SchemaError.expectedButGot(type, typeOf(value), path) };
     }
 
     return coercer(value, path);

@@ -1,6 +1,7 @@
 import type { JsonPath } from '#/json-path';
 import { isAnyIterable } from '#/utils/any-iterable-iterator';
 import { mapAsync } from '#/utils/async-iterable-helpers/map';
+import { typeOf } from '#/utils/type-of';
 import { SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
@@ -22,7 +23,7 @@ export class AsyncIterableSchemaValidator<T extends SchemaDefinition> extends Sc
 
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<AsyncIterableSchemaDefinition<T>>> {
     if (!isAnyIterable(value)) {
-      return { valid: false, error: SchemaError.expectedButGot('iterable or async-iterable', typeof value, path) };
+      return { valid: false, error: SchemaError.expectedButGot('iterable or async-iterable', typeOf(value), path) };
     }
 
     const innerValidator = this.innerValidator;

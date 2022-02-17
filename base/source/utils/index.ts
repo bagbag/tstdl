@@ -38,6 +38,7 @@ export * from './stream-reader';
 export * from './timer';
 export * from './timing';
 export * from './type-guards';
+export * from './type-of';
 export * from './units';
 export * from './url-builder';
 export * from './z-base32';

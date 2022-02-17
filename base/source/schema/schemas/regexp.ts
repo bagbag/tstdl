@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path';
 import { isRegExp, isString } from '#/utils/type-guards';
+import { typeOf } from '#/utils/type-of';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test } from '../schema.validator';
@@ -20,7 +21,7 @@ export class RegExpSchemaValidator extends SchemaValidator<RegExpSchemaDefinitio
         }
       }
 
-      return { valid: false, error: SchemaError.expectedButGot('RegExp', typeof value, path) };
+      return { valid: false, error: SchemaError.expectedButGot('RegExp', typeOf(value), path) };
     }
 
     return { valid: true, value };
