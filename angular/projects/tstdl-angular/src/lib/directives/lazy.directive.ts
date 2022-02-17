@@ -1,8 +1,8 @@
-import type { AfterViewInit, OnDestroy } from '@angular/core';
+import type { AfterViewInit, EmbeddedViewRef, OnDestroy } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input, Renderer2, TemplateRef, ViewContainerRef } from '@angular/core';
 import { observeIntersection } from '@tstdl/base/rxjs';
-import { isDefined } from '@tstdl/base/utils';
-import { filter, take, takeUntil } from 'rxjs';
+import { assertDefinedPass, isDefined, isUndefined } from '@tstdl/base/utils';
+import { combineLatest, filter, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils';
 
 /**
@@ -21,6 +21,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
   private readonly changeDetector: ChangeDetectorRef;
 
   private intersectionTracker: HTMLDivElement | undefined;
+  private initialTemplateView: EmbeddedViewRef<any> | undefined;
 
   /** unused */
   @Input() tslLazy: any;
@@ -30,6 +31,19 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
   @Input() tslLazyThreshold: number | number[] | undefined;
   @Input() tslLazyIntrinsicWidth: string;
   @Input() tslLazyIntrinsicHeight: string;
+
+  /**
+   * template to render before actual deferred view. Useful for eg. for skeletons.
+   * Should be lightweight/fast to render
+   */
+  @Input() tslLazyInitialTemplate: TemplateRef<any>;
+
+  /**
+   * insert intersection tracker
+   * true: insert even if `initialTemplate` is provided,
+   * false: only insert if no initialTemplate is provided (default)
+   */
+  @Input() tslLazyTracker: boolean | null | undefined;
 
   constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, elementRef: ElementRef<Node>, renderer: Renderer2, changeDetector: ChangeDetectorRef) {
     super();
@@ -41,23 +55,33 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
     this.changeDetector = changeDetector;
 
     this.tslLazyRootMargin = '10%';
+    this.tslLazyTracker = false;
   }
 
   override ngAfterViewInit(): void {
-    this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
+    if ((this.tslLazyTracker == true) || isUndefined(this.tslLazyInitialTemplate)) {
+      this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
 
-    if (isDefined(this.tslLazyIntrinsicWidth)) {
-      this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicWidth);
+      if (isDefined(this.tslLazyIntrinsicWidth)) {
+        this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicWidth);
+      }
+
+      if (isDefined(this.tslLazyIntrinsicHeight)) {
+        this.renderer.setStyle(this.intersectionTracker, 'height', this.tslLazyIntrinsicHeight);
+      }
+
+      this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
     }
 
-    if (isDefined(this.tslLazyIntrinsicHeight)) {
-      this.renderer.setStyle(this.intersectionTracker, 'height', this.tslLazyIntrinsicHeight);
+    if (isDefined(this.tslLazyInitialTemplate)) {
+      this.initialTemplateView = this.viewContainer.createEmbeddedView(this.tslLazyInitialTemplate);
     }
 
-    this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
+    const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
 
-    observeIntersection(this.intersectionTracker, { root: this.tslLazyRoot, rootMargin: this.tslLazyRootMargin, threshold: this.tslLazyThreshold })
+    combineLatest([this.observe('tslLazyRoot'), this.observe('tslLazyRootMargin'), this.observe('tslLazyThreshold')])
       .pipe(
+        switchMap(([root, rootMargin, threshold]) => observeIntersection(intersectionElement, { root, rootMargin, threshold })),
         filter((intersections) => intersections.some((intersection) => intersection.isIntersecting)),
         take(1),
         takeUntil(this.destroy$)
@@ -67,6 +91,8 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
         this.viewContainer.createEmbeddedView(this.templateRef);
         this.changeDetector.markForCheck();
       });
+
+    setTimeout(() => this.changeDetector.markForCheck(), 0);
 
     super.ngAfterViewInit();
   }
@@ -79,6 +105,10 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
   private removeTracker(): void {
     if (isDefined(this.intersectionTracker)) {
       this.renderer.removeChild(this.elementRef.nativeElement.parentNode, this.intersectionTracker);
+    }
+
+    if (isDefined(this.initialTemplateView)) {
+      this.initialTemplateView.destroy();
     }
   }
 }
