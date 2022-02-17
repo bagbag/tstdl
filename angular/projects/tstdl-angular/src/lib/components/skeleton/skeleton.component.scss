@@ -10,11 +10,8 @@
 
   display: block;
   background: var(--skeleton-color);
-  isolation: isolate;
-  contain: strict;
-  position: relative;
   border-radius: var(--skeleton-border-radius);
-  height: 1em;
+  height: 0.65em;
   width: 10em;
   transform: scale(1);
   transform-origin: top left;
