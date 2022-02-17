@@ -3,6 +3,7 @@ export * from './array';
 export * from './array-buffer';
 export * from './async-iterable';
 export * from './boolean';
+export * from './defaulted';
 export * from './enumeration';
 export * from './instance';
 export * from './iterable';

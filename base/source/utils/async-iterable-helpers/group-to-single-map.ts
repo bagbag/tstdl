@@ -16,7 +16,7 @@ async function async<TIn, TGroup>(iterable: AsyncIterable<TIn>, selector: AsyncI
     const groupKey = await selector(item, index++);
 
     if (map.has(groupKey)) {
-      throw new Error('group has more than one items');
+      throw new Error('group has more than one item');
     }
 
     map.set(groupKey, item);
@@ -33,7 +33,7 @@ async function sync<TIn, TGroup>(iterable: Iterable<TIn>, selector: AsyncIterato
     const groupKey = await selector(item, index++);
 
     if (map.has(groupKey)) {
-      throw new Error('group has more than one items');
+      throw new Error('group has more than one item');
     }
 
     map.set(groupKey, item);

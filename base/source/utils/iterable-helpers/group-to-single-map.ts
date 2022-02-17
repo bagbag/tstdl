@@ -8,7 +8,7 @@ export function groupToSingleMap<TIn, TGroup>(iterable: Iterable<TIn>, selector:
     const groupKey = selector(item, index++);
 
     if (map.has(groupKey)) {
-      throw new Error('group has more than one items');
+      throw new Error('group has more than one item');
     }
 
     map.set(groupKey, item);
