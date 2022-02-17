@@ -25,6 +25,10 @@ export class SkeletonComponent {
   height: string | null | undefined;
 
   @Input()
+  @HostBinding('style.--skeleton-border-radius')
+  borderRadius: string | null | undefined;
+
+  @Input()
   @HostBinding('style.--skeleton-pulse-size')
   pulseSize: string | null | undefined;
 

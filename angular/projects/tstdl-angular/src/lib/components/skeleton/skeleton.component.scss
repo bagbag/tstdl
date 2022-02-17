@@ -1,5 +1,5 @@
 :host {
-  display: block;
+  --skeleton-border-radius: 0px;
   --skeleton-pulse-size: 5px;
   --skeleton-pulse-duration: 1.25s;
   --skeleton-pulse-scale: 0.98;
@@ -8,11 +8,12 @@
   --skeleton-pulse-shadow-color: rgba(0, 0, 0, 0.1) !important;
   --skeleton-pulse-shadow-color-fadeout: rgba(0, 0, 0, 0) !important;
 
+  display: block;
   background: var(--skeleton-color);
   isolation: isolate;
   contain: strict;
   position: relative;
-  border-radius: 9999px;
+  border-radius: var(--skeleton-border-radius);
   height: 1em;
   width: 10em;
   transform: scale(1);
