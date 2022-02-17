@@ -1,11 +1,12 @@
 :host {
   display: block;
   --skeleton-pulse-size: 5px;
-  --skeleton-pulse-duration: 1.5s;
-  --skeleton-color: rgba(75, 75, 75);
-  --skeleton-pulse-color: rgba(75, 75, 75, 0.75);
-  --skeleton-pulse-shadow-color: rgba(75, 75, 75, 0.75);
-  --skeleton-pulse-shadow-color-fadeout: rgba(75, 75, 75, 0);
+  --skeleton-pulse-duration: 1.25s;
+  --skeleton-pulse-scale: 0.98;
+  --skeleton-color: rgba(0, 0, 0, 0.15) !important;
+  --skeleton-pulse-color: rgba(0, 0, 0, 0.1) !important;
+  --skeleton-pulse-shadow-color: rgba(0, 0, 0, 0.1) !important;
+  --skeleton-pulse-shadow-color-fadeout: rgba(0, 0, 0, 0) !important;
 
   background: var(--skeleton-color);
   isolation: isolate;
@@ -15,20 +16,21 @@
   height: 1em;
   width: 10em;
   transform: scale(1);
+  transform-origin: top left;
   animation: pulse var(--skeleton-pulse-duration) infinite;
 }
 
 :host.dark:not(.light),
 .dark :host:not(.light) {
-  --skeleton-color: rgba(175, 175, 175);
-  --skeleton-pulse-color: rgba(175, 175, 175, 0.75);
-  --skeleton-pulse-shadow-color: rgba(175, 175, 175, 0.75);
-  --skeleton-pulse-shadow-color-fadeout: rgba(175, 175, 175, 0);
+  --skeleton-color: rgba(255, 255, 255, 0.2) !important;
+  --skeleton-pulse-color: rgba(255, 255, 255, 0.15) !important;
+  --skeleton-pulse-shadow-color: rgba(255, 255, 255, 0.15) !important;
+  --skeleton-pulse-shadow-color-fadeout: rgba(255, 255, 255, 0) !important;
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(0.98);
+    transform: scale(var(--skeleton-pulse-scale));
     background: var(--skeleton-color);
     box-shadow: 0 0 0 0 var(--skeleton-pulse-shadow-color);
   }
@@ -40,7 +42,7 @@
   }
 
   100% {
-    transform: scale(0.98);
+    transform: scale(var(--skeleton-pulse-scale));
     background: var(--skeleton-color);
     box-shadow: 0 0 0 0 var(--skeleton-pulse-shadow-color-fadeout);
   }

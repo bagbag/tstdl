@@ -15,4 +15,24 @@ export class SkeletonComponent {
   get light(): boolean {
     return this.dark === false;
   }
+
+  @Input()
+  @HostBinding('style.width')
+  width: string | null | undefined;
+
+  @Input()
+  @HostBinding('style.height')
+  height: string | null | undefined;
+
+  @Input()
+  @HostBinding('style.--skeleton-pulse-size')
+  pulseSize: string | null | undefined;
+
+  @Input()
+  @HostBinding('style.--skeleton-pulse-scale')
+  pulseScale: number | string | null | undefined;
+
+  @Input()
+  @HostBinding('style.--skeleton-pulse-duration')
+  pulseDuration: string | null | undefined;
 }
