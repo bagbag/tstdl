@@ -4,7 +4,7 @@ import type { TypedOmit } from '@tstdl/base/types';
 import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
 import { CancellationToken, isUndefined } from '@tstdl/base/utils';
 import { hasOwnProperty } from '@tstdl/base/utils/object';
-import type { Observable } from 'rxjs';
+import { defer, Observable } from 'rxjs';
 import { filter, map, ReplaySubject, startWith, Subject, switchMapTo } from 'rxjs';
 
 export type TypedSimpleChange<T> = TypedOmit<SimpleChange, 'previousValue' | 'currentValue'> & {
@@ -198,10 +198,10 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   observe<Property extends ParentProperties<Parent>>(property: Property): Observable<Parent[Property]> {
     return this.init$.pipe(
       switchMapTo(
-        this.observeChanges(property).pipe(
+        defer(() => this.observeChanges(property).pipe(
           map((change) => change.currentValue),
           startWith((this as unknown as Parent)[property])
-        )
+        ))
       )
     );
   }
