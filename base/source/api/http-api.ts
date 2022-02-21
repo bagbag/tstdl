@@ -9,8 +9,9 @@ import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types
 import { toArray } from '#/utils/array';
 import { decodeText } from '#/utils/encoding';
 import { round } from '#/utils/math';
-import type { NonObjectBufferMode } from '#/utils/stream-helper-types';
-import { readStream } from '#/utils/stream-reader';
+import type { NonObjectBufferMode } from '#/utils/stream/stream-helper-types';
+import { readBinaryStream } from '#/utils/stream/stream-reader';
+import type { TypedReadable } from '#/utils/stream/typed-readable';
 import { Timer } from '#/utils/timer';
 import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
 import * as KoaRouter from '@koa/router';
@@ -19,7 +20,6 @@ import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import type { Readable } from 'stream';
 import type { HttpServer } from '../http/server';
-import type { TypedReadable } from '../utils/typed-readable';
 import type { ApiEndpoint } from './endpoint';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
@@ -326,7 +326,7 @@ async function readRawBody(request: Koa.Request, maxBytes: number): Promise<Arra
     throw new MaxBytesExceededError(`maximum content-length of ${maxBytes} bytes exceeded`);
   }
 
-  const buffer = await readStream(request.req as TypedReadable<NonObjectBufferMode>, maxBytes);
+  const buffer = await readBinaryStream(request.req as TypedReadable<NonObjectBufferMode>, request.length, maxBytes);
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 

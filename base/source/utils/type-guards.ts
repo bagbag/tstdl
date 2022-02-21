@@ -125,6 +125,13 @@ export function assertNotArray<T>(value: T, message: Message = 'expected value t
 export function assertArrayPass(value: any, message?: Message): InferIsType<typeof isArray> { assertArray(value, message); return value; }
 export function assertNotArrayPass<T>(value: T, message?: Message): InferIsNotType<T, typeof isArray> { assertNotArray(value, message); return value; }
 
+export function isReadonlyArray(value: any): value is readonly any[] { return isArray(value); }
+export function isNotReadonlyArray<T>(value: T): value is InferIsNotType<T, typeof isReadonlyArray> { return isNotArray(value); }
+export function assertReadonlyArray(value: any, message: Message = 'expected value to be Array'): asserts value is InferIsType<typeof isReadonlyArray> { assertArray(value, message); }
+export function assertNotReadonlyArray<T>(value: T, message: Message = 'expected value to not be Array'): asserts value is InferIsNotType<T, typeof isReadonlyArray> { assertNotArray(value, message); }
+export function assertReadonlyArrayPass(value: any, message?: Message): InferIsType<typeof isReadonlyArray> { return assertArrayPass(value, message) as readonly any[]; }
+export function assertNotReadonlyArrayPass<T>(value: T, message?: Message): InferIsNotType<T, typeof isReadonlyArray> { return assertNotArrayPass(value, message) as unknown as Exclude<T, readonly any[]>; }
+
 export function isArrayBuffer(value: any): value is ArrayBuffer { return (value instanceof ArrayBuffer); }
 export function isNotArrayBuffer<T>(value: T): value is InferIsNotType<T, typeof isArrayBuffer> { return !isArrayBuffer(value); }
 export function assertArrayBuffer(value: any, message: Message = 'expected value to be ArrayBuffer'): asserts value is InferIsType<typeof isArrayBuffer> { assert(isArrayBuffer(value), message); }

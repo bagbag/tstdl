@@ -55,13 +55,13 @@ function mergeValues(a: any, b: any, options: MergeObjectsOptions, path: string)
       throw new Error(`property type mismatch at ${path}`);
     }
 
-    return mergeArray(a, b, options, path);
+    return mergeArray(a, b, options, path); // eslint-disable-line @typescript-eslint/no-unsafe-return
   }
 
   return _mergeObjects(a as object, b as object, options, path);
 }
 
-function mergeArray<T, U>(a: T[], b: U[], options: MergeObjectsOptions, path: string): (T | U)[] {
+function mergeArray<T, U>(a: readonly T[], b: readonly U[], options: MergeObjectsOptions, path: string): (T | U)[] {
   if (options.array == 'merge' || isUndefined(options.array)) {
     return [...a, ...b];
   }
@@ -70,7 +70,7 @@ function mergeArray<T, U>(a: T[], b: U[], options: MergeObjectsOptions, path: st
     return [...new Set([...a, ...b])];
   }
 
-  if ((options.array == 'equals') || (options.array == 'equals-sorted')) {
+  if ((options.array == 'equals') || (options.array == 'equals-sorted')) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     if (a.length != b.length) {
       throw new Error(`array length mismatch at ${path}`);
     }
@@ -84,5 +84,5 @@ function mergeArray<T, U>(a: T[], b: U[], options: MergeObjectsOptions, path: st
     return [...a];
   }
 
-  throw new Error(`unsupported array option ${options.array}`);
+  throw new Error(`unsupported array option ${options.array as string}`);
 }

@@ -58,11 +58,11 @@ export type HttpBodyType =
 
 export type HttpBody<B extends HttpBodyType = HttpBodyType>
   = B extends HttpNoneBodyType ? undefined
-  : B extends HttpAutoBodyType ? UndefinableJson | string | ArrayBuffer | undefined
+  : B extends HttpAutoBodyType ? UndefinableJson | string | Uint8Array | undefined
   : B extends HttpTextBodyType ? string
   : B extends HttpJsonBodyType ? UndefinableJson
-  : B extends HttpStreamBodyType ? AsyncIterable<ArrayBuffer>
-  : B extends HttpBufferBodyType ? ArrayBuffer
+  : B extends HttpStreamBodyType ? AsyncIterable<Uint8Array>
+  : B extends HttpBufferBodyType ? Uint8Array
   : undefined;
 
 export type NormalizedHttpClientRequest = {
@@ -75,8 +75,8 @@ export type NormalizedHttpClientRequest = {
     form?: NormalizedHttpForm,
     json?: UndefinableJson,
     text?: string,
-    buffer?: ArrayBuffer,
-    stream?: AsyncIterable<ArrayBuffer>
+    buffer?: Uint8Array,
+    stream?: AsyncIterable<Uint8Array>
   },
   timeout?: number,
   context: HttpClientRequestContext
@@ -143,8 +143,8 @@ export type HttpClientRequest = {
     form?: HttpForm,
     json?: UndefinableJson,
     text?: string,
-    buffer?: ArrayBuffer,
-    stream?: AsyncIterable<ArrayBuffer>
+    buffer?: Uint8Array,
+    stream?: AsyncIterable<Uint8Array>
   },
 
   /**

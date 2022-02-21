@@ -102,12 +102,12 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async getBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+  async getBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('get', url, 'buffer', options);
     return response.body;
   }
 
-  async *getStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
+  async *getStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<Uint8Array> {
     const response = await this.requestStream('get', url, options);
     yield* response.body;
   }
@@ -126,12 +126,12 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async postBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+  async postBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('post', url, 'buffer', options);
     return response.body;
   }
 
-  async *postStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
+  async *postStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<Uint8Array> {
     const response = await this.requestStream('post', url, options);
     yield* response.body;
   }
@@ -150,12 +150,12 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async putBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+  async putBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('put', url, 'buffer', options);
     return response.body;
   }
 
-  async *putStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
+  async *putStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<Uint8Array> {
     const response = await this.requestStream('put', url, options);
     yield* response.body;
   }
@@ -174,12 +174,12 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async patchBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+  async patchBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('patch', url, 'buffer', options);
     return response.body;
   }
 
-  async *patchStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
+  async *patchStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<Uint8Array> {
     const response = await this.requestStream('patch', url, options);
     yield* response.body;
   }
@@ -198,12 +198,12 @@ export class HttpClient {
     return response.body as T;
   }
 
-  async deleteBuffer(url: string, options?: HttpClientRequestOptions): Promise<ArrayBuffer> {
+  async deleteBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('delete', url, 'buffer', options);
     return response.body;
   }
 
-  async *deleteStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<ArrayBuffer> {
+  async *deleteStream(url: string, options?: HttpClientRequestOptions): AsyncIterableIterator<Uint8Array> {
     const response = await this.requestStream('delete', url, options);
     yield* response.body;
   }

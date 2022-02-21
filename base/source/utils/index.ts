@@ -1,7 +1,6 @@
 export * from './alphabet';
 export * from './any-iterable-iterator';
 export * from './async-iterator-iterable-iterator';
-export * from './async-writable-stream';
 export * from './backoff';
 export * from './base64';
 export * from './benchmark';
@@ -33,8 +32,6 @@ export * from './reflection';
 export * from './set';
 export * from './singleton';
 export * from './sort';
-export * from './stream-helper-types';
-export * from './stream-reader';
 export * from './timer';
 export * from './timing';
 export * from './type-guards';

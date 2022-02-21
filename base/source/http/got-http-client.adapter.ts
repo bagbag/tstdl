@@ -1,8 +1,7 @@
 import { container, singleton } from '#/container';
 import { toArray } from '#/utils/array';
 import { isArrayBuffer, isDefined, isUndefined } from '#/utils/type-guards';
-import type { CancelableRequest, Options as GotOptions, Response, ResponseType } from 'got';
-import Got, { CancelError, HTTPError, TimeoutError } from 'got';
+import type * as Got from 'got';
 import type { IncomingMessage } from 'http';
 import { Readable } from 'stream';
 import { DeferredPromise } from '../promise';
@@ -11,41 +10,42 @@ import { HttpError, HttpErrorReason } from './http.error';
 import type { HttpBody, HttpBodyType, HttpClientResponse, NormalizedHttpClientRequest, NormalizedHttpHeaders } from './types';
 import { abortToken } from './types';
 
-const defaultGotOptions: GotOptions = {
-  retry: 0,
-  followRedirect: true
-};
+let _got: typeof Got | undefined;
+
+async function getGot(): Promise<typeof Got> {
+  if (isUndefined(_got)) {
+    _got = await (eval('import(\'got\')') as Promise<typeof Got>); // eslint-disable-line no-eval, require-atomic-updates
+  }
+
+  return _got;
+}
 
 @singleton()
 export class GotHttpClientAdapter extends HttpClientAdapter {
   async call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
+    const got = await getGot();
+
     switch (request.responseType) {
       case 'stream':
         return this.callStream(request) as Promise<HttpClientResponse<T>>;
 
       default:
-        return this._call(request);
+        return this._call(got, request);
     }
   }
 
   async callStream(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<'stream'>> {
-    const gotOptions = getGotOptions(request);
+    const got = await getGot();
+
+    const gotOptions = getGotOptions(got, true, request);
 
     const responsePromise = new DeferredPromise<IncomingMessage>();
-    const gotRequest = Got.stream({ ...gotOptions, isStream: true });
-    const originalOnResponse = gotRequest._onResponse.bind(gotRequest);
+    const gotRequest = got.got.stream(request.url, { ...gotOptions });
 
     request[abortToken].set$.subscribe(() => gotRequest.destroy());
 
-    async function onResponseWrapper(response: IncomingMessage): Promise<void> {
-      if (!responsePromise.resolved) {
-        responsePromise.resolve(response);
-      }
-
-      return originalOnResponse(response);
-    }
-
-    gotRequest._onResponse = onResponseWrapper;
+    gotRequest.on('response', (response: IncomingMessage) => responsePromise.resolve(response));
+    gotRequest.on('error', (error) => responsePromise.reject(error));
 
     try {
       const response = await responsePromise;
@@ -55,24 +55,24 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
         statusCode: response.statusCode ?? -1,
         statusMessage: response.statusMessage,
         header: response.headers as NormalizedHttpHeaders,
-        body: gotRequest
+        body: streamWrapper(got, gotRequest, request)
       };
 
       return result;
     }
     catch (error: unknown) {
-      throw convertError(error, request);
+      throw convertError(got, error, request);
     }
   }
 
-  private async _call<T extends HttpBodyType>(request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
+  private async _call<T extends HttpBodyType>(got: typeof Got, request: NormalizedHttpClientRequest): Promise<HttpClientResponse<T>> {
     try {
-      const gotOptions = getGotOptions(request);
-      const gotRequest = Got({ ...gotOptions, responseType: httpBodyTypeToGotResponseType(request.responseType) }) as CancelableRequest;
+      const gotOptions = getGotOptions(got, false, request);
+      const gotRequest = got.got(request.url, { ...gotOptions, responseType: httpBodyTypeToGotResponseType(request.responseType) });
 
       request[abortToken].set$.subscribe(() => gotRequest.cancel());
 
-      const response = await gotRequest as Response;
+      const response = await gotRequest;
       const result: HttpClientResponse<T> = {
         request,
         statusCode: response.statusCode,
@@ -84,28 +84,28 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
       return result;
     }
     catch (error: unknown) {
-      throw convertError(error, request);
+      throw convertError(got, error, request);
     }
   }
 }
 
-function convertError(error: unknown, request: NormalizedHttpClientRequest): HttpError {
-  if (error instanceof HTTPError) {
+function convertError(got: typeof Got, error: unknown, request: NormalizedHttpClientRequest): HttpError {
+  if (error instanceof got.HTTPError) {
     return new HttpError(HttpErrorReason.Unknown, request, convertResponse(request, error.response), error);
   }
 
-  if (error instanceof CancelError) {
+  if (error instanceof got.CancelError) {
     return new HttpError(HttpErrorReason.Cancelled, request, convertResponse(request, error.response), error);
   }
 
-  if (error instanceof TimeoutError) {
+  if (error instanceof got.TimeoutError) {
     return new HttpError(HttpErrorReason.Timeout, request, convertResponse(request, error.response), error);
   }
 
   return new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
 }
 
-function convertResponse(request: NormalizedHttpClientRequest, gotResponse: Response | undefined): HttpClientResponse | undefined {
+function convertResponse(request: NormalizedHttpClientRequest, gotResponse: Got.Response | undefined): HttpClientResponse | undefined {
   if (isUndefined(gotResponse)) {
     return undefined;
   }
@@ -121,27 +121,40 @@ function convertResponse(request: NormalizedHttpClientRequest, gotResponse: Resp
   return response;
 }
 
-function getGotOptions({ url, method, headers, body, responseType, timeout }: NormalizedHttpClientRequest): GotOptions {
-  const options: GotOptions = {
-    ...defaultGotOptions,
-    url,
-    method,
-    headers,
-    responseType: httpBodyTypeToGotResponseType(responseType),
-    timeout
+// eslint-disable-next-line max-statements, max-lines-per-function
+function getGotOptions(got: typeof Got, isStream: boolean, { method, headers, body, responseType, timeout }: NormalizedHttpClientRequest): Got.Options {
+  const optionsInit: Got.OptionsInit = {
+    isStream,
+    retry: { limit: 0, methods: [] },
+    followRedirect: true,
+    method
   };
+
+  const options = new got.Options(optionsInit);
+
+  if (isDefined(headers)) {
+    options.headers = headers;
+  }
+
+  const gotResponseType = httpBodyTypeToGotResponseType(responseType);
+
+  if (isDefined(gotResponseType)) {
+    options.responseType = gotResponseType;
+  }
+
+  options.timeout = { request: timeout };
 
   if (isDefined(body)) {
     const binary = body.buffer ?? body.stream;
 
-    if (isDefined(binary)) {
+    if (isDefined(body.json)) {
+      options.body = JSON.stringify(body.json);
+    }
+    else if (isDefined(binary)) {
       options.body = isArrayBuffer(binary) ? Buffer.from(binary) : Readable.from(binary);
     }
     else if (isDefined(body.text)) {
       options.body = body.text;
-    }
-    else if (isDefined(body.json)) {
-      options.body = JSON.stringify(body.json);
     }
     else if (isDefined(body.form)) {
       const paras = new URLSearchParams();
@@ -154,6 +167,7 @@ function getGotOptions({ url, method, headers, body, responseType, timeout }: No
         }
       }
 
+      options.headers = { 'Content-Type': 'application/x-www-form-urlencoded', ...options.headers }; // eslint-disable-line @typescript-eslint/naming-convention
       options.body = paras.toString();
     }
   }
@@ -161,7 +175,7 @@ function getGotOptions({ url, method, headers, body, responseType, timeout }: No
   return options;
 }
 
-function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): ResponseType | undefined {
+function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): Got.ResponseType | undefined {
   switch (bodyType) {
     case 'json':
       return 'json';
@@ -183,5 +197,14 @@ function httpBodyTypeToGotResponseType(bodyType: HttpBodyType): ResponseType | u
 export function configureGotHttpClientAdapter(register: boolean): void {
   if (register) {
     container.register(HttpClientAdapter, { useToken: GotHttpClientAdapter });
+  }
+}
+
+async function* streamWrapper(got: typeof Got, gotRequest: Got.Request, httpRequest: NormalizedHttpClientRequest): AsyncIterable<Uint8Array> {
+  try {
+    yield* gotRequest;
+  }
+  catch (error) {
+    throw convertError(got, error, httpRequest);
   }
 }

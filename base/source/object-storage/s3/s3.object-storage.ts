@@ -3,12 +3,10 @@ import { AsyncEnumerable } from '#/enumerable';
 import type { ObjectInformation } from '#/object-storage';
 import { ObjectStorage } from '#/object-storage';
 import { now } from '#/utils/date-time';
-import type { NonObjectBufferMode } from '#/utils/stream-helper-types';
-import { readStream } from '#/utils/stream-reader';
+import { readBinaryStream } from '#/utils/stream/stream-reader';
 import { assertStringPass, isObject } from '#/utils/type-guards';
 import type { BucketItem } from 'minio';
 import { Client } from 'minio';
-import type { TypedReadable } from '../../utils/typed-readable';
 import type { S3Object, S3ObjectInformation } from './s3.object';
 import { S3ObjectStorageProvider } from './s3.object-storage-provider';
 
@@ -80,7 +78,7 @@ export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object
     const bucketKey = this.getBucketKey(key);
     const stat = await this.client.statObject(this.bucket, bucketKey);
     const result = await this.client.getObject(this.bucket, bucketKey);
-    const content = await readStream(result as TypedReadable<NonObjectBufferMode>);
+    const content = await readBinaryStream(result);
 
     const object: S3Object = {
       module: this.module,

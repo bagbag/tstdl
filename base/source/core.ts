@@ -52,10 +52,10 @@ export type CoreConfiguration = {
   loggerToken?: InjectionToken<Logger, LoggerArgument>
 };
 
-export function configureTstdl(config: CoreConfiguration): void {
-  coreLogPrefix = config.coreLogPrefix ?? coreLogPrefix;
-  logLevel = config.logLevel ?? logLevel;
-  loggerToken = config.loggerToken ?? loggerToken;
+export function configureTstdl(config?: CoreConfiguration): void {
+  coreLogPrefix = config?.coreLogPrefix ?? coreLogPrefix;
+  logLevel = config?.logLevel ?? logLevel;
+  loggerToken = config?.loggerToken ?? loggerToken;
 }
 
 container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => coreLogPrefix });

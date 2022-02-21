@@ -33,7 +33,7 @@ export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], t
 
   const type = arrays[0]!.constructor;
 
-  if (typeof Buffer != 'undefined' && type == Buffer) {
+  if ((typeof Buffer != 'undefined') && (type == Buffer)) {
     return Buffer.concat(arrays as unknown as Buffer[], totalLength) as unknown as T;
   }
 
