@@ -5,7 +5,7 @@ import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
 import { mergeObjects } from '#/utils/object';
 import type { MappingBooleanProperty, MappingDateProperty, MappingGeoPointProperty, MappingKeywordProperty, MappingNestedProperty, MappingNumberProperty, MappingObjectProperty, MappingPropertyBase, MappingTextProperty, MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 
-export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<T>;
+export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 
 export type ElasticNestedIndexMapping<T> = {
   properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> }
