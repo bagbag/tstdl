@@ -1,5 +1,5 @@
 import type { AfterResolve } from '#/container';
-import { afterResolve, container, injectionToken } from '#/container';
+import { afterResolve, injectionToken } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
 import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
@@ -7,7 +7,7 @@ import type { SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndex, SearchIndexError } from '#/search-index';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
 import { decodeText, encodeUtf8 } from '#/utils/encoding';
-import { assertStringPass, isDefined, isNumber, isString } from '#/utils/type-guards';
+import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest } from '@elastic/elasticsearch/lib/api/types';
 import type { ElasticIndexMapping, SortCombinations } from './model';
@@ -132,7 +132,6 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   async search(searchQueryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     const search: SearchRequest = { index: this.indexName, query: queryBody };
 
     if ((options?.skip ?? 0) + (options?.limit ?? 0) > 10000) {
@@ -204,7 +203,3 @@ function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
   const cause = (isDefined(error.caused_by)) ? convertError(error.caused_by) : undefined;
   return new SearchIndexError(error.type, error.reason, { raw, cause });
 }
-
-container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
-  useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') })
-});

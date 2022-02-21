@@ -1,9 +1,12 @@
 import { container } from '#/container';
 import { connect, disposer } from '#/core';
+import type { Entity } from '#/database';
 import { Logger } from '#/logger';
-import { assert, assertDefined } from '#/utils/type-guards';
+import { assert, assertDefined, assertStringPass } from '#/utils/type-guards';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
+import type { ElasticSearchIndexConfig } from './search-index';
+import { ELASTIC_SEARCH_INDEX_CONFIG } from './search-index';
 
 export type ElasticsearchModuleConfig = {
   defaultOptions: ClientOptions,
@@ -34,3 +37,12 @@ container.registerSingleton<Client, ClientOptions>(Client, {
     return client;
   }
 }, { defaultArgumentProvider: () => elasticsearchModuleConfig.defaultOptions });
+
+
+container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
+  useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') })
+});
+
+export function getElasticSearchIndexConfig<T extends Entity>(config: ElasticSearchIndexConfig<T>): ElasticSearchIndexConfig<T> {
+  return config;
+}
