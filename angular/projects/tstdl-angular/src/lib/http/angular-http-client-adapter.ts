@@ -92,10 +92,10 @@ function getAngularBody(body: NormalizedHttpClientRequest['body']): any {
     return body.text;
   }
   if (isDefined(body.buffer)) {
-    return body.buffer;
+    return new Blob([body.buffer]);
   }
   if (isDefined(body.stream)) {
-    return body.stream;
+    throw new Error('AngularHttpClientAdapter does not support streams. Use buffer instead');
   }
   else if (isDefined(body.form)) {
     const formData = new FormData();
