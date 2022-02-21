@@ -1,4 +1,4 @@
-import { container } from '#/container';
+import { container, injectionToken } from '#/container';
 import { connect, disposer } from '#/core';
 import type { Entity } from '#/database';
 import { Logger } from '#/logger';
@@ -6,7 +6,6 @@ import { assert, assertDefined, assertStringPass } from '#/utils/type-guards';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 import type { ElasticSearchIndexConfig } from './search-index';
-import { ELASTIC_SEARCH_INDEX_CONFIG } from './search-index';
 
 export type ElasticsearchModuleConfig = {
   defaultOptions: ClientOptions,
@@ -17,6 +16,10 @@ export const elasticsearchModuleConfig: ElasticsearchModuleConfig = {
   defaultOptions: { node: 'https://localhost:9200' },
   logPrefix: 'ELASTIC'
 };
+
+export type ElasticSearchIndexConfigArgument = string;
+
+export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig<Entity>, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
 
 export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig>): void {
   elasticsearchModuleConfig.logPrefix = config.logPrefix ?? elasticsearchModuleConfig.logPrefix;
@@ -43,6 +46,6 @@ container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
   useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') })
 });
 
-export function getElasticSearchIndexConfig<T extends Entity>(config: ElasticSearchIndexConfig<T>): ElasticSearchIndexConfig<T> {
-  return config;
+export function getElasticSearchIndexConfig<T extends Entity>(indexName: string): ElasticSearchIndexConfig<T> {
+  return { indexName };
 }

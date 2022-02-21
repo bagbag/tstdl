@@ -1,5 +1,5 @@
 import type { AfterResolve } from '#/container';
-import { afterResolve, injectionToken } from '#/container';
+import { afterResolve } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
 import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
@@ -20,10 +20,6 @@ export type ElasticSearchIndexConfig<T extends Entity> = {
   indexName: string,
   [elasticSearchIndexConfigType]?: T
 };
-
-export type ElasticSearchIndexConfigArgument = string;
-
-export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig<Entity>, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
