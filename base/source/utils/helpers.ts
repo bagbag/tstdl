@@ -3,7 +3,7 @@
 import { HttpError } from '#/http/http.error';
 import { DetailsError } from '../error';
 import type { DeepArray, Record, StringMap } from '../types';
-import { hasOwnProperty } from './object';
+import { hasOwnProperty } from './object/object';
 import { isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';

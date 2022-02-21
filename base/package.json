@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.69.10",
+  "version": "0.69.12",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -32,7 +32,7 @@
     "typescript-transform-paths": "^3.3"
   },
   "peerDependencies": {
-    "@tstdl/angular": "^0.7",
+    "@tstdl/angular": "^0.8",
     "@elastic/elasticsearch": "^8.0",
     "@koa/router": "^10.1",
     "got": "^12.0",

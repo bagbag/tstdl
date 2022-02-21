@@ -10,6 +10,7 @@ export * from './cancellation-token';
 export * from './comparison';
 export * from './date-time';
 export * from './encoding';
+export * from './enum';
 export * from './equals';
 export * from './event-loop';
 export * from './factory-map';

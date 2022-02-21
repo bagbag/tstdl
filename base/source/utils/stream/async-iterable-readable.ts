@@ -1,21 +1,23 @@
 import type { TypedOmit } from '#/types';
 import type { ReadableOptions } from 'stream';
 import { Readable } from 'stream';
+import type { AnyIterable, AnyIterator } from '../any-iterable-iterator';
+import { isIterable } from '../iterable-helpers/is-iterable';
 import { isNotNull } from '../type-guards';
 
 export class AsyncIterableReadable extends Readable {
-  private readonly iterable: AsyncIterable<Uint8Array>;
+  private readonly iterable: AnyIterable<Uint8Array>;
 
-  private iterator: AsyncIterator<Uint8Array>;
+  private iterator: AnyIterator<Uint8Array>;
 
-  constructor(iterable: AsyncIterable<Uint8Array>, options?: TypedOmit<ReadableOptions, 'objectMode'>) {
+  constructor(iterable: AnyIterable<Uint8Array>, options?: TypedOmit<ReadableOptions, 'objectMode'>) {
     super(options);
 
     this.iterable = iterable;
   }
 
   override _construct(callback: (error?: Error | null) => void): void {
-    this.iterator = this.iterable[Symbol.asyncIterator]();
+    this.iterator = isIterable(this.iterable) ? this.iterable[Symbol.iterator]() : this.iterable[Symbol.asyncIterator]();
     callback();
   }
 

@@ -1,7 +1,7 @@
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import type { AnyIterable } from '../any-iterable-iterator';
 import { CancellationToken } from '../cancellation-token';
-import { hasOwnProperty } from '../object';
+import { hasOwnProperty } from '../object/object';
 import { takeUntilAsync } from './take-until';
 
 type BufferItem<T> =

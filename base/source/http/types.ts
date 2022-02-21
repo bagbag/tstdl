@@ -1,6 +1,6 @@
 import type { JsonPrimitive, StringMap, TypedOmit, UndefinableJson, UndefinableJsonInnerNode, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types';
 import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { filterObject } from '#/utils/object';
+import { filterObject } from '#/utils/object/object';
 import { isArray, isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards';
 
 export const abortToken: unique symbol = Symbol('abortToken');

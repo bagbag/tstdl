@@ -1,5 +1,5 @@
 import { FactoryMap } from '#/utils/factory-map';
-import { lazyObject } from '#/utils/object';
+import { lazyObject } from '#/utils/object/lazy-property';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { CircularBuffer } from './circular-buffer';
 import { Collection } from './collection';

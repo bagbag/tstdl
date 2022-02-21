@@ -8,7 +8,6 @@ import { sort } from './iterable-helpers';
 import type { Comparator } from './sort';
 import { isDefined } from './type-guards';
 
-
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
 
 type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
