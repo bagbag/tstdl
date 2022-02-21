@@ -13,7 +13,7 @@ export type ElasticNestedIndexMapping<T> = {
 
 type StrippedBaseType<T extends MappingPropertyBase> = TypedOmit<T, 'properties' | 'fields'>;
 
-type ElasticIndexMappingItemBase = { fields: StringMap<ElasticIndexMappingItem> };
+type ElasticIndexMappingItemBase = { fields?: StringMap<ElasticIndexMappingItem> };
 
 export type ElasticKeywordIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingKeywordProperty>;
 
