@@ -186,7 +186,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
+function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations<T>[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
   return encodeBase64(encodeUtf8(JSON.stringify(data)));
 }
