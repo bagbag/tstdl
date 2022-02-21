@@ -13,7 +13,7 @@ export type ElasticsearchModuleConfig = {
 };
 
 export const elasticsearchModuleConfig: ElasticsearchModuleConfig = {
-  defaultOptions: { node: 'https://localhost:9200' },
+  defaultOptions: { node: 'http://localhost:9200' },
   logPrefix: 'ELASTIC'
 };
 
@@ -22,6 +22,7 @@ export type ElasticSearchIndexConfigArgument = string;
 export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig<Entity>, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
 
 export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig>): void {
+  elasticsearchModuleConfig.defaultOptions = config.defaultOptions ?? elasticsearchModuleConfig.defaultOptions;
   elasticsearchModuleConfig.logPrefix = config.logPrefix ?? elasticsearchModuleConfig.logPrefix;
 }
 
