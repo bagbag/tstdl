@@ -93,7 +93,7 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> ext
       return;
     }
 
-    const existingRawIndexes = await this.collection.indexes() as (TypedIndexDescription<any> & { v: number })[];
+    const existingRawIndexes = await this.collection.indexes() as TypedIndexDescription<any>[];
     const existingIndexes = existingRawIndexes.map(normalizeIndex).filter((index) => index.name != '_id_');
 
     const unwantedIndexes = existingIndexes.filter((existingIndex) => !indexes.some((index) => equals(existingIndex, index, { deep: true, sortArray: false })));
@@ -255,8 +255,9 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> ext
   async patchMany<U extends T = T>(entities: U[], patch: EntityPatch<U>): Promise<number> {
     const transformedPatch = this.transformPatch(patch);
     const ids = entities.map((entity) => entity.id);
+    const filter: Filter = { _id: { $in: ids } };
 
-    const { matchedCount } = await this.baseRepository.updateMany({ _id: { $in: ids } } as Filter<TDb>, transformedPatch);
+    const { matchedCount } = await this.baseRepository.updateMany(filter as Filter<TDb>, transformedPatch);
     return matchedCount;
   }
 
@@ -377,8 +378,8 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> ext
   }
 }
 
-function normalizeIndex<T extends Entity>(index: TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }): TypedIndexDescription<T> {
-  const { name: providedName, v, background, ns, ...indexRest } = index;
+function normalizeIndex<T extends Entity>(index: TypedIndexDescription<T>): TypedIndexDescription<T> {
+  const { name: providedName, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
   const name = providedName ?? Object.keys(index.key).join('_');
 
   return { name, ...indexRest };

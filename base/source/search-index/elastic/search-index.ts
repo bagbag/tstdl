@@ -5,14 +5,12 @@ import { BadRequestError, MultiError } from '#/error';
 import type { Logger } from '#/logger';
 import type { SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndex, SearchIndexError } from '#/search-index';
-import type { TypedOmit } from '#/types';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
 import { decodeText, encodeUtf8 } from '#/utils/encoding';
-import { assertStringPass, isDefined, isString } from '#/utils/type-guards';
+import { assertStringPass, isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
-import type { Bulk, Search } from '@elastic/elasticsearch/api/requestParams';
-import type { BulkResponse, ErrorCause, QueryDslQueryContainer, Sort as ElasticSort, SortCombinations as ElasticSortCombinations } from '@elastic/elasticsearch/api/types';
-import type { ElasticIndexMapping, ElasticIndexSettings } from './model';
+import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest } from '@elastic/elasticsearch/lib/api/types';
+import type { ElasticIndexMapping, SortCombinations } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
 
@@ -29,7 +27,7 @@ export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConf
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
-  sort: ElasticSortCombinations[] | undefined,
+  sort: SortCombinations<T>[] | undefined,
   options?: QueryOptions<T>,
   searchAfter: any
 };
@@ -39,11 +37,11 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
 
   readonly client: Client;
   readonly indexName: string;
-  readonly indexSettings: ElasticIndexSettings;
+  readonly indexSettings: IndicesIndexSettings;
   readonly indexMapping: ElasticIndexMapping<T>;
   readonly sortKeywordRewrites: Set<string>;
 
-  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: ElasticIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
+  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: IndicesIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
     super();
 
     this.client = client;
@@ -62,7 +60,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     const exists = await this.exists();
 
     if (!exists) {
-      await this.client.indices.create({ index: this.indexName, body: { mappings: this.indexMapping, settings: this.indexSettings } });
+      await this.client.indices.create({ index: this.indexName, mappings: this.indexMapping, settings: this.indexSettings });
       this.logger.info(`created index ${this.indexName}`);
     }
   }
@@ -94,20 +92,19 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 
   async index(entities: T[]): Promise<void> {
-    const request: Bulk = {
+    const request: BulkRequest<T> = {
       index: this.indexName,
       refresh: false,
-      body: entities.flatMap((entity) => {
+      operations: entities.flatMap((entity) => {
         const { id: _, ...entityWithoutId } = entity;
         return [{ index: { _id: entity.id } }, entityWithoutId];
       })
     };
 
     const result = await this.client.bulk(request);
-    const body = (result.body as BulkResponse);
 
-    if (body.errors) {
-      const errorItems = body.items
+    if (result.errors) {
+      const errorItems = result.items
         .filter((item) => isDefined(item.index!.error))
         .map((item) => item.index!);
 
@@ -136,7 +133,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    const search: Search<{ query: QueryDslQueryContainer, search_after?: any }> = { index: this.indexName, body: { query: queryBody } };
+    const search: SearchRequest = { index: this.indexName, query: queryBody };
 
     if ((options?.skip ?? 0) + (options?.limit ?? 0) > 10000) {
       throw new BadRequestError(`Result window is too large, skip + limit must be less than or equal to ${this.indexSettings.max_result_window ?? 10000}. Use cursor for more results`);
@@ -160,21 +157,22 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
       querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
     }
 
-    const sort: ElasticSortCombinations[] = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
-    (search.sort as ElasticSort | undefined) = sort;
+    search.sort = sort as string[];
     search.from = options?.skip;
     search.size = options?.limit ?? cursorData?.options?.limit;
-    search.body!.search_after = cursorData?.searchAfter;
+    search.search_after = cursorData?.searchAfter;
 
-    const response = await this.client.search(search) as { body: { hits: { hits: { _id: string, _score: number, _source: TypedOmit<T, 'id'>, sort: any }[], total: { value: number, relation: 'eq' | 'gte' } }, took: number } };
-    const hits = response.body.hits.hits;
+    const response = await this.client.search<T>(search);
 
-    const resultItems = hits.map(({ _id, _score, _source }): SearchResultItem<T> => ({ score: _score, entity: { id: _id, ..._source } as T }));
-    const totalIsLowerBound = response.body.hits.total.relation == 'gte';
+    const hits = response.hits.hits;
+    const resultItems = hits.map(({ _id, _score, _source }): SearchResultItem<T> => ({ score: _score ?? 1, entity: { id: _id, ..._source } as T }));
+    const total = isNumber(response.hits.total) ? response.hits.total : response.hits.total?.value;
+    const totalIsLowerBound = isNumber(response.hits.total) ? false : (response.hits.total?.relation == 'gte');
     const cursor = (hits.length > 0) && (isDefined(hits[hits.length - 1]?.sort)) ? serializeCursor(queryBody, sort, { limit: search.size }, hits[hits.length - 1]!.sort) : undefined;
 
-    const result: SearchResult<T> = { total: response.body.hits.total.value, milliseconds: response.body.took, totalIsLowerBound, cursor, items: resultItems };
+    const result: SearchResult<T> = { total, milliseconds: response.took, totalIsLowerBound, cursor, items: resultItems };
     return result;
   }
 
@@ -189,12 +187,11 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 
   async exists(): Promise<boolean> {
-    const response = await this.client.indices.exists({ index: this.indexName });
-    return response.body;
+    return this.client.indices.exists({ index: this.indexName });
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: ElasticSortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
+function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
   const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
   return encodeBase64(encodeUtf8(JSON.stringify(data)));
 }

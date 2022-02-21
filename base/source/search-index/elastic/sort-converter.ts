@@ -1,5 +1,5 @@
 import type { Entity, Sort } from '#/database';
-import type { SortCombinations, SortOrder } from '@elastic/elasticsearch/api/types';
+import type { SortCombinations, SortOrder } from './model';
 
 const renameMap = new Map([
   ['id', '_id'],

@@ -43,7 +43,7 @@ export class MongoBulk<T extends Entity> {
       throw new Error('no operations specified');
     }
 
-    const result = await this.collection.bulkWrite(this.operations, { ordered });
+    const result = await this.collection.bulkWrite(this.operations as BulkOperation<T>[], { ordered });
 
     return {
       insertedCount: result.insertedCount,

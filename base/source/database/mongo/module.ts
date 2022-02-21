@@ -45,7 +45,7 @@ container.registerSingleton(MongoClient, {
       .on('timeout', () => logger.warn('connection timed out'))
       .on('close', () => logger.verbose('connection closed'));
 
-    disposer.add(async () => client.close());
+    disposer.add(async () => client.close(), 10000);
 
     await connect('mongo', async () => client.connect(), logger);
 
@@ -62,7 +62,7 @@ container.registerSingleton(Database, {
     const name = (isString(argument) ? argument : isObject(argument) ? argument.database : undefined) ?? mongoModuleConfig.defaultDatabase;
 
     const client = await context.resolveAsync(MongoClient, connection);
-    return client.db(name) as any;
+    return client.db(name) as Database;
   }
 }, {
   defaultArgumentProvider: (): DatabaseArgument => ({ database: mongoModuleConfig.defaultDatabase, connection: mongoModuleConfig.defaultConnection }),
@@ -82,7 +82,7 @@ container.registerSingleton(Collection, {
       }
     }
 
-    return database.createCollection<MongoDocument<Entity>>(config.collection) as any;
+    return database.createCollection<MongoDocument<Entity>>(config.collection) as Promise<any>;
   }
 }, {
   argumentIdentityProvider: JSON.stringify

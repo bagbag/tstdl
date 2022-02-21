@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/ban-types */
 
 import type { Entity, MaybeNewEntity } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
+import type { Record } from '#/types';
 import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
-import type { FindOneAndUpdateOptions, OptionalId } from 'mongodb';
+import type { FindOneAndUpdateOptions } from 'mongodb';
 import type { Collection } from './classes';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
@@ -80,7 +80,7 @@ export class MongoBaseRepository<T extends Entity> {
 
   async insert<U extends T>(entity: MaybeNewEntity<U>): Promise<U> {
     const document = mongoDocumentFromMaybeNewEntity(entity);
-    await this.collection.insertOne(document as any as OptionalId<MongoDocument<T>>);
+    await this.collection.insertOne(document as any); // eslint-disable-line @typescript-eslint/no-unsafe-argument
 
     return toEntity(document);
   }
@@ -98,8 +98,8 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertIfNotExists<U extends T>(entity: MaybeNewEntity<U>): Promise<U | undefined> {
-    const filter: Filter<T> = toNewEntity(entity) as Filter<T>;
-    return this.insertIfNotExistsByFilter(filter, entity);
+    const filter: Filter = toNewEntity(entity);
+    return this.insertIfNotExistsByFilter(filter as Filter<T>, entity);
   }
 
   async insertManyIfNotExists<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
@@ -110,7 +110,7 @@ export class MongoBaseRepository<T extends Entity> {
   async insertIfNotExistsByFilter<U extends T>(filter: Filter<T>, entity: MaybeNewEntity<U>): Promise<U | undefined> {
     const document = mongoDocumentFromMaybeNewEntity(entity);
 
-    const result = await this.collection.updateOne(filter, { $setOnInsert: document }, { upsert: true });
+    const result = await this.collection.updateOne(filter, { $setOnInsert: document } as any as UpdateFilter<T>, { upsert: true });
 
     if (result.upsertedCount == 0) {
       return undefined;
@@ -143,7 +143,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async load<U extends T = T>(id: string, options?: LoadOptions<U>): Promise<U> {
-    const entity = await this.tryLoad<U>(id, options);
+    const entity = await this.tryLoad(id, options);
     return throwIfUndefinedElsePass(entity, this.collection.collectionName);
   }
 
@@ -161,7 +161,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async loadAndDelete<U extends T = T>(id: string, options?: LoadAndDeleteOptions<U>): Promise<U> {
-    const entity = await this.tryLoadAndDelete<U>(id, options);
+    const entity = await this.tryLoadAndDelete(id, options);
     return throwIfUndefinedElsePass(entity, this.collection.collectionName);
   }
 
@@ -180,12 +180,12 @@ export class MongoBaseRepository<T extends Entity> {
     return toEntity(document);
   }
 
-  async loadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P>> {
+  async loadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = Record<string, never>>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P>> {
     const id = await this.tryLoadProjectedByFilter(filter, mode, projection, options);
     return throwIfUndefinedElsePass(id, this.collection.collectionName);
   }
 
-  async tryLoadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
+  async tryLoadProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = Record<string, never>>(filter: Filter<U>, mode: M, projection: P, options?: LoadOptions<U>): Promise<ProjectedEntity<U, M, P> | undefined> {
     const document = await this.collection.findOne<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     if (isNullOrUndefined(document)) {
@@ -211,7 +211,7 @@ export class MongoBaseRepository<T extends Entity> {
       return undefined;
     }
 
-    return toEntity(result.value as MongoDocument<U>);
+    return toEntity(result.value as unknown as MongoDocument<U>);
   }
 
   async loadByFilterAndUpdate<U extends T = T>(filter: Filter<U>, update: UpdateFilter<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
@@ -230,7 +230,8 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async loadManyById<U extends T = T>(ids: string[], options?: LoadManyOptions<U>): Promise<U[]> {
-    return this.loadManyByFilter({ _id: { $in: ids } } as Filter<U>, options);
+    const filter: Filter = { _id: { $in: ids } };
+    return this.loadManyByFilter(filter as Filter<U>, options);
   }
 
   async loadManyByFilter<U extends T = T>(filter: Filter<U>, options?: LoadManyOptions<U>): Promise<U[]> {
@@ -240,7 +241,8 @@ export class MongoBaseRepository<T extends Entity> {
 
   // eslint-disable-next-line @typescript-eslint/require-await
   loadManyByIdWithCursor<U extends T = T>(ids: string[], options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
-    return this.loadManyByFilterWithCursor({ _id: { $in: ids } } as Filter<U>, options);
+    const filter: Filter = { _id: { $in: ids } };
+    return this.loadManyByFilterWithCursor(filter as Filter<U>, options);
   }
 
   async *loadManyByFilterWithCursor<U extends T = T>(filter: Filter<U>, options?: LoadManyOptions<U>): AsyncIterableIterator<U> {
@@ -255,16 +257,17 @@ export class MongoBaseRepository<T extends Entity> {
     }
   }
 
-  async loadManyProjectedById<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(ids: string, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
-    return this.loadManyProjectedByFilter({ _id: { $in: ids } } as Filter<U>, mode, projection, options);
+  async loadManyProjectedById<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = Record<string, never>>(ids: string[], mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
+    const filter: Filter = { _id: { $in: ids } };
+    return this.loadManyProjectedByFilter(filter as Filter<U>, mode, projection, options);
   }
 
-  async loadManyProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
+  async loadManyProjectedByFilter<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = Record<string, never>>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): Promise<ProjectedEntity<U, M, P>[]> {
     const documents = await this.collection.find<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object).toArray();
     return documents.map(toProjectedEntity) as ProjectedEntity<U, M, P>[];
   }
 
-  async * loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = {}>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
+  async * loadManyProjectedByFilterWithCursor<U extends T = T, M extends ProjectionMode = ProjectionMode.Include, P extends Projection<U, M> = Record<string, never>>(filter: Filter<U>, mode: M, projection: P, options?: LoadManyOptions<U>): AsyncIterableIterator<ProjectedEntity<U, M, P>> {
     const cursor = this.collection.find<MongoDocument<U>>(filter as Filter<T>, { ...options, projection: toMongoProjection(mode, projection) } as object);
 
     for await (const document of cursor) {
@@ -285,7 +288,8 @@ export class MongoBaseRepository<T extends Entity> {
       return 0;
     }
 
-    return this.deleteManyByFilter({ _id: { $in: ids } } as Filter<T>);
+    const filter: Filter = { _id: { $in: ids } };
+    return this.deleteManyByFilter(filter as Filter<T>);
   }
 
   async deleteByFilter<U extends T = T>(filter: Filter<U>): Promise<boolean> {
@@ -303,7 +307,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async replaceByFilter<U extends T>(filter: Filter<U>, entity: U, options: ReplaceOptions = {}): Promise<boolean> {
-    const document = toMongoDocument(entity);
+    const document = toMongoDocument<T>(entity);
     const result = await this.collection.replaceOne(filter as Filter<T>, document, options);
 
     return ((result.matchedCount as number) + (result.upsertedCount as number)) > 0;
@@ -314,7 +318,7 @@ export class MongoBaseRepository<T extends Entity> {
       return 0;
     }
 
-    const documents = entities.map(toMongoDocument);
+    const documents = entities.map(toMongoDocument) as MongoDocument<T>[];
     const operations = documents.map((document) => replaceOneOperation<T>({ _id: document._id } as Filter<T>, document, options));
     const result = await this.collection.bulkWrite(operations);
 
@@ -357,12 +361,14 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
-    const result = await this.collection.distinct('_id', { _id: { $in: ids } } as Filter<T>);
+    const filter: Filter = { _id: { $in: ids } };
+    const result = await this.collection.distinct('_id', filter as Filter<T>);
     return result;
   }
 
   async hasAll(ids: string[]): Promise<boolean> {
-    const count = await this.countByFilter({ _id: { $in: ids } } as Filter<T>);
+    const filter: Filter = { _id: { $in: ids } };
+    const count = await this.countByFilter(filter as Filter<T>);
     return count == ids.length;
   }
 

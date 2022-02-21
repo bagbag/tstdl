@@ -1,7 +1,9 @@
 import type { Entity, QueryTypes } from '#/database';
 import { allQueryTypes } from '#/database';
 import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
+import type { Record } from '#/types';
 import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
+import type { RootFilterOperators } from 'mongodb';
 import type { MongoDocument } from './model';
 import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';
@@ -17,25 +19,25 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
 
     switch (property) {
       case '$and':
-        filterQuery.$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
         break;
 
       case '$or':
-        filterQuery.$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
         break;
 
       case '$nor':
-        filterQuery.$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<T>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
         break;
 
       default:
         if (operatorsSet.has(property)) {
           const operatorQuery = (convertOperator(property, value, mapping?.transform ?? transform, mappingMap as TransformerMappingMap) as Filter<any>);
-          filterQuery = { ...filterQuery, ...operatorQuery };
+          filterQuery = { ...filterQuery, ...operatorQuery } as Filter;
         }
         else {
           const mappedPropertyName = getPropertyName((mapping?.key as string | undefined) ?? property);
-          filterQuery[mappedPropertyName] = convertInnerQuery(value as object, mapping?.transform ?? transform, mappingMap as TransformerMappingMap);
+          (filterQuery as Record)[mappedPropertyName] = convertInnerQuery(value as object, mapping?.transform ?? transform, mappingMap as TransformerMappingMap);
         }
     }
   }

@@ -6,7 +6,7 @@ export type SearchResultItem<T extends Entity> = {
 };
 
 export type SearchResult<T extends Entity> = {
-  total: number,
+  total?: number,
   totalIsLowerBound: boolean,
   milliseconds: number,
   items: SearchResultItem<T>[],

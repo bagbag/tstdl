@@ -20,22 +20,14 @@ export function setProcessShutdownLogger(shutdownLogger: Logger): void {
   logger = shutdownLogger;
 }
 
-let requested = false;
-
-let quitReason: any[] | undefined;
-
-process.on('beforeExit', () => {
-  if (isDefined(quitReason)) {
-    console.info('quit reason:', ...quitReason);
-  }
-});
+let shutdownRequested = false;
 
 export function requestShutdown(): void {
-  if (requested) {
+  if (shutdownRequested) {
     return;
   }
 
-  requested = true;
+  shutdownRequested = true;
   shutdownToken.set();
 
   const timeout = setTimeout(() => {
@@ -53,6 +45,13 @@ export function forceShutdown(): void {
 
 export function initializeSignals(): void {
   let signalCounter = 0;
+  let quitReason: any[] | undefined;
+
+  process.on('beforeExit', () => {
+    if (isDefined(quitReason)) {
+      console.info('quit reason:', ...quitReason);
+    }
+  });
 
   for (const event of quitEvents) {
     // eslint-disable-next-line @typescript-eslint/no-loop-func

@@ -24,6 +24,6 @@ export class Database extends Db implements Injectable<DatabaseArgument> {
 }
 
 @replaceClass(MongoCollection)
-export class Collection<T extends Entity = Entity, TDb extends Entity = T> extends MongoCollection<MongoDocument<T>> implements Injectable<CollectionArgument<T, TDb>> {
+export class Collection<T extends Entity = Entity, TDb extends Entity = T> extends MongoCollection<MongoDocument<TDb>> implements Injectable<CollectionArgument<T, TDb>> {
   readonly [resolveArgumentType]: CollectionArgument<T, TDb>;
 }

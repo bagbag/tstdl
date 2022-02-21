@@ -33,12 +33,12 @@
   },
   "peerDependencies": {
     "@tstdl/angular": "^0.7",
-    "@elastic/elasticsearch": "^7.17",
+    "@elastic/elasticsearch": "^8.0",
     "@koa/router": "^10.1",
     "got": "^11.8",
     "koa": "^2.13",
     "minio": "^7.0",
-    "mongodb": "4.2",
+    "mongodb": "4.4",
     "superstruct": "0.15"
   },
   "peerDependenciesMeta": {
