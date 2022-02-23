@@ -43,7 +43,7 @@ export class ImgproxyImageService extends ImageService implements Injectable<Img
   }
 
   async getUrl(resourceUri: string, options: ImageOptions = {}): Promise<string> {
-    const encodedRessourceUri = encodeBase64Url(encodeUtf8(resourceUri));
+    const encodedResourceUri = encodeBase64Url(encodeUtf8(resourceUri));
     const processingOptions: string[] = [];
 
     const { resizeMode, width, height } = options;
@@ -69,7 +69,7 @@ export class ImgproxyImageService extends ImageService implements Injectable<Img
     }
 
     const processingOptionsString = processingOptions.join('/');
-    const path = `/${[processingOptionsString, encodedRessourceUri].join('/')}`;
+    const path = `/${[processingOptionsString, encodedResourceUri].join('/')}`;
 
     const signature = await signString(this.keyBytes, this.saltBytes, path, this.signatureSize);
     return `${this.endpoint}/${signature}${path}`;

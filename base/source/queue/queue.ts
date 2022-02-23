@@ -33,9 +33,7 @@ export type QueueConfig = {
   maxTries?: number
 };
 
-export type QueueArgument = string | QueueConfig & {
-  key: string
-};
+export type QueueArgument = string | (QueueConfig & { key: string });
 
 export const defaultQueueConfig: Required<QueueConfig> = {
   processTimeout: millisecondsPerMinute,

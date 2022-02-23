@@ -10,15 +10,29 @@ interface IdleDeadline {
   timeRemaining(): DOMHighResTimeStamp;
 }
 
+/** timeout for specified duration */
 export async function timeout(milliseconds: number = 0): Promise<void> {
   return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
+/** timeout until specified time */
+export async function timeoutUntil(timestamp: number | Date): Promise<void> {
+  const left = timestamp.valueOf() - Date.now();
+  return timeout(left);
+}
+
+/** timeout for specified duration */
 export async function cancelableTimeout(milliseconds: number, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
   return firstValueFrom(race([
     timer(milliseconds).pipe(mapTo(false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
     cancelToken.set$.pipe(mapTo(true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
   ]));
+}
+
+/** timeout until specified time */
+export async function cancelableTimeoutUntil(timestamp: number | Date, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
+  const left = timestamp.valueOf() - Date.now();
+  return cancelableTimeout(left, cancelToken);
 }
 
 export async function immediate(): Promise<void> {

@@ -36,7 +36,7 @@ export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> 
 
     try {
       const { upsertedCount, modifiedCount } = await this.baseRepository.collection.updateOne(filter, { $set: { expiration: newExpirationDate }, $setOnInsert: { _id: getNewId(), key } }, { upsert: true });
-      return (upsertedCount > 0 || modifiedCount > 0) ? newExpirationDate : false;
+      return ((upsertedCount > 0) || (modifiedCount > 0)) ? newExpirationDate : false;
     }
     catch (error: unknown) {
       if (error instanceof MongoError && error.code == 11000) {
@@ -54,7 +54,7 @@ export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> 
   async tryUpdateExpiration(resource: string, key: string, expirationDate: Date): Promise<false | Date> {
     const filter: Filter<MongoLockEntity> = { resource, key };
     const result = await this.baseRepository.update(filter, { $set: { expiration: expirationDate } });
-    return result.modifiedCount > 0 ? expirationDate : false;
+    return (result.modifiedCount > 0) ? expirationDate : false;
   }
 
   async deleteByResource(resource: string, key: string): Promise<boolean> {

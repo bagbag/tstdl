@@ -1,6 +1,7 @@
 import { singleton } from '#/container';
 import { getNewId } from '#/database/id';
 import type { Filter, UpdateFilter } from '#/database/mongo';
+import { Lock } from '#/lock';
 import type { MessageBus } from '#/message-bus';
 import { MessageBusProvider } from '#/message-bus';
 import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue';
@@ -13,7 +14,7 @@ import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestamp } from '#/utils/date-time';
 import { propertyNameOf } from '#/utils/object/property-name';
 import { getRandomString } from '#/utils/random';
-import { assertDefined, isString } from '#/utils/type-guards';
+import { assertDefined, isString, isUndefined } from '#/utils/type-guards';
 import type { MongoJob, NewMongoJob } from './job';
 import { MongoJobRepository } from './mongo-job.repository';
 import { MongoQueueProvider } from './queue.provider';
@@ -48,15 +49,17 @@ const backoffOptions: BackoffOptions = {
 })
 export class MongoQueue<T = unknown> extends Queue<T> {
   private readonly repository: MongoJobRepository<T>;
+  private readonly lock: Lock;
   private readonly queueKey: string;
   private readonly processTimeout: number;
   private readonly maxTries: number;
   private readonly messageBus: MessageBus<void>;
 
-  constructor(repository: MongoJobRepository<T>, messageBusProvider: MessageBusProvider, key: string, config?: QueueConfig) {
+  constructor(repository: MongoJobRepository<T>, lock: Lock, messageBusProvider: MessageBusProvider, key: string, config?: QueueConfig) {
     super();
 
     this.repository = repository;
+    this.lock = lock;
     this.queueKey = key;
     this.processTimeout = config?.processTimeout ?? defaultQueueConfig.processTimeout;
     this.maxTries = config?.maxTries ?? defaultQueueConfig.maxTries;
@@ -193,40 +196,43 @@ export class MongoQueue<T = unknown> extends Queue<T> {
       }
     );
 
-    return (job == undefined) ? undefined : toModelJob(job);
+    return isUndefined(job) ? undefined : toModelJob(job);
   }
 
   async dequeueMany(count: number): Promise<Job<T>[]> {
     const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
-    const { filter } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
 
-    await this.repository.baseRepository.collection.aggregate([
-      { $match: filter },
-      {
-        $sort: {
-          [priorityProperty]: 1,
-          [enqueueTimestampProperty]: 1,
-          [lastDequeueTimestampProperty]: 1,
-          [triesProperty]: 1
-        }
-      },
-      { $limit: count },
-      {
-        $merge: {
-          into: this.repository.baseRepository.collection.collectionName,
-          whenMatched: [
-            {
-              $set: {
-                [triesProperty]: { $add: [`$${triesProperty}`, 1] },
-                [lastDequeueTimestampProperty]: currentTimestamp(),
-                [batchProperty]: batch
+    await this.lock.using(10000, true, async () => {
+      const { filter } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
+
+      await this.repository.baseRepository.collection.aggregate([
+        { $match: filter },
+        {
+          $sort: {
+            [priorityProperty]: 1,
+            [enqueueTimestampProperty]: 1,
+            [lastDequeueTimestampProperty]: 1,
+            [triesProperty]: 1
+          }
+        },
+        { $limit: count },
+        {
+          $merge: {
+            into: this.repository.baseRepository.collection.collectionName,
+            whenMatched: [
+              {
+                $set: {
+                  [triesProperty]: { $add: [`$${triesProperty}`, 1] },
+                  [lastDequeueTimestampProperty]: currentTimestamp(),
+                  [batchProperty]: batch
+                }
               }
-            }
-          ],
-          whenNotMatched: 'discard'
+            ],
+            whenNotMatched: 'discard'
+          }
         }
-      }
-    ]).next();
+      ]).next();
+    });
 
     const jobs = await this.repository.loadManyByFilter({ queue: this.queueKey, batch });
     return jobs.map(toModelJob);

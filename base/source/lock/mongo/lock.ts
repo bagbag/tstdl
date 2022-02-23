@@ -1,33 +1,28 @@
 import { injectable } from '#/container';
+import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '#/lock';
+import { Lock } from '#/lock';
 import { Logger } from '#/logger';
 import { Alphabet } from '#/utils/alphabet';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestamp } from '#/utils/date-time';
 import { getRandomString } from '#/utils/random';
 import { Timer } from '#/utils/timer';
-import { assertStringPass, isDefined, isObject } from '#/utils/type-guards';
-import { cancelableTimeout, timeout as utilsTimeout } from '../../utils/timing';
-import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock';
-import { Lock } from '../lock';
+import { cancelableTimeoutUntil, timeout as utilsTimeout } from '#/utils/timing';
+import { assertStringPass, isObject, isUndefined } from '#/utils/type-guards';
 import { MongoLockRepository } from './mongo-lock-repository';
 import { MongoLockProvider } from './provider';
 
 const expirationTime = 10000;
+const renewBuffer = expirationTime / 2;
 
 @injectable({
   provider: {
     useAsyncFactory: async (argument, context) => {
-      const provider = await context.resolveAsync(MongoLockProvider);
-
       const arg = argument as LockArgument;
-
       const prefix = isObject(arg) ? assertStringPass(arg.prefix, 'invalid lock argument') : undefined;
       const resource = assertStringPass(isObject(arg) ? arg.resource : arg, 'invalid lock argument');
 
-      if (isDefined(prefix)) {
-        return provider.prefix(prefix).get(resource);
-      }
-
+      const provider = await context.resolveAsync(MongoLockProvider, prefix);
       return provider.get(resource);
     }
   }
@@ -43,17 +38,17 @@ export class MongoLock extends Lock {
     this.logger = logger;
   }
 
-  async acquire<Throw extends boolean>(timeout: number, throwOnFail: Throw): Promise<AcquireResult<Throw>> { // eslint-disable-line max-lines-per-function, max-statements
+  async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> { // eslint-disable-line max-lines-per-function, max-statements
     const key = getRandomString(15, Alphabet.LowerUpperCaseNumbers);
-    const timeoutDuration = Math.max(50, Math.min(1000, timeout / 10));
+    const timeoutDuration = Math.max(50, Math.min(1000, (timeout ?? 0) / 10));
 
     let result: boolean | Date = false;
 
     const timer = new Timer(true);
-    while (result == false && (timer.milliseconds < timeout || timeout == 0)) { // eslint-disable-line no-unmodified-loop-condition
+    while ((result == false) && (isUndefined(timeout) || (timer.milliseconds < timeout))) { // eslint-disable-line no-unmodified-loop-condition
       result = await this.tryAcquireOrRefresh(this.resource, key);
 
-      if (result == false && timeout == 0) {
+      if ((result == false) && isUndefined(timeout)) {
         break;
       }
 
@@ -85,18 +80,18 @@ export class MongoLock extends Lock {
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     (async () => {
-      await cancelableTimeout(5000, releaseToken);
+      await cancelableTimeoutUntil(expiration.valueOf() - renewBuffer, releaseToken);
 
       while (!releaseToken.isSet && !controller.lost) {
         try {
           const refreshResult = await this.tryRefresh(this.resource, key);
-          expiration = (refreshResult == false) ? new Date(0) : refreshResult;
+          expiration = (refreshResult == false) ? new Date(0) : refreshResult; // eslint-disable-line require-atomic-updates
         }
         catch (error: unknown) {
           this.logger.error(error as Error);
         }
         finally {
-          await cancelableTimeout(5000, releaseToken);
+          await cancelableTimeoutUntil(Math.max(currentTimestamp() + 1000, expiration.valueOf() - renewBuffer), releaseToken);
         }
       }
     })();
@@ -104,7 +99,7 @@ export class MongoLock extends Lock {
     return controller as AcquireResult<Throw>;
   }
 
-  async using<Throw extends boolean, R>(timeout: number, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>> {
+  async using<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>> {
     const controller = await this.acquire(timeout, throwOnFail) as AcquireResult<false>;
 
     if (controller == false) {
