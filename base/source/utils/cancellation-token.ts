@@ -84,6 +84,11 @@ export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribab
   readonly $state: Promise<boolean>;
 
   /**
+   * returns an AbortSignal
+   */
+  asAbortSignal: AbortSignal;
+
+  /**
    * create a new token and connect it to this instance
    * @see {@link connect}
    */

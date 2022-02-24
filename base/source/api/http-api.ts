@@ -2,8 +2,9 @@ import type { ErrorResponse } from '#/api';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
 import type { CustomError, CustomErrorStatic } from '#/error';
 import { BadRequestError, MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
-import type { HttpAutoBodyType, HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, HttpServerRequest, HttpServerResponse, NormalizedHttpHeaders, NormalizedHttpQuery, NormalizedHttpValueMap } from '#/http';
-import { normalizeHttpValue } from '#/http';
+import type { HttpQueryObject } from '#/http';
+import { HttpHeaders, HttpQuery } from '#/http';
+import type { HttpBody, HttpBodyType, HttpJsonBodyType, HttpMethod, HttpNoneBodyType, NormalizedHttpValueObject } from '#/http/types';
 import type { Logger } from '#/logger';
 import type { Json, JsonObject, StringMap, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
@@ -13,19 +14,19 @@ import type { NonObjectBufferMode } from '#/utils/stream/stream-helper-types';
 import { readBinaryStream } from '#/utils/stream/stream-reader';
 import type { TypedReadable } from '#/utils/stream/typed-readable';
 import { Timer } from '#/utils/timer';
-import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
+import { isDefined, isObject } from '#/utils/type-guards';
 import * as KoaRouter from '@koa/router';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import * as Koa from 'koa';
 import type { Readable } from 'stream';
-import type { HttpServer } from '../http/server';
+import { HttpServerRequest, HttpServerResponse } from '../http/server';
 import type { ApiEndpoint } from './endpoint';
 
 type Context = Koa.ParameterizedContext<void, KoaRouter.RouterParamContext<void, void>>;
 
-export type RequestData<B extends HttpBodyType = HttpAutoBodyType> = {
-  parameters: NormalizedHttpQuery,
+export type RequestData<B extends HttpBodyType = HttpBodyType> = {
+  parameters: HttpQueryObject,
   body: HttpBody<B>
 };
 
@@ -72,19 +73,19 @@ type RouteRequestDataTransformerContext = {
 export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: HttpBodyType, context: RouteRequestDataTransformerContext) => Out;
 
 export function getTextRouteHandler<Parameters, Result extends string>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => ({ body: { text: result } }));
+  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { text: result } }));
 }
 
 export function getJsonRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => ({ body: { json: result } }));
+  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { json: result } }));
 }
 
-export function getBufferRouteHandler<Parameters, Result extends ArrayBuffer>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => ({ body: { buffer: result } }));
+export function getBufferRouteHandler<Parameters, Result extends Uint8Array>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
+  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { buffer: result } }));
 }
 
 export function getStreamRouteHandler<Parameters, Result extends Readable>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => ({ body: { stream: result } }));
+  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { stream: result } }));
 }
 
 export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Result) => HttpServerResponse): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
@@ -111,7 +112,7 @@ export function getDefaultRequestDataTransformer<B extends HttpBodyType>(): Rout
 
     const requestBodyType = contentTypeToBodyType(context.request.type);
 
-    if ((bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) || (bodyType == 'auto' && requestBodyType == 'json')) {
+    if ((bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) || (requestBodyType == 'json')) {
       transformed = { ...transformed, ...(data as RequestData<'json'>).body as JsonObject };
     }
     else if (bodyType != 'none' && isDefined(data.body)) {
@@ -156,10 +157,6 @@ export class HttpApi {
     this.koa.use(this.router.allowedMethods());
   }
 
-  attachHttpServer(httpServer: HttpServer): void {
-    httpServer.registerRequestHandler((request, response) => this.handleRequest(request, response));
-  }
-
   handleRequest(request: IncomingMessage | Http2ServerRequest, response: ServerResponse | Http2ServerResponse): void {
     this.requestHandler(request, response);
   }
@@ -185,7 +182,7 @@ export class HttpApi {
           case 'patch':
           case 'put':
           case 'delete':
-            this.registerRoute(method, route.path, route.bodyType ?? 'auto', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? 'none', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
@@ -220,17 +217,17 @@ export class HttpApi {
       return;
     }
 
-    const requestData: RequestData<B> = { parameters: requestParameters as NormalizedHttpValueMap, body };
+    const requestData: RequestData<B> = { parameters: requestParameters as NormalizedHttpValueObject, body };
 
     const handlerParameters = requestDataTransformer(requestData, bodyType, { request });
-    const httpRequest: HttpServerRequest = {
+    const httpRequest = new HttpServerRequest({
       url: context.URL,
       method: convertMethod(context.request.method),
-      headers: context.req.headers as NormalizedHttpHeaders,
-      query: query as NormalizedHttpQuery,
+      headers: new HttpHeaders(context.req.headers),
+      query: new HttpQuery(query),
       ip: context.request.ip,
-      body
-    };
+      body: request.req
+    });
 
     const httpResponse = await handler(httpRequest, handlerParameters, endpoint);
     applyResponse(response, httpResponse);
@@ -252,17 +249,9 @@ function applyResponse(response: Koa.Response, responseResult: HttpServerRespons
     response.body = responseResult.body.buffer;
   }
 
-  if (responseResult.headers != undefined) {
-    for (const [field, value] of Object.entries(responseResult.headers)) {
-      const normalizedValues = normalizeHttpValue(value);
-
-      if (isUndefined(normalizedValues)) {
-        continue;
-      }
-
-      for (const normalizedValue of toArray(normalizedValues)) {
-        response.append(field, normalizedValue);
-      }
+  for (const [field, value] of responseResult.headers.normalizedEntries()) {
+    for (const val of toArray(value)) {
+      response.append(field, val);
     }
   }
 
@@ -355,19 +344,6 @@ function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>)
       }
     }
   };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function corsMiddleware(context: Context, next: () => Promise<any>): Promise<any> {
-  context.response.set({
-    /* eslint-disable @typescript-eslint/naming-convention */
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': '*',
-    'Access-Control-Allow-Headers': context.request.get('Access-Control-Request-Headers')
-    /* eslint-enable @typescript-eslint/naming-convention */
-  });
-
-  return next();
 }
 
 async function responseTimeMiddleware(context: Context, next: () => Promise<any>): Promise<void> {

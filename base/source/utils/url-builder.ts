@@ -1,6 +1,7 @@
+import { normalizeHttpValue } from '#/http/types';
 import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types';
 import { memoizeSingle } from './function/memoize';
-import { isArray, isDefined, isNull, isObject, isUndefined } from './type-guards';
+import { isArray, isDefined, isObject, isUndefined } from './type-guards';
 
 const enum UrlBuilderPartType {
   Literal = 0,
@@ -64,7 +65,7 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
           throw new Error(`url parameter ${part.value} is a object`);
         }
 
-        parsedUrl += isArray(value) ? value.join(arraySeparator) : (isNull(value) ? '[[null]]' : value.toString());
+        parsedUrl += isArray(value) ? value.map(normalizeHttpValue).join(arraySeparator) : normalizeHttpValue(value);
       }
     }
 

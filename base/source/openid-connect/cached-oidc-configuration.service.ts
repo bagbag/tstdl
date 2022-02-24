@@ -1,5 +1,5 @@
 import { optional, singleton } from '#/container';
-import { HttpClient } from '#/http';
+import { HttpClient } from '#/http/client';
 import { currentTimestamp } from '#/utils/date-time';
 import { isDefined } from '#/utils/type-guards';
 import { millisecondsPerMinute } from '#/utils/units';

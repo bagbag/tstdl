@@ -1,6 +1,5 @@
 export * from './any';
 export * from './array';
-export * from './array-buffer';
 export * from './async-iterable';
 export * from './boolean';
 export * from './defaulted';
@@ -14,8 +13,10 @@ export * from './number';
 export * from './object';
 export * from './optional';
 export * from './preprocess';
+export * from './readable-stream';
 export * from './refine';
 export * from './regexp';
 export * from './string';
 export * from './transform';
+export * from './uint8-array';
 export * from './unknown';

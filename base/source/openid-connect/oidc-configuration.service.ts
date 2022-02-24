@@ -1,5 +1,5 @@
 import { singleton } from '#/container';
-import { HttpClient } from '#/http';
+import { HttpClient } from '#/http/client';
 import { object, optional, string } from 'superstruct';
 
 export type OidcConfiguration = {

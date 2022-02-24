@@ -1,8 +1,9 @@
 import { HttpApi } from './api/http-api';
 import { container } from './container';
 import { CORE_LOGGER } from './core';
+import { NodeHttpServer } from './http/server/node';
 import { Logger } from './logger';
-import { WebServerModule } from './module/modules';
+import { OldWebServerModule, WebServerModule } from './module/modules';
 import type { Type } from './types';
 import { singleton } from './utils/singleton';
 
@@ -57,11 +58,12 @@ export function getHttpApi(): HttpApi {
   });
 }
 
-export function getWebServerModule(): WebServerModule {
+export function getWebServerModule(): OldWebServerModule {
   return singleton(singletonScope, WebServerModule, () => {
+    const httpServer = container.resolve(NodeHttpServer);
     const httpApi = getHttpApi();
     const logger = getLogger(webServerLogPrefix);
 
-    return new WebServerModule(httpApi, webServerPort, logger);
+    return new OldWebServerModule(httpServer, httpApi, webServerPort, logger);
   });
 }

@@ -4,7 +4,7 @@ import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { zBase32Encode } from './z-base32';
 
 export interface CompressionResult {
-  toBuffer(): Promise<ArrayBuffer>;
+  toBuffer(): Promise<Uint8Array>;
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
   toBase64Url(): Promise<string>;

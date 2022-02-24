@@ -103,12 +103,12 @@ function getForwardRefProxy<T extends object>(context: ForwardRefContext): Forwa
 }
 
 function getContext(options?: ForwardRefOptions): ForwardRefContext {
-  const reference: LazyInitializerItem<ForwardRefContext, 'reference'> = isDefined(options?.reference)
-    ? { value: options?.reference }
-    : isDefined(options?.initializer)
-      ? { initializer: options?.initializer }
-      : { value: undefined };
-
+  const reference: LazyInitializerItem<ForwardRefContext, 'reference'>
+    = isDefined(options?.reference)
+      ? { value: options?.reference }
+      : isDefined(options?.initializer)
+        ? { initializer: options?.initializer }
+        : { value: undefined };
 
   return lazyObject<ForwardRefContext>({
     reference

@@ -4,7 +4,7 @@ import { HttpError } from '#/http/http.error';
 import { DetailsError } from '../error';
 import type { DeepArray, Record, StringMap } from '../types';
 import { hasOwnProperty } from './object/object';
-import { isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined } from './type-guards';
+import { isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined, isWritableArray } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
 
@@ -247,7 +247,7 @@ export function decycle<T>(value: T, replacer?: (value: any) => any): Decycled<T
 export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<T> {
   const mapping = new Map<any, string>();
 
-  const replacerFn = isDefined(replacer) ? replacer : (value: any) => value;
+  const replacerFn = isDefined(replacer) ? replacer : (value: unknown) => value;
 
   function _decycle(__value: any, path: string): any {
     const value = replacerFn(__value);
@@ -316,7 +316,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   }
 
   function _recycle(node: any): void {
-    if (isArray(node)) {
+    if (isWritableArray(node)) {
       for (let i = 0; i < node.length; i++) {
         const ref = getRef(node[i]);
 

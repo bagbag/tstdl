@@ -1,6 +1,6 @@
 import { singleton } from '#/container';
 import { ForbiddenError } from '#/error';
-import { HttpClient } from '#/http';
+import { HttpClient } from '#/http/client';
 import type { Json } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { digest } from '#/utils/cryptography';
