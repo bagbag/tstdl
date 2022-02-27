@@ -10,6 +10,7 @@ import { DeferredPromise } from '../../../promise';
 import { HttpHeaders } from '../../http-headers';
 import { HttpError, HttpErrorReason } from '../../http.error';
 import { HttpClientAdapter } from '../http-client.adapter';
+import { setBody } from './utils';
 
 let _got: typeof Got | undefined;
 
@@ -24,10 +25,6 @@ async function getGot(): Promise<typeof Got> {
 @singleton()
 export class GotHttpClientAdapter extends HttpClientAdapter {
   async call(request: HttpClientRequest): Promise<HttpClientResponse> {
-    return this.callStream(request);
-  }
-
-  async callStream(request: HttpClientRequest): Promise<HttpClientResponse> {
     const got = await getGot();
 
     const gotOptions = getGotOptions(got, true, request);
@@ -43,7 +40,7 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
     try {
       const gotResponse = await responsePromise;
 
-      return new HttpClientResponse(
+      const response = new HttpClientResponse(
         request,
         gotResponse.statusCode ?? -1,
         gotResponse.statusMessage ?? '',
@@ -51,35 +48,40 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
         streamWrapper(got, gotRequest, request),
         () => gotRequest.destroy()
       );
+
+      await setBody(response, request.responseType);
+
+      return response;
     }
     catch (error: unknown) {
-      throw convertError(got, error, request);
+      const httpError = await convertError(got, error, request);
+      throw httpError;
     }
   }
 }
 
-function convertError(got: typeof Got, error: unknown, request: HttpClientRequest): HttpError {
+async function convertError(got: typeof Got, error: unknown, request: HttpClientRequest): Promise<HttpError> {
   if (error instanceof got.HTTPError) {
-    return new HttpError(HttpErrorReason.Unknown, request, convertResponse(got, request, error.response), error);
+    return new HttpError(HttpErrorReason.Unknown, request, await convertResponse(got, request, error.response), error);
   }
 
   if (error instanceof got.CancelError) {
-    return new HttpError(HttpErrorReason.Cancelled, request, convertResponse(got, request, error.response), error);
+    return new HttpError(HttpErrorReason.Cancelled, request, await convertResponse(got, request, error.response), error);
   }
 
   if (error instanceof got.TimeoutError) {
-    return new HttpError(HttpErrorReason.Timeout, request, convertResponse(got, request, error.response), error);
+    return new HttpError(HttpErrorReason.Timeout, request, await convertResponse(got, request, error.response), error);
   }
 
   return new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
 }
 
-function convertResponse(got: typeof Got, request: HttpClientRequest, gotResponse: Got.Response | undefined): HttpClientResponse | undefined {
+async function convertResponse(got: typeof Got, request: HttpClientRequest, gotResponse: Got.Response | undefined): Promise<HttpClientResponse | undefined> {
   if (isUndefined(gotResponse)) {
     return undefined;
   }
 
-  return new HttpClientResponse(
+  const response = new HttpClientResponse(
     request,
     gotResponse.statusCode,
     gotResponse.statusMessage ?? '',
@@ -87,6 +89,10 @@ function convertResponse(got: typeof Got, request: HttpClientRequest, gotRespons
     streamWrapper(got, gotResponse, request),
     () => gotResponse.destroy()
   );
+
+  await setBody(response, request.responseType);
+
+  return response;
 }
 
 // eslint-disable-next-line max-statements, max-lines-per-function

@@ -152,7 +152,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this.urlParametersSeparator = requestOptions?.urlParametersSeparator ?? ';';
     this.query = new HttpQuery(requestOptions?.query);
     this.body = normalizeBody(requestOptions?.body);
-    this.responseType = requestOptions?.responseType ?? 'buffer' as T;
+    this.responseType = requestOptions?.responseType ?? 'auto' as T;
     this.timeout = requestOptions?.timeout ?? 30000;
     this.context = requestOptions?.context ?? {};
 
@@ -182,6 +182,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
   }
 
   asObject(): HttpClientRequestObject<T> {
+    const body: HttpClientRequestObject['body'] = isDefined(this.body?.form) ? { form: this.body!.form.asNormalizedObject() } : this.body;
+
     return {
       url: this.url,
       method: this.method,
@@ -189,7 +191,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
       urlParameter: this.urlParameters.asObject(),
       headers: this.headers.asObject(),
       query: this.query.asObject(),
-      body: this.body,
+      body,
       responseType: this.responseType,
       timeout: this.timeout,
       context: this.context

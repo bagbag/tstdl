@@ -1,13 +1,9 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
 import { inject, injectionToken, optional, singleton } from '#/container';
-import type { OneOrMany, Record, UndefinableJson } from '#/types';
+import type { OneOrMany, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { isAsyncIterable } from '#/utils/async-iterable-helpers';
-import { decompress } from '#/utils/compression';
-import { decodeText } from '#/utils/encoding';
 import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
-import { readBinaryStream } from '#/utils/stream';
 import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
 import { buildUrl } from '#/utils/url-builder';
 import { HttpHeaders } from '../http-headers';
@@ -67,7 +63,6 @@ export class HttpClient {
     this.internalMiddleware = [
       getBuildRequestUrlMiddleware(options.baseUrl),
       addRequestHeadersMiddleware,
-      convertBodyMiddleware,
       ...((options.enableErrorHandling ?? false) ? [errorMiddleware] : [])
     ];
 
@@ -253,91 +248,20 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
 async function addRequestHeadersMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {
   const clone = request.clone();
 
-  if (isDefined(request.body?.json)) {
-    request.headers.contentType = 'application/json';
+  if (isDefined(clone.body?.json)) {
+    clone.headers.contentType = 'application/json';
   }
-  else if (isDefined(request.body?.text)) {
-    request.headers.contentType = 'text/plain';
+  else if (isDefined(clone.body?.text)) {
+    clone.headers.contentType = 'text/plain';
   }
-  else if (isDefined(request.body?.form)) {
-    request.headers.contentType = 'application/x-www-form-urlencoded';
+  else if (isDefined(clone.body?.form)) {
+    clone.headers.contentType = 'application/x-www-form-urlencoded';
   }
-  else if (isDefined(request.body?.stream) || isDefined(request.body?.buffer)) {
-    request.headers.contentType = 'application/octet-stream';
+  else if (isDefined(clone.body?.stream) || isDefined(clone.body?.buffer)) {
+    clone.headers.contentType = 'application/octet-stream';
   }
 
   return next(clone);
-}
-
-async function convertBodyMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {
-  const response = await next(request);
-
-  try {
-    switch (request.responseType) {
-      case 'text': {
-        (response as Record<keyof typeof response>).body = getResponseText(response);
-        break;
-      }
-
-      case 'json': {
-        const text = await getResponseText(response);
-        (response as Record<keyof typeof response>).body = JSON.parse(text);
-        break;
-      }
-
-      case 'buffer': {
-        (response as Record<keyof typeof response>).body = await getResponseBuffer(response);
-        break;
-      }
-
-      case 'stream': {
-        (response as Record<keyof typeof response>).body = getResponseStream(response);
-        break;
-      }
-
-      case 'none': {
-        (response as Record<keyof typeof response>).body = undefined;
-        response.close();
-        break;
-      }
-
-      default: {
-        throw new Error(`unsupported responseType ${request.responseType as string}`);
-      }
-    }
-  }
-  catch (error) {
-    throw new HttpError(HttpErrorReason.Unknown, request, response, error as Error);
-  }
-
-  return response;
-}
-
-function getResponseStream(response: HttpClientResponse): AsyncIterable<Uint8Array> {
-  if (!isAsyncIterable(response.body)) {
-    throw new Error('http client adapter does not support streams');
-  }
-
-  return response.body;
-}
-
-async function getResponseBuffer(response: HttpClientResponse): Promise<Uint8Array> {
-  if (response.body instanceof Uint8Array) {
-    return response.body;
-  }
-
-  const stream = getResponseStream(response);
-  return readBinaryStream(stream, response.headers.contentLength);
-}
-
-async function getResponseText(response: HttpClientResponse): Promise<string> {
-  let buffer = await getResponseBuffer(response);
-
-  if ((response.headers.contentEncoding == 'gzip') || (response.headers.contentEncoding == 'brotli') || (response.headers.contentEncoding == 'deflate')) {
-    buffer = await decompress(buffer, response.headers.contentEncoding).toBuffer();
-  }
-
-  return decodeText(buffer, response.headers.charset);
 }
 
 async function errorMiddleware(request: HttpClientRequest, next: HttpClientHandler): Promise<HttpClientResponse> {

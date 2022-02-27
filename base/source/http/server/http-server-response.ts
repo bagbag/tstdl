@@ -1,5 +1,18 @@
 import type { UndefinableJson } from '#/types';
+import type { HttpHeadersObject } from '../http-headers';
 import { HttpHeaders } from '../http-headers';
+
+export type HttpServerResponseOptions = {
+  statusCode?: number | undefined,
+  statusMessage?: string | undefined,
+  headers?: HttpHeadersObject | HttpHeaders,
+  body?: {
+    stream?: AsyncIterable<Uint8Array>,
+    buffer?: Uint8Array,
+    text?: string,
+    json?: UndefinableJson
+  }
+};
 
 export class HttpServerResponse {
   statusCode: number | undefined;
@@ -12,10 +25,10 @@ export class HttpServerResponse {
     json?: UndefinableJson
   };
 
-  constructor(response: Partial<HttpServerResponse> = {}) {
+  constructor(response: HttpServerResponseOptions = {}) {
     this.statusCode = response.statusCode;
     this.statusMessage = response.statusMessage;
-    this.headers = response.headers ?? new HttpHeaders();
+    this.headers = new HttpHeaders(response.headers);
     this.body = response.body;
   }
 }

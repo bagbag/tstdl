@@ -1,19 +1,21 @@
 import { container, singleton } from '#/container';
+import type { HttpBodyType, HttpStreamBodyType } from '#/http';
 import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
-import type { HttpStreamBodyType } from '#/http/types';
+import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { IncomingHttpHeaders } from 'http';
 import type { Dispatcher } from 'undici';
-import { errors as undiciErrors, FormData, request } from 'undici';
+import { errors as undiciErrors, request } from 'undici';
 import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
 import { HttpClientResponse } from '../http-client-response';
 import { HttpClientAdapter } from '../http-client.adapter';
+import { setBody } from './utils';
 
 @singleton()
 export class UndiciHttpClientAdapter extends HttpClientAdapter {
-  // eslint-disable-next-line max-lines-per-function
-  async call(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse> {
+  // eslint-disable-next-line max-lines-per-function, max-statements
+  async call<T extends HttpBodyType>(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse<T>> {
     let body: DispatchOptions['body'];
 
     if (isDefined(httpClientRequest.body?.json)) {
@@ -29,13 +31,15 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
       body = httpClientRequest.body!.stream as unknown as DispatchOptions['body'];
     }
     else if (isDefined(httpClientRequest.body?.form)) {
-      const formData = new FormData();
+      const searchParams = new URLSearchParams();
 
-      for (const [key, entry] of httpClientRequest.body!.form) {
-        formData.set(key, entry);
+      for (const [key, entry] of httpClientRequest.body!.form.normalizedEntries()) {
+        for (const value of toArray(entry)) {
+          searchParams.append(key, value);
+        }
       }
 
-      body = formData as unknown as DispatchOptions['body'];
+      body = searchParams.toString();
     }
 
     try {
@@ -57,11 +61,13 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
         () => response.body.destroy()
       );
 
+      await setBody(httpClientResponse, httpClientRequest.responseType);
+
       if ((response.statusCode >= 400 && response.statusCode <= 500)) {
         throw new HttpError(HttpErrorReason.ErrorResponse, httpClientRequest, httpClientResponse, `status code ${response.statusCode}`);
       }
 
-      return httpClientResponse;
+      return httpClientResponse as HttpClientResponse<T>;
     }
     catch (error) {
       if (error instanceof undiciErrors.UndiciError) {

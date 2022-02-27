@@ -112,7 +112,7 @@ export function getDefaultRequestDataTransformer<B extends HttpBodyType>(): Rout
 
     const requestBodyType = contentTypeToBodyType(context.request.type);
 
-    if ((bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) || (requestBodyType == 'json')) {
+    if ((bodyType == 'json' && isObject(data.body) && !Array.isArray(data.body)) || (bodyType == 'auto' && requestBodyType == 'json')) {
       transformed = { ...transformed, ...(data as RequestData<'json'>).body as JsonObject };
     }
     else if (bodyType != 'none' && isDefined(data.body)) {

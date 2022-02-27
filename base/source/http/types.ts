@@ -23,6 +23,7 @@ export type HttpMethod =
   | 'delete';
 
 export type HttpNoneBodyType = 'none';
+export type HttpAutoBodyType = 'auto';
 export type HttpTextBodyType = 'text';
 export type HttpJsonBodyType = 'json';
 export type HttpBufferBodyType = 'buffer';
@@ -30,6 +31,7 @@ export type HttpStreamBodyType = 'stream';
 
 export type HttpBodyType =
   | HttpNoneBodyType
+  | HttpAutoBodyType
   | HttpTextBodyType
   | HttpJsonBodyType
   | HttpBufferBodyType
@@ -37,6 +39,7 @@ export type HttpBodyType =
 
 export type HttpBody<B extends HttpBodyType = HttpBodyType>
   = B extends HttpNoneBodyType ? undefined
+  : B extends HttpAutoBodyType ? string | UndefinableJson | Uint8Array
   : B extends HttpTextBodyType ? string
   : B extends HttpJsonBodyType ? UndefinableJson
   : B extends HttpBufferBodyType ? Uint8Array

@@ -37,7 +37,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
       throw new BadRequestError(`missing ${lowercasedKey} ${this.valueType}`);
     }
 
-    return this.map.get(lowercasedKey)?.value!; // eslint-disable-line @typescript-eslint/no-non-null-asserted-optional-chain
+    return this.map.get(lowercasedKey)!.value;
   }
 
   /** try to get value */
