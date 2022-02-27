@@ -182,7 +182,7 @@ export class HttpApi {
           case 'patch':
           case 'put':
           case 'delete':
-            this.registerRoute(method, route.path, route.bodyType ?? 'none', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
+            this.registerRoute(method, route.path, route.bodyType ?? 'auto', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
           default:
