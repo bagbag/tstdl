@@ -20,8 +20,9 @@ export enum ModuleState {
 
 export interface Module {
   readonly name: string;
+  readonly state: ModuleState;
 
-  metrics: StringMap<ModuleMetric>;
+  readonly metrics: StringMap<ModuleMetric>;
   run(): Promise<void>;
   stop(): Promise<void>;
 }

@@ -40,9 +40,6 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
 }
 
 export async function disposeInstances(): Promise<void> {
-  const logger = await container.resolveAsync(CORE_LOGGER);
-
-  logger.info('shutting down');
   await disposer.dispose();
 }
 

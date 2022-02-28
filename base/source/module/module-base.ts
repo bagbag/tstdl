@@ -6,7 +6,7 @@ import { ModuleState } from './module';
 
 export abstract class ModuleBase implements Module {
   private runPromise: Promise<void>;
-  private state: ModuleState;
+  private _state: ModuleState;
 
   protected readonly cancellationToken: CancellationToken;
 
@@ -14,41 +14,42 @@ export abstract class ModuleBase implements Module {
 
   abstract readonly metrics: StringMap<ModuleMetric>;
 
+  get state(): ModuleState {
+    return this._state;
+  }
+
   private get stateString(): string {
-    return ModuleState[this.state]!.toLowerCase();
+    return ModuleState[this._state]!.toLowerCase();
   }
 
   constructor(name: string) {
     this.name = name;
+
     this.runPromise = Promise.resolve();
-    this.state = ModuleState.Stopped;
+    this._state = ModuleState.Stopped;
     this.cancellationToken = new CancellationToken();
   }
 
   async run(): Promise<void> {
-    if (this.state != ModuleState.Stopped) {
+    if (this._state != ModuleState.Stopped) {
       throw new Error(`cannot start module, it is ${this.stateString}`);
     }
 
     this.cancellationToken.unset();
 
     try {
-      this.state = ModuleState.Running;
+      this._state = ModuleState.Running;
       this.runPromise = this._run(this.cancellationToken);
       await this.runPromise;
-      this.state = ModuleState.Stopped;
+      this._state = ModuleState.Stopped;
     }
     catch (error: unknown) {
-      this.state = ModuleState.Erroneous;
+      this._state = ModuleState.Erroneous;
       throw error;
     }
   }
 
   async stop(): Promise<void> {
-    if (this.state != ModuleState.Running) {
-      throw new Error(`cannot stop module, it is ${this.stateString}`);
-    }
-
     this.cancellationToken.set();
     await this.runPromise;
   }

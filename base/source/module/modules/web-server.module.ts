@@ -1,11 +1,12 @@
+import type { ApiControllerImplementation, ApiDefinition } from '#/api';
+import { ApiGateway } from '#/api';
 import type { Injectable } from '#/container';
 import { injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
+import { disposeAsync } from '#/disposable/disposable';
 import { HttpServer } from '#/http/server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { ApiControllerImplementation, ApiDefinition } from '#/api';
-import { ApiGateway } from '#/api';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
@@ -34,8 +35,8 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
 
   [resolveArgumentType]: WebServerModuleConfiguration;
 
-  constructor(@injectArg() config: WebServerModuleConfiguration, httpServer: HttpServer, apiGateway: ApiGateway, @resolveArg<LoggerArgument>(WebServerModule.name) logger: Logger) {
-    super(WebServerModule.name);
+  constructor(@injectArg() config: WebServerModuleConfiguration, httpServer: HttpServer, apiGateway: ApiGateway, @resolveArg<LoggerArgument>('WebServer') logger: Logger) {
+    super('WebServer');
 
     this.httpServer = httpServer;
     this.apiGateway = apiGateway;
@@ -53,7 +54,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
 
     const closePromise = cancellationToken.$set.then(async () => {
       this.logger.info('closing http server');
-      return this.httpServer.close(3000);
+      await this.httpServer[disposeAsync]();
     });
 
     for await (const context of this.httpServer) {
