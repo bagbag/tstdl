@@ -1,4 +1,4 @@
-import type { ApiControllerImplementation, ApiDefinition } from '#/api';
+import type { ApiController } from '#/api';
 import { ApiGateway } from '#/api';
 import type { Injectable } from '#/container';
 import { injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
@@ -6,6 +6,7 @@ import { disposeAsync } from '#/disposable/disposable';
 import { HttpServer } from '#/http/server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
+import type { Type } from '#/types';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
@@ -44,8 +45,8 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     this.logger = logger;
   }
 
-  registerApi<T extends ApiDefinition>(definition: T, implementation: ApiControllerImplementation<T>): void {
-    this.apiGateway.registerApi(definition, implementation);
+  async registerApiController(controller: Type<ApiController>): Promise<void> {
+    await this.apiGateway.registerApiController(controller);
   }
 
   protected async _run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
