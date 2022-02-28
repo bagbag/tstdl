@@ -1,4 +1,4 @@
-import { coerceNumber } from '#/api/validation/validators/superstruct';
+import { coerceNumber } from '#/old-api/validation/validators/superstruct';
 import type { Infer } from 'superstruct';
 import { enums, object, optional, string } from 'superstruct';
 

@@ -1,11 +1,11 @@
 import type { Injectable } from '#/container';
 import { injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
-import type { ApiControllerImplementation, ApiDefinition } from '#/http-api';
-import { HttpApiGateway } from '#/http-api';
 import { HttpServer } from '#/http/server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
+import type { ApiControllerImplementation, ApiDefinition } from '#/api';
+import { ApiGateway } from '#/api';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
@@ -23,7 +23,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
   private readonly config: WebServerModuleConfiguration;
   private readonly logger: Logger;
   private readonly httpServer: HttpServer;
-  private readonly apiGateway: HttpApiGateway;
+  private readonly apiGateway: ApiGateway;
 
   readonly metrics = {
     connectedSockets: {
@@ -34,7 +34,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
 
   [resolveArgumentType]: WebServerModuleConfiguration;
 
-  constructor(@injectArg() config: WebServerModuleConfiguration, httpServer: HttpServer, apiGateway: HttpApiGateway, @resolveArg<LoggerArgument>(WebServerModule.name) logger: Logger) {
+  constructor(@injectArg() config: WebServerModuleConfiguration, httpServer: HttpServer, apiGateway: ApiGateway, @resolveArg<LoggerArgument>(WebServerModule.name) logger: Logger) {
     super(WebServerModule.name);
 
     this.httpServer = httpServer;

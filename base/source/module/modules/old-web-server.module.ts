@@ -1,7 +1,7 @@
 import type { NodeHttpServer } from '#/http/server/node';
 import type { Logger } from '#/logger';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { AnyRoute, HttpApi } from '../../api/http-api';
+import type { AnyRoute, HttpApi } from '../../old-api/http-api';
 import type { Module } from '../module';
 import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';

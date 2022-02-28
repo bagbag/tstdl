@@ -1,4 +1,4 @@
-import { HttpApi } from './api/http-api';
+import { HttpApi } from './old-api/http-api';
 import { container } from './container';
 import { CORE_LOGGER } from './core';
 import { NodeHttpServer } from './http/server/node';

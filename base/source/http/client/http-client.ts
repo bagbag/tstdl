@@ -1,4 +1,4 @@
-import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api';
+import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response';
 import { inject, injectionToken, optional, singleton } from '#/container';
 import type { OneOrMany, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';

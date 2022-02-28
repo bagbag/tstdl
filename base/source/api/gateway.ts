@@ -50,7 +50,7 @@ type EndpointParseResult = {
  * @todo error handling (standardized format, serialization etc.)
  */
 @singleton()
-export class HttpApiGateway {
+export class ApiGateway {
   private readonly logger: Logger;
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: AsyncMiddleware<HttpServerRequest, HttpServerResponse>[];
@@ -59,7 +59,7 @@ export class HttpApiGateway {
 
   private handler: ComposedAsyncMiddlerware<HttpServerRequest, HttpServerResponse>;
 
-  constructor(@resolveArg<LoggerArgument>(HttpApiGateway.name) logger: Logger) {
+  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger) {
     this.logger = logger;
 
     this.apis = new Map();

@@ -1,5 +1,5 @@
-import type { ErrorResponse } from '#/api';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api';
+import type { ErrorResponse } from '#/api/response';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '#/api/response';
 import type { CustomError, CustomErrorStatic } from '#/error';
 import { BadRequestError, MaxBytesExceededError, UnsupportedMediaTypeError } from '#/error';
 import type { HttpQueryObject } from '#/http';
