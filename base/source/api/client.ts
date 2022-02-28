@@ -12,11 +12,18 @@ import { rootResource } from './types';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T>;
 
+export type ClientOptions = {
+  /**
+   * url prefix (default: 'api/')
+   */
+  prefix?: string
+};
+
 export const httpClientSymbol = Symbol('ApiTransport');
 export const apiDefinitionSymbol = Symbol('ApiDefinition');
 
 // eslint-disable-next-line max-lines-per-function
-export function compileClient<T extends ApiDefinition>(definition: T): ApiClient<T> {
+export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions): ApiClient<T> {
   const { resource: path, endpoints } = definition;
   const constructedApiName = (path[0]?.toUpperCase() ?? '') + path.slice(1);
   const apiName = `${constructedApiName}ApiClient`;
@@ -35,13 +42,14 @@ export function compileClient<T extends ApiDefinition>(definition: T): ApiClient
 
   const endpointsEntries = Object.entries(endpoints);
 
-  const base = definition.resource;
+  const base = path;
+  const prefix = options.prefix ?? 'api/';
 
   for (const [name, config] of endpointsEntries) {
     const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
     const method = config.method ?? 'get';
     const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
-    const resource = (config.resource == rootResource) ? `${versionPrefix}${base}` : `${versionPrefix}${base}/${config.resource ?? name}`;
+    const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {

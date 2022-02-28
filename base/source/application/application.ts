@@ -59,6 +59,9 @@ export class Application {
         shutdownToken
       ]);
     }
+    catch (error) {
+      this.logger.error(error as Error, { includeRest: true, includeStack: true });
+    }
     finally {
       requestShutdown();
 

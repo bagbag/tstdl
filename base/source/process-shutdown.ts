@@ -43,7 +43,15 @@ export function forceShutdown(): void {
   setTimeout(() => process.exit(2), 1);
 }
 
+let signalsInitialized = false;
+
 export function initializeSignals(): void {
+  if (signalsInitialized) {
+    return;
+  }
+
+  signalsInitialized = true;
+
   let signalCounter = 0;
   let quitReason: any[] | undefined;
 

@@ -1,3 +1,4 @@
+import { SchemaError } from '#/schema/schema.error';
 import { BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, NotFoundError, NotImplementedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
 import { ApiError } from '../error/api.error';
 import { ValidationError } from '../error/validation.error';
@@ -7,6 +8,12 @@ type SerializedValidationError = {
   message: string,
   details?: any,
   inner?: SerializedValidationError[]
+};
+
+type SerializedSchemaError = {
+  message: string,
+  details?: any,
+  path: string
 };
 
 export function registerDefaultErrorHandlers(): void {
@@ -20,6 +27,7 @@ export function registerDefaultErrorHandlers(): void {
   registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
   registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
   registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
+  registerErrorHandler(SchemaError, 400, serializeSchemaError, deserializeSchemaError);
 }
 
 export function serializeValidationError(error: ValidationError): SerializedValidationError {
@@ -33,4 +41,17 @@ export function serializeValidationError(error: ValidationError): SerializedVali
 export function deserializeValidationError(serializedError: SerializedValidationError): ValidationError {
   const inner = serializedError.inner?.map(deserializeValidationError);
   return new ValidationError(serializedError.message, { details: serializedError.details, inner });
+}
+
+
+export function serializeSchemaError(error: SchemaError): SerializedSchemaError {
+  return {
+    message: error.message,
+    details: error.details,
+    path: error.path
+  };
+}
+
+export function deserializeSchemaError(serializedError: SerializedSchemaError): SchemaError {
+  return new SchemaError(serializedError.message, { details: serializedError.details, path: serializedError.path });
 }

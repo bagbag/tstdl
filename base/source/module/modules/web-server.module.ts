@@ -1,7 +1,6 @@
-import type { ApiController } from '#/api';
+import type { ApiController, ApiGatewayArgument } from '#/api';
 import { ApiGateway } from '#/api';
-import type { Injectable } from '#/container';
-import { injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
+import { forwardArg, Injectable, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { disposeAsync } from '#/disposable/disposable';
 import { HttpServer } from '#/http/server';
 import type { LoggerArgument } from '#/logger';
@@ -13,12 +12,20 @@ import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
 
 export type WebServerModuleConfiguration = {
-  port: number
+  port: number,
+  prefix: 'api/'
 };
 
 export const webServerModuleConfiguration: WebServerModuleConfiguration = {
-  port: 8000
+  port: 8000,
+  prefix: 'api/'
 };
+
+function getApiGatewayArgument(config: WebServerModuleConfiguration): ApiGatewayArgument {
+  return {
+    prefix: config.prefix
+  };
+}
 
 @singleton({ defaultArgumentProvider: () => webServerModuleConfiguration })
 export class WebServerModule extends ModuleBase implements Module, Injectable<WebServerModuleConfiguration> {
@@ -36,7 +43,12 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
 
   [resolveArgumentType]: WebServerModuleConfiguration;
 
-  constructor(@injectArg() config: WebServerModuleConfiguration, httpServer: HttpServer, apiGateway: ApiGateway, @resolveArg<LoggerArgument>('WebServer') logger: Logger) {
+  constructor(
+    @injectArg() config: WebServerModuleConfiguration,
+    httpServer: HttpServer,
+    @forwardArg<WebServerModuleConfiguration, ApiGatewayArgument>(getApiGatewayArgument) apiGateway: ApiGateway,
+    @resolveArg<LoggerArgument>('WebServer') logger: Logger
+  ) {
     super('WebServer');
 
     this.httpServer = httpServer;
@@ -66,6 +78,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
   }
 }
 
-export function configureWebServerModule(config?: WebServerModuleConfiguration): void {
+export function configureWebServerModule(config?: Partial<WebServerModuleConfiguration>): void {
   webServerModuleConfiguration.port = config?.port ?? webServerModuleConfiguration.port;
+  webServerModuleConfiguration.prefix = config?.prefix ?? webServerModuleConfiguration.prefix;
 }

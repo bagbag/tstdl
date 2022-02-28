@@ -1,4 +1,5 @@
-import { container, resolveArg, singleton } from '#/container';
+import type { Injectable } from '#/container';
+import { container, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { BadRequestError, NotFoundError, NotImplementedError } from '#/error';
 import type { HttpServerRequest } from '#/http/server';
 import { HttpServerResponse } from '#/http/server';
@@ -26,6 +27,11 @@ const UrlPattern: typeof URLPattern = ForwardRef.create();
 // eslint-disable-next-line no-eval
 void (eval('import(\'urlpattern-polyfill\')') as Promise<typeof URLPatternImport>).then((imported) => ForwardRef.setRef(UrlPattern, imported.URLPattern));
 
+export type ApiGatewayOptions = {
+  /** default: api/ */
+  prefix?: string
+};
+
 type Endpoint = {
   definition: ApiEndpointDefinition,
   implementation: ApiEndpointServerImplementation
@@ -45,13 +51,16 @@ type EndpointParseResult = {
   resourceParameters: StringMap<string>
 };
 
+export type ApiGatewayArgument = ApiGatewayOptions;
+
 /**
  * router for {@link ApiTransport} requests to {@link ApiImplementation}
  * @todo error handling (standardized format, serialization etc.)
  */
 @singleton()
-export class ApiGateway {
+export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly logger: Logger;
+  private readonly prefix: string;
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: AsyncMiddleware<HttpServerRequest, HttpServerResponse>[];
   private readonly supressedErrorLogs: Set<Type<Error>>;
@@ -59,9 +68,11 @@ export class ApiGateway {
 
   private handler: ComposedAsyncMiddlerware<HttpServerRequest, HttpServerResponse>;
 
-  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger) {
+  readonly [resolveArgumentType]: ApiGatewayOptions;
+  constructor(@injectArg() options: ApiGatewayOptions, @resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger) {
     this.logger = logger;
 
+    this.prefix = options.prefix ?? 'api/';
     this.apis = new Map();
     this.middlewares = [];
     this.supressedErrorLogs = new Set();
@@ -96,7 +107,7 @@ export class ApiGateway {
 
       for (const version of versionArray) {
         const versionPrefix = isNull(version) ? '' : `v${version}/`;
-        const resource = (endpointDefinition.resource == rootResource) ? `${versionPrefix}${base}` : `${versionPrefix}${base}/${endpointDefinition.resource ?? name}`;
+        const resource = (endpointDefinition.resource == rootResource) ? `${this.prefix}${versionPrefix}${base}` : `${this.prefix}${versionPrefix}${base}/${endpointDefinition.resource ?? name}`;
         const method = endpointDefinition.method ?? 'get';
 
         let resourceApis = this.apis.get(resource);
