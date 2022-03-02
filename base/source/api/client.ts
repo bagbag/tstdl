@@ -23,7 +23,7 @@ export const httpClientSymbol = Symbol('ApiTransport');
 export const apiDefinitionSymbol = Symbol('ApiDefinition');
 
 // eslint-disable-next-line max-lines-per-function
-export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions): ApiClient<T> {
+export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions = {}): ApiClient<T> {
   const { resource: path, endpoints } = definition;
   const constructedApiName = (path[0]?.toUpperCase() ?? '') + path.slice(1);
   const apiName = `${constructedApiName}ApiClient`;
