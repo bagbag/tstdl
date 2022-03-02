@@ -1,5 +1,4 @@
 import type * as NodeCrypto from 'crypto';
-import { assertFunction } from './type-guards';
 
 type NodeCryptoType = typeof NodeCrypto;
 
@@ -9,9 +8,8 @@ const bufferBypassThreshold = (bufferSize / 2) + 1;
 let nodeCrypto: NodeCryptoType | undefined;
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  nodeCrypto = require(['crypto'][0]!) as NodeCryptoType;
-  assertFunction(nodeCrypto.randomBytes);
+  // eslint-disable-next-line no-eval
+  nodeCrypto = eval('require(\'crypto\')') as NodeCryptoType;
 }
 catch {
   // ignore

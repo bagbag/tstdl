@@ -49,8 +49,8 @@ try {
   subtle = globalThis?.crypto?.subtle;
 
   if (isUndefined(subtle)) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
-    subtle = ((require(['crypto'][0]!) as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
+    // eslint-disable-next-line no-eval
+    subtle = ((eval('require(\'crypto\')') as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
   }
 }
 catch (error: unknown) {
