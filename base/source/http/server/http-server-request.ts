@@ -1,7 +1,7 @@
 import { UnsupportedMediaTypeError } from '#/error/unsupported-media-type.error';
 import type { StringMap, UndefinableJson } from '#/types';
 import { decodeText } from '#/utils/encoding';
-import { readBinaryStream } from '#/utils/stream';
+import { readBinaryStream } from '#/utils/stream/stream-reader';
 import { assertDefined, isDefined } from '#/utils/type-guards';
 import type { HttpHeaders } from '../http-headers';
 import type { HttpQuery } from '../http-query';
