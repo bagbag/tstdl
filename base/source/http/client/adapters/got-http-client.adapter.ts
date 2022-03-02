@@ -40,14 +40,14 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
     try {
       const gotResponse = await responsePromise;
 
-      const response = new HttpClientResponse(
+      const response = new HttpClientResponse({
         request,
-        gotResponse.statusCode ?? -1,
-        gotResponse.statusMessage ?? '',
-        new HttpHeaders(gotResponse.headers),
-        streamWrapper(got, gotRequest, request),
-        () => gotRequest.destroy()
-      );
+        statusCode: gotResponse.statusCode ?? -1,
+        statusMessage: gotResponse.statusMessage ?? '',
+        headers: new HttpHeaders(gotResponse.headers),
+        body: streamWrapper(got, gotRequest, request),
+        closeHandler: () => gotRequest.destroy()
+      });
 
       await setBody(response, request.responseType);
 
@@ -81,14 +81,14 @@ async function convertResponse(got: typeof Got, request: HttpClientRequest, gotR
     return undefined;
   }
 
-  const response = new HttpClientResponse(
+  const response = new HttpClientResponse({
     request,
-    gotResponse.statusCode,
-    gotResponse.statusMessage ?? '',
-    new HttpHeaders(gotResponse.headers),
-    streamWrapper(got, gotResponse, request),
-    () => gotResponse.destroy()
-  );
+    statusCode: gotResponse.statusCode,
+    statusMessage: gotResponse.statusMessage ?? '',
+    headers: new HttpHeaders(gotResponse.headers),
+    body: streamWrapper(got, gotResponse, request),
+    closeHandler: () => gotResponse.destroy()
+  });
 
   await setBody(response, request.responseType);
 

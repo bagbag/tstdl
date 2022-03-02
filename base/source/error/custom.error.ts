@@ -18,17 +18,15 @@ export type CustomErrorOptions = {
 };
 
 export class CustomError extends Error {
-  readonly cause: Error | undefined;
-
   constructor({ name, message, cause }: CustomErrorOptions) {
     const prototype = new.target.prototype;
-    super(message);
+    super(message, { cause });
 
     Object.setPrototypeOf(this, prototype);
 
     this.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? new.target.name;
 
-    if (cause != undefined) {
+    if ((cause != undefined) && (this.cause == undefined)) {
       this.cause = cause;
     }
   }

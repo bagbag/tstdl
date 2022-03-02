@@ -20,7 +20,7 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
   readonly [resolveArgumentType]: CollectionArgument<MongoJob<T>>;
 
   constructor(@forwardArg() collection: Collection<MongoJob<T>>, @resolveArg(MongoJobRepository.name) logger: Logger) {
-    super(collection, noopTransformer, { indexes, logger });
+    super(collection, noopTransformer, { indexes: indexes as TypedIndexDescription<MongoJob<T>>[], logger });
   }
 
   async insertWithUniqueTagStrategy(newJob: NewMongoJob<T>, uniqueTagStrategy: UniqueTagStrategy): Promise<MongoJob<T>> {

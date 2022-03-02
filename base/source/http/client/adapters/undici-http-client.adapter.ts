@@ -1,6 +1,7 @@
 import { container, singleton } from '#/container';
-import type { HttpBodyType, HttpStreamBodyType } from '#/http';
+import type { HttpBodyType } from '#/http';
 import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
+import type { HttpBody } from '#/http/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { IncomingHttpHeaders } from 'http';
@@ -15,7 +16,7 @@ import { setBody } from './utils';
 @singleton()
 export class UndiciHttpClientAdapter extends HttpClientAdapter {
   // eslint-disable-next-line max-lines-per-function, max-statements
-  async call<T extends HttpBodyType>(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse<T>> {
+  async call<T extends HttpBodyType>(httpClientRequest: HttpClientRequest<T>): Promise<HttpClientResponse<T>> {
     let body: DispatchOptions['body'];
 
     if (isDefined(httpClientRequest.body?.json)) {
@@ -52,14 +53,14 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
         bodyTimeout: httpClientRequest.timeout
       });
 
-      const httpClientResponse = new HttpClientResponse<HttpStreamBodyType>(
-        httpClientRequest,
-        response.statusCode,
-        '?',
-        new HttpHeaders(response.headers),
-        response.body,
-        () => response.body.destroy()
-      );
+      const httpClientResponse = new HttpClientResponse<T>({
+        request: httpClientRequest,
+        statusCode: response.statusCode,
+        statusMessage: '?',
+        headers: new HttpHeaders(response.headers),
+        body: response.body as unknown as HttpBody<T>,
+        closeHandler: () => response.body.destroy()
+      });
 
       await setBody(httpClientResponse, httpClientRequest.responseType);
 
@@ -67,7 +68,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
         throw new HttpError(HttpErrorReason.ErrorResponse, httpClientRequest, httpClientResponse, `status code ${response.statusCode}`);
       }
 
-      return httpClientResponse as HttpClientResponse<T>;
+      return httpClientResponse;
     }
     catch (error) {
       if (error instanceof undiciErrors.UndiciError) {

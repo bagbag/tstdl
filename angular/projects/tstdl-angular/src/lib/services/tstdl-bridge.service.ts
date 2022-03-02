@@ -1,7 +1,7 @@
 import { ApplicationRef, Injectable, Injector } from '@angular/core';
 import type { Registration } from '@tstdl/base/container';
 import { container, getTokenName } from '@tstdl/base/container';
-import { HttpClientAdapter } from '@tstdl/base/http/client.adapter';
+import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { Logger } from '@tstdl/base/logger';
 import { filter, from, merge } from 'rxjs';
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';

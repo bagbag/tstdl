@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.70.6",
+  "version": "0.70.7",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -18,22 +18,22 @@
     "rxjs": "^7"
   },
   "devDependencies": {
-    "@types/koa__router": "^8.0",
-    "@types/luxon": "^2.0",
-    "@types/minio": "^7.0",
+    "@types/koa__router": "8.0",
+    "@types/luxon": "2.0",
+    "@types/minio": "7.0",
     "@types/node": ">=16",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "^5.12",
-    "@typescript-eslint/parser": "^5.12",
-    "eslint": "^8.10",
-    "ttypescript": "^1.5",
-    "typescript": "^4.5",
-    "typescript-transform-paths": "^3.3"
+    "@typescript-eslint/eslint-plugin": "5.13",
+    "@typescript-eslint/parser": "5.13",
+    "eslint": "8.10",
+    "ttypescript": "1.5",
+    "typescript": "4.6",
+    "typescript-transform-paths": "3.3"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.0",
     "@koa/router": "^10.1",
-    "@tstdl/angular": "^0.8",
+    "@tstdl/angular": "^0.9",
     "got": "^12.0",
     "koa": "^2.13",
     "minio": "^7.0",
