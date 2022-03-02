@@ -9,7 +9,7 @@ import { Logger } from '#/logger';
 import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { Json, StringMap, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { _throw } from '#/utils/helpers';
+import { deferThrow, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { ForwardRef, lazyObject } from '#/utils/object';
@@ -134,8 +134,8 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
           this.apis.set(resource, resourceApis);
         }
 
-        const endpoint = implementation[name] ?? (() => _throw(new NotImplementedError(`endpoint ${name} for resource ${resource} not implemented`)));
-        resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpoint as ApiEndpointServerImplementation });
+        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`endpoint ${name} for resource ${resource} not implemented`));
+        resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });
       }
     }
   }
@@ -175,7 +175,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       ? await this.getBody(request, context.endpoint.definition.body)
       : undefined;
 
-    const bodyAsParameters = (isDefined(context.endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
+    const bodyAsParameters = (isUndefined(context.endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
       ? await request.bodyAsJson()
       : undefined;
 

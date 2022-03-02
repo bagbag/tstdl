@@ -40,10 +40,10 @@ export type ApiEndpointDefinition = {
   data?: any,
   cors?: {
     accessControlAllowCredentials?: boolean,
-    accessControlAllowHeaders?: string[],
-    accessControlAllowMethods?: HttpMethod[],
+    accessControlAllowHeaders?: OneOrMany<string>,
+    accessControlAllowMethods?: OneOrMany<HttpMethod>,
     accessControlAllowOrigin?: string,
-    accessControlExposeHeaders?: string[],
+    accessControlExposeHeaders?: OneOrMany<string>,
     accessControlMaxAge?: number
   }
 };
