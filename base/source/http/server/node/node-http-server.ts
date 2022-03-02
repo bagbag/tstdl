@@ -206,8 +206,8 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
 
   if (isDefined(simpleData)) {
     const bytes = isString(simpleData) ? encodeUtf8(simpleData) : simpleData;
-    if (!httpResponse.hasHeader('content-length')) {
-      httpResponse.setHeader('content-length', bytes.byteLength);
+    if (!httpResponse.hasHeader('Content-Length')) {
+      httpResponse.setHeader('Content-Length', bytes.byteLength);
     }
 
     await write(httpResponse, bytes);

@@ -7,7 +7,7 @@ import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
-import type { Json, StringMap, Type, UndefinableJson } from '#/types';
+import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { deferThrow, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
@@ -56,12 +56,6 @@ type ApiItem = {
 };
 
 export type EndpointMetadataBodyType = 'none' | 'text' | 'json' | 'buffer' | 'stream';
-
-type EndpointParseResult = {
-  api: ApiItem,
-  endpoint: GatewayEndpoint,
-  resourceParameters: StringMap<string>
-};
 
 export type ApiGatewayArgument = ApiGatewayOptions;
 
@@ -145,7 +139,13 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     const endpoint = api.endpoints.get(request.method)!;
 
     const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
-    await respond(response);
+
+    try {
+      await respond(response);
+    }
+    catch (error) {
+      this.logger.error(error as Error, { includeRest: false, includeStack: false });
+    }
   }
 
   getApiMetadata(resource: URL): { api: ApiItem, patternResult: URLPatternResult } {
