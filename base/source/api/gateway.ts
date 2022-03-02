@@ -44,7 +44,7 @@ export type ApiGatewayOptions = {
   prefix?: string
 };
 
-type GatewayEndpoint = {
+export type GatewayEndpoint = {
   definition: ApiEndpointDefinition,
   implementation: ApiEndpointServerImplementation
 };
@@ -166,7 +166,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   private updateMiddleware(): void {
-    const middlewares: ApiGatewayMiddleware[] = [this.errorCatchMiddleware, responseTimeMiddleware, allowedMethodsMiddleware, corsMiddleware, ...this.middlewares];
+    const middlewares: ApiGatewayMiddleware[] = [this.errorCatchMiddleware, responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, ...this.middlewares];
     this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
   }
 
