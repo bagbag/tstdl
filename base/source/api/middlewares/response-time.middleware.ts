@@ -1,9 +1,9 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import { round } from '#/utils/math';
-import type { AsyncMiddlerwareHandler } from '#/utils/middleware';
 import { Timer } from '#/utils/timer';
+import type { ApiGatewayMiddlewareNext } from '../gateway';
 
-export async function responseTimeMiddleware(request: HttpServerRequest, next: AsyncMiddlerwareHandler<HttpServerRequest, HttpServerResponse>): Promise<HttpServerResponse> {
+export async function responseTimeMiddleware(request: HttpServerRequest, next: ApiGatewayMiddlewareNext): Promise<HttpServerResponse> {
   const timer = new Timer(true);
 
   const response = await next(request);

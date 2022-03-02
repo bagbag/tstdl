@@ -1,5 +1,5 @@
 import { SchemaError } from '#/schema/schema.error';
-import { BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, NotFoundError, NotImplementedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
+import { BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
 import { ApiError } from '../error/api.error';
 import { ValidationError } from '../error/validation.error';
 import { registerErrorHandler } from './response';
@@ -25,6 +25,7 @@ export function registerDefaultErrorHandlers(): void {
   registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
   registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
   registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
+  registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
   registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
   registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
   registerErrorHandler(SchemaError, 400, serializeSchemaError, deserializeSchemaError);

@@ -47,7 +47,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   for (const [name, config] of endpointsEntries) {
     const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
-    const method = config.method ?? 'get';
+    const method = config.method ?? 'GET';
     const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
     const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
 

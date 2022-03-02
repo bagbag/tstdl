@@ -134,11 +134,11 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
   constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options?: HttpClientRequestOptions<T>) {
     if (isString(urlOrObject)) {
       this.url = urlOrObject;
-      this.method = method ?? 'get';
+      this.method = method ?? 'GET';
     }
     else {
       this.url = urlOrObject.url;
-      this.method = urlOrObject.method ?? 'get';
+      this.method = urlOrObject.method ?? 'GET';
     }
 
     const requestOptions: HttpClientRequestOptions<T> | undefined = isString(urlOrObject) ? options : urlOrObject;

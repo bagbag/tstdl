@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
+import type { HttpMethod } from '#/http/types';
 import type { ObjectSchemaValidator, SchemaInput, SchemaOutput, SchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
-import type { OneOrMany, Record } from '#/types';
-import 'reflect-metadata';
+import type { NonUndefinable, OneOrMany, Record } from '#/types';
 
 export const rootResource = '$';
 
@@ -24,7 +24,7 @@ export type EndpointRegistrationOptions = {
 
 const registeredApis: Map<ApiDefinition, ApiControllerImplementation | ApiImplementationFactory> = new Map();
 
-export type ApiEndpointMethod = 'get' | 'head' | 'post' | 'put' | 'patch' | 'delete';
+export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | Uint8ArraySchemaValidator;
 export type ApiEndpointDefinitionResult = SchemaValidator;
@@ -37,24 +37,32 @@ export type ApiEndpointDefinition = {
   body?: ApiEndpointDefinitionBody,
   result?: ApiEndpointDefinitionResult,
   description?: string,
-  data?: any
+  data?: any,
+  cors?: {
+    accessControlAllowCredentials?: boolean,
+    accessControlAllowHeaders?: string[],
+    accessControlAllowMethods?: HttpMethod[],
+    accessControlAllowOrigin?: string,
+    accessControlExposeHeaders?: string[],
+    accessControlMaxAge?: number
+  }
 };
 
 export type ApiDefinition = {
   resource: string,
   endpoints: Record<string, ApiEndpointDefinition>,
-  context: ObjectSchemaValidator<any>
+  context?: ObjectSchemaValidator<any>
 };
 
 export type ApiImplementationFactory<T extends ApiDefinition = any> = () => ApiControllerImplementation<T> | Promise<ApiControllerImplementation<T>>;
 
 export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];
 export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = T['endpoints'][K];
-export type ApiContextType<T extends ApiDefinition> = T['context']['outputType'];
+export type ApiContextType<T extends ApiDefinition> = SchemaOutput<NonUndefinable<T['context']>>;
 
-export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonNullable<ApiEndpoint<T, K>['parameters']>['schema'];
-export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonNullable<ApiEndpoint<T, K>['body']>['schema'];
-export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonNullable<ApiEndpoint<T, K>['result']>['schema'];
+export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['parameters']>['schema'];
+export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>['schema'];
+export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>['schema'];
 
 export type ApiEndpointParametersInput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaInput<ApiEndpointParametersSchema<T, K>>;
 export type ApiEndpointParametersOutput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointParametersSchema<T, K>>;

@@ -5,7 +5,6 @@ import type { HttpBody } from '#/http/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { IncomingHttpHeaders } from 'http';
-import type { Dispatcher } from 'undici';
 import { errors as undiciErrors, request } from 'undici';
 import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
@@ -45,7 +44,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
 
     try {
       const response = await request(httpClientRequest.url, {
-        method: httpClientRequest.method.toUpperCase() as Dispatcher.HttpMethod,
+        method: httpClientRequest.method,
         signal: httpClientRequest.abortToken.asAbortSignal,
         headers: httpClientRequest.headers.asNormalizedObject() as IncomingHttpHeaders,
         body,

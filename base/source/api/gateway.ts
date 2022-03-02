@@ -10,15 +10,16 @@ import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator
 import type { Json, StringMap, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { _throw } from '#/utils/helpers';
-import type { AsyncMiddleware, ComposedAsyncMiddlerware } from '#/utils/middleware';
+import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { ForwardRef, lazyObject } from '#/utils/object';
 import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import type * as URLPatternImport from 'urlpattern-polyfill';
 import type { URLPattern } from 'urlpattern-polyfill';
+import type { URLPatternResult } from 'urlpattern-polyfill/dist/url-pattern.interfaces';
 import type { ApiController } from './api-controller';
 import { getApiControllerDefinition } from './api-controller';
-import { errorCatchMiddleware, responseTimeMiddleware } from './middlewares';
+import { allowedMethodsMiddleware, corsMiddleware, errorCatchMiddleware, responseTimeMiddleware } from './middlewares';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation } from './types';
 import { rootResource } from './types';
 
@@ -27,12 +28,23 @@ const UrlPattern: typeof URLPattern = ForwardRef.create();
 // eslint-disable-next-line no-eval
 void (eval('import(\'urlpattern-polyfill\')') as Promise<typeof URLPatternImport>).then((imported) => ForwardRef.setRef(UrlPattern, imported.URLPattern));
 
+export type ApiGatewayMiddlewareContext = {
+  api: ApiItem,
+
+  /** can be undefined if used before allowedMethods middleware */
+  endpoint: GatewayEndpoint,
+  resourcePatternResult: URLPatternResult
+};
+
+export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>;
+export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
+
 export type ApiGatewayOptions = {
   /** default: api/ */
   prefix?: string
 };
 
-type Endpoint = {
+type GatewayEndpoint = {
   definition: ApiEndpointDefinition,
   implementation: ApiEndpointServerImplementation
 };
@@ -40,14 +52,14 @@ type Endpoint = {
 type ApiItem = {
   resource: string,
   pattern: URLPattern,
-  endpoints: Map<ApiEndpointMethod, Endpoint>
+  endpoints: Map<ApiEndpointMethod, GatewayEndpoint>
 };
 
 export type EndpointMetadataBodyType = 'none' | 'text' | 'json' | 'buffer' | 'stream';
 
 type EndpointParseResult = {
   api: ApiItem,
-  endpoint: Endpoint,
+  endpoint: GatewayEndpoint,
   resourceParameters: StringMap<string>
 };
 
@@ -62,17 +74,17 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly logger: Logger;
   private readonly prefix: string;
   private readonly apis: Map<string, ApiItem>;
-  private readonly middlewares: AsyncMiddleware<HttpServerRequest, HttpServerResponse>[];
+  private readonly middlewares: ApiGatewayMiddleware[];
   private readonly supressedErrorLogs: Set<Type<Error>>;
-  private readonly errorCatchMiddleware: AsyncMiddleware<HttpServerRequest, HttpServerResponse>;
+  private readonly errorCatchMiddleware: ApiGatewayMiddleware;
 
-  private handler: ComposedAsyncMiddlerware<HttpServerRequest, HttpServerResponse>;
+  private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
   readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(@injectArg() options: ApiGatewayOptions, @resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger) {
+  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options?: ApiGatewayOptions) {
     this.logger = logger;
 
-    this.prefix = options.prefix ?? 'api/';
+    this.prefix = options?.prefix ?? 'api/';
     this.apis = new Map();
     this.middlewares = [];
     this.supressedErrorLogs = new Set();
@@ -81,7 +93,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     this.updateMiddleware();
   }
 
-  addMiddleware(middleware: AsyncMiddleware<HttpServerRequest, HttpServerResponse>): void {
+  addMiddleware(middleware: ApiGatewayMiddleware): void {
     this.middlewares.push(middleware);
     this.updateMiddleware();
   }
@@ -108,7 +120,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       for (const version of versionArray) {
         const versionPrefix = isNull(version) ? '' : `v${version}/`;
         const resource = (endpointDefinition.resource == rootResource) ? `${this.prefix}${versionPrefix}${base}` : `${this.prefix}${versionPrefix}${base}/${endpointDefinition.resource ?? name}`;
-        const method = endpointDefinition.method ?? 'get';
+        const method = endpointDefinition.method ?? 'GET';
 
         let resourceApis = this.apis.get(resource);
 
@@ -129,23 +141,41 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   async handleHttpServerRequestContext({ request, respond }: HttpServerRequestContext): Promise<void> {
-    const response = await this.handler(request);
+    const { api, patternResult } = this.getApiMetadata(request.url);
+    const endpoint = api.endpoints.get(request.method)!;
+
+    const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
     await respond(response);
   }
 
-  private updateMiddleware(): void {
-    const middlewares: AsyncMiddleware<HttpServerRequest, HttpServerResponse>[] = [this.errorCatchMiddleware, responseTimeMiddleware, ...this.middlewares];
-    this.handler = composeAsyncMiddleware(middlewares, async (request) => this.middlewareHandler(request));
+  getApiMetadata(resource: URL): { api: ApiItem, patternResult: URLPatternResult } {
+    const urlWithoutPort = new URL(resource);
+    urlWithoutPort.port = '';
+
+    for (const api of this.apis.values()) {
+      const result = api.pattern.exec(urlWithoutPort);
+
+      if (isNullOrUndefined(result)) {
+        continue;
+      }
+
+      return { api, patternResult: result };
+    }
+
+    throw new NotFoundError(`resource ${resource.href} not available`);
   }
 
-  private async middlewareHandler(request: HttpServerRequest): Promise<HttpServerResponse> {
-    const { endpoint, resourceParameters } = this.getEndpointMetadata(request.url, request.method);
+  private updateMiddleware(): void {
+    const middlewares: ApiGatewayMiddleware[] = [this.errorCatchMiddleware, responseTimeMiddleware, allowedMethodsMiddleware, corsMiddleware, ...this.middlewares];
+    this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
+  }
 
-    const body = isDefined(endpoint.definition.body)
-      ? await this.getBody(request, endpoint.definition.body)
+  private async middlewareHandler(request: HttpServerRequest, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
+    const body = isDefined(context.endpoint.definition.body)
+      ? await this.getBody(request, context.endpoint.definition.body)
       : undefined;
 
-    const bodyAsParameters = (isDefined(endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
+    const bodyAsParameters = (isDefined(context.endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
       ? await request.bodyAsJson()
       : undefined;
 
@@ -153,13 +183,13 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       throw new BadRequestError('expected json object as body');
     }
 
-    const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...resourceParameters };
+    const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...context.resourcePatternResult.pathname.groups };
 
-    const validatedParameters = isDefined(endpoint.definition.parameters)
-      ? await endpoint.definition.parameters.parseAsync(parameters)
+    const validatedParameters = isDefined(context.endpoint.definition.parameters)
+      ? await context.endpoint.definition.parameters.parseAsync(parameters)
       : parameters;
 
-    const result = await endpoint.implementation(validatedParameters, body as any, request, request.context); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    const result = await context.endpoint.implementation(validatedParameters, body as any, request, request.context); // eslint-disable-line @typescript-eslint/no-unsafe-argument
 
     if (result instanceof HttpServerResponse) {
       return result;
@@ -189,28 +219,5 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
 
     return schema.parseAsync(body);
-  }
-
-  private getEndpointMetadata(resource: URL, method: ApiEndpointMethod): EndpointParseResult {
-    const urlWithoutPort = new URL(resource);
-    urlWithoutPort.port = '';
-
-    for (const api of this.apis.values()) {
-      const result = api.pattern.exec(urlWithoutPort);
-
-      if (isNullOrUndefined(result)) {
-        continue;
-      }
-
-      const endpoint = api.endpoints.get(method);
-
-      if (isUndefined(endpoint)) {
-        throw new NotFoundError(`method ${method} for resource ${resource.href} not available`);
-      }
-
-      return { api, resourceParameters: result.pathname.groups, endpoint };
-    }
-
-    throw new NotFoundError(`resource ${resource.href} not available`);
   }
 }

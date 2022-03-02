@@ -174,14 +174,14 @@ export class HttpApi {
 
       for (const method of methods) {
         switch (method) {
-          case 'get':
+          case 'GET':
             this.registerRoute(method, route.path, 'none', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
-          case 'post':
-          case 'patch':
-          case 'put':
-          case 'delete':
+          case 'POST':
+          case 'PATCH':
+          case 'PUT':
+          case 'DELETE':
             this.registerRoute(method, route.path, route.bodyType ?? 'auto', route.maxRequestBodyBytes ?? 10e6, route.requestDataTransformer, route.endpoint, route.handler);
             break;
 
@@ -222,7 +222,7 @@ export class HttpApi {
     const handlerParameters = requestDataTransformer(requestData, bodyType, { request });
     const httpRequest = new HttpServerRequest({
       url: context.URL,
-      method: convertMethod(context.request.method),
+      method: context.request.method as HttpMethod,
       headers: new HttpHeaders(context.req.headers),
       query: new HttpQuery(query),
       ip: context.request.ip,
@@ -351,23 +351,6 @@ async function responseTimeMiddleware(context: Context, next: () => Promise<any>
   const roundedMilliseconds = round(milliseconds, 2);
 
   context.response.set('X-Response-Time', `${roundedMilliseconds}ms`);
-}
-
-function convertMethod(method: string): HttpMethod {
-  const normalized = method.toLowerCase();
-
-  switch (normalized) {
-    case 'get':
-    case 'post':
-    case 'put':
-    case 'patch':
-    case 'head':
-    case 'delete':
-      return normalized;
-
-    default:
-      throw new Error(`unsupported HTTP method ${method}`);
-  }
 }
 
 function contentTypeToBodyType(contentType: string): HttpBodyType {

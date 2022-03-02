@@ -5,11 +5,11 @@ import { HttpServerResponse } from '#/http/server';
 import type { Logger } from '#/logger';
 import type { Type } from '#/types';
 import { formatError } from '#/utils/helpers';
-import type { AsyncMiddlerwareHandler, AsyncMiddleware } from '#/utils/middleware';
+import type { ApiGatewayMiddleware, ApiGatewayMiddlewareNext } from '../gateway';
 
-export function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>): AsyncMiddleware<HttpServerRequest, HttpServerResponse> {
+export function errorCatchMiddleware(logger: Logger, supressedErrors: Set<Type<Error>>): ApiGatewayMiddleware {
   // eslint-disable-next-line @typescript-eslint/no-shadow
-  async function errorCatchMiddleware(request: HttpServerRequest, next: AsyncMiddlerwareHandler<HttpServerRequest, HttpServerResponse>): Promise<HttpServerResponse> {
+  async function errorCatchMiddleware(request: HttpServerRequest, next: ApiGatewayMiddlewareNext): Promise<HttpServerResponse> {
     try {
       const response = await next(request);
       return response;

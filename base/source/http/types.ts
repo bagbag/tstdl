@@ -15,12 +15,13 @@ export type NormalizedHttpValueObject = Record<string, OneOrMany<string>>;
 export type HttpClientRequestContext<T extends Record<any, unknown> = Record<any, unknown>> = T;
 
 export type HttpMethod =
-  | 'head'
-  | 'get'
-  | 'post'
-  | 'put'
-  | 'patch'
-  | 'delete';
+  | 'HEAD'
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'PATCH'
+  | 'DELETE'
+  | 'OPTIONS';
 
 export type HttpNoneBodyType = 'none';
 export type HttpAutoBodyType = 'auto';

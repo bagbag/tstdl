@@ -131,7 +131,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   private handleRequest(request: Http.IncomingMessage, response: Http.ServerResponse): HttpServerRequestContext<NodeHttpServerContext> {
-    const method = request.method!.toLowerCase() as HttpMethod;
+    const method = request.method as HttpMethod;
     const url = new URL(request.url!, `http://${request.headers.host}`);
 
     const headers = new HttpHeaders(request.headers);

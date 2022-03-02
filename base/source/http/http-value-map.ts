@@ -79,6 +79,13 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
     this.map.set(this.normalizeKey(key), { value: denormalizeHttpValue(value), actualKey: key });
   }
 
+  /** set entry if missing */
+  setIfMissing(key: string, value: OneOrMany<HttpValue> | undefined): void {
+    if (!this.has(key)) {
+      this.set(key, value);
+    }
+  }
+
   setMany(input: HttpValueMapInput): void {
     const iterable = isIterable(input) ? input : Object.entries(input);
 

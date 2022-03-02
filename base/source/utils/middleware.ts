@@ -1,22 +1,24 @@
-export type ComposedMiddlerware<TIn, TOut> = (value: TIn) => TOut;
-export type MiddlerwareHandler<TIn, TOut> = (value: TIn) => TOut;
-export type Middleware<TIn, TOut> = (value: TIn, next: MiddlerwareHandler<TIn, TOut>) => TOut | TOut;
+export type ComposedMiddleware<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut;
+export type MiddlewareHandler<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut;
+export type MiddlewareNext<TIn, TOut> = (value: TIn) => TOut;
+export type Middleware<TIn, TOut, Context = unknown> = (value: TIn, next: MiddlewareNext<TIn, TOut>, context: Context) => TOut | TOut;
 
-export type ComposedAsyncMiddlerware<TIn, TOut> = (value: TIn) => Promise<TOut>;
-export type AsyncMiddlerwareHandler<TIn, TOut> = (value: TIn) => TOut | Promise<TOut>;
-export type AsyncMiddleware<TIn, TOut> = (value: TIn, next: AsyncMiddlerwareHandler<TIn, TOut>) => TOut | Promise<TOut>;
+export type ComposedAsyncMiddleware<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => Promise<TOut>;
+export type AsyncMiddlewareHandler<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut | Promise<TOut>;
+export type AsyncMiddlewareNext<TIn, TOut> = (value: TIn) => TOut | Promise<TOut>;
+export type AsyncMiddleware<TIn, TOut, Context = unknown> = (value: TIn, next: AsyncMiddlewareNext<TIn, TOut>, context: Context) => TOut | Promise<TOut>;
 
 export type MiddlewareOptions = {
   allowMultipleNextCalls?: boolean
 };
 
-export function composeMiddleware<TIn, TOut>(middlewares: Middleware<TIn, TOut>[], handler: MiddlerwareHandler<TIn, TOut>, options: MiddlewareOptions = {}): ComposedMiddlerware<TIn, TOut> {
-  function composedMiddleware(value: TIn): TOut {
+export function composeMiddleware<TIn, TOut, Context = unknown>(middlewares: Middleware<TIn, TOut, Context>[], handler: MiddlewareHandler<TIn, TOut, Context>, options: MiddlewareOptions = {}): ComposedMiddleware<TIn, TOut, Context> {
+  function composedMiddleware(value: TIn, context: Context): TOut {
     let currentIndex = -1;
 
     function dispatch(index: number, dispatchedValue: TIn): TOut {
       if (index == middlewares.length) {
-        return handler(dispatchedValue);
+        return handler(dispatchedValue, context);
       }
 
       const middleware = middlewares[index]!;
@@ -30,7 +32,7 @@ export function composeMiddleware<TIn, TOut>(middlewares: Middleware<TIn, TOut>[
         return dispatch(index + 1, nextValue);
       }
 
-      return middleware(dispatchedValue, next);
+      return middleware(dispatchedValue, next, context);
     }
 
     return dispatch(0, value);
@@ -39,13 +41,13 @@ export function composeMiddleware<TIn, TOut>(middlewares: Middleware<TIn, TOut>[
   return composedMiddleware;
 }
 
-export function composeAsyncMiddleware<TIn, TOut>(middlewares: AsyncMiddleware<TIn, TOut>[], handler: AsyncMiddlerwareHandler<TIn, TOut>, options: MiddlewareOptions = {}): ComposedAsyncMiddlerware<TIn, TOut> {
-  async function composedMiddleware(value: TIn): Promise<TOut> {
+export function composeAsyncMiddleware<TIn, TOut, Context>(middlewares: AsyncMiddleware<TIn, TOut, Context>[], handler: AsyncMiddlewareHandler<TIn, TOut, Context>, options: MiddlewareOptions = {}): ComposedAsyncMiddleware<TIn, TOut, Context> {
+  async function composedMiddleware(value: TIn, context: Context): Promise<TOut> {
     let currentIndex = -1;
 
     async function dispatch(index: number, dispatchedValue: TIn): Promise<TOut> {
       if (index == middlewares.length) {
-        return handler(dispatchedValue);
+        return handler(dispatchedValue, context);
       }
 
       const middleware = middlewares[index]!;
@@ -59,7 +61,7 @@ export function composeAsyncMiddleware<TIn, TOut>(middlewares: AsyncMiddleware<T
         return dispatch(index + 1, nextValue);
       }
 
-      return middleware(dispatchedValue, next);
+      return middleware(dispatchedValue, next, context);
     }
 
     return dispatch(0, value);
