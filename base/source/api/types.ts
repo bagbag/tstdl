@@ -29,6 +29,15 @@ export type ApiEndpointMethod = HttpMethod;
 export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | Uint8ArraySchemaValidator;
 export type ApiEndpointDefinitionResult = SchemaValidator;
 
+export type ApiEndpointDefinitionCors = {
+  accessControlAllowCredentials?: boolean,
+  accessControlAllowHeaders?: OneOrMany<string>,
+  accessControlAllowMethods?: OneOrMany<HttpMethod>,
+  accessControlAllowOrigin?: string,
+  accessControlExposeHeaders?: OneOrMany<string>,
+  accessControlMaxAge?: number
+};
+
 export type ApiEndpointDefinition = {
   method?: ApiEndpointMethod,
   resource?: typeof rootResource | string,
@@ -38,14 +47,7 @@ export type ApiEndpointDefinition = {
   result?: ApiEndpointDefinitionResult,
   description?: string,
   data?: any,
-  cors?: {
-    accessControlAllowCredentials?: boolean,
-    accessControlAllowHeaders?: OneOrMany<string>,
-    accessControlAllowMethods?: OneOrMany<HttpMethod>,
-    accessControlAllowOrigin?: string,
-    accessControlExposeHeaders?: OneOrMany<string>,
-    accessControlMaxAge?: number
-  }
+  cors?: ApiEndpointDefinitionCors
 };
 
 export type ApiDefinition = {
