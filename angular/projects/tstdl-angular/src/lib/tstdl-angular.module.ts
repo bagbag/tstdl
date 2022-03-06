@@ -1,11 +1,13 @@
 import { NgModule } from '@angular/core';
 import { SkeletonComponent } from './components';
-import { LazyDirective, LazyListDirective, LetDirective, VisibleObserverDirective } from './directives';
+import { AutoForDirective, AutoIdDirective, LazyDirective, LazyListDirective, LetDirective, VisibleObserverDirective } from './directives';
 import { RepeatDirective } from './directives/repeat.directive';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
 import { TstdlBridgeService } from './services/tstdl-bridge.service';
 
 const declarations = [
+  AutoForDirective,
+  AutoIdDirective,
   DateTimeLocalePipe,
   DateTimePipe,
   DateTimeToDatePipe,
