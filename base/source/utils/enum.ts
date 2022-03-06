@@ -1,9 +1,9 @@
 import type { Simplify, StringMap } from '#/types';
 import { memoizeSingle } from './function';
 
-type EnumEntry<T> = [EnumKey<T>, EnumValue<T>];
-type EnumKey<T> = Extract<keyof T, string>;
-type EnumValue<T> = Simplify<T[Extract<keyof T, string>]>;
+export type EnumEntry<T> = [EnumKey<T>, EnumValue<T>];
+export type EnumKey<T> = Extract<keyof T, string>;
+export type EnumValue<T> = Simplify<T[Extract<keyof T, string>]>;
 
 function _enumEntries<T>(enumeration: T): EnumEntry<T>[] {
   return Object.entries(enumeration)
