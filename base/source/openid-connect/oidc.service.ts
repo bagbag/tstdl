@@ -5,7 +5,7 @@ import type { Json } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { digest } from '#/utils/cryptography';
 import { currentTimestamp } from '#/utils/date-time';
-import type { JwtTokenHeader } from '#/utils/jwt';
+import type { JwtToken, JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { getRandomString } from '#/utils/random';
 import { assertNumberPass, isUndefined } from '#/utils/type-guards';
@@ -18,6 +18,8 @@ import type { OidcGetTokenParameters, OidcInitParameters, OidcInitResult, OidcRe
 type OidcJwtTokenPayload = {
   exp: number
 };
+
+type OidcJwtToken = JwtToken<JwtTokenHeader, OidcJwtTokenPayload>;
 
 const tokenResponseStruct = object({
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -131,7 +133,7 @@ export class OidcService<Data = any> {
 function parseTokenResponse(response: Json): OidcToken {
   const { access_token, id_token, token_type, refresh_token } = tokenResponseStruct.mask(response); // eslint-disable-line @typescript-eslint/naming-convention
 
-  const decodedToken = parseJwtTokenString<JwtTokenHeader, OidcJwtTokenPayload>(id_token);
+  const decodedToken = parseJwtTokenString<OidcJwtToken>(id_token);
 
   const token: OidcToken = {
     tokenType: token_type,
