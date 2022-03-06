@@ -18,9 +18,9 @@ export type JwtToken<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload =
   readonly payload: TPayload
 };
 
-export type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload extends StringMap = StringMap> = {
+export type JwtTokenParseResult<T extends JwtToken = JwtToken> = {
   raw: string,
-  token: JwtToken<THeader, TPayload>,
+  token: T,
   encoded: {
     header: string,
     payload: string,
@@ -37,7 +37,7 @@ export type JwtTokenParseResult<THeader extends JwtTokenHeader = JwtTokenHeader,
   }
 };
 
-export function parseJwtTokenString<THeader extends JwtTokenHeader, TPayload = StringMap>(tokenString: string): JwtTokenParseResult<THeader, TPayload> {
+export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: string): JwtTokenParseResult<T> {
   const splits = tokenString.split('.');
 
   if (splits.length != 3) {
@@ -65,24 +65,24 @@ export function parseJwtTokenString<THeader extends JwtTokenHeader, TPayload = S
     payload: textDecoder.decode(bytes.payload)
   };
 
-  const header = JSON.parse(string.header) as THeader;
-  const payload = JSON.parse(string.payload) as TPayload;
+  const header = JSON.parse(string.header) as T['header'];
+  const payload = JSON.parse(string.payload) as T['payload'];
 
-  const token: JwtToken<THeader, TPayload> = {
+  const token: JwtToken = {
     header,
     payload
   };
 
   return {
     raw: tokenString,
-    token,
+    token: token as T,
     encoded,
     bytes,
     string
   };
 }
 
-export async function createJwtTokenString<THeader extends JwtTokenHeader, TPayload extends StringMap>(jwtToken: JwtToken<THeader, TPayload>, key: Key | string): Promise<string> {
+export async function createJwtTokenString<T extends JwtToken = JwtToken>(jwtToken: T, key: Key | string): Promise<string> {
   const headerBuffer = encodeUtf8(JSON.stringify(jwtToken.header));
   const payloadBuffer = encodeUtf8(JSON.stringify(jwtToken.payload));
 
@@ -99,9 +99,9 @@ export async function createJwtTokenString<THeader extends JwtTokenHeader, TPayl
   return tokenString;
 }
 
-export async function parseAndValidateJwtTokenString<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap>(tokenString: string, key: Key | string): Promise<JwtToken<THeader, TPayload>> {
+export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtToken>(tokenString: string, key: Key | string): Promise<T> {
   try {
-    const { encoded, bytes, token } = parseJwtTokenString<THeader, TPayload>(tokenString);
+    const { encoded, bytes, token } = parseJwtTokenString<T>(tokenString);
 
     const calculatedSignature = await getSignature(encodeUtf8(`${encoded.header}.${encoded.payload}`), token.header.alg, key);
     const validSignature = binaryEquals(calculatedSignature, bytes.signature);
