@@ -107,6 +107,8 @@ export type HttpClientRequestObject<T extends HttpBodyType = HttpBodyType> = Htt
   method?: HttpMethod
 };
 
+export type CredentialsOptions = 'omit' | 'same-origin' | 'include';
+
 export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements HttpClientRequestDocs, Disposable {
   private readonly _abortToken: CancellationToken;
 
@@ -122,6 +124,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
   query: HttpQuery;
   body: HttpRequestBody;
   responseType: T;
+  credentials: CredentialsOptions;
   timeout: number;
   context: StringMap;
 
@@ -153,6 +156,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this.query = new HttpQuery(requestOptions?.query);
     this.body = normalizeBody(requestOptions?.body);
     this.responseType = requestOptions?.responseType ?? 'auto' as T;
+    this.credentials = requestOptions?.credentials ?? 'omit';
     this.timeout = requestOptions?.timeout ?? 30000;
     this.context = requestOptions?.context ?? {};
 

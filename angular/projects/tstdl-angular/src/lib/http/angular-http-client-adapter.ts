@@ -10,7 +10,7 @@ import type { StringMap } from '@tstdl/base/types';
 import { isDefined, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
 import type { Observable } from 'rxjs';
-import { race, switchMapTo, throwError } from 'rxjs';
+import { race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
 
@@ -36,9 +36,10 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
             headers: new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>),
             responseType: getAngularHttpRequestResponseType(request.responseType),
             observe: 'response',
-            body: getAngularBody(request.body)
+            body: getAngularBody(request.body),
+            withCredentials: (request.credentials == 'same-origin') || (request.credentials == 'include')
           }) as Observable<AngularHttpResponse<HttpBody<T>>>,
-          request.abortToken.set$.pipe(switchMapTo(throwError(() => aborted)))
+          request.abortToken.set$.pipe(switchMap(() => throwError(() => aborted)))
         )
       );
 
