@@ -3,6 +3,7 @@ import type { StringMap, UndefinableJson } from '#/types';
 import { decodeText } from '#/utils/encoding';
 import { readBinaryStream } from '#/utils/stream/stream-reader';
 import { assertDefined, isDefined } from '#/utils/type-guards';
+import { CookieParser } from '../cookie-parser';
 import type { HttpHeaders } from '../http-headers';
 import type { HttpQuery } from '../http-query';
 import type { HttpMethod } from '../types';
@@ -22,6 +23,7 @@ export class HttpServerRequest {
   readonly url: URL;
   readonly method: HttpMethod;
   readonly headers: HttpHeaders;
+  readonly cookies: CookieParser;
   readonly query: HttpQuery;
   readonly ip: string;
 
@@ -35,6 +37,7 @@ export class HttpServerRequest {
     this.url = data.url;
     this.method = data.method;
     this.headers = data.headers;
+    this.cookies = new CookieParser(this.headers);
     this.query = data.query;
     this.ip = data.ip;
     this.body = data.body;
