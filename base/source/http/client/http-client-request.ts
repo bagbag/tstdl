@@ -133,8 +133,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
   }
 
   constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions<T>);
-  constructor(url: HttpClientRequestObject<T>);
-  constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options?: HttpClientRequestOptions<T>) {
+  constructor(requestObject: HttpClientRequestObject<T>);
+  constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options: HttpClientRequestOptions<T> = {}) {
     if (isString(urlOrObject)) {
       this.url = urlOrObject;
       this.method = method ?? 'GET';
@@ -146,21 +146,21 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
 
     const requestOptions: HttpClientRequestOptions<T> | undefined = isString(urlOrObject) ? options : urlOrObject;
 
-    this.headers = new HttpHeaders(requestOptions?.headers);
-    this.parameters = requestOptions?.parameters;
-    this.mapParametersToUrl = requestOptions?.mapParametersToUrl ?? true;
-    this.mapParametersToQuery = requestOptions?.mapParametersToQuery ?? true;
-    this.mapParametersToBody = requestOptions?.mapParametersToBody ?? true;
-    this.urlParameters = new HttpUrlParameters(requestOptions?.urlParameters);
-    this.urlParametersSeparator = requestOptions?.urlParametersSeparator ?? ';';
-    this.query = new HttpQuery(requestOptions?.query);
-    this.body = normalizeBody(requestOptions?.body);
-    this.responseType = requestOptions?.responseType ?? 'auto' as T;
-    this.credentials = requestOptions?.credentials ?? 'omit';
-    this.timeout = requestOptions?.timeout ?? 30000;
-    this.context = requestOptions?.context ?? {};
+    this.headers = new HttpHeaders(requestOptions.headers);
+    this.parameters = requestOptions.parameters;
+    this.mapParametersToUrl = requestOptions.mapParametersToUrl ?? true;
+    this.mapParametersToQuery = requestOptions.mapParametersToQuery ?? true;
+    this.mapParametersToBody = requestOptions.mapParametersToBody ?? true;
+    this.urlParameters = new HttpUrlParameters(requestOptions.urlParameters);
+    this.urlParametersSeparator = requestOptions.urlParametersSeparator ?? ';';
+    this.query = new HttpQuery(requestOptions.query);
+    this.body = normalizeBody(requestOptions.body);
+    this.responseType = requestOptions.responseType ?? 'auto' as T;
+    this.credentials = requestOptions.credentials ?? 'omit';
+    this.timeout = requestOptions.timeout ?? 30000;
+    this.context = requestOptions.context ?? {};
 
-    this._abortToken = requestOptions?.abortToken?.createChild() ?? new CancellationToken();
+    this._abortToken = requestOptions.abortToken?.createChild() ?? new CancellationToken();
   }
 
   [dispose](): void {

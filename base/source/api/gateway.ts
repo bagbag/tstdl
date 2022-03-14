@@ -1,5 +1,6 @@
 import type { Injectable } from '#/container';
 import { container, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
+import type { CustomError, CustomErrorStatic } from '#/error';
 import { BadRequestError, NotFoundError, NotImplementedError } from '#/error';
 import type { HttpServerRequest } from '#/http/server';
 import { HttpServerResponse } from '#/http/server';
@@ -9,7 +10,7 @@ import { Logger } from '#/logger';
 import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { deferThrow, _throw } from '#/utils/helpers';
+import { deferThrow, formatError, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { ForwardRef, lazyObject } from '#/utils/object';
@@ -19,7 +20,8 @@ import type { URLPattern } from 'urlpattern-polyfill';
 import type { URLPatternResult } from 'urlpattern-polyfill/dist/url-pattern.interfaces';
 import type { ApiController } from './api-controller';
 import { getApiControllerDefinition } from './api-controller';
-import { allowedMethodsMiddleware, corsMiddleware, errorCatchMiddleware, responseTimeMiddleware } from './middlewares';
+import { allowedMethodsMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from './response';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation } from './types';
 import { rootResource } from './types';
 
@@ -69,8 +71,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly prefix: string;
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: ApiGatewayMiddleware[];
-  private readonly supressedErrorLogs: Set<Type<Error>>;
-  private readonly errorCatchMiddleware: ApiGatewayMiddleware;
+  private readonly supressedErrors: Set<Type<Error>>;
 
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
@@ -81,8 +82,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     this.prefix = options?.prefix ?? 'api/';
     this.apis = new Map();
     this.middlewares = [];
-    this.supressedErrorLogs = new Set();
-    this.errorCatchMiddleware = errorCatchMiddleware(logger, this.supressedErrorLogs);
+    this.supressedErrors = new Set();
 
     this.updateMiddleware();
   }
@@ -94,7 +94,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
   supressErrors(...errorTypes: Type<Error>[]): void {
     for (const type of errorTypes) {
-      this.supressedErrorLogs.add(type);
+      this.supressedErrors.add(type);
     }
   }
 
@@ -121,7 +121,19 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         if (isUndefined(resourceApis)) {
           resourceApis = lazyObject({
             resource: { value: resource },
-            pattern: { initializer: () => new UrlPattern(resource, 'http://localhost') },
+            pattern: {
+              initializer: () => new UrlPattern({
+                pathname: resource,
+                baseURL: 'http://localhost',
+                username: '*',
+                password: '*',
+                protocol: '*',
+                hostname: '*',
+                port: '*',
+                search: '*',
+                hash: '*'
+              })
+            },
             endpoints: { value: new Map() }
           });
 
@@ -135,16 +147,22 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   async handleHttpServerRequestContext({ request, respond }: HttpServerRequestContext): Promise<void> {
-    const { api, patternResult } = this.getApiMetadata(request.url);
-    const endpoint = api.endpoints.get(request.method)!;
-
-    const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
-
     try {
+      const { api, patternResult } = this.getApiMetadata(request.url);
+      const endpoint = api.endpoints.get(request.method)!;
+
+      const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
+
       await respond(response);
     }
     catch (error) {
       this.logger.error(error as Error, { includeRest: false, includeStack: false });
+
+      try {
+        const response = handleApiError(error, this.supressedErrors, this.logger);
+        await respond(response);
+      }
+      catch { /* ignore */ }
     }
   }
 
@@ -162,11 +180,11 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       return { api, patternResult: result };
     }
 
-    throw new NotFoundError(`resource ${resource.href} not available`);
+    throw new NotFoundError(`resource ${resource.pathname} not available`);
   }
 
   private updateMiddleware(): void {
-    const middlewares: ApiGatewayMiddleware[] = [this.errorCatchMiddleware, responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, ...this.middlewares];
+    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, ...this.middlewares];
     this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
   }
 
@@ -220,4 +238,37 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
     return schema.parseAsync(body);
   }
+}
+
+function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>, logger: Logger): HttpServerResponse {
+  logger.error(error as Error, { includeRest: false, includeStack: false });
+
+  const response = new HttpServerResponse();
+
+  if (error instanceof Error) {
+    const errorConstructor = error.constructor as Type<Error> & CustomErrorStatic;
+    const supressed = supressedErrors.has(errorConstructor);
+
+    if (!supressed) {
+      logger.error(error);
+    }
+
+    if (hasErrorHandler(errorConstructor)) {
+      response.statusCode = getErrorStatusCode(error as CustomError);
+      response.body = { json: createErrorResponse(error) };
+    }
+    else {
+      response.statusCode = 500;
+      response.body = { json: createErrorResponse('500', 'Internal Server Error') };
+    }
+  }
+  else {
+    const formattedError = formatError(error, { includeStack: true, includeRest: true, handleBuiltInErrors: true });
+    logger.error(formattedError);
+
+    response.statusCode = 500;
+    response.body = { json: createErrorResponse('500', 'Internal Server Error') };
+  }
+
+  return response;
 }

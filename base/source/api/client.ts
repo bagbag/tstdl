@@ -7,7 +7,7 @@ import type { UndefinableJsonObject } from '#/types';
 import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
 import { isNull, isUndefined } from '#/utils/type-guards';
-import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinitionResult } from './types';
+import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from './types';
 import { rootResource } from './types';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T>;
@@ -17,6 +17,10 @@ export type ClientOptions = {
    * url prefix (default: 'api/')
    */
   prefix?: string
+};
+
+export type ApiClientHttpRequestContext = {
+  endpoint: ApiEndpointDefinition
 };
 
 export const httpClientSymbol = Symbol('ApiTransport');
@@ -60,11 +64,16 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
                 : (config.result == undefined) ? 'none'
                   : 'json';
 
+        const context: ApiClientHttpRequestContext = {
+          endpoint: config
+        };
+
         const request = new HttpClientRequest({
           method,
           url: resource,
           responseType,
-          parameters
+          parameters,
+          context
         });
 
         let response: HttpClientResponse | undefined;
