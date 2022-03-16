@@ -276,7 +276,7 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
 
     const body = await error.response!.body;
 
-    if (!isErrorResponse(body) || hasErrorHandler(body)) {
+    if (!isErrorResponse(body) || !hasErrorHandler(body)) {
       throw error;
     }
 
