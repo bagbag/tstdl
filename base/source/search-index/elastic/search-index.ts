@@ -7,9 +7,10 @@ import type { SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndex, SearchIndexError } from '#/search-index';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
 import { decodeText, encodeUtf8 } from '#/utils/encoding';
+import { filterObject } from '#/utils/object';
 import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
-import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest } from '@elastic/elasticsearch/lib/api/types';
+import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';
 import type { ElasticIndexMapping, SortCombinations } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -25,7 +26,7 @@ type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
   sort: SortCombinations<T>[] | undefined,
   options?: QueryOptions<T>,
-  searchAfter: any
+  searchAfter: SortResults
 };
 
 export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> implements AfterResolve {
@@ -165,7 +166,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     const resultItems = hits.map(({ _id, _score, _source }): SearchResultItem<T> => ({ score: _score ?? 1, entity: { id: _id, ..._source } as T }));
     const total = isNumber(response.hits.total) ? response.hits.total : response.hits.total?.value;
     const totalIsLowerBound = isNumber(response.hits.total) ? false : (response.hits.total?.relation == 'gte');
-    const cursor = (hits.length > 0) && (isDefined(hits[hits.length - 1]?.sort)) ? serializeCursor(queryBody, sort, { limit: search.size }, hits[hits.length - 1]!.sort) : undefined;
+    const cursor = (hits.length > 0) && (isDefined(hits[hits.length - 1]!.sort)) ? serializeCursor(queryBody, sort, { limit: search.size }, hits[hits.length - 1]!.sort!) : undefined;
 
     const result: SearchResult<T> = { total, milliseconds: response.took, totalIsLowerBound, cursor, items: resultItems };
     return result;
@@ -186,8 +187,9 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations<T>[] | undefined, options: QueryOptions | undefined, searchAfterSort: any): string {
-  const data: CursorData<T> = { query, sort, options, searchAfter: searchAfterSort };
+function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations<T>[] | undefined, options: QueryOptions | undefined, searchAfter: SortResults): string {
+  const filteredOptions = isDefined(options) ? filterObject(options, isDefined) : undefined;
+  const data: CursorData<T> = { query, sort, options: filteredOptions, searchAfter };
   return encodeBase64(encodeUtf8(JSON.stringify(data)));
 }
 

@@ -21,7 +21,7 @@ export abstract class SearchIndex<T extends Entity> {
     let cursor: string | undefined;
 
     do {
-      const result = await this.search(query, options);
+      const result = await this.search(cursor ?? query, options);
       cursor = result.cursor;
 
       yield* result.items;
@@ -39,7 +39,7 @@ export abstract class SearchIndex<T extends Entity> {
     let cursor: string | undefined;
 
     do {
-      const result = await this.search(query, options);
+      const result = await this.search(cursor ?? query, options);
       cursor = result.cursor;
 
       batches.push(result.items);

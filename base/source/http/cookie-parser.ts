@@ -1,5 +1,5 @@
-import { isUndefined } from '#/utils';
 import { lazyProperty } from '#/utils/object';
+import { isUndefined } from '#/utils/type-guards';
 import type { HttpHeaders } from './http-headers';
 
 export class CookieParser {
