@@ -18,12 +18,12 @@ import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array,
 import type * as URLPatternImport from 'urlpattern-polyfill';
 import type { URLPattern } from 'urlpattern-polyfill';
 import type { URLPatternResult } from 'urlpattern-polyfill/dist/url-pattern.interfaces';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response';
+import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
+import { rootResource } from '../types';
 import type { ApiController } from './api-controller';
 import { getApiControllerDefinition } from './api-controller';
 import { allowedMethodsMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from './response';
-import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation } from './types';
-import { rootResource } from './types';
 
 const UrlPattern: typeof URLPattern = ForwardRef.create();
 
@@ -207,7 +207,13 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       ? await context.endpoint.definition.parameters.parseAsync(parameters)
       : parameters;
 
-    const result = await context.endpoint.implementation(validatedParameters, body as any, request, request.context); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    const requestData: ApiEndpointServerRequestData = {
+      parameters: validatedParameters,
+      body: body as any,
+      request
+    };
+
+    const result = await context.endpoint.implementation(requestData);
 
     if (result instanceof HttpServerResponse) {
       return result;

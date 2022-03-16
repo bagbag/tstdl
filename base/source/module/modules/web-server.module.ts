@@ -1,5 +1,5 @@
-import type { ApiController, ApiGatewayArgument } from '#/api';
-import { ApiControllers, ApiGateway, API_CONTROLLERS } from '#/api';
+import type { ApiController, ApiGatewayArgument } from '#/api/server';
+import { ApiControllers, ApiGateway, API_CONTROLLERS } from '#/api/server';
 import type { AfterResolve, Injectable } from '#/container';
 import { afterResolve, forwardArg, inject, injectArg, optional, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { disposeAsync } from '#/disposable/disposable';

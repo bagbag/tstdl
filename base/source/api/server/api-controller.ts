@@ -2,7 +2,7 @@
 import type { InjectableOptionsWithoutLifecycle } from '#/container';
 import { singleton } from '#/container';
 import type { Constructor, Type } from '#/types';
-import type { ApiControllerImplementation, ApiDefinition } from './types';
+import type { ApiControllerImplementation, ApiDefinition } from '../types';
 
 export const apiControllerDefinition: unique symbol = Symbol('ApiController definition');
 
