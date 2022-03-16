@@ -47,12 +47,11 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
 
   // eslint-disable-next-line @typescript-eslint/require-await, max-statements, max-lines-per-function
   async search(queryOrCursor: string | Query<T>, options?: QueryOptions<T>): Promise<SearchResult<T>> {
-    const timer = new Timer(true);
-
     if (isString(queryOrCursor)) {
       throw new Error('cursor not supported');
     }
 
+    const timer = new Timer(true);
     const entries = Object.entries(queryOrCursor);
 
     let items: T[];

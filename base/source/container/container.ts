@@ -205,7 +205,7 @@ export class Container {
     }
 
     if (isUndefined(token)) {
-      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
+      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case', chain);
     }
 
     if (context.providedInstances.has(token)) {
@@ -344,7 +344,7 @@ export class Container {
     }
 
     if (isUndefined(token)) {
-      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias and forwardRef in this case', chain);
+      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case', chain);
     }
 
     if (context.providedInstances.has(token)) {
