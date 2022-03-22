@@ -267,6 +267,11 @@ async function addRequestHeadersMiddleware(request: HttpClientRequest, next: Htt
 async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
   try {
     const response = await next(request);
+
+    if (request.throwOnNon200 && ((response.statusCode < 200) || (response.statusCode >= 300))) {
+      throw new HttpError(HttpErrorReason.Non200StatusCode, request, response);
+    }
+
     return response;
   }
   catch (error: unknown) {

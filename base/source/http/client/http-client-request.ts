@@ -126,6 +126,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
   responseType: T;
   credentials: CredentialsOptions;
   timeout: number;
+  throwOnNon200: boolean;
   context: StringMap;
 
   get abortToken(): ReadonlyCancellationToken {
@@ -134,7 +135,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
 
   constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions<T>);
   constructor(requestObject: HttpClientRequestObject<T>);
-  constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options: HttpClientRequestOptions<T> = {}) {
+  constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options: HttpClientRequestOptions<T> = {}) { // eslint-disable-line max-statements
     if (isString(urlOrObject)) {
       this.url = urlOrObject;
       this.method = method ?? 'GET';
@@ -158,6 +159,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this.responseType = requestOptions.responseType ?? 'auto' as T;
     this.credentials = requestOptions.credentials ?? 'omit';
     this.timeout = requestOptions.timeout ?? 30000;
+    this.throwOnNon200 = requestOptions.throwOnNon200 ?? true;
     this.context = requestOptions.context ?? {};
 
     this._abortToken = requestOptions.abortToken?.createChild() ?? new CancellationToken();
@@ -198,6 +200,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
       body,
       responseType: this.responseType,
       timeout: this.timeout,
+      throwOnNon200: this.throwOnNon200,
       context: this.context
     };
   }

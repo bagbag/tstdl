@@ -7,6 +7,7 @@ export enum HttpErrorReason {
   Unknown = 'Unknown',
   Cancelled = 'Cancelled',
   InvalidRequest = 'InvalidRequest',
+  Non200StatusCode = 'Non200StatusCode',
   ErrorResponse = 'ErrorResponse',
   Timeout = 'Timeout'
 }
