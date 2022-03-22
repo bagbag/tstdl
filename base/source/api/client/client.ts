@@ -7,6 +7,7 @@ import type { UndefinableJsonObject } from '#/types';
 import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
 import { isNull, isUndefined } from '#/utils/type-guards';
+import { isErrorResponse, parseErrorResponse } from '../response';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { rootResource } from '../types';
 
@@ -82,6 +83,15 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           response = await this[httpClientSymbol].rawRequest(request);
 
           const result = await getBody(response, config.result);
+
+          if ((response.statusCode < 200) || (response.statusCode >= 300)) {
+            if (isErrorResponse(result)) {
+              throw parseErrorResponse(result);
+            }
+
+            throw new HttpError(HttpErrorReason.ErrorResponse, request, response);
+          }
+
           return result;
         }
         catch (error) {
