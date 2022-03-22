@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.0",
+  "version": "0.71.1",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -23,8 +23,8 @@
     "@types/minio": "7.0",
     "@types/node": ">=16",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "5.15",
-    "@typescript-eslint/parser": "5.15",
+    "@typescript-eslint/eslint-plugin": "5.16",
+    "@typescript-eslint/parser": "5.16",
     "eslint": "8.11",
     "ttypescript": "1.5",
     "typescript": "4.6",
@@ -39,7 +39,7 @@
     "minio": "^7.0",
     "mongodb": "4.4",
     "superstruct": "^0.15",
-    "undici": "^4.15",
+    "undici": "^4.16",
     "urlpattern-polyfill": "^1.0.0-rc5"
   },
   "peerDependenciesMeta": {

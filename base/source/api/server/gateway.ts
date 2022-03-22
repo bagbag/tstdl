@@ -1,6 +1,5 @@
 import type { Injectable } from '#/container';
 import { container, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
-import type { CustomError, CustomErrorStatic } from '#/error';
 import { BadRequestError, NotFoundError, NotImplementedError } from '#/error';
 import type { HttpServerRequest } from '#/http/server';
 import { HttpServerResponse } from '#/http/server';
@@ -10,7 +9,7 @@ import { Logger } from '#/logger';
 import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { deferThrow, formatError, _throw } from '#/utils/helpers';
+import { deferThrow, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { ForwardRef, lazyObject } from '#/utils/object';
@@ -18,12 +17,12 @@ import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array,
 import type * as URLPatternImport from 'urlpattern-polyfill';
 import type { URLPattern } from 'urlpattern-polyfill';
 import type { URLPatternResult } from 'urlpattern-polyfill/dist/url-pattern.interfaces';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
 import { rootResource } from '../types';
 import type { ApiController } from './api-controller';
 import { getApiControllerDefinition } from './api-controller';
-import { allowedMethodsMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
+import { handleApiError } from './error-handler';
+import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
 
 const UrlPattern: typeof URLPattern = ForwardRef.create();
 
@@ -72,6 +71,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: ApiGatewayMiddleware[];
   private readonly supressedErrors: Set<Type<Error>>;
+  private readonly catchErrorMiddleware: ApiGatewayMiddleware;
 
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
@@ -83,6 +83,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     this.apis = new Map();
     this.middlewares = [];
     this.supressedErrors = new Set();
+    this.catchErrorMiddleware = catchErrorMiddleware(this.supressedErrors, logger);
 
     this.updateMiddleware();
   }
@@ -184,7 +185,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   private updateMiddleware(): void {
-    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, ...this.middlewares];
+    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, this.catchErrorMiddleware, ...this.middlewares];
     this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
   }
 
@@ -244,37 +245,4 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
     return schema.parseAsync(body);
   }
-}
-
-function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>, logger: Logger): HttpServerResponse {
-  logger.error(error as Error, { includeRest: false, includeStack: false });
-
-  const response = new HttpServerResponse();
-
-  if (error instanceof Error) {
-    const errorConstructor = error.constructor as Type<Error> & CustomErrorStatic;
-    const supressed = supressedErrors.has(errorConstructor);
-
-    if (!supressed) {
-      logger.error(error);
-    }
-
-    if (hasErrorHandler(errorConstructor)) {
-      response.statusCode = getErrorStatusCode(error as CustomError);
-      response.body = { json: createErrorResponse(error) };
-    }
-    else {
-      response.statusCode = 500;
-      response.body = { json: createErrorResponse('500', 'Internal Server Error') };
-    }
-  }
-  else {
-    const formattedError = formatError(error, { includeStack: true, includeRest: true, handleBuiltInErrors: true });
-    logger.error(formattedError);
-
-    response.statusCode = 500;
-    response.body = { json: createErrorResponse('500', 'Internal Server Error') };
-  }
-
-  return response;
 }
