@@ -12,22 +12,15 @@ import { toArray } from '#/utils/array';
 import { deferThrow, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
-import { ForwardRef, lazyObject } from '#/utils/object';
 import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
-import type * as URLPatternImport from 'urlpattern-polyfill';
-import type { URLPattern } from 'urlpattern-polyfill';
-import type { URLPatternResult } from 'urlpattern-polyfill/dist/url-pattern.interfaces';
+import 'urlpattern-polyfill';
+import type { URLPattern, URLPatternResult } from 'urlpattern-polyfill/dist';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
 import { rootResource } from '../types';
 import type { ApiController } from './api-controller';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
-
-const UrlPattern: typeof URLPattern = ForwardRef.create();
-
-// eslint-disable-next-line no-eval
-void (eval('import(\'urlpattern-polyfill\')') as Promise<typeof URLPatternImport>).then((imported) => ForwardRef.setRef(UrlPattern, imported.URLPattern));
 
 export type ApiGatewayMiddlewareContext = {
   api: ApiItem,
@@ -120,23 +113,21 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         let resourceApis = this.apis.get(resource);
 
         if (isUndefined(resourceApis)) {
-          resourceApis = lazyObject({
-            resource: { value: resource },
-            pattern: {
-              initializer: () => new UrlPattern({
-                pathname: resource,
-                baseURL: 'http://localhost',
-                username: '*',
-                password: '*',
-                protocol: '*',
-                hostname: '*',
-                port: '*',
-                search: '*',
-                hash: '*'
-              })
-            },
-            endpoints: { value: new Map() }
-          });
+          resourceApis = {
+            resource,
+            pattern: new ((globalThis as any).URLPattern as Type<URLPattern>)({
+              pathname: resource,
+              baseURL: 'http://localhost',
+              username: '*',
+              password: '*',
+              protocol: '*',
+              hostname: '*',
+              port: '*',
+              search: '*',
+              hash: '*'
+            }),
+            endpoints: new Map()
+          };
 
           this.apis.set(resource, resourceApis);
         }

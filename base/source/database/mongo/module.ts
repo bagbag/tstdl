@@ -47,7 +47,7 @@ container.registerSingleton(MongoClient, {
 
     disposer.add(async () => client.close(), 10000);
 
-    await connect('mongo', async () => client.connect(), logger);
+    await connect(`mongo at ${url}`, async () => client.connect(), logger);
 
     return client;
   }
