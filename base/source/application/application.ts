@@ -25,6 +25,7 @@ export class Application {
 
   private readonly logger: Logger;
   private readonly moduleTypes: Set<Type<Module>>;
+  private readonly moduleInstances: Set<Module>;
   private readonly shutdownPromise: DeferredPromise;
 
   constructor(@resolveArg<LoggerArgument>('App') logger: Logger) {
@@ -36,6 +37,10 @@ export class Application {
 
   static registerModule(moduleType: Type<Module>): void {
     Application.instance.registerModule(moduleType);
+  }
+
+  static registerModuleInstance(module: Module): void {
+    Application.instance.moduleInstances.add(module);
   }
 
   static async run(): Promise<void> {
@@ -51,7 +56,8 @@ export class Application {
   }
 
   async run(): Promise<void> {
-    const modules = await toArrayAsync(mapAsync(this.moduleTypes, async (type) => container.resolveAsync(type)));
+    const resolvedModules = await toArrayAsync(mapAsync(this.moduleTypes, async (type) => container.resolveAsync(type)));
+    const modules = [...resolvedModules, ...this.moduleInstances];
 
     try {
       await Promise.race([

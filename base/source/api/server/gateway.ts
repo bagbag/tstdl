@@ -14,7 +14,6 @@ import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } fr
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
-import type { URLPattern, URLPatternResult } from 'urlpattern-polyfill/dist';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
 import { rootResource } from '../types';
 import type { ApiController } from './api-controller';
