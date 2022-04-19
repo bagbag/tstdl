@@ -346,7 +346,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
   return value as any as T;
 }
 
-type NormalizeTextOptions = {
+export type NormalizeTextOptions = {
   /**
    * remove leading and trailing whitespace
    */

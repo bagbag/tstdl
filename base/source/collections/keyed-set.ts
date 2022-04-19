@@ -5,7 +5,7 @@ export enum KeyedSetMode {
   Overwrite = 1
 }
 
-type Selector<T> = (value: T) => any;
+export type Selector<T> = (value: T) => any;
 
 export class KeyedSet<T> implements Set<T> {
   private readonly selector: Selector<T>;

@@ -36,7 +36,6 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   private readonly sockets: Set<Socket>;
   private readonly requestIterable: FeedableAsyncIterable<RequestItem>;
   private readonly logger: Logger;
-  private readonly handler: RequestHandler;
 
   private untrackConnectedSockets?: () => void;
 
@@ -54,7 +53,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
     this.requestIterable = new FeedableAsyncIterable();
 
     this.httpServer.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => {
-      this.logger.verbose(`request from "${request.socket.remoteAddress!}" to "${request.url!}"`);
+      this.logger.verbose(`${request.method} from "${request.socket.remoteAddress}" to "${request.url}"`);
       this.requestIterable.feed({ request, response });
     });
   }
@@ -80,6 +79,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       let errorListener: (error: Error) => void; // eslint-disable-line prefer-const
 
       listeningListener = () => { // eslint-disable-line prefer-const
+        this.logger.info(`listening on port ${port}`);
         this.untrackConnectedSockets = trackConnectedSockets(this.httpServer, this.sockets);
         this.httpServer.removeListener('error', errorListener);
         resolve();
@@ -96,6 +96,8 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   async close(timeout: number): Promise<void> {
+    this.logger.info('closing http server');
+
     const timer = new Timer(true);
 
     const close$ = bindNodeCallback(this.httpServer.close.bind(this.httpServer))().pipe(share());

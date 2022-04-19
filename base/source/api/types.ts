@@ -22,8 +22,6 @@ export type EndpointRegistrationOptions = {
   description?: string
 };
 
-const registeredApis: Map<ApiDefinition, ApiControllerImplementation | ApiImplementationFactory> = new Map();
-
 export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | Uint8ArraySchemaValidator;
@@ -82,7 +80,9 @@ export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinit
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
   ApiEndpointBody<T, K> extends never
-  ? (parameters: ApiEndpointParametersOutput<T, K>) => Promise<ApiEndpointClientResultType<T, K>>
+  ? ApiEndpointParametersOutput<T, K> extends never
+  ? () => Promise<ApiEndpointClientResultType<T, K>>
+  : (parameters: ApiEndpointParametersOutput<T, K>) => Promise<ApiEndpointClientResultType<T, K>>
   : (parameters: ApiEndpointParametersOutput<T, K>, body: ApiEndpointBody<T, K>) => Promise<ApiEndpointClientResultType<T, K>>;
 
 export type ApiControllerImplementation<T extends ApiDefinition = any> = {
@@ -96,8 +96,4 @@ export type ApiClientImplementation<T extends ApiDefinition = any> = {
 
 export function defineApi<T extends ApiDefinition>(definition: T): T {
   return definition;
-}
-
-export function registerApi<T extends ApiDefinition>(definition: T, implementationOrFactory: ApiControllerImplementation<T> | ApiImplementationFactory<T>): void {
-  registeredApis.set(definition, implementationOrFactory);
 }

@@ -13,7 +13,7 @@ import { MongoBaseRepository } from './mongo-base.repository';
 import { convertQuery, convertSort } from './query-converter';
 import type { Filter, TypedIndexDescription, UpdateFilter } from './types';
 
-type MongoEntityRepositoryOptions<T extends Entity> = {
+export type MongoEntityRepositoryOptions<T extends Entity> = {
   logger: Logger,
   indexes?: TypedIndexDescription<T>[]
 }

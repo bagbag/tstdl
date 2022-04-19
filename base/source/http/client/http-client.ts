@@ -23,6 +23,7 @@ export type HttpClientOptions = {
 
   /**
    * enables parsing of response errors with registered error handlers via {@link parseErrorResponse}
+   * @default true
    */
   enableErrorHandling?: boolean
 };
@@ -63,7 +64,7 @@ export class HttpClient {
     this.internalMiddleware = [
       getBuildRequestUrlMiddleware(options.baseUrl),
       addRequestHeadersMiddleware,
-      ...((options.enableErrorHandling ?? false) ? [errorMiddleware] : [])
+      ...((options.enableErrorHandling ?? true) ? [errorMiddleware] : [])
     ];
 
     this.updateHandlers();

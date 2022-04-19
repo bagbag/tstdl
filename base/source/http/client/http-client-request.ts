@@ -14,11 +14,42 @@ import type { HttpUrlParametersObject } from '../http-url-parameters';
 import { HttpUrlParameters } from '../http-url-parameters';
 import type { HttpBodyType, HttpMethod } from '../types';
 
-interface HttpClientRequestDocs {
-  /**
-   * can be used to cancel the request. Throws HttpError
-   */
-  readonly abortToken: ReadonlyCancellationToken;
+/** only one type at a time is supported. If multiple are set, behaviour is undefined */
+export type HttpRequestBody = undefined | {
+  text?: string,
+  json?: UndefinableJson,
+  form?: HttpForm,
+  buffer?: Uint8Array,
+  stream?: AsyncIterable<Uint8Array>
+};
+
+export type HttpClientRequestOptions<T extends HttpBodyType = HttpBodyType> = Partial<TypedOmit<HttpClientRequest<T>, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
+  urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
+  headers?: HttpHeadersObject | HttpHeaders,
+  query?: HttpQueryObject | HttpQuery,
+  body?: undefined | {
+    text?: string,
+    json?: UndefinableJson,
+    form?: HttpFormObject | HttpForm,
+    buffer?: Uint8Array,
+    stream?: AsyncIterable<Uint8Array>
+  },
+  abortToken?: ReadonlyCancellationToken
+};
+
+export type HttpClientRequestObject<T extends HttpBodyType = HttpBodyType> = HttpClientRequestOptions<T> & {
+  url: string,
+  method?: HttpMethod
+};
+
+export type CredentialsOptions = 'omit' | 'same-origin' | 'include';
+
+export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements Disposable {
+  private readonly _abortToken: CancellationToken;
+
+  url: string;
+  method: HttpMethod;
+  headers: HttpHeaders;
 
   /**
    * automatically maps parameters to `urlParameters`, `query` and `body`
@@ -29,6 +60,9 @@ interface HttpClientRequestDocs {
    * @see mapParametersToBody
    */
   parameters: UndefinableJsonObject | undefined;
+  mapParametersToUrl: boolean;
+  mapParametersToQuery: boolean;
+  mapParametersToBody: boolean;
 
   /**
    * parameters for url
@@ -64,12 +98,16 @@ interface HttpClientRequestDocs {
    * // -> http://domain.tld/search?categories=3&categories=8&limit=10
    */
   query: HttpQuery;
+  body: HttpRequestBody;
+  responseType: T;
+  credentials: CredentialsOptions;
 
   /**
    * request timeout in milliseconds
    * @default 30000
    */
-  timeout: number | undefined;
+  timeout: number;
+  throwOnNon200: boolean;
 
   /**
    * can be used to store data for middleware etc.
@@ -77,58 +115,10 @@ interface HttpClientRequestDocs {
    * will not be used for actual request
    */
   context: StringMap;
-}
 
-/** only one type at a time is supported. If multiple are set, behaviour is undefined */
-export type HttpRequestBody = undefined | {
-  text?: string,
-  json?: UndefinableJson,
-  form?: HttpForm,
-  buffer?: Uint8Array,
-  stream?: AsyncIterable<Uint8Array>
-};
-
-export type HttpClientRequestOptions<T extends HttpBodyType = HttpBodyType> = Partial<TypedOmit<HttpClientRequest<T>, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
-  urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
-  headers?: HttpHeadersObject | HttpHeaders,
-  query?: HttpQueryObject | HttpQuery,
-  body?: undefined | {
-    text?: string,
-    json?: UndefinableJson,
-    form?: HttpFormObject | HttpForm,
-    buffer?: Uint8Array,
-    stream?: AsyncIterable<Uint8Array>
-  },
-  abortToken?: ReadonlyCancellationToken
-};
-
-export type HttpClientRequestObject<T extends HttpBodyType = HttpBodyType> = HttpClientRequestOptions<T> & {
-  url: string,
-  method?: HttpMethod
-};
-
-export type CredentialsOptions = 'omit' | 'same-origin' | 'include';
-
-export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements HttpClientRequestDocs, Disposable {
-  private readonly _abortToken: CancellationToken;
-
-  url: string;
-  method: HttpMethod;
-  headers: HttpHeaders;
-  parameters: UndefinableJsonObject | undefined;
-  mapParametersToUrl: boolean;
-  mapParametersToQuery: boolean;
-  mapParametersToBody: boolean;
-  urlParameters: HttpUrlParameters;
-  urlParametersSeparator: string;
-  query: HttpQuery;
-  body: HttpRequestBody;
-  responseType: T;
-  credentials: CredentialsOptions;
-  timeout: number;
-  throwOnNon200: boolean;
-  context: StringMap;
-
+  /**
+   * can be used to cancel the request. Throws HttpError
+   */
   get abortToken(): ReadonlyCancellationToken {
     return this._abortToken.asReadonly;
   }

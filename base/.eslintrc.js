@@ -58,7 +58,7 @@ module.exports = {
     'array-bracket-newline': ['error', 'consistent'],
     'array-element-newline': ['error', 'consistent'],
     'camelcase': 'off',
-    'capitalized-comments': ['warn', 'never'],
+    'capitalized-comments': "off",
     'class-methods-use-this': 'off',
     'dot-location': ['error', 'property'],
     'eqeqeq': 'off',

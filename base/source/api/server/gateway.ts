@@ -42,7 +42,7 @@ export type GatewayEndpoint = {
   implementation: ApiEndpointServerImplementation
 };
 
-type ApiItem = {
+export type ApiItem = {
   resource: string,
   pattern: URLPattern,
   endpoints: Map<ApiEndpointMethod, GatewayEndpoint>
@@ -51,6 +51,11 @@ type ApiItem = {
 export type EndpointMetadataBodyType = 'none' | 'text' | 'json' | 'buffer' | 'stream';
 
 export type ApiGatewayArgument = ApiGatewayOptions;
+
+export type ApiMetadata = {
+  api: ApiItem,
+  patternResult: URLPatternResult
+};
 
 /**
  * router for {@link ApiTransport} requests to {@link ApiImplementation}
@@ -157,7 +162,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
   }
 
-  getApiMetadata(resource: URL): { api: ApiItem, patternResult: URLPatternResult } {
+  getApiMetadata(resource: URL): ApiMetadata {
     const urlWithoutPort = new URL(resource);
     urlWithoutPort.port = '';
 

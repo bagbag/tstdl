@@ -1,11 +1,9 @@
 import type { ApiController, ApiGatewayArgument } from '#/api/server';
 import { ApiControllers, ApiGateway, API_CONTROLLERS } from '#/api/server';
 import type { AfterResolve, Injectable } from '#/container';
-import { afterResolve, forwardArg, inject, injectArg, optional, resolveArg, resolveArgumentType, singleton } from '#/container';
+import { afterResolve, forwardArg, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
 import { disposeAsync } from '#/disposable/disposable';
 import { HttpServer } from '#/http/server';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
 import type { Type } from '#/types';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import type { Module } from '../module';
@@ -31,7 +29,6 @@ function getApiGatewayArgument(config: WebServerModuleConfiguration): ApiGateway
 @singleton({ defaultArgumentProvider: () => webServerModuleConfiguration })
 export class WebServerModule extends ModuleBase implements Module, Injectable<WebServerModuleConfiguration>, AfterResolve {
   private readonly config: WebServerModuleConfiguration;
-  private readonly logger: Logger;
   private readonly httpServer: HttpServer;
   private readonly apiGateway: ApiGateway;
   private readonly apiControllers: ApiControllers;
@@ -51,7 +48,6 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     @injectArg() config: WebServerModuleConfiguration,
     httpServer: HttpServer,
     @forwardArg<WebServerModuleConfiguration, ApiGatewayArgument>(getApiGatewayArgument) apiGateway: ApiGateway,
-    @resolveArg<LoggerArgument>('WebServer') logger: Logger,
     @inject(API_CONTROLLERS) @optional() apiControllers: ApiControllers = []
   ) {
     super('WebServer');
@@ -59,7 +55,6 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     this.httpServer = httpServer;
     this.apiGateway = apiGateway;
     this.config = config;
-    this.logger = logger;
     this.apiControllers = apiControllers;
 
     this.initialized = false;
@@ -89,10 +84,8 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     await this.initialize();
 
     await this.httpServer.listen(this.config.port);
-    this.logger.info(`listening on port ${this.config.port}`);
 
     const closePromise = cancellationToken.$set.then(async () => {
-      this.logger.info('closing http server');
       await this.httpServer[disposeAsync]();
     });
 

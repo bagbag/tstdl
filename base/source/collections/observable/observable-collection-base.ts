@@ -2,12 +2,7 @@ import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
 import { merge, Subject } from 'rxjs';
 import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith } from 'rxjs/operators';
-import type { ObservableCollection } from './observable-collection';
-
-export type ObservableCollectionChangeEvent<T> = {
-  add?: T[],
-  remove?: T[]
-};
+import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
 
 export abstract class ObservableCollectionBase<T, TThis extends ObservableCollection<T>> implements ObservableCollection<T> {
   private readonly clearSubject: Subject<void>;

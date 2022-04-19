@@ -8,7 +8,7 @@ import type { Coercible, Maskable, SchemaDefinition, SchemaInput, SchemaOutput }
 export const test: unique symbol = Symbol('test');
 export const testAsync: unique symbol = Symbol('testAsync');
 
-type CoercerFunction<P extends PrimitiveTypeString, T> = (value: PrimitiveType<P>, path: string | JsonPath) => ValidationTestResult<T>;
+export type CoercerFunction<P extends PrimitiveTypeString, T> = (value: PrimitiveType<P>, path: string | JsonPath) => ValidationTestResult<T>;
 
 export type CoercerMap<T> = { [P in PrimitiveTypeString]?: CoercerFunction<P, T> };
 

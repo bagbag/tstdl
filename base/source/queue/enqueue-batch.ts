@@ -1,6 +1,6 @@
 import type { EnqueueManyItem, EnqueueOptions, Job, Queue } from './queue';
 
-interface QueueEnqueueBatchMethods<T> {
+export interface QueueEnqueueBatchMethods<T> {
   add(...args: Parameters<Queue<T>['enqueue']>): void;
   enqueue(): ReturnType<Queue<T>['enqueueMany']>;
 }

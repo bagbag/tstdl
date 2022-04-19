@@ -1,5 +1,7 @@
-import type { HttpClient, HttpClientResponse } from '#/http/client';
-import { HttpClientRequest } from '#/http/client';
+import type { Injectable } from '#/container';
+import { container, resolveArgumentType } from '#/container';
+import type { HttpClientResponse } from '#/http/client';
+import { HttpClient, HttpClientRequest } from '#/http/client';
 import type { HttpBodyType } from '#/http/types';
 import { AsyncIterableSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
@@ -32,16 +34,24 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {
-    [apiName]: class {
+    [apiName]: class implements Injectable<HttpClient> {
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
+      readonly [resolveArgumentType]: HttpClient;
       constructor(httpClient: HttpClient) {
         this[httpClientSymbol] = httpClient;
         this[apiDefinitionSymbol] = definition;
       }
     }
   }[apiName]!;
+
+  container.registerSingleton(api, {
+    useFactory: (argument, context) => {
+      const httpClient = argument ?? context.resolve(HttpClient);
+      return new api(httpClient);
+    }
+  });
 
   const endpointsEntries = Object.entries(endpoints);
 

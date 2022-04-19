@@ -12,13 +12,13 @@ import { SchemaValidator, test } from '../schema.validator';
 import type { Coercible, SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
-type EnumerationArray = readonly [string | number, ...(string | number)[]];
+export type EnumerationArray = readonly [string | number, ...(string | number)[]];
 
-type EnumerationObject = StringMap<string | number>;
+export type EnumerationObject = StringMap<string | number>;
 
-type Enumeration = EnumerationArray | EnumerationObject;
+export type Enumeration = EnumerationArray | EnumerationObject;
 
-type EnumerationSchemaOutput<T extends Enumeration> = T extends EnumerationArray ? T[number] : EnumValue<T>;
+export type EnumerationSchemaOutput<T extends Enumeration> = T extends EnumerationArray ? T[number] : EnumValue<T>;
 
 export type EnumerationSchemaDefinition<T extends Enumeration = Enumeration> = SchemaDefinition<'enumeration', unknown, EnumerationSchemaOutput<T>> & Coercible & {
   values: T

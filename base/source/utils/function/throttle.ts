@@ -1,9 +1,8 @@
 import { currentTimestamp } from '../date-time';
 
-type DidNotRun = symbol;
-export const didNotRun: DidNotRun = Symbol('did-not-run');
+export const didNotRun = Symbol('did-not-run');
 
-export function throttleFunction<Args extends any[], ReturnValue>(func: (...args: Args) => ReturnValue, interval: number, queue: boolean = false): (...args: Args) => (ReturnValue | DidNotRun) {
+export function throttleFunction<Args extends any[], ReturnValue>(func: (...args: Args) => ReturnValue, interval: number, queue: boolean = false): (...args: Args) => (ReturnValue | typeof didNotRun) {
   let lastCall = 0;
   let pending = false;
   let nextArgs: Args;

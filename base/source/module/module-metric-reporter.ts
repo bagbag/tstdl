@@ -7,13 +7,13 @@ import { MovingMetric } from '#/utils/moving-metric';
 import { cancelableTimeout } from '#/utils/timing';
 import type { ModuleMetric } from './module';
 
-type MetricReport<Aggregation extends MetricAggregation> = {
+export type MetricReport<Aggregation extends MetricAggregation> = {
   displayName: string,
   aggregation: Aggregation,
   aggregationOptions?: MetricAggregationOptions<Aggregation>
 };
 
-type MetricReportRegistration = {
+export type MetricReportRegistration = {
   metric: ModuleMetric,
   moving: MovingMetric,
   reports: MetricReport<MetricAggregation>[]

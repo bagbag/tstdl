@@ -1,9 +1,11 @@
+import { SchemaError } from '#/schema/schema.error';
 import type { CustomError, CustomErrorStatic } from '../error';
-import { ApiError } from '../error/api.error';
+import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, UnauthorizedError, UnsupportedMediaTypeError, ValidationError } from '../error';
 import type { UndefinableJson } from '../types';
 import { isDefined, isFunction, isObject, isString } from '../utils/type-guards';
+import { deserializeSchemaError, deserializeValidationError, serializeSchemaError, serializeValidationError } from './default-error-handlers';
 
-type ErrorHandlerData = undefined | UndefinableJson;
+export type ErrorHandlerData = undefined | UndefinableJson;
 
 export type ErrorSerializer<T extends CustomError, TData extends ErrorHandlerData> = (error: T) => TData;
 export type ErrorDeserializer<T extends CustomError, TData extends ErrorHandlerData> = (data: TData, responseError: ResponseError) => T;
@@ -149,3 +151,16 @@ export function isErrorResponse(response: Response<any> | unknown): response is 
 export function isResponse<T = any>(obj: unknown): obj is Response<T> {
   return (isResultResponse(obj) || isErrorResponse(obj));
 }
+
+registerErrorHandler(ApiError, 400, ({ response }) => response, (response) => new ApiError(response));
+registerErrorHandler(BadRequestError, 400, () => undefined, (_, error) => new BadRequestError(error.message));
+registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new ForbiddenError(error.message));
+registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
+registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
+registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
+registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
+registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
+registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
+registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
+registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
+registerErrorHandler(SchemaError, 400, serializeSchemaError, deserializeSchemaError);

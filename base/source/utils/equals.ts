@@ -10,9 +10,9 @@ import { isDefined } from './type-guards';
 
 const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
 
-type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
+export type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
 
-type ArrayEqualsOptions<A, B> = {
+export type ArrayEqualsOptions<A, B> = {
   sort?: Comparator<A | B>,
   comparator?: ArrayEqualsComparator<A, B>
 };

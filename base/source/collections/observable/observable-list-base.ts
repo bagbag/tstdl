@@ -6,11 +6,6 @@ import type { ObservableCollection } from './observable-collection';
 import { ObservableCollectionBase } from './observable-collection-base';
 import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
 
-export type ObservableCollectionChangeEvent<T> = {
-  add?: T[],
-  remove?: T[]
-};
-
 export abstract class ObservableListBase<T, TThis extends ObservableCollection<T>> extends ObservableCollectionBase<T, TThis> implements ObservableList<T> {
   private readonly addAtSubject: Subject<ObservableListIndexedEvent<T>[]>;
   private readonly removeAtSubject: Subject<ObservableListIndexedEvent<T>[]>;

@@ -1,6 +1,6 @@
 const promiseConstructor = Promise;
 
-const enum PromiseState {
+export const enum PromiseState {
   Pending = 0,
   Resolved = 1,
   Rejected = 2
