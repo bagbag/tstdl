@@ -41,7 +41,7 @@ export class Application {
   }
 
   static registerModuleInstance(module: Module): void {
-    Application.instance.moduleInstances.add(module);
+    Application.instance.registerModuleInstance(module);
   }
 
   static async run(): Promise<void> {
@@ -54,6 +54,10 @@ export class Application {
 
   registerModule(moduleType: Type<Module>): void {
     this.moduleTypes.add(moduleType);
+  }
+
+  registerModuleInstance(module: Module): void {
+    this.moduleInstances.add(module);
   }
 
   async run(): Promise<void> {
