@@ -32,6 +32,7 @@ export class Application {
     this.logger = logger;
 
     this.moduleTypes = new Set();
+    this.moduleInstances = new Set();
     this.shutdownPromise = new DeferredPromise();
   }
 
