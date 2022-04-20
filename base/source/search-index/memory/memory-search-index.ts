@@ -46,7 +46,7 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await, max-statements, max-lines-per-function
-  async search(queryOrCursor: string | Query<T>, options?: QueryOptions<T>): Promise<SearchResult<T>> {
+  async search(queryOrCursor: string | Query<T>, options: QueryOptions<T> = {}): Promise<SearchResult<T>> {
     if (isString(queryOrCursor)) {
       throw new Error('cursor not supported');
     }
@@ -90,12 +90,14 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
       items = intersectSets(...sets);
     }
 
-    if (isDefined(options?.sort)) {
-      items.sort(compareByValueSelectionOrdered(...options!.sort.map((sort) => [(item: T) => item[sort.field as keyof T], sort.order == 'desc' ? -1 : 1] as const)));
+    if (isDefined(options.sort)) {
+      items.sort(compareByValueSelectionOrdered(...options.sort.map((sort) => [(item: T) => item[sort.field as keyof T], sort.order == 'desc' ? -1 : 1] as const)));
     }
 
-    if (isDefined(options?.skip) || isDefined(options?.limit)) {
-      items = items.slice(options?.skip, items.length - (options?.limit ?? 0));
+    if (isDefined(options.skip) || isDefined(options.limit)) {
+      const start = options.skip ?? 0;
+      const end = isDefined(options.limit) ? (start + options.limit) : undefined;
+      items = items.slice(start, end);
     }
 
     const resultItems = items.map((item): SearchResultItem<T> => ({ entity: item, score: 1 }));
