@@ -2,7 +2,10 @@
   "$schema": "https://typedoc.org/schema.json",
   "readme": "README.md",
   "includeVersion": true,
-  "watch": true,
+  "out": "dist/doc",
+  "exclude": [
+    "dist"
+  ],
   "entryPoints": [
     "source/",
     "source/api",
@@ -22,8 +25,9 @@
     "source/error",
     "source/http",
     "source/http/client",
+    "source/http/client/adapters/got-http-client.adapter.ts",
+    "source/http/client/adapters/undici-http-client.adapter.ts",
     "source/http/server",
-    "source/http/server/adapters/**.ts",
     "source/image-service",
     "source/interfaces.ts",
     "source/json-path",
@@ -54,7 +58,6 @@
     "source/utils/object",
     "source/utils/stream"
   ],
-  "out": "dist/doc",
   "intentionallyNotExported": [
     "async-enumerable.ts:enumerable",
     "async-iterator-iterable-iterator.ts:FullyTypedAsyncIterableIterator",
