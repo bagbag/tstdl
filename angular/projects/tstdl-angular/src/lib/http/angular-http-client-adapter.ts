@@ -90,7 +90,7 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   }
 
   else if (isDefined(body.json)) {
-    return body.json;
+    return JSON.stringify(body.json);
   }
   else if (isDefined(body.text)) {
     return body.text;
