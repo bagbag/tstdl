@@ -9,7 +9,7 @@ import { Subject } from 'rxjs';
 import type { AfterResolve, Injectable, InjectableArgument } from './interfaces';
 import { afterResolve } from './interfaces';
 import type { Provider } from './provider';
-import { isAsyncFactoryProvider, isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './provider';
+import { isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './provider';
 import { ResolveChain } from './resolve-chain';
 import { ResolveError } from './resolve.error';
 import type { InjectionToken } from './token';
@@ -57,7 +57,7 @@ export type RegistrationOptions<T, A = unknown> = {
   argumentIdentityProvider?: Mapper<InjectableArgument<T, A> | undefined>,
 
   /** function which gets called after a resolve */
-  initializer?: (instance: T) => any | Promise<any>,
+  initializer?: (instance: T) => any,
 
   /** custom metadata */
   metadata?: Record
@@ -245,7 +245,7 @@ export class Container {
     }
 
     if (context.resolving.has([token, argumentIdentity])) {
-      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', chain.truncate(15));
+      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain.truncate(15));
     }
 
     context.resolving.set([token, argumentIdentity], true);
@@ -281,15 +281,17 @@ export class Container {
 
     if (isFactoryProvider(registration.provider)) {
       try {
-        instance = registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
+        const result = registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
+
+        if (isPromise(result)) {
+          throw new ResolveError(`cannot evaluate async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+        }
+
+        instance = result;
       }
       catch (error) {
         throw new ResolveError('error in factory', chain, error as Error);
       }
-    }
-
-    if (isAsyncFactoryProvider(registration.provider)) {
-      throw new ResolveError(`cannot evaluate async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
     }
 
     if (!isTokenProvider(registration.provider)) {
@@ -376,7 +378,7 @@ export class Container {
     }
 
     if (context.resolving.has([token, argumentIdentity])) {
-      throw new ResolveError('circular dependency to itself detected. Please check your registrations and providers', chain.truncate(15));
+      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain.truncate(15));
     }
 
     context.resolving.set([token, argumentIdentity], true);
@@ -413,16 +415,7 @@ export class Container {
 
     if (isFactoryProvider(registration.provider)) {
       try {
-        instance = registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
-      }
-      catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
-      }
-    }
-
-    if (isAsyncFactoryProvider(registration.provider)) {
-      try {
-        instance = await registration.provider.useAsyncFactory(resolveArgument, this.getResolveContext(context, chain));
+        instance = await registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
       }
       catch (error) {
         throw new ResolveError('error in factory', chain, error as Error);

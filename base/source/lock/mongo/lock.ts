@@ -17,7 +17,7 @@ const renewBuffer = expirationTime / 2;
 
 @injectable({
   provider: {
-    useAsyncFactory: async (argument, context) => {
+    useFactory: async (argument, context) => {
       const arg = argument as LockArgument;
       const prefix = isObject(arg) ? assertStringPass(arg.prefix, 'invalid lock argument') : undefined;
       const resource = assertStringPass(isObject(arg) ? arg.resource : arg, 'invalid lock argument');

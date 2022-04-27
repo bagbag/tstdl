@@ -10,15 +10,15 @@ import type { InjectionToken } from './token';
 import { buildTypeInfoIfNeeded, getInjectMetadata } from './type-info';
 import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types';
 
-export type InjectableOptions<T, P> = RegistrationOptions<T> & {
+export type InjectableOptions<T, A> = RegistrationOptions<T> & {
   /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
   alias?: OneOrMany<InjectionToken>,
 
   /** custom provider. Useful for example if initialization is required */
-  provider?: Provider<T, P>
+  provider?: Provider<T, A>
 };
 
-export type InjectableOptionsWithoutLifecycle<T, P> = Simplify<TypedOmit<InjectableOptions<T, P>, 'lifecycle'>>;
+export type InjectableOptionsWithoutLifecycle<T, A> = Simplify<TypedOmit<InjectableOptions<T, A>, 'lifecycle'>>;
 
 /**
  * helper decorator to replace a class definition with an other
@@ -37,7 +37,7 @@ export function replaceClass<T>(constructor: Constructor<T>): ClassDecorator {
  * registers the class in the global container. Decorated class is not modified in any way
  * @param options registration options
  */
-export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = {}): ClassDecorator {
+export function injectable<T = any, A = any>(options: InjectableOptions<T, A> = {}): ClassDecorator {
   function injectableDecorator<U extends T>(constructor: Constructor<U>): void {
     const { alias: aliases, provider, ...registrationOptions } = options;
 
@@ -67,7 +67,7 @@ export function injectable<T = any, P = any>(options: InjectableOptions<T, P> = 
  * registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function singleton<T = any, P = any>(options: InjectableOptionsWithoutLifecycle<T, P> = {}): ClassDecorator {
+export function singleton<T = any, A = any>(options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle: 'singleton' });
 }
 
@@ -75,7 +75,7 @@ export function singleton<T = any, P = any>(options: InjectableOptionsWithoutLif
  * registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function scoped<T = any, P = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: InjectableOptionsWithoutLifecycle<T, P> = {}): ClassDecorator {
+export function scoped<T = any, A = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle });
 }
 
