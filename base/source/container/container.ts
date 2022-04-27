@@ -473,7 +473,7 @@ export class Container {
 
     const injectToken = (metadata.injectToken ?? metadata.token)!;
 
-    if (isDefined(metadata.injectArgumentMapper)) {
+    if (isDefined(metadata.injectArgumentMapper) && (isDefined(resolveArgument) || isUndefined(injectToken))) {
       const mapped = metadata.injectArgumentMapper(resolveArgument);
 
       if (isPromise(mapped)) {
@@ -513,15 +513,16 @@ export class Container {
   }
 
   private async resolveInjectionAsync(context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
-    if (isDefined(metadata.injectArgumentMapper)) {
+    const injectToken = (metadata.injectToken ?? metadata.token)!;
+
+    if (isDefined(metadata.injectArgumentMapper) && (isDefined(resolveArgument) || isUndefined(injectToken))) {
       return { resolved: metadata.injectArgumentMapper(resolveArgument) };
     }
 
     const getChain = metadata.type == 'parameter'
-      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(injectToken!)
-      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(injectToken!);
+      ? (token: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, token!).addToken(token!)
+      : (token: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, token!).addToken(token!);
 
-    const injectToken = (metadata.injectToken ?? metadata.token)!;
     const parameterResolveArgument = await (metadata.forwardArgumentMapper?.(resolveArgument) ?? metadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken))));
 
     if (isDefined(metadata.forwardRefToken)) {
