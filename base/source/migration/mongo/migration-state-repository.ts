@@ -15,7 +15,7 @@ const indexes: TypedIndexDescription<MigrationState>[] = [
 
 @singleton({ defaultArgumentProvider: () => mongoMigrationStateRepositoryModuleConfig.defaultMigrationStateRepositoryConfig })
 export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository, Injectable<CollectionArgument<MigrationState>> {
-  readonly [resolveArgumentType]: CollectionArgument<MigrationState, MigrationState>;
+  readonly [resolveArgumentType]: CollectionArgument<MigrationState>;
 
   constructor(@forwardArg() collection: Collection<MigrationState>, @resolveArg<LoggerArgument>(MongoMigrationStateRepository.name) logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });

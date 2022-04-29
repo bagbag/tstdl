@@ -17,6 +17,7 @@ import { getTokenName } from './token';
 import type { InjectMetadata, TypeInfo } from './type-info';
 import { typeInfos } from './type-info';
 import type { ArgumentProvider, Mapper, ResolveContext } from './types';
+import { isStubClass } from './utils';
 
 type InternalResolveContext = {
   isAsync: boolean,
@@ -259,6 +260,10 @@ export class Container {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
       }
 
+      if ((typeInfo.constructor as any)[isStubClass] == true) {
+        throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
+      }
+
       const parameters = typeInfo.parameters.map((metadata): unknown => this.resolveInjection(token, context, typeInfo, metadata, resolveArgument, chain));
 
       instance = new typeInfo.constructor(...parameters) as T;
@@ -390,6 +395,10 @@ export class Container {
 
       if (isUndefined(typeInfo)) {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
+      }
+
+      if ((typeInfo.constructor as any)[isStubClass] == true) {
+        throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
       }
 
       const boxedParameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(context, typeInfo, metadata, resolveArgument, chain)));

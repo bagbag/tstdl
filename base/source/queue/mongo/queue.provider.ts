@@ -39,7 +39,7 @@ export class MongoQueueProvider extends QueueProvider implements Injectable<Coll
  * @param jobRepositoryConfig repository configuration for jobs
  * @param register whether to register for {@link Queue} and {@link QueueProvider}
  */
-export function configureMongoQueue(jobRepositoryConfig: MongoRepositoryConfig<MongoJob>, register: boolean): void {
+export function configureMongoQueue(jobRepositoryConfig: MongoRepositoryConfig<MongoJob>, register: boolean = true): void {
   defaultJobRepositoryConfig = jobRepositoryConfig;
 
   if (register) {

@@ -14,7 +14,7 @@ const indexes: TypedIndexDescription<MongoLockEntity>[] = [
 ];
 
 @singleton()
-export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements Injectable<CollectionArgument> {
+export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements Injectable<CollectionArgument<MongoLockEntity>> {
   [resolveArgumentType]: CollectionArgument<MongoLockEntity>;
 
   constructor(@forwardArg() collection: Collection<MongoLockEntity>, logger: Logger) {
