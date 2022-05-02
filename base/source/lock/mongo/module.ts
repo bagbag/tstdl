@@ -19,7 +19,7 @@ export const mongoLockModuleConfig: MongoLockModuleConfig = {
  * @param lockRepositoryConfig repository configuration for locks
  * @param register whether to register for {@link Lock} and {@link LockProvider}
  */
-export function configureMongoLock(lockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity>, register: boolean): void {
+export function configureMongoLock(lockRepositoryConfig: MongoRepositoryConfig<MongoLockEntity>, register: boolean = true): void {
   mongoLockModuleConfig.lockEntityRepositoryConfig = lockRepositoryConfig;
 
   if (register) {

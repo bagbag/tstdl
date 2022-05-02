@@ -7,3 +7,4 @@ export * from './resolve.error';
 export * from './token';
 export * from './type-info';
 export * from './types';
+export * from './utils';

@@ -27,7 +27,7 @@ const transformer: EntityTransformer<OidcState, MongoOidcState> = {
 
 @singleton({ defaultArgumentProvider: () => repositoryConfig })
 export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository, Injectable<CollectionArgument<MongoOidcState>> {
-  readonly [resolveArgumentType]: CollectionArgument<MongoOidcState, MongoOidcState>;
+  readonly [resolveArgumentType]: CollectionArgument<MongoOidcState>;
 
   constructor(@forwardArg() collection: Collection<MongoOidcState>, @resolveArg<LoggerArgument>(MongoOidcStateRepository.name) logger: Logger) {
     super(collection, transformer, { logger, indexes });

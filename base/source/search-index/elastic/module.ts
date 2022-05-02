@@ -27,7 +27,7 @@ export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig
 }
 
 container.registerSingleton<Client, ClientOptions>(Client, {
-  useAsyncFactory: async (options) => {
+  useFactory: async (options) => {
     assertDefined(options, 'missing elasticsearch client options');
 
     const logger = await container.resolveAsync(Logger, elasticsearchModuleConfig.logPrefix);

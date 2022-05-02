@@ -38,7 +38,7 @@ export class LocalMessageBusProvider extends MessageBusProvider {
  * configure local message bus module
  * @param register whether to register for {@link LocalMessageBus} and {@link LocalMessageBusProvider}
  */
-export function configureLocalMessageBus(register: boolean): void {
+export function configureLocalMessageBus(register: boolean = true): void {
   if (register) {
     container.registerSingleton(MessageBusProvider, { useToken: LocalMessageBusProvider });
     container.register(MessageBus, { useToken: LocalMessageBus });

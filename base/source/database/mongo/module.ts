@@ -31,7 +31,7 @@ export function configureMongo(config: Partial<MongoModuleConfig>): void {
 }
 
 container.registerSingleton(MongoClient, {
-  useAsyncFactory: async (argument, context) => {
+  useFactory: async (argument, context) => {
     assertDefined(argument, 'mongo connection resolve argument missing');
 
     const { url, ...options } = argument;
@@ -57,7 +57,7 @@ container.registerSingleton(MongoClient, {
 });
 
 container.registerSingleton(Database, {
-  useAsyncFactory: async (argument, context) => {
+  useFactory: async (argument, context) => {
     const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
     const name = (isString(argument) ? argument : isObject(argument) ? argument.database : undefined) ?? mongoModuleConfig.defaultDatabase;
 
@@ -70,7 +70,7 @@ container.registerSingleton(Database, {
 });
 
 container.registerSingleton(Collection, {
-  useAsyncFactory: async (config, context) => {
+  useFactory: async (config, context) => {
     assertDefined(config, 'mongo repository config resolve argument missing');
 
     const database = await context.resolveAsync(Database, config);

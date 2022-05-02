@@ -6,10 +6,11 @@ import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import { assertDefinedPass } from '#/utils/type-guards';
 import { MongoLock } from './lock';
+import type { MongoLockEntity } from './model';
 import { mongoLockModuleConfig } from './module';
 import { MongoLockRepository } from './mongo-lock-repository';
 
-const collectionArgumentProvider = (): CollectionArgument => assertDefinedPass(mongoLockModuleConfig.lockEntityRepositoryConfig, 'mongo lock module not configured');
+const collectionArgumentProvider = (): CollectionArgument<MongoLockEntity> => assertDefinedPass(mongoLockModuleConfig.lockEntityRepositoryConfig, 'mongo lock module not configured');
 
 @singleton()
 export class MongoLockProvider extends LockProvider {
@@ -17,7 +18,7 @@ export class MongoLockProvider extends LockProvider {
   private readonly logger: Logger;
   private readonly _prefix: string;
 
-  constructor(@resolveArgProvider<CollectionArgument>(collectionArgumentProvider) lockRepository: MongoLockRepository, @resolveArg<LoggerArgument>('MongoLock') logger: Logger, @injectArg() prefix: string = '') {
+  constructor(@resolveArgProvider<CollectionArgument<MongoLockEntity>>(collectionArgumentProvider) lockRepository: MongoLockRepository, @resolveArg<LoggerArgument>('MongoLock') logger: Logger, @injectArg() prefix: string = '') {
     super();
 
     this.lockRepository = lockRepository;

@@ -36,6 +36,7 @@ export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
 export type Constructor<T = any, Args extends any[] = any> = Type<T, Args>;
 export type Type<T = any, Args extends any[] = any> = new (...args: Args) => T;
+export type AbstractType<T = any, Args extends any[] = any> = abstract new (...args: Args) => T;
 
 export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
 export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };
@@ -44,6 +45,7 @@ export type NumberMap<T = any> = { [key: number]: T };
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 
 export type OneOrMany<T> = T | readonly T[];
+export type WritableOneOrMany<T> = T | T[];
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
 
