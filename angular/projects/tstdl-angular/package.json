@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "publishConfig": {
     "access": "public"
   },
@@ -9,6 +9,6 @@
     "@angular/core": ">=12.0",
     "@tstdl/base": "^0.71",
     "luxon": "^2.3",
-    "tslib": "^2.3"
+    "tslib": "^2.4"
   }
 }
