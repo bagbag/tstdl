@@ -6,7 +6,6 @@ import type { DefinedValidationOptions, ValidationTestResult } from '../schema.v
 import { SchemaValidator, test, testAsync } from '../schema.validator';
 import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
-import { NeverSchemaValidator } from './never';
 
 export type ObjectOutputType<T extends StringMap<SchemaDefinition>> = Simplify<Optionalize<{ [P in keyof T]: SchemaOutput<T[P]> }>>;
 
@@ -47,24 +46,16 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
 
     const resultObject: Record = {};
 
-    for (const [key, innerValue] of testBaseResult.value) {
-      if (!this.validatorEntries.has(key)) {
-        if (options.mask) {
-          continue;
-        }
+    for (const [key, validator] of this.validatorEntries) {
+      const innerValue = testBaseResult.value.get(key as string);
 
-        return { valid: false, error: schemaError(`unexpected key ${key}`, path.add(key)) };
-      }
-
-      const validator = this.validatorEntries.get(key)!;
-
-      const innerValueValidationTestResult = validator[test](innerValue, options, path.add(key));
+      const innerValueValidationTestResult = validator[test](innerValue, options, path.add(key as string));
 
       if (!innerValueValidationTestResult.valid) {
         return innerValueValidationTestResult;
       }
 
-      resultObject[key] = innerValueValidationTestResult.value;
+      resultObject[key as string] = innerValueValidationTestResult.value;
     }
 
     return { valid: true, value: resultObject as ObjectOutputType<T> };
@@ -79,30 +70,22 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
 
     const resultObject: Record = {};
 
-    for (const [key, innerValue] of testBaseResult.value) {
-      if (!this.validatorEntries.has(key)) {
-        if (options.mask) {
-          continue;
-        }
+    for (const [key, validator] of this.validatorEntries) {
+      const innerValue = testBaseResult.value.get(key as string);
 
-        return { valid: false, error: schemaError(`unexpected key ${key}`, path.add(key)) };
-      }
-
-      const validator = this.validatorEntries.get(key)!;
-
-      const innerValueValidationTestResult = await validator[testAsync](innerValue, options, path.add(key));
+      const innerValueValidationTestResult = await validator[testAsync](innerValue, options, path.add(key as string));
 
       if (!innerValueValidationTestResult.valid) {
         return innerValueValidationTestResult;
       }
 
-      resultObject[key] = innerValueValidationTestResult.value;
+      resultObject[key as string] = innerValueValidationTestResult.value;
     }
 
     return { valid: true, value: resultObject as ObjectOutputType<T> };
   }
 
-  private _testBase(value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<string, any>> {
+  private _testBase(value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<string, any>> {
     const typeResult = this.ensureType('object', value, path);
 
     if (!typeResult.valid) {
@@ -113,11 +96,11 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
     }
 
     const valueEntries = new Map(Object.entries(value as Record));
-    const missingKeys = differenceMaps(this.validatorEntries, valueEntries).filter(([key]) => !(this.validatorEntries.get(key)! instanceof NeverSchemaValidator));
+    const unknownKeys = differenceMaps(valueEntries, this.validatorEntries);
 
-    if (missingKeys.length > 0) {
-      const keys = missingKeys.map((entry) => entry[0]).join(', ');
-      return { valid: false, error: schemaError(`missing entries: ${keys}`, path) };
+    if ((unknownKeys.length > 0) && !options.mask) {
+      const keys = unknownKeys.map((entry) => entry[0]).join(', ');
+      return { valid: false, error: schemaError(`unexpecet keys in object: ${keys}`, path) };
     }
 
     return { valid: true, value: valueEntries };
