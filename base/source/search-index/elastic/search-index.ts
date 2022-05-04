@@ -138,17 +138,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
       throw new Error('cursor and sort cannot be used at the same time');
     }
 
-    const querySort = [...(options?.sort ?? [])];
-
-    if (!querySort.some((item) => item.field == '$score')) {
-      querySort.push({ field: '$score', order: 'desc' });
-    }
-
-    if (!querySort.some((item) => item.field == 'id')) {
-      querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
-    }
-
-    const sort = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort = cursorData?.sort ?? (options?.sort ?? []).map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
     search.sort = sort as string[];
     search.from = options?.skip;
