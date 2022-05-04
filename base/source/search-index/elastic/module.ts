@@ -2,10 +2,11 @@ import { container, injectionToken } from '#/container';
 import { connect, disposer } from '#/core';
 import type { Entity } from '#/database';
 import { Logger } from '#/logger';
-import { assert, assertDefined, assertStringPass } from '#/utils/type-guards';
+import { assert, assertDefined } from '#/utils/type-guards';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
-import type { ElasticSearchIndexConfig } from './search-index';
+import type { ElasticSearchIndexConfigArgument } from './config';
+import { ElasticSearchIndexConfig } from './config';
 
 export type ElasticsearchModuleConfig = {
   defaultOptions: ClientOptions,
@@ -17,11 +18,9 @@ export const elasticsearchModuleConfig: ElasticsearchModuleConfig = {
   logPrefix: 'ELASTIC'
 };
 
-export type ElasticSearchIndexConfigArgument = string;
+export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
 
-export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig<Entity>, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
-
-export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig>): void {
+export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig> = {}): void {
   elasticsearchModuleConfig.defaultOptions = config.defaultOptions ?? elasticsearchModuleConfig.defaultOptions;
   elasticsearchModuleConfig.logPrefix = config.logPrefix ?? elasticsearchModuleConfig.logPrefix;
 }
@@ -42,11 +41,10 @@ container.registerSingleton<Client, ClientOptions>(Client, {
   }
 }, { defaultArgumentProvider: () => elasticsearchModuleConfig.defaultOptions });
 
-
 container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
-  useFactory: (argument) => ({ indexName: assertStringPass(argument, 'resolve argument (index name) missing') })
+  useFactory: (argument, context) => context.resolve(ElasticSearchIndexConfig, argument)
 });
 
 export function getElasticSearchIndexConfig<T extends Entity>(indexName: string): ElasticSearchIndexConfig<T> {
-  return { indexName };
+  return container.resolve(ElasticSearchIndexConfig, indexName);
 }

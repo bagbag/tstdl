@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import type { AfterResolve } from '#/container';
 import { afterResolve } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
@@ -11,16 +12,10 @@ import { filterObject } from '#/utils/object';
 import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';
+import type { ElasticSearchIndexConfig } from './config';
 import type { ElasticIndexMapping, SortCombinations } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
-
-declare const elasticSearchIndexConfigType: unique symbol;
-
-export type ElasticSearchIndexConfig<T extends Entity> = {
-  indexName: string,
-  [elasticSearchIndexConfigType]?: T
-};
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
