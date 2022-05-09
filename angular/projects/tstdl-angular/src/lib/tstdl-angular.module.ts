@@ -1,8 +1,9 @@
 import { NgModule } from '@angular/core';
 import { configureTstdl } from '@tstdl/base';
 import { SkeletonComponent } from './components';
-import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibleObserverDirective } from './directives';
+import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
+import { TextPipe } from './pipes/text.pipe';
 import { TstdlBridgeService } from './services/tstdl-bridge.service';
 
 const declarations = [
@@ -24,12 +25,13 @@ const declarations = [
   RepeatDirective,
   SafeUrlPipe,
   SkeletonComponent,
+  TextPipe,
   TimestampToDateTimePipe,
-  VisibleObserverDirective
+  VisibilityObserverDirective
 ];
 
 @NgModule({
-  declarations,
+  declarations: declarations,
   exports: declarations
 })
 export class TstdlAngularModule {
