@@ -60,13 +60,13 @@ catch (error: unknown) {
 }
 
 /* eslint-disable */
-export const deriveBits = (subtle! as SubtleCrypto | undefined)?.deriveBits!;
-export const deriveKey = (subtle! as SubtleCrypto | undefined)?.deriveKey!;
-export const exportKey = (subtle! as SubtleCrypto | undefined)?.exportKey!;
-export const generateKey = (subtle! as SubtleCrypto | undefined)?.generateKey!;
-export const importKey = (subtle! as SubtleCrypto | undefined)?.importKey!;
-export const unwrapKey = (subtle! as SubtleCrypto | undefined)?.unwrapKey!;
-export const wrapKey = (subtle! as SubtleCrypto | undefined)?.wrapKey!;
+export const deriveBits = (subtle! as SubtleCrypto | undefined)?.deriveBits.bind(subtle!)!;
+export const deriveKey = (subtle! as SubtleCrypto | undefined)?.deriveKey.bind(subtle!)!;
+export const exportKey = (subtle! as SubtleCrypto | undefined)?.exportKey.bind(subtle!)!;
+export const generateKey = (subtle! as SubtleCrypto | undefined)?.generateKey.bind(subtle!)!;
+export const importKey = (subtle! as SubtleCrypto | undefined)?.importKey.bind(subtle!)!;
+export const unwrapKey = (subtle! as SubtleCrypto | undefined)?.unwrapKey.bind(subtle!)!;
+export const wrapKey = (subtle! as SubtleCrypto | undefined)?.wrapKey.bind(subtle!)!;
 /* eslint-enable */
 
 /**
