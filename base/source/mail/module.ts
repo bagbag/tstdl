@@ -14,7 +14,6 @@ export type MailModuleConfig = {
   logRepository: Type<MailLogRepository> | undefined,
   templateProvider: Type<MailTemplateProvider>,
   templateRenderers: Type<MailTemplateRenderer>[]
-  // queueKey: string | undefined
 };
 
 export const mailModuleConfig: MailModuleConfig = {
@@ -23,15 +22,12 @@ export const mailModuleConfig: MailModuleConfig = {
   logRepository: stubClass(MailLogRepository),
   templateProvider: stubClass(MailTemplateProvider),
   templateRenderers: []
-  // queueKey: undefined
 };
 
 /**
  * configure mail module
  */
-export function configureMail({ clientConfig, client, logRepository, templateProvider, templateRenderers /* , queueKey */ }: Partial<MailModuleConfig>): void {
-  // mailModuleConfig.queueKey = queueKey ?? mailModuleConfig.queueKey;
-
+export function configureMail({ clientConfig, client, logRepository, templateProvider, templateRenderers }: Partial<MailModuleConfig>): void {
   if (isDefined(clientConfig)) {
     container.registerSingleton(MAIL_CLIENT_CONFIG, { useValue: clientConfig });
   }

@@ -1,7 +1,6 @@
 import { inject, optional, resolveArg, singleton } from '#/container';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import type { Queue } from '#/queue';
 import type { TypedOmit } from '#/types';
 import { currentTimestamp } from '#/utils/date-time';
 import { formatError } from '#/utils/helpers';
@@ -17,7 +16,6 @@ export class MailService {
   private readonly mailClient: MailClient;
   private readonly mailTemplateProvider: MailTemplateProvider;
   private readonly mailTemplateRendererProvider: MailTemplateRendererProvider;
-  private readonly mailQueue: Queue<unknown> | undefined;
   private readonly mailLogRepository: MailLogRepository | undefined;
   private readonly logger: Logger;
 
@@ -25,39 +23,30 @@ export class MailService {
     mailClient: MailClient,
     @optional() mailTemplateProvider: MailTemplateProvider,
     mailTemplateRendererProvider: MailTemplateRendererProvider,
-    // @inject(Queue) @resolveArgProvider(() => mailModuleConfig.queueKey) @optional() mailQueue: Queue<unknown> | undefined,
     @inject(MailLogRepository) @optional() mailLogRepository: MailLogRepository | undefined,
     @resolveArg<LoggerArgument>(MailService.name) logger: Logger
   ) {
     this.mailClient = mailClient;
     this.mailTemplateProvider = mailTemplateProvider;
     this.mailTemplateRendererProvider = mailTemplateRendererProvider;
-    // this.mailQueue = mailQueue;
     this.mailLogRepository = mailLogRepository;
     this.logger = logger;
   }
 
-  async sendTemplate(key: string, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: object): Promise<MailSendResult> {
-    const template = await this.mailTemplateProvider.get(key);
-    const renderer = this.mailTemplateRendererProvider.get(template.type);
-    const { subject, html, text } = await renderer.render(template, templateContext);
-
-    const fullMailData = { ...mailData, subject, content: { html, text } };
-
+  async send(mailData: MailData): Promise<MailSendResult> {
     let mailLog: MailLog | undefined;
 
     if (isDefined(this.mailLogRepository)) {
       const log: NewMailLog = {
         timestamp: currentTimestamp(),
-        templateKey: key,
-        data: fullMailData
+        data: mailData
       };
 
       mailLog = await this.mailLogRepository.insert(log);
     }
 
     try {
-      const result = await this.mailClient.send(fullMailData);
+      const result = await this.mailClient.send(mailData);
 
       if (isDefined(mailLog)) {
         await this.mailLogRepository!.patch(mailLog, { sendResult: result });
@@ -77,5 +66,14 @@ export class MailService {
 
       throw error;
     }
+  }
+
+  async sendTemplate(key: string, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: object): Promise<MailSendResult> {
+    const template = await this.mailTemplateProvider.get(key);
+    const renderer = this.mailTemplateRendererProvider.get(template.type);
+    const { subject, html, text } = await renderer.render(template, templateContext);
+    const fullMailData = { ...mailData, subject, content: { html, text } };
+
+    return this.send(fullMailData);
   }
 }

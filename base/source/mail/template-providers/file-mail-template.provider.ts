@@ -1,7 +1,8 @@
-import { Injectable, injectArg, resolveArgumentType, singleton } from '#/container';
+import type { Injectable } from '#/container';
+import { injectArg, resolveArgumentType, singleton } from '#/container';
 import type { Schema } from '#/schema';
 import { object, optional, string, unknown } from '#/schema';
-import { TypedOmit } from '#/types';
+import type { TypedOmit } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import * as fs from 'fs/promises';
 import * as path from 'path';
