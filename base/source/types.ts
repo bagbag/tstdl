@@ -40,8 +40,8 @@ export type AbstractType<T = any, Args extends any[] = any> = abstract new (...a
 
 export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
 export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };
-export type StringMap<T = any> = { [key: string]: T };
-export type NumberMap<T = any> = { [key: number]: T };
+export type StringMap<T = any> = Record<string, T>;
+export type NumberMap<T = any> = Record<number, T>;
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 
 export type OneOrMany<T> = T | readonly T[];

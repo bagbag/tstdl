@@ -19,7 +19,7 @@ export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = Strin
   keepUnknown?: boolean
 };
 
-export type ObjectAssign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>> = SimplifyObject<Omit<A, keyof B> & B>;
+export type ObjectAssign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>> = SimplifyObject<B & Omit<A, keyof B>>;
 
 export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extends SchemaValidator<ObjectSchemaDefinition<T>> {
   private readonly validatorEntries: Map<PropertyKey, SchemaValidator>;
