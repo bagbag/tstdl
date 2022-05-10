@@ -1,18 +1,22 @@
 import type { JsonPath } from '#/json-path';
 import type { Optionalize, Record, Simplify, SimplifyObject, StringMap } from '#/types';
 import { differenceMaps } from '#/utils/map';
+import { isBoolean } from '#/utils/type-guards';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
+import type { Maskable, SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
 
 export type ObjectOutputType<T extends StringMap<SchemaDefinition>> = Simplify<Optionalize<{ [P in keyof T]: SchemaOutput<T[P]> }>>;
 
 export type ObjectSchemaValidatorEntries<T extends StringMap<SchemaDefinition>> = { [P in keyof T]: SchemaValidator<T[P]> };
 
-export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = StringMap<SchemaDefinition>> = SchemaDefinition<'object', unknown, ObjectOutputType<T>> & {
-  entries: T
+export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = StringMap<SchemaDefinition>> = SchemaDefinition<'object', unknown, ObjectOutputType<T>> & Maskable & {
+  entries: T,
+
+  /** Keep unknown properties instead of raising an error. This overwrites mask. */
+  keepUnknown?: boolean
 };
 
 export type ObjectAssign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>> = SimplifyObject<Omit<A, keyof B> & B>;
@@ -44,7 +48,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
       return testBaseResult;
     }
 
-    const resultObject: Record = {};
+    let resultObject: Record = {};
 
     for (const [key, validator] of this.validatorEntries) {
       const innerValue = testBaseResult.value.get(key as string);
@@ -58,6 +62,10 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
       resultObject[key as string] = innerValueValidationTestResult.value;
     }
 
+    if (this.schema.keepUnknown == true) {
+      resultObject = { ...(value as object), ...resultObject };
+    }
+
     return { valid: true, value: resultObject as ObjectOutputType<T> };
   }
 
@@ -68,7 +76,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
       return testBaseResult;
     }
 
-    const resultObject: Record = {};
+    let resultObject: Record = {};
 
     for (const [key, validator] of this.validatorEntries) {
       const innerValue = testBaseResult.value.get(key as string);
@@ -80,6 +88,10 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
       }
 
       resultObject[key as string] = innerValueValidationTestResult.value;
+    }
+
+    if (this.schema.keepUnknown == true) {
+      resultObject = { ...(value as object), ...resultObject };
     }
 
     return { valid: true, value: resultObject as ObjectOutputType<T> };
@@ -98,7 +110,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
     const valueEntries = new Map(Object.entries(value as Record));
     const unknownKeys = differenceMaps(valueEntries, this.validatorEntries);
 
-    if ((unknownKeys.length > 0) && !options.mask) {
+    if ((unknownKeys.length > 0) && (this.schema.mask != true) && (isBoolean(this.schema.mask) || !options.mask) && (this.schema.keepUnknown != true)) {
       const keys = unknownKeys.map((entry) => entry[0]).join(', ');
       return { valid: false, error: schemaError(`unexpecet keys in object: ${keys}`, path) };
     }
