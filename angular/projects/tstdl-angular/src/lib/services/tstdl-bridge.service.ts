@@ -1,8 +1,10 @@
+import { DOCUMENT as ANGULAR_DOCUMENT } from '@angular/common';
 import { ApplicationRef, Injectable, Injector } from '@angular/core';
 import type { Registration } from '@tstdl/base/container';
 import { container, getTokenName } from '@tstdl/base/container';
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { Logger } from '@tstdl/base/logger';
+import { DOCUMENT } from '@tstdl/base/tokens';
 import { filter, from, merge } from 'rxjs';
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
 
@@ -36,6 +38,7 @@ export class TstdlBridgeService {
     }
 
     container.register(Injector, { useValue: this.injector }, { metadata: { skipAngularInjection: true } });
+    container.register(DOCUMENT, { useFactory: () => this.injector.get(ANGULAR_DOCUMENT) });
 
     merge(
       from(container.registrations).pipe(
