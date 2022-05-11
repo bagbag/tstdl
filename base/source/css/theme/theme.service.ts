@@ -1,11 +1,8 @@
 import { inject, singleton } from '#/container';
 import { DOCUMENT } from '#/tokens';
-import { createArray } from '#/utils/array/array';
 import { isDefined, isString } from '#/utils/type-guards';
 import * as chroma from 'chroma-js';
 import type { Theme } from './theme.model';
-
-const paletteNumbers = [50, ...createArray(9, (index) => (100 + (100 * index)))];
 
 @singleton()
 export class ThemeService {
@@ -53,17 +50,32 @@ function buildThemeRules(theme: Theme): string[] {
     const name = isString(value) ? colorName : (value.name ?? colorName);
     const color = isString(value) ? value : value.color;
 
-    const colorRules = generatePaletteVariableDeclarations(name, theme.isDark ?? false, color);
+    const colorRules = generatePaletteVariableDeclarations(name, color);
     rules.push(...colorRules);
   }
 
   return rules;
 }
 
-function generatePaletteVariableDeclarations(paletteName: string, isDark: boolean, color: string): string[] {
-  const baseColor = isDark ? 'black' : 'white';
-  const colors = chroma.scale([baseColor, color]).colors(paletteNumbers.length);
-  const variables = [[`--color-${paletteName}`, color], ...paletteNumbers.map((number, index) => [`--color-${paletteName}-${number}`, colors[index]] as const)];
+function generatePaletteVariableDeclarations(paletteName: string, color: string): string[] {
+  const chromaColor = chroma(color);
+  const [hue, saturation, lightness] = chromaColor.hsl();
+
+  const colors = {
+    50: chroma.hsl(hue, saturation, lightness + 0.50).css(),
+    100: chroma.hsl(hue, saturation, lightness + 0.40).css(),
+    200: chroma.hsl(hue, saturation, lightness + 0.30).css(),
+    300: chroma.hsl(hue, saturation, lightness + 0.20).css(),
+    400: chroma.hsl(hue, saturation, lightness + 0.10).css(),
+    500: chromaColor.css(),
+    600: chroma.hsl(hue, saturation, lightness - 0.10).css(),
+    700: chroma.hsl(hue, saturation, lightness - 0.20).css(),
+    800: chroma.hsl(hue, saturation, lightness - 0.30).css(),
+    900: chroma.hsl(hue, saturation, lightness - 0.40).css()
+  };
+
+  const colorEntries = Object.entries(colors);
+  const variables = [[`--color-${paletteName}`, colors[500]], ...colorEntries.map(([number, numberColor]) => [`--color-${paletteName}-${number}`, numberColor] as const)];
   const variableDeclarations = variables.map(([name, value]) => `${name}: ${value};`);
 
   return variableDeclarations;

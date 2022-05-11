@@ -4,7 +4,6 @@ export type ThemeEntry<Name extends string = string> = string | {
 };
 
 export type Theme<T extends Record<string, ThemeEntry> = Record<string, ThemeEntry>> = {
-  isDark?: boolean,
   colors: T
 };
 
