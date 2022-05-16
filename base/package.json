@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.23",
+  "version": "0.71.24",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -44,10 +44,10 @@
     "koa": "^2.13",
     "minio": "^7.0",
     "mjml": "^4.12",
-    "mongodb": "4.5",
+    "mongodb": "^4.6",
     "nodemailer": "^6.7",
     "superstruct": "^0.15",
-    "undici": "^5.1",
+    "undici": "^5.2",
     "urlpattern-polyfill": "^4.0"
   },
   "peerDependenciesMeta": {
