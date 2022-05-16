@@ -7,7 +7,7 @@ import { AsyncIterableSchemaValidator, StringSchemaValidator, Uint8ArraySchemaVa
 import type { UndefinableJsonObject } from '#/types';
 import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
-import { isNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isNull, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { rootResource } from '../types';
 
@@ -60,9 +60,12 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   for (const [name, config] of endpointsEntries) {
     const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
-    const method = config.method ?? 'GET';
+    const methods = isArray(config.method) ? config.method : [config.method ?? 'GET'];
     const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
     const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
+
+    const hasGet = methods.includes('GET');
+    const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
@@ -76,6 +79,8 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         const context: ApiClientHttpRequestContext = {
           endpoint: config
         };
+
+        const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
         const request = new HttpClientRequest({
           method,

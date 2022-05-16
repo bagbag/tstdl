@@ -37,7 +37,7 @@ export type ApiEndpointDefinitionCors = {
 };
 
 export type ApiEndpointDefinition = {
-  method?: ApiEndpointMethod,
+  method?: OneOrMany<ApiEndpointMethod>,
   resource?: typeof rootResource | string,
   version?: OneOrMany<number | null>,
   parameters?: ObjectSchemaValidator<any>,
