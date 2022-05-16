@@ -10,7 +10,7 @@
     "build:watch": "ttsc --watch",
     "build:prod": "rm -rf dist && npm run build && cp package.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build:prod && rm -v dist/test* && npm publish dist/"
+    "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
     "luxon": "^2",
