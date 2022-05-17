@@ -1,5 +1,6 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response';
-import { inject, injectionToken, optional, singleton } from '#/container';
+import type { Injectable } from '#/container';
+import { inject, injectArg, injectionToken, optional, resolveArgumentType, singleton } from '#/container';
 import type { OneOrMany, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import type { AsyncMiddleware, AsyncMiddlewareHandler, AsyncMiddlewareNext } from '#/utils/middleware';
@@ -34,8 +35,10 @@ export type HttpClientMiddlewareNext = AsyncMiddlewareNext<HttpClientRequest, Ht
 
 export const HTTP_CLIENT_OPTIONS = injectionToken<HttpClientOptions>(Symbol('HttpClientOptions'));
 
+export type HttpClientArgument = HttpClientOptions;
+
 @singleton()
-export class HttpClient {
+export class HttpClient implements Injectable<HttpClientArgument> {
   private static _instance?: HttpClient;
 
   private readonly adapter: HttpClientAdapter;
@@ -54,7 +57,9 @@ export class HttpClient {
     return this._instance;
   }
 
-  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) @optional() options: HttpClientOptions = {}) {
+  readonly [resolveArgumentType]: HttpClientOptions;
+
+  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) @optional() @injectArg() options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;
 
