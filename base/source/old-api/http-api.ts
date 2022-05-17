@@ -250,6 +250,8 @@ function applyResponse(response: Koa.Response, responseResult: HttpServerRespons
   }
 
   for (const [field, value] of responseResult.headers.normalizedEntries()) {
+    response.remove(field);
+
     for (const val of toArray(value)) {
       response.append(field, val);
     }
