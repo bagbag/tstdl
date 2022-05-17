@@ -9,7 +9,7 @@ import type { ApiGatewayMiddlewareContext } from '../gateway';
 export async function corsMiddleware(request: HttpServerRequest, next: AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
   const response = await next(request);
 
-  const requestMethod = request.headers.tryGetSingle('Access-Control-Request-Method');
+  const requestMethod = request.headers.tryGetSingle('Access-Control-Request-Method') ?? request.method;
   const cors = context.api.endpoints.get(requestMethod as ApiEndpointMethod)?.definition.cors;
 
   if (isUndefined(cors)) {
