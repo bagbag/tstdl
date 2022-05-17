@@ -2,6 +2,8 @@ import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
 import type { ObjectSchemaValidator, SchemaInput, SchemaOutput, SchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { NonUndefinable, OneOrMany, Record } from '#/types';
+import { isFunction } from '#/utils/type-guards';
+import type { ApiGatewayMiddlewareContext } from './server';
 
 export const rootResource = '$';
 
@@ -27,13 +29,15 @@ export type ApiEndpointMethod = HttpMethod;
 export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | Uint8ArraySchemaValidator;
 export type ApiEndpointDefinitionResult = SchemaValidator;
 
+export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
+
 export type ApiEndpointDefinitionCors = {
-  accessControlAllowCredentials?: boolean,
-  accessControlAllowHeaders?: OneOrMany<string>,
-  accessControlAllowMethods?: OneOrMany<HttpMethod>,
-  accessControlAllowOrigin?: string,
-  accessControlExposeHeaders?: OneOrMany<string>,
-  accessControlMaxAge?: number
+  accessControlAllowCredentials?: ApiEndpointDataProvider<boolean>,
+  accessControlAllowHeaders?: ApiEndpointDataProvider<OneOrMany<string>>,
+  accessControlAllowMethods?: ApiEndpointDataProvider<OneOrMany<HttpMethod>>,
+  accessControlAllowOrigin?: ApiEndpointDataProvider<string>,
+  accessControlExposeHeaders?: ApiEndpointDataProvider<OneOrMany<string>>,
+  accessControlMaxAge?: ApiEndpointDataProvider<number>
 };
 
 export type ApiEndpointDefinition = {
@@ -96,4 +100,12 @@ export type ApiClientImplementation<T extends ApiDefinition = any> = {
 
 export function defineApi<T extends ApiDefinition>(definition: T): T {
   return definition;
+}
+
+export async function resolveApiEndpointDataProvider<T>(request: HttpServerRequest, context: ApiGatewayMiddlewareContext, provider: ApiEndpointDataProvider<T>): Promise<T> {
+  if (isFunction(provider)) {
+    return provider(request, context);
+  }
+
+  return provider;
 }

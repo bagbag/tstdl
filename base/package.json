@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.27",
+  "version": "0.71.28",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -26,8 +26,8 @@
     "@types/node": ">=16",
     "@types/nodemailer": "^6.4.4",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "5.23",
-    "@typescript-eslint/parser": "5.23",
+    "@typescript-eslint/eslint-plugin": "5.24",
+    "@typescript-eslint/parser": "5.24",
     "eslint": "8.15",
     "ttypescript": "1.5",
     "typedoc": "0.22",
