@@ -19,7 +19,7 @@ export const mongoKeyValueStoreModuleConfig: MongoKeyValueStoreModuleConfig = {
  * @param keyValueRepositoryConfig repository configuration for jobs
  * @param register whether to register for {@link Queue} and {@link QueueProvider}
  */
-export function configureMongoKeyValueStore(keyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue>, register: boolean): void {
+export function configureMongoKeyValueStore(keyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue>, register: boolean = true): void {
   mongoKeyValueStoreModuleConfig.defaultKeyValueRepositoryConfig = keyValueRepositoryConfig;
 
   if (register) {

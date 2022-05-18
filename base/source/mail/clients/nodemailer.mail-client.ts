@@ -60,7 +60,7 @@ function convertConfig(config: MailClientConfig): SMTPTransport.Options {
 /**
  * @param register whether to register for {@link MailClient}
  */
-export function configureNodemailerMailClient(register: boolean): void {
+export function configureNodemailerMailClient(register: boolean = true): void {
   if (register) {
     container.register(NodemailerMailClient, { useToken: MailClient });
   }

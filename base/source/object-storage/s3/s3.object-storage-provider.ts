@@ -77,7 +77,7 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
  * @param config s3 config
  * @param register whether to register for {@link ObjectStorage} and {@link ObjectStorageProvider}
  */
-export function configureS3ObjectStorage(config: S3ObjectStorageProviderConfig, register: boolean): void {
+export function configureS3ObjectStorage(config: S3ObjectStorageProviderConfig, register: boolean = true): void {
   container.register(S3_OBJECT_STORAGE_PROVIDER_CONFIG, { useValue: config });
 
   if (register) {

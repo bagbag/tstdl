@@ -106,7 +106,7 @@ function convertOrigin(origin: ImageOrigin): string {
  * @param defaultConfig default configuration
  * @param register whether to register for {@link ImageService}
  */
-export function configureImgproxyImageService(defaultConfig: ImgproxyImageServiceConfig, register: boolean): void {
+export function configureImgproxyImageService(defaultConfig: ImgproxyImageServiceConfig, register: boolean = true): void {
   container.register(IMGPROXY_IMAGE_SERVICE_CONFIG, { useValue: defaultConfig });
 
   if (register) {

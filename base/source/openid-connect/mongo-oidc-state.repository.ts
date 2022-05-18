@@ -39,7 +39,7 @@ export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, M
  * @param mongoOidcStateRepositoryConfig repository configuration for states
  * @param register whether to register for {@link OidcStateRepository}
  */
-export function configureMongoOidcStateRepository(mongoOidcStateRepositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcState>, register: boolean): void {
+export function configureMongoOidcStateRepository(mongoOidcStateRepositoryConfig: MongoRepositoryConfig<OidcState, MongoOidcState>, register: boolean = true): void {
   repositoryConfig = mongoOidcStateRepositoryConfig;
 
   if (register) {
