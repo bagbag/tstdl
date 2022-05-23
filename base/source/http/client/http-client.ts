@@ -23,6 +23,11 @@ export type HttpClientOptions = {
   baseUrl?: string,
 
   /**
+   * middlewares to add
+   */
+  middleware?: HttpClientMiddleware[],
+
+  /**
    * enables parsing of response errors with registered error handlers via {@link parseErrorResponse}
    * @default true
    */
@@ -63,7 +68,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     this.adapter = adapter;
     this.options = options;
 
-    this.middleware = [];
+    this.middleware = [...(options.middleware ?? [])];
     this.headers = new HttpHeaders();
 
     this.internalMiddleware = [
