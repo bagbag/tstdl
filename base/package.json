@@ -9,6 +9,8 @@
     "build": "ttsc --project tsconfig.json",
     "build:watch": "ttsc --watch",
     "build:prod": "rm -rf dist && npm run build && cp package.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
+    "build:docs": "typedoc",
+    "build:docs-watch": "typedoc --watch",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
     "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
   },
