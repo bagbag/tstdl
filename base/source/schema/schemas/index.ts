@@ -19,4 +19,5 @@ export * from './regexp';
 export * from './string';
 export * from './transform';
 export * from './uint8-array';
+export * from './union';
 export * from './unknown';

@@ -1,4 +1,5 @@
 import { resolveArg, singleton } from '#/container';
+import type { LockProviderArgument } from '#/lock';
 import { LockProvider } from '#/lock';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
@@ -40,7 +41,7 @@ export class Migrator {
   private readonly lockProvider: LockProvider;
   private readonly logger: Logger;
 
-  constructor(migrationStateRepository: MigrationStateRepository, lockProvider: LockProvider, @resolveArg<LoggerArgument>(Migrator.name) logger: Logger) {
+  constructor(migrationStateRepository: MigrationStateRepository, @resolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @resolveArg<LoggerArgument>(Migrator.name) logger: Logger) {
     this.migrationStateRepository = migrationStateRepository;
     this.lockProvider = lockProvider;
     this.logger = logger;
@@ -52,7 +53,7 @@ export class Migrator {
       throw new Error('no migrations provided');
     }
 
-    const lock = this.lockProvider.get(`migrator-${name}`);
+    const lock = this.lockProvider.get(`${name}`);
 
     // eslint-disable-next-line max-statements, max-lines-per-function
     const { result } = await lock.using(30000, true, async (): Promise<MigrationResult<T>[]> => {

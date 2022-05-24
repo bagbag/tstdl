@@ -12,7 +12,7 @@ import { toArray } from '#/utils/array';
 import { deferThrow, _throw } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
-import { isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
 import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
 import { rootResource } from '../types';
@@ -112,7 +112,11 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       for (const version of versionArray) {
         const versionPrefix = isNull(version) ? '' : `v${version}/`;
         const resource = (endpointDefinition.resource == rootResource) ? `${this.prefix}${versionPrefix}${base}` : `${this.prefix}${versionPrefix}${base}/${endpointDefinition.resource ?? name}`;
-        const method = endpointDefinition.method ?? 'GET';
+        const methods = isArray(endpointDefinition.method) ? endpointDefinition.method : [endpointDefinition.method ?? 'GET'];
+
+        if (methods.length == 0) {
+          throw new Error(`No method provided for resource ${resource}`);
+        }
 
         let resourceApis = this.apis.get(resource);
 
@@ -137,7 +141,10 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         }
 
         const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`endpoint ${name} for resource ${resource} not implemented`));
-        resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });
+
+        for (const method of methods) {
+          resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });
+        }
       }
     }
   }

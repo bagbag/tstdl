@@ -9,7 +9,7 @@ import { filter, mapTo } from 'rxjs/operators';
   selector: '[visibilityObserver]',
   exportAs: 'visibilityObserver'
 })
-export class VisibleObserverDirective implements OnDestroy, OnInit, OnChanges {
+export class VisibilityObserverDirective implements OnDestroy, OnInit, OnChanges {
   private readonly renderer: Renderer2;
   private readonly isVisibleSubject: BehaviorSubject<boolean>;
   private readonly visibilitySubject: BehaviorSubject<number>;

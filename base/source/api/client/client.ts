@@ -1,23 +1,24 @@
 import type { Injectable } from '#/container';
 import { container, resolveArgumentType } from '#/container';
-import type { HttpClientResponse } from '#/http/client';
+import type { HttpClientOptions, HttpClientResponse } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import type { HttpBodyType } from '#/http/types';
 import { AsyncIterableSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
 import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
-import { isNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isNull, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { rootResource } from '../types';
 
-export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T>;
+export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
 
 export type ClientOptions = {
   /**
    * url prefix (default: 'api/')
    */
-  prefix?: string
+  prefix?: string,
+  defaultHttpClientOptions?: HttpClientOptions
 };
 
 export type ApiClientHttpRequestContext = {
@@ -34,11 +35,11 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {
-    [apiName]: class implements Injectable<HttpClient> {
+    [apiName]: class implements Injectable<HttpClientOptions> {
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
-      readonly [resolveArgumentType]: HttpClient;
+      readonly [resolveArgumentType]: HttpClientOptions;
       constructor(httpClient: HttpClient) {
         this[httpClientSymbol] = httpClient;
         this[apiDefinitionSymbol] = definition;
@@ -48,7 +49,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   container.registerSingleton(api, {
     useFactory: (argument, context) => {
-      const httpClient = argument ?? context.resolve(HttpClient);
+      const httpClient = context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions);
       return new api(httpClient);
     }
   });
@@ -60,9 +61,12 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   for (const [name, config] of endpointsEntries) {
     const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
-    const method = config.method ?? 'GET';
+    const methods = isArray(config.method) ? config.method : [config.method ?? 'GET'];
     const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
     const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
+
+    const hasGet = methods.includes('GET');
+    const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
@@ -76,6 +80,8 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         const context: ApiClientHttpRequestContext = {
           endpoint: config
         };
+
+        const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
         const request = new HttpClientRequest({
           method,

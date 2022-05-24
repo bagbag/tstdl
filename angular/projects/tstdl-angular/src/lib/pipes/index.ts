@@ -8,4 +8,5 @@ export * from './numeric-date-to-date-time.pipe';
 export * from './optional-localize.pipe';
 export * from './pad.pipe';
 export * from './safe-url.pipe';
+export * from './text.pipe';
 export * from './timestamp-to-date-time.pipe';

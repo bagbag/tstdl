@@ -146,7 +146,7 @@ function getGotOptions(got: typeof Got, isStream: boolean, { method, headers, bo
 /**
  * @param register whether to register for {@link HttpClientAdapter}
  */
-export function configureGotHttpClientAdapter(register: boolean): void {
+export function configureGotHttpClientAdapter(register: boolean = true): void {
   if (register) {
     container.register(HttpClientAdapter, { useToken: GotHttpClientAdapter });
   }

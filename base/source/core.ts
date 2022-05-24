@@ -14,7 +14,7 @@ export const CORE_LOGGER = injectionToken<Logger>('CORE_LOGGER');
 
 export const disposer: AsyncDisposer = new AsyncDisposer();
 
-export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 3): Promise<void> {
+export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 5): Promise<void> {
   let triesLeft = maxTries;
   let success = false;
 
@@ -34,7 +34,7 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
         throw new Error(`failed to connect to ${name} - no tries left`);
       }
 
-      await timeout(2000);
+      await timeout(3000);
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.8",
+  "version": "0.71.37",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,7 @@
     "build:watch": "ttsc --watch",
     "build:prod": "rm -rf dist && npm run build && cp package.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
     "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build:prod && rm -v dist/test* && npm publish dist/"
+    "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
     "luxon": "^2",
@@ -18,29 +18,36 @@
     "rxjs": "^7"
   },
   "devDependencies": {
+    "@types/chroma-js": "^2.1",
     "@types/koa__router": "8.0",
     "@types/luxon": "2.3",
     "@types/minio": "7.0",
+    "@types/mjml": "4.7",
     "@types/node": ">=16",
+    "@types/nodemailer": "^6.4.4",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "5.21",
-    "@typescript-eslint/parser": "5.21",
-    "eslint": "8.14",
+    "@typescript-eslint/eslint-plugin": "5.25",
+    "@typescript-eslint/parser": "5.25",
+    "eslint": "8.16",
     "ttypescript": "1.5",
     "typedoc": "0.22",
     "typescript": "4.6",
     "typescript-transform-paths": "3.3"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.1",
+    "@elastic/elasticsearch": "^8.2.0-patch.1",
     "@koa/router": "^10.1",
     "@tstdl/angular": "^0.10",
+    "chroma-js": "^2.4",
     "got": "^12.0",
+    "handlebars": "^4.7",
     "koa": "^2.13",
     "minio": "^7.0",
-    "mongodb": "4.5",
+    "mjml": "^4.12",
+    "mongodb": "^4.6",
+    "nodemailer": "^6.7",
     "superstruct": "^0.15",
-    "undici": "^5.0",
+    "undici": "^5.2",
     "urlpattern-polyfill": "^4.0"
   },
   "peerDependenciesMeta": {

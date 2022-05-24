@@ -475,7 +475,7 @@ export class Container {
 
     const injectToken = (metadata.injectToken ?? metadata.token)!;
 
-    if (isDefined(metadata.injectArgumentMapper) && (isDefined(resolveArgument) || isUndefined(injectToken))) {
+    if (isDefined(metadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
       const mapped = metadata.injectArgumentMapper(resolveArgument);
 
       if (isPromise(mapped)) {
@@ -517,7 +517,7 @@ export class Container {
   private async resolveInjectionAsync(context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
     const injectToken = (metadata.injectToken ?? metadata.token)!;
 
-    if (isDefined(metadata.injectArgumentMapper) && (isDefined(resolveArgument) || isUndefined(injectToken))) {
+    if (isDefined(metadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
       return { resolved: metadata.injectArgumentMapper(resolveArgument) };
     }
 

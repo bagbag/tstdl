@@ -87,7 +87,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
 /**
  * @param register whether to register for {@link HttpClientAdapter}
  */
-export function configureUndiciHttpClientAdapter(register: boolean): void {
+export function configureUndiciHttpClientAdapter(register: boolean = true): void {
   if (register) {
     container.register(HttpClientAdapter, { useToken: UndiciHttpClientAdapter });
   }

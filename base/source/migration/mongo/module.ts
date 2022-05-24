@@ -17,7 +17,7 @@ export const mongoMigrationStateRepositoryModuleConfig: MongoMigrationStateRepos
  * @param migrationStateRepositoryConfig repository configuration for states
  * @param register whether to register for {@link MigrationStateRepository}
  */
-export function configureMongoMigrationStateRepository(migrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState>, register: boolean): void {
+export function configureMongoMigrationStateRepository(migrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState>, register: boolean = true): void {
   mongoMigrationStateRepositoryModuleConfig.defaultMigrationStateRepositoryConfig = migrationStateRepositoryConfig;
 
   if (register) {

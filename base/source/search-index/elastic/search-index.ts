@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import type { AfterResolve } from '#/container';
 import { afterResolve } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
@@ -11,16 +12,10 @@ import { filterObject } from '#/utils/object';
 import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';
+import type { ElasticSearchIndexConfig } from './config';
 import type { ElasticIndexMapping, SortCombinations } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
-
-declare const elasticSearchIndexConfigType: unique symbol;
-
-export type ElasticSearchIndexConfig<T extends Entity> = {
-  indexName: string,
-  [elasticSearchIndexConfigType]?: T
-};
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,
@@ -130,30 +125,17 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
     const search: SearchRequest = { index: this.indexName, query: queryBody };
+    const windowLimit = this.indexSettings.max_result_window ?? 10000;
 
-    if ((options?.skip ?? 0) + (options?.limit ?? 0) > 10000) {
-      throw new BadRequestError(`Result window is too large, skip + limit must be less than or equal to ${this.indexSettings.max_result_window ?? 10000}. Use cursor for more results`);
+    if ((options?.skip ?? 0) + (options?.limit ?? 0) > windowLimit) {
+      throw new BadRequestError(`Result window is too large, skip + limit must be less than or equal to ${windowLimit}. Use cursor for more results`);
     }
 
     if (isDefined(cursorData) && isDefined(options?.skip)) {
       throw new Error('cursor and skip cannot be used at the same time');
     }
 
-    if (isDefined(cursorData) && isDefined(options?.sort)) {
-      throw new Error('cursor and sort cannot be used at the same time');
-    }
-
-    const querySort = [...(options?.sort ?? [])];
-
-    if (!querySort.some((item) => item.field == '$score')) {
-      querySort.push({ field: '$score', order: 'desc' });
-    }
-
-    if (!querySort.some((item) => item.field == 'id')) {
-      querySort.push({ field: 'id' as Extract<keyof T, string>, order: 'asc' });
-    }
-
-    const sort = cursorData?.sort ?? querySort.map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort = cursorData?.sort ?? (options?.sort ?? []).map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
 
     search.sort = sort as string[];
     search.from = options?.skip;
