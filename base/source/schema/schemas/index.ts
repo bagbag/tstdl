@@ -2,6 +2,7 @@ export * from './any';
 export * from './array';
 export * from './async-iterable';
 export * from './boolean';
+export * from './date';
 export * from './defaulted';
 export * from './enumeration';
 export * from './instance';

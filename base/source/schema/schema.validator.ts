@@ -1,5 +1,5 @@
 import { JsonPath } from '#/json-path';
-import type { PrimitiveType, PrimitiveTypeString } from '#/types';
+import type { PrimitiveType, PrimitiveTypeString, Type } from '#/types';
 import { isUndefined } from '#/utils/type-guards';
 import { typeOf } from '#/utils/type-of';
 import { SchemaError } from './schema.error';
@@ -84,6 +84,20 @@ export abstract class SchemaValidator<S extends SchemaDefinition = SchemaDefinit
 
     if (isUndefined(coercer)) {
       return { valid: false, error: SchemaError.expectedButGot(type, typeOf(value), path) };
+    }
+
+    return coercer(value, path);
+  }
+
+  protected ensureInstance<U extends PrimitiveType>(type: Type, value: unknown, path: JsonPath, options?: EnsureTypeOptions, coercers?: CoercerMap<U>): ValidationTestResult<U> {
+    if (value instanceof type) {
+      return { valid: true, value: value as U };
+    }
+
+    const coercer: CoercerFunction<any, any> | undefined = (options?.coerce ?? false) ? coercers?.[typeof value] : undefined;
+
+    if (isUndefined(coercer)) {
+      return { valid: false, error: SchemaError.expectedButGot(type.name, typeOf(value), path) };
     }
 
     return coercer(value, path);
