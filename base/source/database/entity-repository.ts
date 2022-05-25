@@ -58,6 +58,7 @@ export abstract class EntityRepository<T extends Entity = Entity> {
   abstract delete<U extends T>(entity: U): Promise<boolean>;
   abstract deleteMany<U extends T>(entities: U[]): Promise<number>;
   abstract deleteById(id: string): Promise<boolean>;
+  abstract deleteManyById(ids: string[]): Promise<number>;
   abstract deleteByFilter<U extends T = T>(query: Query<U>): Promise<boolean>;
   abstract deleteManyByFilter<U extends T = T>(query: Query<U>): Promise<number>;
 }
