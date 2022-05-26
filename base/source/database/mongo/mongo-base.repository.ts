@@ -103,7 +103,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async insertManyIfNotExists<U extends T>(entities: MaybeNewEntity<U>[]): Promise<U[]> {
-    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toNewEntity(entity) as Filter<U>, entity }));
+    const items: InsertIfNotExistsByFilterItem<U>[] = entities.map((entity) => ({ filter: toNewEntity(entity) as unknown as Filter<U>, entity }));
     return this.insertManyIfNotExistsByFilter(items);
   }
 
