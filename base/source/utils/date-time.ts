@@ -1,30 +1,31 @@
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
-import { millisecondsPerDay } from './units';
+import { millisecondsPerDay, millisecondsPerHour, millisecondsPerMinute, millisecondsPerSecond } from './units';
 
-export type SimpleDate = {
+export type DateObject = {
   year: number,
   month: number,
   day: number
 };
 
-export type ZonedDate = SimpleDate & {
+export type ZonedDateObject = DateObject & {
   zone: string
 };
 
-export type SimpleTime = {
+export type TimeObject = {
   hour: number,
   minute: number,
-  second: number
+  second: number,
+  millisecond: number
 };
 
-export type ZonedTime = SimpleTime & {
+export type ZonedTimeObject = TimeObject & {
   zone: string
 };
 
-export type SimpleDateTime = SimpleDate & SimpleTime;
+export type SimpleDateTimeObject = DateObject & TimeObject;
 
-export type ZonedDateTime = SimpleDateTime & {
+export type ZonedDateTimeObject = SimpleDateTimeObject & {
   zone: string
 };
 
@@ -68,6 +69,22 @@ export function timestampToTime(timestamp: number): number {
   return timestamp % millisecondsPerDay;
 }
 
+export function timeObjectToNumericTime(time: Partial<TimeObject>): number {
+  return ((time.hour ?? 0) * millisecondsPerHour)
+    + ((time.minute ?? 0) * millisecondsPerMinute)
+    + ((time.second ?? 0) * millisecondsPerSecond)
+    + (time.millisecond ?? 0);
+}
+
+export function numericTimeToTimeObject(time: number): TimeObject {
+  return {
+    hour: Math.floor(time / millisecondsPerHour),
+    minute: Math.floor((time % millisecondsPerHour) / millisecondsPerMinute),
+    second: Math.floor((time % millisecondsPerMinute) / millisecondsPerSecond),
+    millisecond: Math.floor(time % millisecondsPerSecond)
+  };
+}
+
 export function timestampToNumericDateAndTime(timestamp: number): NumericDateTime {
   return {
     date: timestampToNumericDate(timestamp),
@@ -94,7 +111,7 @@ export function numericDateTimeToTimestamp({ date, time }: NumericDateTime): num
   return numericDateToTimestamp(date) + time;
 }
 
-export function zonedDateToDateTime(zonedDate: ZonedDate, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
+export function zonedDateObjectToDateTime(zonedDate: ZonedDateObject, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
   return DateTime.fromObject({ ...zonedDate, ...units }, options);
 }
 
@@ -112,6 +129,6 @@ export function dateTimeToTime(dateTime: DateTime): number {
   return dateTime.startOf('day').until(dateTime).count('milliseconds');
 }
 
-export function numericDateTimeToDateTime(date: number, time: number, zone: string): DateTime {
+export function numericDateTimeToDateTime({ date, time }: NumericDateTime, zone?: string): DateTime {
   return numericDateToDateTime(date, undefined, { zone }).set({ millisecond: time });
 }
