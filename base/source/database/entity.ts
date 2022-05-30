@@ -1,4 +1,4 @@
-export type Entity<Id extends string | number = string> = {
+export type Entity<Id = string> = {
   id: Id
 };
 
