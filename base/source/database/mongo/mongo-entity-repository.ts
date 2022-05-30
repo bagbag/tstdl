@@ -13,25 +13,25 @@ import { MongoBaseRepository } from './mongo-base.repository';
 import { convertQuery, convertSort } from './query-converter';
 import type { Filter, TypedIndexDescription, UpdateFilter } from './types';
 
-export type MongoEntityRepositoryOptions<T extends Entity> = {
+export type MongoEntityRepositoryOptions<T extends Entity<any>> = {
   logger: Logger,
   indexes?: TypedIndexDescription<T>[]
 }
 
-export type MappingItemTransformer<T extends Entity = any, TKey extends keyof T = any> = (value: T[TKey]) => any;
+export type MappingItemTransformer<T extends Entity<any> = any, TKey extends keyof T = any> = (value: T[TKey]) => any;
 
-export type MappingItem<T extends Entity, TDb extends Entity, TKey extends keyof T = keyof T, TDbKey extends keyof TDb = keyof TDb> =
+export type MappingItem<T extends Entity<any>, TDb extends Entity<any>, TKey extends keyof T = keyof T, TDbKey extends keyof TDb = keyof TDb> =
   { key: TDbKey, transform: MappingItemTransformer<T, TKey> };
 
-export function mapTo<T extends Entity, TDb extends Entity, TKey extends keyof T, TDbKey extends keyof TDb>(key: TDbKey, transform: (value: T[TKey]) => TDb[TDbKey]): MappingItem<T, TDb, TKey, TDbKey> {
+export function mapTo<T extends Entity<any>, TDb extends Entity<any>, TKey extends keyof T, TDbKey extends keyof TDb>(key: TDbKey, transform: (value: T[TKey]) => TDb[TDbKey]): MappingItem<T, TDb, TKey, TDbKey> {
   return { key, transform };
 }
 
-export type TransformerMapping<T extends Entity, TDb extends Entity> = { [P in keyof T]?: MappingItem<T, TDb, P> };
+export type TransformerMapping<T extends Entity<any>, TDb extends Entity<any>> = { [P in keyof T]?: MappingItem<T, TDb, P> };
 
-export type TransformerMappingMap<T extends Entity = any, TDb extends Entity = any> = Map<keyof T, MappingItem<T, TDb>>;
+export type TransformerMappingMap<T extends Entity<any> = any, TDb extends Entity<any> = any> = Map<keyof T, MappingItem<T, TDb>>;
 
-export type EntityTransformer<T extends Entity, TDb extends Entity> = {
+export type EntityTransformer<T extends Entity<any>, TDb extends Entity<any>> = {
   /**
    * function to transform the base entity to the mongo entity
    */
@@ -46,7 +46,7 @@ export type EntityTransformer<T extends Entity, TDb extends Entity> = {
   mapping?: TransformerMapping<T, TDb>
 }
 
-export type InsertIfNotExistsByQueryItem<T extends Entity> = {
+export type InsertIfNotExistsByQueryItem<T extends Entity<any>> = {
   query: Query<T>,
   entity: MaybeNewEntity<T>
 };
@@ -58,11 +58,11 @@ export const noopTransformer: EntityTransformer<any, any> = {
   untransform: noopTransformerFunction
 }
 
-export function getNoopTransformer<T extends Entity = any>(): EntityTransformer<T, T> {
+export function getNoopTransformer<T extends Entity<any> = any>(): EntityTransformer<T, T> {
   return noopTransformer;
 }
 
-export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> extends EntityRepository<T> implements AfterResolve {
+export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any> = T> extends EntityRepository<T> implements AfterResolve {
   readonly collection: Collection<TDb>;
   readonly transformer: EntityTransformer<T, TDb>;
   readonly logger: Logger;
@@ -378,14 +378,14 @@ export class MongoEntityRepository<T extends Entity, TDb extends Entity = T> ext
   }
 }
 
-function normalizeIndex<T extends Entity>(index: TypedIndexDescription<T>): TypedIndexDescription<T> {
+function normalizeIndex<T extends Entity<any>>(index: TypedIndexDescription<T>): TypedIndexDescription<T> {
   const { name: providedName, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
   const name = providedName ?? Object.keys(index.key).join('_');
 
   return { name, ...indexRest };
 }
 
-function convertOptions<T extends Entity, TDb extends Entity>(options: QueryOptions<T> | undefined, mappingMap: TransformerMappingMap<T, TDb>): LoadOptions<TDb> | undefined {
+function convertOptions<T extends Entity<any>, TDb extends Entity<any>>(options: QueryOptions<T> | undefined, mappingMap: TransformerMappingMap<T, TDb>): LoadOptions<TDb> | undefined {
   if (options == undefined) {
     return undefined;
   }

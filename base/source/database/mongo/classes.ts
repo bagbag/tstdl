@@ -11,7 +11,7 @@ export type MongoClientArgument = MongoConnection;
 /** database name */
 export type DatabaseArgument = string | { connection?: MongoConnection, database?: string };
 
-export type CollectionArgument<T extends Entity = Entity, TDb extends Entity = T> = MongoRepositoryConfig<T, TDb>;
+export type CollectionArgument<T extends Entity<any> = Entity, TDb extends Entity<any> = T> = MongoRepositoryConfig<T, TDb>;
 
 @replaceClass(MongoMongoClient)
 export class MongoClient extends MongoMongoClient implements Injectable<MongoClientArgument> {
@@ -24,6 +24,6 @@ export class Database extends Db implements Injectable<DatabaseArgument> {
 }
 
 @replaceClass(MongoCollection)
-export class Collection<T extends Entity = Entity, TDb extends Entity = T> extends MongoCollection<MongoDocument<TDb>> implements Injectable<CollectionArgument<T, TDb>> {
+export class Collection<T extends Entity<any> = Entity, TDb extends Entity<any> = T> extends MongoCollection<MongoDocument<TDb>> implements Injectable<CollectionArgument<T, TDb>> {
   readonly [resolveArgumentType]: CollectionArgument<T, TDb>;
 }
