@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.45",
+  "version": "0.71.46",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -54,45 +54,6 @@
   },
   "peerDependenciesMeta": {
     "@tstdl/angular": {
-      "optional": true
-    },
-    "@elastic/elasticsearch": {
-      "optional": true
-    },
-    "@koa/router": {
-      "optional": true
-    },
-    "chroma-js": {
-      "optional": true
-    },
-    "got": {
-      "optional": true
-    },
-    "handlebars": {
-      "optional": true
-    },
-    "koa": {
-      "optional": true
-    },
-    "minio": {
-      "optional": true
-    },
-    "mjml": {
-      "optional": true
-    },
-    "mongodb": {
-      "optional": true
-    },
-    "nodemailer": {
-      "optional": true
-    },
-    "superstruct": {
-      "optional": true
-    },
-    "undici": {
-      "optional": true
-    },
-    "urlpattern-polyfill": {
       "optional": true
     }
   }
