@@ -73,7 +73,7 @@ export function buildTypeInfoIfNeeded(constructor: Constructor): void {
 
 export function getInjectMetadata(target: object, propertyKey: PropertyKey | undefined, parameterIndex: number | undefined, createIfMissing: boolean = false): InjectMetadata {
   const constructor = (((target as Constructor).prototype ?? target) as { constructor: Constructor }).constructor;
-  const typeInfo = getTypeInfo(constructor, createIfMissing); // getOrCreateRegistration(constructor as Constructor);
+  const typeInfo = getTypeInfo(constructor, createIfMissing);
 
   if (isDefined(propertyKey)) {
     return (typeInfo.properties[propertyKey] ?? (typeInfo.properties[propertyKey] = { type: 'property', propertyKey }));
