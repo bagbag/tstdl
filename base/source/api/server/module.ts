@@ -1,9 +1,9 @@
 import { container, injectionToken } from '#/container';
 import type { Type } from '#/types';
-import type { ApiControllerImplementation } from '../types';
+import type { ApiController } from '../types';
 import { ensureApiController } from './api-controller';
 
-export type ApiControllers = Type<ApiControllerImplementation>[];
+export type ApiControllers = Type<ApiController>[];
 
 export const API_CONTROLLERS = injectionToken<ApiControllers>('API_CONTROLLERS');
 

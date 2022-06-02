@@ -14,7 +14,7 @@ import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } fr
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
-import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
 import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
@@ -99,10 +99,10 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     const definition = getApiControllerDefinition(controller);
     const instance = await container.resolveAsync(controller);
 
-    this.registerApi(definition, instance as unknown as ApiControllerImplementation);
+    this.registerApi(definition, instance as unknown as ApiController);
   }
 
-  registerApi<T extends ApiDefinition>(definition: ApiDefinition, implementation: ApiControllerImplementation<T>): void {
+  registerApi<T extends ApiDefinition>(definition: ApiDefinition, implementation: ApiController<T>): void {
     const base = definition.resource;
 
     for (const [name, endpointDefinition] of normalizedApiDefinitionEndpointsEntries(definition.endpoints)) {

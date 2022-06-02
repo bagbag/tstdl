@@ -57,8 +57,6 @@ export type ApiDefinition = {
   endpoints: Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>
 };
 
-export type ApiImplementationFactory<T extends ApiDefinition = any> = () => ApiControllerImplementation<T> | Promise<ApiControllerImplementation<T>>;
-
 export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];
 export type NormalizedApiEndpoints<T extends ApiDefinition['endpoints']> = { [P in keyof T]: ReturnTypeOrT<T[P]> };
 export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NormalizedApiEndpoints<T['endpoints']>[K];
@@ -111,7 +109,12 @@ export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinit
   : (parameters: ApiParameters<T, K>) => Promise<ApiClientResult<T, K>>
   : (parameters: ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
 
-export type ApiControllerImplementation<T extends ApiDefinition = any> = {
+/**
+ * @deprecated Use {@link ApiController} instead
+ */
+export type ApiControllerImplementation<T extends ApiDefinition = any> = ApiController<T>;
+
+export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>
 };
 

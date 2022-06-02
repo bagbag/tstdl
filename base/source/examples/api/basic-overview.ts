@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { ApiControllerImplementation, ApiRequestData, ApiServerResult } from '#/api';
+import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
 import { defineApi, rootResource } from '#/api';
 import { compileClient } from '#/api/client';
 import { apiController, registerApiControllers } from '#/api/server';
@@ -65,7 +65,7 @@ const usersApiDefinition = defineApi({
 });
 
 @apiController(usersApiDefinition)
-class UserApi implements ApiControllerImplementation<UsersApiDefinition> {
+class UserApi implements ApiController<UsersApiDefinition> {
   load({ parameters }: ApiRequestData<UsersApiDefinition, 'load'>): ApiServerResult<UsersApiDefinition, 'load'> {
     return users.find((user) => user.id == parameters.id)!;
   }
