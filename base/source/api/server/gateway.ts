@@ -14,9 +14,8 @@ import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } fr
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
-import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiEndpointServerRequestData } from '../types';
-import { rootResource } from '../types';
-import type { ApiController } from './api-controller';
+import type { ApiControllerImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
@@ -96,7 +95,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
   }
 
-  async registerApiController(controller: Type<ApiController>): Promise<void> {
+  async registerApiController(controller: Type): Promise<void> {
     const definition = getApiControllerDefinition(controller);
     const instance = await container.resolveAsync(controller);
 
@@ -106,7 +105,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   registerApi<T extends ApiDefinition>(definition: ApiDefinition, implementation: ApiControllerImplementation<T>): void {
     const base = definition.resource;
 
-    for (const [name, endpointDefinition] of Object.entries(definition.endpoints)) {
+    for (const [name, endpointDefinition] of normalizedApiDefinitionEndpointsEntries(definition.endpoints)) {
       const versionArray = isUndefined(endpointDefinition.version) ? [1] : toArray(endpointDefinition.version);
 
       for (const version of versionArray) {
@@ -123,7 +122,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         if (isUndefined(resourceApis)) {
           resourceApis = {
             resource,
-            pattern: new ((globalThis as any).URLPattern as Type<URLPattern>)({
+            pattern: new ((globalThis as any as { URLPattern: Type<URLPattern> }).URLPattern)({
               pathname: resource,
               baseURL: 'http://localhost',
               username: '*',
@@ -210,7 +209,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       ? await context.endpoint.definition.parameters.parseAsync(parameters)
       : parameters;
 
-    const requestData: ApiEndpointServerRequestData = {
+    const requestData: ApiRequestData = {
       parameters: validatedParameters,
       body: body as any,
       request

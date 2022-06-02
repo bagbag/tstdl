@@ -37,6 +37,7 @@ export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 export type Constructor<T = any, Args extends any[] = any> = Type<T, Args>;
 export type Type<T = any, Args extends any[] = any> = new (...args: Args) => T;
 export type AbstractType<T = any, Args extends any[] = any> = abstract new (...args: Args) => T;
+export type ReturnTypeOrT<T> = T extends (...args: any) => infer R ? R : T;
 
 export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
 export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };

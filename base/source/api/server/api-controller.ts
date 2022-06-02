@@ -6,45 +6,42 @@ import type { ApiControllerImplementation, ApiDefinition } from '../types';
 
 export const apiControllerDefinition: unique symbol = Symbol('ApiController definition');
 
-const registeredApiControllers = new Map<Type<ApiController>, ApiDefinition>();
+const registeredApiControllers = new Map<Type<ApiControllerImplementation>, ApiDefinition>();
 
-export function getApiControllerDefinition(controller: Type<ApiController>): ApiDefinition {
-  if (!registeredApiControllers.has(controller)) {
-    throw new Error('controller is unknown, make sure to use decorator');
-  }
-
+export function getApiControllerDefinition(controller: Type): ApiDefinition {
+  ensureApiController(controller);
   return registeredApiControllers.get(controller)!;
 }
 
-export function apiController<T = Type<ApiController>, P = any>(definition: ApiDefinition, injectableOptions: InjectableOptionsWithoutLifecycle<T, P> = {}): ClassDecorator {
+export function isApiController(controller: Type): boolean {
+  return registeredApiControllers.has(controller);
+}
+
+export function ensureApiController(controller: Type): void {
+  if (!isApiController(controller)) {
+    throw new Error(`Provided type ${(controller as Type | undefined)?.name} is not a known ApiController. Make sure to use @ApiController decorator`);
+  }
+}
+
+export function apiController<T = Type<ApiControllerImplementation>, P = any>(definition: ApiDefinition, injectableOptions: InjectableOptionsWithoutLifecycle<T, P> = {}): ClassDecorator { // eslint-disable-line @typescript-eslint/naming-convention
   function apiControllerDecorator<U extends T>(constructor: Constructor<U>): void {
-    registeredApiControllers.set(constructor as unknown as Type<ApiController>, definition);
+    registeredApiControllers.set(constructor as unknown as Type<ApiControllerImplementation>, definition);
     singleton(injectableOptions)(constructor);
   }
 
   return apiControllerDecorator as ClassDecorator;
 }
 
-export class ApiController {
-  readonly [apiControllerDefinition]: ApiDefinition;
-
-  constructor(definition: ApiDefinition) {
-    this[apiControllerDefinition] = definition;
-  }
-}
-
-export function implementApi<T extends ApiDefinition>(definition: T, implementation: ApiControllerImplementation<T>): Constructor<ApiController & ApiControllerImplementation<T>> {
+export function implementApi<T extends ApiDefinition>(definition: T, implementation: ApiControllerImplementation<T>): Constructor<ApiControllerImplementation<T>> {
   const { resource: path } = definition;
   const constructedApiName = (path[0]?.toUpperCase() ?? '') + path.slice(1);
   const apiName = `${constructedApiName}ApiController`;
 
   const api = {
-    [apiName]: class extends ApiController {
-      constructor() {
-        super(definition);
-      }
-    }
+    [apiName]: class { }
   }[apiName]!;
+
+  apiController(definition)(api);
 
   const implementationEntries = Object.entries(implementation);
 
@@ -57,5 +54,5 @@ export function implementApi<T extends ApiDefinition>(definition: T, implementat
     });
   }
 
-  return api as unknown as Constructor<ApiController & ApiControllerImplementation<T>>;
+  return api as unknown as Constructor<ApiControllerImplementation<T>>;
 }

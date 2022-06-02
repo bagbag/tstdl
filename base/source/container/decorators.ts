@@ -21,7 +21,7 @@ export type InjectableOptions<T, A> = RegistrationOptions<T> & {
 export type InjectableOptionsWithoutLifecycle<T, A> = Simplify<TypedOmit<InjectableOptions<T, A>, 'lifecycle'>>;
 
 /**
- * helper decorator to replace a class definition with an other
+ * Helper decorator to replace a class definition with an other
  * can be used for example to type external classes with the {@link Injectable} interface
  * @param constructor class to replace with
  */

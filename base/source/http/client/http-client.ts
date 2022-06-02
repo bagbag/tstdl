@@ -290,16 +290,18 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
       throw error;
     }
 
-    const body = await error.response!.body;
+    if (isDefined(error.response?.body)) {
+      const body = await error.response!.body;
 
-    if (!isErrorResponse(body) || !hasErrorHandler(body)) {
-      throw error;
-    }
+      if (!isErrorResponse(body) || !hasErrorHandler(body)) {
+        throw error;
+      }
 
-    const parsedError = parseErrorResponse(body, false);
+      const parsedError = parseErrorResponse(body, false);
 
-    if (isDefined(parsedError)) {
-      throw parsedError;
+      if (isDefined(parsedError)) {
+        throw parsedError;
+      }
     }
 
     throw error;
