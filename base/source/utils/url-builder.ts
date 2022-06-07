@@ -58,11 +58,11 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
         ({ [part.value]: value, ...parametersRest } = parametersRest);
 
         if (isUndefined(value)) {
-          throw new Error(`url parameter ${part.value} not provided`);
+          throw new Error(`Url parameter ${part.value} not provided. (${url})`);
         }
 
         if (isObject(value)) {
-          throw new Error(`url parameter ${part.value} is a object`);
+          throw new Error(`Url parameter ${part.value} is an object. (${url})`);
         }
 
         parsedUrl += isArray(value) ? value.map(normalizeHttpValue).join(arraySeparator) : normalizeHttpValue(value);
