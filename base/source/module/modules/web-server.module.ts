@@ -1,4 +1,4 @@
-import type { ApiController, ApiGatewayArgument } from '#/api/server';
+import type { ApiGatewayArgument } from '#/api/server';
 import { ApiControllers, ApiGateway, API_CONTROLLERS } from '#/api/server';
 import type { AfterResolve, Injectable } from '#/container';
 import { afterResolve, forwardArg, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
@@ -76,7 +76,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     await this.initialize();
   }
 
-  async registerApiController(controller: Type<ApiController>): Promise<void> {
+  async registerApiController(controller: Type): Promise<void> {
     await this.apiGateway.registerApiController(controller);
   }
 

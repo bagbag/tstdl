@@ -1,7 +1,8 @@
 /* eslint-disable max-classes-per-file */
+import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
 import { defineApi, rootResource } from '#/api';
 import { compileClient } from '#/api/client';
-import { apiController, implementApi, registerApiControllers } from '#/api/server';
+import { apiController, registerApiControllers } from '#/api/server';
 import { Application } from '#/application';
 import { container } from '#/container';
 import { HTTP_CLIENT_OPTIONS } from '#/http';
@@ -11,6 +12,7 @@ import { WebServerModule } from '#/module/modules';
 import type { SchemaOutput } from '#/schema';
 import { array, boolean, number, object, refine, string } from '#/schema';
 import { timeout } from '#/utils';
+import { Agent } from 'undici';
 
 const userSchema = object({
   id: number(),
@@ -26,45 +28,54 @@ const users: User[] = [
 
 const userIdParameterSchema = refine(number({ coerce: true }), (value) => (users.some((user) => user.id == value) ? { valid: true } : { valid: false, error: 'user not found' }));
 
+type UsersApiDefinition = typeof usersApiDefinition;
+
 const usersApiDefinition = defineApi({
   resource: 'users', // /api/:version/users
   endpoints: {
-    load: {
-      method: 'GET',
-      resource: ':id', // => /api/v1/users/:id
-      version: 1,
-      parameters: object({
-        id: userIdParameterSchema
-      }),
-      result: userSchema
+    load() {
+      return {
+        method: 'GET',
+        resource: ':id', // => /api/v1/users/:id
+        version: 1,
+        parameters: object({
+          id: userIdParameterSchema
+        }),
+        result: userSchema
+      };
     },
-    loadAll: {
-      method: 'GET',
-      resource: rootResource, // => /api/v1/users
-      result: array(userSchema)
+    loadAll() {
+      return {
+        method: 'GET',
+        resource: rootResource, // => /api/v1/users
+        result: array(userSchema)
+      };
     },
-    delete: {
-      method: 'DELETE',
-      resource: ':id', // => /api/v1/users/:id
-      parameters: object({
-        id: number({ coerce: true })
-      }),
-      result: boolean()
+    delete() {
+      return {
+        method: 'DELETE',
+        resource: ':id', // => /api/v1/users/:id
+        parameters: object({
+          id: number({ coerce: true })
+        }),
+        result: boolean()
+      };
     }
   }
 });
 
-const foo = implementApi(usersApiDefinition, {
-  load({ parameters: { id } }) {
-    return users.find((user) => user.id == id)!;
-  },
+@apiController(usersApiDefinition)
+class UserApi implements ApiController<UsersApiDefinition> {
+  load({ parameters }: ApiRequestData<UsersApiDefinition, 'load'>): ApiServerResult<UsersApiDefinition, 'load'> {
+    return users.find((user) => user.id == parameters.id)!;
+  }
 
-  loadAll(this: UserApi) {
+  loadAll(this: UserApi): ApiServerResult<UsersApiDefinition, 'loadAll'> {
     return users;
-  },
+  }
 
-  delete({ parameters: { id } }) {
-    const index = users.findIndex((user) => user.id == id);
+  delete({ parameters }: ApiRequestData<UsersApiDefinition, 'delete'>): ApiServerResult<UsersApiDefinition, 'delete'> {
+    const index = users.findIndex((user) => user.id == parameters.id);
 
     if (index == -1) {
       return false;
@@ -73,10 +84,7 @@ const foo = implementApi(usersApiDefinition, {
     users.splice(index, 1);
     return true;
   }
-});
-
-@apiController(usersApiDefinition)
-class UserApi extends foo { }
+}
 
 const UserApiClient = compileClient(usersApiDefinition);
 
@@ -97,7 +105,7 @@ async function clientTest(): Promise<void> {
 async function main(): Promise<void> {
   configureNodeHttpServer(true);
   registerApiControllers(UserApi);
-  configureUndiciHttpClientAdapter(true);
+  configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
 
   Application.registerModule(WebServerModule);
@@ -105,4 +113,4 @@ async function main(): Promise<void> {
 }
 
 void main();
-void clientTest().catch((error) => console.error(error));
+void clientTest().catch((error) => console.error(error)).then(async () => timeout(1000)).then(async () => Application.shutdown());

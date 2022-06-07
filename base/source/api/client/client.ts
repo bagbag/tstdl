@@ -9,7 +9,7 @@ import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
 import { isArray, isNull, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
-import { rootResource } from '../types';
+import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
 
@@ -54,7 +54,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
     }
   });
 
-  const endpointsEntries = Object.entries(endpoints);
+  const endpointsEntries = normalizedApiDefinitionEndpointsEntries(endpoints);
 
   const base = path;
   const prefix = options.prefix ?? 'api/';

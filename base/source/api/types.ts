@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { ObjectSchemaValidator, SchemaInput, SchemaOutput, SchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record } from '#/types';
+import type { ObjectSchemaValidator, SchemaOutput, SchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -54,45 +54,69 @@ export type ApiEndpointDefinition = {
 
 export type ApiDefinition = {
   resource: string,
-  endpoints: Record<string, ApiEndpointDefinition>
+  endpoints: Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>
 };
 
-export type ApiImplementationFactory<T extends ApiDefinition = any> = () => ApiControllerImplementation<T> | Promise<ApiControllerImplementation<T>>;
-
 export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];
-export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = T['endpoints'][K];
+export type NormalizedApiEndpoints<T extends ApiDefinition['endpoints']> = { [P in keyof T]: ReturnTypeOrT<T[P]> };
+export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NormalizedApiEndpoints<T['endpoints']>[K];
 
 export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['parameters']>['schema'];
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>['schema'];
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>['schema'];
 
-export type ApiEndpointParametersInput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaInput<ApiEndpointParametersSchema<T, K>>;
-export type ApiEndpointParametersOutput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointParametersSchema<T, K>>;
-export type ApiEndpointBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointBodySchema<T, K>>;
+/**
+ * @deprecated Use {@link ApiParameters} instead
+ */
+export type ApiEndpointParametersOutput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiParameters<T, K>;
+export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointParametersSchema<T, K>>;
 
-export type ApiEndpointServerResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
-export type ApiEndpointClientResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>>;
+/**
+ * @deprecated Use {@link ApiBody} instead
+ */
+export type ApiEndpointBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiBody<T, K>;
+export type ApiBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointBodySchema<T, K>>;
 
-export type ApiEndpointServerRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
-  parameters: ApiEndpointParametersOutput<T, K>,
-  body: ApiEndpointBody<T, K>,
+/**
+ * @deprecated Use {@link ApiServerResult} instead
+ */
+export type ApiEndpointServerResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiServerResult<T, K>;
+export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+
+/**
+ * @deprecated Use {@link ApiClientResult} instead
+ */
+export type ApiEndpointClientResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiClientResult<T, K>;
+export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>>;
+
+/**
+ * @deprecated Use {@link ApiRequestData} instead
+ */
+export type ApiEndpointServerRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = ApiRequestData<T, K>;
+export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
+  parameters: ApiParameters<T, K>,
+  body: ApiBody<T, K>,
   request: HttpServerRequest
 };
 
 export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  (requestData: ApiEndpointServerRequestData<T, K>) => ApiEndpointServerResultType<T, K> | Promise<ApiEndpointServerResultType<T, K>>;
+  (requestData: ApiRequestData<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  ApiEndpointBody<T, K> extends never
-  ? ApiEndpointParametersOutput<T, K> extends never
-  ? () => Promise<ApiEndpointClientResultType<T, K>>
-  : (parameters: ApiEndpointParametersOutput<T, K>) => Promise<ApiEndpointClientResultType<T, K>>
-  : (parameters: ApiEndpointParametersOutput<T, K>, body: ApiEndpointBody<T, K>) => Promise<ApiEndpointClientResultType<T, K>>;
+  ApiBody<T, K> extends never
+  ? ApiParameters<T, K> extends never
+  ? () => Promise<ApiClientResult<T, K>>
+  : (parameters: ApiParameters<T, K>) => Promise<ApiClientResult<T, K>>
+  : (parameters: ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
 
-export type ApiControllerImplementation<T extends ApiDefinition = any> = {
+/**
+ * @deprecated Use {@link ApiController} instead
+ */
+export type ApiControllerImplementation<T extends ApiDefinition = any> = ApiController<T>;
+
+export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>
 };
-
 
 export type ApiClientImplementation<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointClientImplementation<T, P>
@@ -108,4 +132,13 @@ export async function resolveApiEndpointDataProvider<T>(request: HttpServerReque
   }
 
   return provider;
+}
+
+export function normalizedApiDefinitionEndpoints<T extends ApiDefinition['endpoints']>(apiDefinitionEndpoints: T): NormalizedApiEndpoints<T> {
+  const entries = normalizedApiDefinitionEndpointsEntries(apiDefinitionEndpoints);
+  return Object.fromEntries(entries) as NormalizedApiEndpoints<T>;
+}
+
+export function normalizedApiDefinitionEndpointsEntries<T extends ApiDefinition['endpoints']>(apiDefinition: T): [keyof T, ApiEndpointDefinition][] {
+  return Object.entries(apiDefinition).map(([key, def]): [string, ApiEndpointDefinition] => [key, isFunction(def) ? def() : def]);
 }
