@@ -19,6 +19,7 @@ import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types'
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
+import { API_MODULE_OPTIONS } from './tokens';
 
 export type ApiGatewayMiddlewareContext = {
   api: ApiItem,
@@ -33,7 +34,13 @@ export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServer
 
 export type ApiGatewayOptions = {
   /** default: api/ */
-  prefix?: string
+  prefix?: string,
+
+  /** initial middlewares */
+  middlewares?: ApiGatewayMiddleware[],
+
+  /** errors to supress in log output */
+  supressedErrors?: Type<Error>[]
 };
 
 export type GatewayEndpoint = {
@@ -60,7 +67,9 @@ export type ApiMetadata = {
  * router for {@link ApiTransport} requests to {@link ApiImplementation}
  * @todo error handling (standardized format, serialization etc.)
  */
-@singleton()
+@singleton({
+  defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions
+})
 export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly logger: Logger;
   private readonly prefix: string;
@@ -77,8 +86,8 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
     this.prefix = options?.prefix ?? 'api/';
     this.apis = new Map();
-    this.middlewares = [];
-    this.supressedErrors = new Set();
+    this.middlewares = options?.middlewares ?? [];
+    this.supressedErrors = new Set(options?.supressedErrors);
     this.catchErrorMiddleware = catchErrorMiddleware(this.supressedErrors, logger);
 
     this.updateMiddleware();

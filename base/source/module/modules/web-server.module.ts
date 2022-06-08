@@ -1,5 +1,5 @@
 import type { ApiGatewayArgument } from '#/api/server';
-import { ApiControllers, ApiGateway, API_CONTROLLERS } from '#/api/server';
+import { ApiGateway, API_MODULE_OPTIONS } from '#/api/server';
 import type { AfterResolve, Injectable } from '#/container';
 import { afterResolve, forwardArg, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
 import { disposeAsync } from '#/disposable/disposable';
@@ -31,7 +31,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
   private readonly config: WebServerModuleConfiguration;
   private readonly httpServer: HttpServer;
   private readonly apiGateway: ApiGateway;
-  private readonly apiControllers: ApiControllers;
+  private readonly apiControllers: Type[];
 
   private initialized: boolean;
 
@@ -48,7 +48,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     @injectArg() config: WebServerModuleConfiguration,
     httpServer: HttpServer,
     @forwardArg<WebServerModuleConfiguration, ApiGatewayArgument>(getApiGatewayArgument) apiGateway: ApiGateway,
-    @inject(API_CONTROLLERS) @optional() apiControllers: ApiControllers = []
+    @inject(API_MODULE_OPTIONS, undefined, (options) => options.controllers) @optional() apiControllers: Type[] = []
   ) {
     super('WebServer');
 
