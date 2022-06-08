@@ -1,1 +1,1 @@
-export * from './text.model';
+export * from './dynamic-text.model';

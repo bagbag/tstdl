@@ -3,7 +3,7 @@ import { configureTstdl } from '@tstdl/base';
 import { SkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DurationPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeUrlPipe, TimestampToDateTimePipe } from './pipes';
-import { TextPipe } from './pipes/text.pipe';
+import { DynamicTextPipe } from './pipes/dynamic-text.pipe';
 import { TstdlBridgeService } from './services/tstdl-bridge.service';
 
 const declarations = [
@@ -13,6 +13,7 @@ const declarations = [
   DateTimePipe,
   DateTimeToDatePipe,
   DurationPipe,
+  DynamicTextPipe,
   InputPatternDirective,
   LazyDirective,
   LazyListDirective,
@@ -25,7 +26,6 @@ const declarations = [
   RepeatDirective,
   SafeUrlPipe,
   SkeletonComponent,
-  TextPipe,
   TimestampToDateTimePipe,
   VisibilityObserverDirective
 ];

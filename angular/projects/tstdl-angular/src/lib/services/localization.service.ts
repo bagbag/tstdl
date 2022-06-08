@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Enumerable } from '@tstdl/base/enumerable';
 import type { StringMap } from '@tstdl/base/types';
-import { assertDefinedPass, isFunction, isNotNull, isObject, isString, isUndefined } from '@tstdl/base/utils';
+import { assertDefinedPass, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '@tstdl/base/utils';
 import type { PropertyName } from '@tstdl/base/utils/object';
 import { deepEntries, getPropertyNameProxy, isPropertyName, propertyName } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
@@ -144,8 +144,23 @@ export class LocalizationService {
     this.setLanguage(localization.language);
   }
 
+  tryGetItem<Parameters>(key: LocalizationKey<Parameters> | LocalizationData<Parameters>): LocalizeItem | undefined {
+    if (isUndefined(this.activeLanguage)) {
+      return undefined;
+    }
+
+    const keyIsLocalizationKey = isLocalizationKey(key);
+    const actualKey = keyIsLocalizationKey ? key[propertyName] : (key as LocalizationDataObject<unknown>).key[propertyName];
+    return this.localizations.get(this.activeLanguage.code)?.keys.get(actualKey);
+  }
+
+  hasKey<Parameters>(key: LocalizationKey<Parameters> | LocalizationData<Parameters>): boolean {
+    const item = this.tryGetItem(key);
+    return isDefined(item);
+  }
+
   // eslint-disable-next-line max-statements
-  localize<Parameters>(data: LocalizationData<Parameters>): string {
+  localize<Parameters>(data: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
     if (isUndefined(this.activeLanguage)) {
       throw new Error('language not set');
     }
