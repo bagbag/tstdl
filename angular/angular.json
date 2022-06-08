@@ -55,6 +55,5 @@
   },
   "cli": {
     "analytics": "44ff302b-c6ea-4ed9-a1e1-884d5e25a0f1"
-  },
-  "defaultProject": "tstdl-angular"
+  }
 }

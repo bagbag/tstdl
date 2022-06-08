@@ -10,14 +10,14 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^13.3",
-    "@angular/common": "^13.3",
-    "@angular/compiler": "^13.3",
-    "@angular/core": "^13.3",
-    "@angular/forms": "^13.3",
-    "@angular/platform-browser": "^13.3",
-    "@angular/platform-browser-dynamic": "^13.3",
-    "@angular/router": "^13.3",
+    "@angular/animations": "^14.0",
+    "@angular/common": "^14.0",
+    "@angular/compiler": "^14.0",
+    "@angular/core": "^14.0",
+    "@angular/forms": "^14.0",
+    "@angular/platform-browser": "^14.0",
+    "@angular/platform-browser-dynamic": "^14.0",
+    "@angular/router": "^14.0",
     "@tstdl/base": "^0.71",
     "luxon": "^2.4",
     "rxjs": "^7.5",
@@ -25,16 +25,16 @@
     "zone.js": "^0.11"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^13.3",
-    "@angular-devkit/core": "^13.3",
-    "@angular/cli": "^13.3",
-    "@angular/compiler-cli": "^13.3",
+    "@angular-devkit/build-angular": "^14.0",
+    "@angular-devkit/core": "^14.0",
+    "@angular/cli": "^14.0",
+    "@angular/compiler-cli": "^14.0",
     "@types/luxon": "2.3",
     "@types/node": ">=16",
     "@typescript-eslint/eslint-plugin": "5.27",
     "@typescript-eslint/parser": "5.27",
-    "eslint": "^8.16",
-    "ng-packagr": "^13.3",
-    "typescript": "4.5"
+    "eslint": "^8.17",
+    "ng-packagr": "^14.0",
+    "typescript": "4.7"
   }
 }
