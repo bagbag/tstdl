@@ -14,7 +14,7 @@ export const apiModuleOptions: ApiModuleOptions = {
   controllers: []
 };
 
-export function configureApiModule(options: Partial<ApiModuleOptions>): void {
+export function configureApiServer(options: Partial<ApiModuleOptions>): void {
   if (isDefined(options.controllers)) {
     for (const controller of options.controllers) {
       ensureApiController(controller);
@@ -29,7 +29,7 @@ export function configureApiModule(options: Partial<ApiModuleOptions>): void {
 }
 
 /**
- * @deprecated Use {@link configureApiModule} instead
+ * @deprecated Use {@link configureApiServer} instead
  */
 export function registerApiControllers(...controllers: (Type | Type[])[]): void {
   const flatControllers = controllers.flatMap((controller) => controller);
@@ -38,5 +38,5 @@ export function registerApiControllers(...controllers: (Type | Type[])[]): void 
     ensureApiController(controller);
   }
 
-  configureApiModule({ controllers: flatControllers });
+  configureApiServer({ controllers: flatControllers });
 }

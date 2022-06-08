@@ -2,7 +2,7 @@
 import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
 import { defineApi, rootResource } from '#/api';
 import { compileClient } from '#/api/client';
-import { apiController, configureApiModule } from '#/api/server';
+import { apiController, configureApiServer } from '#/api/server';
 import { Application } from '#/application';
 import { container } from '#/container';
 import { HTTP_CLIENT_OPTIONS } from '#/http';
@@ -104,7 +104,7 @@ async function clientTest(): Promise<void> {
 
 async function main(): Promise<void> {
   configureNodeHttpServer(true);
-  configureApiModule({ controllers: [UserApi] });
+  configureApiServer({ controllers: [UserApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
 
