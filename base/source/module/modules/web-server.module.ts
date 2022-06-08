@@ -1,7 +1,6 @@
-import type { ApiGatewayArgument } from '#/api/server';
 import { ApiGateway, API_MODULE_OPTIONS } from '#/api/server';
 import type { AfterResolve, Injectable } from '#/container';
-import { afterResolve, forwardArg, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
+import { afterResolve, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
 import { disposeAsync } from '#/disposable/disposable';
 import { HttpServer } from '#/http/server';
 import type { Type } from '#/types';
@@ -11,20 +10,12 @@ import { ModuleMetricType } from '../module';
 import { ModuleBase } from '../module-base';
 
 export type WebServerModuleConfiguration = {
-  port: number,
-  prefix: 'api/'
+  port: number
 };
 
 export const webServerModuleConfiguration: WebServerModuleConfiguration = {
-  port: 8000,
-  prefix: 'api/'
+  port: 8000
 };
-
-function getApiGatewayArgument(config: WebServerModuleConfiguration): ApiGatewayArgument {
-  return {
-    prefix: config.prefix
-  };
-}
 
 @singleton({ defaultArgumentProvider: () => webServerModuleConfiguration })
 export class WebServerModule extends ModuleBase implements Module, Injectable<WebServerModuleConfiguration>, AfterResolve {
@@ -47,7 +38,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
   constructor(
     @injectArg() config: WebServerModuleConfiguration,
     httpServer: HttpServer,
-    @forwardArg<WebServerModuleConfiguration, ApiGatewayArgument>(getApiGatewayArgument) apiGateway: ApiGateway,
+    apiGateway: ApiGateway,
     @inject(API_MODULE_OPTIONS, undefined, (options) => options.controllers) @optional() apiControllers: Type[] = []
   ) {
     super('WebServer');
@@ -99,5 +90,4 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
 
 export function configureWebServerModule(config?: Partial<WebServerModuleConfiguration>): void {
   webServerModuleConfiguration.port = config?.port ?? webServerModuleConfiguration.port;
-  webServerModuleConfiguration.prefix = config?.prefix ?? webServerModuleConfiguration.prefix;
 }
