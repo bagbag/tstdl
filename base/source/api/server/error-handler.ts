@@ -6,8 +6,6 @@ import { formatError } from '#/utils/helpers';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response';
 
 export function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>, logger: Logger): HttpServerResponse {
-  logger.error(error as Error, { includeRest: false, includeStack: false });
-
   const response = new HttpServerResponse();
 
   if (error instanceof Error) {

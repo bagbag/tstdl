@@ -167,8 +167,6 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       await respond(response);
     }
     catch (error) {
-      this.logger.error(error as Error, { includeRest: false, includeStack: false });
-
       try {
         const response = handleApiError(error, this.supressedErrors, this.logger);
         await respond(response);
