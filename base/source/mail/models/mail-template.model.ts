@@ -1,5 +1,4 @@
 export type MailTemplate<Type extends string = string, Options = any> = {
-  key: string,
   type: Type,
 
   /** subject template */

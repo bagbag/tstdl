@@ -17,7 +17,8 @@
   "dependencies": {
     "luxon": "^2",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7"
+    "rxjs": "^7",
+    "type-fest": "^2"
   },
   "devDependencies": {
     "@types/chroma-js": "^2.1",
@@ -48,6 +49,7 @@
     "mjml": "^4.12",
     "mongodb": "^4.7",
     "nodemailer": "^6.7",
+    "puppeteer": "^14.4.0",
     "superstruct": "^0.16",
     "undici": "^5.4",
     "urlpattern-polyfill": "^4.0"

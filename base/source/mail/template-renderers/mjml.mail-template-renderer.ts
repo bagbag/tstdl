@@ -1,66 +1,65 @@
-import { forwardRef, singleton } from '#/container';
+import { singleton } from '#/container';
+import { configureTemplates, TemplateRendererProvider } from '#/templates';
+import type { MjmlTemplate, MjmlTemplateOptions } from '#/templates/renderers/mjml.template-renderer';
+import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
 import { isDefined } from '#/utils/type-guards';
-// @ts-expect-error import is actually working
-import * as mjml2html from 'mjml';
-import type { MJMLParsingOptions } from 'mjml-core';
-import { MailTemplateRendererProvider } from '../mail-template-renderer.provider';
 import type { MailTemplateRenderResult } from '../mail-template.renderer';
 import { MailTemplateRenderer } from '../mail-template.renderer';
 import type { MailTemplate } from '../models';
 
-export type MjmlMailTemplateOptions = Pick<MJMLParsingOptions, 'fonts' | 'keepComments' | 'validationLevel'> & {
-  preprocessorOptions?: any
-};
+export type MjmlMailTemplate = MailTemplate<MjmlTemplate['type'], MjmlTemplateOptions>;
 
-export type MjmlMailTemplate = MailTemplate<'mjml' | `mjml-${string}`, MjmlMailTemplateOptions>;
+configureTemplates({ templateRenderers: [MjmlTemplateRenderer] });
 
 @singleton()
 export class MjmlMailTemplateRenderer extends MailTemplateRenderer<MjmlMailTemplate> {
-  private readonly rendererProvider: MailTemplateRendererProvider;
+  private readonly rendererProvider: TemplateRendererProvider;
+  private readonly mjmlTemplateRenderer: MjmlTemplateRenderer;
 
-  constructor(@forwardRef(() => MailTemplateRendererProvider) rendererProvider: MailTemplateRendererProvider) {
+  constructor(rendererProvider: TemplateRendererProvider, mjmlTemplateRenderer: MjmlTemplateRenderer) {
     super();
 
     this.rendererProvider = rendererProvider;
+    this.mjmlTemplateRenderer = mjmlTemplateRenderer;
   }
 
   canHandleType(type: string): boolean {
-    if (type == 'mjml') {
-      return true;
-    }
-
-    if (!type.startsWith('mjml-')) {
-      return false;
-    }
-
-    const parent = type.slice(5);
-    return this.rendererProvider.has(parent);
+    return this.mjmlTemplateRenderer.canHandleType(type);
   }
 
   async render(template: MjmlMailTemplate, context?: object): Promise<MailTemplateRenderResult> {
-    if (template.type.length > 4) {
-      const parent = template.type.slice(5);
-      const renderer = this.rendererProvider.get(parent);
+    if (template.type == 'mjml') {
+      const mjmlTemplate: MjmlTemplate | undefined = isDefined(template.html) ? {
+        type: template.type,
+        template: template.html
+      } : undefined;
 
-      const { subject, html, text } = await renderer.render({ ...template, type: parent, options: template.options?.preprocessorOptions }, context);
+      const html = isDefined(mjmlTemplate)
+        ? await this.mjmlTemplateRenderer.render(mjmlTemplate)
+        : undefined;
 
-      const preprocessedTemplate: MjmlMailTemplate = {
-        ...template,
-        type: 'mjml',
-        subject,
+      return {
+        subject: template.subject,
         html,
-        text
+        text: template.text
       };
-
-      return this.render(preprocessedTemplate);
     }
 
-    const html = isDefined(template.html) ? mjml2html(template.html).html : undefined;
+    const parent = template.type.slice(5);
+    const renderer = this.rendererProvider.get(parent);
 
-    return {
-      subject: template.subject,
+    const subject = isDefined(template.subject) ? await renderer.render({ type: parent, template: template.subject, options: template.options?.preprocessorOptions }, context) : undefined;
+    const html = isDefined(template.html) ? await renderer.render({ type: parent, template: template.html, options: template.options?.preprocessorOptions }, context) : undefined;
+    const text = isDefined(template.text) ? await renderer.render({ type: parent, template: template.text, options: template.options?.preprocessorOptions }, context) : undefined;
+
+    const preprocessedTemplate: MjmlMailTemplate = {
+      ...template,
+      type: 'mjml',
+      subject,
       html,
-      text: template.text
+      text
     };
+
+    return this.render(preprocessedTemplate);
   }
 }

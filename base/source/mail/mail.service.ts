@@ -18,6 +18,7 @@ export class MailService {
   private readonly mailTemplateRendererProvider: MailTemplateRendererProvider;
   private readonly mailLogRepository: MailLogRepository | undefined;
   private readonly logger: Logger;
+  private readonly mailDataSourceTemplateKey: WeakMap<MailData, string>;
 
   constructor(
     mailClient: MailClient,
@@ -31,6 +32,8 @@ export class MailService {
     this.mailTemplateRendererProvider = mailTemplateRendererProvider;
     this.mailLogRepository = mailLogRepository;
     this.logger = logger;
+
+    this.mailDataSourceTemplateKey = new WeakMap();
   }
 
   async send(mailData: MailData): Promise<MailSendResult> {
@@ -39,7 +42,10 @@ export class MailService {
     if (isDefined(this.mailLogRepository)) {
       const log: NewMailLog = {
         timestamp: currentTimestamp(),
-        data: mailData
+        templateKey: this.mailDataSourceTemplateKey.get(mailData) ?? null,
+        data: mailData,
+        sendResult: null,
+        errors: null
       };
 
       mailLog = await this.mailLogRepository.insert(log);
@@ -74,6 +80,7 @@ export class MailService {
     const { subject, html, text } = await renderer.render(template, templateContext);
     const fullMailData = { ...mailData, subject, content: { html, text } };
 
+    this.mailDataSourceTemplateKey.set(fullMailData, key);
     return this.send(fullMailData);
   }
 }
