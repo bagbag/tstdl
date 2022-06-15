@@ -5,6 +5,7 @@ import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
 import { Pool } from '#/pool';
 import { TemplateService } from '#/templates';
+import { isObject, isUndefined } from '#/utils/type-guards';
 import * as puppeteer from 'puppeteer';
 
 export type PdfRenderOptions = {
@@ -15,7 +16,7 @@ export type PdfRenderOptions = {
   width?: string | number,
   height?: string | number,
   scale?: number,
-  margin?: {
+  margin?: string | number | {
     top?: number | string,
     bottom?: number | string,
     right?: number | string,
@@ -68,6 +69,18 @@ export class PdfService implements AsyncDisposable, AfterResolve {
 
       try {
         await handler(page);
+
+        const margin = isUndefined(options?.margin)
+          ? undefined
+          : isObject(options!.margin)
+            ? options!.margin
+            : {
+              top: options!.margin,
+              bottom: options!.margin,
+              right: options!.margin,
+              left: options!.margin
+            };
+
         const result = await page.pdf({
           format: options?.format ?? 'a4',
           scale: options?.scale,
@@ -76,7 +89,7 @@ export class PdfService implements AsyncDisposable, AfterResolve {
           height: options?.height,
           omitBackground: options?.omitDefaultBackground,
           printBackground: options?.renderBackground,
-          margin: options?.margin
+          margin
         });
 
         return result;
