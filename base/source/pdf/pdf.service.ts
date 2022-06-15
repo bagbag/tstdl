@@ -21,7 +21,8 @@ export type PdfRenderOptions = {
     bottom?: number | string,
     right?: number | string,
     left?: number | string
-  }
+  },
+  waitForNetworkIdle?: boolean
 };
 
 @singleton()
@@ -51,11 +52,11 @@ export class PdfService implements AsyncDisposable, AfterResolve {
   }
 
   async renderHtml(html: string, options?: PdfRenderOptions): Promise<Uint8Array> {
-    return this.render(async (page) => page.setContent(html, { waitUntil: 'networkidle2' }), options);
+    return this.render(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
   }
 
   async renderUrl(url: string, options?: PdfRenderOptions): Promise<Uint8Array> {
-    return this.render(async (page) => page.goto(url, { waitUntil: 'networkidle2' }), options);
+    return this.render(async (page) => page.goto(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
   }
 
   async renderTemplate(key: string, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
