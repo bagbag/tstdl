@@ -18,7 +18,7 @@ export const templateModuleConfig: TemplateModuleConfig = {
 /**
  * configure mail module
  */
-export function configureTemplates({ templateProvider, templateRenderers }: Partial<TemplateModuleConfig>): void {
+export function configureTemplates({ templateProvider, templateRenderers }: Partial<TemplateModuleConfig> = {}): void {
   templateModuleConfig.templateProvider = templateProvider ?? templateModuleConfig.templateProvider;
   templateModuleConfig.templateRenderers = [...new Set([...templateModuleConfig.templateRenderers, ...(templateRenderers ?? [])])];
 

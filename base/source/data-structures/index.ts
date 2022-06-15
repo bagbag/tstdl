@@ -5,5 +5,6 @@ export * from './index-out-of-bounds.error';
 export * from './linked-list';
 export * from './list';
 export * from './multi-key-map';
+export * from './set';
 export * from './sorted-array-list';
 export * from './weak-ref-map';
