@@ -20,7 +20,7 @@ async function test(): Promise<void> {
   const service = await container.resolveAsync(PdfService);
   const result = await service.renderTemplate('hello-name', { name: 'Max Mustermann' });
 
-  console.log(result);
+  console.log(`Resulting PDF has ${result.length} bytes.`);
 }
 
 void test();
