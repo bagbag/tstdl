@@ -1,4 +1,5 @@
-import type { Simplify, StringMap } from '#/types';
+import type { EnumerationObject, Simplify } from '#/types';
+import { randomItem } from './array/array';
 import { memoizeSingle } from './function';
 
 export type EnumEntry<T> = [EnumKey<T>, EnumValue<T>];
@@ -22,14 +23,18 @@ const memoizedEnumEntries = memoizeSingle(_enumEntries);
 const memoizedEnumKeys = memoizeSingle(_enumKeys);
 const memoizedEnumValues = memoizeSingle(_enumValues);
 
-export function enumEntries<T extends StringMap<string | number>>(enumeration: T): EnumEntry<T>[] {
+export function enumEntries<T extends EnumerationObject>(enumeration: T): EnumEntry<T>[] {
   return memoizedEnumEntries(enumeration);
 }
 
-export function enumKeys<T extends StringMap<string | number>>(enumeration: T): EnumKey<T>[] {
+export function enumKeys<T extends EnumerationObject>(enumeration: T): EnumKey<T>[] {
   return memoizedEnumKeys(enumeration);
 }
 
-export function enumValues<T extends StringMap<string | number>>(enumeration: T): EnumValue<T>[] {
+export function enumValues<T extends EnumerationObject>(enumeration: T): EnumValue<T>[] {
   return memoizedEnumValues(enumeration);
+}
+
+export function randomEnumValue<T extends EnumerationObject>(enumeration: T): EnumValue<T> {
+  return randomItem(enumValues(enumeration));
 }

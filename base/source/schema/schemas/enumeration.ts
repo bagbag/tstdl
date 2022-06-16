@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path';
-import type { StringMap } from '#/types';
+import type { Enumeration, EnumerationArray } from '#/types';
 import type { EnumValue } from '#/utils/enum';
 import { enumValues } from '#/utils/enum';
 import { lazyProperty } from '#/utils/object/lazy-property';
@@ -11,12 +11,6 @@ import type { DefinedValidationOptions, ValidationTestResult } from '../schema.v
 import { SchemaValidator, test } from '../schema.validator';
 import type { Coercible, SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
 import { schemaHelper } from '../types';
-
-export type EnumerationArray = readonly [string | number, ...(string | number)[]];
-
-export type EnumerationObject = StringMap<string | number>;
-
-export type Enumeration = EnumerationArray | EnumerationObject;
 
 export type EnumerationSchemaOutput<T extends Enumeration> = T extends EnumerationArray ? T[number] : EnumValue<T>;
 
