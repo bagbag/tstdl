@@ -110,6 +110,11 @@ export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object
     return `s3://${this.bucket}/${bucketKey}`;
   }
 
+  async *getContentStream(key: string): AsyncIterable<Uint8Array> {
+    const bucketKey = this.getBucketKey(key);
+    yield* await this.client.getObject(this.bucket, bucketKey);
+  }
+
   async getDownloadUrl(key: string, expirationTimestamp: number): Promise<string> {
     const bucketKey = this.getBucketKey(key);
     const { date, expiration } = getDateAndExpiration(expirationTimestamp);

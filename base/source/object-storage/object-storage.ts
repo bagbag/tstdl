@@ -60,6 +60,12 @@ export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInforma
   abstract getResourceUri(key: string): Promise<string>;
 
   /**
+   * get stream of object content
+   * @param key object key
+   */
+  abstract getContentStream(key: string): AsyncIterable<Uint8Array>;
+
+  /**
    * gets an url which can be used to download the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
