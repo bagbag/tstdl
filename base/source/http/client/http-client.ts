@@ -228,9 +228,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
 
   async rawRequest<T extends HttpBodyType = HttpBodyType>(request: HttpClientRequest<T>): Promise<HttpClientResponse<T>> {
     const preparedRequest = this.prepareRequest(request);
-    const response = await this.callHandler(preparedRequest, undefined);
-
-    return response;
+    return this.callHandler(preparedRequest, undefined);
   }
 
   private updateHandlers(): void {
@@ -315,13 +313,15 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
   const isGetOrHead = (request.method == 'GET') || (request.method == 'HEAD');
 
   let url: URL;
-  let parameterEntries = new Set(Object.entries(request.parameters ?? {}));
+  const filteredParameterEntries = Object.entries(request.parameters ?? {}).filter(([_, value]) => isDefined(value));
+  const filteredParameters = Object.fromEntries(filteredParameterEntries);
+  let parameterEntries = new Set(filteredParameterEntries);
 
   if (!request.mapParametersToUrl) {
     url = new URL(request.url, baseUrl);
   }
   else {
-    const { parsedUrl, parametersRest } = buildUrl(request.url, request.parameters, { arraySeparator: request.urlParametersSeparator });
+    const { parsedUrl, parametersRest } = buildUrl(request.url, filteredParameters, { arraySeparator: request.urlParametersSeparator });
 
     url = new URL(parsedUrl, baseUrl);
     parameterEntries = new Set(Object.entries(parametersRest));
