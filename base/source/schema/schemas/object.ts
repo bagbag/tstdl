@@ -112,7 +112,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
 
     if ((unknownKeys.length > 0) && (this.schema.mask != true) && (isBoolean(this.schema.mask) || !options.mask) && (this.schema.keepUnknown != true)) {
       const keys = unknownKeys.map((entry) => entry[0]).join(', ');
-      return { valid: false, error: schemaError(`unexpecet keys in object: ${keys}`, path) };
+      return { valid: false, error: schemaError(`unexpected keys in object: ${keys}`, path) };
     }
 
     return { valid: true, value: valueEntries };
