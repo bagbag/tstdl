@@ -4,11 +4,13 @@
   "publishConfig": {
     "access": "public"
   },
+  "dependencies": {
+    "tslib": "^2.4"
+  },
   "peerDependencies": {
     "@angular/common": ">=12.0",
     "@angular/core": ">=12.0",
     "@tstdl/base": "^0.71",
-    "luxon": "^2.4",
-    "tslib": "^2.4"
+    "luxon": "^2.4"
   }
 }
