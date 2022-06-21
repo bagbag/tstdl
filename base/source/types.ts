@@ -38,9 +38,10 @@ export type Enumeration = EnumerationArray | EnumerationObject;
 export type EnumerationArray = readonly [string | number, ...(string | number)[]];
 export type EnumerationObject = StringMap<string | number>;
 
-export type Constructor<T = any, Args extends any[] = any> = Type<T, Args>;
-export type Type<T = any, Args extends any[] = any> = new (...args: Args) => T;
-export type AbstractType<T = any, Args extends any[] = any> = abstract new (...args: Args) => T;
+export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
+export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;
+export type AbstractType<T = any, Arguments extends any[] = any> = AbstractConstructor<T, Arguments> & { prototype: T };
+export type AbstractConstructor<T = any, Arguments extends any[] = any> = abstract new (...args: Arguments) => T;
 export type ReturnTypeOrT<T> = T extends (...args: any) => infer R ? R : T;
 
 export type Record<K extends keyof any = any, V = any> = { [P in K]: V };

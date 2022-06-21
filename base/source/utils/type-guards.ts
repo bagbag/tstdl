@@ -69,11 +69,11 @@ export function assertNotBigInt<T>(value: T, message: AssertionMessage = 'expect
 export function assertBigIntPass(value: any, message?: AssertionMessage): InferIsType<typeof isBigInt> { assertBigInt(value, message); return value; }
 export function assertNotBigIntPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBigInt> { assertNotBigInt(value, message); return value; }
 
-export function isFunction(value: any): value is Function { return (typeof value == 'function'); }
+export function isFunction<T extends Function = Function>(value: any): value is T { return (typeof value == 'function'); }
 export function isNotFunction<T>(value: T): value is InferIsNotType<T, typeof isFunction> { return !isFunction(value); }
-export function assertFunction(value: any, message: AssertionMessage = 'expected value to be function'): asserts value is InferIsType<typeof isFunction> { assert(isFunction(value), message); }
+export function assertFunction<T extends Function = Function>(value: any, message: AssertionMessage = 'expected value to be function'): asserts value is InferIsType<typeof isFunction<T>> { assert(isFunction(value), message); }
 export function assertNotFunction<T>(value: T, message: AssertionMessage = 'expected value to not be function'): asserts value is InferIsNotType<T, typeof isFunction> { assert(isNotFunction(value), message); }
-export function assertFunctionPass(value: any, message?: AssertionMessage): InferIsType<typeof isFunction> { assertFunction(value, message); return value as Function; }
+export function assertFunctionPass<T extends Function = Function>(value: any, message?: AssertionMessage): InferIsType<typeof isFunction<T>> { assertFunction<T>(value, message); return value; }
 export function assertNotFunctionPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isFunction> { assertNotFunction(value, message); return value; }
 
 export function isSymbol(value: any): value is symbol { return (typeof value == 'symbol'); }
