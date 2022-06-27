@@ -3,9 +3,12 @@ import { disposeInstances } from '#/core';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { Module } from '#/module';
+import { ModuleState } from '#/module';
+import type { FunctionModuleFunction } from '#/module/modules';
+import { FunctionModule } from '#/module/modules';
 import { initializeSignals, requestShutdown, shutdownToken } from '#/process-shutdown';
 import { DeferredPromise } from '#/promise';
-import type { Type } from '#/types';
+import type { OneOrMany, Type } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { isUndefined } from '#/utils/type-guards';
 
@@ -44,8 +47,8 @@ export class Application {
     Application.instance.registerModuleInstance(module);
   }
 
-  static async run(): Promise<void> {
-    await Application.instance.run();
+  static async run(...functions: OneOrMany<FunctionModuleFunction>[]): Promise<void> {
+    await Application.instance.run(...functions);
   }
 
   static async shutdown(): Promise<void> {
@@ -60,7 +63,12 @@ export class Application {
     this.moduleInstances.add(module);
   }
 
-  async run(): Promise<void> {
+  async run(...functions: OneOrMany<FunctionModuleFunction>[]): Promise<void> {
+    for (const fn of functions.flatMap((fns) => fns)) {
+      const module = new FunctionModule(fn);
+      this.registerModuleInstance(module);
+    }
+
     const resolvedModules = await toArrayAsync(mapAsync(this.moduleTypes, async (type) => container.resolveAsync(type)));
     const modules = [...resolvedModules, ...this.moduleInstances];
 
@@ -79,14 +87,14 @@ export class Application {
       await stopModules(modules, this.logger);
       await disposeInstances();
 
-      this.logger.info('bye');
+      this.logger.info('Bye');
     }
 
     this.shutdownPromise.resolve();
   }
 
   async shutdown(): Promise<void> {
-    this.logger.info('shutting down');
+    this.logger.info('Shutting down');
     requestShutdown();
     await this.shutdownPromise;
   }
@@ -95,7 +103,7 @@ export class Application {
 async function runModules(modules: Module[], logger?: Logger): Promise<void> {
   const promises = modules.map(async (module) => {
     if (logger != undefined) {
-      logger.verbose(`starting module ${module.name}`);
+      logger.verbose(`Starting module ${module.name}`);
     }
 
     await module.run();
@@ -106,14 +114,22 @@ async function runModules(modules: Module[], logger?: Logger): Promise<void> {
 
 async function stopModules(modules: Module[], logger?: Logger): Promise<void> {
   const promises = modules.map(async (module) => {
+    if (module.state == ModuleState.Stopped) {
+      if (logger != undefined) {
+        logger.verbose(`Module ${module.name} already stopped`);
+      }
+
+      return;
+    }
+
     if (logger != undefined) {
-      logger.verbose(`stopping module ${module.name}`);
+      logger.verbose(`Stopping module ${module.name}`);
     }
 
     await module.stop();
 
     if (logger != undefined) {
-      logger.verbose(`stopped module ${module.name}`);
+      logger.verbose(`Stopped module ${module.name}`);
     }
   });
 

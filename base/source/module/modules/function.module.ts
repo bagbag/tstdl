@@ -11,6 +11,8 @@ export class FunctionModule extends ModuleBase implements Module {
 
   constructor(fn: FunctionModuleFunction, name: string = fn.name) {
     super(name);
+
+    this.fn = fn;
   }
 
   protected async _run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
