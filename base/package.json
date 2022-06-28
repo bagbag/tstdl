@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.65",
+  "version": "0.71.66",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -15,22 +15,22 @@
     "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "^2",
+    "luxon": "^2.4",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7",
-    "type-fest": "^2"
+    "rxjs": "^7.5",
+    "type-fest": "^2.14"
   },
   "devDependencies": {
-    "@types/chroma-js": "^2.1",
+    "@types/chroma-js": "2.1",
     "@types/koa__router": "8.0",
     "@types/luxon": "2.3",
     "@types/minio": "7.0",
     "@types/mjml": "4.7",
-    "@types/node": ">=16",
-    "@types/nodemailer": "^6.4.4",
+    "@types/node": "18",
+    "@types/nodemailer": "6.4",
     "@types/yup": "0.29",
-    "@typescript-eslint/eslint-plugin": "5.29",
-    "@typescript-eslint/parser": "5.29",
+    "@typescript-eslint/eslint-plugin": "5",
+    "@typescript-eslint/parser": "5",
     "eslint": "8.18",
     "ttypescript": "1.5",
     "typedoc": "0.23",
@@ -49,7 +49,7 @@
     "mjml": "^4.12",
     "mongodb": "^4.7",
     "nodemailer": "^6.7",
-    "puppeteer": "^14.4",
+    "puppeteer": "^15.1",
     "superstruct": "^0.16",
     "undici": "^5.5",
     "urlpattern-polyfill": "^4.0"

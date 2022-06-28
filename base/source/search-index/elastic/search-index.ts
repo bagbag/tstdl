@@ -13,6 +13,7 @@ import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';
 import type { ElasticSearchIndexConfig } from './config';
+import { KeywordRewriter } from './keyword-rewriter';
 import type { ElasticIndexMapping, SortCombinations } from './model';
 import { convertQuery } from './query-converter';
 import { convertSort } from './sort-converter';
@@ -31,17 +32,18 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   readonly indexName: string;
   readonly indexSettings: IndicesIndexSettings;
   readonly indexMapping: ElasticIndexMapping<T>;
-  readonly sortKeywordRewrites: Set<string>;
+  readonly keywordRewriter: KeywordRewriter;
 
-  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: IndicesIndexSettings, indexMapping: ElasticIndexMapping<T>, sortKeywordRewrites: Set<string>, logger: Logger) {
+  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: IndicesIndexSettings, indexMapping: ElasticIndexMapping<T>, keywordRewrites: Iterable<string>, logger: Logger) {
     super();
 
     this.client = client;
     this.indexName = config.indexName;
     this.indexSettings = indexSettings;
     this.indexMapping = indexMapping;
-    this.sortKeywordRewrites = sortKeywordRewrites;
     this.logger = logger;
+
+    this.keywordRewriter = new KeywordRewriter(keywordRewrites);
   }
 
   async [afterResolve](): Promise<void> {
@@ -135,7 +137,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
       throw new Error('cursor and skip cannot be used at the same time');
     }
 
-    const sort = cursorData?.sort ?? (options?.sort ?? []).map((sortItem) => convertSort(sortItem, this.sortKeywordRewrites));
+    const sort = cursorData?.sort ?? (options?.sort ?? []).map((sortItem) => convertSort(sortItem, this.keywordRewriter));
 
     search.sort = sort as string[];
     search.from = options?.skip;
