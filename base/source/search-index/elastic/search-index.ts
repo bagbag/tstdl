@@ -156,6 +156,19 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     return result;
   }
 
+  async count(query: Query<T>, options?: QueryOptions<T>): Promise<number> {
+    if (isDefined(options?.skip) || isDefined(options?.limit)) {
+      throw new Error('Options skip and limit for count are not support in ElasticSearchIndex.');
+    }
+
+    const result = await this.client.count({
+      index: this.indexName,
+      query: convertQuery(query)
+    });
+
+    return result.count;
+  }
+
   async drop(): Promise<void> {
     const exists = await this.exists();
 

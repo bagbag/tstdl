@@ -112,6 +112,11 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
     return result;
   }
 
+  async count(query: Query<T>, options?: QueryOptions<T> | undefined): Promise<number> {
+    const items = await this.searchAll(query, options);
+    return items.length;
+  }
+
   // eslint-disable-next-line @typescript-eslint/require-await
   async drop(): Promise<void> {
     this.allSet.clear();
