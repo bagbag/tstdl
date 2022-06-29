@@ -71,7 +71,7 @@ export abstract class SearchIndex<T extends Entity> {
   abstract search(cursor: string, options?: QueryOptions<T>): Promise<SearchResult<T>>; // eslint-disable-line @typescript-eslint/unified-signatures
   abstract search(queryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>>; // eslint-disable-line @typescript-eslint/unified-signatures
 
-  abstract count(query: Query<T>, options?: QueryOptions<T>): Promise<number>;
+  abstract count(query?: Query<T>, options?: QueryOptions<T>): Promise<number>;
 
   /**
    * drop index. If you only want to delete all items from the index, use {@link deleteByQuery} with an empty query.
