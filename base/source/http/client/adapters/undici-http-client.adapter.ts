@@ -24,7 +24,7 @@ let defaultOptions: UndiciHttpClientAdapterOptions = {};
 export class UndiciHttpClientAdapter extends HttpClientAdapter {
   private readonly options: UndiciHttpClientAdapterOptions;
 
-  constructor(@injectArg() options: UndiciHttpClientAdapterOptions) {
+  constructor(@injectArg() options: UndiciHttpClientAdapterOptions = {}) {
     super();
 
     this.options = options;
