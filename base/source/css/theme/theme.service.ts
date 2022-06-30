@@ -1,5 +1,6 @@
 import { inject, singleton } from '#/container';
 import { DOCUMENT } from '#/tokens';
+import { objectEntries } from '#/utils/object/object';
 import { isDefined, isString } from '#/utils/type-guards';
 import * as chroma from 'chroma-js';
 import type { Theme } from './theme.model';
@@ -46,7 +47,7 @@ export class ThemeService {
 function buildThemeRules(theme: Theme): string[] {
   const rules: string[] = [];
 
-  for (const [colorName, value] of Object.entries(theme.colors)) {
+  for (const [colorName, value] of objectEntries(theme.colors)) {
     const name = isString(value) ? colorName : (value.name ?? colorName);
     const color = isString(value) ? value : value.color;
 
@@ -74,7 +75,7 @@ function generatePaletteVariableDeclarations(paletteName: string, color: string)
     900: chroma.hsl(hue, saturation, lightness - 0.40).css()
   };
 
-  const colorEntries = Object.entries(colors);
+  const colorEntries = objectEntries(colors);
   const variables = [[`--color-${paletteName}`, colors[500]], ...colorEntries.map(([number, numberColor]) => [`--color-${paletteName}-${number}`, numberColor] as const)];
   const variableDeclarations = variables.map(([name, value]) => `${name}: ${value};`);
 

@@ -3,8 +3,8 @@
 import { HttpError } from '#/http/http.error';
 import { DetailsError } from '../error';
 import type { DeepArray, Record, StringMap } from '../types';
-import { hasOwnProperty } from './object/object';
-import { isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isNullOrUndefined, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined, isWritableArray } from './type-guards';
+import { hasOwnProperty, mapObjectValues, objectEntries } from './object/object';
+import { assertObject, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined, isWritableArray } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
 
@@ -46,7 +46,7 @@ export async function structuredCloneAsync<T>(value: T, options?: { transfer?: a
 
 // eslint-disable-next-line max-statements
 export function clone<T>(object: T, deep: boolean): T {
-  if (isPrimitive(object) || isNullOrUndefined(object)) {
+  if (isPrimitive(object)) {
     return object;
   }
 
@@ -79,15 +79,20 @@ export function clone<T>(object: T, deep: boolean): T {
     return new DataView(clonedBuffer, object.byteOffset, object.byteLength) as unknown as T;
   }
 
-  if (!deep) {
-    return (isArray(object) ? [...object] : { ...object }) as T;
-  }
-
   if (isArray(object)) {
-    return object.map((value): any => clone(value, true)) as any as T;
+    return deep
+      ? object.map((value): any => clone(value, true)) as any as T
+      : [...object] as unknown as T;
   }
 
-  return Object.fromEntries(Object.entries(object).map(([key, value]) => [key, clone(value, true)] as const)) as T;
+  assertObject(object);
+
+  if (!deep) {
+    return { ...object } as T;
+  }
+
+  const entries = objectEntries(object).map(([key, value]) => [key, clone(value, true)] as const);
+  return Object.fromEntries(entries) as unknown as T;
 }
 
 export function formatDuration(milliseconds: number, precision: number): string {
@@ -268,7 +273,7 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
       return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
     }
 
-    return Object.fromEntries(Object.entries(value as StringMap).map(([key, item]) => [key, _decycle(item, `${path}['${key}']`)] as const));
+    return mapObjectValues(value, ([key, item]) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
   }
 
   return _decycle(_value, '$') as Decycled<T>;

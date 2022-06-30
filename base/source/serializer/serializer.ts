@@ -2,9 +2,10 @@
 
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { SortedArrayList } from '#/data-structures/sorted-array-list';
-import type { Constructor, StringMap } from '#/types';
+import type { Constructor, Record, StringMap } from '#/types';
 import { compareByValueSelection } from '#/utils/comparison';
 import { ForwardRef } from '#/utils/object/forward-ref';
+import { objectEntries } from '#/utils/object/object';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { DereferenceCallback } from './serializable';
 import { getSerializerByTypeName, getTypeNameByConstructor } from './serializable';
@@ -65,7 +66,7 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
   }
 
   if ((path == '$') && isDefined(options.context)) {
-    for (const entry of Object.entries(options.context)) {
+    for (const entry of objectEntries(options.context)) {
       references.set(entry[1], `$['__context__']['${entry[0]}']`);
     }
   }
@@ -131,10 +132,10 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
       result = target as SerializedData;
     }
     else if (constructor == Object) {
-      const target: StringMap = {};
-      const entries = Object.entries(value as object);
+      const target: Record = {};
+      const entries = objectEntries(value);
 
-      const queueItems = entries.map(([key, innerValue]): QueueItem => () => (target[key] = serialize(innerValue, options, references, queue, `${path}['${key}']`)));
+      const queueItems = entries.map(([key, innerValue]): QueueItem => () => (target[key] = serialize(innerValue, options, references, queue, `${path}['${key.toString()}']`)));
       queue.addMany(queueItems);
 
       result = target;
@@ -196,12 +197,12 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
 
   if (type == 'object') {
     if ((depth == 0) && isDefined(context.options.context)) {
-      for (const entry of Object.entries(context.options.context)) {
+      for (const entry of objectEntries(context.options.context)) {
         context.references.set(`$['__context__']['${entry[0]}']`, entry[1]);
       }
     }
 
-    const entries = Object.entries(serialized as object);
+    const entries = Object.entries(serialized as Record);
     const isNonPrimitive = (entries.length == 1) && entries[0]![0].startsWith('<') && entries[0]![0].endsWith('>');
 
     if (isNonPrimitive) {

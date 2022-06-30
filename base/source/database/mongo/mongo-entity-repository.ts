@@ -4,6 +4,7 @@ import { afterResolve } from '#/container';
 import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
 import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
+import type { Record } from '#/types';
 import { equals } from '#/utils/equals';
 import { _throw } from '#/utils/helpers';
 import { isDefined, isUndefined } from '#/utils/type-guards';
@@ -361,13 +362,13 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateFilter<TDb> {
-    const transformedPatch: Record<string, any> = {};
+    const transformedPatch: Record = {};
 
     for (const [property, value] of Object.entries(patch)) {
       const mapping = this.transformerMappingMap.get(property as keyof T);
 
       if (isDefined(mapping)) {
-        transformedPatch[mapping.key as string] = mapping.transform(value as T[keyof T]);
+        transformedPatch[mapping.key] = mapping.transform(value as T[keyof T]);
       }
       else {
         transformedPatch[property] = value;

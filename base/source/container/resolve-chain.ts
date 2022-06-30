@@ -1,7 +1,8 @@
+import { reflectionRegistry } from '#/reflection';
 import type { Constructor } from '#/types';
+import { assertDefinedPass } from '#/utils';
 import type { InjectionToken } from './token';
 import { getTokenName } from './token';
-import { getTypeInfo } from './type-info';
 
 export type ResolveChainNodeBase<Type extends string> = {
   type: Type
@@ -50,9 +51,9 @@ export class ResolveChain {
           break;
 
         case 'parameter':
-          const typeInfo = getTypeInfo(node.constructor);
+          const metadata = reflectionRegistry.getMetadata(node.constructor);
           const prefix = '_, '.repeat(node.index);
-          const suffix = ', _'.repeat(typeInfo.parameters.length - node.index - 1);
+          const suffix = ', _'.repeat(assertDefinedPass(metadata.parameters, 'missing parameters metadata').length - node.index - 1);
           chainString += `(${prefix}${tokenName}${suffix})`;
           break;
 

@@ -1,8 +1,11 @@
 import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { MultiKeyMap } from '#/data-structures/multi-key-map';
+import type { ConstructorParameterMetadata, PropertyMetadata, TypeMetadata } from '#/reflection';
+import { reflectionRegistry } from '#/reflection';
 import type { Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef } from '#/utils/object/forward-ref';
+import { objectEntries } from '#/utils/object/object';
 import { isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
@@ -14,10 +17,11 @@ import { ResolveChain } from './resolve-chain';
 import { ResolveError } from './resolve.error';
 import type { InjectionToken } from './token';
 import { getTokenName } from './token';
-import type { InjectMetadata, TypeInfo } from './type-info';
-import { typeInfos } from './type-info';
+import type { InjectMetadata } from './type-info';
 import type { ArgumentProvider, Mapper, ResolveContext } from './types';
 import { isStubClass } from './utils';
+
+export const injectMetadataSymbol = Symbol('Inject metadata');
 
 type InternalResolveContext = {
   isAsync: boolean,
@@ -97,8 +101,10 @@ export class Container {
    * @param options registration options
    */
   register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options: RegistrationOptions<T, A> = {}): void {
-    if (isClassProvider(provider)) {
-      if (!typeInfos.has(provider.useClass)) {
+    if (isClassProvider(provider) && !isStubClass(provider.useClass)) {
+      const injectable = reflectionRegistry.hasType(provider.useClass) && reflectionRegistry.getMetadata(provider.useClass).data.has(injectMetadataSymbol);
+
+      if (!injectable) {
         throw new Error(`${provider.useClass.name} is not injectable`);
       }
     }
@@ -254,22 +260,26 @@ export class Container {
     let instance!: T;
 
     if (isClassProvider(registration.provider)) {
-      const typeInfo = typeInfos.get(registration.provider.useClass);
+      const typeMetadata = reflectionRegistry.getMetadata(registration.provider.useClass);
 
-      if (isUndefined(typeInfo)) {
-        throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
+      if (!typeMetadata.data.has(injectMetadataSymbol)) {
+        throw new ResolveError(`${registration.provider.useClass.name} is not injectable.`, chain);
       }
 
-      if ((typeInfo.constructor as any)[isStubClass] == true) {
-        throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
+      if (isStubClass(typeMetadata.constructor)) {
+        throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
       }
 
-      const parameters = typeInfo.parameters.map((metadata): unknown => this.resolveInjection(token, context, typeInfo, metadata, resolveArgument, chain));
+      const parameters = (typeMetadata.parameters ?? []).map((metadata): unknown => this.resolveInjection(token, context, typeMetadata, metadata, resolveArgument, chain));
 
-      instance = new typeInfo.constructor(...parameters) as T;
+      instance = new typeMetadata.constructor(...parameters) as T;
 
-      for (const [property, metadata] of Object.entries(typeInfo.properties)) {
-        (instance as Record)[property] = this.resolveInjection(token, context, typeInfo, metadata, resolveArgument, chain);
+      for (const [property, metadata] of typeMetadata.properties) {
+        if (!metadata.data.has(injectMetadataSymbol)) {
+          continue;
+        }
+
+        (instance as Record)[property as string] = this.resolveInjection(token, context, typeMetadata, metadata, resolveArgument, chain);
       }
     }
 
@@ -295,7 +305,7 @@ export class Container {
         instance = result;
       }
       catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
+        throw new ResolveError('Error in factory.', chain, error as Error);
       }
     }
 
@@ -391,23 +401,27 @@ export class Container {
     let instance!: T;
 
     if (isClassProvider(registration.provider)) {
-      const typeInfo = typeInfos.get(registration.provider.useClass);
+      const typeMetadata = reflectionRegistry.getMetadata(registration.provider.useClass);
 
-      if (isUndefined(typeInfo)) {
-        throw new ResolveError(`${registration.provider.useClass.name} is not injectable`, chain);
+      if (!typeMetadata.data.has(injectMetadataSymbol)) {
+        throw new ResolveError(`${registration.provider.useClass.name} is not injectable.`, chain);
       }
 
-      if ((typeInfo.constructor as any)[isStubClass] == true) {
-        throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
+      if (isStubClass(typeMetadata.constructor)) {
+        throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
       }
 
-      const boxedParameters = await toArrayAsync(mapAsync(typeInfo.parameters, async (metadata) => this.resolveInjectionAsync(context, typeInfo, metadata, resolveArgument, chain)));
+      const boxedParameters = await toArrayAsync(mapAsync(typeMetadata.parameters ?? [], async (metadata) => this.resolveInjectionAsync(context, typeMetadata, metadata, resolveArgument, chain)));
       const parameters = boxedParameters.map((box) => box.resolved);
 
-      instance = new typeInfo.constructor(...parameters) as T;
+      instance = new typeMetadata.constructor(...parameters) as T;
 
-      for (const [property, metadata] of Object.entries(typeInfo.properties)) {
-        (instance as Record)[property] = (await this.resolveInjectionAsync(context, typeInfo, metadata, resolveArgument, chain)).resolved;
+      for (const [property, metadata] of typeMetadata.properties) {
+        if (!metadata.data.has(injectMetadataSymbol)) {
+          continue;
+        }
+
+        (instance as Record)[property as string] = (await this.resolveInjectionAsync(context, typeMetadata, metadata, resolveArgument, chain)).resolved;
       }
     }
 
@@ -427,7 +441,7 @@ export class Container {
         instance = await registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
       }
       catch (error) {
-        throw new ResolveError('error in factory', chain, error as Error);
+        throw new ResolveError('Error in factory.', chain, error as Error);
       }
     }
 
@@ -468,15 +482,16 @@ export class Container {
     return instance;
   }
 
-  private resolveInjection(token: InjectionToken, context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): unknown {
-    const getChain = metadata.type == 'parameter'
-      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, injectToken!).addToken(injectToken!)
-      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, injectToken!).addToken(injectToken!);
+  private resolveInjection(token: InjectionToken, context: InternalResolveContext, typeMetadata: TypeMetadata, metadata: ConstructorParameterMetadata | PropertyMetadata, resolveArgument: any, chain: ResolveChain): unknown {
+    const getChain = (metadata.metadataType == 'constructor-parameter')
+      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
+      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    const injectToken = (metadata.injectToken ?? metadata.token)!;
+    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
 
-    if (isDefined(metadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
-      const mapped = metadata.injectArgumentMapper(resolveArgument);
+    if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
+      const mapped = injectMetadata.injectArgumentMapper(resolveArgument);
 
       if (isPromise(mapped)) {
         throw new ResolveError(`cannot evaluate async argument mapper for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, getChain(injectToken));
@@ -485,24 +500,24 @@ export class Container {
       return mapped;
     }
 
-    const parameterResolveArgument = metadata.forwardArgumentMapper?.(resolveArgument) ?? metadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken)));
+    const parameterResolveArgument = injectMetadata.forwardArgumentMapper?.(resolveArgument) ?? injectMetadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken)));
 
     if (isPromise(parameterResolveArgument)) {
       throw new ResolveError(`cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, getChain(injectToken));
     }
 
-    if (isDefined(metadata.forwardRefToken)) {
+    if (isDefined(injectMetadata.forwardRefToken)) {
       const forwardRef = ForwardRef.create();
-      const forwardRefToken = metadata.forwardRefToken;
+      const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(() => {
         const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
 
-        if (isDefined(metadata.mapper)) {
+        if (isDefined(injectMetadata.mapper)) {
           throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));
         }
 
-        const resolved = this._resolve(forwardToken, metadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);
+        const resolved = this._resolve(forwardToken, injectMetadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);
         ForwardRef.setRef(forwardRef, resolved);
       });
 
@@ -510,35 +525,36 @@ export class Container {
       return forwardRef;
     }
 
-    const resolved = this._resolve(injectToken, metadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
-    return isDefined(metadata.mapper) ? metadata.mapper(resolved) : resolved;
+    const resolved = this._resolve(injectToken, injectMetadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
+    return isDefined(injectMetadata.mapper) ? injectMetadata.mapper(resolved) : resolved;
   }
 
-  private async resolveInjectionAsync(context: InternalResolveContext, typeInfo: TypeInfo, metadata: InjectMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
-    const injectToken = (metadata.injectToken ?? metadata.token)!;
+  private async resolveInjectionAsync(context: InternalResolveContext, typeMetadata: TypeMetadata, metadata: ConstructorParameterMetadata | PropertyMetadata, resolveArgument: any, chain: ResolveChain): Promise<{ resolved: unknown }> {
+    const getChain = (metadata.metadataType == 'constructor-parameter')
+      ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
+      : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    if (isDefined(metadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
-      return { resolved: metadata.injectArgumentMapper(resolveArgument) };
+    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
+
+    if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
+      return { resolved: injectMetadata.injectArgumentMapper(resolveArgument) };
     }
 
-    const getChain = metadata.type == 'parameter'
-      ? (token: InjectionToken | undefined) => chain.addParameter(typeInfo.constructor, metadata.parameterIndex, token!).addToken(token!)
-      : (token: InjectionToken | undefined) => chain.addProperty(typeInfo.constructor, metadata.propertyKey, token!).addToken(token!);
+    const parameterResolveArgument = await (injectMetadata.forwardArgumentMapper?.(resolveArgument) ?? injectMetadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken))));
 
-    const parameterResolveArgument = await (metadata.forwardArgumentMapper?.(resolveArgument) ?? metadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken))));
-
-    if (isDefined(metadata.forwardRefToken)) {
+    if (isDefined(injectMetadata.forwardRefToken)) {
       const forwardRef = ForwardRef.create();
-      const forwardRefToken = metadata.forwardRefToken;
+      const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(async () => {
         const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
 
-        if (isDefined(metadata.mapper)) {
+        if (isDefined(injectMetadata.mapper)) {
           throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));
         }
 
-        const resolved = await this._resolveAsync(forwardToken, metadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);
+        const resolved = await this._resolveAsync(forwardToken, injectMetadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);
         ForwardRef.setRef(forwardRef, resolved);
       });
 
@@ -546,8 +562,8 @@ export class Container {
       return { resolved: forwardRef };
     }
 
-    const resolved = await this._resolveAsync(injectToken, metadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
-    return { resolved: isDefined(metadata.mapper) ? metadata.mapper(resolved) : resolved };
+    const resolved = await this._resolveAsync(injectToken, injectMetadata.optional, parameterResolveArgument, context, getChain(injectToken), false);
+    return { resolved: isDefined(injectMetadata.mapper) ? injectMetadata.mapper(resolved) : resolved };
   }
 
   private getResolveContext(resolveContext: InternalResolveContext, chain: ResolveChain): ResolveContext {
@@ -583,7 +599,7 @@ function derefForwardRefs(context: InternalResolveContext): void {
       continue;
     }
 
-    for (const [key, value] of Object.entries(resolution.instance as Record)) {
+    for (const [key, value] of objectEntries(resolution.instance as Record)) {
       if (!context.forwardRefs.has(value as ForwardRef)) {
         continue;
       }

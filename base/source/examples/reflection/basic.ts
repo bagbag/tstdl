@@ -1,7 +1,6 @@
-import { Accessor, Class, Method, Parameter, printType, Property, ReflectionRegistry } from '#/reflection';
+import { Accessor, Class, Method, Parameter, printType, Property, reflectionRegistry, ReflectionRegistry } from '#/reflection';
 
-
-@Class(undefined, { data: { tableName: 'foos' } })
+@Class({ data: { tableName: 'foos' } })
 export class Foo {
   private readonly registry: ReflectionRegistry;
 
@@ -32,4 +31,8 @@ export class Foo {
   someMethod(@Parameter() _parameter: bigint): void { }
 }
 
+console.log('Type:');
 printType(Foo);
+
+console.log('\nMetadata:');
+console.log(reflectionRegistry.getMetadata(Foo));

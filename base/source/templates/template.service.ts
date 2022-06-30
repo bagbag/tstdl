@@ -1,8 +1,9 @@
 import { optional, singleton } from '#/container';
+import { _throw } from '#/utils/helpers';
 import { isString } from '#/utils/type-guards';
 import { TemplateRendererProvider } from './template-renderer.provider';
 import type { Template } from './template.model';
-import { TemplateProvider } from './template.provider';
+import type { TemplateProvider } from './template.provider';
 import type { TemplateRenderResult } from './template.renderer';
 
 @singleton()
@@ -10,8 +11,8 @@ export class TemplateService {
   private readonly templateProvider: TemplateProvider;
   private readonly templateRendererProvider: TemplateRendererProvider;
 
-  constructor(@optional() templateProvider: TemplateProvider, templateRendererProvider: TemplateRendererProvider) {
-    this.templateProvider = templateProvider;
+  constructor(@optional() templateProvider: TemplateProvider | undefined, templateRendererProvider: TemplateRendererProvider) {
+    this.templateProvider = templateProvider ?? { get: () => _throw(new Error('No template provider provided. Cannot render template-keys.')) };
     this.templateRendererProvider = templateRendererProvider;
   }
 

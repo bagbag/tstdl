@@ -1,20 +1,28 @@
 import type { PickBy, Record } from '#/types';
 import { filterAsync, mapAsync, toArrayAsync } from '../async-iterable-helpers';
-import { isArray, isObject, isUndefined } from '../type-guards';
+import { isArray, isObject, isSymbol, isUndefined } from '../type-guards';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
   // eslint-disable-next-line prefer-object-has-own
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+/**
+ * returns object entries including those with symbols keys (which Object.entries does not)
+ */
+export function objectEntries<T extends object>(object: T): [keyof T, T[keyof T]][] {
+  const keys = Reflect.ownKeys(object) as (keyof T)[];
+  return keys.map((key) => [key, object[key]]);
+}
+
 export function mapObject<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => [key: K, value: V]): Record<K, V> {
-  const mappedEntries = Object.entries(object).map(([key, value]) => mapper(value as T[keyof T], key));
+  const mappedEntries = objectEntries(object).map(([key, value]) => mapper(value, key));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
 export async function mapObjectAsync<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<[key: K, value: V]>): Promise<Record<K, V>> {
-  const entries = Object.entries(object);
-  const mappedEntries = await toArrayAsync(mapAsync(entries, async ([key, value]) => mapper(value as T[keyof T], key)));
+  const entries = objectEntries(object);
+  const mappedEntries = await toArrayAsync(mapAsync(entries, async ([key, value]) => mapper(value, key)));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
@@ -29,18 +37,18 @@ export async function mapObjectValuesAsync<T extends Record, V>(object: T, mappe
 export function filterObject<T extends Record, U extends T[keyof T]>(object: T, predicate: (value: T[keyof T], key: keyof T) => value is U): PickBy<T, U>;
 export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T>;
 export function filterObject<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => boolean): Partial<T> {
-  const mappedEntries = Object.entries(object).filter(([key, value]) => predicate(value as T[keyof T], key));
+  const mappedEntries = objectEntries(object).filter(([key, value]) => predicate(value, key));
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 
 export async function filterObjectAsync<T extends Record>(object: T, predicate: (value: T[keyof T], key: keyof T) => Promise<boolean>): Promise<Partial<T>> {
-  const entries = Object.entries(object);
-  const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => predicate(value as T[keyof T], key)));
+  const entries = objectEntries(object);
+  const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => predicate(value, key)));
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 
-export function copyObjectProperties<T, U extends T>(source: T, target: U): void {
-  for (const [key, value] of Object.entries(source) as [keyof T, any][]) {
+export function copyObjectProperties<T extends object, U extends T>(source: T, target: U): void {
+  for (const [key, value] of objectEntries(source) as [keyof T, any][]) {
     target[key] = value;
   }
 }
@@ -72,9 +80,17 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
 }
 
 export function deepEntries(object: Record, keepInnerObjects: boolean = false, prefix?: string): [string, any][] {
-  const rawEntries: [string, any][] = isUndefined(prefix)
-    ? Object.entries(object)
-    : Object.entries(object).map(([key, value]) => [`${prefix}${key}`, value]);
+  const allEntries = objectEntries(object) as [string, any][];
+
+  for (const entry of allEntries) {
+    if (isSymbol(entry[0])) {
+      throw new Error('Deep entries does not support symbols.');
+    }
+  }
+
+  const rawEntries = isUndefined(prefix)
+    ? allEntries
+    : allEntries.map(([key, value]) => [`${prefix}${key}`, value] as const);
 
   let entries: [string, any][] = [];
 

@@ -15,6 +15,8 @@ export const templateModuleConfig: TemplateModuleConfig = {
   templateRenderers: []
 };
 
+container.registerSingleton(TemplateProvider, { useToken: templateModuleConfig.templateProvider });
+
 /**
  * configure mail module
  */

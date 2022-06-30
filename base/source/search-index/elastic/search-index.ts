@@ -8,7 +8,7 @@ import type { SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndex, SearchIndexError } from '#/search-index';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
 import { decodeText, encodeUtf8 } from '#/utils/encoding';
-import { filterObject } from '#/utils/object';
+import { filterObject } from '#/utils/object/object';
 import { isDefined, isNumber, isString } from '#/utils/type-guards';
 import type { Client } from '@elastic/elasticsearch';
 import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';

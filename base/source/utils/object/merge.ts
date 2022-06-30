@@ -2,7 +2,7 @@ import type { Record } from '#/types';
 import { compareByValue } from '../comparison';
 import { arrayEquals } from '../equals';
 import { isArray, isPrimitive, isUndefined } from '../type-guards';
-import { hasOwnProperty } from './object';
+import { hasOwnProperty, objectEntries } from './object';
 
 export type MergeObjectsOptions = {
   /**
@@ -19,7 +19,7 @@ export function mergeObjects<T extends object>(objects: T[], options: MergeObjec
 function _mergeObjects(a: object, b: object, options: MergeObjectsOptions, path: string = '$'): object {
   const merged: Record<string> = { ...a };
 
-  const bEntries = Object.entries(b);
+  const bEntries = objectEntries(b);
 
   for (const [key, valueB] of bEntries) {
     if (!hasOwnProperty(merged, key)) {

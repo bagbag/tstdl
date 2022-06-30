@@ -1,4 +1,4 @@
-import { lazyProperty } from '#/utils/object';
+import { lazyProperty } from '#/utils/object/lazy-property';
 import { isUndefined } from '#/utils/type-guards';
 import type { HttpHeaders } from './http-headers';
 

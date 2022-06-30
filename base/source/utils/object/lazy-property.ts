@@ -1,6 +1,6 @@
 import type { IfUnknown } from '#/types';
 import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards';
-import { filterObject, hasOwnProperty } from './object';
+import { filterObject, hasOwnProperty, objectEntries } from './object';
 
 const lazyObjectValueSymbol = Symbol('LazyObjectValue');
 
@@ -92,7 +92,7 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
 export function lazyObject<T extends object>(initializers: { [P in keyof T]: LazyInitializerItem<T, P> }): T {
   const object = {} as unknown as T;
 
-  for (const [key, value] of Object.entries(initializers) as [keyof T, LazyInitializerItem<T, any>][]) {
+  for (const [key, value] of objectEntries(initializers) as [keyof T, LazyInitializerItem<T, any>][]) {
     const valueIsFunction = isFunction(value);
     const valueIsObject = isObject(value);
 

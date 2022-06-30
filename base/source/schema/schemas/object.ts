@@ -1,6 +1,7 @@
 import type { JsonPath } from '#/json-path';
 import type { Optionalize, Record, Simplify, SimplifyObject, StringMap } from '#/types';
 import { differenceMaps } from '#/utils/map';
+import { objectEntries } from '#/utils/object/object';
 import { isBoolean } from '#/utils/type-guards';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
@@ -27,7 +28,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
   constructor(validators: ObjectSchemaValidatorEntries<T>, schema: ObjectSchemaDefinition<T>) {
     super(schema);
 
-    this.validatorEntries = new Map(Object.entries(validators));
+    this.validatorEntries = new Map(objectEntries(validators));
   }
 
   static assign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>>(a: ObjectSchemaValidator<A>, b: ObjectSchemaValidator<B>): ObjectSchemaValidator<ObjectAssign<A, B>> {
@@ -97,7 +98,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
     return { valid: true, value: resultObject as ObjectOutputType<T> };
   }
 
-  private _testBase(value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<string, any>> {
+  private _testBase(value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<Map<PropertyKey, any>> {
     const typeResult = this.ensureType('object', value, path);
 
     if (!typeResult.valid) {
@@ -107,7 +108,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
       return { valid: false, error: SchemaError.expectedButGot('object', 'null', path) };
     }
 
-    const valueEntries = new Map(Object.entries(value as Record));
+    const valueEntries = new Map(objectEntries(value as Record));
     const unknownKeys = differenceMaps(valueEntries, this.validatorEntries);
 
     if ((unknownKeys.length > 0) && (this.schema.mask != true) && (isBoolean(this.schema.mask) || !options.mask) && (this.schema.keepUnknown != true)) {
@@ -120,7 +121,7 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
 }
 
 export function object<T extends StringMap<SchemaDefinition>>(entries: ObjectSchemaValidatorEntries<T>, options?: SchemaOptions<ObjectSchemaDefinition<T>, 'entries'>): ObjectSchemaValidator<T> {
-  const validatorEntries = Object.entries(entries) as [PropertyKey, SchemaValidator][];
+  const validatorEntries = objectEntries(entries) as [PropertyKey, SchemaValidator][];
   const mappedValidatorEntries = validatorEntries.map(([key, value]) => [key, value.schema] as const);
 
   const schema = schemaHelper<ObjectSchemaDefinition<T>>({

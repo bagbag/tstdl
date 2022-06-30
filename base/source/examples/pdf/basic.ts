@@ -1,3 +1,4 @@
+import { Application } from '#/application';
 import { container } from '#/container';
 import { configureTstdl } from '#/core';
 import { PdfService } from '#/pdf/pdf.service';
@@ -23,4 +24,4 @@ async function test(): Promise<void> {
   console.log(`Resulting PDF has ${result.length} bytes.`);
 }
 
-void test();
+void Application.run(test);

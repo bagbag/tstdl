@@ -44,8 +44,8 @@ export type AbstractType<T = any, Arguments extends any[] = any> = AbstractConst
 export type AbstractConstructor<T = any, Arguments extends any[] = any> = abstract new (...args: Arguments) => T;
 export type ReturnTypeOrT<T> = T extends (...args: any) => infer R ? R : T;
 
-export type Record<K extends keyof any = any, V = any> = { [P in K]: V };
-export type DeepRecord<K extends keyof any = any, V = any> = { [P in K]: V | DeepRecord<K, V> };
+export type Record<K extends PropertyKey = PropertyKey, V = any> = { [P in K]: V };
+export type DeepRecord<K extends PropertyKey = PropertyKey, V = any> = { [P in K]: V | DeepRecord<K, V> };
 export type StringMap<T = any> = Record<string, T>;
 export type NumberMap<T = any> = Record<number, T>;
 export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };

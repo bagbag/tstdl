@@ -1,95 +1,90 @@
-import type { Constructor, Record } from '#/types';
-import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
-import type { AccessorDecoratorData, ClassDecoratorData, ConstructorParameterDecoratorData, DecoratorData, MethodDecoratorData, MethodParameterDecoratorData, ParameterDecoratorData, PropertyDecoratorData, PropertyOrAccessorDecoratorData } from './decorator-data';
+import type { Constructor, PropertiesOfType, Record } from '#/types';
+import { noop } from '#/utils/noop';
+import { objectEntries } from '#/utils/object/object';
+import { assert, assertObject, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
 import { reflectionRegistry } from './registry';
+import type { Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType } from './types';
 
-export type Decorator = ClassDecorator | PropertyDecorator | MethodDecorator | ParameterDecorator;
-export type DecoratorHandler = (data: DecoratorData) => ReturnType<Decorator>;
-export type ClassDecoratorHandler<T extends Constructor> = (data: ClassDecoratorData) => void | undefined | T;
-export type PropertyDecoratorHandler = (data: PropertyDecoratorData) => void;
-export type AccessorDecoratorHandler = (data: AccessorDecoratorData) => void;
-export type PropertyOrAccessorDecoratorHandler = <T>(data: PropertyOrAccessorDecoratorData) => void | TypedPropertyDescriptor<T>;
-export type MethodDecoratorHandler = <T>(data: MethodDecoratorData) => void | TypedPropertyDescriptor<T>;
-export type ParameterDecoratorHandler = (data: ParameterDecoratorData) => void;
-export type ConstructorParameterDecoratorHandler = (data: ConstructorParameterDecoratorData) => void;
-export type MethodParameterDecoratorHandler = (data: MethodParameterDecoratorData) => void;
+export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 
 export type CreateDecoratorOptions = {
-  data?: Record<string | symbol>
+  data?: Record<string | symbol>,
+
+  /** merge data values instead of replacing them (requires them to be objects) */
+  mergeData?: boolean
 };
 
-export function createDecorator(decorator: DecoratorHandler, options: CreateDecoratorOptions = {}): Decorator {
+export type SpecificCreateDecoratorOptions<T extends DecoratorType> = CreateDecoratorOptions & {
+  handler?: DecoratorHandler<T>
+};
+
+type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
+
+export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDecoratorOptions>(options: T, handler: DecoratorHandler<CreateDecoratorType<T>> = noop): Decorator<CreateDecoratorType<T>> {
   function decoratorWrapper(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): ReturnType<Decorator> {
     const data = getDecoratorData(target, propertyKey, descriptorOrParameterIndex);
-    const metadata = reflectionRegistry.registerDecoratorData(data);
+    const optionsType: keyof CreateDecoratorTypeOptions = (data.type == 'constructor-parameter') ? 'constructorParameter' : data.type;
+
+    const valid = (options[optionsType] == true)
+      || (optionsType == 'parameter' && ((options.constructorParameter == true) || (options.methodParameter == true)))
+      || (((optionsType == 'constructorParameter') || (optionsType as DecoratorType == 'methodParameter')) && (options.parameter == true));
+
+    assert(valid, () => `Decorator cannot be used for ${data.type}.`);
+
+    const metadata = reflectionRegistry.registerDecoratorData(data) as DecoratorMetadata<CreateDecoratorType<T>>;
 
     if (isDefined(options.data)) {
-      for (const [key, value] of Object.entries(options.data)) {
-        metadata.data.set(key, value);
+      for (const [key, value] of objectEntries(options.data)) {
+        if (options.mergeData != true) {
+          metadata.data.set(key, value);
+        }
+        else {
+          const existing = metadata.data.get(key) ?? {};
+          assertObject(existing, 'Existing and new data must be of type object in order to merge them.');
+          assertObject(value, 'Existing and new data must be of type object in order to merge them.');
+
+          metadata.data.set(key, { ...existing, ...value });
+        }
       }
     }
 
-    return decorator(data);
+    return handler(data as DecoratorData<CreateDecoratorType<T>>, metadata) as void;
   }
 
-  return decoratorWrapper;
+  return decoratorWrapper as Decorator<CreateDecoratorType<T>>;
 }
 
-export function createClassDecorator<T extends Constructor>(decorator: ClassDecoratorHandler<T>, options: CreateDecoratorOptions = {}): ClassDecorator {
-  return createDecorator((data) => {
-    assert(data.type == 'class', `Class decorator cannot be used for ${data.type}.`);
-    return decorator(data);
-  }, options) as ClassDecorator;
+export function createClassDecorator(options: SpecificCreateDecoratorOptions<'class'> = {}): ClassDecorator {
+  return createDecorator({ ...options, class: true }, options.handler);
 }
 
-export function createPropertyDecorator(decorator: PropertyDecoratorHandler, options: CreateDecoratorOptions = {}): PropertyDecorator {
-  return createDecorator((data) => {
-    assert(data.type == 'property', `Property decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as PropertyDecorator;
+export function createPropertyDecorator(options: SpecificCreateDecoratorOptions<'property'> = {}): PropertyDecorator {
+  return createDecorator({ ...options, property: true }, options.handler);
 }
 
-export function createAccessorDecorator(decorator: AccessorDecoratorHandler, options: CreateDecoratorOptions = {}): MethodDecorator {
-  return createDecorator((data) => {
-    assert(data.type == 'accessor', `Accessor decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as MethodDecorator;
+export function createAccessorDecorator(options: SpecificCreateDecoratorOptions<'accessor'> = {}): MethodDecorator {
+  return createDecorator({ ...options, accessor: true }, options.handler);
 }
 
-export function createPropertyOrAccessorDecorator(decorator: PropertyOrAccessorDecoratorHandler, options: CreateDecoratorOptions = {}): MethodDecorator {
-  return createDecorator((data) => {
-    assert((data.type == 'property') || (data.type == 'accessor'), `Property or accessor decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as MethodDecorator;
+export function createPropertyOrAccessorDecorator(options: SpecificCreateDecoratorOptions<'property' | 'accessor'> = {}): Decorator<'property' | 'accessor'> {
+  return createDecorator({ ...options, property: true, accessor: true }, options.handler);
 }
 
-export function createMethodDecorator(decorator: MethodDecoratorHandler, options: CreateDecoratorOptions = {}): MethodDecorator {
-  return createDecorator((data) => {
-    assert(data.type == 'method', `Method decorator cannot be used for ${data.type}.`);
-    return decorator(data);
-  }, options) as MethodDecorator;
+export function createMethodDecorator(options: SpecificCreateDecoratorOptions<'method'> = {}): MethodDecorator {
+  return createDecorator({ ...options, method: true }, options.handler);
 }
 
-export function createParameterDecorator(decorator: ParameterDecoratorHandler, options: CreateDecoratorOptions = {}): ParameterDecorator {
-  return createDecorator((data) => {
-    assert((data.type == 'parameter') || (data.type == 'constructor-parameter'), `Parameter decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as ParameterDecorator;
+export function createParameterDecorator(options: SpecificCreateDecoratorOptions<'parameter'> = {}): ParameterDecorator {
+  return createDecorator({ ...options, parameter: true }, options.handler);
 }
 
-export function createConstructorParameterDecorator(decorator: ConstructorParameterDecoratorHandler, options: CreateDecoratorOptions = {}): ParameterDecorator {
-  return createDecorator((data) => {
-    assert((data.type == 'constructor-parameter'), `Constructor-Parameter decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as ParameterDecorator;
+export function createMethodParameterDecorator(options: SpecificCreateDecoratorOptions<'methodParameter'> = {}): ParameterDecorator {
+  return createDecorator({ ...options, methodParameter: true }, options.handler);
 }
 
-export function createMethodParameterDecorator(decorator: MethodParameterDecoratorHandler, options: CreateDecoratorOptions = {}): ParameterDecorator {
-  return createDecorator((data) => {
-    assert((data.type == 'parameter'), `Method-Parameter decorator cannot be used for ${data.type}.`);
-    decorator(data);
-  }, options) as ParameterDecorator;
+export function createConstructorParameterDecorator(options: SpecificCreateDecoratorOptions<'constructorParameter'> = {}): ParameterDecorator {
+  return createDecorator({ ...options, constructorParameter: true }, options.handler);
 }
 
 export function getConstructor<T extends Constructor = Constructor>(constructorOrTarget: object): T {
@@ -102,7 +97,7 @@ export function getTypeInfoString(type: Constructor): string {
   const lines: string[] = [];
 
   const metadata = reflectionRegistry.getMetadata(type);
-  const constructorParameters = metadata.parameters.map((parameter) => parameter.type.name).join(', ');
+  const constructorParameters = metadata.parameters?.map((parameter) => parameter.type?.name ?? '<unknown>').join(', ') ?? '?';
 
   lines.push(`${metadata.constructor.name}(${constructorParameters})`);
 
@@ -113,7 +108,7 @@ export function getTypeInfoString(type: Constructor): string {
 
   for (const [key, methodMetadata] of metadata.staticMethods) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
-    const parameters = metadata.parameters.map((parameter) => parameter.type.name).join(', ');
+    const parameters = methodMetadata.parameters.map((parameter) => parameter.type.name).join(', ');
     lines.push(`  static ${propertyKey}(${parameters}): ${methodMetadata.returnType?.name ?? 'void'}`);
   }
 
@@ -124,7 +119,7 @@ export function getTypeInfoString(type: Constructor): string {
 
   for (const [key, methodMetadata] of metadata.methods) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
-    const parameters = metadata.parameters.map((parameter) => parameter.type.name).join(', ');
+    const parameters = methodMetadata.parameters.map((parameter) => parameter.type.name).join(', ');
     lines.push(`  ${propertyKey}(${parameters}): ${methodMetadata.returnType?.name ?? 'void'}`);
   }
 

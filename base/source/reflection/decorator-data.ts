@@ -1,60 +1,6 @@
-import type { Constructor } from '#/types';
 import { isDefined, isFunction, isNumber, isObject, isUndefined } from '#/utils/type-guards';
+import type { DecoratorData } from './types';
 import { getConstructor } from './utils';
-
-export type ClassDecoratorData = {
-  type: 'class',
-  constructor: Constructor,
-  prototype: object
-};
-
-export type PropertyDecoratorData = {
-  type: 'property',
-  constructor: Constructor,
-  prototype: object,
-  static: boolean,
-  propertyKey: string | symbol
-};
-
-export type AccessorDecoratorData = {
-  type: 'accessor',
-  constructor: Constructor,
-  prototype: object,
-  static: boolean,
-  propertyKey: string | symbol,
-  descriptor: PropertyDescriptor
-};
-
-export type PropertyOrAccessorDecoratorData = PropertyDecoratorData | AccessorDecoratorData;
-
-export type MethodDecoratorData = {
-  type: 'method',
-  constructor: Constructor,
-  prototype: object,
-  static: boolean,
-  methodKey: string | symbol,
-  descriptor: PropertyDescriptor
-};
-
-export type MethodParameterDecoratorData = {
-  type: 'parameter',
-  constructor: Constructor,
-  prototype: object,
-  static: boolean,
-  methodKey: string | symbol,
-  index: number
-};
-
-export type ConstructorParameterDecoratorData = {
-  type: 'constructor-parameter',
-  constructor: Constructor,
-  prototype: object,
-  index: number
-};
-
-export type ParameterDecoratorData = MethodParameterDecoratorData | ConstructorParameterDecoratorData;
-
-export type DecoratorData = ClassDecoratorData | PropertyDecoratorData | AccessorDecoratorData | MethodDecoratorData | ParameterDecoratorData;
 
 // eslint-disable-next-line max-lines-per-function
 export function getDecoratorData(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): DecoratorData {
