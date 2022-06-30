@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.69",
+  "version": "0.71.70",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -18,7 +18,7 @@
     "luxon": "^2.4",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.5",
-    "type-fest": "^2.14"
+    "type-fest": "^2.15"
   },
   "devDependencies": {
     "@types/chroma-js": "2.1",
@@ -31,7 +31,7 @@
     "@types/yup": "0.29",
     "@typescript-eslint/eslint-plugin": "5",
     "@typescript-eslint/parser": "5",
-    "eslint": "8.18",
+    "eslint": "8",
     "ttypescript": "1.5",
     "typedoc": "0.23",
     "typescript": "4.7",
@@ -49,7 +49,7 @@
     "mjml": "^4.12",
     "mongodb": "^4.7",
     "nodemailer": "^6.7",
-    "puppeteer": "^15.1",
+    "puppeteer": "^15.2",
     "superstruct": "^0.16",
     "undici": "^5.5",
     "urlpattern-polyfill": "^4.0"
