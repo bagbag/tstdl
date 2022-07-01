@@ -196,14 +196,16 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
 
   if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
     try {
-      message = JSON.stringify(decycle(error), null, 2);
+      const decycledError = decycle(error);
+      message = JSON.stringify(decycledError, null, 2);
     }
     catch {
       throw error;
     }
   }
 
-  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycle(rest), null, 2)}` : '';
+  const decycledRest = decycle(rest);
+  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycledRest, null, 2)}` : '';
   const extraInfoString = isDefined(extraInfo) ? `\n${JSON.stringify(extraInfo, null, 2)}` : '';
   const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
 
@@ -273,7 +275,7 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
       return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
     }
 
-    return mapObjectValues(value, ([item, key]) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
+    return mapObjectValues(value, (item, key) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
   }
 
   return _decycle(_value, '$') as Decycled<T>;
