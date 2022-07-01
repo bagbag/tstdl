@@ -1,5 +1,4 @@
 /* eslint-disable max-classes-per-file */
-import { WeakRefMap } from '#/data-structures';
 import type { Constructor, Type, Writable } from '#/types';
 import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
@@ -64,7 +63,7 @@ export class ReflectionRegistry {
   private readonly metadataMap: FactoryMap<Type, TypeMetadata>;
 
   constructor() {
-    this.metadataMap = new FactoryMap((type) => this.initializeType(type), new WeakRefMap());
+    this.metadataMap = new FactoryMap((type) => this.initializeType(type));
   }
 
   hasType(type: Constructor): boolean {
