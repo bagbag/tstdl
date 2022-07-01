@@ -273,7 +273,7 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
       return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
     }
 
-    return mapObjectValues(value, ([key, item]) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
+    return mapObjectValues(value, ([item, key]) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
   }
 
   return _decycle(_value, '$') as Decycled<T>;
