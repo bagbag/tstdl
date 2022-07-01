@@ -1,7 +1,7 @@
 import type { Constructor, PropertiesOfType, Record } from '#/types';
 import { noop } from '#/utils/noop';
 import { objectEntries } from '#/utils/object/object';
-import { assert, assertObject, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
+import { assert, assertArray, assertMap, assertObject, assertSet, isArray, isDefined, isFunction, isMap, isObject, isSet, isSymbol } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
 import { reflectionRegistry } from './registry';
 import type { Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType } from './types';
@@ -11,7 +11,7 @@ export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 export type CreateDecoratorOptions = {
   data?: Record<string | symbol>,
 
-  /** merge data values instead of replacing them (requires them to be objects) */
+  /** merge data values instead of replacing them (requires them to be objects, arrays, maps or sets) */
   mergeData?: boolean
 };
 
@@ -21,7 +21,9 @@ export type SpecificCreateDecoratorOptions<T extends DecoratorType> = CreateDeco
 
 type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
 
+// eslint-disable-next-line max-lines-per-function
 export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDecoratorOptions>(options: T, handler: DecoratorHandler<CreateDecoratorType<T>> = noop): Decorator<CreateDecoratorType<T>> {
+  // eslint-disable-next-line max-statements, max-lines-per-function
   function decoratorWrapper(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): ReturnType<Decorator> {
     const data = getDecoratorData(target, propertyKey, descriptorOrParameterIndex);
     const optionsType: keyof CreateDecoratorTypeOptions = (data.type == 'constructor-parameter') ? 'constructorParameter' : data.type;
@@ -40,11 +42,33 @@ export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDec
           metadata.data.set(key, value);
         }
         else {
-          const existing = metadata.data.get(key) ?? {};
-          assertObject(existing, 'Existing and new data must be of type object in order to merge them.');
-          assertObject(value, 'Existing and new data must be of type object in order to merge them.');
+          let newData: any;
 
-          metadata.data.set(key, { ...existing, ...value });
+          if (isObject(value)) {
+            const existing = metadata.data.get(key) ?? {};
+            assertObject(existing, 'Cannot merge object into non-object.');
+            newData = { ...existing, ...value };
+          }
+          else if (isArray(value)) {
+            const existing = metadata.data.get(key) ?? [];
+            assertArray(existing, 'Cannot merge array into non-array.');
+            newData = [...existing, ...value];
+          }
+          else if (isMap(value)) {
+            const existing = metadata.data.get(key) ?? new Map();
+            assertMap(existing, 'Cannot merge map into non-map.');
+            newData = new Map([...existing, ...value]);
+          }
+          else if (isSet(value)) {
+            const existing = metadata.data.get(key) ?? new Set();
+            assertSet(existing, 'Cannot merge set into non-set.');
+            newData = new Set([...existing, ...value]);
+          }
+          else {
+            throw new Error('Merging of data can only be done with objects, arrays, maps and sets.');
+          }
+
+          metadata.data.set(key, newData);
         }
       }
     }

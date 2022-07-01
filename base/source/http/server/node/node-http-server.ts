@@ -14,17 +14,14 @@ import { FeedableAsyncIterable } from '#/utils/feedable-async-iterable';
 import { Timer } from '#/utils/timer';
 import { cancelableTimeout } from '#/utils/timing';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards';
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { ServerResponse } from 'http';
 import * as Http from 'http';
-import type { Http2ServerRequest, Http2ServerResponse } from 'http2';
 import type { Socket } from 'net';
 import { bindNodeCallback, share } from 'rxjs';
 import type { HttpServerRequestContext } from '../http-server';
 import { HttpServer } from '../http-server';
 import { HttpServerRequest } from '../http-server-request';
 import type { HttpServerResponse } from '../http-server-response';
-
-type RequestHandler = (req: IncomingMessage | Http2ServerRequest, res: ServerResponse | Http2ServerResponse) => void;
 
 type RequestItem = { request: Http.IncomingMessage, response: Http.ServerResponse };
 
