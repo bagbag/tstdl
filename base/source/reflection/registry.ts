@@ -60,10 +60,10 @@ export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
 
 export class ReflectionRegistry {
-  private readonly metadataMap: FactoryMap<Type, TypeMetadata>;
+  private readonly metadataMap: WeakMap<Type, TypeMetadata>;
 
   constructor() {
-    this.metadataMap = new FactoryMap((type) => this.initializeType(type));
+    this.metadataMap = new WeakMap();
   }
 
   hasType(type: Constructor): boolean {
@@ -71,7 +71,13 @@ export class ReflectionRegistry {
   }
 
   getMetadata(type: Constructor): TypeMetadata {
-    return this.metadataMap.get(type);
+    if (!this.metadataMap.has(type)) {
+      const metadata = this.initializeType(type);
+      this.metadataMap.set(type, metadata);
+      return metadata;
+    }
+
+    return this.metadataMap.get(type)!;
   }
 
   register(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): DecoratorData {
@@ -82,7 +88,7 @@ export class ReflectionRegistry {
   }
 
   registerDecoratorData(data: DecoratorData): ReflectionMetadata {
-    const metadata = this.metadataMap.get(data.constructor);
+    const metadata = this.getMetadata(data.constructor);
 
     (metadata as WritableTypeMetadata).registered = true;
 
