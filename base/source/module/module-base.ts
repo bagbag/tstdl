@@ -51,7 +51,7 @@ export abstract class ModuleBase implements Module {
 
   async stop(): Promise<void> {
     this.cancellationToken.set();
-    await this.runPromise;
+    await this.runPromise.catch(() => { /* ignore */ });
   }
 
   protected abstract _run(cancellationToken: ReadonlyCancellationToken): Promise<void>;
