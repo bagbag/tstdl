@@ -50,3 +50,7 @@ export class FileMailTemplateProvider extends FileTemplateProviderBase<MailTempl
 export function configureFileMailTemplateProvider(config: Partial<FileMailTemplateProviderConfig> = {}): void {
   fileMailTemplateProviderConfig.basePath = config.basePath ?? fileMailTemplateProviderConfig.basePath;
 }
+
+export function fileMailTemplate<T extends FileMailTemplate>(template: T): T {
+  return template;
+}
