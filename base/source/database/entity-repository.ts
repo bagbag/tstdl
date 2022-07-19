@@ -1,7 +1,7 @@
 import type { Entity, MaybeNewEntity } from './entity';
 import type { Query, QueryOptions } from './query';
 
-declare const type: unique symbol;
+export declare const repositoryType: unique symbol;
 
 export type UpdateOptions = {
   upsert?: boolean
@@ -10,7 +10,7 @@ export type UpdateOptions = {
 export type EntityPatch<T extends Entity = Entity> = Partial<Omit<T, 'id'>>;
 
 export abstract class EntityRepository<T extends Entity = Entity> {
-  readonly [type]: T;
+  readonly [repositoryType]: T;
 
   abstract load<U extends T = T>(id: string): Promise<U>;
   abstract tryLoad<U extends T = T>(id: string): Promise<U | undefined>;
