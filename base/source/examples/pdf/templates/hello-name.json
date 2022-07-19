@@ -1,4 +1,0 @@
-{
-  "type": "mjml-handlebars",
-  "template": "<mjml>\n<mj-body>\n<mj-section>\n<mj-column>\n<mj-text font-size=\"20px\" color=\"#F45E43\" font-family=\"helvetica\">Hello {{ name }} in html!</mj-text>\n</mj-column>\n</mj-section>\n</mj-body>\n</mjml>"
-}

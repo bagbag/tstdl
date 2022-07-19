@@ -1,3 +1,4 @@
+import { BadRequestError } from '#/error/bad-request.error';
 import type { Schema } from '#/schema';
 import type { Record, TypedOmit } from '#/types';
 import { assertStringPass, isDefined } from '#/utils/type-guards';
@@ -8,6 +9,8 @@ import type { Template } from '../template.model';
 export type FileTemplateBase = TypedOmit<Template, 'template'>;
 
 export type FileForward<T extends FileTemplateBase, U extends FileTemplateBase> = [fileKey: keyof U, targetKey: keyof T];
+
+const keyPattern = /^[\w\-\/]+$/u;
 
 export class FileTemplateProviderBase<T extends FileTemplateBase, U extends FileTemplateBase> {
   private readonly schema: Schema<U>;
@@ -21,9 +24,14 @@ export class FileTemplateProviderBase<T extends FileTemplateBase, U extends File
   }
 
   async get(key: string): Promise<T> {
-    const filePath = path.resolve(this.basePath, `${key}.json`);
-    const fileContent = await fs.readFile(filePath, { encoding: 'utf8' });
-    const fileTemplate = this.schema.parse(JSON.parse(fileContent));
+    if (!keyPattern.test(key)) {
+      throw new BadRequestError('Illegal template key. Only a-z, A-Z, 0-9, _ and - are allowed.');
+    }
+
+    const filePath = path.resolve(this.basePath, `${key}.js`);
+    const templateModule = await import(filePath) as { default: unknown };
+    const fileContent = templateModule.default;
+    const fileTemplate = this.schema.parse(fileContent);
 
     const result: Record = {};
     const entries = Object.entries(fileTemplate) as [keyof U, keyof T][];

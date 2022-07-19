@@ -43,3 +43,7 @@ export class FileTemplateProvider extends FileTemplateProviderBase<Template, Fil
 export function configureFileTemplateProvider(config: Partial<FileTemplateProviderConfig> = {}): void {
   fileTemplateProviderConfig.basePath = config.basePath ?? fileTemplateProviderConfig.basePath;
 }
+
+export function fileTemplate<T extends FileTemplate>(template: T): T {
+  return template;
+}

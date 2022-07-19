@@ -15,7 +15,7 @@ configureTemplates({
   templateRenderers: [MjmlTemplateRenderer, HandlebarsTemplateRenderer]
 });
 
-configureFileTemplateProvider({ basePath: resolve(__dirname.replace('/dist', '/source'), 'templates') });
+configureFileTemplateProvider({ basePath: resolve(__dirname, 'templates') });
 
 async function test(): Promise<void> {
   const service = await container.resolveAsync(PdfService);
