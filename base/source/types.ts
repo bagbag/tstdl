@@ -22,6 +22,7 @@ export type Primitive = string | number | boolean | bigint | null | undefined | 
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export type PrimitiveArray = PrimitiveValue[];
+export type BuiltIn = Primitive | RegExp | Date | Function;
 
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
@@ -121,9 +122,17 @@ export type DeepFlatten<T> = T extends readonly (infer R)[]
 
 export type DeepArray<T> = (T | DeepArray<T>)[];
 
-export type DeepReadonly<T> = T extends (Primitive | Function) ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : DeepReadonlyObject<T>;
+export type DeepReadonly<T> = T extends BuiltIn ? T : T extends (any[] | readonly any[]) ? DeepReadonlyArray<T[number]> : DeepReadonlyObject<T>;
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 export type DeepReadonlyArray<T> = readonly DeepReadonly<T>[];
+
+export type DeepPartial<T> = T extends BuiltIn
+  ? T
+  : T extends any[] ? DeepPartialArray<T[number]>
+  : T extends readonly any[] ? Readonly<DeepPartialArray<T[number]>>
+  : DeepPartialObject<T>;
+export type DeepPartialObject<T> = { [P in keyof T]?: DeepPartial<T[P]> };
+export type DeepPartialArray<T> = DeepPartial<T>[];
 
 export type TypedArray =
   | Int8Array
