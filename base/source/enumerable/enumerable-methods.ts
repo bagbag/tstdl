@@ -6,6 +6,8 @@ export interface EnumerableMethods {
   cast(...args: any[]): any;
   concat(...args: any[]): any;
   defaultIfEmpty(...args: any[]): any;
+  difference(...args: any[]): any;
+  differenceMany(...args: any[]): any;
   distinct(...args: any[]): any;
   drain(...args: any[]): any;
   filter(...args: any[]): any;
@@ -38,6 +40,7 @@ export interface EnumerableMethods {
   toArray(...args: any[]): any;
   toAsync(...args: any[]): any;
   toIterator(...args: any[]): any;
+  toSet(...args: any[]): any;
   toSync(...args: any[]): any;
   while(...args: any[]): any;
 }

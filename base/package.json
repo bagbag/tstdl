@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.71.81",
+  "version": "0.71.82",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -42,14 +42,14 @@
     "@koa/router": "^12.0",
     "@tstdl/angular": "^0.10",
     "chroma-js": "^2.4",
-    "got": "^12.1",
+    "got": "^12.2",
     "handlebars": "^4.7",
     "koa": "^2.13",
     "minio": "^7.0",
     "mjml": "^4.13",
     "mongodb": "4.7",
     "nodemailer": "^6.7",
-    "puppeteer": "^15.4",
+    "puppeteer": "^15.5",
     "superstruct": "^0.16",
     "undici": "^5.8",
     "urlpattern-polyfill": "^4.0"

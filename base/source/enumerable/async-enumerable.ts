@@ -5,7 +5,7 @@ import type { AsyncComparator } from '#/utils/sort';
 import { isNotNullOrUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
@@ -70,13 +70,23 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     return this as AsyncEnumerable<any> as AsyncEnumerable<TNew>;
   }
 
-  concat<TOther>(iterable: Iterable<TOther>): AsyncEnumerable<T | TOther> {
-    const concatted = concatAsync(this.source, iterable);
+  concat<U>(...iterables: AnyIterable<U>[]): AsyncEnumerable<T | U> {
+    const concatted = concatAsync<T | U>(this.source, ...iterables);
     return new AsyncEnumerable(concatted);
   }
 
   defaultIfEmpty<TDefault>(defaultValue: TDefault): AsyncEnumerable<T | TDefault> {
     const result = defaultIfEmptyAsync(this.source, defaultValue);
+    return new AsyncEnumerable(result);
+  }
+
+  difference(iterable: AnyIterable<T>, selector?: AsyncIteratorFunction<T, unknown>): AsyncEnumerable<T> {
+    const result = differenceAsync(this.source, iterable, selector);
+    return new AsyncEnumerable(result);
+  }
+
+  differenceMany(iterables: AnyIterable<T>[], selector?: AsyncIteratorFunction<T, unknown>): AsyncEnumerable<T> {
+    const result = differenceManyAsync(this.source, iterables, selector);
     return new AsyncEnumerable(result);
   }
 
@@ -250,6 +260,11 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
   toIterator(): AsyncIterator<T> {
     const iterator = iterableToAsyncIterator(this.source);
     return iterator;
+  }
+
+  async toSet(): Promise<Set<T>> {
+    const iterable = await this.toSync();
+    return new Set(iterable);
   }
 
   async toSync(): Promise<Enumerable<T>> {
