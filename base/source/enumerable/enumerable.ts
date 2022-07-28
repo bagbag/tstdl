@@ -55,7 +55,7 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
     return this as any as Enumerable<TNew>;
   }
 
-  concat<U>(...iterables: Iterable<T>[]): Enumerable<T | U> {
+  concat<U>(...iterables: Iterable<U>[]): Enumerable<T | U> {
     const concatted = concat<T | U>(this.source, ...iterables);
     return new Enumerable(concatted);
   }
