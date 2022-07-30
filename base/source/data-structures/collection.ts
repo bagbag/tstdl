@@ -78,8 +78,12 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     return this.items();
   }
 
-  toJSON(): any {
+  toArray(): T[] {
     return [...this];
+  }
+
+  toJSON(): T[] {
+    return this.toArray();
   }
 
   /** remove all items */
