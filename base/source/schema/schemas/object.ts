@@ -1,8 +1,10 @@
 import type { JsonPath } from '#/json-path';
-import type { Optionalize, Record, Simplify, SimplifyObject, StringMap } from '#/types';
+import type { OneOrMany, Optionalize, Record, SimplifyObject, StringMap } from '#/types';
+import { toArray } from '#/utils/array/array';
 import { differenceMaps } from '#/utils/map';
 import { objectEntries } from '#/utils/object/object';
 import { isBoolean } from '#/utils/type-guards';
+import type { Simplify } from 'type-fest';
 import { schemaError, SchemaError } from '../schema.error';
 import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
 import { SchemaValidator, test, testAsync } from '../schema.validator';
@@ -21,6 +23,8 @@ export type ObjectSchemaDefinition<T extends StringMap<SchemaDefinition> = Strin
 };
 
 export type ObjectAssign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>> = SimplifyObject<B & Omit<A, keyof B>>;
+export type ObjectPick<T extends StringMap<SchemaDefinition>, K extends keyof T> = SimplifyObject<Pick<T, K>>;
+export type ObjectExclude<T extends StringMap<SchemaDefinition>, K extends keyof T> = SimplifyObject<Omit<T, K>>;
 
 export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extends SchemaValidator<ObjectSchemaDefinition<T>> {
   private readonly validatorEntries: Map<PropertyKey, SchemaValidator>;
@@ -32,11 +36,35 @@ export class ObjectSchemaValidator<T extends StringMap<SchemaDefinition>> extend
   }
 
   static assign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>>(a: ObjectSchemaValidator<A>, b: ObjectSchemaValidator<B>): ObjectSchemaValidator<ObjectAssign<A, B>> {
-    const validatorEntries = Object.fromEntries([...a.validatorEntries.entries(), ...b.validatorEntries.entries()]) as ObjectSchemaValidatorEntries<A & B>;
+    const validatorEntries = Object.fromEntries([...a.validatorEntries, ...b.validatorEntries]) as ObjectSchemaValidatorEntries<A & B>;
 
     const schema: ObjectSchemaDefinition<ObjectAssign<A, B>> = {
       type: 'object',
       entries: { ...a.schema.entries, ...b.schema.entries }
+    };
+
+    return new ObjectSchemaValidator(validatorEntries, schema);
+  }
+
+  static pick<T extends StringMap<SchemaDefinition>, K extends keyof T>(objectSchema: ObjectSchemaValidator<T>, keys: OneOrMany<K>): ObjectSchemaValidator<ObjectPick<T, K>> {
+    const keysArray = toArray(keys);
+    const validatorEntries = Object.fromEntries([...objectSchema.validatorEntries].filter(([key]) => keysArray.includes(key as K))) as ObjectSchemaValidatorEntries<ObjectPick<T, K>>;
+
+    const schema: ObjectSchemaDefinition<Pick<T, K>> = {
+      type: 'object',
+      entries: Object.fromEntries([...Object.entries(objectSchema.schema.entries)].filter(([key]) => keysArray.includes(key as K))) as Pick<T, K>
+    };
+
+    return new ObjectSchemaValidator(validatorEntries, schema);
+  }
+
+  static exclude<T extends StringMap<SchemaDefinition>, K extends keyof T>(objectSchema: ObjectSchemaValidator<T>, keys: OneOrMany<K>): ObjectSchemaValidator<ObjectExclude<T, K>> {
+    const keysArray = toArray(keys);
+    const validatorEntries = Object.fromEntries([...objectSchema.validatorEntries].filter(([key]) => !keysArray.includes(key as K))) as ObjectSchemaValidatorEntries<ObjectExclude<T, K>>;
+
+    const schema: ObjectSchemaDefinition<Omit<T, K>> = {
+      type: 'object',
+      entries: Object.fromEntries([...Object.entries(objectSchema.schema.entries)].filter(([key]) => !keysArray.includes(key as K))) as Omit<T, K>
     };
 
     return new ObjectSchemaValidator(validatorEntries, schema);
@@ -135,4 +163,12 @@ export function object<T extends StringMap<SchemaDefinition>>(entries: ObjectSch
 
 export function assign<A extends StringMap<SchemaDefinition>, B extends StringMap<SchemaDefinition>>(a: ObjectSchemaValidator<A>, b: ObjectSchemaValidator<B>): ObjectSchemaValidator<ObjectAssign<A, B>> {
   return ObjectSchemaValidator.assign(a, b);
+}
+
+export function pick<T extends StringMap<SchemaDefinition>, K extends keyof T>(objectSchema: ObjectSchemaValidator<T>, keys: OneOrMany<K>): ObjectSchemaValidator<ObjectPick<T, K>> {
+  return ObjectSchemaValidator.pick(objectSchema, keys);
+}
+
+export function exclude<T extends StringMap<SchemaDefinition>, K extends keyof T>(objectSchema: ObjectSchemaValidator<T>, keys: OneOrMany<K>): ObjectSchemaValidator<ObjectExclude<T, K>> {
+  return ObjectSchemaValidator.exclude(objectSchema, keys);
 }
