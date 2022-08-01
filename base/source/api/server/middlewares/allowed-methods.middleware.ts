@@ -16,7 +16,7 @@ export async function allowedMethodsMiddleware(request: HttpServerRequest, next:
 
   const allowMethods = [...context.api.endpoints.keys()].join(', ');
 
-  return new HttpServerResponse({
+  return HttpServerResponse.fromObject({
     statusCode: 204,
     statusMessage: 'No Content',
     headers: {

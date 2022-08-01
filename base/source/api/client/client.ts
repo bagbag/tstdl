@@ -3,7 +3,7 @@ import { container, resolveArgumentType } from '#/container';
 import type { HttpClientOptions, HttpClientResponse } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import type { HttpBodyType } from '#/http/types';
-import { AsyncIterableSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
+import { AsyncIterableSchemaValidator, LiteralSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
 import { toArray } from '#/utils/array';
 import { compareByValueDescending } from '#/utils/comparison';
@@ -70,12 +70,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
-        const responseType: HttpBodyType
-          = (config.result instanceof AsyncIterableSchemaValidator) ? 'stream'
-            : (config.result instanceof StringSchemaValidator) ? 'text'
-              : (config.result instanceof Uint8ArraySchemaValidator) ? 'buffer'
-                : (config.result == undefined) ? 'none'
-                  : 'json';
+        const responseType = convertApiEndpointResultToHttpBodyType(config.result);
 
         const context: ApiClientHttpRequestContext = {
           endpoint: config
@@ -105,6 +100,15 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   }
 
   return api as unknown as ApiClient<T>;
+}
+
+function convertApiEndpointResultToHttpBodyType(result: ApiEndpointDefinitionResult | undefined): HttpBodyType {
+  return (result instanceof AsyncIterableSchemaValidator) ? 'stream'
+    : (result instanceof StringSchemaValidator) ? 'text'
+      : (result instanceof LiteralSchemaValidator) ? ((typeof result.schema.value) == 'string') ? 'text' : 'json'
+        : (result instanceof Uint8ArraySchemaValidator) ? 'buffer'
+          : (result == undefined) ? 'none'
+            : 'json';
 }
 
 async function getBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResult | undefined): Promise<unknown> {

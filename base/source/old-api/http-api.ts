@@ -73,19 +73,19 @@ type RouteRequestDataTransformerContext = {
 export type RouteRequestDataTransformer<In, Out> = (data: In, bodyType: HttpBodyType, context: RouteRequestDataTransformerContext) => Out;
 
 export function getTextRouteHandler<Parameters, Result extends string>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { text: result } }));
+  return getSimpleRouteHandler((result) => HttpServerResponse.fromObject({ body: { text: result } }));
 }
 
 export function getJsonRouteHandler<Parameters, Result extends UndefinableJson>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { json: result } }));
+  return getSimpleRouteHandler((result) => HttpServerResponse.fromObject({ body: { json: result } }));
 }
 
 export function getBufferRouteHandler<Parameters, Result extends Uint8Array>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { buffer: result } }));
+  return getSimpleRouteHandler((result) => HttpServerResponse.fromObject({ body: { buffer: result } }));
 }
 
 export function getStreamRouteHandler<Parameters, Result extends Readable>(): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {
-  return getSimpleRouteHandler((result) => new HttpServerResponse({ body: { stream: result } }));
+  return getSimpleRouteHandler((result) => HttpServerResponse.fromObject({ body: { stream: result } }));
 }
 
 export function getSimpleRouteHandler<Parameters, Result>(handler: (result: Result) => HttpServerResponse): RouteHandler<Parameters, Parameters, Result, HttpServerRequest> {

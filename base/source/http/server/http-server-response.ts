@@ -31,4 +31,8 @@ export class HttpServerResponse {
     this.headers = new HttpHeaders(response.headers);
     this.body = response.body;
   }
+
+  static fromObject(options?: HttpServerResponseOptions): HttpServerResponse {
+    return new HttpServerResponse(options);
+  }
 }
