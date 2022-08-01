@@ -13,8 +13,9 @@ export type UnionSchemaDefinition<A extends SchemaDefinition, B extends SchemaDe
 };
 
 export class UnionSchemaValidator<A extends SchemaDefinition, B extends SchemaDefinition[]> extends SchemaValidator<UnionSchemaDefinition<A, B>> {
-  private readonly innerSchemas: [SchemaValidator<A>, ...SchemaValidator<B[number]>[]];
   private readonly innerSchemaTypesString: string;
+
+  readonly innerSchemas: [SchemaValidator<A>, ...SchemaValidator<B[number]>[]];
 
   constructor(innerSchemas: [SchemaValidator<A>, ...SchemaValidator<B[number]>[]], schema: UnionSchemaDefinition<A, B>) {
     super(schema);

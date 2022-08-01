@@ -6,10 +6,10 @@ import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
+import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { deferThrow, _throw } from '#/utils/helpers';
+import { deferThrow } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
@@ -239,13 +239,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   private async getBody(request: HttpServerRequest, schema: ApiEndpointDefinitionBody): Promise<string | Json | Uint8Array | undefined> {
-    const body = (schema instanceof ObjectSchemaValidator)
-      ? await request.bodyAsJson()
-      : (schema instanceof StringSchemaValidator)
-        ? await request.bodyAsText()
-        : (schema instanceof Uint8ArraySchemaValidator)
-          ? await request.bodyAsBytes()
-          : _throw(new Error('invalid body schema'));
+    const body = await getRequestBody(schema, request);
 
     if (isUndefined(body)) {
       return undefined;
@@ -253,4 +247,24 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
     return schema.parseAsync(body);
   }
+}
+
+async function getRequestBody(schema: ApiEndpointDefinitionBody, request: HttpServerRequest): Promise<Uint8Array | UndefinableJson> {
+  if (schema instanceof ObjectSchemaValidator) {
+    return request.bodyAsJson();
+  }
+
+  if (schema instanceof StringSchemaValidator) {
+    return request.bodyAsText();
+  }
+
+  if (schema instanceof Uint8ArraySchemaValidator) {
+    return request.bodyAsBytes();
+  }
+
+  if (schema instanceof UnionSchemaValidator) {
+    return getRequestBody(schema.innerSchemas[0] as ObjectSchemaValidator<any>, request);
+  }
+
+  throw new Error('invalid body schema');
 }
