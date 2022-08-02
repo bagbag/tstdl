@@ -3,7 +3,7 @@
 import { singleton } from '#/container';
 import type { Record } from '#/types';
 import { now } from '#/utils/date-time';
-import { formatError } from '#/utils/helpers';
+import { formatError } from '#/utils/format-error';
 import { isDefined, isObject, isString } from '#/utils/type-guards';
 import { LogLevel } from '../level';
 import type { LogErrorOptions, LoggerArgument } from '../logger';

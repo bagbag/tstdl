@@ -2,7 +2,7 @@ import type { CustomError, CustomErrorStatic } from '#/error';
 import { HttpServerResponse } from '#/http/server';
 import type { Logger } from '#/logger';
 import type { Type } from '#/types';
-import { formatError } from '#/utils/helpers';
+import { formatError } from '#/utils/format-error';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response';
 
 export function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>, logger: Logger): HttpServerResponse {
@@ -26,7 +26,7 @@ export function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>
     }
   }
   else {
-    const formattedError = formatError(error, { includeStack: true, includeRest: true, handleBuiltInErrors: true });
+    const formattedError = formatError(error, { includeStack: true, includeRest: 'if-no-extra-info', includeExtraInfo: true });
     logger.error(formattedError);
 
     response.statusCode = 500;

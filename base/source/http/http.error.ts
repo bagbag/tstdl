@@ -1,4 +1,5 @@
-import type { TypedOmit } from '#/types';
+import type { TypedOmit, UndefinableJson } from '#/types';
+import type { ErrorExtraInfo } from '#/utils';
 import { isDefined, isNotString, isString } from '#/utils/type-guards';
 import { CustomError } from '../error';
 import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, HttpClientResponseObject } from './client';
@@ -12,7 +13,7 @@ export enum HttpErrorReason {
   Timeout = 'Timeout'
 }
 
-export class HttpError extends CustomError {
+export class HttpError extends CustomError implements ErrorExtraInfo {
   static readonly errorName = 'HttpError';
 
   readonly reason: HttpErrorReason;
@@ -41,5 +42,12 @@ export class HttpError extends CustomError {
       value: response,
       enumerable: false
     });
+  }
+
+  getExtraInfo(): UndefinableJson | undefined {
+    return {
+      url: this.request.url,
+      method: this.request.method
+    };
   }
 }

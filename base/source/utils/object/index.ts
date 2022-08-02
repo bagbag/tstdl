@@ -1,3 +1,4 @@
+export * from './decycle';
 export * from './dereference';
 export * from './forward-ref';
 export * from './lazy-property';

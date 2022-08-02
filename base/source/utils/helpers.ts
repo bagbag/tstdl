@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { HttpError } from '#/http/http.error';
 import { DetailsError } from '../error';
-import type { DeepArray, Record, StringMap } from '../types';
-import { hasOwnProperty, mapObjectValues, objectEntries } from './object/object';
-import { assertObject, isArray, isArrayBuffer, isDataView, isDate, isDefined, isFunction, isMap, isNotNull, isObject, isPrimitive, isRegExp, isSet, isString, isTypedArray, isUndefined, isWritableArray } from './type-guards';
+import type { DeepArray, Record } from '../types';
+import { decycle } from './object/decycle';
+import { isDefined } from './type-guards';
 
 const supportsNotification = typeof Notification != 'undefined';
 
@@ -42,57 +41,6 @@ export async function structuredCloneAsync<T>(value: T, options?: { transfer?: a
   port1.postMessage(value, options);
 
   return promise;
-}
-
-// eslint-disable-next-line max-statements
-export function clone<T>(object: T, deep: boolean): T {
-  if (isPrimitive(object)) {
-    return object;
-  }
-
-  if (isDate(object)) {
-    return new Date(object) as unknown as T;
-  }
-
-  if (isRegExp(object)) {
-    return new RegExp(object.source, object.flags) as unknown as T;
-  }
-
-  if (isSet(object)) {
-    return new Set(object) as unknown as T;
-  }
-
-  if (isMap(object)) {
-    return new Map(object) as unknown as T;
-  }
-
-  if (isArrayBuffer(object)) {
-    return object.slice(0) as unknown as T;
-  }
-
-  if (isTypedArray(object)) {
-    return object.slice() as unknown as T;
-  }
-
-  if (isDataView(object)) {
-    const clonedBuffer = object.buffer.slice(0);
-    return new DataView(clonedBuffer, object.byteOffset, object.byteLength) as unknown as T;
-  }
-
-  if (isArray(object)) {
-    return deep
-      ? object.map((value): any => clone(value, true)) as any as T
-      : [...object] as unknown as T;
-  }
-
-  assertObject(object);
-
-  if (!deep) {
-    return { ...object } as T;
-  }
-
-  const entries = objectEntries(object).map(([key, value]) => [key, clone(value, true)] as const);
-  return Object.fromEntries(entries) as unknown as T;
 }
 
 export function formatDuration(milliseconds: number, precision: number): string {
@@ -148,72 +96,8 @@ export function toError(obj: any): Error {
   return error;
 }
 
-export type FormatErrorOptions = {
-  /**
-   * include all error properties beside name and message
-   */
-  includeRest?: boolean,
-
-  /**
-   * include stack trace
-   */
-  includeStack?: boolean,
-
-  /**
-   * enable special formatting for some known Errors like {@link HttpError} in certain configurations
-   */
-  handleBuiltInErrors?: boolean
-};
-
-// eslint-disable-next-line max-statements, complexity
-export function formatError(error: any, options: FormatErrorOptions = {}): string {
-  const { includeRest = true, includeStack = true, handleBuiltInErrors = true } = options;
-
-  let name: string | undefined;
-  let message: string | undefined;
-  let stack: string | undefined;
-  let rest: StringMap | undefined;
-  let extraInfo: StringMap | undefined;
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const wrappedError = error?.rejection ?? error?.reason ?? error?.error;
-
-  if ((error instanceof Error) && !(error.message.startsWith('Uncaught') && (wrappedError instanceof Error))) {
-    ({ name, message, stack, ...rest } = error);
-
-    if (handleBuiltInErrors) {
-      if ((error instanceof HttpError) && !includeRest) {
-        extraInfo = {
-          url: error.request.url,
-          method: error.request.method
-        };
-      }
-    }
-  }
-  else if (wrappedError instanceof Error) {
-    return formatError(wrappedError, options);
-  }
-
-  if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
-    try {
-      const decycledError = decycle(error);
-      message = JSON.stringify(decycledError, null, 2);
-    }
-    catch {
-      throw error;
-    }
-  }
-
-  const decycledRest = decycle(rest);
-  const restString = (includeRest && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycledRest, null, 2)}` : '';
-  const extraInfoString = isDefined(extraInfo) ? `\n${JSON.stringify(extraInfo, null, 2)}` : '';
-  const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
-
-  return `${name ?? 'Error'}: ${message}${restString}${extraInfoString}${stackString}`;
-}
-
 export function select<T extends Record, K extends keyof T>(key: K): (item: T) => T[K] {
-  return (item: T) => item[key];
+  return (item: T): any => item[key];
 }
 
 export function parseFirstAndFamilyName(name: string): { firstName: string | undefined, familyName: string | undefined } {
@@ -241,116 +125,6 @@ export function deferThrow(value: any): () => never {
   return function deferThrow() {
     throw value;
   };
-}
-
-export type Decycled<T> = { __type: T } & StringMap;
-
-/**
- * replaces cycles (circular references) in objects with JSONPath
- * @param value object to decycle
- * @param replacer replace values. Like JSON.stringify(value, *replacer*)
- */
-export function decycle<T>(value: T, replacer?: (value: any) => any): Decycled<T>;
-export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<T> {
-  const mapping = new Map<any, string>();
-
-  const replacerFn = isDefined(replacer) ? replacer : (value: unknown) => value;
-
-  function _decycle(__value: any, path: string): any {
-    const value = replacerFn(__value);
-
-    if (isPrimitive(value) || isRegExp(value) || isDate(value) || isFunction(value)) {
-      return value;
-    }
-
-    const mappedPath = mapping.get(value);
-
-    if (isDefined(mappedPath)) {
-      return { $ref: mappedPath };
-    }
-
-    mapping.set(value, path);
-
-    if (isArray(value)) {
-      return value.map((item, index): any => _decycle(item, `${path}[${index}]`)) as any;
-    }
-
-    return mapObjectValues(value, (item, key) => [key, _decycle(item, `${path}['${key as string}']`)] as const);
-  }
-
-  return _decycle(_value, '$') as Decycled<T>;
-}
-
-const recyclePathPattern = /^\$(?:\[(?:(\d+)|'(.*?)')\])*$/u;
-const recyclePathPartsPattern = /\[(?:(\d+)|'(.*?)')\]/ug;
-
-/**
- * replaces JSONPath in objects with their reference
- * @param value object to recycle
- */
-export function recycle<T = any>(value: Decycled<T>, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow
-export function recycle<T = any>(value: any, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow, @typescript-eslint/unified-signatures
-export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T { // eslint-disable-line max-lines-per-function
-  const value = _clone ? clone(_value, true) : _value;
-
-  function deref(ref: string): any {
-    const parts = ref.matchAll(recyclePathPartsPattern);
-
-    let target = value;
-    for (const [, index, property] of parts) {
-      const key = index ?? property;
-
-      if (!hasOwnProperty(target, key!)) {
-        throw new Error(`reference ${ref} not found`);
-      }
-
-      target = (target as StringMap)[key!];
-    }
-
-    return target;
-  }
-
-  function getRef(node: any): string | undefined {
-    if (isObject(node) && hasOwnProperty<Record>(node, '$ref')) {
-      const ref = (node as StringMap)['$ref'];
-
-      if (isString(ref) && recyclePathPattern.test(ref)) {
-        return ref;
-      }
-    }
-
-    return undefined;
-  }
-
-  function _recycle(node: any): void {
-    if (isWritableArray(node)) {
-      for (let i = 0; i < node.length; i++) {
-        const ref = getRef(node[i]);
-
-        if (isDefined(ref)) {
-          node[i] = deref(ref);
-        }
-        else {
-          _recycle(node[i]);
-        }
-      }
-    }
-    else if (isObject(node) && isNotNull(node)) {
-      for (const key of Object.keys(node)) {
-        const ref = getRef((node as StringMap)[key]);
-
-        if (isDefined(ref)) {
-          (node as StringMap)[key] = deref(ref);
-        }
-        else {
-          _recycle((node as StringMap)[key]);
-        }
-      }
-    }
-  }
-
-  _recycle(value);
-  return value as any as T;
 }
 
 export type NormalizeTextOptions = {

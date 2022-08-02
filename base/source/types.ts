@@ -35,9 +35,10 @@ export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
+export type EnumerationValue = string | number;
 export type Enumeration = EnumerationArray | EnumerationObject;
-export type EnumerationArray = readonly [string | number, ...(string | number)[]];
-export type EnumerationObject = StringMap<string | number>;
+export type EnumerationArray = readonly [EnumerationValue, ...(EnumerationValue)[]];
+export type EnumerationObject = Record<string, EnumerationValue>;
 
 export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
 export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;

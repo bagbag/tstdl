@@ -3,7 +3,7 @@ import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { TypedOmit } from '#/types';
 import { currentTimestamp } from '#/utils/date-time';
-import { formatError } from '#/utils/helpers';
+import { formatError } from '#/utils/format-error';
 import { isDefined } from '#/utils/type-guards';
 import { MailLogRepository } from './mail-log.repository';
 import { MailTemplateRendererProvider } from './mail-template-renderer.provider';
