@@ -6,7 +6,7 @@ import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import { ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
+import { ArraySchemaValidator, ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { deferThrow } from '#/utils/helpers';
@@ -250,7 +250,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 }
 
 async function getRequestBody(schema: ApiEndpointDefinitionBody, request: HttpServerRequest): Promise<Uint8Array | UndefinableJson> {
-  if (schema instanceof ObjectSchemaValidator) {
+  if ((schema instanceof ObjectSchemaValidator) || (schema instanceof ArraySchemaValidator)) {
     return request.bodyAsJson();
   }
 

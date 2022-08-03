@@ -1,6 +1,6 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { ObjectSchemaDefinition, ObjectSchemaValidator, SchemaOutput, SchemaValidator, StringSchemaDefinition, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
+import type { ArraySchemaDefinition, ArraySchemaValidator, ObjectSchemaDefinition, ObjectSchemaValidator, SchemaOutput, SchemaValidator, StringSchemaDefinition, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
 import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
@@ -26,7 +26,7 @@ export type EndpointRegistrationOptions = {
 
 export type ApiEndpointMethod = HttpMethod;
 
-export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | Uint8ArraySchemaValidator | UnionSchemaValidator<StringSchemaDefinition | ObjectSchemaDefinition<any>, (StringSchemaDefinition | ObjectSchemaDefinition<any>)[]>;
+export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | ArraySchemaValidator<any> | Uint8ArraySchemaValidator | UnionSchemaValidator<StringSchemaDefinition | ObjectSchemaDefinition | ArraySchemaDefinition, (StringSchemaDefinition | ObjectSchemaDefinition | ArraySchemaDefinition)[]>;
 export type ApiEndpointDefinitionResult = SchemaValidator;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
