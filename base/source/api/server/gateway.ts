@@ -245,7 +245,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       return undefined;
     }
 
-    return schema.parseAsync(body);
+    return schema.parseAsync(body) as Promise<string | Json | Uint8Array>;
   }
 }
 
