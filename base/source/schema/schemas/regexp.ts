@@ -1,38 +1,18 @@
-import type { JsonPath } from '#/json-path';
-import { isRegExp, isString } from '#/utils/type-guards';
-import { typeOf } from '#/utils/type-of';
-import { schemaError, SchemaError } from '../schema.error';
-import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+import type { Decorator } from '#/reflection';
+import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import type { Schema } from '../schema';
+import type { Coercible } from '../types';
+import { valueSchema } from '../types';
 
-export type RegExpSchemaDefinition = SchemaDefinition<'regexp', unknown, RegExp> & Coercible;
+export type RegExpSchemaOptions = Coercible;
 
-export class RegExpSchemaValidator extends SchemaValidator<RegExpSchemaDefinition> {
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<RegExp> {
-    if (!isRegExp(value)) {
-      if ((this.schema.coerce ?? options.coerce) && isString(value)) {
-        try {
-          return { valid: true, value: RegExp(value, 'u') };
-        }
-        catch (error) {
-          return { valid: false, error: schemaError(`could not coerce provided string to regular expression: ${(error as Error).message}`, path) };
-        }
-      }
-
-      return { valid: false, error: SchemaError.expectedButGot('RegExp', typeOf(value), path) };
-    }
-
-    return { valid: true, value };
-  }
+export function regexp(options: RegExpSchemaOptions = {}): Schema<globalThis.RegExp> {
+  return valueSchema({
+    type: globalThis.RegExp,
+    coerce: options.coerce
+  });
 }
 
-export function regexp(options?: SchemaOptions<RegExpSchemaDefinition>): RegExpSchemaValidator {
-  const schema = schemaHelper<RegExpSchemaDefinition>({
-    type: 'regexp',
-    ...options
-  });
-
-  return new RegExpSchemaValidator(schema);
+export function RegExp(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromValueType(regexp(options));
 }

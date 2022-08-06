@@ -1,5 +1,5 @@
 import { decodeJsonPath } from '#/json-path';
-import type { StringMap } from '#/types';
+import type { Record } from '#/types';
 import { memoizeSingle } from '../function/memoize';
 
 /**
@@ -15,7 +15,7 @@ export function compileDereferencer(reference: string): (object: object) => unkn
     let target = object;
 
     for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
-      target = (target as StringMap)[nodes[i]!];
+      target = (target as Record)[nodes[i]!];
     }
 
     return target;

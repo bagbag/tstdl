@@ -1,6 +1,7 @@
 import { singleton } from '#/container';
 import { ForbiddenError } from '#/error';
 import { HttpClient } from '#/http/client';
+import { object, optional, Schema, string } from '#/schema';
 import type { Json } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { digest } from '#/utils/cryptography';
@@ -9,7 +10,6 @@ import type { JwtToken, JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { getRandomString } from '#/utils/random';
 import { assertNumberPass, isUndefined } from '#/utils/type-guards';
-import { object, optional, string } from 'superstruct';
 import { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
 import { OidcStateRepository } from './oidc-state.repository';
@@ -21,7 +21,7 @@ type OidcJwtTokenPayload = {
 
 type OidcJwtToken = JwtToken<JwtTokenHeader, OidcJwtTokenPayload>;
 
-const tokenResponseStruct = object({
+const tokenResponseSchema = object({
   /* eslint-disable @typescript-eslint/naming-convention */
   access_token: string(),
   id_token: string(),
@@ -131,7 +131,7 @@ export class OidcService<Data = any> {
 }
 
 function parseTokenResponse(response: Json): OidcToken {
-  const { access_token, id_token, token_type, refresh_token } = tokenResponseStruct.mask(response); // eslint-disable-line @typescript-eslint/naming-convention
+  const { access_token, id_token, token_type, refresh_token } = Schema.parse(tokenResponseSchema, response, { mask: true }); // eslint-disable-line @typescript-eslint/naming-convention
 
   const decodedToken = parseJwtTokenString<OidcJwtToken>(id_token);
 

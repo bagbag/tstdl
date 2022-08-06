@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
 
-import { getCoreLogger } from '#/instance-provider';
 import type { Logger } from '#/logger';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { isDefined } from '#/utils/type-guards';
+import { container } from './container';
+import { CORE_LOGGER } from './core';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';
@@ -13,7 +14,7 @@ const quitEvents: QuitEvent[] = ['uncaughtException' /* , 'multipleResolves' */,
 
 export const shutdownToken = new CancellationToken();
 
-let logger: Logger = getCoreLogger();
+let logger: Logger = container.resolve(CORE_LOGGER);
 
 // eslint-disable-next-line no-shadow
 export function setProcessShutdownLogger(shutdownLogger: Logger): void {

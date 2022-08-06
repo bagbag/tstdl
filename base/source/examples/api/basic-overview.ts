@@ -9,24 +9,22 @@ import { HTTP_CLIENT_OPTIONS } from '#/http';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
-import type { SchemaOutput } from '#/schema';
-import { array, boolean, number, object, refine, string } from '#/schema';
+import { array, boolean, number, object, Property } from '#/schema';
 import { timeout } from '#/utils';
 import { Agent } from 'undici';
 
-const userSchema = object({
-  id: number(),
-  name: string()
-});
+class User {
+  @Property({ coerce: true })
+  id: number;
 
-type User = SchemaOutput<typeof userSchema>;
+  @Property()
+  name: string;
+}
 
 const users: User[] = [
   { id: 1, name: 'Alice' },
   { id: 3, name: 'Bob' }
 ];
-
-const userIdParameterSchema = refine(number({ coerce: true }), (value) => (users.some((user) => user.id == value) ? { valid: true } : { valid: false, error: 'user not found' }));
 
 type UsersApiDefinition = typeof usersApiDefinition;
 
@@ -39,16 +37,16 @@ const usersApiDefinition = defineApi({
         resource: ':id', // => /api/v1/users/:id
         version: 1,
         parameters: object({
-          id: userIdParameterSchema
+          id: number({ coerce: true })
         }),
-        result: userSchema
+        result: User
       };
     },
     loadAll() {
       return {
         method: 'GET',
         resource: rootResource, // => /api/v1/users
-        result: array(userSchema)
+        result: array(User)
       };
     },
     delete() {

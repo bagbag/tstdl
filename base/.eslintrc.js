@@ -15,13 +15,11 @@ module.exports = {
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2018,
+    ecmaVersion: 2022,
     sourceType: 'module',
     project: 'tsconfig.json'
   },
-  plugins: [
-    '@typescript-eslint'
-  ],
+  plugins: ['@typescript-eslint'],
   rules: {
     '@angular-eslint/template/eqeqeq': 'off',
     '@typescript-eslint/brace-style': ['error', 'stroustrup', { allowSingleLine: true }],

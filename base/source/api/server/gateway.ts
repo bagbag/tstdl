@@ -6,7 +6,8 @@ import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import { ArraySchemaValidator, ObjectSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
+import type { SchemaTestable } from '#/schema';
+import { Schema } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { deferThrow } from '#/utils/helpers';
@@ -14,7 +15,7 @@ import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } fr
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
-import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionBody, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
 import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
@@ -213,7 +214,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...context.resourcePatternResult.pathname.groups };
 
     const validatedParameters = isDefined(context.endpoint.definition.parameters)
-      ? await context.endpoint.definition.parameters.parseAsync(parameters)
+      ? Schema.parse(context.endpoint.definition.parameters, parameters)
       : parameters;
 
     const requestData: ApiRequestData = {
@@ -228,43 +229,34 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       return result;
     }
 
-    const response = new HttpServerResponse();
-
-    response.body =
-      isString(result) ? { text: result }
+    const response = new HttpServerResponse({
+      body: isString(result) ? { text: result }
         : isUint8Array(result) ? { buffer: result }
-          : { json: result as UndefinableJson };
+          : { json: result as UndefinableJson }
+    });
 
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, schema: ApiEndpointDefinitionBody): Promise<string | Json | Uint8Array | undefined> {
-    const body = await getRequestBody(schema, request);
+  private async getBody(request: HttpServerRequest, schema: SchemaTestable): Promise<string | Json | Uint8Array | undefined> {
+    const body = await getRequestBody(request);
 
     if (isUndefined(body)) {
       return undefined;
     }
 
-    return schema.parseAsync(body) as Promise<string | Json | Uint8Array>;
+    return Schema.parse<Json | Uint8Array>(schema, body);
   }
 }
 
-async function getRequestBody(schema: ApiEndpointDefinitionBody, request: HttpServerRequest): Promise<Uint8Array | UndefinableJson> {
-  if ((schema instanceof ObjectSchemaValidator) || (schema instanceof ArraySchemaValidator)) {
-    return request.bodyAsJson();
-  }
-
-  if (schema instanceof StringSchemaValidator) {
+async function getRequestBody(request: HttpServerRequest): Promise<UndefinableJson | Uint8Array> {
+  if (request.headers.contentType?.startsWith('text') == true) {
     return request.bodyAsText();
   }
 
-  if (schema instanceof Uint8ArraySchemaValidator) {
-    return request.bodyAsBytes();
+  if (request.headers.contentType?.includes('json') == true) {
+    return request.bodyAsJson();
   }
 
-  if (schema instanceof UnionSchemaValidator) {
-    return getRequestBody(schema.innerSchemas[0] as ObjectSchemaValidator<any>, request);
-  }
-
-  throw new Error('invalid body schema');
+  return request.bodyAsBytes();
 }

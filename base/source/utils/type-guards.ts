@@ -111,6 +111,13 @@ export function assertNotDate<T>(value: T, message: AssertionMessage = 'expected
 export function assertDatePass(value: any, message?: AssertionMessage): InferIsType<typeof isDate> { assertDate(value, message); return value; }
 export function assertNotDatePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isDate> { assertNotDate(value, message); return value; }
 
+export function isValidDate(value: any): value is Date { return isDate(value) && !Number.isNaN(value.getTime()); }
+export function isNotValidDate<T>(value: T): value is InferIsNotType<T, typeof isValidDate> { return !isValidDate(value); }
+export function assertValidDate(value: any, message: AssertionMessage = 'expected value to be a valid Date'): asserts value is InferIsType<typeof isValidDate> { assert(isValidDate(value), message); }
+export function assertNotValidDate<T>(value: T, message: AssertionMessage = 'expected value to not be a valid Date'): asserts value is InferIsNotType<T, typeof isValidDate> { assert(isNotValidDate(value), message); }
+export function assertValidDatePass(value: any, message?: AssertionMessage): InferIsType<typeof isValidDate> { assertValidDate(value, message); return value; }
+export function assertNotValidDatePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isValidDate> { assertNotValidDate(value, message); return value; }
+
 export function isRegExp(value: any): value is RegExp { return (value instanceof RegExp); }
 export function isNotRegExp<T>(value: T): value is InferIsNotType<T, typeof isRegExp> { return !isRegExp(value); }
 export function assertRegExp(value: any, message: AssertionMessage = 'expected value to be RegExp'): asserts value is InferIsType<typeof isRegExp> { assert(isRegExp(value), message); }

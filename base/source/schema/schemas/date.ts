@@ -1,83 +1,35 @@
-import type { JsonPath } from '#/json-path';
+/* eslint-disable @typescript-eslint/naming-convention */
+
+import type { Decorator } from '#/reflection';
 import { isDefined } from '#/utils/type-guards';
-import { SchemaError, schemaError } from '../schema.error';
-import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
-import { schemaHelper } from '../types';
-import { instance } from './instance';
+import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints';
+import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
+import { valueSchema } from '../types';
 
-export type DateSchemaDefinition = SchemaDefinition<'uint8-array', unknown, Date> & Coercible & {
-  min?: Date,
-  max?: Date
+export type DateOptions = Coercible & {
+  minimum?: Date | number,
+  maximum?: Date | number
 };
 
-const dateInstanceSchema = instance(Date);
+export function date(options: DateOptions = {}): ValueSchema<Date> {
+  const constraints: SchemaValueConstraint[] = [];
 
-const coercerMap: CoercerMap<Date> = {
-  string: (string, path) => {
-    const dateValue = new Date(string);
-
-    if (Number.isNaN(dateValue.getTime())) {
-      return { valid: false, error: SchemaError.couldNotCoerce('number', 'string', 'invalid format', path) };
-    }
-
-    return { valid: true, value: dateValue };
-  },
-  number: (number, path) => {
-    const dateValue = new Date(number);
-
-    if (Number.isNaN(dateValue.getTime())) {
-      return { valid: false, error: SchemaError.couldNotCoerce('number', 'string', 'invalid timestamp', path) };
-    }
-
-    return { valid: true, value: dateValue };
-  },
-  bigint: (bigint, path) => {
-    const numberValue = Number(bigint);
-    const dateValue = new Date(numberValue);
-
-    if (Number.isNaN(dateValue.getTime())) {
-      return { valid: false, error: SchemaError.couldNotCoerce('number', 'string', 'invalid timestamp', path) };
-    }
-
-    return { valid: true, value: dateValue };
+  if (isDefined(options.minimum)) {
+    constraints.push(new MinimumDateConstraint(options.minimum));
   }
-};
 
-export class DateSchemaValidator extends SchemaValidator<DateSchemaDefinition> {
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<DateSchemaDefinition>> {
-    const result = super.ensureInstance(Date, value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
-
-    if (!result.valid) {
-      return result;
-    }
-
-    const instanceTestResult = dateInstanceSchema[test](result.value, options, path);
-
-    if (!instanceTestResult.valid) {
-      return instanceTestResult;
-    }
-
-    const dateValue = instanceTestResult.value;
-
-    if (isDefined(this.schema.min) && (dateValue < this.schema.min)) {
-      return { valid: false, error: schemaError(`minimum date is ${this.schema.min.toISOString()}`, path) };
-    }
-
-    if (isDefined(this.schema.max) && (dateValue > this.schema.max)) {
-      return { valid: false, error: schemaError(`maximum date is ${this.schema.max.toISOString()}`, path) };
-    }
-
-    return { valid: true, value: dateValue };
+  if (isDefined(options.maximum)) {
+    constraints.push(new MaximumDateConstraint(options.maximum));
   }
+
+  return valueSchema({
+    type: globalThis.Date,
+    coerce: options.coerce,
+    valueConstraints: constraints
+  });
 }
 
-export function date(options?: SchemaOptions<DateSchemaDefinition>): DateSchemaValidator {
-  const schema = schemaHelper<DateSchemaDefinition>({
-    type: 'uint8-array',
-    ...options
-  });
-
-  return new DateSchemaValidator(schema);
+export function Date(options?: DateOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromValueType(date(options));
 }

@@ -35,10 +35,10 @@ export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
-export type EnumerationValue = string | number;
 export type Enumeration = EnumerationArray | EnumerationObject;
-export type EnumerationArray = readonly [EnumerationValue, ...(EnumerationValue)[]];
-export type EnumerationObject = Record<string, EnumerationValue>;
+export type EnumerationArray = readonly [string | number, ...(string | number)[]];
+export type EnumerationObject = Record<string, string | number>;
+export type EnumerationValue<T extends Enumeration = Enumeration> = T extends EnumerationArray ? T[number] : T[Extract<keyof T, string>];
 
 export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
 export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;
@@ -85,6 +85,8 @@ export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
  * remove type information on object
  */
 export type SimplifyObject<T extends Record> = { [K in keyof T]: T[K] } & {};
+
+export type UndefinableObject<T extends Record> = { [K in keyof T]: T[K] | undefined };
 
 /**
  * pick properties from a type that extend from a specific type.

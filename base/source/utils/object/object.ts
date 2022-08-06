@@ -11,8 +11,15 @@ export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean 
  * returns object entries including those with symbols keys (which Object.entries does not)
  */
 export function objectEntries<T extends object>(object: T): [keyof T, T[keyof T]][] {
-  const keys = Reflect.ownKeys(object) as (keyof T)[];
+  const keys = objectKeys(object);
   return keys.map((key) => [key, object[key]]);
+}
+
+/**
+ * returns object keys including symbols (which Object.keys does not)
+ */
+export function objectKeys<T extends object>(object: T): (keyof T)[] {
+  return Reflect.ownKeys(object) as (keyof T)[];
 }
 
 export function mapObject<T extends Record, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => [key: K, value: V]): Record<K, V> {

@@ -1,39 +1,88 @@
+import type { CustomErrorOptions } from '#/error';
 import { CustomError } from '#/error';
 import type { JsonPath } from '#/json-path';
-import { isNotNullOrUndefined, isString } from '#/utils/type-guards';
+import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types';
+import { toArray } from '#/utils/array/array';
+import type { ErrorExtraInfo } from '#/utils/format-error';
+import { isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards';
+import type { ValueType } from './types';
+import { getValueTypeName } from './utils';
 
-export type SchemaErrorOptions = {
+export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,
-  details?: any
+  inner?: OneOrMany<SchemaError>,
+  details?: UndefinableJson
 };
 
-export class SchemaError extends CustomError {
+export class SchemaError extends CustomError implements ErrorExtraInfo {
   static readonly errorName = 'SchemaError';
 
   readonly path: string;
-  readonly details: any;
+  readonly inner?: SchemaError[];
+  readonly details?: UndefinableJson;
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
-    super({ message, cause });
+    super({ message, cause, fast: options.fast ?? true });
 
     this.path = isString(options.path) ? options.path : options.path.path;
 
-    if (isNotNullOrUndefined(this.details)) {
+    if (isDefined(options.inner)) {
+      const errors = toArray(options.inner);
+
+      if (errors.length > 0) {
+        this.inner = errors as SchemaError[];
+      }
+    }
+
+    if (isNotNullOrUndefined(options.details)) {
       this.details = options.details;
     }
   }
 
-  static expectedButGot(expected: string, got: string, path: string | JsonPath): SchemaError {
-    const message = `expected ${expected} but got ${got}`;
-    return new SchemaError(message, { path });
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
+    const gotName = isString(got) ? got : getValueTypeName(got);
+
+    const expectedString = expectedNames.length == 1
+      ? expectedNames[0]!
+      : `[${expectedNames.join(', ')}]`;
+
+    const message = `Expected ${expectedString} but got ${gotName}.`;
+    return new SchemaError(message, { path, ...options });
   }
 
-  static couldNotCoerce(expected: string, got: string, message: string, path: string | JsonPath): SchemaError {
-    const errorMessage = `could not coerce ${got} to ${expected}: ${message}`;
-    return new SchemaError(errorMessage, { path });
-  }
-}
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, customMessage?: string | undefined, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
+    const gotText = isString(got) ? got : getValueTypeName(got);
 
-export function schemaError(message: string, path: string | JsonPath): SchemaError {
-  return new SchemaError(message, { path });
+    const expectedString = expectedNames.length == 1
+      ? expectedNames[0]!
+      : `[${expectedNames.join(', ')}]`;
+
+    const customMessageString = isDefined(customMessage) ? `: ${customMessage}` : '.';
+    const errorMessage = `Could not coerce ${gotText} to ${expectedString}${customMessageString}`;
+    return new SchemaError(errorMessage, { path, ...options });
+  }
+
+  getExtraInfo(includeMessage: boolean = false): UndefinableJson | undefined {
+    const obj: UndefinableJson = {
+      path: this.path
+    };
+
+    if (includeMessage) {
+      obj['message'] = this.message;
+    }
+
+    if (isDefined(this.inner) && (this.inner.length > 0)) {
+      obj['inner'] = this.inner.map((error) => error.getExtraInfo(true));
+    }
+
+    if (isNotNullOrUndefined(this.details)) {
+      obj['details'] = this.details;
+    }
+
+    return obj;
+  }
 }

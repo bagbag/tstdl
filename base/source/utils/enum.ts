@@ -4,7 +4,7 @@ import { memoizeSingle } from './function';
 
 export type EnumEntry<T> = [EnumKey<T>, EnumValue<T>];
 export type EnumKey<T> = Extract<keyof T, string>;
-export type EnumValue<T> = Simplify<T[Extract<keyof T, string>]>;
+export type EnumValue<T> = Simplify<T[EnumKey<T>]>;
 
 function _enumEntries<T>(enumeration: T): EnumEntry<T>[] {
   return Object.entries(enumeration)

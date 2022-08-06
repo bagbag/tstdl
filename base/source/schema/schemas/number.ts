@@ -1,75 +1,42 @@
-import type { JsonPath } from '#/json-path';
-import { numberPattern } from '#/utils/patterns';
+/* eslint-disable @typescript-eslint/naming-convention */
+
+import type { Decorator } from '#/reflection';
 import { isDefined } from '#/utils/type-guards';
-import { SchemaError, schemaError } from '../schema.error';
-import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+import { integerConstraint } from '../constraints/integer';
+import { MaximumConstraint } from '../constraints/maximum';
+import { MinimumConstraint } from '../constraints/minimum';
+import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
+import { valueSchema } from '../types';
 
-const coercerMap: CoercerMap<number> = {
-  string: (string, path) => {
-    const isNumberString = numberPattern.test(string);
-    const numberValue = Number(string);
-
-    if (!isNumberString || Number.isNaN(numberValue)) {
-      return { valid: false, error: SchemaError.couldNotCoerce('number', 'string', 'invalid format', path) };
-    }
-
-    return { valid: true, value: numberValue };
-  },
-  boolean: (boolean) => ({ valid: true, value: Number(boolean) }),
-  bigint: (bigint, path) => {
-    const numberValue = Number(bigint);
-
-    if (!Number.isFinite(numberValue)) {
-      return { valid: false, error: SchemaError.couldNotCoerce('number', 'bigint', 'value out of bounds', path) };
-    }
-
-    return { valid: true, value: numberValue };
-  }
+export type NumberOptions = Coercible & {
+  minimum?: number,
+  maximum?: number,
+  integer?: boolean
 };
 
-export type NumberSchemaDefinition = SchemaDefinition<'number', unknown, number> & Coercible & {
-  /** integer */
-  integer?: boolean,
+export function number(options: NumberOptions = {}): ValueSchema<number> {
+  const constraints: SchemaValueConstraint[] = [];
 
-  /** min */
-  min?: number,
-
-  /** max */
-  max?: number
-};
-
-export class NumberSchemaValidator extends SchemaValidator<NumberSchemaDefinition> {
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<number> {
-    const result = super.ensureType('number', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
-
-    if (!result.valid) {
-      return result;
-    }
-
-    if ((this.schema.integer == true) && !Number.isInteger(result.value)) {
-      return { valid: false, error: schemaError('expected integer', path) };
-    }
-
-    if (isDefined(this.schema.min) && (result.value < this.schema.min)) {
-      return { valid: false, error: schemaError(`minimum valid value is ${this.schema.min}`, path) };
-    }
-
-    if (isDefined(this.schema.max) && (result.value > this.schema.max)) {
-      return { valid: false, error: schemaError(`maximum valid value is ${this.schema.max}`, path) };
-    }
-
-    return { valid: true, value: result.value };
+  if (isDefined(options.minimum)) {
+    constraints.push(new MinimumConstraint(options.minimum));
   }
+
+  if (isDefined(options.maximum)) {
+    constraints.push(new MaximumConstraint(options.maximum));
+  }
+
+  if (options.integer == true) {
+    constraints.push(integerConstraint);
+  }
+
+  return valueSchema({
+    type: globalThis.Number,
+    coerce: options.coerce,
+    valueConstraints: constraints
+  });
 }
 
-export function number(options?: SchemaOptions<NumberSchemaDefinition>): NumberSchemaValidator {
-  const schema = schemaHelper<NumberSchemaDefinition>({
-    type: 'number',
-    ...options
-  });
-
-  return new NumberSchemaValidator(schema);
+export function Number(options?: NumberOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromValueType(number(options));
 }

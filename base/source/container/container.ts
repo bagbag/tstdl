@@ -487,7 +487,7 @@ export class Container {
       ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
       : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectMetadata: InjectMetadata = metadata.data.tryGet(injectMetadataSymbol) ?? {};
     const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
 
     if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
@@ -534,7 +534,7 @@ export class Container {
       ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
       : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectMetadata: InjectMetadata = metadata.data.tryGet(injectMetadataSymbol) ?? {};
     const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
 
     if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {

@@ -6,6 +6,7 @@ export type DecoratorType = 'class' | 'property' | 'accessor' | 'method' | 'para
 export type DecoratorHandler<T extends DecoratorType = DecoratorType> = (data: DecoratorData<T>, metadata: DecoratorMetadata<T>) => DecoratorHandlerReturnType<T>;
 export type DecoratorHandlerReturnType<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorHandlerReturnTypeMap, T>;
 export type Decorator<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMapIntersection<DecoratorMap, T>;
+export type DecoratorUnion<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorMap, T>;
 export type DecoratorData<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorDataMap, T>;
 export type DecoratorMetadata<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorMetadataMap, T>;
 

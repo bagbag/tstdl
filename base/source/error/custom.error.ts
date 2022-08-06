@@ -14,21 +14,37 @@ export type CustomErrorOptions = {
   /**
    * cause for error
    */
-  cause?: Error
+  cause?: Error,
+
+  /** skip {@link Error} super call, which improves speed but looses stack trace */
+  fast?: boolean
 };
 
 export class CustomError extends Error {
-  constructor({ name, message, cause }: CustomErrorOptions) {
-    const prototype = new.target.prototype;
-    super(message, { cause });
+  constructor(options: CustomErrorOptions) {
+    if (options.fast == true) {
+      const errorObject = {};
 
-    Object.setPrototypeOf(this, prototype);
+      init(errorObject as Error, new.target.prototype, options);
 
-    this.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? new.target.name;
-
-    if ((cause != undefined) && (this.cause == undefined)) {
-      this.cause = cause;
+      // eslint-disable-next-line no-constructor-return
+      return errorObject as CustomError;
     }
+
+    super(options.message, { cause: options.cause });
+
+    init(this, new.target.prototype, options);
+  }
+}
+
+function init(instance: Error, prototype: CustomError, { name, message, cause }: CustomErrorOptions): void {
+  Object.setPrototypeOf(instance, prototype);
+
+  instance.message = (instance.message as string | undefined) ?? message ?? '';
+  instance.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? prototype.name;
+
+  if ((cause != undefined) && (instance.cause == undefined)) {
+    instance.cause = cause;
   }
 }
 

@@ -1,72 +1,33 @@
-import type { JsonPath } from '#/json-path';
-import { isArray } from '#/utils/type-guards';
-import { typeOf } from '#/utils/type-of';
-import { SchemaError } from '../schema.error';
-import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test, testAsync } from '../schema.validator';
-import type { SchemaDefinition, SchemaInput, SchemaOptions, SchemaOutput } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-export type ArraySchemaDefinition<T extends SchemaDefinition = SchemaDefinition> = SchemaDefinition<'array', unknown, SchemaOutput<T>[]> & {
-  schema: T
+import { isDefined } from '#/utils/type-guards';
+import { ArrayMaximumLengthConstraint } from '../array-constraints';
+import type { Coercible, MaybeDeferredValueTypes, SchemaArrayConstraint, ValueSchema } from '../types';
+import { valueSchema } from '../types';
+
+export type ArrayOptions = Coercible & {
+  /** minimum length */
+  minimumLength?: number,
+
+  /** maximum length */
+  maximumLength?: number
 };
 
-export class ArraySchemaValidator<T extends SchemaDefinition> extends SchemaValidator<ArraySchemaDefinition<T>> {
-  private readonly innerValidator: SchemaValidator<T>;
+export function array<T>(innerValues: MaybeDeferredValueTypes<T>, options: ArrayOptions = {}): ValueSchema<T[]> {
+  const arrayConstraints: SchemaArrayConstraint[] = [];
 
-  constructor(innerValidator: SchemaValidator<T>, schema: ArraySchemaDefinition<T>) {
-    super(schema);
-
-    this.innerValidator = innerValidator;
+  if (isDefined(options.minimumLength)) {
+    arrayConstraints.push(new ArrayMaximumLengthConstraint(options.minimumLength));
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>> {
-    if (!isArray(value)) {
-      return { valid: false, error: SchemaError.expectedButGot('array', typeOf(value), path) };
-    }
-
-    const validatedArray: SchemaOutput<T>[] = [];
-
-    for (let i = 0; i < value.length; i++) {
-      const innerTestResult = this.innerValidator[test](value[i] as SchemaInput<T>, options, path.add(i));
-
-      if (!innerTestResult.valid) {
-        return innerTestResult;
-      }
-
-      validatedArray.push(innerTestResult.value);
-    }
-
-    return { valid: true, value: validatedArray };
+  if (isDefined(options.maximumLength)) {
+    arrayConstraints.push(new ArrayMaximumLengthConstraint(options.maximumLength));
   }
 
-  async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<SchemaOutput<ArraySchemaDefinition<T>>>> {
-    if (!isArray(value)) {
-      return { valid: false, error: SchemaError.expectedButGot('array', typeOf(value), path) };
-    }
-
-    const validatedArray: SchemaOutput<T>[] = [];
-
-    for (let i = 0; i < value.length; i++) {
-      const innerTestResult = await this.innerValidator[testAsync](value[i] as SchemaInput<T>, options, path.add(i));
-
-      if (!innerTestResult.valid) {
-        return innerTestResult;
-      }
-
-      validatedArray.push(innerTestResult.value);
-    }
-
-    return { valid: true, value: validatedArray };
-  }
-}
-
-export function array<T extends SchemaDefinition>(innerValidator: SchemaValidator<T>, options?: SchemaOptions<ArraySchemaDefinition<T>, 'schema'>): ArraySchemaValidator<T> {
-  const schema = schemaHelper<ArraySchemaDefinition<T>>({
-    type: 'array',
-    schema: innerValidator.schema,
-    ...options
+  return valueSchema({
+    type: innerValues,
+    array: true,
+    coerce: options.coerce,
+    arrayConstraints
   });
-
-  return new ArraySchemaValidator(innerValidator, schema);
 }

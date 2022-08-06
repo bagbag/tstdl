@@ -27,16 +27,3 @@ export function configureApiServer(options: Partial<ApiModuleOptions>): void {
 
   container.register(API_MODULE_OPTIONS, { useValue: apiModuleOptions });
 }
-
-/**
- * @deprecated Use {@link configureApiServer} instead
- */
-export function registerApiControllers(...controllers: (Type | Type[])[]): void {
-  const flatControllers = controllers.flatMap((controller) => controller);
-
-  for (const controller of flatControllers) {
-    ensureApiController(controller);
-  }
-
-  configureApiServer({ controllers: flatControllers });
-}

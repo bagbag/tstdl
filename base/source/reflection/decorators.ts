@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import { noop } from '#/utils/noop';
 import 'reflect-metadata';
 import type { Decorator, DecoratorHandler } from './types';

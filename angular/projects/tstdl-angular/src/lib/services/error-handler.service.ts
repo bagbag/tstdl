@@ -16,7 +16,7 @@ export type ErrorHandlerServiceOptions = {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const ERROR_HANDLER_SERVICE_OPTIONS = new InjectionToken<ErrorHandlerServiceOptions>('ErrorHandlerServiceOptions');
 
-const defaultFormatErrorOptions: FormatErrorOptions = { includeRest: false, includeStack: false, handleBuiltInErrors: true };
+const defaultFormatErrorOptions: FormatErrorOptions = { includeRest: false, includeStack: false };
 
 @Injectable({
   providedIn: 'root'

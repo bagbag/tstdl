@@ -1,18 +1,14 @@
-import type { JsonPath } from '#/json-path';
-import { isDefined, isRegExp } from '#/utils/type-guards';
-import { schemaError } from '../schema.error';
-import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-const coercerMap: CoercerMap<string> = {
-  number: (number) => ({ valid: true, value: number.toString() }),
-  boolean: (boolean) => ({ valid: true, value: boolean.toString() }),
-  bigint: (bigint) => ({ valid: true, value: bigint.toString() })
-};
+import type { Decorator } from '#/reflection';
+import { isDefined } from '#/utils/type-guards';
+import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints';
+import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
+import type { Coercible, SchemaValueConstraint, SchemaValueTransformer, ValueSchema } from '../types';
+import { valueSchema } from '../types';
 
-export type StringSchemaDefinition = SchemaDefinition<'string', unknown, string> & Coercible & {
+export type StringOptions = Coercible & {
   /** trim */
   trim?: boolean,
 
@@ -23,72 +19,58 @@ export type StringSchemaDefinition = SchemaDefinition<'string', unknown, string>
   uppercase?: boolean,
 
   /** minimum length */
-  min?: number,
+  minimumLength?: number,
 
   /** maximum length */
-  max?: number,
+  maximumLength?: number,
 
   /** regular expression */
   pattern?: string | RegExp,
 
   /** regular expression flags */
-  patternFlags?: string
+  patternFlags?: string,
+
+  /** name for errors */
+  patternName?: string
 };
 
-export class StringSchemaValidator extends SchemaValidator<StringSchemaDefinition> {
-  private readonly regexp: RegExp | undefined;
+export function string(options: StringOptions = {}): ValueSchema<string> {
+  const constraints: SchemaValueConstraint[] = [];
+  const transformers: SchemaValueTransformer[] = [];
 
-  constructor(schema: StringSchemaDefinition) {
-    const pattern = isRegExp(schema.pattern) ? schema.pattern.source : schema.pattern;
-    const patternFlags = isRegExp(schema.pattern) ? (schema.patternFlags ?? schema.pattern.flags) : schema.patternFlags;
-
-    super({ ...schema, pattern, patternFlags });
-
-    this.regexp = isDefined(pattern) ? RegExp(pattern, patternFlags) : undefined;
+  if (isDefined(options.minimumLength)) {
+    constraints.push(new MinimumLengthConstraint(options.minimumLength));
   }
 
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<string> {
-    const result = super.ensureType('string', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
-
-    if (!result.valid) {
-      return result;
-    }
-
-    let resultValue = result.value;
-
-    if (this.schema.trim == true) {
-      resultValue = resultValue.trim();
-    }
-
-    if (this.schema.lowercase == true) {
-      resultValue = resultValue.toLowerCase();
-    }
-
-    if (this.schema.uppercase == true) {
-      resultValue = resultValue.toUpperCase();
-    }
-
-    if (isDefined(this.schema.min) && (resultValue.length < this.schema.min)) {
-      return { valid: false, error: schemaError(`minimum length is ${this.schema.min} but value has ${resultValue.length}`, path) };
-    }
-
-    if (isDefined(this.schema.max) && (resultValue.length > this.schema.max)) {
-      return { valid: false, error: schemaError(`maximum length is ${this.schema.max} but value has ${resultValue.length}`, path) };
-    }
-
-    if (isDefined(this.regexp) && !this.regexp.test(resultValue)) {
-      return { valid: false, error: schemaError('pattern did not match', path) };
-    }
-
-    return { valid: true, value: resultValue };
+  if (isDefined(options.maximumLength)) {
+    constraints.push(new MaximumLengthConstraint(options.maximumLength));
   }
+
+  if (isDefined(options.pattern)) {
+    const pattern = RegExp(options.pattern, options.patternFlags);
+    constraints.push(new PatternConstraint(pattern, options.patternName));
+  }
+
+  if (isDefined(options.trim)) {
+    transformers.push(new TrimTransformer());
+  }
+
+  if (isDefined(options.lowercase)) {
+    transformers.push(new LowercaseTransformer());
+  }
+
+  if (isDefined(options.uppercase)) {
+    transformers.push(new UppercaseTransformer());
+  }
+
+  return valueSchema({
+    type: globalThis.String,
+    coerce: options.coerce,
+    valueConstraints: constraints,
+    transformers
+  });
 }
 
-export function string(options?: SchemaOptions<StringSchemaDefinition>): StringSchemaValidator {
-  const schema = schemaHelper<StringSchemaDefinition>({
-    type: 'string',
-    ...options
-  });
-
-  return new StringSchemaValidator(schema);
+export function String(options?: StringOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromValueType(string(options));
 }

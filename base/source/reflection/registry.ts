@@ -5,9 +5,8 @@ import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
 import { isUndefined } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
+import { ReflectionDataMap } from './reflection-data-map';
 import type { DecoratorData } from './types';
-
-type Data = Map<string | symbol, any>;
 
 export type ReflectionMetadata = TypeMetadata | PropertyMetadata | MethodMetadata | ConstructorParameterMetadata | MethodParameterMetadata;
 
@@ -26,7 +25,9 @@ export type TypeMetadata = MetadataBase<'type'> & {
   readonly staticProperties: Map<string | symbol, PropertyMetadata>,
   readonly methods: Map<string | symbol, MethodMetadata>,
   readonly staticMethods: Map<string | symbol, MethodMetadata>,
-  readonly data: Data,
+  readonly data: ReflectionDataMap,
+
+  /** whether the type is known in reflection registry and contains metadata */
   readonly registered: boolean
 };
 
@@ -36,25 +37,25 @@ export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
   type: Type,
   isAccessor: boolean,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
   returnType: Type | undefined,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
   type: Type | undefined,
   index: number,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
   type: Type,
   index: number,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
@@ -135,14 +136,14 @@ export class ReflectionRegistry {
       parameters: {
         initializer() {
           const parametersTypes = getParameterTypes(type);
-          return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new Map() }));
+          return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ReflectionDataMap() }));
         }
       },
       properties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new Map() }))
+        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ReflectionDataMap() }))
       },
       staticProperties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new Map() }))
+        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ReflectionDataMap() }))
       },
       methods: {
         initializer: () => new FactoryMap((key): MethodMetadata => {
@@ -153,7 +154,7 @@ export class ReflectionRegistry {
             throw new Error(`Could not get parameters for method ${key.toString()} of type ${type.name}`);
           }
 
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new Map() })), returnType, data: new Map() };
+          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
         })
       },
       staticMethods: {
@@ -165,10 +166,10 @@ export class ReflectionRegistry {
             throw new Error(`Could not get parameters for static method ${key.toString()} of type ${type.name}`);
           }
 
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new Map() })), returnType, data: new Map() };
+          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
         })
       },
-      data: { initializer: () => new Map() },
+      data: { initializer: () => new ReflectionDataMap() },
       registered: false
     });
   }

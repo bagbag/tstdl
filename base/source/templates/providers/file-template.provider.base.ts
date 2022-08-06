@@ -1,5 +1,5 @@
 import { BadRequestError } from '#/error/bad-request.error';
-import type { Schema } from '#/schema';
+import { Schema } from '#/schema';
 import type { Record, TypedOmit } from '#/types';
 import { assertStringPass, isDefined } from '#/utils/type-guards';
 import * as fs from 'fs/promises';
@@ -10,7 +10,7 @@ export type FileTemplateBase = TypedOmit<Template, 'template'>;
 
 export type FileForward<T extends FileTemplateBase, U extends FileTemplateBase> = [fileKey: keyof U, targetKey: keyof T];
 
-const keyPattern = /^[\w\-\/]+$/u;
+const keyPattern = /^[\w\-/]+$/u;
 
 export class FileTemplateProviderBase<T extends FileTemplateBase, U extends FileTemplateBase> {
   private readonly schema: Schema<U>;
@@ -31,7 +31,7 @@ export class FileTemplateProviderBase<T extends FileTemplateBase, U extends File
     const filePath = path.resolve(this.basePath, `${key}.js`);
     const templateModule = await import(filePath) as { default: unknown };
     const fileContent = templateModule.default;
-    const fileTemplate = this.schema.parse(fileContent);
+    const fileTemplate = Schema.parse(this.schema, fileContent);
 
     const result: Record = {};
     const entries = Object.entries(fileTemplate) as [keyof U, keyof T][];

@@ -22,6 +22,7 @@ export * from './helpers';
 export * from './image';
 export * from './map';
 export * from './math';
+export * from './merge';
 export * from './middleware';
 export * from './moving-metric';
 export * from './noop';

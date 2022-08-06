@@ -1,55 +1,19 @@
-import type { JsonPath } from '#/json-path';
-import { SchemaError } from '../schema.error';
-import type { CoercerMap, DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { Coercible, SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-const coercerMap: CoercerMap<boolean> = {
-  string: (string, path) => {
-    const lowered = string.toLowerCase();
+import type { Decorator } from '#/reflection';
+import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import type { Coercible, ValueSchema } from '../types';
+import { valueSchema } from '../types';
 
-    switch (lowered) {
-      case 'true':
-      case '1':
-      case 'yes':
-        return { valid: true, value: true };
+export type BooleanOptions = Coercible;
 
-      case 'false':
-      case '0':
-      case 'no':
-        return { valid: true, value: false };
-
-      default:
-        return { valid: false, error: SchemaError.expectedButGot('boolean', 'string', path) };
-    }
-  },
-  number: (number, path) => (
-    (number == 1) ? { valid: true, value: true }
-      : (number == 0) ? { valid: true, value: false }
-        : { valid: false, error: SchemaError.expectedButGot('boolean', 'number', path) }
-  )
-};
-
-export type BooleanSchemaDefinition = SchemaDefinition<'boolean', unknown, boolean> & Coercible;
-
-export class BooleanSchemaValidator extends SchemaValidator<BooleanSchemaDefinition> {
-  [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<boolean> {
-    const result = super.ensureType('boolean', value, path, { coerce: this.schema.coerce ?? options.coerce }, coercerMap);
-
-    if (!result.valid) {
-      return result;
-    }
-
-    return { valid: true, value: result.value };
-  }
+export function boolean(options: BooleanOptions = {}): ValueSchema<boolean> {
+  return valueSchema({
+    type: globalThis.Boolean,
+    coerce: options.coerce
+  });
 }
 
-export function boolean(options?: SchemaOptions<BooleanSchemaDefinition>): BooleanSchemaValidator {
-  const schema = schemaHelper<BooleanSchemaDefinition>({
-    type: 'boolean',
-    ...options
-  });
-
-  return new BooleanSchemaValidator(schema);
+export function Boolean(options?: BooleanOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromValueType(boolean(options));
 }

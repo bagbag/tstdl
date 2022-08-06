@@ -1,10 +1,10 @@
-import type { Constructor, PropertiesOfType, Record } from '#/types';
+import type { Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types';
+import { toArray } from '#/utils/array/array';
 import { noop } from '#/utils/noop';
-import { objectEntries } from '#/utils/object/object';
-import { assert, assertArray, assertMap, assertObject, assertSet, isArray, isDefined, isFunction, isMap, isObject, isSet, isSymbol } from '#/utils/type-guards';
+import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
 import { reflectionRegistry } from './registry';
-import type { Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType } from './types';
+import type { Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types';
 
 export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 
@@ -12,11 +12,15 @@ export type CreateDecoratorOptions = {
   data?: Record<string | symbol>,
 
   /** merge data values instead of replacing them (requires them to be objects, arrays, maps or sets) */
-  mergeData?: boolean
+  mergeData?: boolean,
+
+  /** return values of these decorators are not used */
+  include?: OneOrMany<DecoratorUnion>
 };
 
-export type SpecificCreateDecoratorOptions<T extends DecoratorType> = CreateDecoratorOptions & {
-  handler?: DecoratorHandler<T>
+export type SpecificCreateDecoratorOptions<T extends DecoratorType> = TypedOmit<CreateDecoratorOptions, 'include'> & {
+  handler?: DecoratorHandler<T>,
+  include?: OneOrMany<DecoratorUnion<T>>
 };
 
 type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
@@ -37,43 +41,18 @@ export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDec
     const metadata = reflectionRegistry.registerDecoratorData(data) as DecoratorMetadata<CreateDecoratorType<T>>;
 
     if (isDefined(options.data)) {
-      for (const [key, value] of objectEntries(options.data)) {
-        if (options.mergeData != true) {
-          metadata.data.set(key, value);
-        }
-        else {
-          let newData: any;
+      metadata.data.setMany(options.data, options.mergeData);
+    }
 
-          if (isObject(value)) {
-            const existing = metadata.data.get(key) ?? {};
-            assertObject(existing, 'Cannot merge object into non-object.');
-            newData = { ...existing, ...value };
-          }
-          else if (isArray(value)) {
-            const existing = metadata.data.get(key) ?? [];
-            assertArray(existing, 'Cannot merge array into non-array.');
-            newData = [...existing, ...value];
-          }
-          else if (isMap(value)) {
-            const existing = metadata.data.get(key) ?? new Map();
-            assertMap(existing, 'Cannot merge map into non-map.');
-            newData = new Map([...existing, ...value]);
-          }
-          else if (isSet(value)) {
-            const existing = metadata.data.get(key) ?? new Set();
-            assertSet(existing, 'Cannot merge set into non-set.');
-            newData = new Set([...existing, ...value]);
-          }
-          else {
-            throw new Error('Merging of data can only be done with objects, arrays, maps and sets.');
-          }
+    const result = handler(data as DecoratorData<CreateDecoratorType<T>>, metadata) as void;
 
-          metadata.data.set(key, newData);
-        }
+    if (isDefined(options.include)) {
+      for (const include of toArray(options.include)) {
+        (include as (...args: any[]) => any)(target, propertyKey as any, descriptorOrParameterIndex as any); // eslint-disable-line @typescript-eslint/no-unsafe-argument
       }
     }
 
-    return handler(data as DecoratorData<CreateDecoratorType<T>>, metadata) as void;
+    return result;
   }
 
   return decoratorWrapper as Decorator<CreateDecoratorType<T>>;
@@ -150,8 +129,7 @@ export function getTypeInfoString(type: Constructor): string {
   return lines.join('\n');
 }
 
-// eslint-disable-next-line max-statements, max-lines-per-function
 export function printType(type: Constructor): void {
   const text = getTypeInfoString(type);
-  console.log(text);
+  console.log(text); // eslint-disable-line no-console
 }
