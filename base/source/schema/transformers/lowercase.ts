@@ -5,11 +5,11 @@ import { createSchemaValueTransformerDecorator } from '../decorators';
 import type { TransformResult } from '../types';
 import { SchemaValueTransformer } from '../types';
 
-export class LowercaseTransformer extends SchemaValueTransformer {
+export class LowercaseTransformer extends SchemaValueTransformer<string, string, string> {
   readonly sourceType = String;
   readonly targetType = String;
 
-  transform(value: string): TransformResult {
+  transform(value: string): TransformResult<string> {
     return { success: true, value: value.toLowerCase() };
   }
 }

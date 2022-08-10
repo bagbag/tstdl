@@ -11,9 +11,9 @@ export function explicitObject<T extends Record>(properties: ObjectSchemaPropert
   return object(properties, options) as any as ObjectSchema<T>;
 }
 
-export function object<T extends Record>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<PartialOnUndefinedDeep<T>> {
+export function object<T extends Record, O = T>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<T, PartialOnUndefinedDeep<O>> {
   return objectSchema({
     properties,
     ...options
-  }) as ObjectSchema<PartialOnUndefinedDeep<T>>;
+  }) as unknown as ObjectSchema<T, PartialOnUndefinedDeep<O>>;
 }

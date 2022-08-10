@@ -238,14 +238,14 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, schema: SchemaTestable): Promise<string | Json | Uint8Array | undefined> {
+  private async getBody(request: HttpServerRequest, schema: SchemaTestable<Json | Uint8Array>): Promise<Json | Uint8Array | undefined> {
     const body = await getRequestBody(request);
 
     if (isUndefined(body)) {
       return undefined;
     }
 
-    return Schema.parse<Json | Uint8Array>(schema, body);
+    return Schema.parse(schema, body);
   }
 }
 

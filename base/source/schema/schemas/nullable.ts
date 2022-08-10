@@ -1,7 +1,6 @@
-import type { Schema } from '../schema';
-import type { ValueSchema } from '../types';
+import type { ValueSchema, ValueType } from '../types';
 import { valueSchema } from '../types';
 
-export function nullable<T>(schema: Schema<T>): ValueSchema<T | null> {
+export function nullable<T, O>(schema: ValueType<T, O>): ValueSchema<T, O | null> {
   return valueSchema({ type: schema, nullable: true });
 }

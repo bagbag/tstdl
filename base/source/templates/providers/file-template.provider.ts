@@ -22,7 +22,7 @@ export type FileTemplateProviderArgument = string;
 
 export const fileTemplateProviderConfig: FileTemplateProviderConfig = {};
 
-const fileTemplateSchema: Schema<FileTemplate> = object({
+const fileTemplateSchema = object<FileTemplate>({
   type: string(),
   template: optional(string()),
   templateFile: optional(string()),

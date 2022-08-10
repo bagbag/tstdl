@@ -16,16 +16,16 @@ import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from './decorators';
 import { SchemaError } from './schema.error';
 import type { NormalizedValueSchema, ObjectSchema, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, ValueSchema, ValueType } from './types';
-import { isObjectSchema, primitiveValueTypesSet } from './types';
-import { getArrayItemSchema, getValueType, getValueTypeName, maybeDeferredValueTypesToValueTypes, normalizeSchema, normalizeValueSchema } from './utils';
+import { deferrableValueTypesToValueTypes, isValueSchema, primitiveValueTypesSet, valueTypesToSchema } from './types';
+import { getArrayItemSchema, getValueType, getValueTypeName, normalizeSchema, normalizeValueSchema } from './utils';
 
-export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T>;
+export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O>;
 
 export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection);
 
 const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
 
-export type SchemaTestable<T = any> = Schema<T> | Type<T>;
+export type SchemaTestable<T = any, O = T> = Schema<T, O> | Type<T>;
 
 let initialize = (): void => {
   Schema.registerDefaultCoercer(numberCoercer);
@@ -50,7 +50,7 @@ export const Schema = {
     }
   },
 
-  test<T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
+  test<T, O>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
     const result = this.testWithFastError(schema, value, options, path);
 
     if (result.success) {
@@ -60,12 +60,12 @@ export const Schema = {
     return { success: false, error: new SchemaError(result.error.message, { ...result.error, fast: false }, result.error.cause) };
   },
 
-  validate<T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): boolean {
+  validate<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
     const result = this.test(schema, value, options);
     return result.success;
   },
 
-  parse<T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): T {
+  parse<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
     const result = this.test(schema, value, options);
 
     if (result.success) {
@@ -79,21 +79,21 @@ export const Schema = {
    * disables stack traces for errors
    * @deprecated for internal use only
    */
-  testWithFastError<T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
+  testWithFastError<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
     initialize();
 
-    if (isFunction(schema) || isObjectSchema<T>(schema)) {
-      return testObject(schema, value, options, path);
+    if (isValueSchema(schema)) {
+      return testValue(schema, value, options, path);
     }
 
-    return testValue(schema, value, options, path);
+    return testObject(schema, value, options, path);
   }
 };
 
 // eslint-disable-next-line complexity
-function testObject<T>(schemaOrType: ObjectSchema<T> | Type<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
+function testObject<T extends Record, O = T>(schemaOrType: ObjectSchema<T, O> | Type<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
   if (isFunction(schemaOrType) && (value instanceof schemaOrType)) {
-    return { success: true, value: value as T };
+    return { success: true, value: value as O };
   }
 
   if (!(value instanceof Object) && !isObject(value)) {
@@ -107,9 +107,9 @@ function testObject<T>(schemaOrType: ObjectSchema<T> | Type<T>, value: unknown, 
     return { success: false, error: SchemaError.expectedButGot(schemaOrType, getValueType(value), path) };
   }
 
-  const schema = normalizeSchema(unnormalizedSchema);
+  const schema = normalizeSchema(unnormalizedSchema as ObjectSchema);
   const mask = schema.mask ?? options.mask ?? false;
-  const resultValue = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
+  const resultValue: O = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
 
   const schemaPropertyKeys = objectKeys(schema.properties);
   const valuePropertyKeys = objectKeys(value);
@@ -121,13 +121,13 @@ function testObject<T>(schemaOrType: ObjectSchema<T> | Type<T>, value: unknown, 
   }
 
   for (const key of schemaPropertyKeys) {
-    const propertyResult = Schema.testWithFastError(schema.properties[key], (value as Record)[key], options, path.add(key));
+    const propertyResult = Schema.testWithFastError(schema.properties[key as string]!, (value as Record)[key], options, path.add(key));
 
     if (!propertyResult.success) {
       return propertyResult;
     }
 
-    resultValue[key] = propertyResult.value;
+    resultValue[key as keyof O] = propertyResult.value;
   }
 
   if (schema.allowUnknownProperties.size > 0) {
@@ -142,7 +142,7 @@ function testObject<T>(schemaOrType: ObjectSchema<T> | Type<T>, value: unknown, 
           continue;
         }
 
-        resultValue[key] = propertyResult.value;
+        resultValue[key as keyof O] = propertyResult.value;
         break;
       }
 
@@ -158,15 +158,15 @@ function testObject<T>(schemaOrType: ObjectSchema<T> | Type<T>, value: unknown, 
 }
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
-function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
+function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
   const valueSchema = normalizeValueSchema(schema);
 
   if (valueSchema.optional && isUndefined(value)) {
-    return { success: true, value: value as unknown as T };
+    return { success: true, value: value as unknown as O };
   }
 
   if (valueSchema.nullable && isNull(value)) {
-    return { success: true, value: value as unknown as T };
+    return { success: true, value: value as unknown as O };
   }
 
   const context: SchemaContext = {
@@ -201,7 +201,7 @@ function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTes
       validatedItems.push(result.value);
     }
 
-    return { success: true, value: validatedItems as unknown as T };
+    return { success: true, value: validatedItems as unknown as O };
   }
 
   let valueType = getValueType(value);
@@ -271,7 +271,8 @@ function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTes
         continue;
       }
 
-      const result = Schema.testWithFastError(type as Type | ObjectSchema<T>, resultValue, options, path);
+      const typeSchema = valueTypesToSchema(type);
+      const result = Schema.testWithFastError(typeSchema, resultValue, options, path);
 
       if (!result.success) {
         errors.push(result.error);
@@ -322,7 +323,7 @@ function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTes
     }
   }
 
-  return { success: true, value: resultValue as T };
+  return { success: true, value: resultValue as O };
 }
 
 function isValidType(valueSchema: NormalizedValueSchema, valueType: ValueType): boolean {
@@ -342,7 +343,7 @@ function _getObjectSchemaFromReflection<T>(type: Type<T>): ObjectSchema<T> | nul
 
   for (const [key, propertyMetadata] of metadata.properties) {
     const reflectionData = propertyMetadata.data.tryGet<Partial<SchemaPropertyReflectionData>>('schema');
-    const itemType = isDefined(reflectionData?.type) ? maybeDeferredValueTypesToValueTypes(reflectionData!.type) : undefined;
+    const itemType = isDefined(reflectionData?.type) ? deferrableValueTypesToValueTypes(reflectionData!.type) : undefined;
     const array = ((propertyMetadata.type == Array) && (itemType != Array)) || (reflectionData?.array == true);
 
     if (array && (isUndefined(itemType) || (isArray(itemType) && (itemType.length == 0)))) {

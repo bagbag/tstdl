@@ -1,5 +1,5 @@
 import type { OneOrMany } from '#/types';
-import type { MaybeDeferredValueTypes, ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, ValueSchema, ValueType } from '../types';
+import type { DeferrableValueType, ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, ValueSchema, ValueType } from '../types';
 
 export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allowUnknownProperties'>> & {
   factory?: SchemaFactoryFunction<any>
@@ -8,7 +8,7 @@ export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allo
 export type TypesProvider = () => OneOrMany<ValueType>;
 
 export type SchemaPropertyReflectionData = {
-  type?: MaybeDeferredValueTypes,
+  type?: OneOrMany<DeferrableValueType>,
   array?: boolean,
   optional?: boolean,
   nullable?: boolean,

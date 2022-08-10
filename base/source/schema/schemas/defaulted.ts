@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { DefaultValueCoercer } from '../coercers';
-import type { MaybeDeferredValueTypes, ValueSchema } from '../types';
+import type { ValueSchema, ValueType } from '../types';
 import { valueSchema } from '../types';
 
-export function defaulted<T>(type: MaybeDeferredValueTypes, defaultValue: T): ValueSchema<Date | T> {
+export function defaulted<T, O, Default>(type: ValueType<T, O>, defaultValue: Default): ValueSchema<T, O | Default> {
   return valueSchema({
     type,
     coercers: new DefaultValueCoercer(defaultValue)

@@ -1,31 +1,29 @@
 import { toArray } from '#/utils/array/array';
 import { memoizeSingle } from '#/utils/function/memoize';
 import { mapObjectValues } from '#/utils/object/object';
-import { isArray, isFunction, isString } from '#/utils/type-guards';
-import type { Schema } from '../schema';
-import type { MaybeDeferredValueTypes, NormalizedObjectSchema, NormalizedValueSchema, ObjectSchema, ValueSchema, ValueTypes } from '../types';
-import { isDeferredValueType } from '../types';
+import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedValueSchema, ObjectSchema, ValueSchema } from '../types';
+import { valueTypesToSchema, deferrableValueTypesToValueTypes } from '../types';
 
 export const normalizeSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
 export const normalizeValueSchema = memoizeSingle(_normalizeValueSchema, { weak: true });
 export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: true });
 
-export function _normalizeObjectSchema<T>(objectSchema: ObjectSchema<T>): NormalizedObjectSchema<T> {
-  const normalizedObjectSchema: NormalizedObjectSchema = {
+export function _normalizeObjectSchema<T, O>(objectSchema: ObjectSchema<T, O>): NormalizedObjectSchema<T, O> {
+  const normalizedObjectSchema: NormalizedObjectSchema<T, O> = {
     factory: objectSchema.factory,
-    properties: mapObjectValues(objectSchema.properties, maybeDeferredValueTypesToSchema),
+    properties: mapObjectValues(objectSchema.properties, valueTypesToSchema) as unknown as NormalizedObjectSchemaProperties<T>,
     mask: objectSchema.mask,
-    allowUnknownProperties: new Set(toArray(objectSchema.allowUnknownProperties ?? []).map(maybeDeferredValueTypesToSchema))
+    allowUnknownProperties: new Set(toArray(objectSchema.allowUnknownProperties ?? []).map(valueTypesToSchema))
   };
 
   return normalizedObjectSchema;
 }
 
-export function _normalizeValueSchema<T>(valueSchema: ValueSchema<T>): NormalizedValueSchema<T> {
-  const valueTypes = maybeDeferredValueTypesToValueTypes(valueSchema.type);
+export function _normalizeValueSchema<T, O>(valueSchema: ValueSchema<T, O>): NormalizedValueSchema<T, O> {
+  const valueTypes = toArray(deferrableValueTypesToValueTypes(valueSchema.type));
 
-  const normalizedValueSchema: NormalizedValueSchema<T> = {
-    type: new Set(toArray(valueTypes)),
+  const normalizedValueSchema: NormalizedValueSchema<T, O> = {
+    type: new Set(valueTypes),
     array: valueSchema.array ?? false,
     optional: valueSchema.optional ?? false,
     nullable: valueSchema.nullable ?? false,
@@ -49,8 +47,8 @@ export function _normalizeValueSchema<T>(valueSchema: ValueSchema<T>): Normalize
   return normalizedValueSchema;
 }
 
-function _getArrayItemSchema<T>(valueSchema: ValueSchema<T>): ValueSchema<T> {
-  const itemSchema: ValueSchema<T> = {
+function _getArrayItemSchema<T, O>(valueSchema: ValueSchema<T, O>): ValueSchema<T, O> {
+  const itemSchema: ValueSchema<T, O> = {
     type: valueSchema.type,
     array: false,
     optional: false,
@@ -60,27 +58,4 @@ function _getArrayItemSchema<T>(valueSchema: ValueSchema<T>): ValueSchema<T> {
   };
 
   return itemSchema;
-}
-
-export function maybeDeferredValueTypesToValueTypes<T>(valueTypes: MaybeDeferredValueTypes<T>): ValueTypes<T> {
-  if (isArray(valueTypes)) {
-    return valueTypes.flatMap((valueType) => maybeDeferredValueTypesToValueTypes(valueType));
-  }
-
-  return isDeferredValueType<T>(valueTypes)
-    ? valueTypes.deferred()
-    : valueTypes;
-}
-
-export function valueTypesToSchema<T>(valueType: ValueTypes<T>): Schema<T> {
-  if (isFunction(valueType) || isArray(valueType) || isString(valueType)) {
-    return { type: valueType };
-  }
-
-  return valueType;
-}
-
-export function maybeDeferredValueTypesToSchema<T>(valueType: MaybeDeferredValueTypes<T>): Schema<T> {
-  const deferredValueTypes = maybeDeferredValueTypesToValueTypes(valueType);
-  return valueTypesToSchema(deferredValueTypes);
 }

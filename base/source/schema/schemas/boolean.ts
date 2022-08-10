@@ -8,7 +8,7 @@ import { valueSchema } from '../types';
 export type BooleanOptions = Coercible;
 
 export function boolean(options: BooleanOptions = {}): ValueSchema<boolean> {
-  return valueSchema({
+  return valueSchema<boolean>({
     type: globalThis.Boolean,
     coerce: options.coerce
   });

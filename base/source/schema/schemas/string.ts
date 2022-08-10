@@ -63,7 +63,7 @@ export function string(options: StringOptions = {}): ValueSchema<string> {
     transformers.push(new UppercaseTransformer());
   }
 
-  return valueSchema({
+  return valueSchema<string>({
     type: globalThis.String,
     coerce: options.coerce,
     valueConstraints: constraints,

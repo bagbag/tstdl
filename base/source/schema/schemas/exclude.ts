@@ -1,7 +1,7 @@
 import type { OneOrMany, Record } from '#/types';
 import { toArray } from '#/utils/array/array';
 import type { Simplify } from 'type-fest';
-import type { ObjectSchema } from '../types';
+import type { ObjectSchema, ObjectSchemaProperties } from '../types';
 import { objectSchema } from '../types';
 
 export function exclude<T extends Record, K extends keyof T>(schema: ObjectSchema<T>, key: OneOrMany<K>): ObjectSchema<Simplify<Omit<T, K>>> {
@@ -12,8 +12,8 @@ export function exclude<T extends Record, K extends keyof T>(schema: ObjectSchem
 
   const pickedSchema = objectSchema({
     ...schema,
-    properties: Object.fromEntries(pickedEntries) as Omit<T, K>
+    properties: Object.fromEntries(pickedEntries) as ObjectSchemaProperties<T>
   });
 
-  return pickedSchema as ObjectSchema<Omit<T, K>>;
+  return pickedSchema as unknown as ObjectSchema<Omit<T, K>>;
 }

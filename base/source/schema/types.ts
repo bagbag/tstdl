@@ -1,37 +1,37 @@
+/* eslint-disable @typescript-eslint/ban-types */
+
 import type { JsonPath } from '#/json-path/json-path';
 import type { OneOrMany, Record, Type } from '#/types';
 import { hasOwnProperty } from '#/utils/object/object';
-import { isDefined, isObject } from '#/utils/type-guards';
+import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards';
 import type { Schema } from './schema';
 import type { SchemaError } from './schema.error';
 
-declare const schemaTypeSymbol: unique symbol;
+declare const schemaOutputTypeSymbol: unique symbol;
 
-export type SchemaFactoryFunction<T extends Record> = (data: T) => T;
-export type SchemaFactory<T extends Record> =
-  | { type: Type<T, []>, builder?: undefined }
-  | { type?: undefined, builder: SchemaFactoryFunction<T> };
+export type SchemaFactoryFunction<T extends Record, O = T> = (data: T) => NormalizeValueType<O>;
+export type SchemaFactory<T extends Record, O = T> =
+  | { type: Type<T>, builder?: undefined }
+  | { type?: undefined, builder: SchemaFactoryFunction<T, O> };
 
-export type ObjectSchemaProperties<T extends Record> = {
-  [K in keyof T]-?: MaybeDeferredValueTypes<T[K]>;
-};
+export type ObjectSchemaProperties<T extends Record> = { [K in keyof T]-?: OneOrMany<ValueType<T[K]>> };
+export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]: Schema<T[K]> };
 
-export type SchemaOutput<T extends Schema | Type> =
+export type SchemaOutput<T extends Schema> =
   | T extends ObjectSchema<infer U> ? U
-  : T extends ValueSchema<infer U> ? U
-  : T extends Type<infer U> ? U
+  : T extends ValueSchema<infer _, infer U> ? U
   : never;
 
-export type ObjectSchema<T extends Record = any> = {
-  factory?: SchemaFactory<T>,
+export type ObjectSchema<T extends Record = any, O extends Record = T> = {
+  [schemaOutputTypeSymbol]?: O,
+  factory?: SchemaFactory<T, O>,
   properties: ObjectSchemaProperties<T>,
   mask?: boolean,
-  allowUnknownProperties?: MaybeDeferredValueTypes
+  allowUnknownProperties?: OneOrMany<ValueType>
 };
 
-export type ValueSchema<T = any> = {
-  [schemaTypeSymbol]?: T,
-  type: MaybeDeferredValueTypes,
+export type ValueSchema<T = unknown, O = T> = {
+  type: OneOrMany<ValueType<T, O>>,
   array?: boolean,
   optional?: boolean,
   nullable?: boolean,
@@ -46,23 +46,23 @@ export type ValueSchema<T = any> = {
   valueConstraints?: OneOrMany<SchemaValueConstraint>
 };
 
-export type NormalizedObjectSchema<T extends Record = any> = {
-  factory?: SchemaFactory<T>,
-  properties: {
-    [K in keyof T]: Schema<T[K]>;
-  },
+export type NormalizedObjectSchema<T extends Record = any, O extends Record = T> = {
+  [schemaOutputTypeSymbol]?: O,
+  factory?: SchemaFactory<T, O>,
+  properties: NormalizedObjectSchemaProperties<T>,
   mask?: boolean,
   allowUnknownProperties: Set<Schema>
 };
 
-export type NormalizedValueSchema<T = any> = {
-  type: Set<ValueType<T>>,
+export type NormalizedValueSchema<T = any, O = T> = {
+  [schemaOutputTypeSymbol]?: O,
+  type: Set<ResolvedValueType<T, O>>,
   array: boolean,
   optional: boolean,
   nullable: boolean,
   coerce: boolean,
   coercers: Map<ValueType, SchemaValueCoercer[]>,
-  transformers: readonly SchemaValueTransformer[],
+  transformers: readonly SchemaValueTransformer<any, any, any>[],
   arrayConstraints: readonly SchemaArrayConstraint[],
   valueConstraints: readonly SchemaValueConstraint[]
 };
@@ -78,17 +78,35 @@ export type TransformerContext = SchemaContext;
 
 export type CoercerContext = SchemaContext;
 
-export type ValueType<T = any> = Schema<T> | Type<T> | typeof BigInt | typeof Symbol | typeof Function | 'undefined' | 'null' | 'any';
-export type DeferredValueType<T> = { deferred: () => ValueType<T> };
-export type MaybeDeferredValueType<T = any> = ValueType<T> | DeferredValueType<T>;
+export type NormalizeValueType<T> =
+  | T extends String ? string
+  : T extends Number ? number
+  : T extends Boolean ? boolean
+  : T extends BigInt ? bigint
+  : T extends Symbol ? symbol
+  : T extends 'undefined' ? undefined
+  : T extends 'null' ? null
+  : T;
 
-export type ValueTypes<T = any> = OneOrMany<ValueType<T>>;
-export type DeferredValueTypes<T = any> = { deferred: () => ValueTypes<T> };
-export type MaybeDeferredValueTypes<T = any> = OneOrMany<ValueTypes<T> | DeferredValueTypes<T>> | MaybeDeferredValueTypes<T>[];
+export type NormalizeToValueType<T> =
+  T extends string ? typeof String
+  : T extends number ? typeof Number
+  : T extends boolean ? typeof Boolean
+  : T extends bigint ? typeof BigInt
+  : T extends symbol ? typeof Symbol
+  : T extends undefined ? 'undefined'
+  : T extends null ? 'null'
+  : never;
+
+export type ValueType<T = any, O = T> = Schema<T, O> | Type<O> | NormalizeToValueType<T> | DeferredValueType<T, O> | 'undefined' | 'null' | 'any';
+export type DeferredValueType<T = any, O = T> = { deferred: () => ValueType<T, O> };
+export type ResolvedValueType<T = any, O = T> = Exclude<ValueType<T, O>, DeferredValueType>;
+
+export type ValueTypeOutput<T extends ValueType | DeferredValueType> = T extends (ValueType<infer _, infer O> | DeferredValueType<infer _, infer O>) ? NormalizeValueType<O> : never;
 
 export type Coercible = { coerce?: boolean };
 
-export const primitiveValueTypes: ValueType[] = [String, Number, Boolean, BigInt, Symbol, Function, 'undefined', 'null', 'any'];
+export const primitiveValueTypes: ValueType[] = [String, Number, Boolean, BigInt, Symbol, Function, 'undefined', 'null'];
 export const primitiveValueTypesSet = new Set(primitiveValueTypes);
 
 export abstract class SchemaArrayConstraint {
@@ -98,21 +116,21 @@ export abstract class SchemaArrayConstraint {
 export type OptionKeys<T extends Record> = readonly (keyof T)[];
 
 export abstract class SchemaValueConstraint {
-  abstract readonly suitableTypes: ValueTypes;
+  abstract readonly suitableTypes: OneOrMany<ValueType>;
   abstract readonly expects: OneOrMany<string>;
 
   abstract validate(value: unknown, path: JsonPath, context: ConstraintContext): ConstraintResult;
 }
 
-export abstract class SchemaValueTransformer {
-  abstract readonly sourceType: ValueTypes;
-  abstract readonly targetType: ValueType;
+export abstract class SchemaValueTransformer<T = any, O = T, TransformOutput = O> {
+  abstract readonly sourceType: OneOrMany<ValueType<T, O>>;
+  abstract readonly targetType: ValueType<TransformOutput>;
 
-  abstract transform(value: unknown, path: JsonPath, context: TransformerContext): TransformResult;
+  abstract transform(value: O, path: JsonPath, context: TransformerContext): TransformResult<TransformOutput>;
 }
 
 export abstract class SchemaValueCoercer {
-  abstract readonly sourceType: ValueTypes;
+  abstract readonly sourceType: OneOrMany<ValueType>;
   abstract readonly targetType: ValueType;
 
   abstract coerce(value: unknown, path: JsonPath, context: CoercerContext): CoerceResult;
@@ -144,30 +162,65 @@ export type CoerceResult =
   | { success: true, value: any, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
-export type TransformResult =
-  | { success: true, value: any, error?: undefined }
+export type TransformResult<T> =
+  | { success: true, value: T, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
-export function objectSchema<T extends ObjectSchema>(schema: T): T {
+export function objectSchema<T, O = T>(schema: ObjectSchema<T, O>): ObjectSchema<T, O> {
   return schema;
 }
 
-export function valueSchema<T extends ValueSchema>(schema: T): T {
+export function valueSchema<T, O = T>(schema: ValueSchema<T, O>): ValueSchema<T, O> {
   return schema;
 }
 
-export function isSchema<T>(value: ValueType<T>): value is Schema<T> {
+export function isSchema<T, O>(value: ValueType<T, O>): value is Schema<T, O> {
   return isObjectSchema(value) || isValueSchema(value);
 }
 
-export function isObjectSchema<T>(value: ValueType<T>): value is ObjectSchema<T> {
+export function isObjectSchema<T extends Record, O extends Record>(value: ValueType<T, O>): value is ObjectSchema<T, O> {
   return isObject((value as Partial<ObjectSchema> | undefined)?.properties);
 }
 
-export function isValueSchema<T>(value: ValueType<T>): value is ValueSchema<T> {
+export function isValueSchema<T, O>(value: ValueType<T, O>): value is ValueSchema<T, O> {
   return isObject(value) && isDefined((value as Partial<ValueSchema> | undefined)?.type);
 }
 
-export function isDeferredValueType<T>(value: MaybeDeferredValueTypes<T>): value is (DeferredValueType<T> | DeferredValueTypes<T>) {
-  return isObject(value) && hasOwnProperty((value as DeferredValueTypes), 'deferred');
+export function isDeferredValueType<T, O>(value: ValueType<T, O>): value is DeferredValueType<T, O> {
+  return isObject(value) && hasOwnProperty(value as DeferredValueType, 'deferred');
+}
+
+export function deferrableValueTypesToValueTypes<T, O>(valueTypes: OneOrMany<ValueType<T, O>>): OneOrMany<ValueType<T, O>> {
+  if (isArray(valueTypes)) {
+    return valueTypes.flatMap((valueType) => deferrableValueTypesToValueTypes(valueType));
+  }
+
+  return isDeferredValueType(valueTypes)
+    ? valueTypes.deferred()
+    : valueTypes;
+}
+
+export function valueTypeToSchema<T, O>(valueType: ValueType<T, O>): Schema<T, O> {
+  if (isFunction(valueType) || isString(valueType)) {
+    const b = valueSchema({ type: valueType as Type<O> }) as Schema<T, O>;
+    return b;
+  }
+
+  if (isDeferredValueType(valueType)) {
+    return valueTypeToSchema(valueType.deferred());
+  }
+
+  return valueType;
+}
+
+export function valueTypesToSchema<T, O>(valueType: OneOrMany<ValueType<T, O>>): Schema<T, O> {
+  if (isFunction(valueType) || isArray(valueType) || isString(valueType)) {
+    return valueSchema({ type: valueType });
+  }
+
+  if (isDeferredValueType(valueType)) {
+    return valueTypeToSchema(valueType);
+  }
+
+  return valueType;
 }
