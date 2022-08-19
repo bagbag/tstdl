@@ -3,7 +3,7 @@
 import type { Decorator } from '#/reflection';
 import { isDefined } from '#/utils/type-guards';
 import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints';
-import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
 import { typeSchema, valueSchema } from '../types';
 
@@ -30,5 +30,5 @@ export function date(options: DateOptions = {}): ValueSchema<Date> {
 }
 
 export function Date(options?: DateOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(date(options));
+  return createSchemaPropertyDecoratorFromSchema(date(options));
 }

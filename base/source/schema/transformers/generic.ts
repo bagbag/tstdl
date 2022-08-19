@@ -4,17 +4,17 @@ import type { Decorator } from '#/reflection';
 import type { AbstractConstructor, OneOrMany, TypedOmit } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import { createSchemaValueTransformerDecorator } from '../decorators';
-import type { TransformResult, ValueType_FOO } from '../types';
+import type { TransformResult, ValueType } from '../types';
 import { SchemaValueTransformer } from '../types';
 
 export type GenericTransformFunction<T, O> = (value: T) => TypedOmit<TransformResult<O>, 'success'>;
 
 export class GenericTransformer<T, O, TransformOutput> extends SchemaValueTransformer<T, O, TransformOutput> {
-  readonly sourceType: OneOrMany<ValueType_FOO<T>>;
-  readonly targetType: ValueType_FOO<TransformOutput>;
+  readonly sourceType: OneOrMany<ValueType<T>>;
+  readonly targetType: ValueType<TransformOutput>;
   readonly transformFunction: GenericTransformFunction<O, TransformOutput>;
 
-  constructor(sourceType: OneOrMany<ValueType_FOO<T>>, targetType: AbstractConstructor<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>) {
+  constructor(sourceType: OneOrMany<ValueType<T>>, targetType: AbstractConstructor<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>) {
     super();
 
     this.sourceType = sourceType;

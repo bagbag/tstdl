@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MinimumConstraint extends SchemaValueConstraint {
   private readonly minimum: number;
@@ -30,5 +30,5 @@ export class MinimumConstraint extends SchemaValueConstraint {
 }
 
 export function Minimum(minimum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MinimumConstraint(minimum), { schema: Number });
+  return createSchemaValueConstraintDecorator(new MinimumConstraint(minimum), { schema: typeSchema(Number) });
 }

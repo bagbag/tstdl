@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { SchemaOutput, SchemaTestable } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
+import type { Schema, SchemaOutput, SchemaTestable, ValueType, ValueTypeOutput } from '#/schema';
+import type { Json, NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -27,7 +27,7 @@ export type EndpointRegistrationOptions = {
 export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionParameters = SchemaTestable;
-export type ApiEndpointDefinitionBody = SchemaTestable;
+export type ApiEndpointDefinitionBody = SchemaTestable<Json | Uint8Array>;
 export type ApiEndpointDefinitionResult = SchemaTestable;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
@@ -66,13 +66,15 @@ export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEn
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointParametersSchema<T, K>>;
+type ApiType<T extends SchemaTestable> = T extends Schema ? SchemaOutput<T> : T extends ValueType ? ValueTypeOutput<T> : never;
 
-export type ApiBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointBodySchema<T, K>>;
+export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointParametersSchema<T, K>>;
 
-export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+export type ApiBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointBodySchema<T, K>>;
 
-export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>>;
+export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+
+export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointResultSchema<T, K>>;
 
 export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
   parameters: ApiParameters<T, K>,

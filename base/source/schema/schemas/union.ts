@@ -2,7 +2,7 @@
 
 import type { Decorator } from '#/reflection';
 import { assert } from '#/utils/type-guards';
-import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { Schema } from '../schema';
 import type { ValueSchema } from '../types';
 import { valueSchema } from '../types';
@@ -19,5 +19,5 @@ export function union(...schemas: Schema[]): ValueSchema {
 }
 
 export function Union(...schemas: Schema[]): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(union(...schemas));
+  return createSchemaPropertyDecoratorFromSchema(union(...schemas));
 }

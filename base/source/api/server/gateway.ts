@@ -6,8 +6,7 @@ import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import type { SchemaTestable } from '#/schema';
-import { Schema } from '#/schema';
+import { Schema, SchemaTestable } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { deferThrow } from '#/utils/helpers';
@@ -238,11 +237,15 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, schema: SchemaTestable<Json | Uint8Array>): Promise<Json | Uint8Array | undefined> {
+  private async getBody(request: HttpServerRequest, schema: SchemaTestable<Json | Uint8Array> | undefined): Promise<Json | Uint8Array | undefined> {
     const body = await getRequestBody(request);
 
     if (isUndefined(body)) {
       return undefined;
+    }
+
+    if (isUndefined(schema)) {
+      return body as Json | Uint8Array | undefined;
     }
 
     return Schema.parse(schema, body);

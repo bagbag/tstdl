@@ -15,18 +15,17 @@ import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from './decorators';
 import { SchemaError } from './schema.error';
-import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType_FOO, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType_FOO } from './types';
-import { isTypeSchema, isValueSchema, resolveValueType, valueTypesOrSchemasToSchemas } from './types';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType } from './types';
+import { isTypeSchema, isValueSchema, resolveValueType, valueTypeOrSchemaToSchema, valueTypesOrSchemasToSchemas } from './types';
 import { getArrayItemSchema, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema } from './utils';
 
 export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
+export type SchemaTestable<T = any, O = T> = Schema<T, O> | ValueType<O>;
 export type NormalizedSchema<T = any, O = T> = NormalizedObjectSchema<T, O> | NormalizedValueSchema<T, O> | NormalizedTypeSchema<O>;
 
 export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection);
 
-const defaultCoercers = new Map<ValueType_FOO, SchemaValueCoercer[]>();
-
-export type SchemaTestable<T = any, O = T> = Schema<T, O> | TypeSchema<O>;
+const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
 
 let initialize = (): void => {
   Schema.registerDefaultCoercer(numberCoercer);
@@ -51,7 +50,8 @@ export const Schema = {
     }
   },
 
-  test<T, O>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+  test<T, O>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.testWithFastError(schema, value, options, path);
 
     if (result.success) {
@@ -61,12 +61,15 @@ export const Schema = {
     return { success: false, error: new SchemaError(result.error.message, { ...result.error, fast: false }, result.error.cause) };
   },
 
-  validate<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
+  validate<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
+    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
+
     return result.success;
   },
 
-  parse<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
+  parse<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
+    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
     if (result.success) {
@@ -80,7 +83,7 @@ export const Schema = {
    * disables stack traces for errors
    * @deprecated for internal use only
    */
-  testWithFastError<T, O = T>(schema: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+  testWithFastError<T, O = T>(schema: Schema<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
     initialize();
 
     if (isValueSchema(schema)) {
@@ -222,7 +225,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     return { success: true, value: validatedItems as unknown as O };
   }
 
-  let valueType!: ResolvedValueType_FOO<any>;
+  let valueType!: ResolvedValueType<any>;
   let valueTestResult!: SchemaTestResult<unknown>;
   let resultValue: unknown;
 
@@ -336,7 +339,7 @@ function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Object
   for (const [key, propertyMetadata] of metadata.properties) {
     const reflectionData = propertyMetadata.data.tryGet<Partial<SchemaPropertyReflectionData>>('schema');
     const itemType = (isDefined(reflectionData) && isDefined(reflectionData.type)) ? reflectionData.type : undefined;
-    const array = ((propertyMetadata.type == Array) && (itemType != Array)) || (reflectionData?.array == true);
+    const array = reflectionData?.array == true;
 
     if (array && (isUndefined(itemType) || (isArray(itemType) && (itemType.length == 0)))) {
       throw new Error(`Item type missing on type ${type.name} at property "${String(key)}"`);

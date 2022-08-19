@@ -2,11 +2,11 @@
 
 import type { Decorator } from '#/reflection';
 import type { OneOrMany } from '#/types';
+import type { Schema } from '../schema';
 import type { ArrayOptions } from '../schemas/array';
 import { array } from '../schemas/array';
-import type { ValueType } from '../types';
-import { createSchemaPropertyDecoratorFromValueType } from './utils';
+import { createSchemaPropertyDecoratorFromSchema } from './utils';
 
-export function Array(innerValues: OneOrMany<ValueType>, options?: ArrayOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(array(innerValues, options));
+export function Array(innerValues: OneOrMany<Schema>, options?: ArrayOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(array(innerValues, options));
 }

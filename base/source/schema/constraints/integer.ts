@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class IntegerConstraint extends SchemaValueConstraint {
   readonly suitableTypes = Number;
@@ -29,5 +29,5 @@ export class IntegerConstraint extends SchemaValueConstraint {
 export const integerConstraint = new IntegerConstraint();
 
 export function Integer(): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(integerConstraint, { schema: Number });
+  return createSchemaValueConstraintDecorator(integerConstraint, { schema: typeSchema(Number) });
 }

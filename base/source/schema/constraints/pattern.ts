@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class PatternConstraint extends SchemaValueConstraint {
   private readonly pattern: RegExp;
@@ -32,5 +32,5 @@ export class PatternConstraint extends SchemaValueConstraint {
 }
 
 export function Pattern(pattern: RegExp, patternName?: string): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new PatternConstraint(pattern, patternName), { schema: String });
+  return createSchemaValueConstraintDecorator(new PatternConstraint(pattern, patternName), { schema: typeSchema(String) });
 }

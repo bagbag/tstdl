@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { Schema } from '../schema';
 import type { Coercible } from '../types';
 import { typeSchema, valueSchema } from '../types';
@@ -15,5 +15,5 @@ export function regexp(options: RegExpSchemaOptions = {}): Schema<globalThis.Reg
 }
 
 export function RegExp(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(regexp(options));
+  return createSchemaPropertyDecoratorFromSchema(regexp(options));
 }

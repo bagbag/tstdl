@@ -2,10 +2,10 @@
 
 import type { Decorator } from '#/reflection';
 import type { OneOrMany } from '#/types';
+import type { Schema } from '../schema';
 import { defaulted } from '../schemas/defaulted';
-import type { ValueType } from '../types';
-import { createSchemaPropertyDecoratorFromValueType } from './utils';
+import { createSchemaPropertyDecoratorFromSchema } from './utils';
 
-export function Defaulted(type: OneOrMany<ValueType>, defaultValue: any): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(defaulted(type, defaultValue));
+export function Defaulted(type: OneOrMany<Schema>, defaultValue: any): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(defaulted(type, defaultValue));
 }

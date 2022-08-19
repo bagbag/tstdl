@@ -6,7 +6,7 @@ import { assertValidDate, isNumber } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MaximumDateConstraint extends SchemaValueConstraint {
   private readonly maximum: Date;
@@ -33,5 +33,5 @@ export class MaximumDateConstraint extends SchemaValueConstraint {
 }
 
 export function MaximumDate(maximum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MaximumDateConstraint(maximum), { schema: Number });
+  return createSchemaValueConstraintDecorator(new MaximumDateConstraint(maximum), { schema: typeSchema(Number) });
 }

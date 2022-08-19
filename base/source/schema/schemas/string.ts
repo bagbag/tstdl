@@ -3,7 +3,7 @@
 import type { Decorator } from '#/reflection';
 import { isDefined } from '#/utils/type-guards';
 import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints';
-import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
 import type { Coercible, SchemaValueConstraint, SchemaValueTransformer, ValueSchema } from '../types';
 import { typeSchema, valueSchema } from '../types';
@@ -71,5 +71,5 @@ export function string(options: StringOptions = {}): ValueSchema<string> {
 }
 
 export function String(options?: StringOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(string(options));
+  return createSchemaPropertyDecoratorFromSchema(string(options));
 }

@@ -3,7 +3,7 @@
 import type { Decorator } from '#/reflection';
 import type { Enumeration as EnumerationType, EnumerationValue } from '#/types';
 import { EnumerationConstraint } from '../constraints';
-import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { Coercible, ValueSchema } from '../types';
 import { valueSchema, valueTypesOrSchemasToSchemas } from '../types';
 
@@ -19,5 +19,5 @@ export function enumeration<T extends EnumerationType>(enumerationValue: T, opti
 }
 
 export function Enumeration(enumerationValue: EnumerationType, options: EnumerationOptions = {}): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromValueType(enumeration(enumerationValue, options));
+  return createSchemaPropertyDecoratorFromSchema(enumeration(enumerationValue, options));
 }

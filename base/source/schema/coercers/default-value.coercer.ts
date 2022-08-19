@@ -1,10 +1,10 @@
-import type { CoerceResult, ValueType_FOO } from '../types';
+import type { CoerceResult, ValueType } from '../types';
 import { SchemaValueCoercer } from '../types';
 
 export class DefaultValueCoercer extends SchemaValueCoercer {
   readonly defaultValue: any;
   readonly sourceType = ['undefined', 'null'] as const;
-  readonly targetType: ValueType_FOO;
+  readonly targetType: ValueType;
 
   constructor(defaultValue: any) {
     super();

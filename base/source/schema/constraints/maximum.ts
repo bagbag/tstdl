@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MaximumConstraint extends SchemaValueConstraint {
   private readonly maximum: number;
@@ -30,5 +30,5 @@ export class MaximumConstraint extends SchemaValueConstraint {
 }
 
 export function Maximum(maximum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MaximumConstraint(maximum), { schema: Number });
+  return createSchemaValueConstraintDecorator(new MaximumConstraint(maximum), { schema: typeSchema(Number) });
 }

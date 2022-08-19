@@ -6,7 +6,7 @@ import { assertValidDate, isNumber } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
 import type { ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MinimumDateConstraint extends SchemaValueConstraint {
   private readonly minimum: Date;
@@ -33,5 +33,5 @@ export class MinimumDateConstraint extends SchemaValueConstraint {
 }
 
 export function MinimumDate(minimum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MinimumDateConstraint(minimum), { schema: Number });
+  return createSchemaValueConstraintDecorator(new MinimumDateConstraint(minimum), { schema: typeSchema(Number) });
 }
