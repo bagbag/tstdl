@@ -30,7 +30,7 @@ export function createSchemaPropertyDecorator(options: PropertyOptions): Decorat
 }
 
 export function createSchemaPropertyDecoratorFromValueType(valueType: ValueType): Decorator<'property' | 'accessor'> {
-  const schema: ValueType = isValueSchema(valueType) ? valueType : valueSchema({ type: valueType });
+  const schema: ValueType = isValueSchema(valueType) ? valueType : valueSchema(valueType);
 
   return createSchemaPropertyDecorator({
     ...schema,

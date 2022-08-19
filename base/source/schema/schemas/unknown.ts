@@ -6,7 +6,7 @@ import type { ValueSchema } from '../types';
 import { valueSchema } from '../types';
 
 export function unknown(): ValueSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
-  return valueSchema({ type: 'any' });
+  return valueSchema('any');
 }
 
 export function Unknwon(): Decorator<'property' | 'accessor'> {

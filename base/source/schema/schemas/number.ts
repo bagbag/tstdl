@@ -30,8 +30,7 @@ export function number(options: NumberOptions = {}): ValueSchema<number> {
     constraints.push(integerConstraint);
   }
 
-  return valueSchema<number>({
-    type: globalThis.Number,
+  return valueSchema(globalThis.Number, {
     array: false,
     optional: false,
     nullable: false,

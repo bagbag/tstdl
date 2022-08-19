@@ -12,8 +12,7 @@ export type EnumerationOptions = Coercible;
 export function enumeration<T extends EnumerationType>(enumerationValue: T, options: EnumerationOptions = {}): ValueSchema<EnumerationValue<T>> {
   const enumerationConstraint = new EnumerationConstraint(enumerationValue);
 
-  return valueSchema({
-    type: enumerationConstraint.suitableTypes,
+  return valueSchema(enumerationConstraint.suitableTypes, {
     coerce: options.coerce,
     valueConstraints: enumerationConstraint
   });

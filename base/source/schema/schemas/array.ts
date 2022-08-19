@@ -25,8 +25,7 @@ export function array<T, O = T>(innerValues: OneOrMany<ValueType<T, O>>, options
     arrayConstraints.push(new ArrayMaximumLengthConstraint(options.maximumLength));
   }
 
-  return valueSchema<T, O[]>({
-    type: innerValues as ValueType<T, O[]>,
+  return valueSchema(innerValues as ValueType<T, O[]>, {
     array: true,
     coerce: options.coerce,
     arrayConstraints

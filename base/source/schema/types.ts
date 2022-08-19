@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import type { JsonPath } from '#/json-path/json-path';
-import type { AbstractConstructor, OneOrMany, Record, Type } from '#/types';
+import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
 import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards';
 import type { Schema, SchemaTestable } from './schema';
 import type { SchemaError } from './schema.error';
@@ -172,8 +172,8 @@ export function objectSchema<T, O = T>(schema: ObjectSchema<T, O>): ObjectSchema
   return schema;
 }
 
-export function valueSchema<T, O = T>(schema: ValueSchema<T, O>): ValueSchema<T, O> {
-  return schema;
+export function valueSchema<T, O = T>(type: ValueSchema<T, O>['type'], options?: TypedOmit<ValueSchema<T, O>, 'type'>): ValueSchema<T, O> {
+  return { type, ...options };
 }
 
 export function isSchema<T, O>(value: ValueType<T, O>): value is Schema<T, O> {
@@ -208,7 +208,7 @@ export function deferrableValueTypeToResolvedValueTypes<T, O>(valueType: ValueTy
 
 export function valueTypeToSchema<T, O>(valueType: ValueType<T, O>): Schema<T, O> {
   if (isFunction(valueType) || isString(valueType)) {
-    return valueSchema({ type: valueType as TypeSchema<T, O> });
+    return valueSchema(valueType);
   }
 
   if (isDeferredValueType(valueType)) {
@@ -220,7 +220,7 @@ export function valueTypeToSchema<T, O>(valueType: ValueType<T, O>): Schema<T, O
 
 export function valueTypesToSchema<T, O>(valueType: OneOrMany<ValueType<T, O>>): Schema<T, O> {
   if (isFunction(valueType) || isArray(valueType) || isString(valueType)) {
-    return valueSchema({ type: valueType });
+    return valueSchema(valueType);
   }
 
   if (isDeferredValueType(valueType)) {

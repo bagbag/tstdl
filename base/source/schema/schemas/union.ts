@@ -14,10 +14,7 @@ export function union<T1, O1, T2, O2, T3, O3, T4, O4, T5, O5, T6, O6>(schema1: V
 export function union(...schemas: ValueType[]): ValueSchema;
 export function union(...schemas: ValueType[]): ValueSchema {
   assert(schemas.length >= 2, 'Assign requires at least 2 schemas.');
-
-  return valueSchema({
-    type: schemas
-  });
+  return valueSchema(schemas);
 }
 
 export function Union(...schemas: ValueType[]): Decorator<'property' | 'accessor'> {

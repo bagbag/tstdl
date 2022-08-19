@@ -23,8 +23,7 @@ export function date(options: DateOptions = {}): ValueSchema<Date> {
     constraints.push(new MaximumDateConstraint(options.maximum));
   }
 
-  return valueSchema({
-    type: globalThis.Date,
+  return valueSchema(globalThis.Date, {
     coerce: options.coerce,
     valueConstraints: constraints
   });

@@ -5,8 +5,7 @@ import type { Schema } from '../schema';
 import { valueSchema } from '../types';
 
 export function constraint<T, O>(schema: Schema<T, O>, constraintFunction: GenericConstraintFunction<T>, expects?: OneOrMany<string>): Schema<T, O> {
-  return valueSchema({
-    type: schema,
+  return valueSchema(schema, {
     valueConstraints: new GenericConstraint(constraintFunction, expects)
   });
 }

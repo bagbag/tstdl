@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import type { Decorator } from '#/reflection';
 import { isDefined } from '#/utils/type-guards';
 import { uint8ArrayCoercer } from '../coercers/uint8-array.coercer';
@@ -13,7 +15,7 @@ export type Uint8ArraySchemaOptions = Coercible & {
   maximumLength?: number
 };
 
-export function uint8Array(options: Uint8ArraySchemaOptions = {}): Schema<Uint8Array> {
+export function uint8Array(options: Uint8ArraySchemaOptions = {}): Schema<globalThis.Uint8Array> {
   const constraints: SchemaValueConstraint[] = [];
 
   if (isDefined(options.minimumLength)) {
@@ -24,8 +26,7 @@ export function uint8Array(options: Uint8ArraySchemaOptions = {}): Schema<Uint8A
     constraints.push(new MaximumLengthConstraint(options.maximumLength));
   }
 
-  return valueSchema({
-    type: globalThis.Uint8Array,
+  return valueSchema(globalThis.Uint8Array, {
     coercers: (options.coerce == true) ? uint8ArrayCoercer : undefined,
     valueConstraints: constraints
   });
