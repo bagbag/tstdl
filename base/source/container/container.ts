@@ -2,7 +2,7 @@ import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { MultiKeyMap } from '#/data-structures/multi-key-map';
 import type { ConstructorParameterMetadata, PropertyMetadata, TypeMetadata } from '#/reflection';
 import { reflectionRegistry } from '#/reflection';
-import type { Record, TypedOmit } from '#/types';
+import type { Constructor, Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef } from '#/utils/object/forward-ref';
 import { objectEntries } from '#/utils/object/object';
@@ -272,7 +272,7 @@ export class Container {
 
       const parameters = (typeMetadata.parameters ?? []).map((metadata): unknown => this.resolveInjection(token, context, typeMetadata, metadata, resolveArgument, chain));
 
-      instance = new typeMetadata.constructor(...parameters) as T;
+      instance = new (typeMetadata.constructor as Constructor)(...parameters) as T;
 
       for (const [property, metadata] of typeMetadata.properties) {
         if (!metadata.data.has(injectMetadataSymbol)) {
@@ -414,7 +414,7 @@ export class Container {
       const boxedParameters = await toArrayAsync(mapAsync(typeMetadata.parameters ?? [], async (metadata) => this.resolveInjectionAsync(context, typeMetadata, metadata, resolveArgument, chain)));
       const parameters = boxedParameters.map((box) => box.resolved);
 
-      instance = new typeMetadata.constructor(...parameters) as T;
+      instance = new (typeMetadata.constructor as Constructor)(...parameters) as T;
 
       for (const [property, metadata] of typeMetadata.properties) {
         if (!metadata.data.has(injectMetadataSymbol)) {

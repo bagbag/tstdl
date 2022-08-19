@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import type { JsonPath } from '#/json-path/json-path';
-import type { OneOrMany, Record, Type } from '#/types';
-import { hasOwnProperty } from '#/utils/object/object';
+import type { AbstractConstructor, OneOrMany, Record, Type } from '#/types';
 import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards';
-import type { Schema } from './schema';
+import type { Schema, SchemaTestable } from './schema';
 import type { SchemaError } from './schema.error';
 
 declare const schemaOutputTypeSymbol: unique symbol;
@@ -17,9 +16,10 @@ export type SchemaFactory<T extends Record, O = T> =
 export type ObjectSchemaProperties<T extends Record> = { [K in keyof T]-?: OneOrMany<ValueType<T[K]>> };
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]: Schema<T[K]> };
 
-export type SchemaOutput<T extends Schema> =
-  | T extends ObjectSchema<infer U> ? U
-  : T extends ValueSchema<infer _, infer U> ? U
+export type SchemaOutput<T extends SchemaTestable> =
+  | T extends ObjectSchema<any, infer O> ? O
+  : T extends ValueSchema<any, infer O> ? O
+  : T extends TypeSchema ? InstanceType<T>
   : never;
 
 export type ObjectSchema<T extends Record = any, O extends Record = T> = {
@@ -29,6 +29,8 @@ export type ObjectSchema<T extends Record = any, O extends Record = T> = {
   mask?: boolean,
   allowUnknownProperties?: OneOrMany<ValueType>
 };
+
+export type TypeSchema<T = any, O = T> = AbstractConstructor<T & O>;
 
 export type ValueSchema<T = unknown, O = T> = {
   type: OneOrMany<ValueType<T, O>>,
@@ -98,9 +100,9 @@ export type NormalizeToValueType<T> =
   : T extends null ? 'null'
   : never;
 
-export type ValueType<T = any, O = T> = Schema<T, O> | Type<O> | NormalizeToValueType<T> | DeferredValueType<T, O> | 'undefined' | 'null' | 'any';
-export type DeferredValueType<T = any, O = T> = { deferred: () => ValueType<T, O> };
-export type ResolvedValueType<T = any, O = T> = Exclude<ValueType<T, O>, DeferredValueType>;
+export type ValueType<T = any, O = T> = Schema<T, O> | TypeSchema<T, O> | NormalizeToValueType<T> | DeferredValueType<T, O> | 'undefined' | 'null' | 'any';
+export type DeferredValueType<T = unknown, O = T> = { deferred: () => ValueType<T, O> };
+export type ResolvedValueType<T = unknown, O = T> = Exclude<ValueType<T, O>, DeferredValueType>;
 
 export type ValueTypeOutput<T extends ValueType | DeferredValueType> = T extends (ValueType<infer _, infer O> | DeferredValueType<infer _, infer O>) ? NormalizeValueType<O> : never;
 
@@ -187,23 +189,26 @@ export function isValueSchema<T, O>(value: ValueType<T, O>): value is ValueSchem
 }
 
 export function isDeferredValueType<T, O>(value: ValueType<T, O>): value is DeferredValueType<T, O> {
-  return isObject(value) && hasOwnProperty(value as DeferredValueType, 'deferred');
+  return isObject(value) && isFunction((value as DeferredValueType).deferred);
 }
 
-export function deferrableValueTypesToValueTypes<T, O>(valueTypes: OneOrMany<ValueType<T, O>>): OneOrMany<ValueType<T, O>> {
+export function deferrableValueTypesToValueTypes<T, O>(valueTypes: OneOrMany<ValueType<T, O>>): OneOrMany<ResolvedValueType<T, O>> {
   if (isArray(valueTypes)) {
     return valueTypes.flatMap((valueType) => deferrableValueTypesToValueTypes(valueType));
   }
 
-  return isDeferredValueType(valueTypes)
-    ? valueTypes.deferred()
-    : valueTypes;
+  return deferrableValueTypeToResolvedValueTypes(valueTypes);
+}
+
+export function deferrableValueTypeToResolvedValueTypes<T, O>(valueType: ValueType<T, O>): ResolvedValueType<T, O> {
+  return isDeferredValueType(valueType)
+    ? deferrableValueTypeToResolvedValueTypes(valueType.deferred())
+    : valueType as ResolvedValueType<T, O>;
 }
 
 export function valueTypeToSchema<T, O>(valueType: ValueType<T, O>): Schema<T, O> {
   if (isFunction(valueType) || isString(valueType)) {
-    const b = valueSchema({ type: valueType as Type<O> }) as Schema<T, O>;
-    return b;
+    return valueSchema({ type: valueType as TypeSchema<T, O> });
   }
 
   if (isDeferredValueType(valueType)) {

@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { ObjectSchema, SchemaOutput, SchemaTestable } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT, Type } from '#/types';
+import type { SchemaOutput, SchemaTestable } from '#/schema';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -26,6 +26,7 @@ export type EndpointRegistrationOptions = {
 
 export type ApiEndpointMethod = HttpMethod;
 
+export type ApiEndpointDefinitionParameters = SchemaTestable;
 export type ApiEndpointDefinitionBody = SchemaTestable;
 export type ApiEndpointDefinitionResult = SchemaTestable;
 
@@ -44,7 +45,7 @@ export type ApiEndpointDefinition = {
   method?: OneOrMany<ApiEndpointMethod>,
   resource?: typeof rootResource | string,
   version?: OneOrMany<number | null>,
-  parameters?: ObjectSchema | Type,
+  parameters?: ApiEndpointDefinitionParameters,
   body?: ApiEndpointDefinitionBody,
   result?: ApiEndpointDefinitionResult,
   description?: string,

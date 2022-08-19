@@ -1,8 +1,8 @@
 import type { Type } from '#/types';
 import { isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
-import type { ValueType } from '../types';
+import type { ResolvedValueType, ValueType } from '../types';
 
-export function getValueType(value: unknown): ValueType {
+export function getValueType(value: unknown): ResolvedValueType {
   if (isUndefined(value)) {
     return 'undefined';
   }

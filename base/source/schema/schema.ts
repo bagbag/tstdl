@@ -15,7 +15,7 @@ import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from './decorators';
 import { SchemaError } from './schema.error';
-import type { NormalizedValueSchema, ObjectSchema, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, ValueSchema, ValueType } from './types';
+import type { NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType } from './types';
 import { deferrableValueTypesToValueTypes, isValueSchema, primitiveValueTypesSet, valueTypesToSchema } from './types';
 import { getArrayItemSchema, getValueType, getValueTypeName, normalizeSchema, normalizeValueSchema } from './utils';
 
@@ -25,7 +25,7 @@ export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflect
 
 const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
 
-export type SchemaTestable<T = any, O = T> = Schema<T, O> | Type<T>;
+export type SchemaTestable<T = any, O = T> = Schema<T, O> | TypeSchema<T, O>;
 
 let initialize = (): void => {
   Schema.registerDefaultCoercer(numberCoercer);
@@ -91,7 +91,7 @@ export const Schema = {
 };
 
 // eslint-disable-next-line complexity
-function testObject<T extends Record, O = T>(schemaOrType: ObjectSchema<T, O> | Type<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+function testObject<T extends Record, O = T>(schemaOrType: ObjectSchema<T, O> | TypeSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
   if (isFunction(schemaOrType) && (value instanceof schemaOrType)) {
     return { success: true, value: value as O };
   }
@@ -326,11 +326,11 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   return { success: true, value: resultValue as O };
 }
 
-function isValidType(valueSchema: NormalizedValueSchema, valueType: ValueType): boolean {
+function isValidType(valueSchema: NormalizedValueSchema, valueType: ResolvedValueType): boolean {
   return valueSchema.type.has(valueType) || valueSchema.type.has('any');
 }
 
-function _getObjectSchemaFromReflection<T>(type: Type<T>): ObjectSchema<T> | null {
+function _getObjectSchemaFromReflection<T, O>(type: TypeSchema<T, O>): ObjectSchema<T> | null {
   const metadata = reflectionRegistry.getMetadata(type);
 
   if (!metadata.registered) {
@@ -351,7 +351,7 @@ function _getObjectSchemaFromReflection<T>(type: Type<T>): ObjectSchema<T> | nul
     }
 
     properties[key] = {
-      type: itemType ?? propertyMetadata.type,
+      type: (itemType ?? propertyMetadata.type) as ResolvedValueType,
       array,
       optional: reflectionData?.optional,
       nullable: reflectionData?.nullable,
@@ -364,7 +364,7 @@ function _getObjectSchemaFromReflection<T>(type: Type<T>): ObjectSchema<T> | nul
   }
 
   const objectSchema: ObjectSchema = {
-    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory as SchemaFactoryFunction<T> } : { type },
+    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory as SchemaFactoryFunction<T> } : { type: type as Type },
     properties,
     mask: typeData?.mask,
     allowUnknownProperties: typeData?.allowUnknownProperties

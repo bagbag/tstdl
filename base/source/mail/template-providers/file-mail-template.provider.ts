@@ -1,7 +1,6 @@
 import type { Injectable } from '#/container';
 import { injectArg, resolveArgumentType, singleton } from '#/container';
-import type { Schema } from '#/schema';
-import { object, optional, string, unknown } from '#/schema';
+import { any, explicitObject, optional, string } from '#/schema';
 import { FileTemplateProviderBase } from '#/templates/providers/file-template.provider.base';
 import type { MailTemplateProvider } from '../mail-template.provider';
 import type { MailTemplate } from '../models';
@@ -25,7 +24,7 @@ export type FileMailTemplateProviderArgument = string;
 
 export const fileMailTemplateProviderConfig: FileMailTemplateProviderConfig = {};
 
-const fileMailTemplateSchema: Schema<FileMailTemplate> = object({
+const fileMailTemplateSchema = explicitObject<FileMailTemplate>({
   type: string(),
   subject: optional(string()),
   subjectFile: optional(string()),
@@ -33,7 +32,7 @@ const fileMailTemplateSchema: Schema<FileMailTemplate> = object({
   htmlFile: optional(string()),
   text: optional(string()),
   textFile: optional(string()),
-  options: optional(unknown())
+  options: optional(any())
 });
 
 @singleton({

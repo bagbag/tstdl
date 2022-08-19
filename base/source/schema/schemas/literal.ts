@@ -8,7 +8,7 @@ import { valueSchema } from '../types';
 import { getValueType } from '../utils';
 
 export function literal<T>(value: T): ValueSchema<T> {
-  return valueSchema({
+  return valueSchema<any>({
     type: getValueType(value),
     valueConstraints: new LiteralConstraint(value)
   });

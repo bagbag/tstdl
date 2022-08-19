@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { Constructor, Type, Writable } from '#/types';
+import type { AbstractConstructor, AbstractType, Constructor, Writable } from '#/types';
 import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
@@ -17,7 +17,7 @@ export type MetadataBase<T extends MetadataType> = {
 };
 
 export type TypeMetadata = MetadataBase<'type'> & {
-  readonly constructor: Constructor,
+  readonly constructor: AbstractConstructor,
 
   /** may be undefined if class has no constructor */
   readonly parameters: ConstructorParameterMetadata[] | undefined,
@@ -35,25 +35,25 @@ type WritableTypeMetadata = Writable<TypeMetadata>;
 
 export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
-  type: Type,
+  type: AbstractType,
   isAccessor: boolean,
   data: ReflectionDataMap
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
-  returnType: Type | undefined,
+  returnType: AbstractType | undefined,
   data: ReflectionDataMap
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
-  type: Type | undefined,
+  type: AbstractType | undefined,
   index: number,
   data: ReflectionDataMap
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
-  type: Type,
+  type: AbstractType,
   index: number,
   data: ReflectionDataMap
 };
@@ -61,7 +61,7 @@ export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
 
 export class ReflectionRegistry {
-  private readonly metadataMap: WeakMap<Type, TypeMetadata>;
+  private readonly metadataMap: WeakMap<AbstractConstructor, TypeMetadata>;
 
   constructor() {
     this.metadataMap = new WeakMap();
@@ -71,7 +71,7 @@ export class ReflectionRegistry {
     return this.metadataMap.has(type) && this.getMetadata(type).registered;
   }
 
-  getMetadata(type: Constructor): TypeMetadata {
+  getMetadata(type: AbstractType): TypeMetadata {
     if (!this.metadataMap.has(type)) {
       const metadata = this.initializeType(type);
       this.metadataMap.set(type, metadata);
@@ -124,12 +124,12 @@ export class ReflectionRegistry {
    * However, this should not be necessary since WeakRefs are used.
    * @param type Type to unregister
    */
-  unregister(type: Type): void {
+  unregister(type: AbstractType): void {
     this.metadataMap.delete(type);
   }
 
   // eslint-disable-next-line max-lines-per-function
-  private initializeType(type: Type): TypeMetadata {
+  private initializeType(type: AbstractType): TypeMetadata {
     return lazyObject<TypeMetadata>({
       metadataType: 'type',
       constructor: lazyObjectValue(type),
