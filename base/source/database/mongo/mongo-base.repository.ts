@@ -4,7 +4,7 @@ import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error';
 import type { Record } from '#/types';
 import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
-import type { FindOneAndUpdateOptions } from 'mongodb';
+import type { FindOneAndUpdateOptions, IndexDescription } from 'mongodb';
 import type { Collection } from './classes';
 import type { MongoDocument } from './model';
 import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
@@ -71,7 +71,7 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async createIndexes(indexes: TypedIndexDescription<T>[]): Promise<void> {
-    await this.collection.createIndexes(indexes);
+    await this.collection.createIndexes(indexes as IndexDescription[]);
   }
 
   bulk(): MongoBulk<T> {
@@ -131,7 +131,7 @@ export class MongoBaseRepository<T extends Entity> {
 
     const mapped = Enumerable.from(items)
       .map(({ filter, entity }) => ({ filter, document: mongoDocumentFromMaybeNewEntity(entity) }))
-      .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document }, { upsert: true }) }))
+      .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document } as UpdateFilter<U>, { upsert: true }) }))
       .toArray();
 
     const operations = mapped.map((o) => o.operation as UpdateOneOperation<T>);

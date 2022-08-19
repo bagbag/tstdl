@@ -47,10 +47,10 @@
     "koa": "^2.13",
     "minio": "^7.0",
     "mjml": "^4.13",
-    "mongodb": "4.7",
+    "mongodb": "4.9",
     "nodemailer": "^6.7",
-    "puppeteer": "^16.1",
-    "undici": "^5.8",
+    "puppeteer": "^16.2",
+    "undici": "^5.9",
     "urlpattern-polyfill": "^4.0"
   },
   "peerDependenciesMeta": {

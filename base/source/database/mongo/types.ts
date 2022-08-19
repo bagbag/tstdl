@@ -1,5 +1,5 @@
 import type { Entity } from '#/database';
-import type { TypedOmit } from '#/types';
+import type { Paths, TypedOmit } from '#/types';
 import type * as Mongo from 'mongodb';
 import type { MongoDocument } from './model';
 
@@ -31,7 +31,7 @@ export type SortArray<T extends Entity = Entity> = SortArrayItem<T>[];
 export type Sort<T extends Entity = Entity> = SortArray<T> | SortObject<T>;
 
 export type TypedIndexDescription<T extends Entity = Entity> = Omit<Mongo.IndexDescription, 'key' | 'partialFilterExpression'> & {
-  key: { [P in keyof T]?: 1 | -1 | 'text' | 'hashed' },
+  key: { [P in Paths<T>]?: Mongo.IndexDirection },
   partialFilterExpression?: Filter<T>
 };
 

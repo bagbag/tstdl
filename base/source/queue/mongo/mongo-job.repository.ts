@@ -1,7 +1,7 @@
 import type { Injectable } from '#/container';
 import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { getNewId } from '#/database';
-import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
+import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
 import { Logger } from '#/logger';
 import { UniqueTagStrategy } from '#/queue';
@@ -20,13 +20,13 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
   readonly [resolveArgumentType]: CollectionArgument<MongoJob<T>>;
 
   constructor(@forwardArg() collection: Collection<MongoJob<T>>, @resolveArg(MongoJobRepository.name) logger: Logger) {
-    super(collection, noopTransformer, { indexes: indexes as TypedIndexDescription<MongoJob<T>>[], logger });
+    super(collection, noopTransformer, { indexes, logger });
   }
 
   async insertWithUniqueTagStrategy(newJob: NewMongoJob<T>, uniqueTagStrategy: UniqueTagStrategy): Promise<MongoJob<T>> {
     const { queue, tag, ...rest } = newJob;
 
-    const updateQuery = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
+    const updateQuery: Filter<MongoJob<T>> = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
       ? { $setOnInsert: { _id: getNewId(), ...rest } }
       : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
@@ -39,7 +39,7 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
     for (const newJob of newJobs) {
       const { queue, tag, ...rest } = newJob;
 
-      const updateQuery = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
+      const updateQuery: Filter<MongoJob> = (uniqueTagStrategy == UniqueTagStrategy.KeepOld)
         ? { $setOnInsert: { _id: getNewId(), ...rest } }
         : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
