@@ -5,7 +5,7 @@ import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array/array';
 import type { ErrorExtraInfo } from '#/utils/format-error';
 import { isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards';
-import type { ValueType } from './types';
+import type { ValueType_FOO } from './types';
 import { getValueTypeName } from './utils';
 
 export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
@@ -40,7 +40,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static expectedButGot(expected: OneOrMany<string | ValueType_FOO>, got: string | ValueType_FOO, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotName = isString(got) ? got : getValueTypeName(got);
 
@@ -53,7 +53,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, customMessage?: string | undefined, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static couldNotCoerce(expected: OneOrMany<string | ValueType_FOO>, got: string | ValueType_FOO, path: string | JsonPath, customMessage?: string | undefined, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotText = isString(got) ? got : getValueTypeName(got);
 

@@ -5,14 +5,14 @@ import type { Enumeration as EnumerationType, EnumerationValue } from '#/types';
 import { EnumerationConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
 import type { Coercible, ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { valueSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export type EnumerationOptions = Coercible;
 
 export function enumeration<T extends EnumerationType>(enumerationValue: T, options: EnumerationOptions = {}): ValueSchema<EnumerationValue<T>> {
   const enumerationConstraint = new EnumerationConstraint(enumerationValue);
 
-  return valueSchema(enumerationConstraint.suitableTypes, {
+  return valueSchema(valueTypesOrSchemasToSchemas(enumerationConstraint.suitableTypes), {
     coerce: options.coerce,
     valueConstraints: enumerationConstraint
   });

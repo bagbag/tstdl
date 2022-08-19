@@ -2,11 +2,11 @@
 
 import type { Decorator } from '#/reflection';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
-import type { ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import type { TypeSchema } from '../types';
+import { typeSchema } from '../types';
 
-export function unknown(): ValueSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
-  return valueSchema('any');
+export function unknown(): TypeSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
+  return typeSchema('any');
 }
 
 export function Unknwon(): Decorator<'property' | 'accessor'> {

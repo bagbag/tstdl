@@ -29,5 +29,5 @@ export class IntegerConstraint extends SchemaValueConstraint {
 export const integerConstraint = new IntegerConstraint();
 
 export function Integer(): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(integerConstraint, { type: Number });
+  return createSchemaValueConstraintDecorator(integerConstraint, { schema: Number });
 }

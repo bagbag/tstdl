@@ -6,8 +6,7 @@ import { integerConstraint } from '../constraints/integer';
 import { MaximumConstraint } from '../constraints/maximum';
 import { MinimumConstraint } from '../constraints/minimum';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
-import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { Coercible, SchemaValueConstraint, typeSchema, ValueSchema, valueSchema } from '../types';
 
 export type NumberOptions = Coercible & {
   minimum?: number,
@@ -30,7 +29,7 @@ export function number(options: NumberOptions = {}): ValueSchema<number> {
     constraints.push(integerConstraint);
   }
 
-  return valueSchema(globalThis.Number, {
+  return valueSchema(typeSchema(globalThis.Number), {
     array: false,
     optional: false,
     nullable: false,

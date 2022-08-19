@@ -4,11 +4,11 @@ import type { Decorator } from '#/reflection';
 import { LiteralConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
 import type { ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
 import { getValueType } from '../utils';
 
 export function literal<T>(value: T): ValueSchema<T> {
-  return valueSchema<any>(getValueType(value), {
+  return valueSchema<any>(typeSchema(getValueType(value)), {
     valueConstraints: new LiteralConstraint(value)
   });
 }

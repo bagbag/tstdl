@@ -1,8 +1,11 @@
-import type { Type } from '#/types';
-import { isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
-import type { ResolvedValueType, ValueType } from '../types';
+import type { AbstractConstructor } from '#/types';
+import { toArray } from '#/utils/array/array';
+import { assertObjectPass, isNull, isString, isUndefined } from '#/utils/type-guards';
+import type { Schema } from '../schema';
+import type { ResolvedValueType_FOO, ValueType_FOO } from '../types';
+import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
 
-export function getValueType(value: unknown): ResolvedValueType {
+export function getValueType(value: unknown): ResolvedValueType_FOO<any> {
   if (isUndefined(value)) {
     return 'undefined';
   }
@@ -11,9 +14,31 @@ export function getValueType(value: unknown): ResolvedValueType {
     return 'null';
   }
 
-  return (value as object).constructor as Type;
+  return assertObjectPass(value).constructor as AbstractConstructor;
 }
 
-export function getValueTypeName(valueType: ValueType): string {
-  return isString(valueType) ? valueType : isFunction(valueType) ? valueType.name : 'object';
+export function getValueTypeName(valueType: ValueType_FOO): string {
+  const resolvedValueType = resolveValueType(valueType);
+
+  return isString(resolvedValueType)
+    ? resolvedValueType
+    : resolvedValueType.name;
+}
+
+export function getSchemaTypeNames(schema: Schema): string[] {
+  if (isTypeSchema(schema)) {
+    const name = getValueTypeName(schema.type);
+    return [name];
+  }
+
+  if (isObjectSchema(schema)) {
+    const name = getValueTypeName(schema.sourceType ?? Object);
+    return [name];
+  }
+
+  if (isValueSchema(schema)) {
+    return [...new Set(toArray(schema.schema).flatMap(getSchemaTypeNames))];
+  }
+
+  throw new Error('Unsupported schema');
 }

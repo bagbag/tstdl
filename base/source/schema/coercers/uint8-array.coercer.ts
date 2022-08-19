@@ -1,7 +1,8 @@
 import type { JsonPath } from '#/json-path/json-path';
 import { Schema } from '../schema';
 import { SchemaError } from '../schema.error';
-import { array, number } from '../schemas';
+import { array } from '../schemas/array';
+import { number } from '../schemas/number';
 import type { CoercerContext, CoerceResult } from '../types';
 import { SchemaValueCoercer } from '../types';
 

@@ -32,5 +32,5 @@ export class PatternConstraint extends SchemaValueConstraint {
 }
 
 export function Pattern(pattern: RegExp, patternName?: string): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new PatternConstraint(pattern, patternName), { type: String });
+  return createSchemaValueConstraintDecorator(new PatternConstraint(pattern, patternName), { schema: String });
 }

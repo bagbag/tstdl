@@ -33,5 +33,5 @@ export class MinimumDateConstraint extends SchemaValueConstraint {
 }
 
 export function MinimumDate(minimum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MinimumDateConstraint(minimum), { type: Number });
+  return createSchemaValueConstraintDecorator(new MinimumDateConstraint(minimum), { schema: Number });
 }

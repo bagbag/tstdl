@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import type { OneOrMany, TypedOmit } from '#/types';
+import type { AbstractConstructor, OneOrMany, TypedOmit } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import { createSchemaValueTransformerDecorator } from '../decorators';
-import type { TransformResult, ValueType } from '../types';
+import type { TransformResult, ValueType_FOO } from '../types';
 import { SchemaValueTransformer } from '../types';
 
 export type GenericTransformFunction<T, O> = (value: T) => TypedOmit<TransformResult<O>, 'success'>;
 
 export class GenericTransformer<T, O, TransformOutput> extends SchemaValueTransformer<T, O, TransformOutput> {
-  readonly sourceType: OneOrMany<ValueType<T, O>>;
-  readonly targetType: ValueType<TransformOutput>;
+  readonly sourceType: OneOrMany<ValueType_FOO<T>>;
+  readonly targetType: ValueType_FOO<TransformOutput>;
   readonly transformFunction: GenericTransformFunction<O, TransformOutput>;
 
-  constructor(sourceType: OneOrMany<ValueType<T, O>>, targetType: ValueType<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>) {
+  constructor(sourceType: OneOrMany<ValueType_FOO<T>>, targetType: AbstractConstructor<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>) {
     super();
 
     this.sourceType = sourceType;
@@ -33,6 +33,6 @@ export class GenericTransformer<T, O, TransformOutput> extends SchemaValueTransf
   }
 }
 
-export function Transform<T, O, TransformOutput>(sourceType: OneOrMany<ValueType<T, O>>, targetType: ValueType, transformFunction: GenericTransformFunction<O, TransformOutput>): Decorator<'property' | 'accessor'> {
+export function Transform<T, O, TransformOutput>(sourceType: OneOrMany<AbstractConstructor<T>>, targetType: AbstractConstructor, transformFunction: GenericTransformFunction<O, TransformOutput>): Decorator<'property' | 'accessor'> {
   return createSchemaValueTransformerDecorator(new GenericTransformer(sourceType, targetType, transformFunction));
 }

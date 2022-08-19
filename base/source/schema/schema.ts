@@ -1,12 +1,12 @@
 import { JsonPath } from '#/json-path';
 import { reflectionRegistry } from '#/reflection';
-import type { Record, Type } from '#/types';
+import type { AbstractConstructor, Record, Type } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { memoizeSingle } from '#/utils/function';
 import { noop } from '#/utils/noop';
 import { objectKeys } from '#/utils/object/object';
 import { differenceSets } from '#/utils/set';
-import { isArray, isDefined, isFunction, isNull, isObject, isString, isUndefined } from '#/utils/type-guards';
+import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
 import { booleanCoercer } from './coercers/boolean.coercer';
 import { dateCoercer } from './coercers/date.coercer';
 import { numberCoercer } from './coercers/number.coercer';
@@ -15,17 +15,18 @@ import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from './decorators';
 import { SchemaError } from './schema.error';
-import type { NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType } from './types';
-import { deferrableValueTypesToValueTypes, isValueSchema, primitiveValueTypesSet, valueTypesToSchema } from './types';
-import { getArrayItemSchema, getValueType, getValueTypeName, normalizeSchema, normalizeValueSchema } from './utils';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType_FOO, SchemaContext, SchemaFactoryFunction, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType_FOO } from './types';
+import { isTypeSchema, isValueSchema, resolveValueType, valueTypesOrSchemasToSchemas } from './types';
+import { getArrayItemSchema, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema } from './utils';
 
-export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O>;
+export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
+export type NormalizedSchema<T = any, O = T> = NormalizedObjectSchema<T, O> | NormalizedValueSchema<T, O> | NormalizedTypeSchema<O>;
 
 export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection);
 
-const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
+const defaultCoercers = new Map<ValueType_FOO, SchemaValueCoercer[]>();
 
-export type SchemaTestable<T = any, O = T> = Schema<T, O> | TypeSchema<T, O>;
+export type SchemaTestable<T = any, O = T> = Schema<T, O> | TypeSchema<O>;
 
 let initialize = (): void => {
   Schema.registerDefaultCoercer(numberCoercer);
@@ -86,28 +87,45 @@ export const Schema = {
       return testValue(schema, value, options, path);
     }
 
+    if (isTypeSchema(schema)) {
+      return testType(schema, value, options, path);
+    }
+
     return testObject(schema, value, options, path);
   }
 };
 
+function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
+  const resolvedValueType = resolveValueType(schema.type);
+
+  if (resolvedValueType == 'any') {
+    return { success: true, value: value as T };
+  }
+  else if (isFunction(resolvedValueType)) {
+    if (value instanceof resolvedValueType) {
+      return { success: true, value };
+    }
+
+    const objectSchema = getSchemaFromReflection(resolvedValueType);
+
+    if (isNotNull(objectSchema)) {
+      return testObject<T>(objectSchema, value, options, path);
+    }
+  }
+  else if ((resolvedValueType == 'null' && isNull(value)) || (resolvedValueType == 'undefined' && isUndefined(value)) || (resolvedValueType == 'any')) {
+    return { success: true, value: value as T };
+  }
+
+  return { success: false, error: SchemaError.expectedButGot(resolvedValueType, getValueType(value), path) };
+}
+
 // eslint-disable-next-line complexity
-function testObject<T extends Record, O = T>(schemaOrType: ObjectSchema<T, O> | TypeSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
-  if (isFunction(schemaOrType) && (value instanceof schemaOrType)) {
-    return { success: true, value: value as O };
+function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+  if (!(value instanceof Object)) {
+    return { success: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path) };
   }
 
-  if (!(value instanceof Object) && !isObject(value)) {
-    const expected = isFunction(schemaOrType) ? schemaOrType : Object;
-    return { success: false, error: SchemaError.expectedButGot(expected, getValueType(value), path) };
-  }
-
-  const unnormalizedSchema = isFunction(schemaOrType) ? getSchemaFromReflection(schemaOrType) : schemaOrType;
-
-  if (isNull(unnormalizedSchema)) {
-    return { success: false, error: SchemaError.expectedButGot(schemaOrType, getValueType(value), path) };
-  }
-
-  const schema = normalizeSchema(unnormalizedSchema as ObjectSchema);
+  const schema = normalizeObjectSchema(objectSchema as ObjectSchema);
   const mask = schema.mask ?? options.mask ?? false;
   const resultValue: O = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
 
@@ -204,133 +222,107 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     return { success: true, value: validatedItems as unknown as O };
   }
 
-  let valueType = getValueType(value);
-  let validType = isValidType(valueSchema, valueType);
-  let resultValue = value;
+  let valueType!: ResolvedValueType_FOO<any>;
+  let valueTestResult!: SchemaTestResult<unknown>;
+  let resultValue: unknown;
 
-  /** try to coerce with custom coercers */
-  if (!validType) {
-    const coercers = valueSchema.coercers.get(valueType);
-
-    if (isDefined(coercers)) {
-      const errors: SchemaError[] = [];
-
-      for (const coercer of coercers) {
-        const coerceResult = coercer.coerce(resultValue, path, context);
-
-        if (!coerceResult.success) {
-          errors.push(coerceResult.error);
-          continue;
-        }
-
-        resultValue = coerceResult.value;
-        valueType = getValueType(resultValue);
-        validType = isValidType(valueSchema, valueType);
-        break;
-      }
-
-      if ((errors.length > 0)) {
-        return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path }) };
-      }
-    }
+  function updateCurrentState(newValue: unknown): void {
+    resultValue = newValue;
+    valueType = getValueType(newValue);
+    valueTestResult = isValidValue(valueSchema.schema, newValue, options, path);
   }
 
-  /** try to coerce with default coercers if enabled */
-  if (!validType && (valueSchema.coerce || options.coerce == true)) {
-    const coercers = defaultCoercers.get(valueType);
+  updateCurrentState(value);
 
-    if (isDefined(coercers)) {
-      const errors: SchemaError[] = [];
+  /** try to coerce */
+  if (!valueTestResult.success) {
+    const coercers = [
+      ...(valueSchema.coercers.get(valueType) ?? []),
+      ...((valueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
+    ];
 
-      for (const coercer of coercers) {
-        const coerceResult = coercer.coerce(resultValue, path, context);
-
-        if (!coerceResult.success) {
-          errors.push(coerceResult.error);
-          continue;
-        }
-
-        resultValue = coerceResult.value;
-        valueType = getValueType(resultValue);
-        validType = isValidType(valueSchema, valueType);
-        break;
-      }
-
-      if ((errors.length > 0)) {
-        return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path }) };
-      }
-    }
-  }
-
-  /** check for sub-schemas */
-  if (!validType) {
     const errors: SchemaError[] = [];
 
-    for (const type of valueSchema.type) {
-      if (primitiveValueTypesSet.has(type)) {
+    for (const coercer of coercers) {
+      const coerceResult = coercer.coerce(resultValue, path, context);
+
+      if (!coerceResult.success) {
+        errors.push(coerceResult.error);
         continue;
       }
 
-      const typeSchema = valueTypesToSchema(type);
-      const result = Schema.testWithFastError(typeSchema, resultValue, options, path);
-
-      if (!result.success) {
-        errors.push(result.error);
-        continue;
-      }
-
-      resultValue = result.value;
-      validType = true;
+      updateCurrentState(coerceResult.value);
       break;
     }
 
-    if (!validType && (errors.length > 0)) {
-      return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match any allowed schemas.', { inner: errors, path }) };
+    if (errors.length > 0) {
+      return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path }) };
     }
   }
 
-  if (!validType) {
-    const expectedNames = [...valueSchema.type].map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
-    const expectedTypeString = expectedNames.length == 1
+  if (!valueTestResult.success) {
+    const expectedNames = getSchemaTypeNames(schema);
+    const expectedTypeString = (expectedNames.length == 1)
       ? expectedNames[0]!
       : `[${expectedNames.join(', ')}]`;
 
     const expects = valueSchema.valueConstraints.map((constraint) => constraint.expects);
-    const expectsString = expects.length > 0 ? ` (${expects.join(', ')})` : '';
+    const expectsString = (expects.length > 0) ? ` (${expects.join(', ')})` : '';
 
-    return { success: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, getValueType(resultValue), path) };
+    return { success: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path) };
   }
 
   if (valueSchema.transformers.length > 0) {
+    let transformedValue = resultValue;
+
     for (const transformer of valueSchema.transformers) {
-      resultValue = transformer.transform(resultValue, path, context);
+      transformedValue = transformer.transform(transformedValue, path, context);
     }
 
-    valueType = getValueType(resultValue);
-    validType = isValidType(valueSchema, valueType);
+    updateCurrentState(transformedValue);
 
-    if (!validType) {
-      const typeString = isFunction(valueType) ? valueType.name : valueType as string;
+    if (!valueTestResult.success) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+      const typeString = getValueTypeName(valueType);
       throw new Error(`Transformers resulted in invalid type (${typeString}).`);
     }
   }
 
-  for (const constraint of valueSchema.valueConstraints) {
-    const result = constraint.validate(resultValue, path, context);
+  {
+    const errors: SchemaError[] = [];
 
-    if (!result.success) {
-      return { success: false, error: result.error };
+    for (const constraint of valueSchema.valueConstraints) {
+      const result = constraint.validate(resultValue, path, context);
+
+      if (!result.success) {
+        errors.push(result.error);
+      }
+    }
+
+    if (errors.length > 0) {
+      return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
     }
   }
 
   return { success: true, value: resultValue as O };
 }
 
-function isValidType(valueSchema: NormalizedValueSchema, valueType: ResolvedValueType): boolean {
-  return valueSchema.type.has(valueType) || valueSchema.type.has('any');
+function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options: SchemaTestOptions | undefined, path: JsonPath): SchemaTestResult<T> {
+  const errors: SchemaError[] = [];
+
+  for (const schema of validSchemas) {
+    const result = Schema.testWithFastError(schema, value, options, path);
+
+    if (result.success) {
+      return result;
+    }
+
+    errors.push(result.error);
+  }
+
+  return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
 }
 
-function _getObjectSchemaFromReflection<T, O>(type: TypeSchema<T, O>): ObjectSchema<T> | null {
+function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {
   const metadata = reflectionRegistry.getMetadata(type);
 
   if (!metadata.registered) {
@@ -343,7 +335,7 @@ function _getObjectSchemaFromReflection<T, O>(type: TypeSchema<T, O>): ObjectSch
 
   for (const [key, propertyMetadata] of metadata.properties) {
     const reflectionData = propertyMetadata.data.tryGet<Partial<SchemaPropertyReflectionData>>('schema');
-    const itemType = isDefined(reflectionData?.type) ? deferrableValueTypesToValueTypes(reflectionData!.type) : undefined;
+    const itemType = (isDefined(reflectionData) && isDefined(reflectionData.type)) ? reflectionData.type : undefined;
     const array = ((propertyMetadata.type == Array) && (itemType != Array)) || (reflectionData?.array == true);
 
     if (array && (isUndefined(itemType) || (isArray(itemType) && (itemType.length == 0)))) {
@@ -351,7 +343,7 @@ function _getObjectSchemaFromReflection<T, O>(type: TypeSchema<T, O>): ObjectSch
     }
 
     properties[key] = {
-      type: (itemType ?? propertyMetadata.type) as ResolvedValueType,
+      schema: valueTypesOrSchemasToSchemas(itemType ?? propertyMetadata.type),
       array,
       optional: reflectionData?.optional,
       nullable: reflectionData?.nullable,
@@ -364,6 +356,7 @@ function _getObjectSchemaFromReflection<T, O>(type: TypeSchema<T, O>): ObjectSch
   }
 
   const objectSchema: ObjectSchema = {
+    sourceType: type,
     factory: isDefined(typeData?.factory) ? { builder: typeData!.factory as SchemaFactoryFunction<T> } : { type: type as Type },
     properties,
     mask: typeData?.mask,

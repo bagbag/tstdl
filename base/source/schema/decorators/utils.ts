@@ -34,7 +34,7 @@ export function createSchemaPropertyDecoratorFromValueType(valueType: ValueType)
 
   return createSchemaPropertyDecorator({
     ...schema,
-    type: schema.type as OneOrMany<ValueType<unknown>>
+    schema: schema.type as OneOrMany<ValueType<unknown>>
   });
 }
 

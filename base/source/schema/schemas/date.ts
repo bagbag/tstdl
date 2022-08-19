@@ -5,7 +5,7 @@ import { isDefined } from '#/utils/type-guards';
 import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
 import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
 
 export type DateOptions = Coercible & {
   minimum?: Date | number,
@@ -23,7 +23,7 @@ export function date(options: DateOptions = {}): ValueSchema<Date> {
     constraints.push(new MaximumDateConstraint(options.maximum));
   }
 
-  return valueSchema(globalThis.Date, {
+  return valueSchema(typeSchema(globalThis.Date), {
     coerce: options.coerce,
     valueConstraints: constraints
   });

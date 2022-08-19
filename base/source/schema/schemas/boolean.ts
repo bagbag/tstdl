@@ -3,12 +3,12 @@
 import type { Decorator } from '#/reflection';
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
 import type { Coercible, ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
 
 export type BooleanOptions = Coercible;
 
 export function boolean(options: BooleanOptions = {}): ValueSchema<boolean> {
-  return valueSchema<boolean>(globalThis.Boolean, {
+  return valueSchema<boolean>(typeSchema(globalThis.Boolean), {
     coerce: options.coerce
   });
 }

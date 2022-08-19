@@ -3,7 +3,7 @@
 import type { Decorator } from '#/reflection';
 import { createSchemaValueTransformerDecorator } from '../decorators';
 import type { TransformResult } from '../types';
-import { SchemaValueTransformer } from '../types';
+import { SchemaValueTransformer, typeSchema } from '../types';
 
 export class UppercaseTransformer extends SchemaValueTransformer<string, string, string> {
   readonly sourceType = String;
@@ -15,5 +15,5 @@ export class UppercaseTransformer extends SchemaValueTransformer<string, string,
 }
 
 export function Uppercase(): Decorator<'property' | 'accessor'> {
-  return createSchemaValueTransformerDecorator(new UppercaseTransformer(), { type: String });
+  return createSchemaValueTransformerDecorator(new UppercaseTransformer(), { schema: typeSchema(String) });
 }

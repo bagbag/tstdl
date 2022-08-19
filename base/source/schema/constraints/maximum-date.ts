@@ -33,5 +33,5 @@ export class MaximumDateConstraint extends SchemaValueConstraint {
 }
 
 export function MaximumDate(maximum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MaximumDateConstraint(maximum), { type: Number });
+  return createSchemaValueConstraintDecorator(new MaximumDateConstraint(maximum), { schema: Number });
 }

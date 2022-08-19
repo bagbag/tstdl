@@ -30,5 +30,5 @@ export class MaximumConstraint extends SchemaValueConstraint {
 }
 
 export function Maximum(maximum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MaximumConstraint(maximum), { type: Number });
+  return createSchemaValueConstraintDecorator(new MaximumConstraint(maximum), { schema: Number });
 }

@@ -30,5 +30,5 @@ export class MinimumConstraint extends SchemaValueConstraint {
 }
 
 export function Minimum(minimum: number): Decorator<'property' | 'accessor'> {
-  return createSchemaValueConstraintDecorator(new MinimumConstraint(minimum), { type: Number });
+  return createSchemaValueConstraintDecorator(new MinimumConstraint(minimum), { schema: Number });
 }

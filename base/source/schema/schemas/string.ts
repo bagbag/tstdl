@@ -6,7 +6,7 @@ import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } f
 import { createSchemaPropertyDecoratorFromValueType } from '../decorators';
 import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
 import type { Coercible, SchemaValueConstraint, SchemaValueTransformer, ValueSchema } from '../types';
-import { valueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
 
 export type StringOptions = Coercible & {
   /** trim */
@@ -63,7 +63,7 @@ export function string(options: StringOptions = {}): ValueSchema<string> {
     transformers.push(new UppercaseTransformer());
   }
 
-  return valueSchema<string>(globalThis.String, {
+  return valueSchema(typeSchema(globalThis.String), {
     coerce: options.coerce,
     valueConstraints: constraints,
     transformers
