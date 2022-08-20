@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { AbstractConstructor, AbstractType, Constructor, Writable } from '#/types';
+import type { AbstractConstructor, Writable } from '#/types';
 import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
@@ -35,25 +35,25 @@ type WritableTypeMetadata = Writable<TypeMetadata>;
 
 export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
-  type: AbstractType,
+  type: AbstractConstructor,
   isAccessor: boolean,
   data: ReflectionDataMap
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
-  returnType: AbstractType | undefined,
+  returnType: AbstractConstructor | undefined,
   data: ReflectionDataMap
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
-  type: AbstractType | undefined,
+  type: AbstractConstructor | undefined,
   index: number,
   data: ReflectionDataMap
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
-  type: AbstractType,
+  type: AbstractConstructor,
   index: number,
   data: ReflectionDataMap
 };
@@ -67,11 +67,11 @@ export class ReflectionRegistry {
     this.metadataMap = new WeakMap();
   }
 
-  hasType(type: Constructor): boolean {
+  hasType(type: AbstractConstructor): boolean {
     return this.metadataMap.has(type) && this.getMetadata(type).registered;
   }
 
-  getMetadata(type: AbstractType): TypeMetadata {
+  getMetadata(type: AbstractConstructor): TypeMetadata {
     if (!this.metadataMap.has(type)) {
       const metadata = this.initializeType(type);
       this.metadataMap.set(type, metadata);
@@ -124,12 +124,12 @@ export class ReflectionRegistry {
    * However, this should not be necessary since WeakRefs are used.
    * @param type Type to unregister
    */
-  unregister(type: AbstractType): void {
+  unregister(type: AbstractConstructor): void {
     this.metadataMap.delete(type);
   }
 
   // eslint-disable-next-line max-lines-per-function
-  private initializeType(type: AbstractType): TypeMetadata {
+  private initializeType(type: AbstractConstructor): TypeMetadata {
     return lazyObject<TypeMetadata>({
       metadataType: 'type',
       constructor: lazyObjectValue(type),

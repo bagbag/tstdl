@@ -2,6 +2,7 @@
 
 import type { JsonPath } from '#/json-path/json-path';
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
+import { filterObject } from '#/utils/object/object';
 import { isArray, isDefined, isFunction, isObject } from '#/utils/type-guards';
 import type { NormalizedSchema, Schema } from './schema';
 import type { SchemaError } from './schema.error';
@@ -174,12 +175,16 @@ export type TransformResult<T> =
   | { success: true, value: T, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
+export function objectSchemaProperties<T>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
+  return filterObject(properties, isDefined) as ObjectSchemaProperties<T>;
+}
+
 export function objectSchema<T, O = T>(schema: ObjectSchema<T, O>): ObjectSchema<T, O> {
-  return schema;
+  return filterObject(schema, isDefined) as ObjectSchema<T, O>;
 }
 
 export function valueSchema<T, O = T>(schema: OneOrMany<Schema<T, O>>, options?: TypedOmit<ValueSchema<T, O>, 'schema'>): ValueSchema<T, O> {
-  return { schema, ...options };
+  return filterObject({ schema, ...options }, isDefined);
 }
 
 export function typeSchema<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {

@@ -1,17 +1,21 @@
+import { reflectionRegistry } from '#/reflection/registry';
+import type { AbstractConstructor, Type } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { memoizeSingle } from '#/utils/function/memoize';
 import { mapObjectValues } from '#/utils/object/object';
-import { isArray } from '#/utils/type-guards';
+import { isArray, isDefined, isNotNull, isUndefined } from '#/utils/type-guards';
+import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types';
 import type { NormalizedSchema, Schema } from '../schema';
-import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, TypeSchema, ValueSchema } from '../types';
-import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema } from '../types';
+import { assign } from '../schemas/assign';
+import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, SchemaFactoryFunction, TypeSchema, ValueSchema } from '../types';
+import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
 export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
 export const normalizeValueSchema = memoizeSingle(_normalizeValueSchema, { weak: true });
 export const normalizeTypeSchema = memoizeSingle(_normalizeTypeSchema, { weak: true });
 export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: true });
-
+export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection, { weak: true });
 
 function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
   if (isObjectSchema(schema)) {
@@ -85,4 +89,53 @@ function _getArrayItemSchema<T, O>(schema: ValueSchema<T, O>): ValueSchema<T, O>
   };
 
   return itemSchema;
+}
+
+function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {
+  const metadata = reflectionRegistry.getMetadata(type);
+
+  if (!metadata.registered) {
+    return null;
+  }
+
+  const typeData = metadata.data.tryGet<SchemaTypeReflectionData>('schema');
+  const properties: ObjectSchemaProperties<T> = {} as ObjectSchemaProperties<T>;
+
+  for (const [key, propertyMetadata] of metadata.properties) {
+    const reflectionData = propertyMetadata.data.tryGet<Partial<SchemaPropertyReflectionData>>('schema');
+    const itemType = (isDefined(reflectionData) && isDefined(reflectionData.type)) ? reflectionData.type : undefined;
+    const array = (reflectionData?.array == true) ? true : undefined;
+
+    if (array && (isUndefined(itemType) || (isArray(itemType) && (itemType.length == 0)))) {
+      throw new Error(`Item type missing on type ${type.name} at property "${String(key)}"`);
+    }
+
+    properties[key as keyof T] = valueSchema(valueTypesOrSchemasToSchemas(itemType ?? propertyMetadata.type), {
+      array,
+      optional: reflectionData?.optional,
+      nullable: reflectionData?.nullable,
+      coerce: reflectionData?.coerce,
+      coercers: reflectionData?.coercers,
+      transformers: reflectionData?.transformers,
+      arrayConstraints: reflectionData?.arrayConstraints,
+      valueConstraints: reflectionData?.valueConstraints
+    });
+  }
+
+  const schema: ObjectSchema = objectSchema({
+    sourceType: type,
+    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory as SchemaFactoryFunction<T> } : { type: type as Type },
+    properties,
+    mask: typeData?.mask,
+    allowUnknownProperties: (isUndefined(typeData?.allowUnknownProperties) || (isArray(typeData?.allowUnknownProperties) && (typeData?.allowUnknownProperties.length == 0))) ? undefined : typeData?.allowUnknownProperties
+  });
+
+  const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
+
+  if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
+    const parentSchema = getSchemaFromReflection(prototype)!;
+    return assign(parentSchema, schema);
+  }
+
+  return schema;
 }
