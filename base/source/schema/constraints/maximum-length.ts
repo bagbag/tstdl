@@ -25,10 +25,10 @@ export class MaximumLengthConstraint extends SchemaValueConstraint {
     const length = isArrayBuffer(value) ? value.byteLength : value.length;
 
     if (length > this.maximumLength) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }
 

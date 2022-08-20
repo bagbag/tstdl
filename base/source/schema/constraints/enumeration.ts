@@ -33,9 +33,9 @@ export class EnumerationConstraint extends SchemaValueConstraint {
 
   validate(value: number, path: JsonPath): ConstraintResult {
     if (!this.allowedValuesSet.has(value)) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }

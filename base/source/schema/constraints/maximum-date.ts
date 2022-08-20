@@ -25,10 +25,10 @@ export class MaximumDateConstraint extends SchemaValueConstraint {
 
   validate(value: Date, path: JsonPath): ConstraintResult {
     if (value > this.maximum) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, value.toISOString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toISOString(), path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }
 

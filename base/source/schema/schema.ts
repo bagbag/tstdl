@@ -54,25 +54,25 @@ export const Schema = {
     const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.testWithFastError(schema, value, options, path);
 
-    if (result.success) {
+    if (result.valid) {
       return result;
     }
 
-    return { success: false, error: new SchemaError(result.error.message, { ...result.error, fast: false }, result.error.cause) };
+    return { valid: false, error: new SchemaError(result.error.message, { ...result.error, fast: false }, result.error.cause) };
   },
 
   validate<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
     const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
-    return result.success;
+    return result.valid;
   },
 
   parse<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
     const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
-    if (result.success) {
+    if (result.valid) {
       return result.value;
     }
 
@@ -102,11 +102,11 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
   const resolvedValueType = resolveValueType(schema.type);
 
   if (resolvedValueType == 'any') {
-    return { success: true, value: value as T };
+    return { valid: true, value: value as T };
   }
   else if (isFunction(resolvedValueType)) {
     if (value instanceof resolvedValueType) {
-      return { success: true, value };
+      return { valid: true, value };
     }
 
     const objectSchema = getSchemaFromReflection(resolvedValueType);
@@ -116,16 +116,16 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
     }
   }
   else if ((resolvedValueType == 'null' && isNull(value)) || (resolvedValueType == 'undefined' && isUndefined(value)) || (resolvedValueType == 'any')) {
-    return { success: true, value: value as T };
+    return { valid: true, value: value as T };
   }
 
-  return { success: false, error: SchemaError.expectedButGot(resolvedValueType, getValueType(value), path) };
+  return { valid: false, error: SchemaError.expectedButGot(resolvedValueType, getValueType(value), path) };
 }
 
 // eslint-disable-next-line complexity
 function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
   if (!(value instanceof Object)) {
-    return { success: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path) };
+    return { valid: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path) };
   }
 
   const schema = normalizeObjectSchema(objectSchema as ObjectSchema);
@@ -138,13 +138,13 @@ function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, v
   const unknownValuePropertyKeys = differenceSets(new Set(valuePropertyKeys), new Set(schemaPropertyKeys));
 
   if ((unknownValuePropertyKeys.length > 0) && !(mask || (schema.allowUnknownProperties.size > 0))) {
-    return { success: false, error: new SchemaError('Unknown property', { path: path.add(unknownValuePropertyKeys[0]!) }) };
+    return { valid: false, error: new SchemaError('Unknown property', { path: path.add(unknownValuePropertyKeys[0]!) }) };
   }
 
   for (const key of schemaPropertyKeys) {
     const propertyResult = Schema.testWithFastError(schema.properties[key as string]!, (value as Record)[key], options, path.add(key));
 
-    if (!propertyResult.success) {
+    if (!propertyResult.valid) {
       return propertyResult;
     }
 
@@ -158,7 +158,7 @@ function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, v
       for (const allowedSchema of schema.allowUnknownProperties) {
         const propertyResult = Schema.testWithFastError(allowedSchema, (value as Record)[key], options, path.add(key));
 
-        if (!propertyResult.success && !mask) {
+        if (!propertyResult.valid && !mask) {
           errors.push(propertyResult.error);
           continue;
         }
@@ -168,14 +168,14 @@ function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, v
       }
 
       if (errors.length > 0) {
-        return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match any allowed schemas.', { inner: errors, path }) };
+        return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match any allowed schemas.', { inner: errors, path }) };
       }
     }
   }
 
   const testResultValue = isUndefined(schema.factory) ? resultValue : isDefined(schema.factory.type) ? resultValue : schema.factory.builder!(resultValue);
 
-  return { success: true, value: testResultValue };
+  return { valid: true, value: testResultValue };
 }
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
@@ -183,11 +183,11 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   const valueSchema = normalizeValueSchema(schema);
 
   if (valueSchema.optional && isUndefined(value)) {
-    return { success: true, value: value as unknown as O };
+    return { valid: true, value: value as unknown as O };
   }
 
   if (valueSchema.nullable && isNull(value)) {
-    return { success: true, value: value as unknown as O };
+    return { valid: true, value: value as unknown as O };
   }
 
   const context: SchemaContext = {
@@ -204,8 +204,8 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     for (const arrayConstraint of valueSchema.arrayConstraints) {
       const result = arrayConstraint.validate(value, path, context);
 
-      if (!result.success) {
-        return { success: false, error: result.error };
+      if (!result.valid) {
+        return { valid: false, error: result.error };
       }
     }
 
@@ -215,14 +215,14 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     for (let i = 0; i < value.length; i++) {
       const result = testValue(itemSchema, value[i], options, path.add(i));
 
-      if (!result.success) {
+      if (!result.valid) {
         return result;
       }
 
       validatedItems.push(result.value);
     }
 
-    return { success: true, value: validatedItems as unknown as O };
+    return { valid: true, value: validatedItems as unknown as O };
   }
 
   let valueType!: ResolvedValueType<any>;
@@ -238,7 +238,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   updateCurrentState(value);
 
   /** try to coerce */
-  if (!valueTestResult.success) {
+  if (!valueTestResult.valid) {
     const coercers = [
       ...(valueSchema.coercers.get(valueType) ?? []),
       ...((valueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
@@ -259,11 +259,11 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     }
 
     if (errors.length > 0) {
-      return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path }) };
+      return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path }) };
     }
   }
 
-  if (!valueTestResult.success) {
+  if (!valueTestResult.valid) {
     const expectedNames = getSchemaTypeNames(schema);
     const expectedTypeString = (expectedNames.length == 1)
       ? expectedNames[0]!
@@ -272,7 +272,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     const expects = valueSchema.valueConstraints.map((constraint) => constraint.expects);
     const expectsString = (expects.length > 0) ? ` (${expects.join(', ')})` : '';
 
-    return { success: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path) };
+    return { valid: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path) };
   }
 
   if (valueSchema.transformers.length > 0) {
@@ -284,7 +284,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
 
     updateCurrentState(transformedValue);
 
-    if (!valueTestResult.success) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+    if (!valueTestResult.valid) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       const typeString = getValueTypeName(valueType);
       throw new Error(`Transformers resulted in invalid type (${typeString}).`);
     }
@@ -296,17 +296,17 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     for (const constraint of valueSchema.valueConstraints) {
       const result = constraint.validate(resultValue, path, context);
 
-      if (!result.success) {
+      if (!result.valid) {
         errors.push(result.error);
       }
     }
 
     if (errors.length > 0) {
-      return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
+      return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
     }
   }
 
-  return { success: true, value: resultValue as O };
+  return { valid: true, value: resultValue as O };
 }
 
 function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options: SchemaTestOptions | undefined, path: JsonPath): SchemaTestResult<T> {
@@ -315,14 +315,14 @@ function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options
   for (const schema of validSchemas) {
     const result = Schema.testWithFastError(schema, value, options, path);
 
-    if (result.success) {
+    if (result.valid) {
       return result;
     }
 
     errors.push(result.error);
   }
 
-  return { success: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
+  return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, fast: true, inner: errors }) };
 }
 
 function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {

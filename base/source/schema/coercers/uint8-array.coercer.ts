@@ -15,7 +15,7 @@ export class Uint8ArrayCoercer extends SchemaValueCoercer {
   coerce(value: any[], path: JsonPath, { options }: CoercerContext): CoerceResult {
     const testResult = Schema.testWithFastError(byteNumberArraySchema, value, options, path);
 
-    if (!testResult.success) {
+    if (!testResult.valid) {
       return { success: false, error: SchemaError.couldNotCoerce(Uint8Array, Array, path, undefined, { inner: testResult.error }) };
     }
 

@@ -25,9 +25,9 @@ export class LiteralConstraint extends SchemaValueConstraint {
   validate(value: any, path: JsonPath): ConstraintResult {
     if (value !== this.literal) {
       const valueType = getValueType(value);
-      return { success: false, error: SchemaError.expectedButGot(this.expects, getValueTypeName(valueType), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, getValueTypeName(valueType), path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }

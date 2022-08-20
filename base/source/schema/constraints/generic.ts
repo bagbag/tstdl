@@ -32,8 +32,8 @@ export class GenericConstraint<T> extends SchemaValueConstraint {
 
     if (isBoolean(result)) {
       return result
-        ? { success: true }
-        : { success: false, error: SchemaError.expectedButGot(this.expects, 'invalid value', path) };
+        ? { valid: true }
+        : { valid: false, error: SchemaError.expectedButGot(this.expects, 'invalid value', path) };
     }
 
     return result;

@@ -13,8 +13,8 @@ export type SchemaFactory<T extends Record, O = T> =
   | { type: Type<T>, builder?: undefined }
   | { type?: undefined, builder: SchemaFactoryFunction<T, O> };
 
-export type ObjectSchemaProperties<T extends Record> = { [K in keyof T]-?: OneOrMany<Schema<T[K]>> };
-export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<T[K]> };
+export type ObjectSchemaProperties<T extends Record> = { [K in keyof T]-?: OneOrMany<Schema<any, T[K]>> };
+export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
 
 export type SchemaOutput<T extends Schema> =
   | T extends ObjectSchema<any, infer O> ? O
@@ -159,12 +159,12 @@ export type SchemaTestOptions = {
 };
 
 export type SchemaTestResult<T> =
-  | { success: true, value: T, error?: undefined }
-  | { success: false, value?: undefined, error: SchemaError };
+  | { valid: true, value: T, error?: undefined }
+  | { valid: false, value?: undefined, error: SchemaError };
 
 export type ConstraintResult =
-  | { success: true, error?: undefined }
-  | { success: false, error: SchemaError };
+  | { valid: true, error?: undefined }
+  | { valid: false, error: SchemaError };
 
 export type CoerceResult =
   | { success: true, value: any, error?: undefined }

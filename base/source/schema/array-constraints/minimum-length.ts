@@ -21,10 +21,10 @@ export class MinimumArrayLengthConstraint extends SchemaArrayConstraint {
 
   validate(value: any[], path: JsonPath): ConstraintResult {
     if (value.length < this.minimumLength) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, `an array length of ${value.length}`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `an array length of ${value.length}`, path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }
 

@@ -19,10 +19,10 @@ export class IntegerConstraint extends SchemaValueConstraint {
 
   validate(value: number, path: JsonPath): ConstraintResult {
     if (!Number.isInteger(value)) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }
 

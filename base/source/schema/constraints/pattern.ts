@@ -24,10 +24,10 @@ export class PatternConstraint extends SchemaValueConstraint {
 
   validate(value: string, path: JsonPath): ConstraintResult {
     if (!this.pattern.test(value)) {
-      return { success: false, error: SchemaError.expectedButGot(this.expects, `"${value}"`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `"${value}"`, path) };
     }
 
-    return { success: true };
+    return { valid: true };
   }
 }
 
