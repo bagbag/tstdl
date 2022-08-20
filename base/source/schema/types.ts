@@ -205,7 +205,19 @@ export function isValueSchema(schema: any): schema is ValueSchema {
 export function isTypeSchema<T, O>(schema: Schema<T, O>): schema is TypeSchema<O>;
 export function isTypeSchema<T, O>(schema: any): schema is TypeSchema<O>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isTypeSchema(schema: any): schema is TypeSchema {
-  return isObject(schema) && isFunction((schema as TypeSchema | undefined)?.type);
+  if (!isObject(schema)) {
+    return false;
+  }
+
+  const type = (schema as TypeSchema).type;
+
+  return isObject(schema)
+    && (
+      isFunction(type)
+      || (type == 'undefined')
+      || (type == 'null')
+      || (type == 'any')
+    );
 }
 
 export function isDeferredValueType<T>(value: ValueType<T>): value is DeferredValueType<T> {

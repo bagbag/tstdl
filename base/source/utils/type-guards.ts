@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line */
 
-import type { TypedArray } from '#/types';
+import type { AbstractConstructor, TypedArray } from '#/types';
 import { AssertionError } from '../error';
 
 export type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
@@ -18,6 +18,14 @@ export function assertNot(condition: boolean, message: AssertionMessage = 'asser
   if (condition) {
     throw new AssertionError(isFunction(message) ? message() : message);
   }
+}
+
+export function isType<T>(type: AbstractConstructor<T>, value: any): value is T {
+  return (value instanceof type);
+}
+
+export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = 'assertion failed'): asserts value is T {
+  assert(isType(type, value), message);
 }
 
 export function isUndefined(value: any): value is undefined { return value === undefined; }
