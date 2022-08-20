@@ -4,6 +4,7 @@ import { isAsyncIterable } from '#/utils/async-iterable-helpers/is-async-iterabl
 import { decompress } from '#/utils/compression';
 import { decodeText } from '#/utils/encoding';
 import { readBinaryStream } from '#/utils/stream/stream-reader';
+import { isArrayBuffer, isBlob, isUint8Array } from '#/utils/type-guards';
 import type { HttpClientResponse } from '../http-client-response';
 
 export function getResponseStream(response: HttpClientResponse): AsyncIterable<Uint8Array> {
@@ -15,21 +16,32 @@ export function getResponseStream(response: HttpClientResponse): AsyncIterable<U
 }
 
 export async function getResponseBuffer(response: HttpClientResponse): Promise<Uint8Array> {
-  if (response.body instanceof Uint8Array) {
-    return response.body;
+  let uint8Array: Uint8Array;
+
+  if (isUint8Array(response.body)) {
+    uint8Array = response.body;
+  }
+  else if (isArrayBuffer(response.body)) {
+    uint8Array = new Uint8Array(response.body);
+  }
+  else if (isBlob(response.body)) {
+    const buffer = await response.body.arrayBuffer();
+    uint8Array = new Uint8Array(buffer);
+  }
+  else {
+    const stream = getResponseStream(response);
+    uint8Array = await readBinaryStream(stream, response.headers.contentLength);
   }
 
-  const stream = getResponseStream(response);
-  return readBinaryStream(stream, response.headers.contentLength);
+  if ((response.headers.contentEncoding == 'gzip') || (response.headers.contentEncoding == 'brotli') || (response.headers.contentEncoding == 'deflate')) {
+    uint8Array = await decompress(uint8Array, response.headers.contentEncoding).toBuffer();
+  }
+
+  return uint8Array;
 }
 
 export async function getResponseText(response: HttpClientResponse): Promise<string> {
-  let buffer = await getResponseBuffer(response);
-
-  if ((response.headers.contentEncoding == 'gzip') || (response.headers.contentEncoding == 'brotli') || (response.headers.contentEncoding == 'deflate')) {
-    buffer = await decompress(buffer, response.headers.contentEncoding).toBuffer();
-  }
-
+  const buffer = await getResponseBuffer(response);
   return decodeText(buffer, response.headers.charset);
 }
 
