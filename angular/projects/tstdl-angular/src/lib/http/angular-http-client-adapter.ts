@@ -1,14 +1,15 @@
-import type { HttpRequest as AngularHttpRequest, HttpResponse as AngularHttpResponse } from '@angular/common/http';
+import type { HttpResponse as AngularHttpResponse } from '@angular/common/http';
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
 import { Injector } from '@angular/core';
 import { container, singleton } from '@tstdl/base/container';
 import type { HttpBody, HttpBodyType, HttpClientRequest } from '@tstdl/base/http';
 import { HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
+import { setBody } from '@tstdl/base/http/client/adapters/utils';
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { StringMap } from '@tstdl/base/types';
-import { isDefined, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
+import { isDefined, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { race, switchMap, throwError } from 'rxjs';
 
@@ -34,7 +35,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
         race(
           this.angularHttpClient.request(request.method, request.url, {
             headers: new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>),
-            responseType: getAngularHttpRequestResponseType(request.responseType),
+            responseType: 'arraybuffer',
             observe: 'response',
             body: getAngularBody(request.body),
             withCredentials: (request.credentials == 'same-origin') || (request.credentials == 'include')
@@ -50,9 +51,11 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
         statusCode: angularResponse.status,
         statusMessage: angularResponse.statusText,
         headers,
-        body: (angularResponse.body ?? undefined) as HttpBody<T>,
+        body: angularResponse.body as unknown as HttpBody<T>,
         closeHandler: () => request.abort()
       });
+
+      await setBody(response, request.responseType);
 
       return response;
     }
@@ -116,22 +119,6 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   }
 
   throw new Error('unsupported body');
-}
-
-function getAngularHttpRequestResponseType(responseType: HttpBodyType): AngularHttpRequest<any>['responseType'] {
-  switch (responseType) {
-    case 'buffer':
-      return 'arraybuffer';
-
-    case 'json':
-      return 'json';
-
-    case 'text':
-      return 'text';
-
-    default:
-      throw new Error(`HttpResponseType "${responseType}" not supported`);
-  }
 }
 
 /**

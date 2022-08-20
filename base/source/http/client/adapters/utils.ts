@@ -56,28 +56,28 @@ export async function setBody(response: HttpClientResponse, type: HttpBodyType):
     }
 
     case 'text': {
-      (response as Record<keyof typeof response>).body = await getResponseText(response);
+      (response as Record<keyof HttpClientResponse>).body = await getResponseText(response);
       break;
     }
 
     case 'json': {
       const text = await getResponseText(response);
-      (response as Record<keyof typeof response>).body = JSON.parse(text);
+      (response as Record<keyof HttpClientResponse>).body = JSON.parse(text);
       break;
     }
 
     case 'buffer': {
-      (response as Record<keyof typeof response>).body = await getResponseBuffer(response);
+      (response as Record<keyof HttpClientResponse>).body = await getResponseBuffer(response);
       break;
     }
 
     case 'stream': {
-      (response as Record<keyof typeof response>).body = getResponseStream(response);
+      (response as Record<keyof HttpClientResponse>).body = getResponseStream(response);
       break;
     }
 
     case 'none': {
-      (response as Record<keyof typeof response>).body = undefined;
+      (response as Record<keyof HttpClientResponse>).body = undefined;
       response.close();
       break;
     }
