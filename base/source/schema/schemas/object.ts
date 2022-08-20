@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Record, TypedOmit } from '#/types';
-import type { PartialOnUndefinedDeep } from 'type-fest';
+import type { Record, SimplifiedOptionalize, TypedOmit } from '#/types';
 import type { ObjectSchema, ObjectSchemaProperties } from '../types';
 import { objectSchema } from '../types';
 
@@ -11,9 +10,9 @@ export function explicitObject<T extends Record>(properties: ObjectSchemaPropert
   return object(properties, options) as any as ObjectSchema<T>;
 }
 
-export function object<T extends Record>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<PartialOnUndefinedDeep<T>, PartialOnUndefinedDeep<T>> {
+export function object<T extends Record>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<SimplifiedOptionalize<T>, SimplifiedOptionalize<T>> {
   return objectSchema({
     properties,
     ...options
-  }) as unknown as ObjectSchema<PartialOnUndefinedDeep<T>, PartialOnUndefinedDeep<T>>;
+  }) as unknown as ObjectSchema<SimplifiedOptionalize<T>, SimplifiedOptionalize<T>>;
 }

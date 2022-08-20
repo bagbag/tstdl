@@ -71,7 +71,9 @@ export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> 
 /**
  * normalize properties of a type that allow `undefined` to make them optional.
  */
-export type Optionalize<S extends object> = OmitBy<S, undefined> & Partial<PickBy<S, undefined>>;
+export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
+
+export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
 
 /**
  * remove nested type information
