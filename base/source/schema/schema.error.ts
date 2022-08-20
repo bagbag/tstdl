@@ -11,7 +11,8 @@ import { getValueTypeName } from './utils';
 export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,
   inner?: OneOrMany<SchemaError>,
-  details?: UndefinableJson
+  details?: UndefinableJson,
+  cause?: any
 };
 
 export class SchemaError extends CustomError implements ErrorExtraInfo {
@@ -22,7 +23,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   readonly details?: UndefinableJson;
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
-    super({ message, cause, fast: options.fast ?? true });
+    super({ message, cause: cause ?? options.cause, fast: options.fast ?? true });
 
     this.path = isString(options.path) ? options.path : options.path.path;
 

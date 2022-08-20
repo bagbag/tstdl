@@ -105,8 +105,8 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
     return { valid: true, value: value as T };
   }
   else if (isFunction(resolvedValueType)) {
-    if (value instanceof resolvedValueType) {
-      return { valid: true, value };
+    if ((value instanceof resolvedValueType) || (getValueType(value) == resolvedValueType)) {
+      return { valid: true, value: value as T };
     }
 
     const objectSchema = getSchemaFromReflection(resolvedValueType);
@@ -272,7 +272,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     const expects = valueSchema.valueConstraints.map((constraint) => constraint.expects);
     const expectsString = (expects.length > 0) ? ` (${expects.join(', ')})` : '';
 
-    return { valid: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path) };
+    return { valid: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path, { inner: valueTestResult.error }) };
   }
 
   if (valueSchema.transformers.length > 0) {
