@@ -4,6 +4,7 @@ export * from './assign';
 export * from './boolean';
 export * from './constraint';
 export * from './date';
+export * from './defaulted';
 export * from './enumeration';
 export * from './exclude';
 export * from './instance';
