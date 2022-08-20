@@ -251,15 +251,8 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   }
 
   if (!valueTestResult.valid) {
-    const expectedNames = getSchemaTypeNames(schema);
-    const expectedTypeString = (expectedNames.length == 1)
-      ? expectedNames[0]!
-      : `[${expectedNames.join(', ')}]`;
-
-    const expects = valueSchema.valueConstraints.map((constraint) => constraint.expects);
-    const expectsString = (expects.length > 0) ? ` (${expects.join(', ')})` : '';
-
-    return { valid: false, error: SchemaError.expectedButGot(`${expectedTypeString}${expectsString}`, valueType, path) };
+    const expectsString = getExpectString(schema);
+    return { valid: false, error: SchemaError.expectedButGot(expectsString, valueType, path) };
   }
 
   if (valueSchema.transformers.length > 0) {
@@ -309,6 +302,25 @@ function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options
     errors.push(result.error);
   }
 
-  const typeNames = getSchemaTypeNames({ schema: [...validSchemas] });
-  return { valid: false, error: SchemaError.expectedButGot(typeNames, getValueType(value), path) };
+  const expectStrings: string[] = [];
+
+  for (const schema of validSchemas) {
+    getExpectString(schema);
+  }
+
+  const expectString = expectStrings.join('\n');
+
+  return { valid: false, error: SchemaError.expectedButGot(expectString, getValueType(value), path) };
+}
+
+function getExpectString(schema: Schema): string {
+  const expectedNames = getSchemaTypeNames(schema);
+  const expectedTypeString = (expectedNames.length == 1)
+    ? expectedNames[0]!
+    : `[${expectedNames.join(', ')}]`;
+
+  const expects = isValueSchema(schema) ? toArray(schema.valueConstraints ?? []).map((constraint) => constraint.expects) : [];
+  const expectsString = (expects.length > 0) ? ` (${expects.join(', ')})` : '';
+
+  return `${expectedTypeString}${expectsString}`;
 }
