@@ -163,7 +163,6 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       const endpoint = api.endpoints.get(request.method)!;
 
       const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
-
       await respond(response);
     }
     catch (error) {

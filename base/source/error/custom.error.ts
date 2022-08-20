@@ -1,3 +1,4 @@
+
 export type CustomErrorOptions = {
   /**
    * name of error
@@ -20,12 +21,12 @@ export type CustomErrorOptions = {
   fast?: boolean
 };
 
-export class CustomError extends Error {
+export abstract class CustomError extends Error {
   constructor(options: CustomErrorOptions) {
     if (options.fast == true) {
       const errorObject = {};
 
-      init(errorObject as Error, new.target.prototype, options);
+      init(errorObject as Error, new.target as unknown as CustomErrorStatic, options);
 
       // eslint-disable-next-line no-constructor-return
       return errorObject as CustomError;
@@ -33,20 +34,20 @@ export class CustomError extends Error {
 
     super(options.message, { cause: options.cause });
 
-    init(this, new.target.prototype, options);
+    init(this, new.target as unknown as CustomErrorStatic, options);
   }
 }
 
-function init(instance: Error, prototype: CustomError, { name, message, cause, fast }: CustomErrorOptions): void {
+function init(instance: Error, target: CustomErrorStatic, { name, message, cause, fast }: CustomErrorOptions): void {
   instance.message = (instance.message as string | undefined) ?? message ?? 'No error message provided.';
-  instance.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? prototype.name;
+  instance.name = name ?? (target as CustomErrorStatic | undefined)?.errorName ?? (target.prototype as CustomErrorStatic).name;
 
   if ((cause != undefined) && (instance.cause == undefined)) {
     instance.cause = cause;
   }
 
   if (fast == true) {
-    Object.setPrototypeOf(instance, prototype);
+    Object.setPrototypeOf(instance, (target.prototype as CustomErrorStatic));
   }
 }
 

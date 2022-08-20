@@ -32,7 +32,7 @@ export type ResponseError = {
   data?: ErrorHandlerData
 };
 
-const errorHandlers: Map<string, ErrorHandler<any, any>> = new Map();
+const errorHandlers = new Map<string, ErrorHandler<any, any>>();
 
 export function registerErrorHandler<T extends CustomError, TData extends ErrorHandlerData>(constructor: CustomErrorStatic<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   if (errorHandlers.has(constructor.errorName)) {
