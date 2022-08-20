@@ -1,6 +1,6 @@
 import { AssertionError } from '#/error';
 import type { BinaryData } from '#/types';
-import { createArray } from './array';
+import { createArray } from './array/array';
 import { toUint8Array } from './binary';
 import { isUndefined } from './type-guards';
 

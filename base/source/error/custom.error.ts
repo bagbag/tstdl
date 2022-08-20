@@ -37,14 +37,16 @@ export class CustomError extends Error {
   }
 }
 
-function init(instance: Error, prototype: CustomError, { name, message, cause }: CustomErrorOptions): void {
-  Object.setPrototypeOf(instance, prototype);
-
-  instance.message = (instance.message as string | undefined) ?? message ?? '';
+function init(instance: Error, prototype: CustomError, { name, message, cause, fast }: CustomErrorOptions): void {
+  instance.message = (instance.message as string | undefined) ?? message ?? 'No error message provided.';
   instance.name = name ?? (new.target as unknown as CustomErrorStatic | undefined)?.errorName ?? prototype.name;
 
   if ((cause != undefined) && (instance.cause == undefined)) {
     instance.cause = cause;
+  }
+
+  if (fast == true) {
+    Object.setPrototypeOf(instance, prototype);
   }
 }
 

@@ -1,5 +1,3 @@
-const promiseConstructor = Promise;
-
 export const enum PromiseState {
   Pending = 0,
   Resolved = 1,
@@ -7,11 +5,7 @@ export const enum PromiseState {
 }
 
 export class DeferredPromise<T = void> implements Promise<T> {
-  static all = promiseConstructor.all.bind(promiseConstructor);
-  static race = promiseConstructor.race.bind(promiseConstructor);
-  static resolve = promiseConstructor.resolve.bind(promiseConstructor);
-  static reject = promiseConstructor.reject.bind(promiseConstructor);
-  static [Symbol.species] = promiseConstructor;
+  static readonly [Symbol.species] = Promise;
 
   private backingPromise: Promise<T>;
   private resolvePromise: (value: T | PromiseLike<T>) => void;
@@ -19,7 +13,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
 
   private state: PromiseState;
 
-  readonly [Symbol.toStringTag]: 'DeferredPromise';
+  readonly [Symbol.toStringTag] = 'DeferredPromise';
 
   get resolved(): boolean {
     return this.state == PromiseState.Resolved;
@@ -38,8 +32,6 @@ export class DeferredPromise<T = void> implements Promise<T> {
   }
 
   constructor(executor?: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
-    this[Symbol.toStringTag] = 'DeferredPromise';
-
     this.reset();
 
     if (executor != undefined) {
@@ -82,7 +74,7 @@ export class DeferredPromise<T = void> implements Promise<T> {
   }
 
   reset(): void {
-    this.backingPromise = new promiseConstructor<T>((resolve, reject) => {
+    this.backingPromise = new Promise<T>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
