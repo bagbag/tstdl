@@ -1,6 +1,6 @@
 import type { AbstractConstructor } from '#/types';
 import { toArray } from '#/utils/array/array';
-import { assertObjectPass, isNull, isString, isUndefined } from '#/utils/type-guards';
+import { isNull, isString, isUndefined } from '#/utils/type-guards';
 import type { Schema } from '../schema';
 import type { ResolvedValueType, ValueType } from '../types';
 import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
@@ -14,7 +14,7 @@ export function getValueType(value: unknown): ResolvedValueType<any> {
     return 'null';
   }
 
-  return assertObjectPass(value).constructor as AbstractConstructor;
+  return (value as object).constructor as AbstractConstructor;
 }
 
 export function getValueTypeName(valueType: ValueType): string {
