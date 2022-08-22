@@ -4,19 +4,20 @@ import type { HttpClientOptions, HttpClientResponse } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
-import { toArray } from '#/utils/array';
-import { compareByValueDescending } from '#/utils/comparison';
-import { isArray, isNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
-import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
+import { normalizedApiDefinitionEndpointsEntries } from '../types';
+import { getFullApiEndpointResource } from '../utils';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
 
 export type ClientOptions = {
   /**
-   * url prefix (default: 'api/')
+   * url prefix
+   * @default `api/`
    */
   prefix?: string,
+
   defaultHttpClientOptions?: HttpClientOptions
 };
 
@@ -55,24 +56,16 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   const endpointsEntries = normalizedApiDefinitionEndpointsEntries(endpoints);
 
-  const base = path;
-  const prefix = options.prefix ?? 'api/';
-
-  for (const [name, config] of endpointsEntries) {
-    const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
-    const methods = isArray(config.method) ? config.method : [config.method ?? 'GET'];
-    const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
-    const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
+  for (const [name, endpoint] of endpointsEntries) {
+    const methods = isArray(endpoint.method) ? endpoint.method : [endpoint.method ?? 'GET'];
+    const resource = getFullApiEndpointResource({ api: definition, endpoint, prefix: options.prefix });
 
     const hasGet = methods.includes('GET');
     const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
-        const context: ApiClientHttpRequestContext = {
-          endpoint: config
-        };
-
+        const context: ApiClientHttpRequestContext = { endpoint };
         const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
         const request = new HttpClientRequest({
@@ -83,7 +76,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         });
 
         const response = await this[httpClientSymbol].rawRequest(request);
-        return getBody(response, config.result);
+        return getBody(response, endpoint.result);
       }
     }[name];
 

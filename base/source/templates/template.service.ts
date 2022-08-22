@@ -1,5 +1,5 @@
 import { inject, optional, singleton } from '#/container';
-import { _throw } from '#/utils/helpers';
+import { _throw } from '#/utils/throw';
 import { isString } from '#/utils/type-guards';
 import { TemplateRendererProvider } from './template-renderer.provider';
 import type { Template } from './template.model';

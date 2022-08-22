@@ -6,7 +6,7 @@ import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
 import type { Record } from '#/types';
 import { equals } from '#/utils/equals';
-import { _throw } from '#/utils/helpers';
+import { _throw } from '#/utils/throw';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { Collection } from './classes';
 import type { LoadOptions } from './mongo-base.repository';

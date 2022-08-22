@@ -1,10 +1,8 @@
 import { randomInt } from '../math';
 import { isDefined } from '../type-guards';
 
-export function toArray<T>(value: T | T[]): T[];
-export function toArray<T>(value: T | readonly T[]): readonly T[];
-export function toArray<T>(value: T | T[]): T[] {
-  return Array.isArray(value) ? value : [value];
+export function toArray<T>(value: T | T[] | readonly T[]): T[] {
+  return Array.isArray(value) ? value : [value] as T[];
 }
 
 /**

@@ -36,6 +36,7 @@ export * from './reflection';
 export * from './set';
 export * from './singleton';
 export * from './sort';
+export * from './throw';
 export * from './timer';
 export * from './timing';
 export * from './type-guards';

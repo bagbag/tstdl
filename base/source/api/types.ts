@@ -5,8 +5,6 @@ import type { Json, NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/t
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
-export const rootResource = '$';
-
 export type ApiRegistrationOptions = {
   name?: string,
   prefix?: string
@@ -43,7 +41,22 @@ export type ApiEndpointDefinitionCors = {
 
 export type ApiEndpointDefinition = {
   method?: OneOrMany<ApiEndpointMethod>,
-  resource?: typeof rootResource | string,
+
+  /**
+   * Root resource path. Overwrites default from {@link ApiDefinition}.
+   */
+  rootResource?: string,
+
+  /**
+   * sub resource in api
+   *
+   * results in
+   * ```ts
+   * ${endpoint.rootResource ?? api.ressource}/${endpoint.resource}
+   * ```
+   */
+  resource?: string,
+
   version?: OneOrMany<number | null>,
   parameters?: ApiEndpointDefinitionParameters,
   body?: ApiEndpointDefinitionBody,

@@ -6,16 +6,18 @@ import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import { Schema, SchemaTestable } from '#/schema';
+import type { SchemaTestable } from '#/schema';
+import { Schema } from '#/schema';
 import type { Json, Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
-import { deferThrow } from '#/utils/helpers';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
-import { isArray, isDefined, isNull, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { deferThrow } from '#/utils/throw';
+import { isArray, isDefined, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import 'urlpattern-polyfill';
 import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
-import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
+import { normalizedApiDefinitionEndpointsEntries } from '../types';
+import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
@@ -112,14 +114,11 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   registerApi<T extends ApiDefinition>(definition: ApiDefinition, implementation: ApiController<T>): void {
-    const base = definition.resource;
-
     for (const [name, endpointDefinition] of normalizedApiDefinitionEndpointsEntries(definition.endpoints)) {
       const versionArray = isUndefined(endpointDefinition.version) ? [1] : toArray(endpointDefinition.version);
 
       for (const version of versionArray) {
-        const versionPrefix = isNull(version) ? '' : `v${version}/`;
-        const resource = (endpointDefinition.resource == rootResource) ? `${this.prefix}${versionPrefix}${base}` : `${this.prefix}${versionPrefix}${base}/${endpointDefinition.resource ?? name}`;
+        const resource = getFullApiEndpointResource({ api: definition, endpoint: endpointDefinition, prefix: this.prefix, explicitVersion: version });
         const methods = isArray(endpointDefinition.method) ? endpointDefinition.method : [endpointDefinition.method ?? 'GET'];
 
         if (methods.length == 0) {

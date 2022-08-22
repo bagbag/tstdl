@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
-import { defineApi, rootResource } from '#/api';
+import { defineApi } from '#/api';
 import { compileClient } from '#/api/client';
 import { apiController, configureApiServer } from '#/api/server';
 import { Application } from '#/application';
@@ -44,8 +44,7 @@ const usersApiDefinition = defineApi({
     },
     loadAll() {
       return {
-        method: 'GET',
-        resource: rootResource, // => /api/v1/users
+        method: 'GET', // => /api/v1/users
         result: array(User)
       };
     },

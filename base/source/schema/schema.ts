@@ -259,7 +259,13 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     let transformedValue = resultValue;
 
     for (const transformer of valueSchema.transformers) {
-      transformedValue = transformer.transform(transformedValue, path, context);
+      const transformResult = transformer.transform(transformedValue, path, context);
+
+      if (!transformResult.success) {
+        return { valid: false, error: transformResult.error };
+      }
+
+      transformedValue = transformResult.value;
     }
 
     updateCurrentState(transformedValue);
