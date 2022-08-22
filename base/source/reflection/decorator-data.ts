@@ -46,7 +46,7 @@ export function getDecoratorData(target: object, propertyKey?: string | symbol, 
   }
   else if (isDefined(propertyKey) && isNumber(descriptorOrParameterIndex)) {
     return {
-      type: 'parameter',
+      type: 'method-parameter',
       constructor,
       prototype,
       static: isStatic,

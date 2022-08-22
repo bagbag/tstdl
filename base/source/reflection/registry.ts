@@ -105,7 +105,7 @@ export class ReflectionRegistry {
     else if (data.type == 'method') {
       return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
     }
-    else if (data.type == 'parameter') {
+    else if (data.type == 'method-parameter') {
       return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
     }
     else if (data.type == 'constructor-parameter') { // eslint-disable-line @typescript-eslint/no-unnecessary-condition

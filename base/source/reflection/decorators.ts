@@ -42,14 +42,14 @@ export function Method(options?: SpecificCreateDecoratorOptions<'method'>): Meth
   return createMethodDecorator(options);
 }
 
-export function Parameter(options?: SpecificCreateDecoratorOptions<'parameter'>): ParameterDecorator {
-  return createParameterDecorator(options);
+export function MethodParameter(options?: SpecificCreateDecoratorOptions<'methodParameter'>): ParameterDecorator {
+  return createMethodParameterDecorator(options);
 }
 
 export function ConstructorParameter(options?: SpecificCreateDecoratorOptions<'constructorParameter'>): ParameterDecorator {
   return createConstructorParameterDecorator(options);
 }
 
-export function MethodParameter(options?: SpecificCreateDecoratorOptions<'methodParameter'>): ParameterDecorator {
-  return createMethodParameterDecorator(options);
+export function Parameter(options?: SpecificCreateDecoratorOptions<'parameter'>): ParameterDecorator {
+  return createParameterDecorator(options);
 }

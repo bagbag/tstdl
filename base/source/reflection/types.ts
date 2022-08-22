@@ -3,12 +3,13 @@ import type { UnionToIntersection } from 'type-fest';
 import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry';
 
 export type DecoratorType = 'class' | 'property' | 'accessor' | 'method' | 'parameter' | 'methodParameter' | 'constructorParameter';
-export type DecoratorHandler<T extends DecoratorType = DecoratorType> = (data: DecoratorData<T>, metadata: DecoratorMetadata<T>) => DecoratorHandlerReturnType<T>;
+export type DecoratorHandler<T extends DecoratorType = DecoratorType> = (data: DecoratorData<T>, metadata: DecoratorMetadata<T>, originalArguments: Parameters<DecoratorUnion<T>>) => DecoratorHandlerReturnType<T>;
 export type DecoratorHandlerReturnType<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorHandlerReturnTypeMap, T>;
 export type Decorator<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMapIntersection<DecoratorMap, T>;
 export type DecoratorUnion<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorMap, T>;
 export type DecoratorData<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorDataMap, T>;
 export type DecoratorMetadata<T extends DecoratorType = DecoratorType> = DecoratorOptionsTypeMap<DecoratorMetadataMap, T>;
+export type CombinedDecoratorParameters = [target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number];
 
 export type DecoratorTypeMap<T extends Record<DecoratorType> = Record<DecoratorType>> = T;
 export type DecoratorOptionsTypeMap<T extends DecoratorTypeMap, U extends DecoratorType> = { [D in U]: T[D] }[U];
@@ -81,7 +82,7 @@ export type MethodDecoratorData = DecoratorDataBase<'method'> & {
   descriptor: PropertyDescriptor
 };
 
-export type MethodParameterDecoratorData = DecoratorDataBase<'parameter'> & {
+export type MethodParameterDecoratorData = DecoratorDataBase<'method-parameter'> & {
   static: boolean,
   methodKey: string | symbol,
   index: number

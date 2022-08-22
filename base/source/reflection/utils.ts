@@ -4,7 +4,7 @@ import { noop } from '#/utils/noop';
 import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
 import { reflectionRegistry } from './registry';
-import type { Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types';
+import type { CombinedDecoratorParameters, Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types';
 
 export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 
@@ -23,18 +23,25 @@ export type SpecificCreateDecoratorOptions<T extends DecoratorType> = TypedOmit<
   include?: OneOrMany<DecoratorUnion<T>>
 };
 
+export type WrapDecoratorOptions = CreateDecoratorOptions & {
+  handler?: (data: DecoratorData, metadata: DecoratorMetadata, originalArguments: CombinedDecoratorParameters) => void
+};
+
 type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
 
 // eslint-disable-next-line max-lines-per-function
 export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDecoratorOptions>(options: T, handler: DecoratorHandler<CreateDecoratorType<T>> = noop): Decorator<CreateDecoratorType<T>> {
   // eslint-disable-next-line max-statements, max-lines-per-function
-  function decoratorWrapper(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): ReturnType<Decorator> {
-    const data = getDecoratorData(target, propertyKey, descriptorOrParameterIndex);
-    const optionsType: keyof CreateDecoratorTypeOptions = (data.type == 'constructor-parameter') ? 'constructorParameter' : data.type;
+  function decoratorWrapper(...args: CombinedDecoratorParameters): ReturnType<Decorator> {
+    const data = getDecoratorData(...args);
+    const optionsType: keyof CreateDecoratorTypeOptions =
+      (data.type == 'constructor-parameter') ? 'constructorParameter'
+        : (data.type == 'method-parameter') ? 'methodParameter'
+          : data.type;
 
     const valid = (options[optionsType] == true)
-      || (optionsType == 'parameter' && ((options.constructorParameter == true) || (options.methodParameter == true)))
-      || (((optionsType == 'constructorParameter') || (optionsType as DecoratorType == 'methodParameter')) && (options.parameter == true));
+      || (optionsType == 'methodParameter' && ((options.methodParameter == true) || (options.parameter == true)))
+      || (optionsType == 'constructorParameter' && ((options.constructorParameter == true) || (options.parameter == true)));
 
     assert(valid, () => `Decorator cannot be used for ${data.type}.`);
 
@@ -44,11 +51,11 @@ export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDec
       metadata.data.setMany(options.data, options.mergeData);
     }
 
-    const result = handler(data as DecoratorData<CreateDecoratorType<T>>, metadata) as void;
+    const result = handler(data as DecoratorData<CreateDecoratorType<T>>, metadata, args as Parameters<DecoratorHandler<CreateDecoratorType<T>>>['2']) as void;
 
     if (isDefined(options.include)) {
       for (const include of toArray(options.include)) {
-        (include as (...args: any[]) => any)(target, propertyKey as any, descriptorOrParameterIndex as any); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+        (include as (...includeArgs: any[]) => any)(...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
       }
     }
 
@@ -78,16 +85,45 @@ export function createMethodDecorator(options: SpecificCreateDecoratorOptions<'m
   return createDecorator({ ...options, method: true }, options.handler);
 }
 
-export function createParameterDecorator(options: SpecificCreateDecoratorOptions<'parameter'> = {}): ParameterDecorator {
-  return createDecorator({ ...options, parameter: true }, options.handler);
-}
-
 export function createMethodParameterDecorator(options: SpecificCreateDecoratorOptions<'methodParameter'> = {}): ParameterDecorator {
   return createDecorator({ ...options, methodParameter: true }, options.handler);
 }
 
 export function createConstructorParameterDecorator(options: SpecificCreateDecoratorOptions<'constructorParameter'> = {}): ParameterDecorator {
   return createDecorator({ ...options, constructorParameter: true }, options.handler);
+}
+
+export function createParameterDecorator(options: SpecificCreateDecoratorOptions<'parameter'> = {}): ParameterDecorator {
+  return createDecorator({ ...options, parameter: true }, options.handler);
+}
+
+export function wrapDecoratorFactory<T extends (...args: any[]) => DecoratorUnion>(decoratorFactory: T, options?: WrapDecoratorOptions): T {
+  function wrappedDecoratorFactory(...args: Parameters<T>): Decorator {
+    const decorator = decoratorFactory(...args) as Decorator;
+    return wrapDecorator(decorator, options);
+  }
+
+  return wrappedDecoratorFactory as T;
+}
+
+export function wrapDecorator<T extends DecoratorUnion>(decorator: T, options?: WrapDecoratorOptions): T {
+  const wrappedDecorator = createDecorator(
+    {
+      class: true,
+      property: true,
+      method: true,
+      parameter: true,
+      methodParameter: true,
+      constructorParameter: true,
+      ...options
+    },
+    (data, metadata, args) => {
+      options?.handler?.(data, metadata, args);
+      return (decorator as Decorator)(...args as [any, any, any]); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    }
+  );
+
+  return wrappedDecorator as T;
 }
 
 export function getConstructor<T extends Constructor = Constructor>(constructorOrTarget: object): T {
