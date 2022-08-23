@@ -74,6 +74,8 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
           closeHandler: () => request.abort()
         });
 
+        await setBody(response, 'auto');
+
         throw new HttpError(HttpErrorReason.InvalidRequest, request, response, error);
       }
 

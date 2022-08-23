@@ -288,9 +288,9 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
       throw error;
     }
 
-    if (isDefined(error.response?.body)) {
-      const body = await error.response!.body;
+    const body = error.response?.body;
 
+    if (isDefined(body)) {
       if (!isErrorResponse(body) || !hasErrorHandler(body)) {
         throw error;
       }
