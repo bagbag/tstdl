@@ -1,4 +1,4 @@
-import type { Record, Simplify } from '@tstdl/base/types';
+import type { Record, Simplify, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes } from '@tstdl/base/web-types';
 import type { LocalizableText } from '../models';
 
@@ -39,7 +39,7 @@ export type MessageBoxTextInput = MessageBoxInputBase<MessageBoxTextInputType> &
   label?: LocalizableText,
   placeholder?: LocalizableText,
   initialValue?: any,
-  attributes: InputAttributes,
+  attributes?: TypedOmit<InputAttributes, 'placeholder'>,
   validator?: (value: any) => boolean
 };
 
