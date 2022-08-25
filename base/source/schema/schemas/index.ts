@@ -12,6 +12,7 @@ export * from './literal';
 export * from './nullable';
 export * from './number';
 export * from './object';
+export * from './omit';
 export * from './optional';
 export * from './pick';
 export * from './readable-stream';

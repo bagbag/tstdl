@@ -1,4 +1,4 @@
 import type { Observable } from 'rxjs';
-import type { LocalizationData } from '../services';
+import type { LocalizableText } from './localizable-text.model';
 
-export type DynamicText = string | LocalizationData | Observable<string | LocalizationData>;
+export type DynamicText = LocalizableText | Observable<LocalizableText>;
