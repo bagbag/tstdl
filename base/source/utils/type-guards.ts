@@ -20,13 +20,12 @@ export function assertNot(condition: boolean, message: AssertionMessage = 'asser
   }
 }
 
-export function isType<T>(type: AbstractConstructor<T>, value: any): value is T {
-  return (value instanceof type);
-}
-
-export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Value is not an instance of ${type.name}.`): asserts value is T {
-  assert(isType(type, value), message);
-}
+export function isType<T>(type: AbstractConstructor<T>, value: any): value is T { return (value instanceof type); }
+export function isNotType<T>(type: AbstractConstructor<T>, value: any): value is InferIsNotType<T, typeof isType> { return !isType(type, value); }
+export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Expected value to be of type ${type.name}.`): asserts value is T { assert(isType(type, value), message); }
+export function assertNotType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Expected value to be not of type ${type.name}.`): asserts value is InferIsNotType<T, typeof isType> { assert(isNotType(type, value), message); }
+export function assertTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): T { assertType(type, value, message); return value; }
+export function assertNotTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): InferIsNotType<T, typeof isType> { assertNotType(type, value, message); return value; }
 
 export function isUndefined(value: any): value is undefined { return value === undefined; }
 export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return !isUndefined(value); }
