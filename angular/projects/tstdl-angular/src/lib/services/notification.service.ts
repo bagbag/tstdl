@@ -86,13 +86,3 @@ export function isMessageBoxTextInput(messageBoxInput: MessageBoxInput): message
 export function isMessageBoxSelectInput<T>(messageBoxInput: MessageBoxInput<T>): messageBoxInput is MessageBoxSelectInput<T> {
   return messageBoxInput.type == 'select';
 }
-
-
-void (null as any as NotificationService).openMessageBox({
-  inputs: {
-    name: {
-      type: 'text',
-      required: true
-    }
-  }
-}).then((result) => result.inputs.name)
