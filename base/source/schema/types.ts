@@ -9,12 +9,12 @@ import type { SchemaError } from './schema.error';
 
 declare const schemaOutputTypeSymbol: unique symbol;
 
-export type SchemaFactoryFunction<T extends Record, O = T> = (data: T) => NormalizeValueType<O>;
-export type SchemaFactory<T extends Record, O = T> =
+export type SchemaFactoryFunction<T, O = T> = (data: T) => NormalizeValueType<O>;
+export type SchemaFactory<T, O = T> =
   | { type: Type<T>, builder?: undefined }
   | { type?: undefined, builder: SchemaFactoryFunction<T, O> };
 
-export type ObjectSchemaProperties<T extends Record> = { [K in keyof T]-?: OneOrMany<Schema<any, T[K]>> };
+export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<Schema<any, T[K]>> };
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
 
 export type SchemaOutput<T extends Schema> =
@@ -23,7 +23,7 @@ export type SchemaOutput<T extends Schema> =
   : T extends TypeSchema<infer O> ? O
   : never;
 
-export type ObjectSchema<T extends Record = any, O extends Record = T> = {
+export type ObjectSchema<T = any, O = T> = {
   [schemaOutputTypeSymbol]?: O,
   sourceType?: ValueType,
   factory?: SchemaFactory<T, O>,
@@ -53,7 +53,7 @@ export type ValueSchema<T = unknown, O = T> = {
   valueConstraints?: OneOrMany<SchemaValueConstraint>
 };
 
-export type NormalizedObjectSchema<T extends Record = any, O extends Record = T> = {
+export type NormalizedObjectSchema<T = any, O = T> = {
   [schemaOutputTypeSymbol]?: O,
   factory?: SchemaFactory<T, O>,
   properties: NormalizedObjectSchemaProperties<T>,
@@ -175,11 +175,11 @@ export type TransformResult<T> =
   | { success: true, value: T, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
-export function objectSchemaProperties<T>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
+export function objectSchemaProperties<T extends Record>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
   return filterObject(properties, isDefined) as ObjectSchemaProperties<T>;
 }
 
-export function objectSchema<T, O = T>(schema: ObjectSchema<T, O>): ObjectSchema<T, O> {
+export function objectSchema<T extends Record, O extends Record = T>(schema: ObjectSchema<T, O>): ObjectSchema<T, O> {
   return filterObject(schema, isDefined) as ObjectSchema<T, O>;
 }
 
@@ -191,7 +191,7 @@ export function typeSchema<T>(type: ValueType<T>): TypeSchema<NormalizeValueType
   return { type } as TypeSchema<NormalizeValueType<T>>;
 }
 
-export function isSchema<T extends Record, O extends Record>(value: any): value is Schema<T, O> {
+export function isSchema<T, O>(value: any): value is Schema<T, O> {
   return isObjectSchema(value) || isValueSchema(value) || isTypeSchema(value);
 }
 

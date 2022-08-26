@@ -511,7 +511,7 @@ export class Container {
       const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(() => {
-        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
+        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() as InjectionToken : forwardRefToken;
 
         if (isDefined(injectMetadata.mapper)) {
           throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));
@@ -548,7 +548,7 @@ export class Container {
       const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(async () => {
-        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
+        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() as InjectionToken : forwardRefToken;
 
         if (isDefined(injectMetadata.mapper)) {
           throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));

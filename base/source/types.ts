@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
+export type ObjectLiteral = {};
+
 export type PrimitiveTypeMap = {
   'string': string,
   'number': number,
@@ -102,7 +104,7 @@ export type NonNullOrUndefinable<T> = T extends null | undefined ? never : T;
 /**
  * makes optional properties required and removes null and undefined
  */
-export type DeepNonNullable<T extends Record> = { [P in keyof T]-?: T extends Record ? DeepNonNullable<NonNullable<T[P]>> : NonNullable<T[P]> };
+export type DeepNonNullable<T> = T extends Record ? { [P in keyof T]-?: DeepNonNullable<T[P]> } : NonNullable<T>;
 
 export type IfAny<T, Then, Else = never> = true extends (false & T) ? Then : Else;
 export type IfUnknown<T, Then, Else = never> = unknown extends T ? Then : Else;

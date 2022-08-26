@@ -1,4 +1,4 @@
-import type { Constructor, Type } from '#/types';
+import type { AbstractConstructor, Type } from '#/types';
 import { isDefined, isFunction } from '#/utils/type-guards';
 import { registerDefaultSerializers } from './handlers';
 
@@ -28,15 +28,15 @@ export type DeserializeFunction<T, Data> = Serializable<T, Data>[typeof Serializ
 
 type SerializableRegistration<T, Data> = {
   type: string,
-  constructor: Constructor<T>,
+  constructor: AbstractConstructor<T>,
   serializer: SerializeFunction<T, Data>,
   deserializer: DeserializeFunction<T, Data>
 };
 
-const constructorTypeNameMap = new Map<Constructor, string>();
+const constructorTypeNameMap = new Map<AbstractConstructor, string>();
 const typeNameSerializerMap = new Map<string, SerializableRegistration<any, any>>();
 
-export function getTypeNameByConstructor(constructor: Constructor): string | undefined {
+export function getTypeNameByConstructor(constructor: AbstractConstructor): string | undefined {
   return constructorTypeNameMap.get(constructor);
 }
 
@@ -66,7 +66,7 @@ export function registerSerializable<T extends Serializable<any, Data>, Data>(ty
   registerSerializer(type, typeName ?? type.name, serializer, deserializer);
 }
 
-export function registerSerializer<T, Data>(constructor: Constructor<T>, typeName: string, serializer: SerializeFunction<T, Data>, deserializer: DeserializeFunction<T, Data>): void {
+export function registerSerializer<T, Data>(constructor: AbstractConstructor<T>, typeName: string, serializer: SerializeFunction<T, Data>, deserializer: DeserializeFunction<T, Data>): void {
   const existingMappedType = constructorTypeNameMap.get(constructor);
   const existingMappedSerializer = typeNameSerializerMap.get(typeName);
 

@@ -7,7 +7,7 @@ import { isArray, isDefined, isNotNull, isUndefined } from '#/utils/type-guards'
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types';
 import type { NormalizedSchema, Schema } from '../schema';
 import { assign } from '../schemas/assign';
-import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, SchemaFactoryFunction, TypeSchema, ValueSchema } from '../types';
+import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
 import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
@@ -19,7 +19,7 @@ export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflect
 
 function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
   if (isObjectSchema(schema)) {
-    return normalizeObjectSchema(schema);
+    return normalizeObjectSchema(schema) as NormalizedSchema<T, O>;
   }
 
   if (isValueSchema(schema)) {
@@ -124,7 +124,7 @@ function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Object
 
   const schema: ObjectSchema = objectSchema({
     sourceType: type,
-    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory as SchemaFactoryFunction<T> } : { type: type as Type },
+    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory } : { type: type as Type },
     properties,
     mask: typeData?.mask,
     allowUnknownProperties: (isUndefined(typeData?.allowUnknownProperties) || (isArray(typeData?.allowUnknownProperties) && (typeData?.allowUnknownProperties.length == 0))) ? undefined : typeData?.allowUnknownProperties
@@ -134,7 +134,7 @@ function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Object
 
   if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
     const parentSchema = getSchemaFromReflection(prototype)!;
-    return assign(parentSchema, schema);
+    return assign(parentSchema, schema) as ObjectSchema<T>;
   }
 
   return schema;

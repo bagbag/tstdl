@@ -12,7 +12,8 @@ import { regExpCoercer } from './coercers/regexp.coercer';
 import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import { SchemaError } from './schema.error';
-import { isTypeSchema, isValueSchema, NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, resolveValueType, SchemaContext, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, valueSchema, ValueSchema, ValueType, valueTypeOrSchemaToSchema } from './types';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType } from './types';
+import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema } from './types';
 import { getArrayItemSchema, getSchemaFromReflection, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema } from './utils';
 
 export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
@@ -89,7 +90,11 @@ export const Schema = {
       return testType(schema, value, options, path);
     }
 
-    return testObject(schema, value, options, path);
+    if (isObjectSchema(schema)) {
+      return testObject(schema, value, options, path);
+    }
+
+    throw new Error('Unsupported schema');
   }
 };
 
@@ -107,7 +112,7 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
     const objectSchema = getSchemaFromReflection(resolvedValueType);
 
     if (isNotNull(objectSchema)) {
-      return testObject<T>(objectSchema, value, options, path);
+      return testObject(objectSchema as ObjectSchema, value, options, path);
     }
   }
   else if ((resolvedValueType == 'null' && isNull(value)) || (resolvedValueType == 'undefined' && isUndefined(value)) || (resolvedValueType == 'any')) {
@@ -118,7 +123,7 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
 }
 
 // eslint-disable-next-line complexity
-function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
   if (!(value instanceof Object)) {
     return { valid: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path) };
   }
@@ -165,28 +170,28 @@ function testObject<T extends Record, O = T>(objectSchema: ObjectSchema<T, O>, v
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
 function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
-  const valueSchema = normalizeValueSchema(schema);
+  const normalizedValueSchema = normalizeValueSchema(schema);
 
-  if (valueSchema.optional && isUndefined(value)) {
+  if (normalizedValueSchema.optional && isUndefined(value)) {
     return { valid: true, value: value as unknown as O };
   }
 
-  if (valueSchema.nullable && isNull(value)) {
+  if (normalizedValueSchema.nullable && isNull(value)) {
     return { valid: true, value: value as unknown as O };
   }
 
   const context: SchemaContext = {
-    schema: valueSchema,
+    schema: normalizedValueSchema,
     options
   };
 
   /** handle arrays */
-  if (valueSchema.array) {
+  if (normalizedValueSchema.array) {
     if (!isArray(value)) {
       throw SchemaError.expectedButGot(Array, getValueType(value), path);
     }
 
-    for (const arrayConstraint of valueSchema.arrayConstraints) {
+    for (const arrayConstraint of normalizedValueSchema.arrayConstraints) {
       const result = arrayConstraint.validate(value, path, context);
 
       if (!result.valid) {
@@ -217,7 +222,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   function updateCurrentState(newValue: unknown): void {
     resultValue = newValue;
     valueType = getValueType(newValue);
-    valueTestResult = isValidValue(valueSchema.schema, newValue, options, path);
+    valueTestResult = isValidValue(normalizedValueSchema.schema, newValue, options, path);
   }
 
   updateCurrentState(value);
@@ -225,8 +230,8 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   /** try to coerce */
   if (!valueTestResult.valid) {
     const coercers = [
-      ...(valueSchema.coercers.get(valueType) ?? []),
-      ...((valueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
+      ...(normalizedValueSchema.coercers.get(valueType) ?? []),
+      ...((normalizedValueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
     ];
 
     const errors: SchemaError[] = [];
@@ -255,10 +260,10 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     return { valid: false, error: SchemaError.expectedButGot(expectsString, valueType, path) };
   }
 
-  if (valueSchema.transformers.length > 0) {
+  if (normalizedValueSchema.transformers.length > 0) {
     let transformedValue = resultValue;
 
-    for (const transformer of valueSchema.transformers) {
+    for (const transformer of normalizedValueSchema.transformers) {
       const transformResult = transformer.transform(transformedValue, path, context);
 
       if (!transformResult.success) {
@@ -279,7 +284,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   {
     const errors: SchemaError[] = [];
 
-    for (const constraint of valueSchema.valueConstraints) {
+    for (const constraint of normalizedValueSchema.valueConstraints) {
       const result = constraint.validate(resultValue, path, context);
 
       if (!result.valid) {
