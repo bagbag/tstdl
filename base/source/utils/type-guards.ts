@@ -24,7 +24,7 @@ export function isType<T>(type: AbstractConstructor<T>, value: any): value is T 
   return (value instanceof type);
 }
 
-export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = 'assertion failed'): asserts value is T {
+export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Value is not an instance of ${type.name}.`): asserts value is T {
   assert(isType(type, value), message);
 }
 
