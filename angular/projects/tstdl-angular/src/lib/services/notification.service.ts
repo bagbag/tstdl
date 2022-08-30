@@ -50,7 +50,7 @@ export type MessageBoxSelectInputItem<T> = {
 
 export type MessageBoxSelectInput<T> = MessageBoxInputBase<MessageBoxSelectInputType> & {
   label?: LocalizableText,
-  items?: MessageBoxSelectInputItem<T>[],
+  items: MessageBoxSelectInputItem<T>[],
   initialValue?: T,
   required?: boolean
 };

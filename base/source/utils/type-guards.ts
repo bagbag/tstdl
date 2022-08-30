@@ -146,7 +146,7 @@ export function assertNotWritableArray<T>(value: T, message: AssertionMessage = 
 export function assertWritableArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isWritableArray> { return assertArrayPass(value, message) as any[]; }
 export function assertNotWritableArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isWritableArray> { return assertNotArrayPass(value, message) as unknown as Exclude<T, any[]>; }
 
-export function isBlob(value: any): value is Blob { return (value instanceof Blob); }
+export function isBlob(value: any): value is Blob { return (typeof Blob != 'undefined') && (value instanceof Blob); }
 export function isNotBlob<T>(value: T): value is InferIsNotType<T, typeof isBlob> { return !isBlob(value); }
 export function assertBlob(value: any, message: AssertionMessage = 'expected value to be Blob'): asserts value is InferIsType<typeof isBlob> { assert(isBlob(value), message); }
 export function assertNotBlob<T>(value: T, message: AssertionMessage = 'expected value to not be Blob'): asserts value is InferIsNotType<T, typeof isBlob> { assert(isNotBlob(value), message); }
