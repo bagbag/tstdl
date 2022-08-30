@@ -2,17 +2,23 @@ import { singleton } from '#/container';
 import type { Record } from '#/types';
 import { memoizeSingle } from '#/utils/function/memoize';
 import { mapObjectValues } from '#/utils/object/object';
-import { isDefined } from '#/utils/type-guards';
+import { isDefined, isFunction, isString } from '#/utils/type-guards';
 import * as handlebars from 'handlebars';
 import type { Template } from '../template.model';
 import type { TemplateRenderResult } from '../template.renderer';
 import { TemplateRenderer } from '../template.renderer';
 
+export type HandlebarsTemplateHelper = handlebars.HelperDelegate;
+export type HandlebarsTemplateHelpersObject = Record<string, HandlebarsTemplateHelper>;
+
+export type HandlebarsTemplatePartial = string | HandlebarsTemplate | handlebars.TemplateDelegate;
+export type HandlebarsTemplatePartialsObject = Record<string, HandlebarsTemplatePartial>;
+
 export type HandlebarsTemplateOptions = {
   strict?: boolean,
   preventIndent?: boolean,
-  helpers?: Record<string, handlebars.HelperDelegate>,
-  partials?: Record<string, handlebars.TemplateDelegate>
+  helpers?: HandlebarsTemplateHelpersObject,
+  partials?: HandlebarsTemplatePartialsObject
 };
 
 export type HandlebarsTemplate = Template<'handlebars', HandlebarsTemplateOptions>;
@@ -47,5 +53,19 @@ function _compileHandlebarsTemplate({ template, options = {} }: HandlebarsTempla
     knownHelpersOnly: true
   });
 
-  return (context?: any) => renderer(context, { helpers: options.helpers, partials: options.partials });
+  const normalizedPartials = isDefined(options.partials) ? mapObjectValues(options.partials, normalizePartial) : undefined;
+
+  return (context?: any) => renderer(context, { helpers: options.helpers, partials: normalizedPartials });
+}
+
+function normalizePartial(partial: HandlebarsTemplatePartial): handlebars.TemplateDelegate {
+  if (isString(partial)) {
+    return compileHandlebarsTemplate({ type: 'handlebars', template: partial });
+  }
+
+  if (isFunction(partial)) {
+    return partial;
+  }
+
+  return compileHandlebarsTemplate(partial);
 }
