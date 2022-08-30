@@ -50,6 +50,14 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
     this.set('Content-Encoding', value);
   }
 
+  get authorization(): string | undefined {
+    return this.getStringHeader('Authorization');
+  }
+
+  set authorization(value: string | undefined) {
+    this.set('Authorization', value);
+  }
+
   /** get charset from {@link contentType} */
   get charset(): string | undefined {
     const contentType = this.contentType;

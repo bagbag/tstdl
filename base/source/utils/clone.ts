@@ -1,7 +1,13 @@
 import { objectEntries } from './object/object';
 import { assertObject, isArray, isArrayBuffer, isDataView, isDate, isMap, isPrimitive, isRegExp, isSet, isTypedArray } from './type-guards';
 
+const supportsStructuredClone = (typeof structuredClone == 'function');
+
 export function clone<T>(object: T, deep: boolean): T {
+  if (supportsStructuredClone && deep) {
+    return structuredClone(object);
+  }
+
   if (isPrimitive(object)) {
     return object;
   }

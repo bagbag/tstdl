@@ -3,6 +3,7 @@ import { dispose } from '#/disposable';
 import type { StringMap, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
+import { clone } from '#/utils/clone';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards';
 import type { HttpFormObject } from '../http-form';
 import { HttpForm } from '../http-form';
@@ -15,7 +16,7 @@ import { HttpUrlParameters } from '../http-url-parameters';
 import type { HttpBodyType, HttpMethod } from '../types';
 
 /** only one type at a time is supported. If multiple are set, behaviour is undefined */
-export type HttpRequestBody = undefined | {
+export type HttpRequestBody = {
   text?: string,
   json?: UndefinableJson,
   form?: HttpForm,
@@ -23,11 +24,21 @@ export type HttpRequestBody = undefined | {
   stream?: AsyncIterable<Uint8Array>
 };
 
+export type HttpRequestAuthorization = {
+  basic?: {
+    username: string,
+    password: string
+  },
+  bearer?: string,
+  token?: string
+};
+
 export type HttpClientRequestOptions<T extends HttpBodyType = HttpBodyType> = Partial<TypedOmit<HttpClientRequest<T>, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
   urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
   headers?: HttpHeadersObject | HttpHeaders,
   query?: HttpQueryObject | HttpQuery,
-  body?: undefined | {
+  authorization?: HttpRequestAuthorization,
+  body?: {
     text?: string,
     json?: UndefinableJson,
     form?: HttpFormObject | HttpForm,
@@ -98,7 +109,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
    * // -> http://domain.tld/search?categories=3&categories=8&limit=10
    */
   query: HttpQuery;
-  body: HttpRequestBody;
+  authorization: HttpRequestAuthorization | undefined;
+  body: HttpRequestBody | undefined;
   responseType: T;
   credentials: CredentialsOptions;
 
@@ -145,6 +157,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this.urlParameters = new HttpUrlParameters(requestOptions.urlParameters);
     this.urlParametersSeparator = requestOptions.urlParametersSeparator ?? ';';
     this.query = new HttpQuery(requestOptions.query);
+    this.authorization = requestOptions.authorization;
     this.body = normalizeBody(requestOptions.body);
     this.responseType = requestOptions.responseType ?? 'auto' as T;
     this.credentials = requestOptions.credentials ?? 'omit';
@@ -171,6 +184,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
 
     request.headers = new HttpHeaders(request.headers);
     request.query = new HttpQuery(request.query);
+    request.authorization = clone(request.authorization, true);
     request.urlParameters = new HttpUrlParameters(request.urlParameters);
     request.body = normalizeBody(request.body);
 
@@ -187,6 +201,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
       urlParameter: this.urlParameters.asObject(),
       headers: this.headers.asObject(),
       query: this.query.asObject(),
+      authorization: this.authorization,
       body,
       responseType: this.responseType,
       timeout: this.timeout,

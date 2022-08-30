@@ -6,7 +6,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { Template } from '../template.model';
 
-export type FileTemplateBase = TypedOmit<Template, 'template'>;
+export type FileTemplateBase<T extends Template = Template> = TypedOmit<T, 'template'>;
 
 export type FileForward<T extends FileTemplateBase, U extends FileTemplateBase> = [fileKey: keyof U, targetKey: keyof T];
 

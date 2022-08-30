@@ -1,13 +1,12 @@
 import type { Injectable } from '#/container';
 import { injectArg, resolveArgumentType, singleton } from '#/container';
-import type { Schema } from '#/schema';
 import { object, optional, string, unknown } from '#/schema';
 import type { Template } from '../template.model';
 import type { TemplateProvider } from '../template.provider';
 import type { FileTemplateBase } from './file-template.provider.base';
 import { FileTemplateProviderBase } from './file-template.provider.base';
 
-export type FileTemplate = FileTemplateBase & {
+export type FileTemplate<T extends Template = Template> = FileTemplateBase<T> & {
   template?: string,
 
   /** subject template file */
@@ -44,6 +43,6 @@ export function configureFileTemplateProvider(config: Partial<FileTemplateProvid
   fileTemplateProviderConfig.basePath = config.basePath ?? fileTemplateProviderConfig.basePath;
 }
 
-export function fileTemplate<T extends FileTemplate>(template: T): T {
+export function fileTemplate<T extends Template = Template>(template: FileTemplate<T>): FileTemplate<T> {
   return template;
 }

@@ -22,7 +22,7 @@ export class IterableWeakMap<K extends object, V> extends Collection<[K, V], Ite
   }
 
   static get supported(): boolean {
-    return (typeof WeakRef != 'undefined');
+    return (typeof WeakRef != 'undefined') && (typeof WeakMap != 'undefined');
   }
 
   constructor(entries?: Iterable<readonly [K, V]>) {

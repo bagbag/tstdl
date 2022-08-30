@@ -3,6 +3,8 @@ import type { Injectable } from '#/container';
 import { inject, injectArg, injectionToken, optional, resolveArgumentType, singleton } from '#/container';
 import type { OneOrMany, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
+import { encodeBase64 } from '#/utils/base64';
+import { encodeUtf8 } from '#/utils/encoding';
 import type { AsyncMiddleware, AsyncMiddlewareHandler, AsyncMiddlewareNext } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
@@ -256,18 +258,34 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
 
 async function addRequestHeadersMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
   const clone = request.clone();
+  const { body, authorization } = clone;
 
-  if (isDefined(clone.body?.json)) {
-    clone.headers.contentType = 'application/json';
+  if (isDefined(body) && isUndefined(clone.headers.contentType)) {
+    if (isDefined(body.json)) {
+      clone.headers.contentType = 'application/json';
+    }
+    else if (isDefined(body.text)) {
+      clone.headers.contentType = 'text/plain';
+    }
+    else if (isDefined(body.form)) {
+      clone.headers.contentType = 'application/x-www-form-urlencoded';
+    }
+    else if (isDefined(body.stream) || isDefined(body.buffer)) {
+      clone.headers.contentType = 'application/octet-stream';
+    }
   }
-  else if (isDefined(clone.body?.text)) {
-    clone.headers.contentType = 'text/plain';
-  }
-  else if (isDefined(clone.body?.form)) {
-    clone.headers.contentType = 'application/x-www-form-urlencoded';
-  }
-  else if (isDefined(clone.body?.stream) || isDefined(clone.body?.buffer)) {
-    clone.headers.contentType = 'application/octet-stream';
+
+  if (isDefined(authorization) && isUndefined(clone.headers.authorization)) {
+    if (isDefined(authorization.basic)) {
+      const base64 = encodeBase64(encodeUtf8(`${authorization.basic.username}:${authorization.basic.password}`));
+      clone.headers.authorization = `Basic ${base64}`;
+    }
+    else if (isDefined(authorization.bearer)) {
+      clone.headers.authorization = `Bearer ${authorization.bearer}`;
+    }
+    else if (isDefined(authorization.token)) {
+      clone.headers.authorization = `Token ${authorization.token}`;
+    }
   }
 
   return next(clone);

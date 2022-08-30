@@ -1,8 +1,10 @@
 import { singleton } from '#/container';
-import { ForbiddenError } from '#/error';
+import { ForbiddenError, NotImplementedError } from '#/error';
+import type { HttpRequestAuthorization } from '#/http/client';
 import { HttpClient } from '#/http/client';
+import { HttpHeaders } from '#/http/http-headers';
 import { object, optional, Schema, string } from '#/schema';
-import type { Json } from '#/types';
+import type { Json, Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { digest } from '#/utils/cryptography';
 import { currentTimestamp } from '#/utils/date-time';
@@ -87,22 +89,67 @@ export class OidcService<Data = any> {
     return oidcState;
   }
 
-  async getToken({ endpoint, clientId, clientSecret, code, redirectUri, codeVerifier, scope }: OidcGetTokenParameters): Promise<OidcToken> {
-    const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(endpoint);
+  async getToken(parameters: OidcGetTokenParameters): Promise<OidcToken> {
+    const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(parameters.endpoint);
 
-    const formData = {
-      /* eslint-disable @typescript-eslint/naming-convention */
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: 'authorization_code',
-      scope,
-      code,
-      code_verifier: codeVerifier,
-      redirect_uri: redirectUri
-      /* eslint-enable @typescript-eslint/naming-convention */
-    };
+    const headers = new HttpHeaders();
+    let formData: Record = {};
+    let authorization: HttpRequestAuthorization | undefined;
 
-    const tokenResponse = await HttpClient.instance.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers: { authorization: `Bearer ${code}` }, body: { form: formData } });
+    switch (parameters.grantType) {
+      case 'authorization_code':
+        headers.set('authorization', `Bearer ${parameters.code}`);
+
+        formData = {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          grant_type: 'authorization_code',
+          client_id: parameters.clientId,
+          client_secret: parameters.clientSecret,
+          scope: parameters.scope,
+          code: parameters.code,
+          code_verifier: parameters.codeVerifier,
+          redirect_uri: parameters.redirectUri
+          /* eslint-enable @typescript-eslint/naming-convention */
+        };
+
+        break;
+
+      case 'client_credentials':
+        formData = {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          grant_type: 'client_credentials',
+
+          scope: parameters.scope
+          /* eslint-enable @typescript-eslint/naming-convention */
+        };
+
+        break;
+
+      default:
+        throw new NotImplementedError(`Grant type "${(parameters as OidcGetTokenParameters).grantType}" not supported.`);
+    }
+
+    switch (parameters.authType) {
+      case 'body':
+      case undefined:
+        formData['client_id'] = parameters.clientId;
+        formData['client_secret'] = parameters.clientSecret;
+        break;
+
+      case 'basic-auth':
+        authorization = {
+          basic: {
+            username: parameters.clientId,
+            password: parameters.clientSecret
+          }
+        };
+        break;
+
+      default:
+        throw new NotImplementedError(`Auth type "${(parameters as OidcGetTokenParameters).authType}" not supported.`);
+    }
+
+    const tokenResponse = await HttpClient.instance.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers, authorization, body: { form: formData } });
     return parseTokenResponse(tokenResponse);
   }
 
