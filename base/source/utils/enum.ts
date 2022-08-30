@@ -19,9 +19,9 @@ function _enumValues<T extends EnumerationObject>(enumeration: T): EnumValue<T>[
   return _enumEntries(enumeration).map((entry) => entry[1]);
 }
 
-const memoizedEnumEntries = memoizeSingle(_enumEntries);
-const memoizedEnumKeys = memoizeSingle(_enumKeys);
-const memoizedEnumValues = memoizeSingle(_enumValues);
+const memoizedEnumEntries = memoizeSingle(_enumEntries, { weak: true });
+const memoizedEnumKeys = memoizeSingle(_enumKeys, { weak: true });
+const memoizedEnumValues = memoizeSingle(_enumValues, { weak: true });
 
 export function enumEntries<T extends EnumerationObject>(enumeration: T): EnumEntry<T>[] {
   return memoizedEnumEntries(enumeration);

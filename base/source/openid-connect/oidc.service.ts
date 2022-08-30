@@ -175,8 +175,12 @@ export class OidcService<Data = any> {
 
   async getUserInfo(endpoint: string, token: OidcToken): Promise<unknown> {
     const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(endpoint);
-    const userInfoResponse = await HttpClient.instance.getJson(oidcConfiguration.userinfoEndpoint, { headers: { authorization: `${token.tokenType} ${token.accessToken}` } });
 
+    if (isUndefined(oidcConfiguration.userInfoEndpoint)) {
+      throw new Error('User info endpoint not supported.');
+    }
+
+    const userInfoResponse = await HttpClient.instance.getJson(oidcConfiguration.userInfoEndpoint, { headers: { authorization: `${token.tokenType} ${token.accessToken}` } });
     return userInfoResponse;
   }
 }

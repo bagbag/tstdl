@@ -6,7 +6,8 @@ export type OidcConfiguration = {
   authorizationEndpoint: string,
   tokenEndpoint: string,
   revocationEndpoint?: string,
-  userinfoEndpoint: string
+  userInfoEndpoint?: string,
+  endSessionEndpoint?: string
 };
 
 const oidcConfigurationSchema = object({
@@ -14,7 +15,8 @@ const oidcConfigurationSchema = object({
   authorization_endpoint: string(),
   token_endpoint: string(),
   revocation_endpoint: optional(string()),
-  userinfo_endpoint: string()
+  userinfo_endpoint: optional(string()),
+  end_session_endpoint: optional(string())
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
@@ -30,13 +32,14 @@ export class OidcConfigurationService {
     const wellKnownUrl = `${endpoint}/.well-known/openid-configuration`;
 
     const configurationResponse = await this.httpClient.getJson(wellKnownUrl);
-    const { authorization_endpoint, token_endpoint, revocation_endpoint, userinfo_endpoint } = Schema.parse(oidcConfigurationSchema, configurationResponse, { mask: true }); // eslint-disable-line @typescript-eslint/naming-convention
+    const { authorization_endpoint, token_endpoint, revocation_endpoint, userinfo_endpoint, end_session_endpoint } = Schema.parse(oidcConfigurationSchema, configurationResponse, { mask: true }); // eslint-disable-line @typescript-eslint/naming-convention
 
     const oidcConfiguration: OidcConfiguration = {
       authorizationEndpoint: authorization_endpoint,
       tokenEndpoint: token_endpoint,
       revocationEndpoint: revocation_endpoint,
-      userinfoEndpoint: userinfo_endpoint
+      userInfoEndpoint: userinfo_endpoint,
+      endSessionEndpoint: end_session_endpoint
     };
 
     return oidcConfiguration;

@@ -11,7 +11,7 @@ export type MemoizeOptions = {
  * @param fn function memoize
  * @returns memoized function
  */export function memoize<Fn extends (...parameters: any[]) => any>(fn: Fn, options: MemoizeOptions = {}): Fn {
-  const cache = new MultiKeyMap<any, any>((options.weak ?? IterableWeakMap.supported) ? () => new IterableWeakMap() : undefined);
+  const cache = new MultiKeyMap<any, any>((options.weak ?? false) ? () => new IterableWeakMap() : undefined);
   const name = getMemoizedName(fn);
 
   return {
@@ -34,7 +34,7 @@ export type MemoizeOptions = {
  * @returns memoized function
  */
 export function memoizeSingle<Fn extends (parameter: any) => any>(fn: Fn, options: MemoizeOptions = {}): Fn {
-  const cache = (options.weak ?? IterableWeakMap.supported) ? new IterableWeakMap() : new Map<any, any>();
+  const cache = (options.weak ?? false) ? new IterableWeakMap() : new Map<any, any>();
   const name = getMemoizedName(fn);
 
   return {

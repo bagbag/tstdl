@@ -10,12 +10,12 @@ import { assign } from '../schemas/assign';
 import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
 import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema, valueTypesOrSchemasToSchemas } from '../types';
 
-export const normalizeSchema = memoizeSingle(_normalizeSchema);
-export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema);
-export const normalizeValueSchema = memoizeSingle(_normalizeValueSchema);
-export const normalizeTypeSchema = memoizeSingle(_normalizeTypeSchema);
-export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema);
-export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection);
+export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
+export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
+export const normalizeValueSchema = memoizeSingle(_normalizeValueSchema, { weak: true });
+export const normalizeTypeSchema = memoizeSingle(_normalizeTypeSchema, { weak: true });
+export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: true });
+export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection, { weak: true });
 
 function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
   if (isObjectSchema(schema)) {

@@ -45,7 +45,7 @@ export function handlebarsTemplate<T extends HandlebarsTemplate = HandlebarsTemp
   return template;
 }
 
-function _compileHandlebarsTemplate({ template, options = {} }: HandlebarsTemplate): (context?: any) => string {
+function _compileHandlebarsTemplate({ template, options = {} }: HandlebarsTemplate): (context?: any, options?: handlebars.RuntimeOptions) => string {
   const renderer = handlebars.compile(template, {
     strict: options.strict ?? true,
     preventIndent: options.preventIndent,
@@ -55,7 +55,7 @@ function _compileHandlebarsTemplate({ template, options = {} }: HandlebarsTempla
 
   const normalizedPartials = isDefined(options.partials) ? mapObjectValues(options.partials, normalizePartial) : undefined;
 
-  return (context?: any) => renderer(context, { helpers: options.helpers, partials: normalizedPartials });
+  return (context?: any, runtimeOptions?: handlebars.RuntimeOptions) => renderer(context, { helpers: options.helpers, partials: normalizedPartials, ...runtimeOptions });
 }
 
 function normalizePartial(partial: HandlebarsTemplatePartial): handlebars.TemplateDelegate {
