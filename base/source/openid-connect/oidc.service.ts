@@ -1,4 +1,4 @@
-import { singleton } from '#/container';
+import { inject, optional as injectOptional, singleton } from '#/container';
 import { ForbiddenError, NotImplementedError } from '#/error';
 import type { HttpRequestAuthorization } from '#/http/client';
 import { HttpClient } from '#/http/client';
@@ -11,7 +11,7 @@ import { currentTimestamp } from '#/utils/date-time';
 import type { JwtToken, JwtTokenHeader } from '#/utils/jwt';
 import { parseJwtTokenString } from '#/utils/jwt';
 import { getRandomString } from '#/utils/random';
-import { assertNumberPass, isUndefined } from '#/utils/type-guards';
+import { assertDefinedPass, assertNumberPass, isUndefined } from '#/utils/type-guards';
 import { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
 import { OidcStateRepository } from './oidc-state.repository';
@@ -35,11 +35,15 @@ const tokenResponseSchema = object({
 @singleton()
 export class OidcService<Data = any> {
   private readonly oidcConfigurationService: OidcConfigurationService;
-  private readonly oidcStateRepository: OidcStateRepository;
+  private readonly maybeOidcStateRepository: OidcStateRepository | undefined;
 
-  constructor(oidcConfigurationService: OidcConfigurationService, oidcStateRepository: OidcStateRepository) {
+  private get oidcStateRepository(): OidcStateRepository {
+    return assertDefinedPass(this.maybeOidcStateRepository, 'OidcStateRepository is not provided but required.');
+  }
+
+  constructor(oidcConfigurationService: OidcConfigurationService, @inject(OidcStateRepository) @injectOptional() oidcStateRepository: OidcStateRepository | undefined) {
     this.oidcConfigurationService = oidcConfigurationService;
-    this.oidcStateRepository = oidcStateRepository;
+    this.maybeOidcStateRepository = oidcStateRepository;
   }
 
   async initAuthorization({ endpoint, clientId, clientSecret, scope, expiration, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
