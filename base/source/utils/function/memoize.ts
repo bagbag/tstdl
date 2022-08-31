@@ -1,9 +1,11 @@
 import { IterableWeakMap } from '#/data-structures';
 import { MultiKeyMap } from '#/data-structures/multi-key-map';
+import { isDefined } from '../type-guards';
 
 export type MemoizeOptions = {
   /** Use WeakMap instead of Map for caching. Can be used with object parameters only */
-  weak?: boolean
+  weak?: boolean,
+  thisArg?: any
 };
 
 /**
@@ -13,6 +15,7 @@ export type MemoizeOptions = {
  */export function memoize<Fn extends (...parameters: any[]) => any>(fn: Fn, options: MemoizeOptions = {}): Fn {
   const cache = new MultiKeyMap<any, any>((options.weak ?? false) ? () => new IterableWeakMap() : undefined);
   const name = getMemoizedName(fn);
+  const boundFn = isDefined(options.thisArg) ? fn.bind(options.thisArg) : fn;
 
   return {
     [name](...parameters: Parameters<Fn>): any {
@@ -20,7 +23,7 @@ export type MemoizeOptions = {
         return cache.get(parameters)!;
       }
 
-      const result = fn(...parameters);
+      const result = boundFn(...parameters);
       cache.set(parameters, result);
 
       return result;
@@ -36,6 +39,7 @@ export type MemoizeOptions = {
 export function memoizeSingle<Fn extends (parameter: any) => any>(fn: Fn, options: MemoizeOptions = {}): Fn {
   const cache = (options.weak ?? false) ? new IterableWeakMap() : new Map<any, any>();
   const name = getMemoizedName(fn);
+  const boundFn = isDefined(options.thisArg) ? fn.bind(options.thisArg) : fn;
 
   return {
     [name](parameter: any): any {
@@ -43,7 +47,7 @@ export function memoizeSingle<Fn extends (parameter: any) => any>(fn: Fn, option
         return cache.get(parameter)!;
       }
 
-      const result = fn(parameter);
+      const result = boundFn(parameter);
       cache.set(parameter, result);
 
       return result;

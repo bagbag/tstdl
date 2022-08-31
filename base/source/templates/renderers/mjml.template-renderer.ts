@@ -3,18 +3,19 @@ import { forwardRef, singleton } from '#/container';
 import * as mjml2html from 'mjml';
 import type { MJMLParsingOptions } from 'mjml-core';
 import { TemplateRendererProvider } from '../template-renderer.provider';
-import type { Template } from '../template.model';
-import type { TemplateRenderResult } from '../template.renderer';
+import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer';
 import { TemplateRenderer } from '../template.renderer';
 
-export type MjmlTemplateOptions = Pick<MJMLParsingOptions, 'fonts' | 'keepComments' | 'validationLevel'> & {
+export type MjmlRendererOptions = Pick<MJMLParsingOptions, 'fonts' | 'keepComments' | 'validationLevel'> & {
   preprocessorOptions?: any
 };
 
-export type MjmlTemplate = Template<'mjml' | `mjml-${string}`, MjmlTemplateOptions>;
+export type MjmlRendererString = 'mjml' | `mjml-${string}`;
+
+export type MjmlTemplateRenderObject = TemplateRenderObject<MjmlRendererString, MjmlRendererOptions>;
 
 @singleton()
-export class MjmlTemplateRenderer extends TemplateRenderer<MjmlTemplate> {
+export class MjmlTemplateRenderer extends TemplateRenderer<MjmlRendererString, MjmlRendererOptions> {
   private readonly rendererProvider: TemplateRendererProvider;
 
   constructor(@forwardRef(() => TemplateRendererProvider) rendererProvider: TemplateRendererProvider) {
@@ -36,22 +37,21 @@ export class MjmlTemplateRenderer extends TemplateRenderer<MjmlTemplate> {
     return this.rendererProvider.has(parent);
   }
 
-  async render(template: MjmlTemplate, context?: object): Promise<TemplateRenderResult> {
-    if (template.type.length > 4) {
-      const parent = template.type.slice(5);
-      const renderer = this.rendererProvider.get(parent);
+  async _render({ renderer, template, options }: MjmlTemplateRenderObject, context?: object): Promise<TemplateRenderResult> {
+    if (renderer.length > 4) {
+      const parent = renderer.slice(5);
+      const parentRenderer = this.rendererProvider.get(parent);
 
-      const result = await renderer.render({ ...template, type: parent, options: template.options?.preprocessorOptions }, context);
+      const result = await parentRenderer.render({ template, renderer: parent, options: options?.preprocessorOptions }, context);
 
-      const preprocessedTemplate: MjmlTemplate = {
-        ...template,
-        type: 'mjml',
+      const preprocessedTemplate: MjmlTemplateRenderObject = {
+        renderer: 'mjml',
         template: result
       };
 
-      return this.render(preprocessedTemplate);
+      return this._render(preprocessedTemplate);
     }
 
-    return mjml2html(template.template).html;
+    return mjml2html(template).html;
   }
 }

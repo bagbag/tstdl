@@ -1,5 +1,5 @@
 import type { OneOrMany } from '#/types';
-import type { Schema } from '../schema';
+import type { SchemaTestable } from '../schema';
 import type { ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, ValueSchema } from '../types';
 
 export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allowUnknownProperties'>> & {
@@ -8,7 +8,7 @@ export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allo
 
 
 export type SchemaPropertyReflectionData = {
-  type?: OneOrMany<Schema>,
+  schema?: OneOrMany<SchemaTestable>,
   array?: boolean,
   optional?: boolean,
   nullable?: boolean,
@@ -19,4 +19,4 @@ export type SchemaPropertyReflectionData = {
   valueConstraints?: readonly SchemaValueConstraint[]
 };
 
-export type PropertyOptions = Partial<ValueSchema>;
+export type PropertyOptions = Partial<ValueSchema<any>>;

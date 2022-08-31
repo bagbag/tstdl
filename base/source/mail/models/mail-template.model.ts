@@ -1,14 +1,9 @@
-export type MailTemplate<Type extends string = string, Options = any> = {
-  type: Type,
+import type { Template, TemplateField } from '#/templates';
 
-  /** subject template */
-  subject?: string,
+export type MailTemplate = Template<{ subject: false, html: false, text: false }, undefined>;
 
-  /** html template */
-  html?: string,
-
-  /** text template */
-  text?: string,
-
-  options?: Options
-};
+export function mailTemplate(fields: { subject?: TemplateField, html?: TemplateField, text?: TemplateField }): MailTemplate {
+  return {
+    fields
+  };
+}

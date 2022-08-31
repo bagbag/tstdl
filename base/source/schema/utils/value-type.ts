@@ -1,9 +1,9 @@
 import type { AbstractConstructor } from '#/types';
 import { toArray } from '#/utils/array/array';
-import { isNull, isString, isUndefined } from '#/utils/type-guards';
-import type { Schema } from '../schema';
+import { isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
+import type { SchemaTestable } from '../schema';
 import type { ResolvedValueType, ValueType } from '../types';
-import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
+import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
 
 export function getValueType(value: unknown): ResolvedValueType<any> {
   if (isUndefined(value)) {
@@ -25,10 +25,19 @@ export function getValueTypeName(valueType: ValueType): string {
     : resolvedValueType.name;
 }
 
-export function getSchemaTypeNames(schema: Schema): string[] {
+export function getSchemaTypeNames(schema: SchemaTestable): string[] {
   if (isTypeSchema(schema)) {
     const name = getValueTypeName(schema.type);
     return [name];
+  }
+
+  if (isFunction(schema)) {
+    const name = getValueTypeName(schema);
+    return [name];
+  }
+
+  if (isString(schema)) {
+    return [schema];
   }
 
   if (isObjectSchema(schema)) {
@@ -38,6 +47,10 @@ export function getSchemaTypeNames(schema: Schema): string[] {
 
   if (isValueSchema(schema)) {
     return [...new Set(toArray(schema.schema).flatMap(getSchemaTypeNames))];
+  }
+
+  if (isDeferredValueType(schema)) {
+    return getSchemaTypeNames(resolveValueType(schema));
   }
 
   throw new Error('Unsupported schema');

@@ -4,7 +4,7 @@ import type { JsonPath } from '#/json-path/json-path';
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
 import { filterObject } from '#/utils/object/object';
 import { isArray, isDefined, isFunction, isObject } from '#/utils/type-guards';
-import type { NormalizedSchema, Schema } from './schema';
+import type { NormalizedSchema, Schema, SchemaTestable } from './schema';
 import type { SchemaError } from './schema.error';
 
 declare const schemaOutputTypeSymbol: unique symbol;
@@ -29,7 +29,7 @@ export type ObjectSchema<T = any, O = T> = {
   factory?: SchemaFactory<T, O>,
   properties: ObjectSchemaProperties<T>,
   mask?: boolean,
-  allowUnknownProperties?: OneOrMany<Schema>
+  allowUnknownProperties?: OneOrMany<SchemaTestable>
 };
 
 export type TypeSchema<T = any> = { type: ValueType<T> };
@@ -38,7 +38,7 @@ export type NormalizedTypeSchema<T = any> = { foo: ResolvedValueType<T> };
 
 export type ValueSchema<T = unknown, O = T> = {
   [schemaOutputTypeSymbol]?: O,
-  schema: OneOrMany<Schema<T, O>>,
+  schema: OneOrMany<SchemaTestable<T, O>>,
   array?: boolean,
   optional?: boolean,
   nullable?: boolean,
@@ -225,7 +225,9 @@ export function isTypeSchema(schema: any): schema is TypeSchema {
     );
 }
 
-export function isDeferredValueType<T>(value: ValueType<T>): value is DeferredValueType<T> {
+export function isDeferredValueType<T>(value: ValueType<T>): value is DeferredValueType<T>;
+export function isDeferredValueType(value: any): value is DeferredValueType;
+export function isDeferredValueType(value: any): value is DeferredValueType {
   return isObject(value) && isFunction((value as DeferredValueType).deferred);
 }
 

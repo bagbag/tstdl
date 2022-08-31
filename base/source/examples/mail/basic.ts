@@ -1,9 +1,11 @@
 import { container } from '#/container';
 import { configureMail, MailService } from '#/mail';
 import { NodemailerMailClient } from '#/mail/clients/nodemailer.mail-client';
-import { configureFileMailTemplateProvider, FileMailTemplateProvider } from '#/mail/template-providers/file-mail-template.provider';
-import { HandlebarsMailTemplateRenderer } from '#/mail/template-renderers/handlebars.mail-template-renderer';
-import { MjmlMailTemplateRenderer } from '#/mail/template-renderers/mjml.mail-template-renderer';
+import { configureTemplates } from '#/templates';
+import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.provider-template';
+import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
+import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
+import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
 import { integer, string } from '#/utils/config-parser';
 import { resolve } from 'path';
 import { configureTstdl } from '../../core';
@@ -19,12 +21,16 @@ configureMail({
       password: string('PASS', 'password')
     }
   },
-  client: NodemailerMailClient,
-  templateProvider: FileMailTemplateProvider,
-  templateRenderers: [MjmlMailTemplateRenderer, HandlebarsMailTemplateRenderer]
+  client: NodemailerMailClient
 });
 
-configureFileMailTemplateProvider({ basePath: resolve(__dirname.replace('/dist', '/source'), 'templates') });
+configureTemplates({
+  templateProvider: FileTemplateProvider,
+  templateRenderers: [MjmlTemplateRenderer, HandlebarsTemplateRenderer]
+});
+
+configureFileTemplateProvider({ basePath: resolve(__dirname, 'templates') });
+configureFileTemplateResolver({ basePath: resolve(__dirname.replace('/dist', '/source'), 'templates') });
 
 async function test(): Promise<void> {
   const service = await container.resolveAsync(MailService);

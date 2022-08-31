@@ -1,23 +1,23 @@
 import { singleton } from '#/container';
-import type { TypedOmit } from '#/types';
 import { isUndefined } from '#/utils/type-guards';
 import type { Template } from '../template.model';
-
-export type MemoryTemplateBase = TypedOmit<Template, 'template'>;
+import { TemplateProvider } from '../template.provider';
 
 @singleton()
-export class MemoryTemplateProviderBase<T extends MemoryTemplateBase> {
-  private readonly map: Map<string, T>;
+export class MemoryTemplateProvider extends TemplateProvider {
+  private readonly map: Map<string, Template>;
 
   constructor() {
+    super();
+
     this.map = new Map();
   }
 
-  add(key: string, template: T): void {
+  add(key: string, template: Template): void {
     this.map.set(key, template);
   }
 
-  async get(key: string): Promise<T> {
+  async get(key: string): Promise<Template> {
     const template = this.map.get(key);
 
     if (isUndefined(template)) {

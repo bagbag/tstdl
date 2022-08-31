@@ -1,9 +1,29 @@
-export type Template<Type extends string = string, Options = any> = {
-  type: Type,
-  template: string,
-  options?: Options
-};
+import { Any, any, object, Optional, Property, Type } from '#/schema';
+import type { PickBy, Record, SimplifyObject } from '#/types';
 
-export function template<T extends Template = Template>(template: T): T {
-  return template;
+@Type({ allowUnknownProperties: any() })
+export class TemplateField<Resolver extends string = string, Renderer extends string = string, Options = any> {
+  @Property()
+  resolver: Resolver;
+
+  @Property()
+  renderer: Renderer;
+
+  @Any()
+  @Optional()
+  options?: Options;
+}
+
+export type TemplateFields<Fields extends Record<string, boolean>, Resolver extends string = string, Renderer extends string = string, Options = any> = SimplifyObject<
+  & { [P in keyof PickBy<Fields, true>]: TemplateField<Resolver, Renderer, Options>; }
+  & { [P in keyof PickBy<Fields, false>]?: TemplateField<Resolver, Renderer, Options>; }
+>;
+
+export abstract class Template<Fields extends Record<string, boolean> = Record<string, boolean>, TemplateOptions = any> {
+  @Property({ schema: object({}, { allowUnknownProperties: TemplateField }) })
+  fields: TemplateFields<Fields>;
+
+  @Any()
+  @Optional()
+  options?: TemplateOptions;
 }

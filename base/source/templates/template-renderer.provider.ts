@@ -1,28 +1,12 @@
-import { singleton } from '#/container';
+import { inject, singleton } from '#/container';
 import type { TemplateRenderer } from './template.renderer';
 import { TEMPLATE_RENDERERS } from './tokens';
 
-@singleton({
-  provider: {
-    useFactory: (_, context) => {
-      if (context.isAsync) {
-        return (async () => {
-          const types = await context.resolveAsync(TEMPLATE_RENDERERS);
-          const renderers = await Promise.all(types.map(async (type) => context.resolveAsync(type)));
-          return new TemplateRendererProvider(renderers);
-        })();
-      }
-
-      const types = context.resolve(TEMPLATE_RENDERERS);
-      const renderers = types.map((type) => context.resolve(type));
-      return new TemplateRendererProvider(renderers);
-    }
-  }
-})
+@singleton()
 export class TemplateRendererProvider {
   private readonly renderers: Set<TemplateRenderer>;
 
-  constructor(renderers: TemplateRenderer[]) {
+  constructor(@inject(TEMPLATE_RENDERERS) renderers: TemplateRenderer[]) {
     this.renderers = new Set(renderers);
   }
 

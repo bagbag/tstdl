@@ -46,7 +46,7 @@ function _normalizeObjectSchema<T, O>(schema: ObjectSchema<T, O>): NormalizedObj
 
 function _normalizeValueSchema<T, O>(schema: ValueSchema<T, O>): NormalizedValueSchema<T, O> {
   const normalizedValueSchema: NormalizedValueSchema<T, O> = {
-    schema: new Set(toArray(schema.schema)),
+    schema: new Set(toArray(schema.schema).map(valueTypeOrSchemaToSchema)),
     array: schema.array ?? false,
     optional: schema.optional ?? false,
     nullable: schema.nullable ?? false,
@@ -102,8 +102,8 @@ function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Object
   const properties: ObjectSchemaProperties<T> = {} as ObjectSchemaProperties<T>;
 
   for (const [key, propertyMetadata] of metadata.properties) {
-    const reflectionData = propertyMetadata.data.tryGet<Partial<SchemaPropertyReflectionData>>('schema');
-    const itemType = (isDefined(reflectionData) && isDefined(reflectionData.type)) ? reflectionData.type : undefined;
+    const reflectionData = propertyMetadata.data.tryGet<SchemaPropertyReflectionData>('schema');
+    const itemType = reflectionData?.schema;
     const array = (reflectionData?.array == true) ? true : undefined;
 
     if (array && (isUndefined(itemType) || (isArray(itemType) && (itemType.length == 0)))) {

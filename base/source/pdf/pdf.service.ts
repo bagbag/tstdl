@@ -4,26 +4,85 @@ import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
 import { Pool } from '#/pool';
-import { TemplateService } from '#/templates';
+import { Enumeration, Optional } from '#/schema';
+import type { TemplateField } from '#/templates';
+import { Template, TemplateService } from '#/templates';
 import { isObject, isUndefined } from '#/utils/type-guards';
 import * as puppeteer from 'puppeteer';
 
-export type PdfRenderOptions = {
-  omitDefaultBackground?: boolean,
-  renderBackground?: boolean,
-  landscape?: boolean,
-  format?: 'letter' | 'legal' | 'tabloid' | 'ledger' | 'a0' | 'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6',
-  width?: string | number,
-  height?: string | number,
-  scale?: number,
-  margin?: string | number | {
-    top?: number | string,
-    bottom?: number | string,
-    right?: number | string,
-    left?: number | string
-  },
-  waitForNetworkIdle?: boolean
-};
+export enum PdfFormat {
+  Letter = 'letter',
+  Legal = 'legal',
+  Tabloid = 'tabloid',
+  Ledger = 'ledger',
+  A0 = 'a0',
+  A1 = 'a1',
+  A2 = 'a2',
+  A3 = 'a3',
+  A4 = 'a4',
+  A5 = 'a5',
+  A6 = 'a6'
+}
+
+export class PdfMarginObject {
+  @Optional([Number, String])
+  top?: number | string;
+
+  @Optional([Number, String])
+  bottom?: number | string;
+
+  @Optional([Number, String])
+  right?: number | string;
+
+  @Optional([Number, String])
+  left?: number | string;
+}
+
+export class PdfRenderOptions {
+  @Optional()
+  omitDefaultBackground?: boolean;
+
+  @Optional()
+  renderBackground?: boolean;
+
+  @Optional()
+  landscape?: boolean;
+
+  @Optional()
+  @Enumeration(PdfFormat)
+  format?: PdfFormat;
+
+  @Optional([String, Number])
+  width?: string | number;
+
+  @Optional([String, Number])
+  height?: string | number;
+
+  @Optional()
+  scale?: number;
+
+  @Optional([String, Number, PdfMarginObject])
+  margin?: string | number | PdfMarginObject;
+
+  @Optional()
+  displayHeaderFooter?: boolean;
+
+  @Optional()
+  waitForNetworkIdle?: boolean;
+
+  @Optional()
+  headerTemplate?: string;
+
+  @Optional()
+  footerTemplate?: string;
+}
+
+export type PdfTemplateOptions = PdfRenderOptions;
+
+export class PdfTemplate extends Template<{ header: false, body: true, footer: false }, PdfRenderOptions> {
+  @Optional()
+  override options?: PdfTemplateOptions;
+}
 
 @singleton()
 export class PdfService implements AsyncDisposable, AfterResolve {
@@ -59,9 +118,16 @@ export class PdfService implements AsyncDisposable, AfterResolve {
     return this.render(async (page) => page.goto(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
   }
 
+  /**
+   * renders a pdf template
+   * @param key template key
+   * @param templateContext context for template rendering
+   * @param options additional options, overwrites options specified in template
+   * @returns PDF bytes
+   */
   async renderTemplate(key: string, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
-    const html = await this.templateService.render(key, templateContext);
-    return this.renderHtml(html, options);
+    const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(key, templateContext);
+    return this.renderHtml(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options });
   }
 
   private async render(handler: (page: puppeteer.Page) => unknown, options?: PdfRenderOptions): Promise<Uint8Array> {
@@ -90,7 +156,10 @@ export class PdfService implements AsyncDisposable, AfterResolve {
           height: options?.height,
           omitBackground: options?.omitDefaultBackground,
           printBackground: options?.renderBackground,
-          margin
+          margin,
+          displayHeaderFooter: options?.displayHeaderFooter,
+          headerTemplate: '',
+          footerTemplate: ''
         });
 
         return result;
@@ -100,4 +169,11 @@ export class PdfService implements AsyncDisposable, AfterResolve {
       }
     });
   }
+}
+
+export function pdfTemplate(fields: { body: TemplateField, header?: TemplateField, footer?: TemplateField }, options?: PdfTemplateOptions): PdfTemplate {
+  return {
+    fields,
+    options
+  };
 }
