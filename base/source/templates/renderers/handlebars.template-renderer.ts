@@ -1,5 +1,5 @@
 import { singleton } from '#/container';
-import type { Record } from '#/types';
+import type { ObjectLiteral, Record } from '#/types';
 import { memoizeSingle } from '#/utils/function/memoize';
 import { mapObjectValues, mapObjectValuesAsync } from '#/utils/object/object';
 import { isDefined, isFunction, isString } from '#/utils/type-guards';
@@ -9,7 +9,25 @@ import type { TemplateField } from '../template.model';
 import type { TemplateRenderObject } from '../template.renderer';
 import { TemplateRenderer } from '../template.renderer';
 
-export type HandlebarsTemplateHelper = handlebars.HelperDelegate;
+export type HandlebarsTemplateHelperOptionsLocationItem = { line: number, column: number };
+
+export type HandlebarsTemplateHelperOptionsLocation = {
+  start: HandlebarsTemplateHelperOptionsLocationItem,
+  end: HandlebarsTemplateHelperOptionsLocationItem
+};
+
+export type HandlebarsTemplateHelperOptions = {
+  name: string,
+  location?: HandlebarsTemplateHelperOptionsLocation,
+  data?: Record<string>,
+  hash: Record<string>,
+  hasFn: false,
+  lookupProperty: (object: ObjectLiteral, propertyName: string) => unknown,
+  fn?: handlebars.TemplateDelegate,
+  inverse?: handlebars.TemplateDelegate
+};
+
+export type HandlebarsTemplateHelper = (context: unknown, args: unknown[], options: HandlebarsTemplateHelperOptions) => any;
 export type HandlebarsTemplateHelpersObject = Record<string, HandlebarsTemplateHelper>;
 
 export type HandlebarsTemplatePartial = string | TemplateField<string, 'handlebars', HandlebarsRendererOptions> | handlebars.TemplateDelegate;
@@ -23,6 +41,8 @@ export type HandlebarsRendererOptions = {
 };
 
 export type HandlebarsTemplateRenderObject = TemplateRenderObject<'handlebars', HandlebarsRendererOptions>;
+
+const wrapHandlebarsTemplateHelper = memoizeSingle(_wrapHandlebarsTemplateHelper, { weak: true });
 
 @singleton()
 export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', HandlebarsRendererOptions> {
@@ -53,9 +73,10 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
       knownHelpersOnly: true
     });
 
+    const wrappedHelpers = isDefined(options.helpers) ? mapObjectValues(options.helpers, wrapHandlebarsTemplateHelper) : undefined;
     const normalizedPartials = isDefined(options.partials) ? await mapObjectValuesAsync(options.partials, async (partial) => this.normalizePartial(partial)) : undefined;
 
-    return (context?: any, runtimeOptions?: handlebars.RuntimeOptions) => renderer(context, { helpers: options.helpers, partials: normalizedPartials, ...runtimeOptions });
+    return (context?: any, runtimeOptions?: handlebars.RuntimeOptions) => renderer(context, { helpers: wrappedHelpers, partials: normalizedPartials, ...runtimeOptions });
   }
 
   private async normalizePartial(partial: HandlebarsTemplatePartial): Promise<handlebars.TemplateDelegate> {
@@ -72,4 +93,15 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
 
     return this.compileHandlebarsTemplate({ renderer: 'handlebars', template, options: partial.options });
   }
+}
+
+function _wrapHandlebarsTemplateHelper(helper: HandlebarsTemplateHelper): handlebars.HelperDelegate {
+  function wrapper(context: unknown, ...argsAndOptions: any[]): any {
+    const args = argsAndOptions.slice(0, -1);
+    const options = argsAndOptions[argsAndOptions.length - 1] as HandlebarsTemplateHelperOptions;
+
+    helper(context, args, options);
+  }
+
+  return wrapper;
 }

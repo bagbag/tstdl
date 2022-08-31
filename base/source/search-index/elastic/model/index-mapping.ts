@@ -3,7 +3,7 @@
 import type { Entity } from '#/database';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
 import { mergeObjects } from '#/utils/object/merge';
-import type { MappingBooleanProperty, MappingDateProperty, MappingGeoPointProperty, MappingKeywordProperty, MappingNestedProperty, MappingNumberProperty, MappingObjectProperty, MappingPropertyBase, MappingTextProperty, MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
+import type { MappingBooleanProperty, MappingByteNumberProperty, MappingDateProperty, MappingDoubleNumberProperty, MappingFloatNumberProperty, MappingGeoPointProperty, MappingHalfFloatNumberProperty, MappingIntegerNumberProperty, MappingKeywordProperty, MappingLongNumberProperty, MappingNestedProperty, MappingObjectProperty, MappingPropertyBase, MappingScaledFloatNumberProperty, MappingShortNumberProperty, MappingTextProperty, MappingTypeMapping, MappingUnsignedLongNumberProperty } from '@elastic/elasticsearch/lib/api/types';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 
@@ -17,6 +17,17 @@ type ElasticIndexMappingItemBase = {
   index?: boolean,
   fields?: StringMap<ElasticIndexMappingItem>
 };
+
+export type MappingNumberProperty =
+  | MappingByteNumberProperty
+  | MappingDoubleNumberProperty
+  | MappingFloatNumberProperty
+  | MappingHalfFloatNumberProperty
+  | MappingIntegerNumberProperty
+  | MappingLongNumberProperty
+  | MappingShortNumberProperty
+  | MappingScaledFloatNumberProperty
+  | MappingUnsignedLongNumberProperty;
 
 export type ElasticKeywordIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingKeywordProperty>;
 

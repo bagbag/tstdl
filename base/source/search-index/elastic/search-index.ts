@@ -196,5 +196,5 @@ function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
 
 function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
   const cause = (isDefined(error.caused_by)) ? convertError(error.caused_by) : undefined;
-  return new SearchIndexError(error.type, error.reason, { raw, cause });
+  return new SearchIndexError(error.type, error.reason ?? 'No error message provided.', { raw, cause });
 }
