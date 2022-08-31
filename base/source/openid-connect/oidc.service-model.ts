@@ -22,8 +22,8 @@ export type OidcInitResult = {
 
 export type OidcToken<Raw = unknown> = {
   tokenType: string,
-  expiration: number,
   accessToken: string,
+  idToken?: string,
   refreshToken?: string,
   raw: Raw
 };

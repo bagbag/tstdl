@@ -21,7 +21,6 @@ export type HandlebarsTemplateHelperOptions = {
   location?: HandlebarsTemplateHelperOptionsLocation,
   data?: Record<string>,
   hash: Record<string>,
-  hasFn: false,
   lookupProperty: (object: ObjectLiteral, propertyName: string) => unknown,
   fn?: handlebars.TemplateDelegate,
   inverse?: handlebars.TemplateDelegate

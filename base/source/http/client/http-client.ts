@@ -46,8 +46,6 @@ export type HttpClientArgument = HttpClientOptions;
 
 @singleton()
 export class HttpClient implements Injectable<HttpClientArgument> {
-  private static _instance?: HttpClient;
-
   private readonly adapter: HttpClientAdapter;
   private readonly options: HttpClientOptions;
   private readonly headers: HttpHeaders;
@@ -55,14 +53,6 @@ export class HttpClient implements Injectable<HttpClientArgument> {
   private readonly internalMiddleware: HttpClientMiddleware[];
 
   private callHandler: HttpClientHandler;
-
-  static get instance(): HttpClient {
-    if (isUndefined(this._instance)) {
-      throw new Error('global instance not configured');
-    }
-
-    return this._instance;
-  }
 
   readonly [resolveArgumentType]: HttpClientOptions;
 
@@ -80,10 +70,6 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     ];
 
     this.updateHandlers();
-  }
-
-  static configureGlobalInstance(adapter: HttpClientAdapter, options: HttpClientOptions = {}): void {
-    this._instance = new HttpClient(adapter, options);
   }
 
   addMiddleware(middleware: HttpClientMiddleware): void {

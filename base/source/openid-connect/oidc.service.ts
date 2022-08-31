@@ -8,25 +8,17 @@ import type { Json, Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { digest } from '#/utils/cryptography';
 import { currentTimestamp } from '#/utils/date-time';
-import type { JwtToken, JwtTokenHeader } from '#/utils/jwt';
-import { parseJwtTokenString } from '#/utils/jwt';
 import { getRandomString } from '#/utils/random';
-import { assertDefinedPass, assertNumberPass, isUndefined } from '#/utils/type-guards';
+import { assertDefinedPass, isUndefined } from '#/utils/type-guards';
 import { OidcConfigurationService } from './oidc-configuration.service';
 import type { NewOidcState, OidcState } from './oidc-state.model';
 import { OidcStateRepository } from './oidc-state.repository';
 import type { OidcGetTokenParameters, OidcInitParameters, OidcInitResult, OidcRefreshTokenParameters, OidcToken } from './oidc.service-model';
 
-type OidcJwtTokenPayload = {
-  exp: number
-};
-
-type OidcJwtToken = JwtToken<JwtTokenHeader, OidcJwtTokenPayload>;
-
 const tokenResponseSchema = object({
   /* eslint-disable @typescript-eslint/naming-convention */
   access_token: string(),
-  id_token: string(),
+  id_token: optional(string()),
   token_type: string(),
   refresh_token: optional(string())
   /* eslint-enable @typescript-eslint/naming-convention */
@@ -36,14 +28,16 @@ const tokenResponseSchema = object({
 export class OidcService<Data = any> {
   private readonly oidcConfigurationService: OidcConfigurationService;
   private readonly maybeOidcStateRepository: OidcStateRepository | undefined;
+  private readonly httpClient: HttpClient;
 
   private get oidcStateRepository(): OidcStateRepository {
     return assertDefinedPass(this.maybeOidcStateRepository, 'OidcStateRepository is not provided but required.');
   }
 
-  constructor(oidcConfigurationService: OidcConfigurationService, @inject(OidcStateRepository) @injectOptional() oidcStateRepository: OidcStateRepository | undefined) {
+  constructor(oidcConfigurationService: OidcConfigurationService, @inject(OidcStateRepository) @injectOptional() oidcStateRepository: OidcStateRepository | undefined, httpClient: HttpClient) {
     this.oidcConfigurationService = oidcConfigurationService;
     this.maybeOidcStateRepository = oidcStateRepository;
+    this.httpClient = httpClient;
   }
 
   async initAuthorization({ endpoint, clientId, clientSecret, scope, expiration, data }: OidcInitParameters<Data>): Promise<OidcInitResult> {
@@ -153,7 +147,7 @@ export class OidcService<Data = any> {
         throw new NotImplementedError(`Auth type "${(parameters as OidcGetTokenParameters).authType}" not supported.`);
     }
 
-    const tokenResponse = await HttpClient.instance.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers, authorization, body: { form: formData } });
+    const tokenResponse = await this.httpClient.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers, authorization, body: { form: formData } });
     return parseTokenResponse(tokenResponse);
   }
 
@@ -169,7 +163,7 @@ export class OidcService<Data = any> {
       /* eslint-enable @typescript-eslint/naming-convention */
     };
 
-    const tokenResponse = await HttpClient.instance.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers: { authorization: `Bearer ${refreshToken}` }, body: { form: formData } });
+    const tokenResponse = await this.httpClient.postJson<Json>(oidcConfiguration.tokenEndpoint, { headers: { authorization: `Bearer ${refreshToken}` }, body: { form: formData } });
     return parseTokenResponse(tokenResponse);
   }
 
@@ -180,7 +174,7 @@ export class OidcService<Data = any> {
       throw new Error('User info endpoint not supported.');
     }
 
-    const userInfoResponse = await HttpClient.instance.getJson(oidcConfiguration.userInfoEndpoint, { headers: { authorization: `${token.tokenType} ${token.accessToken}` } });
+    const userInfoResponse = await this.httpClient.getJson(oidcConfiguration.userInfoEndpoint, { headers: { authorization: `${token.tokenType} ${token.accessToken}` } });
     return userInfoResponse;
   }
 }
@@ -188,12 +182,10 @@ export class OidcService<Data = any> {
 function parseTokenResponse(response: Json): OidcToken {
   const { access_token, id_token, token_type, refresh_token } = Schema.parse(tokenResponseSchema, response, { mask: true }); // eslint-disable-line @typescript-eslint/naming-convention
 
-  const decodedToken = parseJwtTokenString<OidcJwtToken>(id_token);
-
   const token: OidcToken = {
     tokenType: token_type,
-    expiration: assertNumberPass(decodedToken.token.payload.exp) * 1000,
     accessToken: access_token,
+    idToken: id_token,
     refreshToken: refresh_token,
     raw: response
   };
