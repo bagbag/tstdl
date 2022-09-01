@@ -7,8 +7,7 @@ import type { Schema } from '../schema';
 import type { SchemaInput, SchemaOutput, ValueSchema } from '../types';
 import { valueSchema } from '../types';
 
-export function union<T extends Schema[]>(...schemas: [...T]): ValueSchema<SchemaInput<T[number]>, SchemaOutput<T[number]>>;
-export function union(...schemas: Schema[]): ValueSchema {
+export function union<T extends Schema[]>(...schemas: [...T]): ValueSchema<SchemaInput<T[number]>, SchemaOutput<T[number]>> {
   assert(schemas.length >= 2, 'Assign requires at least 2 schemas.');
   return valueSchema(schemas);
 }
