@@ -27,3 +27,11 @@ export abstract class Template<Fields extends Record<string, boolean> = Record<s
   @Optional()
   options?: TemplateOptions;
 }
+
+export function simpleTemplate(template: TemplateField): Template {
+  return {
+    fields: {
+      template
+    }
+  };
+}
