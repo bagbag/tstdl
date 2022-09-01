@@ -17,6 +17,12 @@ export type SchemaFactory<T, O = T> =
 export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<Schema<any, T[K]>> };
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
 
+export type SchemaInput<T extends Schema> =
+  | T extends ObjectSchema<infer U, any> ? U
+  : T extends ValueSchema<infer U, any> ? U
+  : T extends TypeSchema<infer U> ? U
+  : never;
+
 export type SchemaOutput<T extends Schema> =
   | T extends ObjectSchema<any, infer O> ? O
   : T extends ValueSchema<any, infer O> ? O

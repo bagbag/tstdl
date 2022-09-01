@@ -6,7 +6,8 @@ import { integerConstraint } from '../constraints/integer';
 import { MaximumConstraint } from '../constraints/maximum';
 import { MinimumConstraint } from '../constraints/minimum';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import { Coercible, SchemaValueConstraint, typeSchema, ValueSchema, valueSchema } from '../types';
+import type { Coercible, SchemaValueConstraint, ValueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
 
 export type NumberOptions = Coercible & {
   minimum?: number,
