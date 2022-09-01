@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { JsonPath } from '#/json-path/json-path';
-import type { Enumeration as EnumerationType, EnumerationValue, OneOrMany } from '#/types';
+import type { Enumeration, EnumerationValue, OneOrMany } from '#/types';
 import { enumValues } from '#/utils';
 import { distinct } from '#/utils/iterable-helpers';
 import { isArray, isString } from '#/utils/type-guards';
@@ -14,11 +14,11 @@ export class EnumerationConstraint extends SchemaValueConstraint {
   private readonly allowedValuesSet: Set<EnumerationValue>;
   private readonly allowedValuesString: string;
 
-  readonly enumeration: EnumerationType;
+  readonly enumeration: Enumeration;
   readonly suitableTypes: SchemaValueConstraint['suitableTypes'];
   readonly expects: OneOrMany<string>;
 
-  constructor(enumeration: EnumerationType) {
+  constructor(enumeration: Enumeration) {
     super();
 
     this.enumeration = enumeration;

@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
+import type { UnionToIntersection } from 'type-fest';
+
 export type ObjectLiteral = {};
 
 export type PrimitiveTypeMap = {
@@ -37,10 +39,17 @@ export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
+export type ArrayItem<T extends readonly any[]> = T extends readonly (infer U)[] ? U : never;
+
 export type Enumeration = EnumerationArray | EnumerationObject;
 export type EnumerationArray = readonly [string | number, ...(string | number)[]];
 export type EnumerationObject = Record<string, string | number>;
-export type EnumerationValue<T extends Enumeration = Enumeration> = T extends EnumerationArray ? T[number] : T[Extract<keyof T, string>];
+export type EnumerationKey<T extends EnumerationObject = EnumerationObject> = Extract<keyof T, string>;
+export type EnumerationMap<T extends EnumerationObject = EnumerationObject> = SimplifyObject<{ [P in EnumerationKey<T>]: (T[P] extends number ? (`${T[P]}` extends `${infer U extends number}` ? U : never) : `${T[P]}`) | T[P] }>;
+export type EnumerationValue<T extends Enumeration = Enumeration> = T extends EnumerationObject ? Simplify<EnumerationMap<T>[keyof EnumerationMap<T>]> : T extends EnumerationArray ? T[number] : never;
+export type EnumerationEntry<T extends EnumerationObject = EnumerationObject> = { [P in EnumerationKey<T>]: [P, EnumerationMap<T>[P]] }[EnumerationKey<T>];
+type EnumerationEntriesHelper<T extends EnumerationObject = EnumerationObject, Tuple = UnionToTuple<EnumerationKey<T>>> = { [P in keyof Tuple]: [Tuple[P], Tuple[P] extends EnumerationKey<T> ? EnumerationMap<T>[Tuple[P]] : never] };
+export type EnumerationEntries<T extends EnumerationObject = EnumerationObject> = EnumerationEntriesHelper<T> extends (infer U)[] ? U[] : never;
 
 export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
 export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;
@@ -83,12 +92,15 @@ export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
 export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
   : T extends (infer AT)[] ? Simplify<AT>[]
   : T extends readonly (infer AT)[] ? readonly Simplify<AT>[]
-  : { [K in keyof T]: T[K] } & {};
+  : T extends Record ? SimplifyObject<T>
+  : T;
 
 /**
  * remove type information on object
  */
 export type SimplifyObject<T extends Record> = { [K in keyof T]: T[K] } & {};
+
+export type UnionToTuple<T, Tuple extends any[] = []> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? UnionToTuple<Exclude<T, R>, [R, ...Tuple]> : Tuple;
 
 export type UndefinableObject<T extends Record> = { [K in keyof T]: T[K] | undefined };
 
