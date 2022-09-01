@@ -158,8 +158,8 @@ export class PdfService implements AsyncDisposable, AfterResolve {
           printBackground: options?.renderBackground,
           margin,
           displayHeaderFooter: options?.displayHeaderFooter,
-          headerTemplate: '',
-          footerTemplate: ''
+          headerTemplate: options?.headerTemplate,
+          footerTemplate: options?.footerTemplate
         });
 
         return result;
