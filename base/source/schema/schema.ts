@@ -226,9 +226,9 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   let resultValue: unknown;
 
   function updateCurrentState(newValue: unknown): void {
-    resultValue = newValue;
-    valueType = getValueType(newValue);
     valueTestResult = isValidValue(normalizedValueSchema.schema, newValue, options, path);
+    resultValue = valueTestResult.valid ? valueTestResult.value : newValue;
+    valueType = getValueType(resultValue);
   }
 
   updateCurrentState(value);
