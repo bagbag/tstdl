@@ -96,5 +96,5 @@ function getBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResu
     return undefined;
   }
 
-  return Schema.parse(schema, response.body);
+  return Schema.parse(schema, response.body, { mask: true });
 }
