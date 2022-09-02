@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { assertValidDate, isNumber } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MaximumDateConstraint extends SchemaValueConstraint {
@@ -23,9 +23,9 @@ export class MaximumDateConstraint extends SchemaValueConstraint {
     assertValidDate(this.maximum);
   }
 
-  validate(value: Date, path: JsonPath): ConstraintResult {
+  validate(value: Date, path: JsonPath, context: ConstraintContext): ConstraintResult {
     if (value > this.maximum) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toISOString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toISOString(), path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

@@ -31,6 +31,7 @@ export * from './patterns';
 export * from './periodic-reporter';
 export * from './periodic-sampler';
 export * from './provider-function-iterable';
+export * from './proxy';
 export * from './random';
 export * from './reflection';
 export * from './set';

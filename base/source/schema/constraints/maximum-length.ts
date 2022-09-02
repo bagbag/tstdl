@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { isArrayBuffer } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
 
 export class MaximumLengthConstraint extends SchemaValueConstraint {
@@ -21,11 +21,11 @@ export class MaximumLengthConstraint extends SchemaValueConstraint {
     this.expects = `a maximum length of ${this.maximumLength}`;
   }
 
-  validate(value: string, path: JsonPath): ConstraintResult {
+  validate(value: string, path: JsonPath, context: ConstraintContext): ConstraintResult {
     const length = isArrayBuffer(value) ? value.byteLength : value.length;
 
     if (length > this.maximumLength) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

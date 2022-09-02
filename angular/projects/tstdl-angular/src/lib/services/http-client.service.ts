@@ -4,7 +4,7 @@ import type { HttpClientOptions } from '@tstdl/base/http';
 import { HttpClient as TstdlHttpClient, HTTP_CLIENT_OPTIONS } from '@tstdl/base/http';
 import { AngularHttpClientAdapter } from '../http';
 
-const defaultOptions: HttpClientOptions = { baseUrl: window.location.origin };
+const defaultOptions: HttpClientOptions = { baseUrl: globalThis.location.origin };
 
 @Injectable({
   providedIn: 'root'

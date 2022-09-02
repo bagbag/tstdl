@@ -1,5 +1,5 @@
-import type { CustomErrorOptions } from '#/error';
-import { CustomError } from '#/error';
+import type { CustomErrorOptions } from '#/error/custom.error';
+import { CustomError } from '#/error/custom.error';
 import type { JsonPath } from '#/json-path';
 import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array/array';
@@ -23,7 +23,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   readonly details?: UndefinableJson;
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
-    super({ message, cause: cause ?? options.cause, fast: options.fast ?? true });
+    super({ message, cause: cause ?? options.cause, fast: options.fast });
 
     this.path = isString(options.path) ? options.path : options.path.path;
 
@@ -31,7 +31,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
       const errors = toArray(options.inner);
 
       if (errors.length > 0) {
-        this.inner = errors as SchemaError[];
+        this.inner = errors;
       }
     }
 
@@ -41,7 +41,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotName = isString(got) ? got : getValueTypeName(got);
 
@@ -54,7 +54,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, customMessage?: string | undefined, options?: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, customMessage: string | undefined, options: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotText = isString(got) ? got : getValueTypeName(got);
 

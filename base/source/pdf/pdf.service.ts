@@ -7,7 +7,7 @@ import { Pool } from '#/pool';
 import { Enumeration, Optional } from '#/schema';
 import type { TemplateField } from '#/templates';
 import { Template, TemplateService } from '#/templates';
-import { isObject, isUndefined } from '#/utils/type-guards';
+import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
 import * as puppeteer from 'puppeteer';
 
 export enum PdfFormat {
@@ -130,36 +130,36 @@ export class PdfService implements AsyncDisposable, AfterResolve {
     return this.renderHtml(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options });
   }
 
-  private async render(handler: (page: puppeteer.Page) => unknown, options?: PdfRenderOptions): Promise<Uint8Array> {
+  private async render(handler: (page: puppeteer.Page) => unknown, options: PdfRenderOptions = {}): Promise<Uint8Array> {
     return this.pool.use(async (browser) => {
       const page = await browser.newPage();
 
       try {
         await handler(page);
 
-        const margin = isUndefined(options?.margin)
+        const margin = isUndefined(options.margin)
           ? undefined
-          : isObject(options!.margin)
-            ? options!.margin
+          : isObject(options.margin)
+            ? options.margin
             : {
-              top: options!.margin,
-              bottom: options!.margin,
-              right: options!.margin,
-              left: options!.margin
+              top: options.margin,
+              bottom: options.margin,
+              right: options.margin,
+              left: options.margin
             };
 
         const result = await page.pdf({
-          format: options?.format ?? 'a4',
-          scale: options?.scale,
-          landscape: options?.landscape,
-          width: options?.width,
-          height: options?.height,
-          omitBackground: options?.omitDefaultBackground,
-          printBackground: options?.renderBackground,
+          format: options.format ?? 'a4',
+          scale: options.scale,
+          landscape: options.landscape,
+          width: options.width,
+          height: options.height,
+          omitBackground: options.omitDefaultBackground,
+          printBackground: options.renderBackground,
           margin,
-          displayHeaderFooter: options?.displayHeaderFooter,
-          headerTemplate: options?.headerTemplate,
-          footerTemplate: options?.footerTemplate
+          displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
+          headerTemplate: options.headerTemplate,
+          footerTemplate: options.footerTemplate
         });
 
         return result;

@@ -4,7 +4,7 @@ import type { JsonPath } from '#/json-path/json-path';
 import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class MinimumConstraint extends SchemaValueConstraint {
@@ -20,9 +20,9 @@ export class MinimumConstraint extends SchemaValueConstraint {
     this.expects = `>= ${this.minimum}`;
   }
 
-  validate(value: number, path: JsonPath): ConstraintResult {
+  validate(value: number, path: JsonPath, context: ConstraintContext): ConstraintResult {
     if (value < this.minimum) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

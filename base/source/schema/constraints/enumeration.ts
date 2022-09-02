@@ -6,7 +6,7 @@ import { enumValues } from '#/utils';
 import { distinct } from '#/utils/iterable-helpers';
 import { isArray, isString } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
 import { getValueType } from '../utils';
 
@@ -31,9 +31,9 @@ export class EnumerationConstraint extends SchemaValueConstraint {
     this.expects = `one of [${this.allowedValuesString}]`;
   }
 
-  validate(value: number, path: JsonPath): ConstraintResult {
+  validate(value: number, path: JsonPath, context: ConstraintContext): ConstraintResult {
     if (!this.allowedValuesSet.has(value)) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, value.toString(), path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

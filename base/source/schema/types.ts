@@ -153,16 +153,21 @@ export abstract class SchemaValueCoercer {
 
 export type SchemaTestOptions = {
   /**
-   * try to convert wrong input into desired output.
+   * Try to convert wrong input into desired output.
    * Can be specified on definition and validation. If specified on both, definition has higher priority
    */
   coerce?: boolean,
 
   /**
-   * remove unspecified fields on input data instead of raising an error.
+   * Remove unspecified fields on input data instead of raising an error.
    * Can be specified on definition and validation. If specified on both, definition has higher priority
    */
-  mask?: boolean
+  mask?: boolean,
+
+  /**
+   * Use fast errors which can improve performance a lot but misses detailed stack traces.
+   */
+  fastErrors?: boolean
 };
 
 export type SchemaTestResult<T> =

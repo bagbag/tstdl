@@ -4,7 +4,7 @@ import type { JsonPath } from '#/json-path/json-path';
 import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint, typeSchema } from '../types';
 
 export class PatternConstraint extends SchemaValueConstraint {
@@ -22,9 +22,9 @@ export class PatternConstraint extends SchemaValueConstraint {
     this.expects = `matching ${this.patternName}`;
   }
 
-  validate(value: string, path: JsonPath): ConstraintResult {
+  validate(value: string, path: JsonPath, context: ConstraintContext): ConstraintResult {
     if (!this.pattern.test(value)) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, `"${value}"`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `"${value}"`, path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

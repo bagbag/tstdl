@@ -3,7 +3,7 @@
 import type { JsonPath } from '#/json-path/json-path';
 import { isPrimitive } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
 import { getValueType, getValueTypeName } from '../utils';
 
@@ -22,10 +22,10 @@ export class LiteralConstraint extends SchemaValueConstraint {
     this.expects = `literal ${literalName}`;
   }
 
-  validate(value: any, path: JsonPath): ConstraintResult {
+  validate(value: any, path: JsonPath, context: ConstraintContext): ConstraintResult {
     if (value !== this.literal) {
       const valueType = getValueType(value);
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, getValueTypeName(valueType), path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, getValueTypeName(valueType), path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };

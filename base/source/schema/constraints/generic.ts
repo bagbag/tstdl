@@ -6,7 +6,7 @@ import type { OneOrMany } from '#/types';
 import { isBoolean } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
 
 export type GenericConstraintResult =
@@ -27,13 +27,13 @@ export class GenericConstraint<T> extends SchemaValueConstraint {
     this.expects = expects;
   }
 
-  validate(value: T, path: JsonPath): ConstraintResult {
+  validate(value: T, path: JsonPath, context: ConstraintContext): ConstraintResult {
     const result = this.constraintFunction(value, path);
 
     if (isBoolean(result)) {
       return result
         ? { valid: true }
-        : { valid: false, error: SchemaError.expectedButGot(this.expects, 'invalid value', path) };
+        : { valid: false, error: SchemaError.expectedButGot(this.expects, 'invalid value', path, { fast: context.options.fastErrors }) };
     }
 
     return result;

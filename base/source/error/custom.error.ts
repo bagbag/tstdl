@@ -18,7 +18,7 @@ export type CustomErrorOptions = {
   cause?: Error,
 
   /** skip {@link Error} super call, which improves speed but looses stack trace */
-  fast?: boolean
+  fast?: boolean | undefined
 };
 
 export abstract class CustomError extends Error {
@@ -32,7 +32,13 @@ export abstract class CustomError extends Error {
       return errorObject as CustomError;
     }
 
-    super(options.message, { cause: options.cause });
+    const errorOptions: ErrorOptions = {};
+
+    if (options.cause != undefined) {
+      errorOptions.cause = options.cause;
+    }
+
+    super(options.message, errorOptions);
 
     init(this, new.target as unknown as CustomErrorStatic, options);
   }

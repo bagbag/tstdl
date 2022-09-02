@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path';
 import { SchemaError } from '../schema.error';
-import type { CoerceResult } from '../types';
+import type { CoercerContext, CoerceResult } from '../types';
 import { SchemaValueCoercer } from '../types';
 
 export class RegExpCoercer extends SchemaValueCoercer {
@@ -14,12 +14,12 @@ export class RegExpCoercer extends SchemaValueCoercer {
     this.flags = flags;
   }
 
-  coerce(value: string, path: JsonPath): CoerceResult {
+  coerce(value: string, path: JsonPath, context: CoercerContext): CoerceResult {
     try {
       return { success: true, value: RegExp(value, this.flags) };
     }
     catch (error) {
-      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, 'invalid regexp pattern', path, (error as Error).message) };
+      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, 'invalid regexp pattern', path, (error as Error).message, { fast: context.options.fastErrors }) };
     }
   }
 }

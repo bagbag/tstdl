@@ -5,7 +5,7 @@ import type { Decorator } from '#/reflection';
 import { isArrayBuffer } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintResult } from '../types';
+import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
 
 export class MinimumLengthConstraint extends SchemaValueConstraint {
@@ -21,11 +21,11 @@ export class MinimumLengthConstraint extends SchemaValueConstraint {
     this.expects = `a minimum length of ${this.minimumLength}`;
   }
 
-  validate(value: string | ArrayLike<any> | ArrayBuffer, path: JsonPath): ConstraintResult {
+  validate(value: string | ArrayLike<any> | ArrayBuffer, path: JsonPath, context: ConstraintContext): ConstraintResult {
     const length = isArrayBuffer(value) ? value.byteLength : value.length;
 
     if (length < this.minimumLength) {
-      return { valid: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path) };
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `a length of ${length}`, path, { fast: context.options.fastErrors }) };
     }
 
     return { valid: true };
