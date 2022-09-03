@@ -20,6 +20,7 @@ import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
+import type { CorsMiddlewareOptions } from './middlewares';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
 import { API_MODULE_OPTIONS } from './tokens';
 
@@ -35,14 +36,20 @@ export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext<HttpServerRequest, Ht
 export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
 export type ApiGatewayOptions = {
-  /** default: api/ */
+  /**
+   * Api prefix
+   * @default api/
+   */
   prefix?: string,
 
-  /** initial middlewares */
+  /** Initial middlewares */
   middlewares?: ApiGatewayMiddleware[],
 
-  /** errors to supress in log output */
-  supressedErrors?: Type<Error>[]
+  /** Errors to supress in log output */
+  supressedErrors?: Type<Error>[],
+
+  /** Cors middleware options */
+  cors?: CorsMiddlewareOptions
 };
 
 export type GatewayEndpoint = {
@@ -79,17 +86,19 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly middlewares: ApiGatewayMiddleware[];
   private readonly supressedErrors: Set<Type<Error>>;
   private readonly catchErrorMiddleware: ApiGatewayMiddleware;
+  private readonly options: ApiGatewayOptions;
 
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
   readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options?: ApiGatewayOptions) {
+  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
     this.logger = logger;
+    this.options = options;
 
-    this.prefix = options?.prefix ?? 'api/';
+    this.prefix = options.prefix ?? 'api/';
     this.apis = new Map();
-    this.middlewares = options?.middlewares ?? [];
-    this.supressedErrors = new Set(options?.supressedErrors);
+    this.middlewares = options.middlewares ?? [];
+    this.supressedErrors = new Set(options.supressedErrors);
     this.catchErrorMiddleware = catchErrorMiddleware(this.supressedErrors, logger);
 
     this.updateMiddleware();
@@ -191,7 +200,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   private updateMiddleware(): void {
-    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware, allowedMethodsMiddleware, this.catchErrorMiddleware, ...this.middlewares];
+    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware(this.options.cors), allowedMethodsMiddleware, this.catchErrorMiddleware, ...this.middlewares];
     this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
   }
 
