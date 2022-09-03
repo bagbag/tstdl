@@ -131,7 +131,7 @@ function getPartialHelpersDeep(partial: HandlebarsTemplateRenderObject | Handleb
     return [];
   }
 
-  const entries = Object.entries(partial.options!.helpers ?? {});
+  const entries = Object.entries(partial.options?.helpers ?? {});
   const childEntries = Object.values(partial.options?.partials ?? {}).flatMap(getPartialHelpersDeep);
 
   return [...entries, ...childEntries];
