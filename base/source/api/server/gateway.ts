@@ -130,7 +130,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         if (isUndefined(resourceApis)) {
           resourceApis = {
             resource,
-            pattern: new ((globalThis as any as { URLPattern: Type<URLPattern> }).URLPattern)({
+            pattern: new URLPattern({
               pathname: resource,
               baseURL: 'http://localhost',
               username: '*',
