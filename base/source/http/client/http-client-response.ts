@@ -10,8 +10,7 @@ export type ReadBodyOptions = {
 
 export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'request' | 'headers' | 'close' | 'asObject'> & {
   request: HttpClientRequestObject,
-  headers: HttpHeadersObject,
-  body?: any
+  headers: HttpHeadersObject
 };
 
 export type HttpClientResponseOptions<T extends HttpBodyType = HttpBodyType> = {

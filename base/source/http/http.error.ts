@@ -1,5 +1,7 @@
-import type { TypedOmit, UndefinableJson } from '#/types';
-import type { ErrorExtraInfo } from '#/utils';
+import type { Record, TypedOmit, UndefinableJson } from '#/types';
+import { isAsyncIterable } from '#/utils/async-iterable-helpers';
+import type { ErrorExtraInfo } from '#/utils/format-error';
+import { propertyNameOf } from '#/utils/object/property-name';
 import { isDefined, isNotString, isString } from '#/utils/type-guards';
 import { CustomError } from '../error';
 import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, HttpClientResponseObject } from './client';
@@ -30,24 +32,48 @@ export class HttpError extends CustomError implements ErrorExtraInfo {
     this.response = response?.asObject();
 
     if (isDefined(this.response)) {
-      delete (this.response as any).request;
+      Reflect.deleteProperty(this.response, 'request');
     }
 
-    Object.defineProperty(this, 'requestInstance', {
+    Object.defineProperty(this, propertyNameOf<this>((instance) => instance.requestInstance), {
       value: request,
       enumerable: false
     });
 
-    Object.defineProperty(this, 'responseInstance', {
+    Object.defineProperty(this, propertyNameOf<this>((instance) => instance.responseInstance), {
       value: response,
       enumerable: false
     });
   }
 
   getExtraInfo(): UndefinableJson | undefined {
-    return {
+    const extraInfo: Record<string> = {
       url: this.request.url,
       method: this.request.method
     };
+
+    if (isDefined(this.response)) {
+      const responseExtraInfo: Record<string> = {};
+
+      responseExtraInfo['statusCode'] = this.response.statusCode;
+      responseExtraInfo['statusMessage'] = this.response.statusMessage;
+      responseExtraInfo['headers'] = this.response.headers;
+
+      if (this.response.body instanceof Uint8Array) {
+        responseExtraInfo['body'] = '[Uint8Array]';
+      }
+
+      if (isAsyncIterable(this.response.body)) {
+        responseExtraInfo['body'] = '[AsyncIterable]';
+      }
+
+      if (isDefined(this.response.body)) {
+        responseExtraInfo['body'] = this.response.body;
+      }
+
+      extraInfo['response'] = responseExtraInfo;
+    }
+
+    return extraInfo;
   }
 }

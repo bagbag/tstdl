@@ -1,5 +1,5 @@
 import type { HttpBodyType } from '#/http/types';
-import type { Record } from '#/types';
+import type { Record, UndefinableJson } from '#/types';
 import { isAsyncIterable } from '#/utils/async-iterable-helpers/is-async-iterable';
 import { decompress } from '#/utils/compression';
 import { decodeText } from '#/utils/encoding';
@@ -45,6 +45,11 @@ export async function getResponseText(response: HttpClientResponse): Promise<str
   return decodeText(buffer, response.headers.charset);
 }
 
+export async function getResponseJson(response: HttpClientResponse): Promise<UndefinableJson> {
+  const text = await getResponseText(response);
+  return JSON.parse(text) as UndefinableJson;
+}
+
 /**
  * set body of response to correct type (modifies instance)
  * @param response response with either stream of buffer as body
@@ -73,8 +78,7 @@ export async function setBody(response: HttpClientResponse, type: HttpBodyType):
     }
 
     case 'json': {
-      const text = await getResponseText(response);
-      (response as Record<keyof HttpClientResponse>).body = JSON.parse(text);
+      (response as Record<keyof HttpClientResponse>).body = await getResponseJson(response);
       break;
     }
 
