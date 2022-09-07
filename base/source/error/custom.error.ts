@@ -13,6 +13,11 @@ export type CustomErrorOptions = {
   message?: string,
 
   /**
+   * stack trace
+   */
+  stack?: string,
+
+  /**
    * cause for error
    */
   cause?: Error,
@@ -22,7 +27,7 @@ export type CustomErrorOptions = {
 };
 
 export abstract class CustomError extends Error {
-  constructor(options: CustomErrorOptions) {
+  constructor(options: CustomErrorOptions = {}) {
     if (options.fast == true) {
       const errorObject = {};
 
@@ -44,9 +49,13 @@ export abstract class CustomError extends Error {
   }
 }
 
-function init(instance: Error, target: CustomErrorStatic, { name, message, cause, fast }: CustomErrorOptions): void {
+function init(instance: Error, target: CustomErrorStatic, { name, message, stack, cause, fast }: CustomErrorOptions): void {
   instance.message = (instance.message as string | undefined) ?? message ?? 'No error message provided.';
   instance.name = name ?? (target as CustomErrorStatic | undefined)?.errorName ?? (target.prototype as CustomErrorStatic).name;
+
+  if (stack != undefined) {
+    instance.stack = stack;
+  }
 
   if ((cause != undefined) && (instance.cause == undefined)) {
     instance.cause = cause;

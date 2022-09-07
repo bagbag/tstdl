@@ -90,7 +90,7 @@ export function assertNotSymbol<T>(value: T, message: AssertionMessage = 'expect
 export function assertSymbolPass(value: any, message?: AssertionMessage): InferIsType<typeof isSymbol> { assertSymbol(value, message); return value; }
 export function assertNotSymbolPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isSymbol> { assertNotSymbol(value, message); return value; }
 
-export function isObject(value: any): value is object { return ((value as {} | undefined)?.constructor == Object); }
+export function isObject<T extends object = object>(value: any): value is T { return ((value as {} | undefined)?.constructor == Object); }
 export function isNotObject<T>(value: T): value is InferIsNotType<T, typeof isObject> { return !isObject(value); }
 export function assertObject(value: any, message: AssertionMessage = 'expected value to be object'): asserts value is InferIsType<typeof isObject> { assert(isObject(value), message); }
 export function assertNotObject<T>(value: T, message: AssertionMessage = 'expected value to not be object'): asserts value is InferIsNotType<T, typeof isObject> { assert(isNotObject(value), message); }
