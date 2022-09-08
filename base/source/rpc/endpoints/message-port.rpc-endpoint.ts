@@ -1,5 +1,5 @@
-import { WeakRefMap } from '#/data-structures';
-import { filter, fromEvent, map, Observable, Subject } from 'rxjs';
+import type { Observable } from 'rxjs';
+import { fromEvent, map } from 'rxjs';
 import type { RpcMessage } from '../model';
 import { RpcEndpoint } from '../rpc-endpoint';
 
