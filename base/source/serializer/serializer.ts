@@ -8,9 +8,9 @@ import { ForwardRef } from '#/utils/object/forward-ref';
 import { objectEntries } from '#/utils/object/object';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { DereferenceCallback } from './serializable';
-import { getSerializerByTypeName, getTypeNameByConstructor } from './serializable';
-import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
-import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
+import { getSerializerByTypeName, getTypeNameByConstructor, isRawSerializable } from './serializable';
+import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RawNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
+import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, rawNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
 
 type QueueItem = () => void;
 
@@ -54,7 +54,15 @@ export function serialize<T>(value: T, options?: SerializationOptions): Serializ
  * @deprecated
  */
 export function serialize<T>(value: T, options: SerializationOptions, references: Map<any, string>, queue: CircularBuffer<QueueItem>, path: string): Serialized<T>;
-export function serialize(value: any, options: SerializationOptions = {}, references: Map<any, string> = new Map(), queue: CircularBuffer<QueueItem> = new CircularBuffer(), path: string = '$'): SerializedData {
+export function serialize(_value: any, options: SerializationOptions = {}, references: Map<any, string> = new Map(), queue: CircularBuffer<QueueItem> = new CircularBuffer(), path: string = '$'): SerializedData {
+  let value = _value;
+
+  if (isDefined(options.replacers)) {
+    for (const replacer of options.replacers) {
+      value = replacer(value);
+    }
+  }
+
   const type = typeof value;
 
   if (type == 'boolean' || type == 'number' || value === null) {
@@ -72,7 +80,8 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
   }
 
   const reference = references.get(value);
-  if (reference !== undefined) {
+
+  if (isDefined(reference)) {
     return { '<ref>': reference } as RefNonPrimitive;
   }
 
@@ -140,6 +149,10 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
 
       result = target;
     }
+    else if (isRawSerializable(constructor) || (isDefined(options.raws) && options.raws.includes(constructor))) {
+      references.set(value, path);
+      return { '<raw>': value } as RawNonPrimitive;
+    }
     else {
       const serializableType = getTypeNameByConstructor(constructor);
 
@@ -153,8 +166,8 @@ export function serialize(value: any, options: SerializationOptions = {}, refere
       const nonPrimitive: CustomNonPrimitive<string> = { [typeString]: null };
 
       queue.add(() => {
-        const data = registration!.serializer.call(value, value);
-        return (nonPrimitive[typeString] = serialize(data, options, references, queue, `${path}['${typeString}']`));
+        const data = registration!.serializer.call(value, value, options.data ?? {});
+        (nonPrimitive[typeString] = (registration!.serializeData != false) ? serialize(data, options, references, queue, `${path}['${typeString}']`) : data);
       });
 
       result = nonPrimitive;
@@ -239,6 +252,10 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
           return fn;
         }
 
+        case rawNonPrimitiveType: {
+          return nonPrimitiveData;
+        }
+
         case refNonPrimitiveType: {
           const dereferenced = context.references.get(nonPrimitiveData as RefNonPrimitive['<ref>']);
 
@@ -263,7 +280,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
             const deserializedData = _deserialize(nonPrimitiveData, context, `${path}['<${nonPrimitiveType}>']`, depth + 1);
 
             context.addToDeserializeQueue(() => {
-              const deserialized = registration.deserializer(deserializedData, context.tryAddToDerefQueue);
+              const deserialized = registration.deserializer(deserializedData, context.tryAddToDerefQueue, context.options.data ?? {});
               ForwardRef.setRef(forwardRef, deserialized);
             }, depth);
           }, depth);

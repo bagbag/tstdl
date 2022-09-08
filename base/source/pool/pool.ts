@@ -10,16 +10,22 @@ export type PoolOptions = {
    * maximum number of instances
    * @default number of cpu cores
    */
-  size?: number
+  size?: number,
+
+  /**
+   * dipose instances on error instead of reusing them
+   */
+  disposeOnError?: boolean
 };
 
 export type PoolInstanceFactory<T> = () => T | Promise<T>;
-export type PoolInstanceDisposer<T> = (instance: T) => void | Promise<void>;
+export type PoolInstanceDisposer<T> = (instance: T) => any | Promise<any>;
 
 const placeholder = Symbol('pool placeholder');
 
 export class Pool<T> implements AsyncDisposable {
   private readonly size: number;
+  private readonly disposeOnError: boolean;
   private readonly freeInstances: ArrayList<T>;
   private readonly usedInstances: Set<T>;
   private readonly factory: PoolInstanceFactory<T>;
@@ -33,6 +39,7 @@ export class Pool<T> implements AsyncDisposable {
 
   constructor(factory: PoolInstanceFactory<T>, disposer: PoolInstanceDisposer<T>, options?: PoolOptions) {
     this.size = options?.size ?? cpus().length;
+    this.disposeOnError = options?.disposeOnError ?? true;
     this.factory = factory;
     this.disposer = disposer;
 
@@ -99,7 +106,9 @@ export class Pool<T> implements AsyncDisposable {
     }
     catch (error) {
       try {
-        await this.disposer(instance);
+        if (this.disposeOnError) {
+          await this.disposer(instance);
+        }
       }
       finally {
         this.usedInstances.delete(instance);

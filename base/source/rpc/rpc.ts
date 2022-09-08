@@ -2,7 +2,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { NotImplementedError } from '#/error/not-implemented.error';
-import type { Record } from '#/types';
+import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer';
+import { deserialize, registerSerializer, serialize } from '#/serializer';
+import type { Record, TypedOmit } from '#/types';
+import { _throw } from '#/utils';
 import { hasOwnProperty } from '#/utils/object';
 import { reflectMethods } from '#/utils/proxy';
 import { getRandomString } from '#/utils/random';
@@ -10,14 +13,17 @@ import { assert, isDefined } from '#/utils/type-guards';
 import { filter, Subject, takeUntil } from 'rxjs';
 import type { MessagePortRpcEndpointSource } from './adapters/message-port.rpc-endpoint';
 import { MessagePortRpcEndpoint } from './adapters/message-port.rpc-endpoint';
-import type { RpcConnectMessage, RpcInput, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote } from './model';
+import type { RpcConnectMessage, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote, RpcRemoteInput } from './model';
 import { createRpcMessage } from './model';
 import { RpcEndpoint } from './rpc-endpoint';
 import { RpcError, RpcRemoteError } from './rpc-error';
 
+export type RpcEndpointSource = RpcEndpoint | MessagePortRpcEndpointSource;
+
 type ProxyFinalizationRegistryData = { id: string, endpoint: RpcEndpoint };
 
-const transfers = new WeakMap<object, any[]>();
+const markedTransfers = new WeakMap<object, any[]>();
+const serializationTargets = new WeakMap<object, SerializationOptions | undefined>();
 const proxyTargets = new WeakSet();
 
 const proxyFinalizationRegistry = new FinalizationRegistry<ProxyFinalizationRegistryData>(async (data) => { // eslint-disable-line @typescript-eslint/no-misused-promises
@@ -27,7 +33,7 @@ const proxyFinalizationRegistry = new FinalizationRegistry<ProxyFinalizationRegi
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
 export const Rpc = {
-  async connect<T extends RpcInput>(endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, name: string = 'default'): Promise<RpcRemote<T>> {
+  async connect<T extends RpcRemoteInput>(endpointOrSource: RpcEndpointSource, name: string = 'default'): Promise<RpcRemote<T>> {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
 
     const connectMessage = createRpcMessage('connect', { name });
@@ -38,18 +44,34 @@ export const Rpc = {
     return parseRpcMessageValue(response, endpoint);
   },
 
-  expose(object: RpcInput, endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, name: string = 'default'): void {
+  expose(object: RpcRemoteInput, endpointOrSource: RpcEndpointSource, name: string = 'default'): void {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
     exposeConnectable(object, endpoint, name);
   },
 
-  proxy<T extends object>(object: T): T {
+  /**
+   * mark object for proxy forward
+   * @param object object to forward as proxy
+   * @param root if object is a child of the actual passed value (to function calls, returns or whatever), this must be set to to mark the parent for serialization (required for children proxies)
+   * @returns
+   */
+  proxy<T extends object>(object: T, root?: object): T {
     proxyTargets.add(object);
+
+    if (isDefined(root)) {
+      Rpc.serialize(root);
+    }
+
     return object;
   },
 
   transfer<T extends object>(object: T, transfer: any[]): T {
-    transfers.set(object, transfer);
+    markedTransfers.set(object, transfer);
+    return object;
+  },
+
+  serialize<T extends object>(object: T, options?: SerializationOptions): T {
+    serializationTargets.set(object, options);
     return object;
   },
 
@@ -117,7 +139,7 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
   return proxy;
 }
 
-function exposeConnectable(object: RpcInput, endpoint: RpcEndpoint, name: string): void {
+function exposeConnectable(object: RpcRemoteInput, endpoint: RpcEndpoint, name: string): void {
   endpoint.message$
     .pipe(
       filter((message): message is RpcConnectMessage => message.type == 'connect'),
@@ -134,7 +156,7 @@ function exposeConnectable(object: RpcInput, endpoint: RpcEndpoint, name: string
     });
 }
 
-function exposeObject(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void {
+function exposeObject(object: RpcRemoteInput, endpoint: RpcEndpoint, proxyId: string): void {
   const abortSubject = new Subject<void>();
 
   endpoint.message$
@@ -202,7 +224,7 @@ function exposeObject(object: RpcInput, endpoint: RpcEndpoint, proxyId: string):
 
 function getPostMessageDataFromArray(values: any[], endpoint: RpcEndpoint): RpcPostMessageArrayData {
   const mappedValues = values.map((value) => getRpcMessageValue(value, endpoint));
-  const transfer = values.flatMap((value) => transfers.get(value) ?? []);
+  const transfer = values.flatMap((value) => markedTransfers.get(value) ?? []);
 
   const messageValues = mappedValues.map((mappedValue) => mappedValue[0]);
   const additionalTransfers = mappedValues.flatMap((mappedValue) => mappedValue[1]);
@@ -212,20 +234,30 @@ function getPostMessageDataFromArray(values: any[], endpoint: RpcEndpoint): RpcP
 
 function getPostMessageData(value: any, endpoint: RpcEndpoint): RpcPostMessageData {
   const [messageValue, additionalTransfers] = getRpcMessageValue(value, endpoint);
-  const transfer = transfers.get(value) ?? [];
+  const transfer = markedTransfers.get(value) ?? [];
 
   return { value: messageValue, transfer: [...transfer, ...additionalTransfers] };
 }
 
-function getRpcMessageValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageValue, transfers: any[]] {
+function getRpcMessageValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageValue, transfer: any[]] {
   if (proxyTargets.has(value)) {
     return createProxyValue(value, endpoint);
+  }
+
+  if (serializationTargets.has(value)) {
+    const options = serializationTargets.get(value);
+    const transfer: any[] = [];
+    const replacer = getRpcProxySerializationReplacer(endpoint, transfer);
+
+    const serialized = serialize(value, { ...options, replacers: [replacer, ...options?.replacers ?? []] });
+
+    return [{ type: 'serialized', value: serialized, options }, transfer];
   }
 
   return [{ type: 'raw', value }, []];
 }
 
-function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageProxyValue, transfers: any[]] {
+function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageProxyValue, transfer: any[]] {
   const id = getRandomString(24);
 
   if (endpoint.supportsTransfers) {
@@ -237,6 +269,7 @@ function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: Rpc
     return [{ type: 'proxy', id, port: port2 }, [port2]];
   }
 
+  exposeObject(value, endpoint, id);
   return [{ type: 'proxy', id }, []];
 }
 
@@ -250,9 +283,12 @@ function parseRpcMessageValue(value: RpcMessageValue, endpoint: RpcEndpoint): an
       return value.value;
     }
 
+    case 'serialized': {
+      return deserialize(value.value, { ...value.options, data: { ...value.options?.data, rpcEndpoint: endpoint } });
+    }
+
     case 'throw': {
       const remoteError = new RpcRemoteError(value.error);
-      console.error(remoteError);
       throw new RpcError('Received error from remote.', remoteError);
     }
 
@@ -280,4 +316,34 @@ function deref(object: any, path: PropertyKey[], skipLast: boolean = false): { p
   }
 
   return { parent, value };
+}
+
+/* serialization */
+
+type RpcProxyNonPrimitiveData = TypedOmit<RpcMessageProxyValue, 'type'>;
+
+type RpcProxyNonPrimitive = NonPrimitive<'RpcProxy', RpcProxyNonPrimitiveData>;
+
+class RpcProxy { }
+
+registerSerializer<RpcProxy, RpcProxyNonPrimitiveData>(
+  RpcProxy,
+  'RpcProxy',
+  () => _throw(new Error('Not supported.')),
+  (data, _, { rpcEndpoint }: { rpcEndpoint: RpcEndpoint }) => parseRpcMessageValue({ type: 'proxy', ...data }, rpcEndpoint)
+);
+
+function getRpcProxySerializationReplacer(endpoint: RpcEndpoint, transfer: any[]): SerializationReplacer {
+  function rpcProxySerializationReplacer(value: any): RpcProxyNonPrimitive {
+    if (!proxyTargets.has(value)) {
+      return value;
+    }
+
+    const [proxy, proxyTransfer] = createProxyValue(value, endpoint);
+    transfer.push(...proxyTransfer);
+
+    return { '<RpcProxy>': { id: proxy.id, port: proxy.port } };
+  }
+
+  return rpcProxySerializationReplacer;
 }

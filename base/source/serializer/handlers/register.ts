@@ -1,5 +1,5 @@
 import { isDefined } from '#/utils/type-guards';
-import type { registerSerializer } from '../serializable';
+import type { registerRawSerializable, registerSerializer } from '../serializable';
 import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary';
 import { deserializeDate, serializeDate } from './date';
 import { deserializeError, serializeError } from './error';
@@ -21,7 +21,7 @@ const typedArrays = [
   globalThis.BigUint64Array
 ].filter(isDefined);
 
-export function registerDefaultSerializers(register: typeof registerSerializer): void {
+export function registerDefaultSerializers(register: typeof registerSerializer, registerRaw: typeof registerRawSerializable): void {
   register(Set, 'Set', serializeSet, deserializeSet);
   register(Map, 'Map', serializeMap, deserializeMap);
   register(RegExp, 'RegExp', serializeRegExp, deserializeRegExp);
@@ -35,5 +35,9 @@ export function registerDefaultSerializers(register: typeof registerSerializer):
 
   if (typeof Buffer != 'undefined') {
     register(Buffer, 'Buffer', serializeBuffer, deserializeBuffer);
+  }
+
+  if (typeof MessagePort != 'undefined') {
+    registerRaw(MessagePort);
   }
 }
