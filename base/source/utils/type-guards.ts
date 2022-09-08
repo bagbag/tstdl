@@ -132,7 +132,7 @@ export function assertNotRegExp<T>(value: T, message: AssertionMessage = 'expect
 export function assertRegExpPass(value: any, message?: AssertionMessage): InferIsType<typeof isRegExp> { assertRegExp(value, message); return value; }
 export function assertNotRegExpPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isRegExp> { assertNotRegExp(value, message); return value; }
 
-export function isArray(value: any): value is readonly any[] { return Array.isArray(value); }
+export function isArray<T = any>(value: any): value is readonly T[] { return Array.isArray(value); }
 export function isNotArray<T>(value: T): value is InferIsNotType<T, typeof isArray> { return !isArray(value); }
 export function assertArray(value: any, message: AssertionMessage = 'expected value to be Array'): asserts value is InferIsType<typeof isArray> { assert(isArray(value), message); }
 export function assertNotArray<T>(value: T, message: AssertionMessage = 'expected value to not be Array'): asserts value is InferIsNotType<T, typeof isArray> { assert(isNotArray(value), message); }

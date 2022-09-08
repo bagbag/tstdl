@@ -1,7 +1,7 @@
 
 import type { Entity, MaybeNewEntity } from '#/database';
 import { Enumerable } from '#/enumerable';
-import { NotFoundError } from '#/error';
+import { NotFoundError } from '#/error/not-found.error';
 import type { Record } from '#/types';
 import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
 import type { FindOneAndUpdateOptions, IndexDescription } from 'mongodb';

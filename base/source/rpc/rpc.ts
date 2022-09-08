@@ -1,33 +1,46 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import { NotImplementedError } from '#/error';
+import { NotImplementedError } from '#/error/not-implemented.error';
 import type { Record } from '#/types';
 import { hasOwnProperty } from '#/utils/object';
 import { reflectMethods } from '#/utils/proxy';
 import { getRandomString } from '#/utils/random';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { filter } from 'rxjs';
+import { assert, isDefined } from '#/utils/type-guards';
+import { filter, Subject, takeUntil } from 'rxjs';
 import type { MessagePortRpcEndpointSource } from './adapters/message-port.rpc-endpoint';
 import { MessagePortRpcEndpoint } from './adapters/message-port.rpc-endpoint';
-import type { RpcInput, RpcMessage, RpcMessageValue, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote } from './model';
+import type { RpcConnectMessage, RpcInput, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote } from './model';
 import { createRpcMessage } from './model';
 import { RpcEndpoint } from './rpc-endpoint';
 import { RpcError, RpcRemoteError } from './rpc-error';
 
+type ProxyFinalizationRegistryData = { id: string, endpoint: RpcEndpoint };
+
 const transfers = new WeakMap<object, any[]>();
 const proxyTargets = new WeakSet();
 
+const proxyFinalizationRegistry = new FinalizationRegistry<ProxyFinalizationRegistryData>(async (data) => { // eslint-disable-line @typescript-eslint/no-misused-promises
+  const message = createRpcMessage('release-proxy', { proxyId: data.id });
+  await data.endpoint.postMessage(message);
+});
+
 // eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
 export const Rpc = {
-  connect<T extends RpcInput>(endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, id: string = 'default'): RpcRemote<T> {
+  async connect<T extends RpcInput>(endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, name: string = 'default'): Promise<RpcRemote<T>> {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
-    return createProxy<T>(endpoint, id);
+
+    const connectMessage = createRpcMessage('connect', { name });
+    const response = await endpoint.request(connectMessage);
+
+    assert(response.type == 'proxy', 'Rpc connect must result in proxy.');
+
+    return parseRpcMessageValue(response, endpoint);
   },
 
-  expose(object: RpcInput, endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, id: string = 'default'): void {
+  expose(object: RpcInput, endpointOrSource: RpcEndpoint | MessagePortRpcEndpointSource, name: string = 'default'): void {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
-    expose(object, endpoint, id);
+    exposeConnectable(object, endpoint, name);
   },
 
   proxy<T extends object>(object: T): T {
@@ -55,14 +68,14 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
     apply(_target: T, _this: any, args: any[]): any {
       const postMessageData = getPostMessageDataFromArray(args, endpoint);
 
-      const message = createRpcMessage('apply', id, { path, args: postMessageData.value });
+      const message = createRpcMessage('apply', { proxyId: id, path, args: postMessageData.value });
       return endpoint.request(message, postMessageData.transfer).then((responseValue) => parseRpcMessageValue(responseValue, endpoint));
     },
 
     construct(_target: T, args: any[]): object {
       const postMessageData = getPostMessageDataFromArray(args, endpoint);
 
-      const message = createRpcMessage('construct', id, { path, args: postMessageData.value });
+      const message = createRpcMessage('construct', { proxyId: id, path, args: postMessageData.value });
       return endpoint.request(message, postMessageData.transfer).then((responseValue) => parseRpcMessageValue(responseValue, endpoint));
     },
 
@@ -72,7 +85,7 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
           return { then: () => proxy };
         }
 
-        const message = createRpcMessage('get', id, { path });
+        const message = createRpcMessage('get', { proxyId: id, path });
 
         const resultValue = endpoint.request(message).then((responseValue) => parseRpcMessageValue(responseValue, endpoint));
         return resultValue.then.bind(resultValue);
@@ -83,7 +96,7 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
 
     set(_target: T, property: string | symbol, value: any): boolean {
       const postMessageData = getPostMessageData(value, endpoint);
-      const message = createRpcMessage('set', id, { path: [...path, property], value: postMessageData.value });
+      const message = createRpcMessage('set', { proxyId: id, path: [...path, property], value: postMessageData.value });
 
       return endpoint.request(message, postMessageData.transfer).then((responseValue) => parseRpcMessageValue(responseValue, endpoint)) as unknown as boolean;
     }
@@ -99,12 +112,36 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
 
   proxy = new Proxy(RpcProxy as any, handlers) as RpcRemote<T>;
 
+  proxyFinalizationRegistry.register(proxy, { id, endpoint });
+
   return proxy;
 }
 
-function expose(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void {
+function exposeConnectable(object: RpcInput, endpoint: RpcEndpoint, name: string): void {
   endpoint.message$
-    .pipe(filter((message) => message.proxyId == proxyId))
+    .pipe(
+      filter((message): message is RpcConnectMessage => message.type == 'connect'),
+      filter((message) => message.name == name)
+    )
+    .subscribe(async (message) => { // eslint-disable-line @typescript-eslint/no-misused-promises
+      try {
+        const [proxy, transfer] = createProxyValue(object, endpoint);
+        await endpoint.respond(message.id, proxy, transfer);
+      }
+      catch (error) {
+        await endpoint.respond(message.id, { type: 'throw', error });
+      }
+    });
+}
+
+function exposeObject(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void {
+  const abortSubject = new Subject<void>();
+
+  endpoint.message$
+    .pipe(
+      takeUntil(abortSubject),
+      filter((message) => ((message as Partial<RpcMessageWithProxyIdBase>).proxyId == proxyId))
+    )
     .subscribe(async (message) => { // eslint-disable-line @typescript-eslint/no-misused-promises
       try {
         switch (message.type) {
@@ -112,7 +149,7 @@ function expose(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void 
             const { value } = deref(object, message.path);
             const postMessageData = getPostMessageData(await value, endpoint);
 
-            await endpoint.respond(message.id, proxyId, postMessageData.value, postMessageData.transfer);
+            await endpoint.respond(message.id, postMessageData.value, postMessageData.transfer);
             break;
           }
 
@@ -121,7 +158,7 @@ function expose(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void 
             const result = Reflect.set(value, message.path[message.path.length - 1]!, parseRpcMessageValue(message.value, endpoint));
             const postMessageData = getPostMessageData(result, endpoint);
 
-            await endpoint.respond(message.id, proxyId, postMessageData.value, postMessageData.transfer);
+            await endpoint.respond(message.id, postMessageData.value, postMessageData.transfer);
             break;
           }
 
@@ -130,38 +167,35 @@ function expose(object: RpcInput, endpoint: RpcEndpoint, proxyId: string): void 
             const result = await Reflect.apply(value, parent, parseRpcMessageValues(message.args, endpoint));
             const postMessageData = getPostMessageData(result, endpoint);
 
-            await endpoint.respond(message.id, proxyId, postMessageData.value, postMessageData.transfer);
+            await endpoint.respond(message.id, postMessageData.value, postMessageData.transfer);
             break;
           }
 
           case 'construct': {
             const { value } = deref(object, message.path);
             const result = Reflect.construct(value, parseRpcMessageValues(message.args, endpoint));
-            const postMessageData = getPostMessageData(Rpc.proxy(result), endpoint);
+            const [proxy, transfer] = createProxyValue(result, endpoint);
 
-            await endpoint.respond(message.id, proxyId, postMessageData.value, postMessageData.transfer);
+            await endpoint.respond(message.id, proxy, transfer);
             break;
           }
 
           case 'release-proxy': {
-            const target = endpoint.proxyIdTargets.get(message.proxyId)!;
-            endpoint.proxyIdTargets.delete(message.proxyId);
-            endpoint.proxyTargetIds.delete(target);
-
+            abortSubject.next();
             break;
           }
 
           case 'response':
-            // we do not handle responses here
+          case 'connect':
+            // we do not handle these here
             break;
 
           default:
-            console.log('unsupported', message);
             throw new NotImplementedError(`Unsupported message type ${(message as RpcMessage).type}`);
         }
       }
       catch (error) {
-        await endpoint.respond(message.id, proxyId, { type: 'throw', error });
+        await endpoint.respond(message.id, { type: 'throw', error });
       }
     });
 }
@@ -185,23 +219,25 @@ function getPostMessageData(value: any, endpoint: RpcEndpoint): RpcPostMessageDa
 
 function getRpcMessageValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageValue, transfers: any[]] {
   if (proxyTargets.has(value)) {
-    const id = getRandomString(16);
-
-    if (endpoint.supportsTransfers) {
-      const { port1, port2 } = new MessageChannel();
-
-      const newEndpoint = new MessagePortRpcEndpoint(port1);
-      expose(value, newEndpoint, id);
-
-      return [{ type: 'proxy', id, port: port2 }, [port2]];
-    }
-
-    endpoint.proxyTargetIds.set(value, id);
-    endpoint.proxyIdTargets.set(id, value);
-    return [{ type: 'proxy', id }, []];
+    return createProxyValue(value, endpoint);
   }
 
   return [{ type: 'raw', value }, []];
+}
+
+function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: RpcMessageProxyValue, transfers: any[]] {
+  const id = getRandomString(24);
+
+  if (endpoint.supportsTransfers) {
+    const { port1, port2 } = new MessageChannel();
+
+    const newEndpoint = new MessagePortRpcEndpoint(port1);
+    exposeObject(value, newEndpoint, id);
+
+    return [{ type: 'proxy', id, port: port2 }, [port2]];
+  }
+
+  return [{ type: 'proxy', id }, []];
 }
 
 function parseRpcMessageValues(values: RpcMessageValue[], endpoint: RpcEndpoint): any[] {
@@ -222,15 +258,7 @@ function parseRpcMessageValue(value: RpcMessageValue, endpoint: RpcEndpoint): an
 
     case 'proxy': {
       const proxyEndpoint = (isDefined(value.port)) ? new MessagePortRpcEndpoint(value.port) : endpoint;
-      const proxy = createProxy(proxyEndpoint, value.id);
-
-      if (isUndefined(value.port)) {
-        endpoint.proxyIdTargets.set(value.id, proxy);
-        endpoint.proxyTargetIds.set(proxy, value.id);
-        endpoint.proxyFinalizationRegistry.register(proxy, { id: value.id, endpoint });
-      }
-
-      return proxy;
+      return createProxy(proxyEndpoint, value.id);
     }
 
     default:

@@ -1,5 +1,6 @@
 import { inject, optional as injectOptional, singleton } from '#/container';
-import { ForbiddenError, NotImplementedError } from '#/error';
+import { ForbiddenError } from '#/error/forbidden.error';
+import { NotImplementedError } from '#/error/not-implemented.error';
 import type { HttpRequestAuthorization } from '#/http/client';
 import { HttpClient } from '#/http/client';
 import { HttpHeaders } from '#/http/http-headers';

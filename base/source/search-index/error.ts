@@ -1,4 +1,4 @@
-import { CustomError } from '#/error';
+import { CustomError } from '#/error/custom.error';
 import { isDefined } from '#/utils/type-guards';
 
 export class SearchIndexError extends CustomError {

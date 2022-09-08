@@ -1,4 +1,4 @@
-import { AssertionError } from '#/error';
+import { AssertionError } from '#/error/assertion.error';
 import type { BinaryData } from '#/types';
 import { createArray } from './array/array';
 import { toUint8Array } from './binary';

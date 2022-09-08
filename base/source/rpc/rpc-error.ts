@@ -1,4 +1,4 @@
-import { CustomError } from '#/error';
+import { CustomError } from '#/error/custom.error';
 import { formatError } from '#/utils/format-error';
 import { isDefined, isObject } from '#/utils/type-guards';
 

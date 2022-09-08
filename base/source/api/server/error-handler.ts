@@ -1,4 +1,4 @@
-import type { CustomError, CustomErrorStatic } from '#/error';
+import type { CustomError, CustomErrorStatic } from '#/error/custom.error';
 import { HttpServerResponse } from '#/http/server';
 import type { Logger } from '#/logger';
 import type { Type } from '#/types';

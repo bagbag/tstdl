@@ -2,7 +2,8 @@
 import type { AfterResolve } from '#/container';
 import { afterResolve } from '#/container';
 import type { Entity, Query, QueryOptions } from '#/database';
-import { BadRequestError, MultiError } from '#/error';
+import { BadRequestError } from '#/error/bad-request.error';
+import { MultiError } from '#/error/multi.error';
 import type { Logger } from '#/logger';
 import type { SearchResult, SearchResultItem } from '#/search-index';
 import { SearchIndex, SearchIndexError } from '#/search-index';

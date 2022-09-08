@@ -1,4 +1,4 @@
-import { AssertionError } from '#/error';
+import { AssertionError } from '#/error/assertion.error';
 import { firstValueFrom } from '#/rxjs/compat';
 import { fromEvent, mapTo, race, switchMap, throwError } from 'rxjs';
 import { FactoryMap } from './factory-map';

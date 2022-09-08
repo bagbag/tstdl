@@ -1,4 +1,5 @@
-import { BadRequestError, MaxBytesExceededError } from '#/error';
+import { BadRequestError } from '#/error/bad-request.error';
+import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error';
 import { concatArrayBufferViews } from '../binary';
 import { isDefined } from '../type-guards';
 

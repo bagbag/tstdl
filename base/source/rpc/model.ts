@@ -1,4 +1,4 @@
-import type { Constructor, Record, TypedOmit } from '#/types';
+import type { Constructor, Record } from '#/types';
 import { getRandomString } from '#/utils/random';
 
 export type RpcConstructor<T extends Constructor> = T extends Constructor<any, infer R> ? Constructor<Promise<RpcRemote<InstanceType<T>>>, R> : never;
@@ -10,26 +10,31 @@ export type RpcInput = ((...args: any) => any) | Record;
 export type RpcRemote<T extends RpcInput = RpcInput> =
   T extends Constructor ? RpcConstructor<T> : T extends (...args: any) => any ? RpcFunction<T> : RpcObject<T>;
 
-type RpcMessageBase<Type extends string> = { id: string, proxyId: string, type: Type, metadata?: any };
+export type RpcMessageBase<Type extends string = string> = { type: Type, id: string, metadata?: any };
 
-export type RpcApplyMessage = RpcMessageBase<'apply'> & { path: PropertyKey[], args: RpcMessageValue[] };
+export type RpcMessageWithProxyIdBase<Type extends string = string> = RpcMessageBase<Type> & { proxyId: string };
 
-export type RpcConstructMessage = RpcMessageBase<'construct'> & { path: PropertyKey[], args: RpcMessageValue[] };
+export type RpcConnectMessage = RpcMessageBase<'connect'> & { name: string };
 
-export type RpcGetMessage = RpcMessageBase<'get'> & { path: PropertyKey[] };
+export type RpcApplyMessage = RpcMessageWithProxyIdBase<'apply'> & { path: PropertyKey[], args: RpcMessageValue[] };
 
-export type RpcSetMessage = RpcMessageBase<'set'> & { path: PropertyKey[], value: RpcMessageValue };
+export type RpcConstructMessage = RpcMessageWithProxyIdBase<'construct'> & { path: PropertyKey[], args: RpcMessageValue[] };
 
-export type RpcReleaseProxyMessage = RpcMessageBase<'release-proxy'>;
+export type RpcGetMessage = RpcMessageWithProxyIdBase<'get'> & { path: PropertyKey[] };
+
+export type RpcSetMessage = RpcMessageWithProxyIdBase<'set'> & { path: PropertyKey[], value: RpcMessageValue };
+
+export type RpcReleaseProxyMessage = RpcMessageWithProxyIdBase<'release-proxy'>;
 
 export type RpcResponseMessage = RpcMessageBase<'response'> & { value: RpcMessageValue };
 
-export type RpcMessage = RpcApplyMessage | RpcConstructMessage | RpcGetMessage | RpcSetMessage | RpcReleaseProxyMessage | RpcResponseMessage;
+export type RpcMessage = RpcConnectMessage | RpcApplyMessage | RpcConstructMessage | RpcGetMessage | RpcSetMessage | RpcReleaseProxyMessage | RpcResponseMessage;
 
-export type RpcMessageValue =
-  | { type: 'raw', value: any }
-  | { type: 'proxy', id: string, port?: MessagePort }
-  | { type: 'throw', error: unknown };
+export type RpcMessageRawValue = { type: 'raw', value: any };
+export type RpcMessageProxyValue = { type: 'proxy', id: string, port?: MessagePort };
+export type RpcMessageThrowValue = { type: 'throw', error: unknown };
+
+export type RpcMessageValue = | RpcMessageRawValue | RpcMessageProxyValue | RpcMessageThrowValue;
 
 export type RpcPostMessageArrayData = {
   value: RpcMessageValue[],
@@ -41,11 +46,10 @@ export type RpcPostMessageData = {
   transfer?: any[]
 };
 
-export function createRpcMessage<Type extends RpcMessage['type']>(type: Type, proxyId: string, message: TypedOmit<Extract<RpcMessage, { type: Type }>, 'id' | 'type' | 'proxyId'>): Extract<RpcMessage, { type: Type }> {
+export function createRpcMessage<Type extends RpcMessage['type']>(type: Type, message: Omit<Extract<RpcMessage, { type: Type }>, 'id' | 'type'>): Extract<RpcMessage, { type: Type }> {
   return {
-    id: getRandomString(16),
+    id: getRandomString(24),
     type,
-    proxyId,
     ...message
   } as Extract<RpcMessage, { type: Type }>;
 }

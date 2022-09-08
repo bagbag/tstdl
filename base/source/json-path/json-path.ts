@@ -1,14 +1,16 @@
+import { isIterable } from '#/utils/iterable-helpers/is-iterable';
 import { assertDefinedPass, isArray, isDefined, isString, isSymbol, isUndefined } from '#/utils/type-guards';
 
 const numberPattern = /^\d+$/u;
 const parsePattern = /(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+)|(?:Symbol\((?<symbol>.*)\)))\]|(?<error>.+?)/ug;
 
 export type JsonPathNode = PropertyKey;
+export type JsonPathInput = string | JsonPath | Iterable<JsonPathNode>;
 
-export class JsonPath<T = any> {
+export class JsonPath<T = any> implements Iterable<JsonPathNode> {
   private readonly _options: JsonPathOptions;
   private _path: string | undefined;
-  private _nodes: JsonPathNode[] | undefined;
+  private _nodes: readonly JsonPathNode[] | undefined;
 
   /** json path as encoded string */
   get path(): string {
@@ -20,7 +22,7 @@ export class JsonPath<T = any> {
   }
 
   /** json path as decoded array */
-  get nodes(): JsonPathNode[] {
+  get nodes(): readonly JsonPathNode[] {
     if (isUndefined(this._nodes)) {
       this._nodes = decodeJsonPath(this._path!);
     }
@@ -33,16 +35,18 @@ export class JsonPath<T = any> {
   }
 
   constructor(options?: JsonPathOptions);
-  constructor(path: string, options?: JsonPathOptions);
-  constructor(nodes: JsonPathNode[], options?: JsonPathOptions);
-  constructor(pathOrNodesOrOptions: string | JsonPathNode[] | JsonPathOptions = [], options: JsonPathOptions = {}) {
+  constructor(path: JsonPathInput, options?: JsonPathOptions);
+  constructor(pathOrNodesOrOptions: JsonPathInput | JsonPathOptions = [], options: JsonPathOptions = {}) {
     this._options = options;
 
     if (isString(pathOrNodesOrOptions)) {
       this._path = pathOrNodesOrOptions;
     }
-    else if (isArray(pathOrNodesOrOptions)) {
+    else if (isArray<JsonPathNode>(pathOrNodesOrOptions)) {
       this._nodes = pathOrNodesOrOptions;
+    }
+    else if (isIterable(pathOrNodesOrOptions)) {
+      this._nodes = [...pathOrNodesOrOptions as Iterable<JsonPathNode>];
     }
     else {
       this._options = pathOrNodesOrOptions;
@@ -65,6 +69,10 @@ export class JsonPath<T = any> {
    */
   options(options: JsonPathOptions): JsonPath {
     return new JsonPath(this.nodes, options);
+  }
+
+  *[Symbol.iterator](): Iterator<PropertyKey> {
+    yield* this.nodes;
   }
 }
 
@@ -93,7 +101,7 @@ export type JsonPathContext = {
  * const path = encodeJsonPath(['foo', 'bar', 5]);
  * path == '$.foo.bar[5]'; // true
  */
-export function encodeJsonPath(nodes: JsonPathNode[], options: JsonPathOptions = {}): string {
+export function encodeJsonPath(nodes: readonly JsonPathNode[], options: JsonPathOptions = {}): string {
   const { treatArrayAsObject = false, forceBrackets = false, noDollar = false } = options;
 
   let path = '';
