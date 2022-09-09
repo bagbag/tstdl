@@ -1,39 +1,51 @@
+import { isBrowser } from '#/environment';
 import type { Observable } from 'rxjs';
 import { fromEvent, map } from 'rxjs';
+import type * as NodeWorkerThreads from 'worker_threads';
 import type { RpcMessage } from '../model';
 import { RpcEndpoint } from '../rpc-endpoint';
 
-export interface BrowserMessagePortRpcEndpointSource {
-  addEventListener(type: 'message', listener: (event: MessageEvent) => any): void;
-  removeEventListener(type: 'message', listener: (event: MessageEvent) => any): void;
-  postMessage(value: any, transfer?: readonly any[]): void;
-}
+type BrowserSource = Worker | MessagePort | Window | SharedWorker;
+type NodeSource = NodeWorkerThreads.MessagePort | NodeWorkerThreads.Worker;
 
-export interface NodeMessagePortRpcEndpointSource {
-  addListener(event: 'message', listener: (value: any) => void): this;
-  removeListener(event: 'message', listener: (value: any) => void): this;
-  postMessage(value: any, transfer?: readonly any[]): void;
-}
-
-export type MessagePortRpcEndpointSource = BrowserMessagePortRpcEndpointSource | NodeMessagePortRpcEndpointSource;
+export type MessagePortRpcEndpointSource = BrowserSource | NodeSource;
 
 export class MessagePortRpcEndpoint extends RpcEndpoint {
-  private readonly messagePort: MessagePortRpcEndpointSource;
+  private readonly source: MessagePortRpcEndpointSource;
+  private readonly _postMessage: this['postMessage'];
 
   readonly supportsTransfers: boolean = true;
   readonly message$: Observable<RpcMessage>;
 
-  constructor(messagePort: MessagePortRpcEndpointSource) {
+  constructor(source: MessagePortRpcEndpointSource) {
     super();
 
-    this.messagePort = messagePort;
+    this.source = (isBrowser && ((typeof SharedWorker == 'function') && (source instanceof SharedWorker)))
+      ? source.port
+      : source;
 
-    this.message$ = fromEvent((messagePort as BrowserMessagePortRpcEndpointSource), 'message').pipe(
-      map((message): RpcMessage => ((message instanceof MessageEvent) ? { ...(message.data as RpcMessage), metadata: { source: message } } : message))
+    this.message$ = fromEvent((this.source as MessagePort), 'message').pipe(
+      map((message: unknown): RpcMessage => ((message instanceof MessageEvent) ? { ...(message.data as RpcMessage), metadata: { source: message } } : message as RpcMessage))
     );
+
+    this._postMessage = isBrowser
+      ? (data, transfer) => (this.source as MessagePort).postMessage(data, { transfer })
+      : (data, transfer) => (this.source as NodeSource).postMessage(data, transfer);
+  }
+
+  start(): void {
+    if (this.source instanceof MessagePort) {
+      this.source.start();
+    }
+  }
+
+  close(): void {
+    if (this.source instanceof MessagePort) {
+      this.source.close();
+    }
   }
 
   postMessage(data: any, transfer?: any[] | undefined): void {
-    this.messagePort.postMessage(data, transfer);
+    this._postMessage(data, transfer);
   }
 }

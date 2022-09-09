@@ -35,6 +35,7 @@ const proxyFinalizationRegistry = new FinalizationRegistry<ProxyFinalizationRegi
 export const Rpc = {
   async connect<T extends RpcRemoteInput>(endpointOrSource: RpcEndpointSource, name: string = 'default'): Promise<RpcRemote<T>> {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
+    endpoint.start();
 
     const connectMessage = createRpcMessage('connect', { name });
     const response = await endpoint.request(connectMessage);
@@ -46,6 +47,8 @@ export const Rpc = {
 
   expose(object: RpcRemoteInput, endpointOrSource: RpcEndpointSource, name: string = 'default'): void {
     const endpoint = (endpointOrSource instanceof RpcEndpoint) ? endpointOrSource : new MessagePortRpcEndpoint(endpointOrSource);
+    endpoint.start();
+
     exposeConnectable(object, endpoint, name);
   },
 
@@ -121,6 +124,9 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
       const message = createRpcMessage('set', { proxyId: id, path: [...path, property], value: postMessageData.value });
 
       return endpoint.request(message, postMessageData.transfer).then((responseValue) => parseRpcMessageValue(responseValue, endpoint)) as unknown as boolean;
+    },
+    getPrototypeOf(): object | null {
+      return null;
     }
   };
 
@@ -264,6 +270,8 @@ function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: Rpc
     const { port1, port2 } = new MessageChannel();
 
     const newEndpoint = new MessagePortRpcEndpoint(port1);
+    newEndpoint.start();
+
     exposeObject(value, newEndpoint, id);
 
     return [{ type: 'proxy', id, port: port2 }, [port2]];
@@ -294,6 +302,8 @@ function parseRpcMessageValue(value: RpcMessageValue, endpoint: RpcEndpoint): an
 
     case 'proxy': {
       const proxyEndpoint = (isDefined(value.port)) ? new MessagePortRpcEndpoint(value.port) : endpoint;
+      proxyEndpoint.start();
+
       return createProxy(proxyEndpoint, value.id);
     }
 

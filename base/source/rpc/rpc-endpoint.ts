@@ -30,5 +30,9 @@ export abstract class RpcEndpoint {
     await this.postMessage(message, transfer);
   }
 
+  abstract start(): void;
+
+  abstract close(): void;
+
   abstract postMessage(data: any, transfer?: any[]): void | Promise<void>;
 }
