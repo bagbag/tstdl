@@ -1,6 +1,6 @@
-import type { AbstractConstructor } from '#/types';
+import type { AbstractConstructor, OneOrMany } from '#/types';
 import { toArray } from '#/utils/array/array';
-import { isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
+import { isArray, isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
 import type { SchemaTestable } from '../schema';
 import type { ResolvedValueType, ValueType } from '../types';
 import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
@@ -26,14 +26,17 @@ export function getValueTypeName(valueType: ValueType): string {
 }
 
 export function getSchemaTypeNames(schema: SchemaTestable): string[] {
+  return getSchemaValueTypes(schema)
+    .map((valueType) => (isString(valueType) ? valueType : valueType.name));
+}
+
+export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType<any>[] {
   if (isTypeSchema(schema)) {
-    const name = getValueTypeName(schema.type);
-    return [name];
+    return [resolveValueType(schema.type)];
   }
 
   if (isFunction(schema)) {
-    const name = getValueTypeName(schema);
-    return [name];
+    return [schema];
   }
 
   if (isString(schema)) {
@@ -41,16 +44,19 @@ export function getSchemaTypeNames(schema: SchemaTestable): string[] {
   }
 
   if (isObjectSchema(schema)) {
-    const name = getValueTypeName(schema.sourceType ?? Object);
-    return [name];
+    return [resolveValueType(schema.sourceType ?? Object)];
   }
 
   if (isValueSchema(schema)) {
-    return [...new Set(toArray(schema.schema).flatMap(getSchemaTypeNames))];
+    return [...new Set(toArray(schema.schema).flatMap(getSchemaValueTypes))];
   }
 
   if (isDeferredValueType(schema)) {
-    return getSchemaTypeNames(resolveValueType(schema));
+    return getSchemaValueTypes(resolveValueType(schema));
+  }
+
+  if (isArray(schema)) {
+    return schema.flatMap(getSchemaValueTypes);
   }
 
   throw new Error('Unsupported schema');

@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path';
-import { Schema } from '../schema';
+import { testWithFastError } from '../schema';
 import { SchemaError } from '../schema.error';
 import { array } from '../schemas/array';
 import { number } from '../schemas/number';
@@ -13,7 +13,7 @@ export class Uint8ArrayCoercer extends SchemaValueCoercer {
   readonly targetType = Uint8Array;
 
   coerce(value: any[], path: JsonPath, { options }: CoercerContext): CoerceResult {
-    const testResult = Schema.testWithFastError(byteNumberArraySchema, value, options, path);
+    const testResult = testWithFastError(byteNumberArraySchema, value, options, path);
 
     if (!testResult.valid) {
       return { success: false, error: SchemaError.couldNotCoerce(Uint8Array, Array, path, undefined, { inner: testResult.error, fast: options.fastErrors }) };

@@ -12,8 +12,8 @@ import { regExpCoercer } from './coercers/regexp.coercer';
 import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import { SchemaError } from './schema.error';
-import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TypeSchema, ValueSchema, ValueType } from './types';
-import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema } from './types';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types';
+import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, schemaTestableToSchema, valueSchema } from './types';
 import { getArrayItemSchema, getSchemaFromReflection, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema } from './utils';
 
 export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
@@ -49,8 +49,8 @@ export const Schema = {
   test<T, O>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
     const normalizedOptions: SchemaTestOptions = { fastErrors: true, ...options };
 
-    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
-    const result = this.testWithFastError(schema, value, normalizedOptions, path);
+    const schema = schemaTestableToSchema(schemaOrValueType);
+    const result = testWithFastError(schema, value, normalizedOptions, path);
 
     if (result.valid) {
       return result;
@@ -64,14 +64,14 @@ export const Schema = {
   },
 
   validate<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
-    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
+    const schema = schemaTestableToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
     return result.valid;
   },
 
   parse<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
-    const schema = valueTypeOrSchemaToSchema(schemaOrValueType);
+    const schema = schemaTestableToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
     if (result.valid) {
@@ -81,28 +81,63 @@ export const Schema = {
     throw result.error;
   },
 
-  /**
-   * disables stack traces for errors
-   * @deprecated for internal use only
-   */
-  testWithFastError<T, O = T>(schema: Schema<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
-    initialize();
+  function<T extends readonly SchemaTestable[], R extends SchemaTestable, F extends (...args: TupleSchemaOutput<T>) => SchemaOutput<R>>(argumentSchemas: T, returnSchema: R, handler: F): F {
+    const name = `validated${handler.name.slice(0, 1).toUpperCase()}${handler.name.slice(1)}`;
+    const schema: ObjectSchema = getFunctionParametersSchema<T>(argumentSchemas);
 
-    if (isValueSchema(schema)) {
-      return testValue(schema, value, options, path);
-    }
+    return {
+      [name](...unsafeArgs: unknown[]): SchemaOutput<R> {
+        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
+        const unsafeResult = handler(...safeArgs);
 
-    if (isTypeSchema(schema)) {
-      return testType(schema, value, options, path);
-    }
+        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>;
+      }
+    }[name] as F;
+  },
 
-    if (isObjectSchema(schema)) {
-      return testObject(schema, value, options, path);
-    }
+  asyncFunction<T extends readonly SchemaTestable[], R extends SchemaTestable, F extends (...args: TupleSchemaOutput<T>) => Promise<SchemaOutput<R>>>(argumentSchemas: T, returnSchema: R, handler: F): F {
+    const name = `validated${handler.name.slice(0, 1).toUpperCase()}${handler.name.slice(1)}`;
+    const schema: ObjectSchema = getFunctionParametersSchema<T>(argumentSchemas);
 
-    throw new Error('Unsupported schema');
+    return {
+      async [name](...unsafeArgs: unknown[]): Promise<SchemaOutput<R>> {
+        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
+        const unsafeResult = await handler(...safeArgs);
+
+        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>;
+      }
+    }[name] as F;
   }
 };
+
+function getFunctionParametersSchema<T extends readonly SchemaTestable[]>(argumentSchemas: T): ObjectSchema<TupleSchemaOutput<T>> {
+  const schema: ObjectSchema = {
+    factory: { type: Array },
+    properties: {}
+  };
+
+  argumentSchemas.forEach((arg, index) => (schema.properties[index] = arg));
+
+  return schema;
+}
+
+export function testWithFastError<T, O = T>(schema: Schema<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+  initialize();
+
+  if (isValueSchema(schema)) {
+    return testValue(schema, value, options, path);
+  }
+
+  if (isTypeSchema(schema)) {
+    return testType(schema, value, options, path);
+  }
+
+  if (isObjectSchema(schema)) {
+    return testObject(schema, value, options, path);
+  }
+
+  throw new Error('Unsupported schema');
+}
 
 function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
   const resolvedValueType = resolveValueType(schema.type);
@@ -148,7 +183,7 @@ function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, 
   }
 
   for (const key of schemaPropertyKeys) {
-    const propertyResult = Schema.testWithFastError(schema.properties[key as string]!, (value as Record)[key], options, path.add(key));
+    const propertyResult = testWithFastError(schema.properties[key as string]!, (value as Record)[key], options, path.add(key));
 
     if (!propertyResult.valid) {
       return propertyResult;
@@ -159,7 +194,7 @@ function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, 
 
   if (schema.allowUnknownProperties.size > 0) {
     for (const key of unknownValuePropertyKeys) {
-      const propertyResult = Schema.testWithFastError(valueSchema([...schema.allowUnknownProperties]), (value as Record)[key], options, path.add(key));
+      const propertyResult = testWithFastError(valueSchema([...schema.allowUnknownProperties]), (value as Record)[key], options, path.add(key));
 
       if (!propertyResult.valid && !mask) {
         return propertyResult;
@@ -309,7 +344,7 @@ function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options
   const errorResults: SchemaTestResult<T>[] = [];
 
   for (const schema of validSchemas) {
-    const result = Schema.testWithFastError(schema, value, options, path);
+    const result = testWithFastError(schema, value, options, path);
 
     if (result.valid) {
       return result;

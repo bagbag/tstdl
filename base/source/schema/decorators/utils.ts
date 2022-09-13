@@ -15,7 +15,7 @@ import type { PropertyOptions, SchemaPropertyReflectionData } from './types';
 export function createSchemaPropertyDecorator(options: PropertyOptions): Decorator<'property' | 'accessor'> {
   return createPropertyOrAccessorDecorator({
     handler(_, metadata) {
-      const schemaData = getSchemaPropertyReflectionData(metadata);
+      const schemaData = getOrCreateSchemaPropertyReflectionData(metadata);
 
       const newSchemaData: SchemaPropertyReflectionData = {
         ...options,
@@ -50,8 +50,12 @@ export function createSchemaValueConstraintDecorator(constraints: OneOrMany<Sche
   return createSchemaPropertyDecorator({ ...options, valueConstraints: constraints });
 }
 
-function getSchemaPropertyReflectionData(metadata: PropertyMetadata): SchemaPropertyReflectionData {
-  let schemaData = metadata.data.tryGet<SchemaPropertyReflectionData>('schema');
+export function tryGetSchemaPropertyReflectionData(metadata: PropertyMetadata): SchemaPropertyReflectionData | undefined {
+  return metadata.data.tryGet<SchemaPropertyReflectionData>('schema');
+}
+
+function getOrCreateSchemaPropertyReflectionData(metadata: PropertyMetadata): SchemaPropertyReflectionData {
+  let schemaData = tryGetSchemaPropertyReflectionData(metadata);
 
   if (isUndefined(schemaData)) {
     schemaData = {};

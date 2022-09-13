@@ -14,7 +14,7 @@ export type SchemaFactory<T, O = T> =
   | { type: Type<T>, builder?: undefined }
   | { type?: undefined, builder: SchemaFactoryFunction<T, O> };
 
-export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<Schema<any, T[K]>> };
+export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<SchemaTestable<any, T[K]>> };
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
 
 export type SchemaInput<T extends Schema> =
@@ -23,11 +23,14 @@ export type SchemaInput<T extends Schema> =
   : T extends TypeSchema<infer U> ? U
   : never;
 
-export type SchemaOutput<T extends Schema> =
+export type SchemaOutput<T extends SchemaTestable> =
   | T extends ObjectSchema<any, infer O> ? O
   : T extends ValueSchema<any, infer O> ? O
   : T extends TypeSchema<infer O> ? O
+  : T extends ValueType<infer O> ? NormalizeValueType<O>
   : never;
+
+export type TupleSchemaOutput<T extends readonly SchemaTestable[]> = { [P in keyof T]: SchemaOutput<T[P]> };
 
 export type ObjectSchema<T = any, O = T> = {
   [schemaOutputTypeSymbol]?: O,
@@ -114,8 +117,8 @@ export type NormalizeToValueType<T> =
   : never;
 
 export type ValueType<T = any> = AbstractConstructor<T> | NormalizeToValueType<T> | DeferredValueType<T>;
-export type DeferredValueType<T = unknown> = { deferred: () => ValueType<T> };
-export type ResolvedValueType<T = unknown> = Exclude<ValueType<T>, DeferredValueType>;
+export type DeferredValueType<T = any> = { deferred: () => ValueType<T> };
+export type ResolvedValueType<T = any> = Exclude<ValueType<T>, DeferredValueType>;
 
 export type ValueTypeOutput<T extends ValueType> = T extends ValueType<infer U> ? NormalizeValueType<U> : never;
 
@@ -256,15 +259,15 @@ export function resolveValueType<T>(valueType: ValueType<T>): ResolvedValueType<
     : valueType as ResolvedValueType<T>;
 }
 
-export function valueTypesOrSchemasToSchemas<T, O>(valueTypesOrSchemas: OneOrMany<ValueType<O> | Schema<T, O>>): OneOrMany<Schema<T, O>> {
+export function valueTypesOrSchemasToSchemas<T, O>(valueTypesOrSchemas: OneOrMany<SchemaTestable<T, O>>): OneOrMany<Schema<T, O>> {
   if (isArray(valueTypesOrSchemas)) {
-    return valueTypesOrSchemas.map(valueTypeOrSchemaToSchema);
+    return valueTypesOrSchemas.map(schemaTestableToSchema);
   }
 
-  return valueTypeOrSchemaToSchema(valueTypesOrSchemas);
+  return schemaTestableToSchema(valueTypesOrSchemas);
 }
 
-export function valueTypeOrSchemaToSchema<T, O>(valueTypeOrSchema: ValueType<O> | Schema<T, O>): Schema<T, O> {
+export function schemaTestableToSchema<T, O>(valueTypeOrSchema: SchemaTestable<T, O>): Schema<T, O> {
   if (isSchema<T, O>(valueTypeOrSchema)) {
     return valueTypeOrSchema;
   }

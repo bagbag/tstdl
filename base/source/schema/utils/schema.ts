@@ -8,7 +8,7 @@ import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../
 import type { NormalizedSchema, Schema } from '../schema';
 import { assign } from '../schemas/assign';
 import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
-import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, valueSchema, valueTypeOrSchemaToSchema, valueTypesOrSchemasToSchemas } from '../types';
+import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
 export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
@@ -36,9 +36,9 @@ function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
 function _normalizeObjectSchema<T, O>(schema: ObjectSchema<T, O>): NormalizedObjectSchema<T, O> {
   const normalizedSchema: NormalizedObjectSchema<T, O> = {
     factory: schema.factory,
-    properties: mapObjectValues(schema.properties, (propertyValueType) => (isArray(propertyValueType) ? valueSchema<any>(propertyValueType) : propertyValueType)) as unknown as NormalizedObjectSchemaProperties<T>,
+    properties: mapObjectValues(schema.properties, (propertyValueType) => valueTypesOrSchemasToSchemas(propertyValueType)) as NormalizedObjectSchemaProperties<T>,
     mask: schema.mask,
-    allowUnknownProperties: new Set(toArray(schema.allowUnknownProperties ?? []).map(valueTypeOrSchemaToSchema))
+    allowUnknownProperties: new Set(toArray(schema.allowUnknownProperties ?? []).map(schemaTestableToSchema))
   };
 
   return normalizedSchema;
@@ -46,7 +46,7 @@ function _normalizeObjectSchema<T, O>(schema: ObjectSchema<T, O>): NormalizedObj
 
 function _normalizeValueSchema<T, O>(schema: ValueSchema<T, O>): NormalizedValueSchema<T, O> {
   const normalizedValueSchema: NormalizedValueSchema<T, O> = {
-    schema: new Set(toArray(schema.schema).map(valueTypeOrSchemaToSchema)),
+    schema: new Set(toArray(schema.schema).map(schemaTestableToSchema)),
     array: schema.array ?? false,
     optional: schema.optional ?? false,
     nullable: schema.nullable ?? false,
