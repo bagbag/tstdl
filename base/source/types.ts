@@ -74,6 +74,15 @@ export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : ne
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type TypedExtract<T, U extends T> = T extends U ? T : never;
 
+export type ReplaceIfUnknown<T, U> = IfUnknown<T, U, T>;
+
+export type OmitNever<T extends Record> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+
+export type SharedProperties<A, B, C = unknown, D = unknown, E = unknown, F = unknown, G = unknown, H = unknown, I = unknown, J = unknown> = OmitNever<Pick<
+  A & B & C & D & E & F & G & H & I & J,
+  keyof A & keyof B & keyof ReplaceIfUnknown<C, never> & keyof ReplaceIfUnknown<D, never> & keyof ReplaceIfUnknown<E, never> & keyof ReplaceIfUnknown<F, never> & keyof ReplaceIfUnknown<G, never> & keyof ReplaceIfUnknown<H, never> & keyof ReplaceIfUnknown<I, never> & keyof ReplaceIfUnknown<J, never>
+>>;
+
 /**
  * omit properties from a type that extend from a specific type.
  */
@@ -128,8 +137,8 @@ export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
-export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
-export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
+export type PropertyOf<T extends object, P extends keyof T> = Property<Of<T>, P>;
+export type Property<T extends object, P extends keyof T> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
 export type PropertiesOfType<T, U> = keyof PickBy<T, U>;
 
