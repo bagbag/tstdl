@@ -1,21 +1,24 @@
-import { decodeJsonPath } from '#/json-path';
-import type { StringMap } from '#/types';
+import type { JsonPathInput } from '#/json-path';
+import { JsonPath } from '#/json-path';
+import type { Record } from '#/types';
 import { memoizeSingle } from '../function/memoize';
+
+export type CompiledDereferencer = (object: object) => unknown;
 
 /**
  * compiles a dereferencer for a specific reference
  * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
-export function compileDereferencer(reference: string): (object: object) => unknown {
-  const nodes = decodeJsonPath(reference);
+export function compileDereferencer(reference: JsonPathInput): (object: object) => unknown {
+  const nodes = new JsonPath(reference).nodes;
 
   function dereferencer(object: object): unknown {
     let target = object;
 
     for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
-      target = (target as StringMap)[nodes[i]!];
+      target = (target as Record)[nodes[i]!];
     }
 
     return target;
@@ -31,10 +34,10 @@ export function compileDereferencer(reference: string): (object: object) => unkn
  *
  * also take a look at {@link getCachedDereference} and {@link compileDereferencer} if you need to dereference multiple times
  * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
-export function dereference(object: object, reference: string): unknown {
+export function dereference(object: object, reference: JsonPathInput): unknown {
   return compileDereferencer(reference)(object);
 }
 
@@ -46,13 +49,13 @@ export function dereference(object: object, reference: string): unknown {
  *
  * also take a look at {@link dereference} and {@link compileDereferencer} for other use cases
  * @param object object to dereference
- * @param reference path to property in dot notation or JSONPath ({@link decodeJsonPath})
+ * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
 export function getCachedDereference(): typeof dereference {
   const memoizedDereferencer = memoizeSingle(compileDereferencer);
 
-  function cachedDereference(object: object, reference: string): unknown {
+  function cachedDereference(object: object, reference: JsonPathInput): unknown {
     return memoizedDereferencer(reference)(object);
   }
 
