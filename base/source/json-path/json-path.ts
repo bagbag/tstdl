@@ -2,7 +2,7 @@ import { isIterable } from '#/utils/iterable-helpers/is-iterable';
 import { assertDefinedPass, isArray, isDefined, isString, isSymbol, isUndefined } from '#/utils/type-guards';
 
 const numberPattern = /^\d+$/u;
-const parsePattern = /^(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+)|(?:Symbol\((?<symbol>.*)\)))\]|(?<error>.+?)$/ug;
+const parsePattern = /(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+)|(?:Symbol\((?<symbol>.*)\)))\]|(?<error>.+?)/ug;
 
 export type JsonPathNode = PropertyKey;
 export type JsonPathInput = string | JsonPath | Iterable<JsonPathNode>;
