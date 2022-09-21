@@ -28,7 +28,8 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
       logger.info(`connected to ${name}`);
     }
     catch (error: unknown) {
-      logger.verbose(`error connecting to ${name} (${(error as Error).message})${triesLeft > 0 ? ', trying again...' : ''}`);
+      logger.verbose(`error connecting to ${name}${triesLeft > 0 ? ', trying again...' : ''}`);
+      logger.error(error as Error);
 
       if (triesLeft == 0) {
         throw new Error(`failed to connect to ${name} - no tries left`);

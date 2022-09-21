@@ -2,7 +2,7 @@ import { container, injectionToken } from '#/container';
 import { connect, disposer } from '#/core';
 import type { Entity } from '#/database';
 import { Logger } from '#/logger';
-import { assert, assertDefined } from '#/utils/type-guards';
+import { assert, assertDefined, isArray, isObject, isString } from '#/utils/type-guards';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 import type { ElasticSearchIndexConfigArgument } from './config';
@@ -30,12 +30,12 @@ container.registerSingleton<Client, ClientOptions>(Client, {
     assertDefined(options, 'missing elasticsearch client options');
 
     const logger = await container.resolveAsync(Logger, elasticsearchModuleConfig.logPrefix);
-
     const client: Client = new Client(options);
 
     disposer.add(async () => client.close().then(() => logger.info('closed connection')), 10000);
 
-    await connect('elasticsearch', async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger);
+    const url = getUrl(options.node ?? options.nodes);
+    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger);
 
     return client;
   }
@@ -47,4 +47,21 @@ container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
 
 export function getElasticSearchIndexConfig<T extends Entity>(indexName: string): ElasticSearchIndexConfig<T> {
   return container.resolve(ElasticSearchIndexConfig, indexName);
+}
+
+function getUrl(node: ClientOptions['node']): string {
+  if (isString(node)) {
+    return node;
+  }
+
+  if (isArray(node)) {
+    const urls = node.map(getUrl);
+    return `[${urls.join(', ')}]`;
+  }
+
+  if (isObject(node)) {
+    return node.url.toString();
+  }
+
+  return 'undefined url';
 }
