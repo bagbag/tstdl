@@ -25,27 +25,39 @@ export class UnionSchemaValidator<A extends SchemaDefinition, B extends SchemaDe
   }
 
   [test](value: unknown, options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<UnionSchemaOutput<A, B>> {
+    const errors: SchemaError[] = [];
+
     for (const schema of this.innerSchemas) {
       const result = schema.test(value as SchemaInput<this>, options);
 
       if (result.valid) {
         return result;
       }
+
+      errors.push(result.error);
     }
 
-    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}).`, { path }) };
+    const childErrors = errors.map((error) => `${' '.repeat(path.nodes.length * 2)}${error.message}`).join('\n');
+
+    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}):\n${childErrors}`, { path }) };
   }
 
   protected async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<UnionSchemaOutput<A, B>>> {
+    const errors: SchemaError[] = [];
+
     for (const schema of this.innerSchemas) {
       const result = await schema.testAsync(value as SchemaInput<this>, options);
 
       if (result.valid) {
         return result;
       }
+
+      errors.push(result.error);
     }
 
-    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}).`, { path }) };
+    const childErrors = errors.map((error) => `${' '.repeat(path.nodes.length * 2)}${error.message}`).join('\n');
+
+    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}):\n${childErrors}`, { path }) };
   }
 }
 
