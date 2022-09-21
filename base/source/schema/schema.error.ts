@@ -23,7 +23,11 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
     this.path = isString(options.path) ? options.path : options.path.path;
 
     if (isDefined(options.inner) && (!isArray(options.inner) || (options.inner.length > 0))) {
-      this.inner = options.inner;
+      this.inner = isArray(options.inner)
+        ? (options.inner.length == 1)
+          ? options.inner[0]!
+          : options.inner
+        : options.inner;
     }
 
     if (isNotNullOrUndefined(this.details)) {

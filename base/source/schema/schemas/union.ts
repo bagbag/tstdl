@@ -37,9 +37,7 @@ export class UnionSchemaValidator<A extends SchemaDefinition, B extends SchemaDe
       errors.push(result.error);
     }
 
-    const childErrors = errors.map((error) => `${' '.repeat(path.nodes.length * 2)}${error.message}`).join('\n');
-
-    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}):\n${childErrors}`, { path }) };
+    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString})`, { path, inner: errors }) };
   }
 
   protected async [testAsync](value: unknown, options: DefinedValidationOptions, path: JsonPath): Promise<ValidationTestResult<UnionSchemaOutput<A, B>>> {
@@ -55,9 +53,7 @@ export class UnionSchemaValidator<A extends SchemaDefinition, B extends SchemaDe
       errors.push(result.error);
     }
 
-    const childErrors = errors.map((error) => `${' '.repeat(path.nodes.length * 2)}${error.message}`).join('\n');
-
-    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString}):\n${childErrors}`, { path }) };
+    return { valid: false, error: new SchemaError(`Value did not match any of the allowed schemas (${this.innerSchemaTypesString})`, { path, inner: errors }) };
   }
 }
 
