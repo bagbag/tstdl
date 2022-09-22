@@ -1,7 +1,5 @@
-import type { OneOrMany, UndefinableJson } from '#/types';
+import type { OneOrMany } from '#/types';
 import { isArray, isNull } from '#/utils/type-guards';
-
-export const abortToken: unique symbol = Symbol('abortToken');
 
 export type HttpValue = string | number | boolean | null;
 
@@ -11,9 +9,6 @@ export type HttpValueObject = Record<string, OneOrMany<HttpValue>>;
 
 export type NormalizedHttpValueObject = Record<string, OneOrMany<string>>;
 
-
-export type HttpClientRequestContext<T extends Record<any, unknown> = Record<any, unknown>> = T;
-
 export type HttpMethod =
   | 'HEAD'
   | 'GET'
@@ -22,30 +17,6 @@ export type HttpMethod =
   | 'PATCH'
   | 'DELETE'
   | 'OPTIONS';
-
-export type HttpNoneBodyType = 'none';
-export type HttpAutoBodyType = 'auto';
-export type HttpTextBodyType = 'text';
-export type HttpJsonBodyType = 'json';
-export type HttpBufferBodyType = 'buffer';
-export type HttpStreamBodyType = 'stream';
-
-export type HttpBodyType =
-  | HttpNoneBodyType
-  | HttpAutoBodyType
-  | HttpTextBodyType
-  | HttpJsonBodyType
-  | HttpBufferBodyType
-  | HttpStreamBodyType;
-
-export type HttpBody<B extends HttpBodyType = HttpBodyType>
-  = B extends HttpNoneBodyType ? undefined
-  : B extends HttpAutoBodyType ? string | UndefinableJson | Uint8Array
-  : B extends HttpTextBodyType ? string
-  : B extends HttpJsonBodyType ? UndefinableJson
-  : B extends HttpBufferBodyType ? Uint8Array
-  : B extends HttpStreamBodyType ? AsyncIterable<Uint8Array>
-  : undefined;
 
 export function normalizeHttpValue(value: OneOrMany<HttpValue>): OneOrMany<string> {
   if (isArray(value)) {

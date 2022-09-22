@@ -29,6 +29,17 @@ export function decodeText(buffer: ArrayBuffer, encoding?: string): string {
 }
 
 /**
+ * decodes stream to string stream
+ * @param stream stream to decode
+ * @param encoding encoding, defaults to utf8
+ * @returns stream of decoded string
+ */
+export function decodeTextStream(stream: ReadableStream, encoding?: string): ReadableStream<string> {
+  const decoder = new TextDecoderStream(encoding, { fatal: true });
+  return stream.pipeThrough(decoder);
+}
+
+/**
  * encodes buffer to hex
  * @param buffer buffer to encode
  * @returns hex encoded string

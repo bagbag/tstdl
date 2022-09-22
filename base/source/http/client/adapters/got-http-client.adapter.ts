@@ -10,7 +10,6 @@ import { DeferredPromise } from '../../../promise';
 import { HttpHeaders } from '../../http-headers';
 import { HttpError, HttpErrorReason } from '../../http.error';
 import { HttpClientAdapter } from '../http-client.adapter';
-import { setBody } from './utils';
 
 let _got: typeof Got | undefined;
 
@@ -49,8 +48,6 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
         closeHandler: () => gotRequest.destroy()
       });
 
-      await setBody(response, request.responseType);
-
       return response;
     }
     catch (error: unknown) {
@@ -62,21 +59,29 @@ export class GotHttpClientAdapter extends HttpClientAdapter {
 
 async function convertError(got: typeof Got, error: unknown, request: HttpClientRequest): Promise<HttpError> {
   if (error instanceof got.HTTPError) {
-    return new HttpError(HttpErrorReason.Unknown, request, await convertResponse(got, request, error.response), error);
+    const response = convertResponse(got, request, error.response);
+    return HttpError.create(HttpErrorReason.Unknown, request, response, error);
   }
 
   if (error instanceof got.CancelError) {
-    return new HttpError(HttpErrorReason.Cancelled, request, await convertResponse(got, request, error.response), error);
+    const response = convertResponse(got, request, error.response);
+    return HttpError.create(HttpErrorReason.Cancelled, request, response, error);
   }
 
   if (error instanceof got.TimeoutError) {
-    return new HttpError(HttpErrorReason.Timeout, request, await convertResponse(got, request, error.response), error);
+    const response = convertResponse(got, request, error.response);
+    return HttpError.create(HttpErrorReason.Timeout, request, response, error);
   }
 
-  return new HttpError(HttpErrorReason.Unknown, request, undefined, error as Error);
+  if ((error instanceof got.ReadError) || (error instanceof got.MaxRedirectsError)) {
+    const response = convertResponse(got, request, error.response);
+    return HttpError.create(HttpErrorReason.ResponseError, request, response, error);
+  }
+
+  return HttpError.create(HttpErrorReason.Unknown, request, undefined, error as Error);
 }
 
-async function convertResponse(got: typeof Got, request: HttpClientRequest, gotResponse: Got.Response | undefined): Promise<HttpClientResponse | undefined> {
+function convertResponse(got: typeof Got, request: HttpClientRequest, gotResponse: Got.Response | undefined): HttpClientResponse | undefined {
   if (isUndefined(gotResponse)) {
     return undefined;
   }
@@ -90,8 +95,6 @@ async function convertResponse(got: typeof Got, request: HttpClientRequest, gotR
     closeHandler: () => gotResponse.destroy()
   });
 
-  await setBody(response, request.responseType);
-
   return response;
 }
 
@@ -101,7 +104,9 @@ function getGotOptions(got: typeof Got, isStream: boolean, { method, headers, bo
     isStream,
     retry: { limit: 0, methods: [] },
     followRedirect: true,
-    method
+    throwHttpErrors: false,
+    method,
+    decompress: false
   };
 
   const options = new got.Options(optionsInit);
@@ -157,6 +162,7 @@ async function* streamWrapper(got: typeof Got, readable: Got.Request | Got.Respo
     yield* readable;
   }
   catch (error) {
-    throw convertError(got, error, httpRequest);
+    const convertedError = await convertError(got, error, httpRequest);
+    throw convertedError;
   }
 }

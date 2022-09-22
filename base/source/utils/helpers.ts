@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { supportsNotification } from '#/supports';
 import { DetailsError } from '../error';
 import type { DeepArray, Record } from '../types';
 import { decycle } from './object/decycle';
 import { isDefined } from './type-guards';
-
-const supportsNotification = typeof Notification != 'undefined';
 
 /**
  * create an structured clone of an value using Notification if available, otherwise history state (may alters history)

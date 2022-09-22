@@ -1,10 +1,15 @@
 import { BadRequestError } from '#/error/bad-request.error';
 import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error';
+import type { AnyIterable } from '../any-iterable-iterator';
+import { isAnyIterable } from '../any-iterable-iterator';
 import { concatArrayBufferViews } from '../binary';
 import { isDefined } from '../type-guards';
+import { getReadableStreamIterable } from './readable-stream-adapter';
 
 // eslint-disable-next-line max-statements
-export async function readBinaryStream(iterable: AsyncIterable<Uint8Array>, length?: number, maxBytes?: number): Promise<Uint8Array> {
+export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array> | ReadableStream<Uint8Array>, length?: number, maxBytes?: number): Promise<Uint8Array> {
+  const iterable = isAnyIterable(iterableOrStream) ? iterableOrStream : getReadableStreamIterable(iterableOrStream);
+
   if (isDefined(length)) {
     const array = new Uint8Array(length);
 
