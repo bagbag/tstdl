@@ -5,7 +5,7 @@ import type { SchemaTestable } from '../schema';
 import type { ResolvedValueType, ValueType } from '../types';
 import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
 
-export function getValueType(value: unknown): ResolvedValueType<any> {
+export function getValueType(value: unknown): ResolvedValueType {
   if (isUndefined(value)) {
     return 'undefined';
   }
@@ -30,7 +30,7 @@ export function getSchemaTypeNames(schema: SchemaTestable): string[] {
     .map((valueType) => (isString(valueType) ? valueType : valueType.name));
 }
 
-export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType<any>[] {
+export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType[] {
   if (isTypeSchema(schema)) {
     return [resolveValueType(schema.type)];
   }

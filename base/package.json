@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.78.0-beta61",
+  "version": "0.78.0-beta63",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -39,17 +39,17 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.4",
     "@koa/router": "^12.0",
-    "@tstdl/angular": "^0.11.0-beta61",
+    "@tstdl/angular": "^0.11.0-beta63",
     "chroma-js": "^2.4",
-    "got": "^12.4",
+    "got": "^12.5",
     "handlebars": "^4.7",
     "knex": "^2.3",
     "koa": "^2.13",
     "minio": "^7.0",
     "mjml": "^4.13",
-    "mongodb": "4.9",
+    "mongodb": "4.10",
     "nodemailer": "^6.7",
-    "puppeteer": "^17.1",
+    "puppeteer": "^18.0",
     "undici": "^5.10",
     "urlpattern-polyfill": "^5.0"
   },

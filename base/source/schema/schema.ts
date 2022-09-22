@@ -14,7 +14,7 @@ import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import { SchemaError } from './schema.error';
 import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types';
 import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, schemaTestableToSchema, valueSchema } from './types';
-import { getArrayItemSchema, getSchemaFromReflection, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema } from './utils';
+import { getArrayItemSchema, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
 
 export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
 export type SchemaTestable<T = any, O = T> = Schema<T, O> | ValueType<O>;
@@ -90,7 +90,7 @@ export const Schema = {
         const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
         const unsafeResult = handler(...safeArgs);
 
-        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>;
+        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
       }
     }[name] as F;
   },
@@ -104,7 +104,7 @@ export const Schema = {
         const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
         const unsafeResult = await handler(...safeArgs);
 
-        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>;
+        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
       }
     }[name] as F;
   }
@@ -150,7 +150,7 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
       return { valid: true, value: value as T };
     }
 
-    const objectSchema = getSchemaFromReflection(resolvedValueType);
+    const objectSchema = tryGetObjectSchemaFromReflection(resolvedValueType);
 
     if (isNotNull(objectSchema)) {
       return testObject(objectSchema as ObjectSchema, value, options, path);

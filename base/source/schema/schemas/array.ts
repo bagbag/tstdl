@@ -3,8 +3,8 @@
 import type { OneOrMany } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import { ArrayMaximumLengthConstraint } from '../array-constraints';
-import type { Schema } from '../schema';
-import type { Coercible, SchemaArrayConstraint, ValueSchema, ValueType } from '../types';
+import type { SchemaTestable } from '../schema';
+import type { Coercible, SchemaArrayConstraint, ValueSchema } from '../types';
 import { valueSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export type ArrayOptions = Coercible & {
@@ -15,7 +15,7 @@ export type ArrayOptions = Coercible & {
   maximumLength?: number
 };
 
-export function array<T, O = T>(innerValues: OneOrMany<Schema<T, O> | ValueType>, options: ArrayOptions = {}): ValueSchema<T, O[]> {
+export function array<T, O = T>(innerValues: OneOrMany<SchemaTestable<T, O>>, options: ArrayOptions = {}): ValueSchema<T, O[]> {
   const arrayConstraints: SchemaArrayConstraint[] = [];
 
   if (isDefined(options.minimumLength)) {

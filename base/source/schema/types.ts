@@ -17,10 +17,11 @@ export type SchemaFactory<T, O = T> =
 export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<SchemaTestable<any, T[K]>> };
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
 
-export type SchemaInput<T extends Schema> =
+export type SchemaInput<T extends SchemaTestable> =
   | T extends ObjectSchema<infer U, any> ? U
   : T extends ValueSchema<infer U, any> ? U
   : T extends TypeSchema<infer U> ? U
+  : T extends ValueType<infer U> ? NormalizeValueType<U>
   : never;
 
 export type SchemaOutput<T extends SchemaTestable> =
@@ -31,6 +32,8 @@ export type SchemaOutput<T extends SchemaTestable> =
   : never;
 
 export type TupleSchemaOutput<T extends readonly SchemaTestable[]> = { [P in keyof T]: SchemaOutput<T[P]> };
+
+export type ObjectSchemaOrType<T = any, O = T> = ObjectSchema<T, O> | AbstractConstructor<O>;
 
 export type ObjectSchema<T = any, O = T> = {
   [schemaOutputTypeSymbol]?: O,
@@ -197,8 +200,8 @@ export function objectSchema<T extends Record, O extends Record = T>(schema: Obj
   return filterObject(schema, isDefined) as ObjectSchema<T, O>;
 }
 
-export function valueSchema<T, O = T>(schema: OneOrMany<Schema<T, O>>, options?: TypedOmit<ValueSchema<T, O>, 'schema'>): ValueSchema<T, O> {
-  return filterObject({ schema, ...options }, isDefined);
+export function valueSchema<T, O = T>(schema: OneOrMany<SchemaTestable<T, O>>, options?: TypedOmit<ValueSchema<T, O>, 'schema'>): ValueSchema<T, O> {
+  return filterObject({ schema, ...options }, isDefined) as ValueSchema<T, O>;
 }
 
 export function typeSchema<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {

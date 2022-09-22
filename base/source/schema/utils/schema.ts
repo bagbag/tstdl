@@ -3,11 +3,11 @@ import type { AbstractConstructor, Type } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { memoizeSingle } from '#/utils/function/memoize';
 import { mapObjectValues } from '#/utils/object/object';
-import { isArray, isDefined, isNotNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types';
 import type { NormalizedSchema, Schema } from '../schema';
 import { assign } from '../schemas/assign';
-import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
+import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
 import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, valueTypesOrSchemasToSchemas } from '../types';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
@@ -15,7 +15,16 @@ export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { wea
 export const normalizeValueSchema = memoizeSingle(_normalizeValueSchema, { weak: true });
 export const normalizeTypeSchema = memoizeSingle(_normalizeTypeSchema, { weak: true });
 export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: true });
-export const getSchemaFromReflection = memoizeSingle(_getObjectSchemaFromReflection, { weak: true });
+export const tryGetObjectSchemaFromReflection = memoizeSingle(_tryGetObjectSchemaFromReflection, { weak: true });
+
+
+export function getObjectSchema<T, O = T>(schemaOrType: ObjectSchemaOrType<T, O>): ObjectSchema<T, O> {
+  return (
+    isFunction(schemaOrType)
+      ? getObjectSchemaFromReflection(schemaOrType)
+      : schemaOrType
+  ) as ObjectSchema<T, O>;
+}
 
 function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
   if (isObjectSchema(schema)) {
@@ -91,7 +100,17 @@ function _getArrayItemSchema<T, O>(schema: ValueSchema<T, O>): ValueSchema<T, O>
   return itemSchema;
 }
 
-function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {
+export function getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> {
+  const schema = tryGetObjectSchemaFromReflection(type);
+
+  if (isNull(schema)) {
+    throw new Error(`Could not get schema for ${type.name} from reflection data.`);
+  }
+
+  return schema;
+}
+
+function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {
   const metadata = reflectionRegistry.getMetadata(type);
 
   if (!metadata.registered) {
@@ -133,7 +152,7 @@ function _getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Object
   const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
 
   if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
-    const parentSchema = getSchemaFromReflection(prototype)!;
+    const parentSchema = getObjectSchemaFromReflection(prototype);
     return assign(parentSchema, schema) as ObjectSchema<T>;
   }
 
