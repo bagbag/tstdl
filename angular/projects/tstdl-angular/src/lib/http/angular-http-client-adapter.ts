@@ -7,8 +7,8 @@ import { HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@ts
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { StringMap } from '@tstdl/base/types';
-import { isDefined, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
+import { isArrayBuffer, isDefined, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { race, switchMap, throwError } from 'rxjs';
 
@@ -45,12 +45,14 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
 
       const headers = convertAngularHeaders(angularResponse.headers);
 
+      const body = (isArrayBuffer(angularResponse.body) ? new Uint8Array(angularResponse.body) : (angularResponse.body ?? undefined)) as HttpBody<T>;
+
       const response = new HttpClientResponse<T>({
         request,
         statusCode: angularResponse.status,
         statusMessage: angularResponse.statusText,
         headers,
-        body: (angularResponse.body ?? undefined) as HttpBody<T>,
+        body,
         closeHandler: () => request.abort()
       });
 
