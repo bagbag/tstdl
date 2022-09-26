@@ -123,8 +123,6 @@ export type ValueType<T = any> = AbstractConstructor<T> | NormalizeToValueType<T
 export type DeferredValueType<T = any> = { deferred: () => ValueType<T> };
 export type ResolvedValueType<T = any> = Exclude<ValueType<T>, DeferredValueType>;
 
-export type ValueTypeOutput<T extends ValueType> = T extends ValueType<infer U> ? NormalizeValueType<U> : never;
-
 export type Coercible = { coerce?: boolean };
 
 export const primitiveConstructors: ValueType[] = [String, Number, Boolean, Symbol as unknown as AbstractConstructor, BigInt as unknown as AbstractConstructor, Function, 'undefined', 'null'];

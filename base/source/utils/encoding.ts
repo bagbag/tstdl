@@ -18,6 +18,13 @@ export function encodeUtf8(text: string): Uint8Array {
 }
 
 /**
+ * encodes text stream to utf8 bytes stream
+ */
+export function encodeUtf8Stream(): TransformStream<string, Uint8Array> {
+  return new TextEncoderStream();
+}
+
+/**
  * decodes buffer to string
  * @param buffer buffer to decode
  * @param encoding encoding, defaults to utf8
@@ -29,14 +36,12 @@ export function decodeText(buffer: ArrayBuffer, encoding?: string): string {
 }
 
 /**
- * decodes stream to string stream
- * @param stream stream to decode
+ * transforms binary stream to string stream
  * @param encoding encoding, defaults to utf8
  * @returns stream of decoded string
  */
-export function decodeTextStream(stream: ReadableStream, encoding?: string): ReadableStream<string> {
-  const decoder = new TextDecoderStream(encoding, { fatal: true });
-  return stream.pipeThrough(decoder);
+export function decodeTextStream(encoding?: string): TransformStream<BufferSource, string> {
+  return new TextDecoderStream(encoding, { fatal: true });
 }
 
 /**

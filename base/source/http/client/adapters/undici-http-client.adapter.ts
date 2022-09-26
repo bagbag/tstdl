@@ -3,8 +3,10 @@ import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { IncomingHttpHeaders } from 'http';
+import { Readable } from 'stream';
+import type { ReadableStream } from 'stream/web';
 import type { Dispatcher } from 'undici';
-import { errors as undiciErrors, request } from 'undici';
+import { errors as undiciErrors, FormData, request } from 'undici';
 import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
 import { HttpClientResponse } from '../http-client-response';
@@ -40,18 +42,16 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
       body = httpClientRequest.body!.text;
     }
     else if (isDefined(httpClientRequest.body?.stream)) {
-      body = httpClientRequest.body!.stream as unknown as DispatchOptions['body'];
+      body = Readable.from(httpClientRequest.body!.stream as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.form)) {
-      const searchParams = new URLSearchParams();
+      body = new FormData();
 
       for (const [key, entry] of httpClientRequest.body!.form.normalizedEntries()) {
         for (const value of toArray(entry)) {
-          searchParams.append(key, value);
+          body.append(key, value);
         }
       }
-
-      body = searchParams.toString();
     }
 
     try {

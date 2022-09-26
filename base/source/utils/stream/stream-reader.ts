@@ -1,5 +1,4 @@
 import { BadRequestError } from '#/error/bad-request.error';
-import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error';
 import type { AnyIterable } from '../any-iterable-iterator';
 import { isAnyIterable } from '../any-iterable-iterator';
 import { concatArrayBufferViews } from '../binary';
@@ -7,20 +6,16 @@ import { isDefined } from '../type-guards';
 import { getReadableStreamIterable } from './readable-stream-adapter';
 
 // eslint-disable-next-line max-statements
-export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array> | ReadableStream<Uint8Array>, length?: number, maxBytes?: number): Promise<Uint8Array> {
+export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array> | ReadableStream<Uint8Array>, length?: number): Promise<Uint8Array> {
   const iterable = isAnyIterable(iterableOrStream) ? iterableOrStream : getReadableStreamIterable(iterableOrStream);
 
   if (isDefined(length)) {
     const array = new Uint8Array(length);
 
-    if (isDefined(length) && isDefined(maxBytes) && (length > maxBytes)) {
-      throw new MaxBytesExceededError(`maximum size of ${maxBytes} bytes exceeded`);
-    }
-
     let bytesWritten = 0;
     for await (const chunk of iterable) {
       if ((bytesWritten + chunk.length) > length) {
-        throw new BadRequestError('size of stream is greater than provided length');
+        throw new BadRequestError('Size of stream is greater than provided length.');
       }
 
       array.set(chunk, bytesWritten);
@@ -28,7 +23,7 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array>
     }
 
     if (bytesWritten != length) {
-      throw new BadRequestError('size of stream did not match provided length');
+      throw new BadRequestError('Size of stream did not match provided length.');
     }
 
     return array;
@@ -40,10 +35,6 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array>
   for await (const chunk of iterable) {
     chunks.push(chunk);
     totalLength += chunk.length;
-
-    if (isDefined(maxBytes) && (totalLength > maxBytes)) {
-      throw new MaxBytesExceededError(`maximum size of ${maxBytes} bytes exceeded`);
-    }
   }
 
   if (chunks.length == 0) {

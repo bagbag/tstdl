@@ -1,3 +1,4 @@
+import { supportsBuffer } from '#/supports';
 import { isDefined } from '#/utils/type-guards';
 import type { registerRawSerializable, registerSerializer } from '../serializable';
 import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary';
@@ -33,7 +34,7 @@ export function registerDefaultSerializers(register: typeof registerSerializer, 
     register(typedArray, typedArray.name, serializeTypedArray, getTypedArrayDeserializer(typedArray));
   }
 
-  if (typeof Buffer != 'undefined') {
+  if (supportsBuffer) {
     register(Buffer, 'Buffer', serializeBuffer, deserializeBuffer);
   }
 

@@ -10,6 +10,7 @@ import { initializeSignals, requestShutdown, shutdownToken } from '#/process-shu
 import { DeferredPromise } from '#/promise';
 import type { OneOrMany, Type } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
+import type { CancellationToken } from '#/utils/cancellation-token';
 import { isUndefined } from '#/utils/type-guards';
 
 initializeSignals();
@@ -30,6 +31,10 @@ export class Application {
   private readonly moduleTypes: Set<Type<Module>>;
   private readonly moduleInstances: Set<Module>;
   private readonly shutdownPromise: DeferredPromise;
+
+  static get shutdownToken(): CancellationToken {
+    return shutdownToken;
+  }
 
   constructor(@resolveArg<LoggerArgument>('App') logger: Logger) {
     this.logger = logger;

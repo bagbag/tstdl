@@ -1,3 +1,4 @@
+import { supportsBuffer } from '#/supports';
 import type { BinaryData, TypedArray } from '#/types';
 import { assert, isArrayBuffer } from './type-guards';
 
@@ -29,11 +30,11 @@ export function concatArrayBuffers(buffers: ArrayBufferLike[]): ArrayBuffer {
 }
 
 export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLength?: number): T {
-  assert(arrays.length > 0, 'no array provided');
+  assert(arrays.length > 0, 'No array provided.');
 
   const type = arrays[0]!.constructor;
 
-  if ((typeof Buffer != 'undefined') && (type == Buffer)) {
+  if (supportsBuffer && ((type == Buffer) || (type == Uint8Array))) {
     return Buffer.concat(arrays as unknown as Buffer[], totalLength) as unknown as T;
   }
 

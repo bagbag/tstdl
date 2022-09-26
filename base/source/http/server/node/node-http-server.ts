@@ -11,6 +11,7 @@ import { Logger } from '#/logger';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { encodeUtf8 } from '#/utils/encoding';
 import { FeedableAsyncIterable } from '#/utils/feedable-async-iterable';
+import { getReadableStreamIterable } from '#/utils/stream';
 import { Timer } from '#/utils/timer';
 import { cancelableTimeout } from '#/utils/timing';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards';
@@ -212,7 +213,7 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
     await write(httpResponse, bytes);
   }
   else if (isDefined(response.body?.stream)) {
-    for await (const chunk of response.body!.stream) {
+    for await (const chunk of getReadableStreamIterable(response.body!.stream)) {
       await write(httpResponse, chunk);
     }
   }

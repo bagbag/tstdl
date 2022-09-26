@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { Schema, SchemaOutput, SchemaTestable, ValueType, ValueTypeOutput } from '#/schema';
-import type { Json, NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
+import type { SchemaOutput, SchemaTestable } from '#/schema';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT, UndefinableJson } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -25,8 +25,8 @@ export type EndpointRegistrationOptions = {
 export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionParameters = SchemaTestable;
-export type ApiEndpointDefinitionBody = SchemaTestable<Json | Uint8Array>;
-export type ApiEndpointDefinitionResult = SchemaTestable;
+export type ApiEndpointDefinitionBody = SchemaTestable<UndefinableJson> | typeof String | typeof Uint8Array | typeof ReadableStream;
+export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeof Uint8Array | typeof ReadableStream;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
 
@@ -40,6 +40,10 @@ export type ApiEndpointDefinitionCors = {
 };
 
 export type ApiEndpointDefinition = {
+  /**
+   * Http Method
+   * @default GET
+   */
   method?: OneOrMany<ApiEndpointMethod>,
 
   /**
@@ -61,6 +65,11 @@ export type ApiEndpointDefinition = {
   parameters?: ApiEndpointDefinitionParameters,
   body?: ApiEndpointDefinitionBody,
   result?: ApiEndpointDefinitionResult,
+
+  /**
+   * Maximum size of request body. Useful to prevent harmful requests.
+   */
+  maxBytes?: number,
   description?: string,
   data?: any,
   cors?: ApiEndpointDefinitionCors
@@ -79,7 +88,9 @@ export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEn
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-type ApiType<T extends SchemaTestable> = T extends Schema ? SchemaOutput<T> : T extends ValueType ? ValueTypeOutput<T> : never;
+type ApiType<T extends SchemaTestable> =
+  | T extends typeof ReadableStream ? ReadableStream<Uint8Array>
+  : T extends SchemaTestable ? SchemaOutput<T> : never;
 
 export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointParametersSchema<T, K>>;
 
@@ -103,7 +114,7 @@ export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinit
   ? ApiParameters<T, K> extends never
   ? () => Promise<ApiClientResult<T, K>>
   : (parameters: ApiParameters<T, K>) => Promise<ApiClientResult<T, K>>
-  : (parameters: ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
+  : (parameters: ApiParameters<T, K> extends never ? undefined | Record<never, never> : ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
 
 export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>

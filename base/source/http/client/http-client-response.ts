@@ -5,11 +5,7 @@ import type { HttpHeadersObject } from '../http-headers';
 import { HttpHeaders } from '../http-headers';
 import type { HttpClientRequest, HttpClientRequestObject } from './http-client-request';
 
-export type ReadBodyOptions = {
-  maxBytes?: number
-};
-
-export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'request' | 'headers' | 'close' | 'asObject'> & {
+export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'hasBody' | 'request' | 'headers' | 'close' | 'asObject'> & {
   request: HttpClientRequestObject,
   headers: HttpHeadersObject
 };
@@ -31,6 +27,10 @@ export class HttpClientResponse {
   readonly statusMessage: string;
   readonly headers: HttpHeaders;
   readonly body: HttpBody;
+
+  get hasBody(): boolean {
+    return this.body.available;
+  }
 
   constructor(options: HttpClientResponseOptions) {
     this.request = options.request;

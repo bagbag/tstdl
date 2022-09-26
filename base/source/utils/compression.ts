@@ -1,4 +1,5 @@
 import { NotSupportedError } from '#/error/not-supported.error';
+import { dynamicRequire } from '#/require';
 import { supportsReadableStream } from '#/supports';
 import type { ObjectLiteral } from '#/types';
 import type { Stream, Transform } from 'stream';
@@ -12,8 +13,8 @@ import { getReadableStreamFromIterable } from './stream';
 import { isFunction } from './type-guards';
 import { zBase32Encode } from './z-base32';
 
-const zlib = ForwardRef.create({ initializer: () => eval('require(\'zlib\')') as typeof import('zlib') });
-const nodeStream = ForwardRef.create({ initializer: () => eval('require(\'stream\')') as typeof import('stream') });
+const zlib = ForwardRef.create({ initializer: () => dynamicRequire<typeof import('zlib')>('zlib') });
+const nodeStream = ForwardRef.create({ initializer: () => dynamicRequire<typeof import('stream')>('stream') });
 
 export interface CompressionResult {
   toBuffer(): Promise<Uint8Array>;
@@ -107,10 +108,10 @@ export function decompress(buffer: ZlibType.InputType, algorithm: CompressionAlg
   };
 }
 
-export function decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: ZlibType.ZlibOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: 'brotli', options?: ZlibType.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: ZlibType.ZlibOptions | ZlibType.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: ZlibType.ZlibOptions | ZlibType.BrotliOptions): ReadableStream<Uint8Array> {
+export function decompressStream(stream: Stream | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: ZlibType.ZlibOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: Stream | ReadableStream, algorithm: 'brotli', options?: ZlibType.BrotliOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: ZlibType.ZlibOptions | ZlibType.BrotliOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: ZlibType.ZlibOptions | ZlibType.BrotliOptions): ReadableStream<Uint8Array> {
   const decompressedStream = _decompressStream(stream, algorithm, options);
   return getReadableStreamFromIterable(decompressedStream);
 }
