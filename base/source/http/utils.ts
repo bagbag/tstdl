@@ -28,7 +28,6 @@ export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders): Readab
           ? getReadableStreamFromIterable(body)
           : undefined;
 
-
   if (isUndefined(rawStream)) {
     throw new NotSupportedError('Unsupported stream type.');
   }

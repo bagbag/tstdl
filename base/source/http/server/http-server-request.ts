@@ -2,8 +2,9 @@ import { UnsupportedMediaTypeError } from '#/error/unsupported-media-type.error'
 import type { StringMap, UndefinableJson } from '#/types';
 import { decodeText } from '#/utils/encoding';
 import { readBinaryStream } from '#/utils/stream/stream-reader';
-import { assertDefined, isDefined } from '#/utils/type-guards';
 import { CookieParser } from '../cookie-parser';
+import type { HttpBodySource } from '../http-body';
+import { HttpBody } from '../http-body';
 import type { HttpHeaders } from '../http-headers';
 import type { HttpQuery } from '../http-query';
 import type { HttpMethod } from '../types';
@@ -13,12 +14,12 @@ export type ReadBodyOptions = {
 };
 
 export type HttpServerRequestObject = Pick<HttpServerRequest, 'url' | 'method' | 'headers' | 'query' | 'ip'> & {
-  body: AsyncIterable<Uint8Array> | undefined,
+  body: HttpBody | HttpBodySource,
   context?: StringMap
 };
 
 export class HttpServerRequest {
-  private readonly body: AsyncIterable<Uint8Array> | undefined;
+  private readonly body: HttpBody;
 
   readonly url: URL;
   readonly method: HttpMethod;
@@ -30,7 +31,7 @@ export class HttpServerRequest {
   context: StringMap;
 
   get hasBody(): boolean {
-    return isDefined(this.body);
+    return this.body.available;
   }
 
   constructor(data: HttpServerRequestObject) {
@@ -40,18 +41,17 @@ export class HttpServerRequest {
     this.cookies = new CookieParser(this.headers);
     this.query = data.query;
     this.ip = data.ip;
-    this.body = data.body;
+    this.body = (data.body instanceof HttpBody) ? data.body : new HttpBody(data.body, this.headers);
 
     this.context = data.context ?? {};
   }
 
-  bodyAsStream(): AsyncIterable<Uint8Array> {
-    assertDefined(this.body, 'body is not available');
-    return this.body;
+  bodyAsStream(): ReadableStream<Uint8Array> {
+    return this.body.readAsBinaryStream();
   }
 
   async bodyAsBytes(options?: ReadBodyOptions): Promise<Uint8Array> {
-    const stream = this.bodyAsStream();
+    const stream = this.body.readAsBinaryStream();
     return readBinaryStream(stream, this.headers.contentLength, options?.maxBytes);
   }
 
