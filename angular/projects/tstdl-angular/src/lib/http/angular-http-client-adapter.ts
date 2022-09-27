@@ -93,8 +93,11 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   if (isDefined(body.buffer)) {
     return new Blob([body.buffer]);
   }
+  if (isDefined(body.blob)) {
+    return body.blob;
+  }
   if (isDefined(body.stream)) {
-    throw new Error('AngularHttpClientAdapter does not support streams. Use buffer instead');
+    throw new Error('AngularHttpClientAdapter does not support streams. Use buffer instead.');
   }
   else if (isDefined(body.form)) {
     const formData = new FormData();
@@ -110,7 +113,7 @@ function getAngularBody(body: HttpClientRequest['body']): any {
     return formData;
   }
 
-  throw new Error('unsupported body');
+  throw new Error('Unsupported body.');
 }
 
 /**

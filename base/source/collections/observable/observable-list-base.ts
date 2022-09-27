@@ -61,11 +61,11 @@ export abstract class ObservableListBase<T, TThis extends ObservableCollection<T
   }
 
   protected override onAdd(): never {
-    throw new Error(`use ${this.onAddAt.name}`);
+    throw new Error(`Use ${this.onAddAt.name}.`);
   }
 
   protected override onRemove(): never {
-    throw new Error(`use ${this.onRemoveAt.name}`);
+    throw new Error(`Use ${this.onRemoveAt.name}.`);
   }
 
   protected onAddAt(events: ObservableListIndexedEvent<T>[]): void {

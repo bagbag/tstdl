@@ -36,7 +36,7 @@ const errorHandlers = new Map<string, ErrorHandler<any, any>>();
 
 export function registerErrorHandler<T extends CustomError, TData extends ErrorHandlerData>(constructor: CustomErrorStatic<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   if (errorHandlers.has(constructor.errorName)) {
-    throw new Error(`a handler for ${constructor.errorName} already registered`);
+    throw new Error(`A handler for ${constructor.errorName} already registered.`);
   }
 
   errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
@@ -118,7 +118,7 @@ export function parseResponse<T>(response: Response<T>): T {
     throw parseErrorResponse(response);
   }
 
-  throw new Error('unsupported response');
+  throw new Error('Unsupported response.');
 }
 
 export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError?: true): Error;

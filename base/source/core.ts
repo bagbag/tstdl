@@ -31,7 +31,7 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
       logger.verbose(`error connecting to ${name} (${(error as Error).message})${triesLeft > 0 ? ', trying again...' : ''}`);
 
       if (triesLeft == 0) {
-        throw new Error(`failed to connect to ${name} - no tries left`);
+        throw new Error(`Failed to connect to ${name} - no tries left.`);
       }
 
       await timeout(3000);

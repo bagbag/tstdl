@@ -143,7 +143,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         const methods = isArray(endpointDefinition.method) ? endpointDefinition.method : [endpointDefinition.method ?? 'GET'];
 
         if (methods.length == 0) {
-          throw new Error(`No method provided for resource ${resource}`);
+          throw new Error(`No method provided for resource ${resource}.`);
         }
 
         let resourceApis = this.apis.get(resource);
@@ -168,7 +168,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
           this.apis.set(resource, resourceApis);
         }
 
-        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`endpoint ${name} for resource ${resource} not implemented`));
+        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`Endpoint ${name} for resource ${resource} not implemented.`));
 
         for (const method of methods) {
           resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });
@@ -208,7 +208,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       return { api, patternResult: result };
     }
 
-    throw new NotFoundError(`resource ${resource.pathname} not available`);
+    throw new NotFoundError(`Resource ${resource.pathname} not available.`);
   }
 
   private updateMiddleware(): void {
@@ -228,7 +228,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       : undefined;
 
     if (isDefined(bodyAsParameters) && !isObject(bodyAsParameters)) {
-      throw new BadRequestError('expected json object as body');
+      throw new BadRequestError('Expected json object as body.');
     }
 
     const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...context.resourcePatternResult.pathname.groups };

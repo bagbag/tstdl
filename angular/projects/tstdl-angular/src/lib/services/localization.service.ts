@@ -107,7 +107,7 @@ export class LocalizationService {
   registerLocalization(...localizations: Localization[]): void {
     for (const localization of localizations) {
       if (this.localizations.has(localization.language.code)) {
-        throw new Error(`localization ${localization.language.name} (${localization.language.code}) already registered`);
+        throw new Error(`Localization ${localization.language.name} (${localization.language.code}) already registered.`);
       }
 
       const mappedLocalization = buildMappedLocalization(localization);
@@ -134,7 +134,7 @@ export class LocalizationService {
     const language = isString(languageOrCode) ? this.localizations.get(languageOrCode)?.language : languageOrCode;
 
     if (isUndefined(language) || !this.localizations.has(language.code)) {
-      throw new Error('language not registered');
+      throw new Error('Language not registered.');
     }
 
     this.activeLanguageSubject.next(language);
@@ -162,7 +162,7 @@ export class LocalizationService {
   // eslint-disable-next-line max-statements
   localize<Parameters>(data: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
     if (isUndefined(this.activeLanguage)) {
-      throw new Error('language not set');
+      throw new Error('Language not set.');
     }
 
     const dataIsLocalizationKey = isLocalizationKey(data);

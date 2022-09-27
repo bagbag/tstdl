@@ -62,7 +62,7 @@ export function copyObjectProperties<T extends object, U extends T>(source: T, t
 
 export function getGetter<T extends object, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
   if (!(property in obj)) {
-    throw new Error(`property ${property as string} does not exist`);
+    throw new Error(`Property ${property as string} does not exist.`);
   }
 
   let objOrPrototype = obj as object;
@@ -74,11 +74,11 @@ export function getGetter<T extends object, U extends keyof T>(obj: T, property:
   const descriptor = Object.getOwnPropertyDescriptor(objOrPrototype, property);
 
   if (descriptor == undefined) {
-    throw new Error('could not get property descriptor');
+    throw new Error('Could not get property descriptor.');
   }
 
   if (descriptor.get == undefined) {
-    throw new Error(`property ${property as string} has no getter`);
+    throw new Error(`Property ${property as string} has no getter.`);
   }
 
   // eslint-disable-next-line @typescript-eslint/unbound-method

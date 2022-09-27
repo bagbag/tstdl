@@ -6,7 +6,7 @@ import { LogLevel } from './level';
 
 export type LogEntry = string;
 export type LogEntryProvider = () => LogEntry;
-export type LogEntryOrProvider = LogEntry | (() => LogEntry);
+export type LogEntryOrProvider = LogEntry | LogEntryProvider;
 export type LoggerStatic = new (level: LogLevel) => Logger;
 
 export type LogErrorOptions = {
@@ -15,7 +15,7 @@ export type LogErrorOptions = {
 };
 
 /** either string as a module shorthand or object */
-export type LoggerArgument = string | {
+export type LoggerArgument = string | undefined | {
   level?: LogLevel,
   module?: string | string[],
   prefix?: string

@@ -281,6 +281,9 @@ async function addRequestHeadersMiddleware(request: HttpClientRequest, next: Htt
     else if (isDefined(body.form)) {
       clone.headers.contentType = 'application/x-www-form-urlencoded';
     }
+    else if (isDefined(body.blob)) {
+      clone.headers.contentType = (body.blob.type.length > 0) ? body.blob.type : 'application/octet-stream';
+    }
     else if (isDefined(body.stream) || isDefined(body.buffer)) {
       clone.headers.contentType = 'application/octet-stream';
     }

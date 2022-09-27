@@ -21,6 +21,7 @@ export type HttpRequestBody = {
   json?: UndefinableJson,
   form?: HttpForm,
   buffer?: Uint8Array,
+  blob?: Blob,
   stream?: ReadableStream<Uint8Array>
 };
 

@@ -4,7 +4,7 @@ import type { HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/h
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
-import { isArray, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
@@ -103,6 +103,10 @@ function getRequestBody(body: unknown): HttpRequestBody | undefined {
 
   if (isReadableStream(body)) {
     return { stream: body };
+  }
+
+  if (isBlob(body)) {
+    return { blob: body };
   }
 
   if (isString(body)) {

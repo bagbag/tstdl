@@ -19,7 +19,7 @@ export function isApiController(controller: Type): boolean {
 
 export function ensureApiController(controller: Type): void {
   if (!isApiController(controller)) {
-    throw new Error(`Provided type ${(controller as Type | undefined)?.name} is not a known ApiController. Make sure to use @ApiController decorator`);
+    throw new Error(`Provided type ${(controller as Type | undefined)?.name} is not a known ApiController. Make sure to use @ApiController decorator.`);
   }
 }
 
