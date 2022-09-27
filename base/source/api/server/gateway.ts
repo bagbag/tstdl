@@ -16,10 +16,10 @@ import { toArray } from '#/utils/array';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { deferThrow } from '#/utils/throw';
-import { isArray, isDefined, isNullOrUndefined, isObject, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isDefined, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
 import { mebibyte } from '#/utils/units';
 import 'urlpattern-polyfill';
-import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
@@ -250,16 +250,17 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
 
     const response = new HttpServerResponse({
-      body: (context.endpoint.definition.result == String) ? { text: result }
-        : (context.endpoint.definition.result == Uint8Array) ? { buffer: result }
-          : (context.endpoint.definition.result == ReadableStream) ? { stream: result }
-            : { json: result }
+      body: isUint8Array(result) ? { buffer: result }
+        : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
+          : isReadableStream<Uint8Array>(result) ? { stream: result }
+            : (context.endpoint.definition.result == String) ? { text: result }
+              : { json: result }
     });
 
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable<UndefinableJson> | typeof Uint8Array | typeof ReadableStream): Promise<UndefinableJson | Uint8Array | ReadableStream<Uint8Array>> {
+  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable<UndefinableJson> | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
     let body: Awaited<ReturnType<typeof this.getBody>> | undefined;
 
     if (request.hasBody) {
@@ -268,6 +269,10 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       }
       else if (schema == Uint8Array) {
         body = await request.body.readAsBuffer(options);
+      }
+      else if (schema == Blob) {
+        const buffer = await request.body.readAsBuffer(options);
+        body = new Blob([buffer], { type: request.headers.contentType });
       }
       else if (schema == String) {
         body = await request.body.readAsText(options);

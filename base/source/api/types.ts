@@ -25,8 +25,8 @@ export type EndpointRegistrationOptions = {
 export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionParameters = SchemaTestable;
-export type ApiEndpointDefinitionBody = SchemaTestable<UndefinableJson> | typeof String | typeof Uint8Array | typeof ReadableStream;
-export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeof Uint8Array | typeof ReadableStream;
+export type ApiEndpointDefinitionBody = SchemaTestable<UndefinableJson> | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
+export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
 
@@ -58,6 +58,7 @@ export type ApiEndpointDefinition = {
    * ```ts
    * ${endpoint.rootResource ?? api.ressource}/${endpoint.resource}
    * ```
+   * @default name of endpoint property
    */
   resource?: string,
 
@@ -88,21 +89,29 @@ export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEn
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-type ApiType<T extends SchemaTestable> =
+export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream;
+
+export type ApiInputType<T extends SchemaTestable> =
+  | T extends ApiBinaryType ? (Uint8Array | Blob | ReadableStream<Uint8Array>)
+  : T extends SchemaTestable ? SchemaOutput<T> : never;
+
+export type ApiOutputType<T extends SchemaTestable> =
   | T extends typeof ReadableStream ? ReadableStream<Uint8Array>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 
-export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointParametersSchema<T, K>>;
+export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointParametersSchema<T, K>>;
 
-export type ApiBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointBodySchema<T, K>>;
+export type ApiClientBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointBodySchema<T, K>>;
 
-export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+export type ApiServerBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiOutputType<ApiEndpointBodySchema<T, K>>;
 
-export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiType<ApiEndpointResultSchema<T, K>>;
+export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+
+export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiOutputType<ApiEndpointResultSchema<T, K>>;
 
 export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
   parameters: ApiParameters<T, K>,
-  body: ApiBody<T, K>,
+  body: ApiServerBody<T, K>,
   request: HttpServerRequest
 };
 
@@ -110,11 +119,11 @@ export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinit
   (requestData: ApiRequestData<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  ApiBody<T, K> extends never
+  ApiClientBody<T, K> extends never
   ? ApiParameters<T, K> extends never
   ? () => Promise<ApiClientResult<T, K>>
   : (parameters: ApiParameters<T, K>) => Promise<ApiClientResult<T, K>>
-  : (parameters: ApiParameters<T, K> extends never ? undefined | Record<never, never> : ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
+  : (parameters: ApiParameters<T, K> extends never ? undefined | Record<never, never> : ApiParameters<T, K>, body: ApiClientBody<T, K>) => Promise<ApiClientResult<T, K>>;
 
 export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>

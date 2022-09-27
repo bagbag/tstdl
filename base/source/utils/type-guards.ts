@@ -93,9 +93,9 @@ export function assertNotSymbolPass<T>(value: T, message?: AssertionMessage): In
 
 export function isObject<T extends object = object>(value: any): value is T { return ((value as {} | undefined)?.constructor == Object); }
 export function isNotObject<T>(value: T): value is InferIsNotType<T, typeof isObject> { return !isObject(value); }
-export function assertObject(value: any, message: AssertionMessage = 'Expected value to be object.'): asserts value is InferIsType<typeof isObject> { assert(isObject(value), message); }
+export function assertObject<T extends object = object>(value: any, message: AssertionMessage = 'Expected value to be object.'): asserts value is InferIsType<typeof isObject<T>> { assert(isObject(value), message); }
 export function assertNotObject<T>(value: T, message: AssertionMessage = 'Expected value to not be object.'): asserts value is InferIsNotType<T, typeof isObject> { assert(isNotObject(value), message); }
-export function assertObjectPass(value: any, message?: AssertionMessage): InferIsType<typeof isObject> { assertObject(value, message); return value; }
+export function assertObjectPass<T extends object = object>(value: any, message?: AssertionMessage): InferIsType<typeof isObject> { assertObject<T>(value, message); return value; }
 export function assertNotObjectPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isObject> { assertNotObject(value, message); return value; }
 
 export function isPrimitive(value: any): value is string | number | boolean | bigint | symbol | null | undefined { const type = typeof value; return type == 'string' || type == 'number' || type == 'boolean' || type == 'bigint' || type == 'symbol' || value === null || value === undefined; }
@@ -135,9 +135,9 @@ export function assertNotRegExpPass<T>(value: T, message?: AssertionMessage): In
 
 export function isArray<T = any>(value: any): value is readonly T[] { return Array.isArray(value); }
 export function isNotArray<T>(value: T): value is InferIsNotType<T, typeof isArray> { return !isArray(value); }
-export function assertArray(value: any, message: AssertionMessage = 'Expected value to be Array.'): asserts value is InferIsType<typeof isArray> { assert(isArray(value), message); }
+export function assertArray<T = any>(value: any, message: AssertionMessage = 'Expected value to be Array.'): asserts value is InferIsType<typeof isArray<T>> { assert(isArray(value), message); }
 export function assertNotArray<T>(value: T, message: AssertionMessage = 'Expected value to not be Array.'): asserts value is InferIsNotType<T, typeof isArray> { assert(isNotArray(value), message); }
-export function assertArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isArray> { assertArray(value, message); return value; }
+export function assertArrayPass<T = any>(value: any, message?: AssertionMessage): InferIsType<typeof isArray> { assertArray<T>(value, message); return value; }
 export function assertNotArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isArray> { assertNotArray(value, message); return value; }
 
 export function isWritableArray(value: any): value is any[] { return isArray(value); }
@@ -259,30 +259,30 @@ export function assertNotDataView<T>(value: T, message: AssertionMessage = 'Expe
 export function assertDataViewPass(value: any, message?: AssertionMessage): InferIsType<typeof isDataView> { assertDataView(value, message); return value; }
 export function assertNotDataViewPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isDataView> { assertNotDataView(value, message); return value; }
 
-export function isSet<T>(value: Set<T> | any): value is Set<T> { return (value instanceof Set); }
+export function isSet<T>(value: any): value is Set<T> { return (value instanceof Set); }
 export function isNotSet<T>(value: T): value is InferIsNotType<T, typeof isSet> { return !isSet(value); }
-export function assertSet<T>(value: Set<T> | any, message: AssertionMessage = 'Expected value to be Set.'): asserts value is Set<T> { assert(isSet(value), message); }
+export function assertSet<T>(value: any, message: AssertionMessage = 'Expected value to be Set.'): asserts value is Set<T> { assert(isSet(value), message); }
 export function assertNotSet<T>(value: T, message: AssertionMessage = 'Expected value to not be Set.'): asserts value is InferIsNotType<T, typeof isSet> { assert(isNotSet(value), message); }
-export function assertSetPass<T>(value: Set<T> | any, message?: AssertionMessage): Set<T> { assertSet(value, message); return value as Set<T>; }
+export function assertSetPass<T>(value: any, message?: AssertionMessage): Set<T> { assertSet(value, message); return value as Set<T>; }
 export function assertNotSetPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isSet> { assertNotSet(value, message); return value; }
 
-export function isMap<K, V>(value: Map<K, V> | any): value is Map<K, V> { return (value instanceof Map); }
+export function isMap<K, V>(value: any): value is Map<K, V> { return (value instanceof Map); }
 export function isNotMap<T>(value: T): value is InferIsNotType<T, typeof isMap> { return !isMap(value); }
-export function assertMap<K, V>(value: Map<K, V> | any, message: AssertionMessage = 'Expected value to be Map.'): asserts value is Map<K, V> { assert(isMap(value), message); }
+export function assertMap<K, V>(value: any, message: AssertionMessage = 'Expected value to be Map.'): asserts value is Map<K, V> { assert(isMap(value), message); }
 export function assertNotMap<T>(value: T, message: AssertionMessage = 'Expected value to not be Map.'): asserts value is InferIsNotType<T, typeof isMap> { assert(isNotMap(value), message); }
-export function assertMapPass<K, V>(value: Map<K, V> | any, message?: AssertionMessage): Map<K, V> { assertMap(value, message); return value as Map<K, V>; }
+export function assertMapPass<K, V>(value: any, message?: AssertionMessage): Map<K, V> { assertMap(value, message); return value as Map<K, V>; }
 export function assertNotMapPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isMap> { assertNotMap(value, message); return value; }
 
-export function isPromise<T>(value: Promise<T> | any): value is Promise<T> { return (value instanceof Promise); }
+export function isPromise<T>(value: any): value is Promise<T> { return (value instanceof Promise); }
 export function isNotPromise<T>(value: T): value is InferIsNotType<T, typeof isPromise> { return !isPromise(value); }
-export function assertPromise<T>(value: Promise<T> | any, message: AssertionMessage = 'Expected value to be Promise.'): asserts value is Promise<T> { assert(isPromise(value), message); }
+export function assertPromise<T>(value: any, message: AssertionMessage = 'Expected value to be Promise.'): asserts value is Promise<T> { assert(isPromise(value), message); }
 export function assertNotPromise<T>(value: T, message: AssertionMessage = 'Expected value to not be Promise.'): asserts value is InferIsNotType<T, typeof isPromise> { assert(isNotPromise(value), message); }
-export function assertPromisePass<T>(value: Promise<T> | any, message?: AssertionMessage): Promise<T> { assertPromise(value, message); return value as Promise<T>; } // eslint-disable-line @typescript-eslint/promise-function-async
+export function assertPromisePass<T>(value: any, message?: AssertionMessage): Promise<T> { assertPromise(value, message); return value as Promise<T>; } // eslint-disable-line @typescript-eslint/promise-function-async
 export function assertNotPromisePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isPromise> { assertNotPromise(value, message); return value; }
 
-export function isReadableStream(value: any): value is ReadableStream { return (supportsReadableStream && (value instanceof ReadableStream)); }
+export function isReadableStream<T = any>(value: any): value is ReadableStream<T> { return (supportsReadableStream && (value instanceof ReadableStream)); }
 export function isNotReadableStream<T>(value: T): value is InferIsNotType<T, typeof isReadableStream> { return !isReadableStream(value); }
-export function assertReadableStream(value: any, message: AssertionMessage = 'Expected value to be ReadableStream.'): asserts value is InferIsType<typeof isReadableStream> { assert(isReadableStream(value), message); }
+export function assertReadableStream<T = any>(value: any, message: AssertionMessage = 'Expected value to be ReadableStream.'): asserts value is InferIsType<typeof isReadableStream<T>> { assert(isReadableStream(value), message); }
 export function assertNotReadableStream<T>(value: T, message: AssertionMessage = 'Expected value to not be ReadableStream.'): asserts value is InferIsNotType<T, typeof isReadableStream> { assert(isNotReadableStream(value), message); }
-export function assertReadableStreamPass(value: any, message?: AssertionMessage): InferIsType<typeof isReadableStream> { assertReadableStream(value, message); return value; }
+export function assertReadableStreamPass<T = any>(value: any, message?: AssertionMessage): InferIsType<typeof isReadableStream> { assertReadableStream<T>(value, message); return value; }
 export function assertNotReadableStreamPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isReadableStream> { assertNotReadableStream(value, message); return value; }
