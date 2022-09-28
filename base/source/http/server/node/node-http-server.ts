@@ -77,7 +77,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       let errorListener: (error: Error) => void; // eslint-disable-line prefer-const
 
       listeningListener = () => { // eslint-disable-line prefer-const
-        this.logger.info(`listening on port ${port}`);
+        this.logger.info(`Listening on port ${port}`);
         this.untrackConnectedSockets = trackConnectedSockets(this.httpServer, this.sockets);
         this.httpServer.removeListener('error', errorListener);
         resolve();
@@ -94,7 +94,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   async close(timeout: number): Promise<void> {
-    this.logger.info('closing http server');
+    this.logger.info('Closing http server');
 
     const timer = new Timer(true);
 
@@ -109,13 +109,13 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       }
 
       if (timer.milliseconds >= timeout) {
-        this.logger.info(`force closing of ${connections} remaining sockets after waiting for ${timeout} milliseconds`);
+        this.logger.info(`Force closing of ${connections} remaining sockets after waiting for ${timeout} milliseconds`);
         destroySockets(this.sockets);
         break;
       }
 
       if (connections > 0) {
-        this.logger.info(`waiting for ${connections} connections to end`);
+        this.logger.info(`Waiting for ${connections} connections to end`);
         await cancelableTimeout(250, CancellationToken.fromObservable(close$));
       }
     }

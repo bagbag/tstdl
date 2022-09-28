@@ -3,15 +3,22 @@ import { disposeInstances } from '#/core';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { Module } from '#/module';
-import { ModuleState } from '#/module';
+import { ModuleBase, ModuleState } from '#/module';
 import type { FunctionModuleFunction } from '#/module/modules';
 import { FunctionModule } from '#/module/modules';
-import { initializeSignals, requestShutdown, shutdownToken } from '#/process-shutdown';
+import { initializeSignals, shutdownToken } from '#/process-shutdown';
 import { DeferredPromise } from '#/promise';
 import type { OneOrMany, Type } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
-import type { CancellationToken } from '#/utils/cancellation-token';
+import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { isUndefined } from '#/utils/type-guards';
+
+/**
+ * TODO
+ *
+ * container scopes
+ * dispose per container
+ */
 
 initializeSignals();
 
@@ -31,9 +38,12 @@ export class Application {
   private readonly moduleTypes: Set<Type<Module>>;
   private readonly moduleInstances: Set<Module>;
   private readonly shutdownPromise: DeferredPromise;
+  private readonly _shutdownToken: CancellationToken;
 
-  static get shutdownToken(): CancellationToken {
-    return shutdownToken;
+  readonly shutdownToken: ReadonlyCancellationToken;
+
+  static get shutdownToken(): ReadonlyCancellationToken {
+    return Application.instance.shutdownToken;
   }
 
   constructor(@resolveArg<LoggerArgument>('App') logger: Logger) {
@@ -42,54 +52,75 @@ export class Application {
     this.moduleTypes = new Set();
     this.moduleInstances = new Set();
     this.shutdownPromise = new DeferredPromise();
+    this._shutdownToken = shutdownToken.createChild();
+    this.shutdownToken = this._shutdownToken.asReadonly;
   }
 
   static registerModule(moduleType: Type<Module>): void {
     Application.instance.registerModule(moduleType);
   }
 
+  static registerModuleFunction(fn: FunctionModuleFunction): void {
+    Application.instance.registerModuleFunction(fn);
+  }
+
   static registerModuleInstance(module: Module): void {
     Application.instance.registerModuleInstance(module);
   }
 
-  static async run(...functions: OneOrMany<FunctionModuleFunction>[]): Promise<void> {
-    await Application.instance.run(...functions);
+  static async run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
+    await Application.instance.run(...functionsAndModules);
   }
 
   static async shutdown(): Promise<void> {
     await Application.instance.shutdown();
   }
 
+  static requestShutdown(): void {
+    Application.instance.requestShutdown();
+  }
+
   registerModule(moduleType: Type<Module>): void {
     this.moduleTypes.add(moduleType);
+  }
+
+  registerModuleFunction(fn: FunctionModuleFunction): void {
+    const module = new FunctionModule(fn);
+    this.registerModuleInstance(module);
   }
 
   registerModuleInstance(module: Module): void {
     this.moduleInstances.add(module);
   }
 
-  async run(...functions: OneOrMany<FunctionModuleFunction>[]): Promise<void> {
-    for (const fn of functions.flatMap((fns) => fns)) {
-      const module = new FunctionModule(fn);
-      this.registerModuleInstance(module);
+  async run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
+    for (const fnOrModule of functionsAndModules.flatMap((fns) => fns)) {
+      if (fnOrModule.prototype instanceof ModuleBase) {
+        this.registerModule(fnOrModule as Type<Module>);
+      }
+      else {
+        this.registerModuleFunction(fnOrModule as FunctionModuleFunction);
+      }
     }
 
     const resolvedModules = await toArrayAsync(mapAsync(this.moduleTypes, async (type) => container.resolveAsync(type)));
-    const modules = [...resolvedModules, ...this.moduleInstances];
+    const modules = [...this.moduleInstances, ...resolvedModules];
 
     try {
       await Promise.race([
-        runModules(modules, this.logger),
-        shutdownToken
+        this.runModules(modules),
+        this.shutdownToken
       ]);
     }
     catch (error) {
       this.logger.error(error as Error, { includeRest: true, includeStack: true });
     }
     finally {
-      requestShutdown();
+      this.requestShutdown();
 
-      await stopModules(modules, this.logger);
+      this.logger.info('Shutting down');
+
+      await this.stopModules(modules);
       await disposeInstances();
 
       this.logger.info('Bye');
@@ -99,44 +130,51 @@ export class Application {
   }
 
   async shutdown(): Promise<void> {
-    this.logger.info('Shutting down');
-    requestShutdown();
+    this.requestShutdown();
     await this.shutdownPromise;
   }
-}
 
-async function runModules(modules: Module[], logger?: Logger): Promise<void> {
-  const promises = modules.map(async (module) => {
-    if (logger != undefined) {
-      logger.verbose(`Starting module ${module.name}`);
-    }
-
-    await module.run();
-  });
-
-  await Promise.all(promises);
-}
-
-async function stopModules(modules: Module[], logger?: Logger): Promise<void> {
-  const promises = modules.map(async (module) => {
-    if (module.state == ModuleState.Stopped) {
-      if (logger != undefined) {
-        logger.verbose(`Module ${module.name} already stopped`);
-      }
-
+  requestShutdown(): void {
+    if (this.shutdownToken.isSet) {
       return;
     }
 
-    if (logger != undefined) {
-      logger.verbose(`Stopping module ${module.name}`);
-    }
+    this._shutdownToken.set();
+  }
 
-    await module.stop();
+  private async runModules(modules: Module[]): Promise<void> {
+    const promises = modules.map(async (module) => {
+      try {
+        this.logger.info(`Starting module ${module.name}`);
+        await module.run();
+        this.logger.info(`Module ${module.name} stopped.`);
+      }
+      catch (error) {
+        this.logger.error(error as Error);
+        this.requestShutdown();
+      }
+    });
 
-    if (logger != undefined) {
-      logger.verbose(`Stopped module ${module.name}`);
-    }
-  });
+    await Promise.all(promises);
+  }
 
-  await Promise.all(promises);
+  private async stopModules(modules: Module[]): Promise<void> {
+    const promises = modules.map(async (module) => {
+      if (module.state == ModuleState.Stopped) {
+        return;
+      }
+
+      this.logger.info(`Stopping module ${module.name}`);
+
+      try {
+        await module.stop();
+      }
+      catch (error) {
+        this.logger.error(error as Error);
+        this.requestShutdown();
+      }
+    });
+
+    await Promise.all(promises);
+  }
 }

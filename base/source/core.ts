@@ -6,7 +6,7 @@ import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { timeout } from './utils/timing';
 
-let coreLogPrefix = 'CORE';
+let coreLogPrefix = 'Core';
 let logLevel = LogLevel.Debug;
 let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
 

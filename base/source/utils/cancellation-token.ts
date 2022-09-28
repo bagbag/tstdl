@@ -6,37 +6,37 @@ import { isBoolean, isUndefined } from './type-guards';
 
 export type ConnectConfig = {
   /**
-   * propagate parent set to child
+   * Propagate parent set to child.
    * @default true
    */
   set?: boolean,
 
   /**
-   * propagate unset to child
+   * Propagate unset to child.
    * @default true
    */
   unset?: boolean,
 
   /**
-   * propagate complete to child
+   * Propagate complete to child.
    * @default true
    */
   complete?: boolean,
 
   /**
-   * propagate errors to child
+   * Propagate errors to child.
    * @default true
    */
   error?: boolean,
 
   /**
-   * update state immediately and don't first for next state change
+   * Update state immediately and don't wait for next state change.
    * @default true
    */
   immediate?: boolean,
 
   /**
-   * only update the state once (if immediate is also true it basically just sets the same value)
+   * Only update the state once (if immediate is also true it basically just sets the same value).
    * @default false
    */
   once?: boolean
@@ -44,58 +44,58 @@ export type ConnectConfig = {
 
 export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribable<void> {
   /**
-   * returns whether this token set
+   * Returns whether this token set.
    */
   readonly isSet: boolean;
 
   /**
-   * returns whether this token unset
+   * Returns whether this token unset.
    */
   readonly isUnset: boolean;
 
   /**
-   * observable which emits the current state and every state change
+   * Observable which emits the current state and every state change.
    */
   readonly state$: Observable<boolean>;
 
   /**
-   * observable which emits when this token is set
+   * Observable which emits when this token is set.
    */
   readonly set$: Observable<void>;
 
   /**
-   * observable which emits when this token is unset
+   * Observable which emits when this token is unset.
    */
   readonly unset$: Observable<void>;
 
   /**
-   * returns a promise which is resolved when this token is set
+   * Returns a promise which is resolved when this token is set.
    */
   readonly $set: Promise<void>;
 
   /**
-   * returns a promise which is resolved when this token is unset
+   * Returns a promise which is resolved when this token is unset.
    */
   readonly $unset: Promise<void>;
 
   /**
-   * returns a promise which is resolved when this token changes its state
+   * Returns a promise which is resolved when this token changes its state.
    */
   readonly $state: Promise<boolean>;
 
   /**
-   * returns an AbortSignal
+   * Returns an AbortSignal.
    */
   asAbortSignal: AbortSignal;
 
   /**
-   * create a new token and connect it to this instance
+   * Create a new token and connect it to this instance.
    * @see {@link connect}
    */
   createChild(config?: ConnectConfig): CancellationToken;
 
   /**
-   * propagate events from this instance to the `child`. Events from the `child` are *not* propagated to this instance
+   * Propagate events from this instance to the `child`. Events from the `child` are *not* propagated to this instance.
    * @param child child to connect
    */
   connect(child: CancellationToken, config?: ConnectConfig): void;
@@ -162,7 +162,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * creates a token and sets it whenever the abort signal is aborted
+   * Creates a token and sets it whenever the abort signal is aborted.
    * @param signal abort signal to listen to
    * @param complete complete token after resolve
    */
@@ -172,7 +172,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * creates a token and sets it whenever the promise is resolved
+   * Creates a token and sets it whenever the promise is resolved.
    * @param promise promise to await
    * @param complete complete token after resolve
    */
@@ -182,8 +182,8 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * creates a token and connets its next, error and complete
-   * @param observable observable to subscribe. Takes emitted value as state if type is boolean otherwise sets state to true
+   * Creates a token and connets its next, error and complete.
+   * @param observable observable to subscribe. Takes emitted value as state if type is boolean otherwise sets state to true.
    */
   static fromObservable(observable: Observable<void | boolean>, config?: ConnectConfig): CancellationToken {
     const token = new CancellationToken();
@@ -227,7 +227,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * become a child of the provided parent. Events from the parent are propagated to this token. Events from this token are *not* propagated to the parent
+   * Become a child of the provided parent. Events from the parent are propagated to this token. Events from this token are *not* propagated to the parent.
    */
   inherit(parent: ReadonlyCancellationToken, config?: ConnectConfig): this {
     CancellationToken.connect(parent.state$, this, config);
@@ -235,37 +235,37 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * set this token
+   * Set this token.
    */
   set(): void {
     this.stateSubject.next(true);
   }
 
   /**
-   * unset this token
+   * Unset this token.
    */
   unset(): void {
     this.stateSubject.next(false);
   }
 
   /**
-   * set the state
+   * Set the state.
    */
   setState(state: boolean): void {
     this.stateSubject.next(state);
   }
 
   /**
-   * errors the token
+   * Errors the token.
    */
   error(error: Error): void {
     this.stateSubject.error(error);
   }
 
   /**
-   * clean up subscriptions
+   * Clean up subscriptions.
    *
-   * keep in mind that *active* awaits (promise) on this token will throw
+   * Keep in mind that *active* awaits (promise) on this token will throw.
    */
   complete(): void {
     this.stateSubject.complete();
