@@ -1,6 +1,7 @@
 import type { AsyncDisposable } from '#/disposable';
 import { disposeAsync } from '#/disposable';
 import { isNode } from '#/environment';
+import type { Logger } from '#/logger';
 import { Pool } from '#/pool';
 import { dynamicRequire } from '#/require';
 import type { RpcRemote } from '#/rpc';
@@ -35,11 +36,11 @@ export class ThreadPool implements AsyncDisposable {
   readonly url: string | URL;
   readonly options: ThreadOptions | undefined;
 
-  constructor(url: string | URL, options?: ThreadOptions) {
+  constructor(url: string | URL, logger: Logger, options?: ThreadOptions) {
     this.url = url;
     this.options = options;
 
-    this.pool = new Pool(() => this.spawn(), ({ worker }) => worker.terminate(), { size: options?.threadCount, disposeOnError: false });
+    this.pool = new Pool(() => this.spawn(), ({ worker }) => worker.terminate(), logger, { size: options?.threadCount });
   }
 
   async dispose(): Promise<void> {

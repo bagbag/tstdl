@@ -1,6 +1,6 @@
 import { noopOperator } from '#/rxjs/noop';
 import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, map, mapTo, skip, take } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, map, skip, take } from 'rxjs';
 import { noop } from './noop';
 import { isBoolean, isUndefined } from './type-guards';
 
@@ -157,8 +157,8 @@ export class CancellationToken implements ReadonlyCancellationToken {
   constructor(initialState: boolean = false) {
     this.stateSubject = new BehaviorSubject<boolean>(initialState);
     this.state$ = this.stateSubject.pipe(distinctUntilChanged());
-    this.set$ = this.state$.pipe(filter((state) => state), mapTo(undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    this.unset$ = this.state$.pipe(filter((state) => !state), mapTo(undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    this.set$ = this.state$.pipe(filter((state) => state), map(() => undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    this.unset$ = this.state$.pipe(filter((state) => !state), map(() => undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
   }
 
   /**
@@ -177,7 +177,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
    * @param complete complete token after resolve
    */
   static fromPromise(promise: PromiseLike<any>, complete: boolean = true): CancellationToken {
-    const signal$ = from(promise).pipe(mapTo(true));
+    const signal$ = from(promise).pipe(map(() => true));
     return CancellationToken.fromObservable(signal$, { complete });
   }
 

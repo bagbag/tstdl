@@ -5,7 +5,7 @@ import { configureTemplates } from '#/templates';
 import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.provider-template';
 import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
 import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
-import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
+import { configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
 import { integer, string } from '#/utils/config-parser';
 import { resolve } from 'path';
 import { configureTstdl } from '../../core';

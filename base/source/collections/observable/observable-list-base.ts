@@ -1,7 +1,5 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { map, share } from 'rxjs/operators';
+import { firstValueFrom, map, merge, share, Subject } from 'rxjs';
 import type { ObservableCollection } from './observable-collection';
 import { ObservableCollectionBase } from './observable-collection-base';
 import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';

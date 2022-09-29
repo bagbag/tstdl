@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 import { observeIntersection, observeResize } from '@tstdl/base/rxjs';
 import { isUndefined, timeout } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, switchMapTo, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, take } from 'rxjs';
 import { LifecycleUtils } from '../utils/lifecycle';
 
 type MaybeWithNativeElement = HTMLElement & Partial<ElementRef<HTMLElement>>;
@@ -110,7 +110,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.viewChecked$
       .pipe(
         take(1),
-        switchMapTo(merge(this.observe('source'), resize$, scroll$, intersect$))
+        switchMap(() => merge(this.observe('source'), resize$, scroll$, intersect$))
       )
       .subscribe(() => void this.check());
   }

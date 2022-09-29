@@ -1,7 +1,6 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Record, StringMap } from '#/types';
 import type { Observable } from 'rxjs';
-import { debounceTime, defaultIfEmpty, merge, Subject, takeUntil } from 'rxjs';
+import { debounceTime, defaultIfEmpty, firstValueFrom, merge, Subject, takeUntil } from 'rxjs';
 import { CancellationToken } from './cancellation-token';
 import { timeout } from './timing';
 import { isDefined, isObject, isUndefined } from './type-guards';

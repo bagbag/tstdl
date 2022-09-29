@@ -4,11 +4,10 @@ import { container, singleton } from '@tstdl/base/container';
 import { HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
-import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { StringMap } from '@tstdl/base/types';
 import { toArray } from '@tstdl/base/utils/array';
 import { isDefined, isUndefined } from '@tstdl/base/utils/type-guards';
-import { race, switchMap, throwError } from 'rxjs';
+import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
 

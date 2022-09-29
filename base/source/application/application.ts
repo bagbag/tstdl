@@ -29,6 +29,11 @@ export class Application {
   private static get instance(): Application {
     if (isUndefined(this._instance)) {
       this._instance = container.resolve(Application);
+
+      // @ts-expect-error readonly
+      this._instance._shutdownToken = shutdownToken;
+      // @ts-expect-error readonly
+      this._instance.shutdownToken = shutdownToken.asReadonly;
     }
 
     return this._instance;
@@ -68,8 +73,12 @@ export class Application {
     Application.instance.registerModuleInstance(module);
   }
 
-  static async run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
-    await Application.instance.run(...functionsAndModules);
+  static run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
+    Application.instance.run(...functionsAndModules);
+  }
+
+  static async waitForShutdown(): Promise<void> {
+    return Application.instance.waitForShutdown();
   }
 
   static async shutdown(): Promise<void> {
@@ -93,7 +102,28 @@ export class Application {
     this.moduleInstances.add(module);
   }
 
-  async run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
+  run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
+    void this._run(...functionsAndModules);
+  }
+
+  async shutdown(): Promise<void> {
+    this.requestShutdown();
+    await this.shutdownPromise;
+  }
+
+  requestShutdown(): void {
+    if (this.shutdownToken.isSet) {
+      return;
+    }
+
+    this._shutdownToken.set();
+  }
+
+  async waitForShutdown(): Promise<void> {
+    return this.shutdownPromise;
+  }
+
+  private async _run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
     for (const fnOrModule of functionsAndModules.flatMap((fns) => fns)) {
       if (fnOrModule.prototype instanceof ModuleBase) {
         this.registerModule(fnOrModule as Type<Module>);
@@ -127,19 +157,6 @@ export class Application {
     }
 
     this.shutdownPromise.resolve();
-  }
-
-  async shutdown(): Promise<void> {
-    this.requestShutdown();
-    await this.shutdownPromise;
-  }
-
-  requestShutdown(): void {
-    if (this.shutdownToken.isSet) {
-      return;
-    }
-
-    this._shutdownToken.set();
   }
 
   private async runModules(modules: Module[]): Promise<void> {

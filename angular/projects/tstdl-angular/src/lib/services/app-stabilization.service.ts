@@ -1,7 +1,6 @@
 import { ApplicationRef, Injectable, NgZone } from '@angular/core';
-import { firstValueFrom } from '@tstdl/base/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { distinctUntilChanged, first, mapTo, shareReplay } from 'rxjs/operators';
+import { distinctUntilChanged, first, firstValueFrom, map, shareReplay } from 'rxjs';
 import { runInZone } from '../utils/rxjs';
 
 @Injectable({
@@ -23,7 +22,7 @@ export class AppStabilizationService {
   wait$(state: boolean = true): Observable<void> {
     return this.state$.pipe(
       first((isStable) => isStable == state),
-      mapTo(undefined)
+      map(() => undefined)
     );
   }
 

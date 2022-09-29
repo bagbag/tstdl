@@ -110,7 +110,8 @@ export class PdfService implements AsyncDisposable, AfterResolve {
 
     this.pool = new Pool(
       async () => puppeteer.launch(),
-      async (browser) => browser.close()
+      async (browser) => browser.close(),
+      logger
     );
   }
 
@@ -199,51 +200,75 @@ export class PdfService implements AsyncDisposable, AfterResolve {
   }
 
   private renderStream(handler: (page: puppeteer.Page) => Promise<PdfRenderOptions | undefined | void>, options: PdfRenderOptions = {}): ReadableStream<Uint8Array> {
-    return readableStreamFromPromise(async () => this.pool.use(async (browser) => {
-      const page = await browser.newPage();
-      const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
+    return readableStreamFromPromise(async () => {
+      const browser = await this.pool.get();
 
       try {
+        let page: puppeteer.Page;
+
+        try {
+          page = await browser.newPage();
+        }
+        catch (error) {
+          await this.pool.disposeInstance(browser);
+          throw error;
+        }
+
+        const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
+
         const optionsFromHandler = await handler(page) ?? {};
+
         const mergedOptions: PdfRenderOptions = { ...optionsFromHandler, ...options };
-
-        const margin = isUndefined(mergedOptions.margin)
-          ? undefined
-          : isObject(mergedOptions.margin)
-            ? mergedOptions.margin
-            : {
-              top: mergedOptions.margin,
-              bottom: mergedOptions.margin,
-              right: mergedOptions.margin,
-              left: mergedOptions.margin
-            };
-
-        const pdfStream = await page.createPDFStream({
-          format: mergedOptions.format ?? 'a4',
-          scale: mergedOptions.scale,
-          landscape: mergedOptions.landscape,
-          width: mergedOptions.width,
-          height: mergedOptions.height,
-          omitBackground: mergedOptions.omitDefaultBackground,
-          printBackground: mergedOptions.renderBackground,
-          margin,
-          displayHeaderFooter: mergedOptions.displayHeaderFooter ?? (isDefined(mergedOptions.headerTemplate) || isDefined(mergedOptions.footerTemplate)),
-          headerTemplate: mergedOptions.headerTemplate,
-          footerTemplate: mergedOptions.footerTemplate
-        });
+        const createPdfOptions: puppeteer.PDFOptions = this.convertOptions(mergedOptions);
+        const pdfStream = await page.createPDFStream(createPdfOptions);
 
         return finalizeStream(getReadableStreamFromIterable<Uint8Array>(pdfStream), async () => {
-          await page.close();
           clearTimeout(timeoutRef);
+
+          try {
+            await page.close();
+          }
+          catch (error) {
+            this.logger.error(error as Error);
+            throw error;
+          }
+          finally {
+            await this.pool.release(browser);
+          }
         });
       }
       catch (error) {
-        await page.close();
-        clearTimeout(timeoutRef);
-
+        await this.pool.release(browser);
         throw error;
       }
-    }));
+    });
+  }
+
+  private convertOptions(options: PdfRenderOptions): puppeteer.PDFOptions {
+    const margin = isUndefined(options.margin)
+      ? undefined
+      : isObject(options.margin)
+        ? options.margin
+        : {
+          top: options.margin,
+          bottom: options.margin,
+          right: options.margin,
+          left: options.margin
+        };
+
+    return {
+      format: options.format ?? 'a4',
+      scale: options.scale,
+      landscape: options.landscape,
+      width: options.width,
+      height: options.height,
+      omitBackground: options.omitDefaultBackground,
+      printBackground: options.renderBackground,
+      margin,
+      displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
+      headerTemplate: options.headerTemplate,
+      footerTemplate: options.footerTemplate
+    };
   }
 }
 

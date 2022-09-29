@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { switchMapTo } from 'rxjs';
+import { switchMap } from 'rxjs';
 import { LifecycleUtils } from '../utils';
 
 @Directive({
@@ -15,7 +15,7 @@ export class RepeatDirective extends LifecycleUtils<RepeatDirective> {
     this.tslRepeat = 1;
 
     this.init$
-      .pipe(switchMapTo(this.observe('tslRepeat')))
+      .pipe(switchMap(() => this.observe('tslRepeat')))
       .subscribe((repeat) => {
         while (viewContainer.length > repeat) {
           viewContainer.remove();

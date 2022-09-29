@@ -27,4 +27,4 @@ async function test(): Promise<void> {
   console.log(`Resulting PDF has ${result.length} bytes.`);
 }
 
-void Application.run(test);
+Application.run(test);

@@ -1,4 +1,4 @@
-import { firstValueFrom, mapTo, race, timer } from 'rxjs';
+import { firstValueFrom, map, race, timer } from 'rxjs';
 import type { ReadonlyCancellationToken } from './cancellation-token';
 
 /** timeout for specified duration */
@@ -15,8 +15,8 @@ export async function timeoutUntil(timestamp: number | Date): Promise<void> {
 /** timeout for specified duration */
 export async function cancelableTimeout(milliseconds: number, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
   return firstValueFrom(race([
-    timer(milliseconds).pipe(mapTo(false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    cancelToken.set$.pipe(mapTo(true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    timer(milliseconds).pipe(map(() => false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    cancelToken.set$.pipe(map(() => true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
   ]));
 }
 

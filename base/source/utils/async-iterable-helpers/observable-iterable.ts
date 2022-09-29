@@ -1,6 +1,5 @@
 import type { Observable } from 'rxjs';
-import { merge } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { merge, take } from 'rxjs';
 import { ObservableArray } from '../../collections/observable';
 import { CancellationToken } from '../cancellation-token';
 

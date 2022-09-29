@@ -2,8 +2,7 @@ import type { OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core'
 import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core';
 import { isDefined, isNull, isNullOrUndefined, isNumber } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
-import { filter, mapTo } from 'rxjs/operators';
+import { BehaviorSubject, filter, map } from 'rxjs';
 
 @Directive({
   selector: '[visibilityObserver]',
@@ -54,7 +53,7 @@ export class VisibilityObserverDirective implements OnDestroy, OnInit, OnChanges
     this.isVisible$ = this.isVisibleSubject.asObservable();
     this.visibility$ = this.visibilitySubject.asObservable();
 
-    this.isVisibleSubject.pipe(filter((visible) => visible), mapTo(this.elementRef)).subscribe(this.visible);
+    this.isVisibleSubject.pipe(filter((visible) => visible), map(() => this.elementRef)).subscribe(this.visible);
     this.isVisible$.subscribe(this.isVisibleChanged);
     this.visibility$.subscribe(this.visibilityChanged);
   }

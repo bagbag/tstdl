@@ -5,8 +5,7 @@ import { assertDefinedPass, isDefined, isFunction, isNotNull, isObject, isString
 import type { PropertyName } from '@tstdl/base/utils/object';
 import { deepEntries, getPropertyNameProxy, isPropertyName, propertyName } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, map } from 'rxjs';
 
 export type Language = {
   code: string,
