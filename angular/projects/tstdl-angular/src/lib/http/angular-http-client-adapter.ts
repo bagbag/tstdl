@@ -60,7 +60,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
           statusCode: error.status,
           statusMessage: error.statusText,
           headers: convertAngularHeaders(error.headers),
-          body: error.error,
+          body: (error.error instanceof ProgressEvent) ? undefined : error.error,
           closeHandler: () => request.abort()
         });
 
