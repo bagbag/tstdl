@@ -229,6 +229,10 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
   /** handle arrays */
   if (normalizedValueSchema.array) {
     if (!isArray(value)) {
+      if (normalizedValueSchema.coerce) {
+        return testValue(schema, [value], options, path);
+      }
+
       throw SchemaError.expectedButGot(Array, getValueType(value), path, { fast: options.fastErrors });
     }
 

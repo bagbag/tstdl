@@ -234,6 +234,7 @@ export function isTypeSchema(schema: any): schema is TypeSchema {
   return isObject(schema)
     && (
       isFunction(type)
+      || (isObject(type) && isFunction(type.deferred))
       || (type == 'undefined')
       || (type == 'null')
       || (type == 'any')

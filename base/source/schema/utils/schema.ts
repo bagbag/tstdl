@@ -90,9 +90,6 @@ function _normalizeTypeSchema<T>(schema: TypeSchema<T>): NormalizedTypeSchema<T>
 function _getArrayItemSchema<T, O>(schema: ValueSchema<T, O>): ValueSchema<T, O> {
   const itemSchema: ValueSchema<T, O> = {
     schema: schema.schema,
-    array: false,
-    optional: false,
-    nullable: false,
     transformers: schema.transformers,
     valueConstraints: schema.valueConstraints
   };

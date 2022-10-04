@@ -3,11 +3,11 @@
 import type { OneOrMany } from '#/types';
 import { toArray } from '#/utils/array';
 import type { SchemaTestable } from '../schema';
-import type { Coercible, ValueSchema } from '../types';
+import type { ValueSchema } from '../types';
 import { array } from './array';
 import { union } from './union';
 
-export type OneOrManyOptions = Coercible & {
+export type OneOrManyOptions = {
   /** minimum array length */
   minimumLength?: number,
 
