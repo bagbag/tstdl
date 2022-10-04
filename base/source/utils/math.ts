@@ -1,3 +1,5 @@
+import { NotSupportedError } from '#/error/not-supported.error';
+
 /**
  * Generates a random value in interval [0, 1).
  */
@@ -43,6 +45,32 @@ export function sum(values: number[]): number {
  */
 export function average(values: number[]): number {
   return sum(values) / values.length;
+}
+
+/**
+ * Calculate the minimum value.
+ * @param values values to get minimum from
+ * @returns minimum
+ */
+export function minimum(values: number[]): number {
+  if (values.length == 0) {
+    throw new NotSupportedError('No values provided.');
+  }
+
+  return values.reduce((previous, current) => Math.min(previous, current), Number.POSITIVE_INFINITY);
+}
+
+/**
+ * Calculate the maximum value.
+ * @param values values to get maximum from
+ * @returns maximum
+ */
+export function maximum(values: number[]): number {
+  if (values.length == 0) {
+    throw new NotSupportedError('No values provided.');
+  }
+
+  return values.reduce((previous, current) => Math.max(previous, current), Number.NEGATIVE_INFINITY);
 }
 
 /**
