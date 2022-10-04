@@ -5,7 +5,7 @@ import { isDefined } from '#/utils/type-guards';
 import { ArrayMaximumLengthConstraint } from '../array-constraints';
 import type { SchemaTestable } from '../schema';
 import type { Coercible, SchemaArrayConstraint, ValueSchema } from '../types';
-import { valueSchema, valueTypesOrSchemasToSchemas } from '../types';
+import { valueSchema } from '../types';
 
 export type ArrayOptions = Coercible & {
   /** minimum length */
@@ -26,7 +26,7 @@ export function array<T, O = T>(innerValues: OneOrMany<SchemaTestable<T, O>>, op
     arrayConstraints.push(new ArrayMaximumLengthConstraint(options.maximumLength));
   }
 
-  return valueSchema<any>(valueTypesOrSchemasToSchemas(innerValues), {
+  return valueSchema<any>(innerValues, {
     array: true,
     coerce: options.coerce,
     arrayConstraints

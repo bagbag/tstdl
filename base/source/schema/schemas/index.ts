@@ -12,6 +12,7 @@ export * from './nullable';
 export * from './number';
 export * from './object';
 export * from './omit';
+export * from './one-or-many';
 export * from './optional';
 export * from './partial';
 export * from './pick';

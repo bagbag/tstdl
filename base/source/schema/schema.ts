@@ -256,7 +256,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     return { valid: true, value: validatedItems as unknown as O };
   }
 
-  let valueType!: ResolvedValueType<any>;
+  let valueType!: ResolvedValueType;
   let valueTestResult!: SchemaTestResult<unknown>;
   let resultValue: unknown;
 

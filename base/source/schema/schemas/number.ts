@@ -31,9 +31,6 @@ export function number(options: NumberOptions = {}): ValueSchema<number> {
   }
 
   return valueSchema(typeSchema(globalThis.Number), {
-    array: false,
-    optional: false,
-    nullable: false,
     coerce: options.coerce,
     valueConstraints: constraints
   });
