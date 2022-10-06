@@ -3,10 +3,10 @@ import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 import { observeIntersection, observeResize } from '@tstdl/base/rxjs';
 import { isDefined, isUndefined, timeout } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils/lifecycle';
 
-type ElementOrElementRef = HTMLElement | ElementRef<HTMLElement>;
+type ElementOrElementRef = Element | ElementRef<Element>;
 
 @Directive({
   selector: '[tslLazyList]',
@@ -14,11 +14,11 @@ type ElementOrElementRef = HTMLElement | ElementRef<HTMLElement>;
 })
 export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> implements AfterViewInit {
   private readonly changeDetector: ChangeDetectorRef;
-  private readonly scrollElementSubject: BehaviorSubject<HTMLElement | undefined>;
+  private readonly scrollElementSubject: BehaviorSubject<Element | undefined>;
 
   private checking: boolean = false;
-  private readonly scrollElement$: Observable<HTMLElement | undefined>;
-  private readonly observeElement$: Observable<HTMLElement | undefined>;
+  private readonly scrollElement$: Observable<Element | undefined>;
+  private readonly observeElement$: Observable<Element | undefined>;
 
   items: T[];
 
@@ -73,10 +73,10 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   constructor(elementRef: ElementRef<Node>, changeDetector: ChangeDetectorRef) {
     super();
 
-    const defaultScrollElement = (elementRef.nativeElement instanceof HTMLElement) ? elementRef.nativeElement : undefined;
+    const defaultScrollElement = (elementRef.nativeElement instanceof Element) ? elementRef.nativeElement : undefined;
 
     this.changeDetector = changeDetector;
-    this.scrollElementSubject = new BehaviorSubject<HTMLElement | undefined>(defaultScrollElement);
+    this.scrollElementSubject = new BehaviorSubject<Element | undefined>(defaultScrollElement);
 
     this.source = [];
     this.initialSize = 1;
@@ -85,7 +85,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.items = [];
 
     this.scrollElement$ = this.scrollElementSubject.asObservable();
-    this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => ((observeElement instanceof HTMLElement) ? observeElement : observeElement?.nativeElement)));
+    this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => ((observeElement instanceof Element) ? observeElement : observeElement?.nativeElement)));
 
     this.observe('source').subscribe(() => {
       this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length));
@@ -93,7 +93,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     });
 
     this.observe('scrollElement')
-      .pipe(map((scrollElement) => ((scrollElement instanceof HTMLElement) ? scrollElement : defaultScrollElement)))
+      .pipe(map((scrollElement) => ((scrollElement instanceof Element) ? scrollElement : defaultScrollElement)))
       .subscribe(this.scrollElementSubject);
   }
 
@@ -101,17 +101,23 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     super.ngAfterViewInit();
 
     const resize$ = this.scrollElement$.pipe(
-      switchMap((element) => (isDefined(element) ? observeResize(element) : EMPTY))
+      switchMap((element) => (isDefined(element) ? observeResize(element) : EMPTY)),
+      takeUntil(this.destroy$)
     );
 
     const scroll$ = this.scrollElement$.pipe(
-      switchMap((element) => (isDefined(element) ? fromEvent(element, 'scroll', { passive: true } as AddEventListenerOptions) : EMPTY))
+      switchMap((element) => (isDefined(element) ? fromEvent(element, 'scroll', { passive: true } as AddEventListenerOptions) : EMPTY)),
+      takeUntil(this.destroy$)
     );
 
-    const intersect$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
+    const intersects$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
       switchMap(([scrollElement, observeElement, margin]) => (isUndefined(observeElement) ? EMPTY : observeIntersection(observeElement, { root: scrollElement, rootMargin: `${margin}%` }))),
-      filter((entries) => entries[0]!.isIntersecting)
+      takeUntil(this.destroy$),
+      map((entries) => entries[0]!.isIntersecting),
+      shareReplay(1)
     );
+
+    const intersect$ = intersects$.pipe(filter((intersects) => intersects));
 
     this.viewChecked$
       .pipe(
@@ -119,6 +125,9 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
         switchMap(() => merge(this.observe('source'), resize$, scroll$, intersect$))
       )
       .subscribe(() => void this.check());
+
+    intersect$.pipe(switchMap((intersects) => (intersects ? interval(10) : EMPTY)))
+      .subscribe(() => this.add());
   }
 
   async check(): Promise<void> {
@@ -129,11 +138,19 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.checking = true;
 
     while (!this.hasAll && this.thresholdReached) {
-      this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length + this.batchSize));
-      this.changeDetector.markForCheck();
+      this.add();
       await timeout();
     }
 
     this.checking = false;
+  }
+
+  add(): void {
+    if (this.hasAll) {
+      return;
+    }
+
+    this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length + this.batchSize));
+    this.changeDetector.markForCheck();
   }
 }

@@ -6,7 +6,7 @@ import type { IncomingHttpHeaders } from 'http';
 import { Readable } from 'stream';
 import type { ReadableStream } from 'stream/web';
 import type { Dispatcher } from 'undici';
-import { errors as undiciErrors, FormData, request } from 'undici';
+import { errors as undiciErrors, request } from 'undici';
 import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
 import { HttpClientResponse } from '../http-client-response';
@@ -48,13 +48,15 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
       body = Readable.from(httpClientRequest.body!.stream as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.form)) {
-      body = new FormData();
+      const params = new URLSearchParams();
 
       for (const [key, entry] of httpClientRequest.body!.form.normalizedEntries()) {
         for (const value of toArray(entry)) {
-          body.append(key, value);
+          params.append(key, value);
         }
       }
+
+      body = params.toString();
     }
 
     try {
