@@ -158,7 +158,7 @@ registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new For
 registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
 registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
 registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
-registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
+registerErrorHandler(NotImplementedError, 501, () => undefined, (_, error) => new NotImplementedError(error.message));
 registerErrorHandler(NotSupportedError, 400, () => undefined, (_, error) => new NotSupportedError(error.message));
 registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
 registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
