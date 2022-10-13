@@ -10,6 +10,7 @@ export * from './method-not-allowed.error';
 export * from './multi.error';
 export * from './not-found.error';
 export * from './not-implemented.error';
+export * from './not-supported.error';
 export * from './unauthorized.error';
 export * from './unsupported-media-type.error';
 export * from './validation.error';

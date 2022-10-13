@@ -1,13 +1,13 @@
 import type { UndefinableJson } from '#/types';
-import type { HttpHeadersObject } from '../http-headers';
+import type { HttpHeadersInput } from '../http-headers';
 import { HttpHeaders } from '../http-headers';
 
 export type HttpServerResponseOptions = {
   statusCode?: number | undefined,
   statusMessage?: string | undefined,
-  headers?: HttpHeadersObject | HttpHeaders,
+  headers?: HttpHeadersInput | HttpHeaders,
   body?: {
-    stream?: AsyncIterable<Uint8Array>,
+    stream?: ReadableStream<Uint8Array>,
     buffer?: Uint8Array,
     text?: string,
     json?: UndefinableJson
@@ -19,7 +19,7 @@ export class HttpServerResponse {
   statusMessage: string | undefined;
   headers: HttpHeaders;
   body: undefined | {
-    stream?: AsyncIterable<Uint8Array>,
+    stream?: ReadableStream<Uint8Array>,
     buffer?: Uint8Array,
     text?: string,
     json?: UndefinableJson

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-types */
 
-import type { Record } from '#/types';
+import { propertyReflectMethods, reflectMethods } from '../proxy';
 import { assert, isDefined, isUndefined } from '../type-guards';
 import type { LazyInitializerItem } from './lazy-property';
 import { lazyObject } from './lazy-property';
@@ -58,25 +58,6 @@ export const ForwardRef = {
     contexts.get(forwardRef)!.reference = reference;
   }
 };
-
-const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
-  apply: true,
-  construct: true,
-  defineProperty: true,
-  deleteProperty: true,
-  get: true,
-  getOwnPropertyDescriptor: true,
-  getPrototypeOf: true,
-  has: true,
-  isExtensible: true,
-  ownKeys: true,
-  preventExtensions: true,
-  set: true,
-  setPrototypeOf: true
-};
-
-const reflectMethods = Object.keys(reflectMethodsMap) as unknown as (keyof typeof reflectMethodsMap)[];
-const propertyReflectMethods = new Set<keyof ProxyHandler<object>>(['defineProperty', 'deleteProperty', 'get', 'getOwnPropertyDescriptor', 'has', 'set']);
 
 function getForwardRefProxy<T extends object>(context: ForwardRefContext): ForwardRef<T> {
   function forwardRef(): void { /* noop */ }

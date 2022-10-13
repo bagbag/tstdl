@@ -64,7 +64,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
   }
 
   set(_index: number, _value: T): void {
-    throw new Error('assignment by index not allowed in sorted collections');
+    throw new Error('Assignment by index not allowed in sorted collections.');
   }
 
   add(value: T): void {
@@ -79,7 +79,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
   }
 
   addAt(_index: number, ..._values: T[]): void {
-    throw new Error('adding at index not allowed in sorted collections');
+    throw new Error('Adding at index not allowed in sorted collections.');
   }
 
   removeFirst(): T {
@@ -204,7 +204,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> implements 
 
   private verifyIndexIsInBounds(index: number): void {
     if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
   }
 }

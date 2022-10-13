@@ -3,6 +3,7 @@ import { dispose } from '#/disposable';
 import type { StringMap, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
+import { clone } from '#/utils/clone';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards';
 import type { HttpFormObject } from '../http-form';
 import { HttpForm } from '../http-form';
@@ -12,39 +13,50 @@ import type { HttpQueryObject } from '../http-query';
 import { HttpQuery } from '../http-query';
 import type { HttpUrlParametersObject } from '../http-url-parameters';
 import { HttpUrlParameters } from '../http-url-parameters';
-import type { HttpBodyType, HttpMethod } from '../types';
+import type { HttpMethod } from '../types';
 
 /** only one type at a time is supported. If multiple are set, behaviour is undefined */
-export type HttpRequestBody = undefined | {
+export type HttpRequestBody = {
   text?: string,
   json?: UndefinableJson,
   form?: HttpForm,
   buffer?: Uint8Array,
-  stream?: AsyncIterable<Uint8Array>
+  blob?: Blob,
+  stream?: ReadableStream<Uint8Array>
 };
 
-export type HttpClientRequestOptions<T extends HttpBodyType = HttpBodyType> = Partial<TypedOmit<HttpClientRequest<T>, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
+export type HttpRequestAuthorization = {
+  basic?: {
+    username: string,
+    password: string
+  },
+  bearer?: string,
+  token?: string
+};
+
+export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
   urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
   headers?: HttpHeadersObject | HttpHeaders,
   query?: HttpQueryObject | HttpQuery,
-  body?: undefined | {
+  authorization?: HttpRequestAuthorization,
+  body?: {
     text?: string,
     json?: UndefinableJson,
     form?: HttpFormObject | HttpForm,
     buffer?: Uint8Array,
-    stream?: AsyncIterable<Uint8Array>
+    stream?: ReadableStream<Uint8Array>
   },
   abortToken?: ReadonlyCancellationToken
 };
 
-export type HttpClientRequestObject<T extends HttpBodyType = HttpBodyType> = HttpClientRequestOptions<T> & {
+export type HttpClientRequestObject = HttpClientRequestOptions & {
   url: string,
   method?: HttpMethod
 };
 
 export type CredentialsOptions = 'omit' | 'same-origin' | 'include';
 
-export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements Disposable {
+export class HttpClientRequest implements Disposable {
   private readonly _abortToken: CancellationToken;
 
   url: string;
@@ -98,8 +110,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
    * // -> http://domain.tld/search?categories=3&categories=8&limit=10
    */
   query: HttpQuery;
-  body: HttpRequestBody;
-  responseType: T;
+  authorization: HttpRequestAuthorization | undefined;
+  body: HttpRequestBody | undefined;
   credentials: CredentialsOptions;
 
   /**
@@ -123,9 +135,9 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     return this._abortToken.asReadonly;
   }
 
-  constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions<T>);
-  constructor(requestObject: HttpClientRequestObject<T>);
-  constructor(urlOrObject: string | HttpClientRequestObject<T>, method?: HttpMethod, options: HttpClientRequestOptions<T> = {}) { // eslint-disable-line max-statements
+  constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions);
+  constructor(requestObject: HttpClientRequestObject);
+  constructor(urlOrObject: string | HttpClientRequestObject, method?: HttpMethod, options: HttpClientRequestOptions = {}) { // eslint-disable-line max-statements
     if (isString(urlOrObject)) {
       this.url = urlOrObject;
       this.method = method ?? 'GET';
@@ -135,7 +147,7 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
       this.method = urlOrObject.method ?? 'GET';
     }
 
-    const requestOptions: HttpClientRequestOptions<T> | undefined = isString(urlOrObject) ? options : urlOrObject;
+    const requestOptions: HttpClientRequestOptions | undefined = isString(urlOrObject) ? options : urlOrObject;
 
     this.headers = new HttpHeaders(requestOptions.headers);
     this.parameters = requestOptions.parameters;
@@ -145,8 +157,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this.urlParameters = new HttpUrlParameters(requestOptions.urlParameters);
     this.urlParametersSeparator = requestOptions.urlParametersSeparator ?? ';';
     this.query = new HttpQuery(requestOptions.query);
+    this.authorization = requestOptions.authorization;
     this.body = normalizeBody(requestOptions.body);
-    this.responseType = requestOptions.responseType ?? 'auto' as T;
     this.credentials = requestOptions.credentials ?? 'omit';
     this.timeout = requestOptions.timeout ?? 30000;
     this.throwOnNon200 = requestOptions.throwOnNon200 ?? true;
@@ -166,18 +178,19 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
     this._abortToken.complete();
   }
 
-  clone(): HttpClientRequest<T> {
+  clone(): HttpClientRequest {
     const request = new HttpClientRequest(this);
 
     request.headers = new HttpHeaders(request.headers);
     request.query = new HttpQuery(request.query);
+    request.authorization = clone(request.authorization, true);
     request.urlParameters = new HttpUrlParameters(request.urlParameters);
     request.body = normalizeBody(request.body);
 
     return request;
   }
 
-  asObject(): HttpClientRequestObject<T> {
+  asObject(): HttpClientRequestObject {
     const body: HttpClientRequestObject['body'] = isDefined(this.body?.form) ? { form: this.body!.form.asNormalizedObject() } : this.body;
 
     return {
@@ -187,8 +200,8 @@ export class HttpClientRequest<T extends HttpBodyType = HttpBodyType> implements
       urlParameter: this.urlParameters.asObject(),
       headers: this.headers.asObject(),
       query: this.query.asObject(),
+      authorization: this.authorization,
       body,
-      responseType: this.responseType,
       timeout: this.timeout,
       throwOnNon200: this.throwOnNon200,
       context: this.context

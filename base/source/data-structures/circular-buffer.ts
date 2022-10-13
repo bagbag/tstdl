@@ -1,9 +1,8 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, first, from, map, mapTo, race, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race, Subject } from 'rxjs';
 import { Collection } from './collection';
 
 export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
@@ -83,8 +82,8 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     this.isFull$ = this.change$.pipe(map(() => this.isFull), distinctUntilChanged());
     this.hasFreeSlots$ = this.change$.pipe(map(() => this.hasFreeSlots), distinctUntilChanged());
 
-    this.onFull$ = this.isFull$.pipe(filter((isFull) => isFull), mapTo(undefined));
-    this.onFreeSlots$ = this.hasFreeSlots$.pipe(filter((hasFreeSlots) => hasFreeSlots), mapTo(undefined));
+    this.onFull$ = this.isFull$.pipe(filter((isFull) => isFull), map(() => undefined));
+    this.onFreeSlots$ = this.hasFreeSlots$.pipe(filter((hasFreeSlots) => hasFreeSlots), map(() => undefined));
 
     this.clear();
   }

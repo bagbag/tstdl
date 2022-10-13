@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { supportsNotification } from '#/supports';
 import { DetailsError } from '../error';
 import type { DeepArray, Record } from '../types';
 import { decycle } from './object/decycle';
 import { isDefined } from './type-guards';
-
-const supportsNotification = typeof Notification != 'undefined';
 
 /**
  * create an structured clone of an value using Notification if available, otherwise history state (may alters history)
@@ -113,17 +112,6 @@ export function parseFirstAndFamilyName(name: string): { firstName: string | und
   return {
     firstName: firstName.length > 0 ? firstName : undefined,
     familyName: familyName.length > 0 ? familyName : undefined
-  };
-}
-
-export function _throw(value: any): never {
-  throw value;
-}
-
-export function deferThrow(value: any): () => never {
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  return function deferThrow() {
-    throw value;
   };
 }
 

@@ -11,7 +11,7 @@ export type HttpValueMapInput = Record<string, OneOrMany<HttpValue> | undefined>
 export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements Iterable<[string, OneOrMany<HttpValue>]> {
   private readonly valueType: string;
   private readonly caseInsensitive: boolean;
-  private readonly map: Map<string, { value: OneOrMany<HttpValue>, actualKey: string }>;
+  private readonly map: Map<string, { actualKey: string, value: OneOrMany<HttpValue> }>;
 
   constructor(valueType: string, caseInsensitive: boolean, input?: HttpValueMapInput) {
     this.valueType = valueType;
@@ -76,7 +76,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
       return;
     }
 
-    this.map.set(this.normalizeKey(key), { value: denormalizeHttpValue(value), actualKey: key });
+    this.map.set(this.normalizeKey(key), { actualKey: key, value: denormalizeHttpValue(value) });
   }
 
   /** set entry if missing */
@@ -131,7 +131,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
   }
 
   *[Symbol.iterator](): Iterator<[string, OneOrMany<HttpValue>]> {
-    for (const [, { value, actualKey }] of this.map) {
+    for (const [, { actualKey, value }] of this.map) {
       yield [actualKey, value];
     }
   }

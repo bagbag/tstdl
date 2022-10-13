@@ -1,5 +1,6 @@
 /* eslint-disable no-bitwise */
 
+import { supportsBuffer } from '#/supports';
 import type { TypedArray } from '../types';
 import { toUint8Array } from './binary';
 import { isArrayBuffer, isDefined } from './type-guards';
@@ -18,7 +19,7 @@ export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOf
     length = bytesLength ?? array.byteLength;
   }
 
-  if (typeof Buffer != 'undefined') {
+  if (supportsBuffer) {
     const buffer = Buffer.from(arrayBuffer, offset, length);
     const base64 = buffer.toString('base64');
     return base64;
@@ -28,7 +29,7 @@ export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOf
 }
 
 export function decodeBase64(base64: string): ArrayBuffer {
-  if (typeof Buffer != 'undefined') {
+  if (supportsBuffer) {
     const buffer = Buffer.from(base64, 'base64');
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   }

@@ -1,4 +1,4 @@
-import type { Constructor, Type } from '#/types';
+import type { AbstractConstructor, Record, Type, TypedOmit } from '#/types';
 import { isDefined, isFunction } from '#/utils/type-guards';
 import { registerDefaultSerializers } from './handlers';
 
@@ -17,8 +17,8 @@ export type TryDereference = (value: unknown, callback: DereferenceCallback) => 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export interface Serializable<T, Data> {
-  [Serializable.serialize](instance: T): Data;
-  [Serializable.deserialize](data: Data, tryDereference: TryDereference): T;
+  [Serializable.serialize](instance: T, context: Record): Data;
+  [Serializable.deserialize](data: Data, tryDereference: TryDereference, context: Record): T;
 }
 
 export type SerializableType<T, Data> = Type<Serializable<T, Data>>;
@@ -26,22 +26,32 @@ export type SerializableType<T, Data> = Type<Serializable<T, Data>>;
 export type SerializeFunction<T, Data> = Serializable<T, Data>[typeof Serializable.serialize];
 export type DeserializeFunction<T, Data> = Serializable<T, Data>[typeof Serializable.deserialize];
 
-type SerializableRegistration<T, Data> = {
+type SerializableRegistration<T = any, Data = any> = {
   type: string,
-  constructor: Constructor<T>,
+  serializeData?: boolean,
+  constructor: AbstractConstructor<T>,
   serializer: SerializeFunction<T, Data>,
   deserializer: DeserializeFunction<T, Data>
 };
 
-const constructorTypeNameMap = new Map<Constructor, string>();
-const typeNameSerializerMap = new Map<string, SerializableRegistration<any, any>>();
+const constructorTypeNameMap = new Map<AbstractConstructor, string>();
+const typeNameSerializerMap = new Map<string, SerializableRegistration>();
+const rawSet = new Set<AbstractConstructor>();
 
-export function getTypeNameByConstructor(constructor: Constructor): string | undefined {
+export function getTypeNameByConstructor(constructor: AbstractConstructor): string | undefined {
   return constructorTypeNameMap.get(constructor);
 }
 
-export function getSerializerByTypeName(typeName: string): SerializableRegistration<any, any> | undefined {
+export function getSerializerByTypeName(typeName: string): SerializableRegistration | undefined {
   return typeNameSerializerMap.get(typeName);
+}
+
+export function registerRawSerializable(constructor: AbstractConstructor): void {
+  rawSet.add(constructor);
+}
+
+export function isRawSerializable(constructor: AbstractConstructor): boolean {
+  return rawSet.has(constructor);
 }
 
 export function serializable<T extends Serializable<any, Data>, Data>(typeName?: string): (target: SerializableType<T, Data>) => void {
@@ -66,7 +76,7 @@ export function registerSerializable<T extends Serializable<any, Data>, Data>(ty
   registerSerializer(type, typeName ?? type.name, serializer, deserializer);
 }
 
-export function registerSerializer<T, Data>(constructor: Constructor<T>, typeName: string, serializer: SerializeFunction<T, Data>, deserializer: DeserializeFunction<T, Data>): void {
+export function registerSerializer<T, Data>(constructor: AbstractConstructor<T>, typeName: string, serializer: SerializeFunction<T, Data>, deserializer: DeserializeFunction<T, Data>, options?: TypedOmit<SerializableRegistration, 'constructor' | 'deserializer' | 'serializer' | 'type'>): void {
   const existingMappedType = constructorTypeNameMap.get(constructor);
   const existingMappedSerializer = typeNameSerializerMap.get(typeName);
 
@@ -75,10 +85,10 @@ export function registerSerializer<T, Data>(constructor: Constructor<T>, typeNam
     throw new Error(`serializer for constructor ${ctor.name} is already registered as ${existingMappedType ?? typeName}`);
   }
 
-  const registration: SerializableRegistration<T, Data> = { type: typeName, constructor, serializer, deserializer };
+  const registration: SerializableRegistration<T, Data> = { ...options, type: typeName, constructor, serializer, deserializer };
 
   constructorTypeNameMap.set(constructor, typeName);
   typeNameSerializerMap.set(typeName, registration);
 }
 
-registerDefaultSerializers(registerSerializer);
+registerDefaultSerializers(registerSerializer, registerRawSerializable);

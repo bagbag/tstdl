@@ -17,6 +17,7 @@ export * from './group';
 export * from './group-single';
 export * from './group-to-map';
 export * from './group-to-single-map';
+export * from './includes';
 export * from './interrupt';
 export * from './is-async-iterable';
 export * from './last';

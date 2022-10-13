@@ -1,7 +1,6 @@
 import type { ToJson } from '#/interfaces';
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, map, mapTo, startWith, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, startWith, Subject } from 'rxjs';
 
 export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
   private readonly sizeSubject: BehaviorSubject<number>;
@@ -70,8 +69,8 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     this.isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
     this.hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
 
-    this.onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), mapTo(undefined));
-    this.onItems$ = this.hasItems$.pipe(filter((isFull) => isFull), mapTo(undefined));
+    this.onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), map(() => undefined));
+    this.onItems$ = this.hasItems$.pipe(filter((hasItems) => hasItems), map(() => undefined));
   }
 
   [Symbol.iterator](): IterableIterator<T> {

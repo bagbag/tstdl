@@ -1,12 +1,12 @@
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 import { observeIntersection, observeResize } from '@tstdl/base/rxjs';
-import { isUndefined, timeout } from '@tstdl/base/utils';
+import { isDefined, isUndefined, timeout } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, map, merge, switchMap, switchMapTo, take } from 'rxjs';
+import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils/lifecycle';
 
-type MaybeWithNativeElement = HTMLElement & Partial<ElementRef<HTMLElement>>;
+type ElementOrElementRef = Element | ElementRef<Element>;
 
 @Directive({
   selector: '[tslLazyList]',
@@ -14,11 +14,11 @@ type MaybeWithNativeElement = HTMLElement & Partial<ElementRef<HTMLElement>>;
 })
 export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> implements AfterViewInit {
   private readonly changeDetector: ChangeDetectorRef;
-  private readonly scrollElementSubject: BehaviorSubject<HTMLElement>;
+  private readonly scrollElementSubject: BehaviorSubject<Element | undefined>;
 
   private checking: boolean = false;
-  private readonly scrollElement$: Observable<HTMLElement>;
-  private readonly observeElement$: Observable<HTMLElement | undefined>;
+  private readonly scrollElement$: Observable<Element | undefined>;
+  private readonly observeElement$: Observable<Element | undefined>;
 
   items: T[];
 
@@ -41,21 +41,25 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
 
   /**
    * how far to preload items. Percentage of scroll elements client height
-   * @default 20
+   * @default 50
    */
   @Input('lazyMargin') margin: number;
 
   /**
    * element to observe for scrolling and load items when at end
    */
-  @Input('lazyScrollElement') scrollElement: MaybeWithNativeElement | undefined;
+  @Input('lazyScrollElement') scrollElement: ElementOrElementRef | undefined;
 
   /**
    * element to observe for intersection with the scroll element to trigger at tick
    */
-  @Input('lazyObserveElement') observeElement: MaybeWithNativeElement | undefined;
+  @Input('lazyObserveElement') observeElement: ElementOrElementRef | undefined;
 
   get thresholdReached(): boolean {
+    if (isUndefined(this.scrollElementSubject.value)) {
+      return false;
+    }
+
     const { scrollHeight, scrollTop, clientHeight } = this.scrollElementSubject.value;
     const threshold = Math.max(1, clientHeight * (this.margin / 100));
 
@@ -66,20 +70,22 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     return this.items.length == this.source.length;
   }
 
-  constructor(elementRef: ElementRef<HTMLElement>, changeDetector: ChangeDetectorRef) {
+  constructor(elementRef: ElementRef<Node>, changeDetector: ChangeDetectorRef) {
     super();
 
+    const defaultScrollElement = (elementRef.nativeElement instanceof Element) ? elementRef.nativeElement : undefined;
+
     this.changeDetector = changeDetector;
-    this.scrollElementSubject = new BehaviorSubject<HTMLElement>(elementRef.nativeElement);
+    this.scrollElementSubject = new BehaviorSubject<Element | undefined>(defaultScrollElement);
 
     this.source = [];
     this.initialSize = 1;
     this.batchSize = 1;
-    this.margin = 25;
+    this.margin = 50;
     this.items = [];
 
     this.scrollElement$ = this.scrollElementSubject.asObservable();
-    this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => observeElement?.nativeElement ?? observeElement));
+    this.observeElement$ = this.observe('observeElement').pipe(map((observeElement) => ((observeElement instanceof Element) ? observeElement : observeElement?.nativeElement)));
 
     this.observe('source').subscribe(() => {
       this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length));
@@ -87,7 +93,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     });
 
     this.observe('scrollElement')
-      .pipe(map((scrollElement) => scrollElement?.nativeElement ?? scrollElement ?? elementRef.nativeElement))
+      .pipe(map((scrollElement) => ((scrollElement instanceof Element) ? scrollElement : defaultScrollElement)))
       .subscribe(this.scrollElementSubject);
   }
 
@@ -95,24 +101,33 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     super.ngAfterViewInit();
 
     const resize$ = this.scrollElement$.pipe(
-      switchMap((element) => observeResize(element))
+      switchMap((element) => (isDefined(element) ? observeResize(element) : EMPTY)),
+      takeUntil(this.destroy$)
     );
 
     const scroll$ = this.scrollElement$.pipe(
-      switchMap((element) => fromEvent(element, 'scroll', { passive: true } as AddEventListenerOptions))
+      switchMap((element) => (isDefined(element) ? fromEvent(element, 'scroll', { passive: true } as AddEventListenerOptions) : EMPTY)),
+      takeUntil(this.destroy$)
     );
 
-    const intersect$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
+    const intersects$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
       switchMap(([scrollElement, observeElement, margin]) => (isUndefined(observeElement) ? EMPTY : observeIntersection(observeElement, { root: scrollElement, rootMargin: `${margin}%` }))),
-      filter((entries) => entries[0]!.isIntersecting)
+      takeUntil(this.destroy$),
+      map((entries) => entries[0]!.isIntersecting),
+      shareReplay(1)
     );
+
+    const intersect$ = intersects$.pipe(filter((intersects) => intersects));
 
     this.viewChecked$
       .pipe(
         take(1),
-        switchMapTo(merge(this.observe('source'), resize$, scroll$, intersect$))
+        switchMap(() => merge(this.observe('source'), resize$, scroll$, intersect$))
       )
       .subscribe(() => void this.check());
+
+    intersect$.pipe(switchMap((intersects) => (intersects ? interval(10) : EMPTY)))
+      .subscribe(() => this.add());
   }
 
   async check(): Promise<void> {
@@ -123,11 +138,19 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     this.checking = true;
 
     while (!this.hasAll && this.thresholdReached) {
-      this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length + this.batchSize));
-      this.changeDetector.markForCheck();
+      this.add();
       await timeout();
     }
 
     this.checking = false;
+  }
+
+  add(): void {
+    if (this.hasAll) {
+      return;
+    }
+
+    this.items = this.source.slice(0, Math.max(this.initialSize, this.items.length + this.batchSize));
+    this.changeDetector.markForCheck();
   }
 }

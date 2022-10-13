@@ -7,7 +7,7 @@ export const cast = Symbol('cast');
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
 export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]: <U extends T>() => PropertyNameProxyChild<U> };
-export type PropertyNameOfExpressionObject<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfExpressionObject<T[P]> & { [cast]: <U extends T[P]>() => PropertyNameOfExpressionObject<U> } };
+export type PropertyNameOfExpressionObject<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfExpressionObject<DeepNonNullable<T>[P]> & { [cast]: <U extends DeepNonNullable<T>[P]>() => PropertyNameOfExpressionObject<U> } };
 export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfExpressionObject<U> } };
 
 export function isPropertyName(value: any): value is PropertyName {

@@ -126,7 +126,7 @@ export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>
 
   private verifyIndexIsInBounds(index: number): void {
     if ((index < 0) || (index > (this.backingArray.length - 1))) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
   }
 }

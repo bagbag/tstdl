@@ -1,7 +1,7 @@
 import type { AnyIterable } from '#/utils/any-iterable-iterator';
 import type { Comparator } from '#/utils/sort';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, IterableItemMetadata, IteratorFunction, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, Predicate, range, reduce, Reducer, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, TypePredicate, whileSync } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, IterableItemMetadata, IteratorFunction, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, Predicate, range, reduce, Reducer, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, TypePredicate, whileSync } from '../utils/iterable-helpers';
 import { isNotNullOrUndefined } from '../utils/type-guards';
 import { AsyncEnumerable, setEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';
@@ -37,13 +37,11 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   }
 
   all(predicate?: Predicate<T>): boolean {
-    const result = all(this.source, predicate);
-    return result;
+    return all(this.source, predicate);
   }
 
   any(predicate?: Predicate<T>): boolean {
-    const result = any(this.source, predicate);
-    return result;
+    return any(this.source, predicate);
   }
 
   batch(size: number): Enumerable<T[]> {
@@ -78,6 +76,10 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   distinct(selector?: IteratorFunction<T, any>): Enumerable<T> {
     const result = distinct(this.source, selector);
     return new Enumerable(result);
+  }
+
+  includes(value: T): boolean {
+    return includes(this.source, value);
   }
 
   drain(): void {
@@ -120,13 +122,11 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   }
 
   groupToMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T[]> {
-    const grouped = groupToMap<T, TGroup>(this.source, selector);
-    return grouped;
+    return groupToMap<T, TGroup>(this.source, selector);
   }
 
   groupToSingleMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T> {
-    const grouped = groupToSingleMap<T, TGroup>(this.source, selector);
-    return grouped;
+    return groupToSingleMap<T, TGroup>(this.source, selector);
   }
 
   tap(tapper: IteratorFunction<T, any>): Enumerable<T> {
@@ -170,18 +170,15 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   reduce(reducer: Reducer<T, T>): T;
   reduce<U>(reducer: Reducer<T, U>, initialValue: U): U;
   reduce<U>(reducer: Reducer<T, U>, initialValue?: U): U {
-    const result = reduce(this.source, reducer, initialValue);
-    return result;
+    return reduce(this.source, reducer, initialValue);
   }
 
   single<TPredicate extends T = T>(predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
-    const result = single(this.source, predicate);
-    return result;
+    return single(this.source, predicate);
   }
 
   singleOrDefault<D, TPredicate extends T = T>(defaultValue: D, predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate | D {
-    const result = singleOrDefault(this.source, defaultValue, predicate);
-    return result;
+    return singleOrDefault(this.source, defaultValue, predicate);
   }
 
   skip(count: number): Enumerable<T> {
@@ -213,8 +210,7 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   }
 
   toArray(): T[] {
-    const array = [...this.source];
-    return array;
+    return [...this.source];
   }
 
   toAsync(): AsyncEnumerable<T> {
@@ -222,8 +218,7 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
   }
 
   toIterator(): Iterator<T> {
-    const iterator = this.source[Symbol.iterator]();
-    return iterator;
+    return this.source[Symbol.iterator]();
   }
 
   toSet(): Set<T> {

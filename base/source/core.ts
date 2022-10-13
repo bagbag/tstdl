@@ -6,7 +6,7 @@ import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { timeout } from './utils/timing';
 
-let coreLogPrefix = 'CORE';
+let coreLogPrefix = 'Core';
 let logLevel = LogLevel.Debug;
 let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
 
@@ -32,7 +32,7 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
       logger.error(error as Error);
 
       if (triesLeft == 0) {
-        throw new Error(`failed to connect to ${name} - no tries left`);
+        throw new Error(`Failed to connect to ${name} - no tries left.`);
       }
 
       await timeout(3000);

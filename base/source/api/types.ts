@@ -1,11 +1,9 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
-import type { ArraySchemaDefinition, ArraySchemaValidator, ObjectSchemaDefinition, ObjectSchemaValidator, SchemaOutput, SchemaValidator, StringSchemaDefinition, StringSchemaValidator, Uint8ArraySchemaValidator, UnionSchemaValidator } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
+import type { SchemaOutput, SchemaTestable } from '#/schema';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT, UndefinableJson } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
-
-export const rootResource = '$';
 
 export type ApiRegistrationOptions = {
   name?: string,
@@ -26,8 +24,9 @@ export type EndpointRegistrationOptions = {
 
 export type ApiEndpointMethod = HttpMethod;
 
-export type ApiEndpointDefinitionBody = StringSchemaValidator | ObjectSchemaValidator<any> | ArraySchemaValidator<any> | Uint8ArraySchemaValidator | UnionSchemaValidator<StringSchemaDefinition | ObjectSchemaDefinition | ArraySchemaDefinition, (StringSchemaDefinition | ObjectSchemaDefinition | ArraySchemaDefinition)[]>;
-export type ApiEndpointDefinitionResult = SchemaValidator;
+export type ApiEndpointDefinitionParameters = SchemaTestable;
+export type ApiEndpointDefinitionBody = SchemaTestable<UndefinableJson> | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
+export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
 
@@ -41,12 +40,37 @@ export type ApiEndpointDefinitionCors = {
 };
 
 export type ApiEndpointDefinition = {
+  /**
+   * Http Method
+   * @default GET
+   */
   method?: OneOrMany<ApiEndpointMethod>,
-  resource?: typeof rootResource | string,
+
+  /**
+   * Root resource path. Overwrites default from {@link ApiDefinition}.
+   */
+  rootResource?: string,
+
+  /**
+   * sub resource in api
+   *
+   * results in
+   * ```ts
+   * ${endpoint.rootResource ?? api.ressource}/${endpoint.resource}
+   * ```
+   * @default name of endpoint property
+   */
+  resource?: string,
+
   version?: OneOrMany<number | null>,
-  parameters?: ObjectSchemaValidator<any>,
+  parameters?: ApiEndpointDefinitionParameters,
   body?: ApiEndpointDefinitionBody,
   result?: ApiEndpointDefinitionResult,
+
+  /**
+   * Maximum size of request body. Useful to prevent harmful requests.
+   */
+  maxBytes?: number,
   description?: string,
   data?: any,
   cors?: ApiEndpointDefinitionCors
@@ -61,41 +85,33 @@ export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];
 export type NormalizedApiEndpoints<T extends ApiDefinition['endpoints']> = { [P in keyof T]: ReturnTypeOrT<T[P]> };
 export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NormalizedApiEndpoints<T['endpoints']>[K];
 
-export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['parameters']>['schema'];
-export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>['schema'];
-export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>['schema'];
+export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['parameters']>;
+export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
+export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-/**
- * @deprecated Use {@link ApiParameters} instead
- */
-export type ApiEndpointParametersOutput<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiParameters<T, K>;
-export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointParametersSchema<T, K>>;
+export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
-/**
- * @deprecated Use {@link ApiBody} instead
- */
-export type ApiEndpointBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiBody<T, K>;
-export type ApiBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointBodySchema<T, K>>;
+export type ApiInputType<T extends SchemaTestable> =
+  | T extends ApiBinaryType ? (Uint8Array | Blob | ReadableStream<Uint8Array>)
+  : T extends SchemaTestable ? SchemaOutput<T> : never;
 
-/**
- * @deprecated Use {@link ApiServerResult} instead
- */
-export type ApiEndpointServerResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiServerResult<T, K>;
-export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+export type ApiOutputType<T extends SchemaTestable> =
+  | T extends typeof ReadableStream ? ReadableStream<Uint8Array>
+  : T extends SchemaTestable ? SchemaOutput<T> : never;
 
-/**
- * @deprecated Use {@link ApiClientResult} instead
- */
-export type ApiEndpointClientResultType<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiClientResult<T, K>;
-export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = SchemaOutput<ApiEndpointResultSchema<T, K>>;
+export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointParametersSchema<T, K>>;
 
-/**
- * @deprecated Use {@link ApiRequestData} instead
- */
-export type ApiEndpointServerRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = ApiRequestData<T, K>;
+export type ApiClientBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointBodySchema<T, K>>;
+
+export type ApiServerBody<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiOutputType<ApiEndpointBodySchema<T, K>>;
+
+export type ApiServerResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointResultSchema<T, K>> | HttpServerResponse;
+
+export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiOutputType<ApiEndpointResultSchema<T, K>>;
+
 export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
   parameters: ApiParameters<T, K>,
-  body: ApiBody<T, K>,
+  body: ApiServerBody<T, K>,
   request: HttpServerRequest
 };
 
@@ -103,16 +119,11 @@ export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinit
   (requestData: ApiRequestData<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  ApiBody<T, K> extends never
+  ApiClientBody<T, K> extends never
   ? ApiParameters<T, K> extends never
   ? () => Promise<ApiClientResult<T, K>>
   : (parameters: ApiParameters<T, K>) => Promise<ApiClientResult<T, K>>
-  : (parameters: ApiParameters<T, K>, body: ApiBody<T, K>) => Promise<ApiClientResult<T, K>>;
-
-/**
- * @deprecated Use {@link ApiController} instead
- */
-export type ApiControllerImplementation<T extends ApiDefinition = any> = ApiController<T>;
+  : (parameters: ApiParameters<T, K> extends never ? undefined | Record<never, never> : ApiParameters<T, K>, body: ApiClientBody<T, K>) => Promise<ApiClientResult<T, K>>;
 
 export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>

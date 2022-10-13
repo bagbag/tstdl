@@ -1,30 +1,18 @@
-import type { JsonPath } from '#/json-path';
-import { SchemaError } from '../schema.error';
-import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-export type LiteralSchemaDefinition<T> = SchemaDefinition<'literal', T, T> & {
-  value: T
-};
+import type { Decorator } from '#/reflection';
+import { LiteralConstraint } from '../constraints';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
+import type { ValueSchema } from '../types';
+import { typeSchema, valueSchema } from '../types';
+import { getValueType } from '../utils';
 
-export class LiteralSchemaValidator<T> extends SchemaValidator<LiteralSchemaDefinition<T>> {
-  [test](value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<LiteralSchemaDefinition<T>>> {
-    if (value === this.schema.value) {
-      return { valid: true, value: value as T };
-    }
-
-    return { valid: false, error: SchemaError.expectedButGot(String(this.schema.value), String(value), path) };
-  }
+export function literal<T>(value: T): ValueSchema<T> {
+  return valueSchema<any>(typeSchema(getValueType(value)), {
+    valueConstraints: new LiteralConstraint(value)
+  });
 }
 
-export function literal<T>(value: T, options?: SchemaOptions<LiteralSchemaDefinition<T>, 'value'>): LiteralSchemaValidator<T> {
-  const schema = schemaHelper<LiteralSchemaDefinition<T>>({
-    type: 'literal',
-    value,
-    ...options
-  });
-
-  return new LiteralSchemaValidator(schema);
+export function Literal(value: any): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(literal(value));
 }

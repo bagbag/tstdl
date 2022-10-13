@@ -1,6 +1,6 @@
 import { reflectionRegistry } from '#/reflection';
-import type { Constructor } from '#/types';
-import { assertDefinedPass } from '#/utils';
+import type { AbstractConstructor } from '#/types';
+import { assertDefinedPass } from '#/utils/type-guards';
 import type { InjectionToken } from './token';
 import { getTokenName } from './token';
 
@@ -10,11 +10,11 @@ export type ResolveChainNodeBase<Type extends string> = {
 
 export type ResolveChainNode =
   | ResolveChainNodeBase<'token'> & { token: InjectionToken }
-  | ResolveChainNodeBase<'parameter'> & { constructor: Constructor, index: number, token: InjectionToken }
-  | ResolveChainNodeBase<'property'> & { constructor: Constructor, property: PropertyKey, token: InjectionToken };
+  | ResolveChainNodeBase<'parameter'> & { constructor: AbstractConstructor, index: number, token: InjectionToken }
+  | ResolveChainNodeBase<'property'> & { constructor: AbstractConstructor, property: PropertyKey, token: InjectionToken };
 
 export class ResolveChain {
-  private readonly nodes: readonly ResolveChainNode[];
+  readonly nodes: readonly ResolveChainNode[];
 
   get length(): number {
     return this.nodes.length;
@@ -24,17 +24,22 @@ export class ResolveChain {
     this.nodes = nodes ?? [];
   }
 
+  static startWith(token: InjectionToken): ResolveChain {
+    const chain = new ResolveChain();
+    return chain.addToken(token);
+  }
+
   addToken(token: InjectionToken): ResolveChain {
     const node: ResolveChainNode = { type: 'token', token };
     return new ResolveChain([...this.nodes, node]);
   }
 
-  addParameter(constructor: Constructor, index: number, token: InjectionToken): ResolveChain {
+  addParameter(constructor: AbstractConstructor, index: number, token: InjectionToken): ResolveChain {
     const node: ResolveChainNode = { type: 'parameter', constructor, index, token };
     return new ResolveChain([...this.nodes, node]);
   }
 
-  addProperty(constructor: Constructor, property: PropertyKey, token: InjectionToken): ResolveChain {
+  addProperty(constructor: AbstractConstructor, property: PropertyKey, token: InjectionToken): ResolveChain {
     const node: ResolveChainNode = { type: 'property', constructor, property, token };
     return new ResolveChain([...this.nodes, node]);
   }

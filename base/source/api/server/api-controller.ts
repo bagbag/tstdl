@@ -2,15 +2,25 @@
 import type { InjectableOptionsWithoutLifecycle } from '#/container';
 import { singleton } from '#/container';
 import type { Constructor, Type } from '#/types';
+import { isFunction } from '#/utils/type-guards';
 import type { ApiController, ApiDefinition } from '../types';
+
+type ApiDefinitionProvider = () => ApiDefinition;
 
 export const apiControllerDefinition: unique symbol = Symbol('ApiController definition');
 
-const registeredApiControllers = new Map<Type<ApiController>, ApiDefinition>();
+const registeredApiControllers = new Map<Type<ApiController>, ApiDefinition | ApiDefinitionProvider>();
 
 export function getApiControllerDefinition(controller: Type): ApiDefinition {
   ensureApiController(controller);
-  return registeredApiControllers.get(controller)!;
+
+  const definitionOrProvider = registeredApiControllers.get(controller)!;
+
+  if (isFunction(definitionOrProvider)) {
+    return definitionOrProvider();
+  }
+
+  return definitionOrProvider;
 }
 
 export function isApiController(controller: Type): boolean {
@@ -19,11 +29,11 @@ export function isApiController(controller: Type): boolean {
 
 export function ensureApiController(controller: Type): void {
   if (!isApiController(controller)) {
-    throw new Error(`Provided type ${(controller as Type | undefined)?.name} is not a known ApiController. Make sure to use @ApiController decorator`);
+    throw new Error(`Provided type ${(controller as Type | undefined)?.name} is not a known ApiController. Make sure to use @ApiController decorator.`);
   }
 }
 
-export function apiController<T = Type<ApiController>, P = any>(definition: ApiDefinition, injectableOptions: InjectableOptionsWithoutLifecycle<T, P> = {}): ClassDecorator { // eslint-disable-line @typescript-eslint/naming-convention
+export function apiController<T = Type<ApiController>, A = any>(definition: ApiDefinition | ApiDefinitionProvider, injectableOptions: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator { // eslint-disable-line @typescript-eslint/naming-convention
   function apiControllerDecorator<U extends T>(constructor: Constructor<U>): void {
     registeredApiControllers.set(constructor as unknown as Type<ApiController>, definition);
     singleton(injectableOptions)(constructor);

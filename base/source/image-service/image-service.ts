@@ -1,26 +1,59 @@
-import { coerceNumber } from '#/old-api/validation/validators/superstruct';
-import type { Infer } from 'superstruct';
-import { enums, object, optional, string } from 'superstruct';
+import { Coerce, Enumeration, Optional } from '#/schema';
 
-export const imageResizeModeSchema = enums(['fit', 'fill']);
-export type ImageResizeMode = Infer<typeof imageResizeModeSchema>;
+export enum ImageResizeMode {
+  Fit = 'fit',
+  Fill = 'fill'
+}
 
-export const imageOriginSchema = enums(['center', 'smart', 'top', 'left', 'right', 'bottom', 'topleft', 'topright', 'bottomleft', 'bottomright']);
-export type ImageOrigin = Infer<typeof imageOriginSchema>;
+export enum ImageFormat {
+  Png = 'png',
+  Jpg = 'jpg',
+  Jpeg = 'jpeg',
+  Webp = 'webp',
+  Avif = 'avif'
+}
 
-export const imageFormatSchema = enums(['png', 'jpg', 'jpeg', 'webp', 'avif']);
-export type ImageFormat = Infer<typeof imageFormatSchema>;
+export enum ImageOrigin {
+  Center = 'center',
+  Smart = 'smart',
+  Top = 'top',
+  Left = 'left',
+  Right = 'right',
+  Bottom = 'bottom',
+  TopLeft = 'topleft',
+  TopRight = 'topright',
+  BottomLeft = 'bottomleft',
+  BottomRight = 'bottomright'
+}
 
-export const imageOptionsSchema = object({
-  resizeMode: optional(imageResizeModeSchema),
-  width: optional(coerceNumber()),
-  height: optional(coerceNumber()),
-  origin: optional(imageOriginSchema),
-  quality: optional(coerceNumber()),
-  format: optional(imageFormatSchema),
-  cacheBuster: optional(string())
-});
-export type ImageOptions = Infer<typeof imageOptionsSchema>;
+
+export class ImageOptions {
+  @Optional()
+  @Enumeration(ImageResizeMode)
+  resizeMode?: ImageResizeMode;
+
+  @Optional()
+  @Coerce()
+  width?: number;
+
+  @Optional()
+  @Coerce()
+  height?: number;
+
+  @Optional()
+  @Enumeration(ImageOrigin)
+  origin?: ImageOrigin;
+
+  @Optional()
+  @Coerce()
+  quality?: number;
+
+  @Optional()
+  format?: ImageFormat;
+
+  @Optional()
+  cacheBuster?: string;
+}
 
 export abstract class ImageService {
   abstract getUrl(resource: string, options?: ImageOptions): Promise<string>;

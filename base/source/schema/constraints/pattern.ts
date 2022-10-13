@@ -1,0 +1,36 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
+import type { JsonPath } from '#/json-path/json-path';
+import type { Decorator } from '#/reflection';
+import { createSchemaValueConstraintDecorator } from '../decorators/utils';
+import { SchemaError } from '../schema.error';
+import type { ConstraintContext, ConstraintResult } from '../types';
+import { SchemaValueConstraint, typeSchema } from '../types';
+
+export class PatternConstraint extends SchemaValueConstraint {
+  private readonly pattern: RegExp;
+  private readonly patternName: string | undefined;
+
+  readonly suitableTypes = String;
+  readonly expects: string;
+
+  constructor(pattern: RegExp, patternName: string = 'a pattern') {
+    super();
+
+    this.pattern = pattern;
+    this.patternName = patternName;
+    this.expects = `matching ${this.patternName}`;
+  }
+
+  validate(value: string, path: JsonPath, context: ConstraintContext): ConstraintResult {
+    if (!this.pattern.test(value)) {
+      return { valid: false, error: SchemaError.expectedButGot(this.expects, `"${value}"`, path, { fast: context.options.fastErrors }) };
+    }
+
+    return { valid: true };
+  }
+}
+
+export function Pattern(pattern: RegExp, patternName?: string): Decorator<'property' | 'accessor'> {
+  return createSchemaValueConstraintDecorator(new PatternConstraint(pattern, patternName), { schema: typeSchema(String) });
+}

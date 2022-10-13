@@ -42,8 +42,8 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     if (isString(pathOrNodesOrOptions)) {
       this._path = pathOrNodesOrOptions;
     }
-    else if (isArray(pathOrNodesOrOptions)) {
-      this._nodes = pathOrNodesOrOptions as JsonPathNode[];
+    else if (isArray<JsonPathNode>(pathOrNodesOrOptions)) {
+      this._nodes = pathOrNodesOrOptions;
     }
     else if (isIterable(pathOrNodesOrOptions)) {
       this._nodes = [...pathOrNodesOrOptions as Iterable<JsonPathNode>];

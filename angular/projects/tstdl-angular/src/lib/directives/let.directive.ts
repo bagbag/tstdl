@@ -5,13 +5,13 @@ import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, EMPTY, from, isObservable, of, ReplaySubject, switchMap, tap } from 'rxjs';
 
-export interface LetContext<T> {
-  $implicit: LetOutput<T>;
-  tslLet: LetOutput<T>;
-  isComplete: boolean;
-  hasError: boolean;
-  error: any;
-}
+export type LetContext<T> = {
+  $implicit: LetOutput<T>,
+  tslLet: LetOutput<T>,
+  isComplete: boolean,
+  hasError: boolean,
+  error: any
+};
 
 type LetAsyncInput<T> =
   | Observable<T>

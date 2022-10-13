@@ -1,21 +1,14 @@
-import type { ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-export type AnySchemaDefinition = SchemaDefinition<'any', any, any>;
+import type { Decorator } from '#/reflection';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
+import type { TypeSchema } from '../types';
+import { typeSchema } from '../types';
 
-export class AnySchemaValidator extends SchemaValidator<AnySchemaDefinition> {
-  [test](value: any): ValidationTestResult<any> {
-    return { valid: true, value };
-  }
+export function any(): TypeSchema<any> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
+  return typeSchema('any');
 }
 
-export function any(options?: SchemaOptions<AnySchemaDefinition>): AnySchemaValidator {
-  const schema = schemaHelper<AnySchemaDefinition>({
-    type: 'any',
-    ...options
-  });
-
-  return new AnySchemaValidator(schema);
+export function Any(): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(any());
 }

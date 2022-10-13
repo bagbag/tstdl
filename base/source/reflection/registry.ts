@@ -1,13 +1,12 @@
 /* eslint-disable max-classes-per-file */
-import type { Constructor, Type, Writable } from '#/types';
+import type { AbstractConstructor, Writable } from '#/types';
 import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
 import { isUndefined } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
+import { ReflectionDataMap } from './reflection-data-map';
 import type { DecoratorData } from './types';
-
-type Data = Map<string | symbol, any>;
 
 export type ReflectionMetadata = TypeMetadata | PropertyMetadata | MethodMetadata | ConstructorParameterMetadata | MethodParameterMetadata;
 
@@ -18,7 +17,7 @@ export type MetadataBase<T extends MetadataType> = {
 };
 
 export type TypeMetadata = MetadataBase<'type'> & {
-  readonly constructor: Constructor,
+  readonly constructor: AbstractConstructor,
 
   /** may be undefined if class has no constructor */
   readonly parameters: ConstructorParameterMetadata[] | undefined,
@@ -26,7 +25,9 @@ export type TypeMetadata = MetadataBase<'type'> & {
   readonly staticProperties: Map<string | symbol, PropertyMetadata>,
   readonly methods: Map<string | symbol, MethodMetadata>,
   readonly staticMethods: Map<string | symbol, MethodMetadata>,
-  readonly data: Data,
+  readonly data: ReflectionDataMap,
+
+  /** whether the type is known in reflection registry and contains metadata */
   readonly registered: boolean
 };
 
@@ -34,43 +35,43 @@ type WritableTypeMetadata = Writable<TypeMetadata>;
 
 export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
-  type: Type,
+  type: AbstractConstructor,
   isAccessor: boolean,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
-  returnType: Type | undefined,
-  data: Data
+  returnType: AbstractConstructor | undefined,
+  data: ReflectionDataMap
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
-  type: Type | undefined,
+  type: AbstractConstructor | undefined,
   index: number,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
-  type: Type,
+  type: AbstractConstructor,
   index: number,
-  data: Data
+  data: ReflectionDataMap
 };
 
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
 
 export class ReflectionRegistry {
-  private readonly metadataMap: WeakMap<Type, TypeMetadata>;
+  private readonly metadataMap: WeakMap<AbstractConstructor, TypeMetadata>;
 
   constructor() {
     this.metadataMap = new WeakMap();
   }
 
-  hasType(type: Constructor): boolean {
+  hasType(type: AbstractConstructor): boolean {
     return this.metadataMap.has(type) && this.getMetadata(type).registered;
   }
 
-  getMetadata(type: Constructor): TypeMetadata {
+  getMetadata(type: AbstractConstructor): TypeMetadata {
     if (!this.metadataMap.has(type)) {
       const metadata = this.initializeType(type);
       this.metadataMap.set(type, metadata);
@@ -104,7 +105,7 @@ export class ReflectionRegistry {
     else if (data.type == 'method') {
       return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
     }
-    else if (data.type == 'parameter') {
+    else if (data.type == 'method-parameter') {
       return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
     }
     else if (data.type == 'constructor-parameter') { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
@@ -123,26 +124,26 @@ export class ReflectionRegistry {
    * However, this should not be necessary since WeakRefs are used.
    * @param type Type to unregister
    */
-  unregister(type: Type): void {
+  unregister(type: AbstractConstructor): void {
     this.metadataMap.delete(type);
   }
 
   // eslint-disable-next-line max-lines-per-function
-  private initializeType(type: Type): TypeMetadata {
+  private initializeType(type: AbstractConstructor): TypeMetadata {
     return lazyObject<TypeMetadata>({
       metadataType: 'type',
       constructor: lazyObjectValue(type),
       parameters: {
         initializer() {
           const parametersTypes = getParameterTypes(type);
-          return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new Map() }));
+          return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ReflectionDataMap() }));
         }
       },
       properties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new Map() }))
+        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ReflectionDataMap() }))
       },
       staticProperties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new Map() }))
+        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ReflectionDataMap() }))
       },
       methods: {
         initializer: () => new FactoryMap((key): MethodMetadata => {
@@ -153,7 +154,7 @@ export class ReflectionRegistry {
             throw new Error(`Could not get parameters for method ${key.toString()} of type ${type.name}`);
           }
 
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new Map() })), returnType, data: new Map() };
+          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
         })
       },
       staticMethods: {
@@ -165,10 +166,10 @@ export class ReflectionRegistry {
             throw new Error(`Could not get parameters for static method ${key.toString()} of type ${type.name}`);
           }
 
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new Map() })), returnType, data: new Map() };
+          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
         })
       },
-      data: { initializer: () => new Map() },
+      data: { initializer: () => new ReflectionDataMap() },
       registered: false
     });
   }

@@ -2,7 +2,7 @@ import { CircularBuffer } from '#/data-structures/circular-buffer';
 import { MultiKeyMap } from '#/data-structures/multi-key-map';
 import type { ConstructorParameterMetadata, PropertyMetadata, TypeMetadata } from '#/reflection';
 import { reflectionRegistry } from '#/reflection';
-import type { Record, TypedOmit } from '#/types';
+import type { Constructor, Record, TypedOmit } from '#/types';
 import { mapAsync, toArrayAsync } from '#/utils/async-iterable-helpers';
 import { ForwardRef } from '#/utils/object/forward-ref';
 import { objectEntries } from '#/utils/object/object';
@@ -105,7 +105,7 @@ export class Container {
       const injectable = reflectionRegistry.hasType(provider.useClass) && reflectionRegistry.getMetadata(provider.useClass).data.has(injectMetadataSymbol);
 
       if (!injectable) {
-        throw new Error(`${provider.useClass.name} is not injectable`);
+        throw new Error(`${provider.useClass.name} is not injectable.`);
       }
     }
 
@@ -147,7 +147,7 @@ export class Container {
 
     if (isUndefined(registration)) {
       const tokenName = getTokenName(token);
-      throw new Error(`no provider for ${tokenName} registered`);
+      throw new Error(`No provider for ${tokenName} registered.`);
     }
 
     return registration;
@@ -179,8 +179,7 @@ export class Container {
       resolving: new MultiKeyMap()
     };
 
-    const chain = new ResolveChain();
-    return this._resolve(token, false, argument, context, chain.addToken(token), true);
+    return this._resolve(token, false, argument, context, ResolveChain.startWith(token), true);
   }
 
   /**
@@ -201,18 +200,17 @@ export class Container {
       resolving: new MultiKeyMap()
     };
 
-    const chain = new ResolveChain();
-    return this._resolveAsync(token, false, argument, context, chain.addToken(token), true);
+    return this._resolveAsync(token, false, argument, context, ResolveChain.startWith(token), true);
   }
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: InternalResolveContext, chain: ResolveChain, isFirst: boolean): T {
     if ((chain.length > 5000) || (++context.resolves > 5000)) {
-      throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', chain.truncate(15));
+      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead.', chain.truncate(15));
     }
 
     if (isUndefined(token)) {
-      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case', chain);
+      throw new ResolveError('Token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case.', chain);
     }
 
     if (context.providedInstances.has(token)) {
@@ -226,13 +224,13 @@ export class Container {
         return undefined as unknown as T;
       }
 
-      throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
+      throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
     }
 
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? registration.options.defaultArgumentProvider?.(this.getResolveContext(context, chain));
 
     if (isPromise(resolveArgument)) {
-      throw new ResolveError(`cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+      throw new ResolveError(`Cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
     }
 
     const argumentIdentity = (isDefined(registration.options.argumentIdentityProvider) && ((registration.options.lifecycle == 'resolution') || (registration.options.lifecycle == 'singleton')))
@@ -240,7 +238,7 @@ export class Container {
       : resolveArgument;
 
     if (isPromise(argumentIdentity)) {
-      throw new ResolveError(`cannot evaluate async argument identity provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+      throw new ResolveError(`Cannot evaluate async argument identity provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
     }
 
     if ((registration.options.lifecycle == 'resolution') && context.instances.has([token, argumentIdentity])) {
@@ -272,7 +270,7 @@ export class Container {
 
       const parameters = (typeMetadata.parameters ?? []).map((metadata): unknown => this.resolveInjection(token, context, typeMetadata, metadata, resolveArgument, chain));
 
-      instance = new typeMetadata.constructor(...parameters) as T;
+      instance = new (typeMetadata.constructor as Constructor)(...parameters) as T;
 
       for (const [property, metadata] of typeMetadata.properties) {
         if (!metadata.data.has(injectMetadataSymbol)) {
@@ -299,7 +297,7 @@ export class Container {
         const result = registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
 
         if (isPromise(result)) {
-          throw new ResolveError(`cannot evaluate async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+          throw new ResolveError(`Cannot evaluate async factory provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
         }
 
         instance = result;
@@ -337,7 +335,7 @@ export class Container {
           const returnValue = (resolution.instance as AfterResolve)[afterResolve]!();
 
           if (isPromise(returnValue)) {
-            throw new ResolveError(`cannot execute async [afterResolve] for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+            throw new ResolveError(`Cannot execute async [afterResolve] for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
           }
         }
 
@@ -345,7 +343,7 @@ export class Container {
           const returnValue = resolution.registration.options.initializer(resolution.instance);
 
           if (isPromise(returnValue)) {
-            throw new ResolveError(`cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, chain);
+            throw new ResolveError(`Cannot execute async initializer for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
           }
         }
       }
@@ -357,11 +355,11 @@ export class Container {
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: InternalResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
     if ((chain.length > 5000) || (++context.resolves > 5000)) {
-      throw new ResolveError('resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead', chain.truncate(15));
+      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead.', chain.truncate(15));
     }
 
     if (isUndefined(token)) {
-      throw new ResolveError('token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case', chain);
+      throw new ResolveError('Token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case.', chain);
     }
 
     if (context.providedInstances.has(token)) {
@@ -375,7 +373,7 @@ export class Container {
         return undefined as unknown as T;
       }
 
-      throw new ResolveError(`no provider for ${getTokenName(token)} registered`, chain);
+      throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
     }
 
     const resolveArgument = _argument ?? registration.options.defaultArgument ?? (await registration.options.defaultArgumentProvider?.(this.getResolveContext(context, chain)));
@@ -414,7 +412,7 @@ export class Container {
       const boxedParameters = await toArrayAsync(mapAsync(typeMetadata.parameters ?? [], async (metadata) => this.resolveInjectionAsync(context, typeMetadata, metadata, resolveArgument, chain)));
       const parameters = boxedParameters.map((box) => box.resolved);
 
-      instance = new typeMetadata.constructor(...parameters) as T;
+      instance = new (typeMetadata.constructor as Constructor)(...parameters) as T;
 
       for (const [property, metadata] of typeMetadata.properties) {
         if (!metadata.data.has(injectMetadataSymbol)) {
@@ -487,14 +485,14 @@ export class Container {
       ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
       : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectMetadata: InjectMetadata = metadata.data.tryGet(injectMetadataSymbol) ?? {};
     const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
 
     if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
       const mapped = injectMetadata.injectArgumentMapper(resolveArgument);
 
       if (isPromise(mapped)) {
-        throw new ResolveError(`cannot evaluate async argument mapper for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, getChain(injectToken));
+        throw new ResolveError(`Cannot evaluate async argument mapper for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, getChain(injectToken));
       }
 
       return mapped;
@@ -503,7 +501,7 @@ export class Container {
     const parameterResolveArgument = injectMetadata.forwardArgumentMapper?.(resolveArgument) ?? injectMetadata.resolveArgumentProvider?.(this.getResolveContext(context, getChain(injectToken)));
 
     if (isPromise(parameterResolveArgument)) {
-      throw new ResolveError(`cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead`, getChain(injectToken));
+      throw new ResolveError(`Cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, getChain(injectToken));
     }
 
     if (isDefined(injectMetadata.forwardRefToken)) {
@@ -511,10 +509,10 @@ export class Container {
       const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(() => {
-        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
+        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() as InjectionToken : forwardRefToken;
 
         if (isDefined(injectMetadata.mapper)) {
-          throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));
+          throw new ResolveError('Cannot use inject mapper with forwardRef.', getChain(forwardToken));
         }
 
         const resolved = this._resolve(forwardToken, injectMetadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);
@@ -534,7 +532,7 @@ export class Container {
       ? (injectToken: InjectionToken | undefined) => chain.addParameter(typeMetadata.constructor, metadata.index, injectToken!).addToken(injectToken!)
       : (injectToken: InjectionToken | undefined) => chain.addProperty(typeMetadata.constructor, metadata.key, injectToken!).addToken(injectToken!);
 
-    const injectMetadata: InjectMetadata = metadata.data.get(injectMetadataSymbol) ?? {};
+    const injectMetadata: InjectMetadata = metadata.data.tryGet(injectMetadataSymbol) ?? {};
     const injectToken = (injectMetadata.injectToken ?? metadata.type)!;
 
     if (isDefined(injectMetadata.injectArgumentMapper) && (!this.hasRegistration(injectToken) || isDefined(resolveArgument) || isUndefined(injectToken))) {
@@ -548,10 +546,10 @@ export class Container {
       const forwardRefToken = injectMetadata.forwardRefToken;
 
       context.forwardRefQueue.add(async () => {
-        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() : forwardRefToken;
+        const forwardToken = isFunction(forwardRefToken) ? forwardRefToken() as InjectionToken : forwardRefToken;
 
         if (isDefined(injectMetadata.mapper)) {
-          throw new ResolveError('cannot use inject mapper with forwardRef', getChain(forwardToken));
+          throw new ResolveError('Cannot use inject mapper with forwardRef.', getChain(forwardToken));
         }
 
         const resolved = await this._resolveAsync(forwardToken, injectMetadata.optional, parameterResolveArgument, context, getChain(forwardToken), false);

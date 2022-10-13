@@ -16,6 +16,7 @@ export * from './group';
 export * from './group-single';
 export * from './group-to-map';
 export * from './group-to-single-map';
+export * from './includes';
 export * from './is-iterable';
 export * from './last';
 export * from './last-or-default';

@@ -7,6 +7,8 @@ import type { HttpValueObject, NormalizedHttpValueObject } from './types';
 
 export type HttpHeadersObject = HttpValueObject;
 
+export type HttpHeadersInput = HttpValueMapInput;
+
 export type NormalizedHttpHeadersObject = NormalizedHttpValueObject;
 
 export class HttpHeaders extends HttpValueMap<HttpHeaders> {
@@ -48,6 +50,14 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
 
   set contentEncoding(value: string | undefined) {
     this.set('Content-Encoding', value);
+  }
+
+  get authorization(): string | undefined {
+    return this.getStringHeader('Authorization');
+  }
+
+  set authorization(value: string | undefined) {
+    this.set('Authorization', value);
   }
 
   /** get charset from {@link contentType} */

@@ -1,6 +1,6 @@
-import { AssertionError } from '#/error';
+import { AssertionError } from '#/error/assertion.error';
 import type { BinaryData } from '#/types';
-import { createArray } from './array';
+import { createArray } from './array/array';
 import { toUint8Array } from './binary';
 import { isUndefined } from './type-guards';
 
@@ -18,6 +18,13 @@ export function encodeUtf8(text: string): Uint8Array {
 }
 
 /**
+ * encodes text stream to utf8 bytes stream
+ */
+export function encodeUtf8Stream(): TransformStream<string, Uint8Array> {
+  return new TextEncoderStream();
+}
+
+/**
  * decodes buffer to string
  * @param buffer buffer to decode
  * @param encoding encoding, defaults to utf8
@@ -26,6 +33,15 @@ export function encodeUtf8(text: string): Uint8Array {
 export function decodeText(buffer: ArrayBuffer, encoding?: string): string {
   const decoder = new TextDecoder(encoding, { fatal: true });
   return decoder.decode(buffer);
+}
+
+/**
+ * transforms binary stream to string stream
+ * @param encoding encoding, defaults to utf8
+ * @returns stream of decoded string
+ */
+export function decodeTextStream(encoding?: string): TransformStream<BufferSource, string> {
+  return new TextDecoderStream(encoding, { fatal: true });
 }
 
 /**

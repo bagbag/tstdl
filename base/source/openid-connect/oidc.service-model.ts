@@ -22,21 +22,32 @@ export type OidcInitResult = {
 
 export type OidcToken<Raw = unknown> = {
   tokenType: string,
-  expiration: number,
   accessToken: string,
+  idToken?: string,
   refreshToken?: string,
   raw: Raw
 };
 
-export type OidcGetTokenParameters = {
+export type OidcGetTokenParametersBase<GrantType extends string> = {
   endpoint: string,
+  grantType: GrantType,
   clientId: string,
   clientSecret: string,
-  scope: string,
+  authType?: 'body' | 'basic-auth'
+};
+
+export type OidcGetTokenParametersWithClientCredentials = OidcGetTokenParametersBase<'client_credentials'> & {
+  scope?: string
+};
+
+export type OidcGetTokenParametersWithAuthorizationCode = OidcGetTokenParametersBase<'authorization_code'> & {
+  scope?: string,
   code: string,
   codeVerifier: string,
   redirectUri: string
 };
+
+export type OidcGetTokenParameters = OidcGetTokenParametersWithClientCredentials | OidcGetTokenParametersWithAuthorizationCode;
 
 export type OidcRefreshTokenParameters = {
   endpoint: string,

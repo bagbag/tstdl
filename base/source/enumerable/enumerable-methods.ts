@@ -9,6 +9,7 @@ export interface EnumerableMethods {
   difference(...args: any[]): any;
   differenceMany(...args: any[]): any;
   distinct(...args: any[]): any;
+  includes(...args: any[]): any;
   drain(...args: any[]): any;
   filter(...args: any[]): any;
   filterNullOrUndefined(...args: any[]): any;

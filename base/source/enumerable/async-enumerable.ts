@@ -4,8 +4,7 @@ import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import type { AsyncComparator } from '#/utils/sort';
 import { isNotNullOrUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
-import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
+import { allAsync, anyAsync, assertAsync, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, includesAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, ParallelizableIteratorFunction, ParallelizablePredicate, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, ThrottleFunction, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
@@ -97,6 +96,10 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
 
   async drain(): Promise<void> {
     await drainAsync(this.source);
+  }
+
+  async includes(value: T): Promise<boolean> {
+    return includesAsync(this.source, value);
   }
 
   filter<TPredicate extends T = T>(predicate: TypePredicate<T, TPredicate> | AsyncPredicate<T>): AsyncEnumerable<TPredicate> {

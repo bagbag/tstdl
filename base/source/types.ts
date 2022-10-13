@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
+import type { UnionToIntersection } from 'type-fest';
+
+export type ObjectLiteral = {};
+
 export type PrimitiveTypeMap = {
   'string': string,
   'number': number,
@@ -35,10 +39,17 @@ export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
 export type UndefinableJsonArray = UndefinableJsonInnerNode[];
 
-export type EnumerationValue = string | number;
+export type ArrayItem<T extends readonly any[]> = T extends readonly (infer U)[] ? U : never;
+
 export type Enumeration = EnumerationArray | EnumerationObject;
-export type EnumerationArray = readonly [EnumerationValue, ...(EnumerationValue)[]];
-export type EnumerationObject = Record<string, EnumerationValue>;
+export type EnumerationArray = readonly [string | number, ...(string | number)[]];
+export type EnumerationObject = Record<string, string | number>;
+export type EnumerationKey<T extends EnumerationObject = EnumerationObject> = Extract<keyof T, string>;
+export type EnumerationMap<T extends EnumerationObject = EnumerationObject> = SimplifyObject<{ [P in EnumerationKey<T>]: (T[P] extends number ? (`${T[P]}` extends `${infer U extends number}` ? U : never) : `${T[P]}`) | T[P] }>;
+export type EnumerationValue<T extends Enumeration = Enumeration> = T extends EnumerationObject ? Simplify<EnumerationMap<T>[keyof EnumerationMap<T>]> : T extends EnumerationArray ? T[number] : never;
+export type EnumerationEntry<T extends EnumerationObject = EnumerationObject> = { [P in EnumerationKey<T>]: [P, EnumerationMap<T>[P]] }[EnumerationKey<T>];
+type EnumerationEntriesHelper<T extends EnumerationObject = EnumerationObject, Tuple = UnionToTuple<EnumerationKey<T>>> = { [P in keyof Tuple]: [Tuple[P], Tuple[P] extends EnumerationKey<T> ? EnumerationMap<T>[Tuple[P]] : never] };
+export type EnumerationEntries<T extends EnumerationObject = EnumerationObject> = EnumerationEntriesHelper<T> extends (infer U)[] ? U[] : never;
 
 export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
 export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;
@@ -63,6 +74,15 @@ export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : ne
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type TypedExtract<T, U extends T> = T extends U ? T : never;
 
+export type ReplaceIfUnknown<T, U> = IfUnknown<T, U, T>;
+
+export type OmitNever<T extends Record> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
+
+export type SharedProperties<A, B, C = unknown, D = unknown, E = unknown, F = unknown, G = unknown, H = unknown, I = unknown, J = unknown> = OmitNever<Pick<
+  A & B & C & D & E & F & G & H & I & J,
+  keyof A & keyof B & keyof ReplaceIfUnknown<C, never> & keyof ReplaceIfUnknown<D, never> & keyof ReplaceIfUnknown<E, never> & keyof ReplaceIfUnknown<F, never> & keyof ReplaceIfUnknown<G, never> & keyof ReplaceIfUnknown<H, never> & keyof ReplaceIfUnknown<I, never> & keyof ReplaceIfUnknown<J, never>
+>>;
+
 /**
  * omit properties from a type that extend from a specific type.
  */
@@ -71,7 +91,9 @@ export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> 
 /**
  * normalize properties of a type that allow `undefined` to make them optional.
  */
-export type Optionalize<S extends object> = OmitBy<S, undefined> & Partial<PickBy<S, undefined>>;
+export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
+
+export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
 
 /**
  * remove nested type information
@@ -79,12 +101,17 @@ export type Optionalize<S extends object> = OmitBy<S, undefined> & Partial<PickB
 export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
   : T extends (infer AT)[] ? Simplify<AT>[]
   : T extends readonly (infer AT)[] ? readonly Simplify<AT>[]
-  : { [K in keyof T]: T[K] } & {};
+  : T extends Record ? SimplifyObject<T>
+  : T;
 
 /**
  * remove type information on object
  */
 export type SimplifyObject<T extends Record> = { [K in keyof T]: T[K] } & {};
+
+export type UnionToTuple<T, Tuple extends any[] = []> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? UnionToTuple<Exclude<T, R>, [R, ...Tuple]> : Tuple;
+
+export type UndefinableObject<T extends Record> = { [K in keyof T]: T[K] | undefined };
 
 /**
  * pick properties from a type that extend from a specific type.
@@ -98,7 +125,7 @@ export type NonNullOrUndefinable<T> = T extends null | undefined ? never : T;
 /**
  * makes optional properties required and removes null and undefined
  */
-export type DeepNonNullable<T extends Record> = { [P in keyof T]-?: T extends Record ? DeepNonNullable<NonNullable<T[P]>> : NonNullable<T[P]> };
+export type DeepNonNullable<T> = T extends Record ? { [P in keyof T]-?: DeepNonNullable<T[P]> } : NonNullable<T>;
 
 export type IfAny<T, Then, Else = never> = true extends (false & T) ? Then : Else;
 export type IfUnknown<T, Then, Else = never> = unknown extends T ? Then : Else;
@@ -110,8 +137,8 @@ export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
-export type PropertyOf<T extends object, P extends keyof T> = Property<P, Of<T>>;
-export type Property<P extends keyof T, T extends object> = { [P2 in keyof T[P]]: T[P][P2] };
+export type PropertyOf<T extends object, P extends keyof T> = Property<Of<T>, P>;
+export type Property<T extends object, P extends keyof T> = { [P2 in keyof T[P]]: T[P][P2] };
 export type Of<T> = T;
 export type PropertiesOfType<T, U> = keyof PickBy<T, U>;
 

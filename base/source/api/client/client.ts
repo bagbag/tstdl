@@ -1,23 +1,23 @@
 import type { Injectable } from '#/container';
 import { container, resolveArgumentType } from '#/container';
-import type { HttpClientOptions, HttpClientResponse } from '#/http/client';
+import type { HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
-import type { HttpBodyType } from '#/http/types';
-import { AsyncIterableSchemaValidator, LiteralSchemaValidator, StringSchemaValidator, Uint8ArraySchemaValidator } from '#/schema';
+import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
-import { toArray } from '#/utils/array';
-import { compareByValueDescending } from '#/utils/comparison';
-import { isArray, isNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
-import { normalizedApiDefinitionEndpointsEntries, rootResource } from '../types';
+import { normalizedApiDefinitionEndpointsEntries } from '../types';
+import { getFullApiEndpointResource } from '../utils';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
 
 export type ClientOptions = {
   /**
-   * url prefix (default: 'api/')
+   * url prefix
+   * @default `api/`
    */
   prefix?: string,
+
   defaultHttpClientOptions?: HttpClientOptions
 };
 
@@ -56,38 +56,28 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   const endpointsEntries = normalizedApiDefinitionEndpointsEntries(endpoints);
 
-  const base = path;
-  const prefix = options.prefix ?? 'api/';
-
-  for (const [name, config] of endpointsEntries) {
-    const version = (isUndefined(config.version) ? [1] : toArray(config.version as number)).sort(compareByValueDescending)[0]!;
-    const methods = isArray(config.method) ? config.method : [config.method ?? 'GET'];
-    const versionPrefix = isNull(config.version) ? '' : `v${version}/`;
-    const resource = (config.resource == rootResource) ? `${prefix}${versionPrefix}${base}` : `${prefix}${versionPrefix}${base}/${config.resource ?? name}`;
+  for (const [name, endpoint] of endpointsEntries) {
+    const methods = isArray(endpoint.method) ? endpoint.method : [endpoint.method ?? 'GET'];
+    const resource = getFullApiEndpointResource({ api: definition, endpoint, prefix: options.prefix });
 
     const hasGet = methods.includes('GET');
     const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
 
     const apiEndpointFunction = {
-      async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
-        const responseType = convertApiEndpointResultToHttpBodyType(config.result);
-
-        const context: ApiClientHttpRequestContext = {
-          endpoint: config
-        };
-
+      async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject, requestBody?: any): Promise<unknown> {
+        const context: ApiClientHttpRequestContext = { endpoint };
         const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
         const request = new HttpClientRequest({
           method,
           url: resource,
-          responseType,
           parameters,
+          body: getRequestBody(requestBody),
           context
         });
 
         const response = await this[httpClientSymbol].rawRequest(request);
-        return getBody(response, config.result);
+        return getResponseBody(response, endpoint.result);
       }
     }[name];
 
@@ -102,19 +92,45 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   return api as unknown as ApiClient<T>;
 }
 
-function convertApiEndpointResultToHttpBodyType(result: ApiEndpointDefinitionResult | undefined): HttpBodyType {
-  return (result instanceof AsyncIterableSchemaValidator) ? 'stream'
-    : (result instanceof StringSchemaValidator) ? 'text'
-      : (result instanceof LiteralSchemaValidator) ? ((typeof result.schema.value) == 'string') ? 'text' : 'json'
-        : (result instanceof Uint8ArraySchemaValidator) ? 'buffer'
-          : (result == undefined) ? 'none'
-            : 'json';
-}
-
-async function getBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResult | undefined): Promise<unknown> {
-  if (isUndefined(schema)) {
+function getRequestBody(body: unknown): HttpRequestBody | undefined {
+  if (isUndefined(body)) {
     return undefined;
   }
 
-  return schema.parseAsync(response.body);
+  if (isUint8Array(body)) {
+    return { buffer: body };
+  }
+
+  if (isReadableStream(body)) {
+    return { stream: body };
+  }
+
+  if (isBlob(body)) {
+    return { blob: body };
+  }
+
+  if (isString(body)) {
+    return { text: body };
+  }
+
+  return { json: body as any };
+}
+
+async function getResponseBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResult | undefined): Promise<unknown> {
+  if (isUndefined(schema)) {
+    response.close();
+    return undefined;
+  }
+
+  const body = response.hasBody
+    ? (schema == ReadableStream)
+      ? response.body.readAsBinaryStream()
+      : (schema == Uint8Array)
+        ? await response.body.readAsBuffer()
+        : (schema == String)
+          ? await response.body.readAsText()
+          : await response.body.read()
+    : undefined;
+
+  return Schema.parse(schema, body, { mask: true }) as Promise<unknown>;
 }

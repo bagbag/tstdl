@@ -1,21 +1,14 @@
-import type { ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { SchemaDefinition, SchemaOptions } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/naming-convention */
 
-export type UnknownSchemaDefinition = SchemaDefinition<'unknown'>;
+import type { Decorator } from '#/reflection';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
+import type { TypeSchema } from '../types';
+import { typeSchema } from '../types';
 
-export class UnknownSchemaValidator extends SchemaValidator<UnknownSchemaDefinition> {
-  [test](value: unknown): ValidationTestResult<unknown> {
-    return { valid: true, value };
-  }
+export function unknown(): TypeSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
+  return typeSchema('any');
 }
 
-export function unknown(options?: SchemaOptions<UnknownSchemaDefinition>): UnknownSchemaValidator {
-  const schema = schemaHelper<UnknownSchemaDefinition>({
-    type: 'unknown',
-    ...options
-  });
-
-  return new UnknownSchemaValidator(schema);
+export function Unknwon(): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(unknown());
 }

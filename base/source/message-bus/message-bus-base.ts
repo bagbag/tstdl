@@ -1,7 +1,6 @@
 import type { Logger } from '#/logger';
 import type { Observable } from 'rxjs';
-import { defer, merge, Subject } from 'rxjs';
-import { share, takeUntil } from 'rxjs/operators';
+import { defer, merge, share, Subject, takeUntil } from 'rxjs';
 import { disposeAsync } from '../disposable';
 import { CancellationToken } from '../utils/cancellation-token';
 import { MessageBus } from './message-bus';

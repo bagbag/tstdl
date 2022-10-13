@@ -1,14 +1,5 @@
-import { firstValueFrom, mapTo, race, timer } from 'rxjs';
+import { firstValueFrom, map, race, timer } from 'rxjs';
 import type { ReadonlyCancellationToken } from './cancellation-token';
-
-/**
- * compatibility for consumers with typescript version less than 4.4
- * @deprecated will be removed as it is available in typescripts dom lib
- */
-export interface IdleDeadline {
-  readonly didTimeout: boolean;
-  timeRemaining(): DOMHighResTimeStamp;
-}
 
 /** timeout for specified duration */
 export async function timeout(milliseconds: number = 0): Promise<void> {
@@ -24,8 +15,8 @@ export async function timeoutUntil(timestamp: number | Date): Promise<void> {
 /** timeout for specified duration */
 export async function cancelableTimeout(milliseconds: number, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
   return firstValueFrom(race([
-    timer(milliseconds).pipe(mapTo(false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    cancelToken.set$.pipe(mapTo(true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    timer(milliseconds).pipe(map(() => false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    cancelToken.set$.pipe(map(() => true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
   ]));
 }
 

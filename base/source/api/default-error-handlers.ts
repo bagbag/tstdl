@@ -13,11 +13,6 @@ export type SerializedSchemaError = {
   path: string
 };
 
-/**
- * @deprecated noop, handlers are registered by default
- */
-export function registerDefaultErrorHandlers(): void { /* noop */ }
-
 export function serializeValidationError(error: ValidationError): SerializedValidationError {
   return {
     message: error.message,

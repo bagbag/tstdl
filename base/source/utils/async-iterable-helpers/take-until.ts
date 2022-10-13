@@ -1,5 +1,4 @@
-import { firstValueFrom } from '#/rxjs/compat';
-import { mapTo, race } from 'rxjs';
+import { firstValueFrom, map, race } from 'rxjs';
 import type { AnyIterable } from '../any-iterable-iterator';
 import type { ReadonlyCancellationToken } from '../cancellation-token';
 import { isAsyncIterable } from './is-async-iterable';
@@ -28,7 +27,7 @@ async function* sync<T>(iterable: Iterable<T>, cancellationToken: ReadonlyCancel
 
 async function* async<T>(iterable: AsyncIterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
-  const cancel$ = cancellationToken.set$.pipe(mapTo<IteratorResult<T>>({ done: true, value: undefined })); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+  const cancel$ = cancellationToken.set$.pipe(map((): IteratorResult<T> => ({ done: true, value: undefined }))); // eslint-disable-line @typescript-eslint/no-unsafe-argument
 
   try {
     while (true) {

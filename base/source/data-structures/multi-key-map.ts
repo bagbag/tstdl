@@ -1,4 +1,3 @@
-import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject } from '#/utils/object/lazy-property';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { CircularBuffer } from './circular-buffer';
@@ -8,20 +7,24 @@ type Node = {
   nodeKey: any,
   parentNode: Node | undefined,
   hasInnerMap: boolean,
-  children: FactoryMap<any, Node>,
+  children: Map<any, Node>,
   hasValue: boolean,
   value: any
 };
 
+type NewMapProvider = () => Map<any, Node>;
+
 export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKeyMap<K, T>> implements Map<K, T> {
+  private readonly newMapProvider: NewMapProvider;
   private rootNode: Node;
 
   readonly [Symbol.toStringTag]: string = 'MultiKeyMap';
 
-  constructor() {
+  constructor(newMapProvider: NewMapProvider = () => new Map()) {
     super();
 
-    this.rootNode = createNode(undefined, undefined);
+    this.newMapProvider = newMapProvider;
+    this.rootNode = createNode(undefined, undefined, this.newMapProvider);
   }
 
   add(value: [K, T]): void {
@@ -135,18 +138,18 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
   }
 
   protected _clear(): void {
-    this.rootNode = createNode(undefined, undefined);
+    this.rootNode = createNode(undefined, undefined, this.newMapProvider);
   }
 
   private getNode<Create extends boolean>(key: K, create: Create): Create extends true ? Node : (Node | undefined) {
-    let node = this.rootNode.children.get(key[0]);
+    let node = getOrCreateChildNode(this.rootNode, key[0], this.newMapProvider);
 
     for (let i = 1; i < key.length; i++) {
       if (!node.hasInnerMap && !create) {
         return undefined as (Create extends true ? Node : (Node | undefined));
       }
 
-      node = node.children.get(key[i]);
+      node = getOrCreateChildNode(this.rootNode, key[i], this.newMapProvider);
     }
 
     return node;
@@ -162,18 +165,33 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
   }
 }
 
-function createNode(nodeKey: any, parentNode: Node | undefined): Node {
+function getOrCreateChildNode(node: Node, key: any, newMapProvider: NewMapProvider): Node {
+  const childNode = node.children.get(key);
+
+  if (isDefined(childNode)) {
+    return childNode;
+  }
+
+  const newNode = createNode(key, node, newMapProvider);
+  node.children.set(key, newNode);
+
+  return newNode;
+}
+
+function createNode(nodeKey: any, parentNode: Node | undefined, newMapProvider: NewMapProvider): Node {
   return lazyObject<Node>({
     nodeKey: { value: nodeKey },
     parentNode: { value: parentNode },
     hasInnerMap: false,
-    children: getChildren,
+    children() {
+      return getChildren(this, newMapProvider);
+    },
     hasValue: false,
     value: { value: undefined }
   });
 }
 
-function getChildren(this: Node): FactoryMap<any, Node> {
-  this.hasInnerMap = true;
-  return new FactoryMap((key) => createNode(key, this));
+function getChildren(node: Node, newMapProvider: NewMapProvider): Map<any, Node> {
+  node.hasInnerMap = true;
+  return newMapProvider();
 }

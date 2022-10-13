@@ -1,32 +1,8 @@
-import type { JsonPath } from '#/json-path';
-import type { Type } from '#/types';
-import { typeOf } from '#/utils/type-of';
-import { SchemaError } from '../schema.error';
-import type { DefinedValidationOptions, ValidationTestResult } from '../schema.validator';
-import { SchemaValidator, test } from '../schema.validator';
-import type { SchemaDefinition, SchemaOptions, SchemaOutput } from '../types';
-import { schemaHelper } from '../types';
+/* eslint-disable @typescript-eslint/ban-types */
 
-export type InstanceSchemaDefinition<T = unknown> = SchemaDefinition<'instance', T, T> & {
-  constructor: Type<T>
-};
+import type { NormalizeValueType, TypeSchema, ValueType } from '../types';
+import { typeSchema } from '../types';
 
-export class InstanceSchemaValidator<T> extends SchemaValidator<InstanceSchemaDefinition<T>> {
-  [test](value: unknown, _options: DefinedValidationOptions, path: JsonPath): ValidationTestResult<SchemaOutput<InstanceSchemaDefinition<T>>> {
-    if (value instanceof this.schema.constructor) {
-      return { valid: true, value: value as T };
-    }
-
-    return { valid: false, error: SchemaError.expectedButGot(`instance of ${this.schema.constructor.name}`, typeOf(value), path) };
-  }
-}
-
-export function instance<T>(constructor: Type<T>, options?: SchemaOptions<InstanceSchemaDefinition<T>, 'constructor'>): InstanceSchemaValidator<T> {
-  const schema = schemaHelper<InstanceSchemaDefinition<T>>({
-    type: 'instance',
-    constructor,
-    ...options
-  });
-
-  return new InstanceSchemaValidator(schema);
+export function instance<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {
+  return typeSchema<T>(type);
 }
