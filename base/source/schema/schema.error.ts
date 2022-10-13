@@ -88,26 +88,4 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
 
     return obj;
   }
-
-  getExtraInfo(includeMessage: boolean = false): UndefinableJson | undefined {
-    const obj: UndefinableJson = {
-      path: this.path
-    };
-
-    if (includeMessage) {
-      obj['message'] = this.message;
-    }
-
-    if (isDefined(this.inner)) {
-      obj['inner'] = isArray(this.inner)
-        ? this.inner.map((error) => error.getExtraInfo(true))
-        : this.inner.getExtraInfo(true);
-    }
-
-    if (isNotNullOrUndefined(this.details)) {
-      obj['details'] = this.details;
-    }
-
-    return obj;
-  }
 }
