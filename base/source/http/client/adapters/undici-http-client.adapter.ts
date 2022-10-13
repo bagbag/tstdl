@@ -42,7 +42,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
       body = httpClientRequest.body!.buffer;
     }
     else if (isDefined(httpClientRequest.body?.blob)) {
-      body = Readable.from(httpClientRequest.body!.blob.stream());
+      body = Readable.from(httpClientRequest.body!.blob.stream() as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.stream)) {
       body = Readable.from(httpClientRequest.body!.stream as ReadableStream);
