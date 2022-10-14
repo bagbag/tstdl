@@ -1,6 +1,5 @@
 import { CircularBuffer } from '#/data-structures/circular-buffer';
-import { firstValueFrom } from '#/rxjs/compat';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 import { CancellationToken } from './cancellation-token';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {

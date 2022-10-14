@@ -113,25 +113,20 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async load<U extends T = T>(id: string): Promise<U> {
-    const entity = await this.baseRepository.load(id);
-    return this.transformer.untransform(entity) as U;
+    return this.loadByFilter<U>({ id } as Query<U>);
   }
 
   async tryLoad<U extends T = T>(id: string): Promise<U | undefined> {
-    const entity = await this.baseRepository.tryLoad(id);
-    return entity == undefined ? undefined : this.transformer.untransform(entity) as U;
+    return this.tryLoadByFilter<U>({ id } as Query<U>);
   }
 
   async loadMany<U extends T = T>(ids: string[], options?: QueryOptions<U>): Promise<U[]> {
-    const entities = await this.baseRepository.loadManyById(ids, convertOptions(options as QueryOptions<T>, this.transformerMappingMap));
-    return entities.map((entity) => this.transformer.untransform(entity) as U);
+    return this.loadManyByFilter<U>({ id: { $in: ids } } as Query<U>, options);
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async *loadManyCursor<U extends T = T>(ids: string[], options?: QueryOptions<U>): AsyncIterableIterator<U> {
-    for await (const entity of this.baseRepository.loadManyByIdWithCursor(ids, convertOptions(options as QueryOptions<T>, this.transformerMappingMap))) {
-      yield this.transformer.untransform(entity) as U;
-    }
+    yield* this.loadManyByFilterCursor<U>({ id: { $in: ids } } as Query<U>, options);
   }
 
   async loadByFilter<U extends T = T>(filter: Query<U>, options?: QueryOptions<U>): Promise<U> {
@@ -218,7 +213,7 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async has(id: string): Promise<boolean> {
-    return this.baseRepository.has(id);
+    return this.hasByFilter({ id } as Query<T>);
   }
 
   async hasByFilter<U extends T>(filter: Query<U>): Promise<boolean> {
@@ -227,11 +222,14 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async hasMany(ids: string[]): Promise<string[]> {
-    return this.baseRepository.hasMany(ids);
+    const transformedFilter = this.transformFilter({ id: { $in: ids } } as Query<T>);
+    return this.baseRepository.getIdsByFilter(transformedFilter);
   }
 
   async hasAll(ids: string[]): Promise<boolean> {
-    return this.baseRepository.hasAll(ids);
+    const transformedFilter = this.transformFilter({ id: { $in: ids } } as Query<T>);
+    const count = await this.baseRepository.countByFilter(transformedFilter);
+    return count == ids.length;
   }
 
   async count(allowEstimation: boolean = false): Promise<number> {
@@ -248,18 +246,12 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async patch<U extends T = T>(entity: U, patch: EntityPatch<U>): Promise<boolean> {
-    const transformedPatch = this.transformPatch(patch);
-    const { matchedCount } = await this.baseRepository.update({ _id: entity.id } as Filter<TDb>, transformedPatch);
-    return matchedCount > 0;
+    return this.patchByFilter({ _id: entity.id } as Query<T>, patch);
   }
 
   async patchMany<U extends T = T>(entities: U[], patch: EntityPatch<U>): Promise<number> {
-    const transformedPatch = this.transformPatch(patch);
     const ids = entities.map((entity) => entity.id);
-    const filter: Filter = { _id: { $in: ids } };
-
-    const { matchedCount } = await this.baseRepository.updateMany(filter as Filter<TDb>, transformedPatch);
-    return matchedCount;
+    return this.patchManyByFilter({ _id: { $in: ids } } as Query<T>, patch);
   }
 
   async patchByFilter<U extends T = T>(filter: Query<U>, patch: EntityPatch<U>): Promise<boolean> {
@@ -331,20 +323,20 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async delete<U extends T>(entity: U): Promise<boolean> {
-    return this.baseRepository.deleteById(entity.id);
+    return this.deleteById(entity.id);
   }
 
   async deleteMany<U extends T>(entities: U[]): Promise<number> {
     const ids = entities.map((entity) => entity.id);
-    return this.baseRepository.deleteManyById(ids);
+    return this.deleteManyByFilter({ id: { $in: ids } } as Query<T>);
   }
 
   async deleteById(id: string): Promise<boolean> {
-    return this.baseRepository.deleteById(id);
+    return this.deleteByFilter({ id } as Query<T>);
   }
 
   async deleteManyById(ids: string[]): Promise<number> {
-    return this.baseRepository.deleteManyById(ids);
+    return this.deleteManyByFilter({ id: { $in: ids } } as Query<T>);
   }
 
   async deleteByFilter<U extends T = T>(filter: Query<U>): Promise<boolean> {

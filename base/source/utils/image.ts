@@ -1,6 +1,5 @@
 import { AssertionError } from '#/error/assertion.error';
-import { firstValueFrom } from '#/rxjs/compat';
-import { fromEvent, mapTo, race, switchMap, throwError } from 'rxjs';
+import { firstValueFrom, fromEvent, map, race, switchMap, throwError } from 'rxjs';
 import { FactoryMap } from './factory-map';
 import { assertNotNullPass, isFunction, isNull } from './type-guards';
 
@@ -36,8 +35,8 @@ async function _canDecodeImage(dataUrl: string): Promise<boolean> {
   const image = new Image();
 
   const canPromise = firstValueFrom(race([
-    fromEvent(image, 'load').pipe(mapTo(true)),
-    fromEvent(image, 'error').pipe(mapTo(false))
+    fromEvent(image, 'load').pipe(map(() => true)),
+    fromEvent(image, 'error').pipe(map(() => false))
   ]));
 
   image.src = dataUrl;
@@ -58,7 +57,7 @@ export async function compressImage(sourceImage: Blob, width: number, height: nu
     const image = new Image();
 
     const imagePromise = firstValueFrom(race([
-      fromEvent(image, 'load').pipe(mapTo(undefined)),
+      fromEvent(image, 'load').pipe(map(() => undefined)),
       fromEvent(image, 'error').pipe(switchMap((event: Event) => throwError(() => ((event as ErrorEvent).error as Error | undefined) ?? new Error((event as ErrorEvent).message))))
     ]));
 

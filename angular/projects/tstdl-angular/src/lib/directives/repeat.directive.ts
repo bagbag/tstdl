@@ -1,6 +1,11 @@
 import { ChangeDetectorRef, Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
-import { switchMapTo } from 'rxjs';
+import { switchMap } from 'rxjs';
 import { LifecycleUtils } from '../utils';
+
+export interface RepeatContext {
+  $implicit: number;
+  index: number;
+}
 
 @Directive({
   selector: '[tslRepeat]'
@@ -9,20 +14,20 @@ export class RepeatDirective extends LifecycleUtils<RepeatDirective> {
   /** how many times to repeat */
   @Input() tslRepeat: number;
 
-  constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, changeDetector: ChangeDetectorRef) {
+  constructor(templateRef: TemplateRef<RepeatContext>, viewContainer: ViewContainerRef, changeDetector: ChangeDetectorRef) {
     super();
 
     this.tslRepeat = 1;
 
     this.init$
-      .pipe(switchMapTo(this.observe('tslRepeat')))
+      .pipe(switchMap(() => this.observe('tslRepeat')))
       .subscribe((repeat) => {
         while (viewContainer.length > repeat) {
           viewContainer.remove();
         }
 
         while (repeat > viewContainer.length) {
-          viewContainer.createEmbeddedView(templateRef);
+          viewContainer.createEmbeddedView(templateRef, { $implicit: viewContainer.length, index: viewContainer.length });
         }
 
         changeDetector.markForCheck();

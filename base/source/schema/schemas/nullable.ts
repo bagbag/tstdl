@@ -1,7 +1,9 @@
-import type { Schema } from '../schema';
-import type { ValueSchema } from '../types';
+import type { SchemaTestable } from '../schema';
+import type { ValueSchema, ValueSchemaOptions } from '../types';
 import { valueSchema } from '../types';
 
-export function nullable<T, O>(schema: Schema<T, O>): ValueSchema<T | null, O | null> {
-  return valueSchema(schema, { nullable: true }) as ValueSchema<T | null, O | null>;
+export type NullableOptions = ValueSchemaOptions;
+
+export function nullable<T>(schema: SchemaTestable<T>, options?: NullableOptions): ValueSchema<T | null> {
+  return valueSchema(schema, { ...options, nullable: true }) as ValueSchema<T | null>;
 }

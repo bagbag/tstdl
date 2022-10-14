@@ -39,7 +39,7 @@ function mergeValues(a: any, b: any, options: MergeObjectsOptions, path: string)
   const typeB = typeof b;
 
   if (typeA != typeB) {
-    throw new Error(`property type mismatch at ${path}`);
+    throw new Error(`Property type mismatch at ${path}.`);
   }
 
   if (isPrimitive(a) || (typeA == 'function')) {
@@ -47,12 +47,12 @@ function mergeValues(a: any, b: any, options: MergeObjectsOptions, path: string)
       return a;
     }
 
-    throw new Error(`property value mismatch at ${path}`);
+    throw new Error(`Property value mismatch at ${path}.`);
   }
 
   if (isArray(a)) {
     if (!isArray(b)) {
-      throw new Error(`property type mismatch at ${path}`);
+      throw new Error(`Property type mismatch at ${path}.`);
     }
 
     return mergeArray(a, b, options, path); // eslint-disable-line @typescript-eslint/no-unsafe-return

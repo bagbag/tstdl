@@ -1,7 +1,5 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { map, share } from 'rxjs/operators';
+import { firstValueFrom, map, merge, share, Subject } from 'rxjs';
 import type { ObservableCollection } from './observable-collection';
 import { ObservableCollectionBase } from './observable-collection-base';
 import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
@@ -61,11 +59,11 @@ export abstract class ObservableListBase<T, TThis extends ObservableCollection<T
   }
 
   protected override onAdd(): never {
-    throw new Error(`use ${this.onAddAt.name}`);
+    throw new Error(`Use ${this.onAddAt.name}.`);
   }
 
   protected override onRemove(): never {
-    throw new Error(`use ${this.onRemoveAt.name}`);
+    throw new Error(`Use ${this.onRemoveAt.name}.`);
   }
 
   protected onAddAt(events: ObservableListIndexedEvent<T>[]): void {

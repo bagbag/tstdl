@@ -2,13 +2,15 @@
 
 import type { Decorator } from '#/reflection';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { TypeSchema } from '../types';
-import { typeSchema } from '../types';
+import type { ValueSchema, ValueSchemaOptions } from '../types';
+import { typeSchema, valueSchema } from '../types';
 
-export function unknown(): TypeSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
-  return typeSchema('any');
+export type UnknownOptions = ValueSchemaOptions;
+
+export function unknown(options?: UnknownOptions): ValueSchema<unknown> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
+  return valueSchema(typeSchema('any'), options);
 }
 
-export function Unknwon(): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(unknown());
+export function Unknown(options?: UnknownOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(unknown(options));
 }

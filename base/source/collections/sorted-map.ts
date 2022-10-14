@@ -76,7 +76,7 @@ export class SortedMap<K extends KComparator, V, KComparator = K> {
 
   removeRange(index: number, count: number): Iterable<[K, V]> {
     if (index < 0 || (index + count) > (this.backingSortedArray.length - 1)) {
-      throw new Error('out of bounds');
+      throw new Error('Out of bounds.');
     }
 
     const items = this.backingSortedArray.removeRange(index, count);

@@ -4,8 +4,7 @@ import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
 import type { FormatErrorOptions } from '@tstdl/base/utils';
 import { formatError } from '@tstdl/base/utils';
 import type { Observable, OperatorFunction } from 'rxjs';
-import { Subject, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, Subject, throwError } from 'rxjs';
 import { Logger } from './logger.service';
 import { NotificationService } from './notification.service';
 

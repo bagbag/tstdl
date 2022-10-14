@@ -1,12 +1,12 @@
-import type { AbstractConstructor, OneOrMany } from '#/types';
-import type { Schema } from '../schema';
+import type { OneOrMany } from '#/types';
+import type { SchemaTestable } from '../schema';
 import type { GenericTransformFunction } from '../transformers/generic';
 import { GenericTransformer } from '../transformers/generic';
 import type { ValueSchema, ValueType } from '../types';
 import { valueSchema } from '../types';
 
-export function transform<T, O, TransformOutput>(schema: OneOrMany<Schema<T, O>>, sourceType: OneOrMany<ValueType<T>>, targetType: AbstractConstructor<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>): ValueSchema<TransformOutput> {
+export function transform<T, O>(schema: OneOrMany<SchemaTestable<T>>, transformFunction: GenericTransformFunction<T, O>, sourceType?: OneOrMany<ValueType<T>>): ValueSchema<O> {
   return valueSchema(schema, {
-    transformers: new GenericTransformer(sourceType, targetType, transformFunction)
+    transformers: new GenericTransformer(transformFunction, sourceType)
   }) as ValueSchema<any>;
 }

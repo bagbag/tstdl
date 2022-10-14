@@ -4,7 +4,7 @@ import type { JsonPath } from '#/json-path';
 import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array/array';
 import type { ErrorExtraInfo } from '#/utils/format-error';
-import { isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards';
+import { isArray, isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards';
 import type { ValueType } from './types';
 import { getValueTypeName } from './utils';
 
@@ -19,7 +19,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   static readonly errorName = 'SchemaError';
 
   readonly path: string;
-  readonly inner?: SchemaError[];
+  readonly inner?: OneOrMany<SchemaError>;
   readonly details?: UndefinableJson;
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
@@ -27,12 +27,12 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
 
     this.path = isString(options.path) ? options.path : options.path.path;
 
-    if (isDefined(options.inner)) {
-      const errors = toArray(options.inner);
-
-      if (errors.length > 0) {
-        this.inner = errors;
-      }
+    if (isDefined(options.inner) && (!isArray(options.inner) || (options.inner.length > 0))) {
+      this.inner = isArray(options.inner)
+        ? (options.inner.length == 1)
+          ? options.inner[0]!
+          : options.inner
+        : options.inner;
     }
 
     if (isNotNullOrUndefined(options.details)) {
@@ -76,8 +76,10 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
       obj['message'] = this.message;
     }
 
-    if (isDefined(this.inner) && (this.inner.length > 0)) {
-      obj['inner'] = this.inner.map((error) => error.getExtraInfo(true));
+    if (isDefined(this.inner)) {
+      obj['inner'] = isArray(this.inner)
+        ? this.inner.map((error) => error.getExtraInfo(true))
+        : this.inner.getExtraInfo(true);
     }
 
     if (isNotNullOrUndefined(this.details)) {

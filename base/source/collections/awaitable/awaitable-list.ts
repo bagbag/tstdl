@@ -1,6 +1,5 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
+import { firstValueFrom, Subject } from 'rxjs';
 
 export class AwaitableList<T> implements Iterable<T> {
   private readonly _added: Subject<T | T[]>;
@@ -47,7 +46,7 @@ export class AwaitableList<T> implements Iterable<T> {
 
   get(index: number): T {
     if (index >= this.size || index < 0) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
 
     return this.backingArray[index]!;
@@ -55,7 +54,7 @@ export class AwaitableList<T> implements Iterable<T> {
 
   set(index: number, value: T): void {
     if (index >= this.size || index < 0) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
 
     const oldValue = this.backingArray[index]!;
@@ -81,7 +80,7 @@ export class AwaitableList<T> implements Iterable<T> {
 
   insert(index: number, ...items: T[]): void {
     if (index >= this.size || index < 0) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
 
     this.backingArray.splice(index, 0, ...items);
@@ -90,11 +89,11 @@ export class AwaitableList<T> implements Iterable<T> {
 
   remove(index: number, count: number = 1): T[] {
     if (index >= this.size || index < 0) {
-      throw new Error('index out of bounds');
+      throw new Error('Index out of bounds.');
     }
 
     if ((index + count) > this.size) {
-      throw new Error('count out of bounds');
+      throw new Error('Count out of bounds.');
     }
 
     const removedItems = this.backingArray.splice(index, count);
@@ -105,7 +104,7 @@ export class AwaitableList<T> implements Iterable<T> {
 
   pop(): T {
     if (this.size == 0) {
-      throw new Error('list contains no items');
+      throw new Error('List contains no items.');
     }
 
     const result = this.backingArray.pop()!;
@@ -116,7 +115,7 @@ export class AwaitableList<T> implements Iterable<T> {
 
   shift(): T {
     if (this.size == 0) {
-      throw new Error('list contains no items');
+      throw new Error('List contains no items.');
     }
 
     const result = this.backingArray.shift()!;

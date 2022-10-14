@@ -6,4 +6,8 @@ export class MaxBytesExceededError extends CustomError {
   constructor(message: string = 'max bytes exceeded') {
     super({ message });
   }
+
+  static fromBytes(bytes: number): MaxBytesExceededError {
+    return new MaxBytesExceededError(`Maximum bytes of ${bytes} exceeded.`);
+  }
 }

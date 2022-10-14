@@ -53,6 +53,10 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     }
   }
 
+  static isJsonPath(path: string): boolean {
+    return isJsonPath(path);
+  }
+
   /**
    * add a property or index to current path
    * @param key
@@ -91,6 +95,10 @@ export type JsonPathContext = {
   /** if path contains symbols, they are required in order to be mapped, otherwise they are created from global symbol registry */
   symbols?: symbol[]
 };
+
+export function isJsonPath(path: string): boolean {
+  return parsePattern.test(path);
+}
 
 /**
  * encodes an array of nodes into a JSONPath

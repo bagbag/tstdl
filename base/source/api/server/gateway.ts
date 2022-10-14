@@ -6,18 +6,20 @@ import { NotImplementedError } from '#/error/not-implemented.error';
 import type { HttpServerRequest } from '#/http/server';
 import { HttpServerResponse } from '#/http/server';
 import type { HttpServerRequestContext } from '#/http/server/http-server';
+import type { ReadBodyOptions } from '#/http/utils';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { SchemaTestable } from '#/schema';
 import { Schema } from '#/schema';
-import type { Json, Type, UndefinableJson } from '#/types';
+import type { Type, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { deferThrow } from '#/utils/throw';
-import { isArray, isDefined, isNullOrUndefined, isObject, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isDefined, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { mebibyte } from '#/utils/units';
 import 'urlpattern-polyfill';
-import type { ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
@@ -25,6 +27,8 @@ import { handleApiError } from './error-handler';
 import type { CorsMiddlewareOptions } from './middlewares';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
 import { API_MODULE_OPTIONS } from './tokens';
+
+const defaultMaxBytes = 10 * mebibyte;
 
 export type ApiGatewayMiddlewareContext = {
   api: ApiItem,
@@ -51,7 +55,13 @@ export type ApiGatewayOptions = {
   supressedErrors?: Type<Error>[],
 
   /** Cors middleware options */
-  cors?: CorsMiddlewareOptions
+  cors?: CorsMiddlewareOptions,
+
+  /**
+   * Maximum size of request body. Useful to prevent harmful requests.
+   * @default 10 MB
+   */
+  defaultMaxBytes?: number
 };
 
 export type GatewayEndpoint = {
@@ -133,7 +143,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
         const methods = isArray(endpointDefinition.method) ? endpointDefinition.method : [endpointDefinition.method ?? 'GET'];
 
         if (methods.length == 0) {
-          throw new Error(`No method provided for resource ${resource}`);
+          throw new Error(`No method provided for resource ${resource}.`);
         }
 
         let resourceApis = this.apis.get(resource);
@@ -158,7 +168,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
           this.apis.set(resource, resourceApis);
         }
 
-        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`endpoint ${name} for resource ${resource} not implemented`));
+        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`Endpoint ${name} for resource ${resource} not implemented.`));
 
         for (const method of methods) {
           resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });
@@ -198,7 +208,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       return { api, patternResult: result };
     }
 
-    throw new NotFoundError(`resource ${resource.pathname} not available`);
+    throw new NotFoundError(`Resource ${resource.pathname} not available.`);
   }
 
   private updateMiddleware(): void {
@@ -207,16 +217,18 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   }
 
   private async middlewareHandler(request: HttpServerRequest, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
+    const readBodyOptions: ReadBodyOptions = { maxBytes: context.endpoint.definition.maxBytes ?? this.options.defaultMaxBytes ?? defaultMaxBytes };
+
     const body = isDefined(context.endpoint.definition.body)
-      ? await this.getBody(request, context.endpoint.definition.body)
+      ? await this.getBody(request, readBodyOptions, context.endpoint.definition.body)
       : undefined;
 
     const bodyAsParameters = (isUndefined(context.endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
-      ? await request.bodyAsJson()
+      ? await request.body.readAsJson(readBodyOptions)
       : undefined;
 
     if (isDefined(bodyAsParameters) && !isObject(bodyAsParameters)) {
-      throw new BadRequestError('expected json object as body');
+      throw new BadRequestError('Expected json object as body.');
     }
 
     const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...context.resourcePatternResult.pathname.groups };
@@ -227,7 +239,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
     const requestData: ApiRequestData = {
       parameters: validatedParameters,
-      body: body as any,
+      body,
       request
     };
 
@@ -238,37 +250,44 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
 
     const response = new HttpServerResponse({
-      body: isString(result) ? { text: result }
-        : isUint8Array(result) ? { buffer: result }
-          : { json: result as UndefinableJson }
+      body: isUint8Array(result) ? { buffer: result }
+        : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
+          : isReadableStream<Uint8Array>(result) ? { stream: result }
+            : (context.endpoint.definition.result == String) ? { text: result }
+              : { json: result }
     });
 
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, schema: SchemaTestable<Json | Uint8Array> | undefined): Promise<Json | Uint8Array | undefined> {
-    const body = await getRequestBody(request);
+  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
+    let body: Awaited<ReturnType<typeof this.getBody>> | undefined;
 
-    if (isUndefined(body)) {
-      return undefined;
+    if (request.hasBody) {
+      if (schema == ReadableStream) {
+        body = request.body.readAsBinaryStream(options);
+      }
+      else if (schema == Uint8Array) {
+        body = await request.body.readAsBuffer(options);
+      }
+      else if (schema == Blob) {
+        const buffer = await request.body.readAsBuffer(options);
+        body = new Blob([buffer], { type: request.headers.contentType });
+      }
+      else if (schema == String) {
+        body = await request.body.readAsText(options);
+      }
+      else if (request.headers.contentType?.startsWith('text') == true) {
+        body = await request.body.readAsText(options);
+      }
+      else if (request.headers.contentType?.includes('json') == true) {
+        body = await request.body.readAsJson(options);
+      }
+      else {
+        body = await request.body.readAsBuffer(options);
+      }
     }
 
-    if (isUndefined(schema)) {
-      return body as Json | Uint8Array | undefined;
-    }
-
-    return Schema.parse(schema, body);
+    return Schema.parse(schema as SchemaTestable<UndefinableJson | Uint8Array | ReadableStream>, body);
   }
-}
-
-async function getRequestBody(request: HttpServerRequest): Promise<UndefinableJson | Uint8Array> {
-  if (request.headers.contentType?.startsWith('text') == true) {
-    return request.bodyAsText();
-  }
-
-  if (request.headers.contentType?.includes('json') == true) {
-    return request.bodyAsJson();
-  }
-
-  return request.bodyAsBytes();
 }

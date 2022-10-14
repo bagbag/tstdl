@@ -1,13 +1,20 @@
 import type { AfterResolve } from '#/container';
-import { afterResolve, singleton } from '#/container';
+import { afterResolve, resolveArg, singleton } from '#/container';
 import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
+import type { LoggerArgument } from '#/logger';
+import { Logger } from '#/logger';
 import { Pool } from '#/pool';
 import { Enumeration, Optional } from '#/schema';
 import type { TemplateField } from '#/templates';
 import { Template, TemplateService } from '#/templates';
+import { finalizeStream } from '#/utils/stream/finalize-stream';
+import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter';
+import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise';
+import { readBinaryStream } from '#/utils/stream/stream-reader';
 import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
+import { millisecondsPerMinute } from '#/utils/units';
 import * as puppeteer from 'puppeteer';
 
 export enum PdfFormat {
@@ -75,6 +82,13 @@ export class PdfRenderOptions {
 
   @Optional()
   footerTemplate?: string;
+
+  /**
+   * Timeout for closing render context in case something went wrong.
+   * @default 60000 (1 minute)
+   */
+  @Optional()
+  timeout?: number;
 }
 
 export type PdfTemplateOptions = PdfRenderOptions;
@@ -87,14 +101,17 @@ export class PdfTemplate extends Template<{ header: false, body: true, footer: f
 @singleton()
 export class PdfService implements AsyncDisposable, AfterResolve {
   private readonly templateService: TemplateService;
+  private readonly logger: Logger;
   private readonly pool: Pool<puppeteer.Browser>;
 
-  constructor(templateService: TemplateService) {
+  constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger) {
     this.templateService = templateService;
+    this.logger = logger;
 
     this.pool = new Pool(
       async () => puppeteer.launch(),
-      async (browser) => browser.close()
+      async (browser) => browser.close(),
+      logger
     );
   }
 
@@ -110,64 +127,148 @@ export class PdfService implements AsyncDisposable, AfterResolve {
     return this.pool.dispose();
   }
 
-  async renderHtml(html: string, options?: PdfRenderOptions): Promise<Uint8Array> {
-    return this.render(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
-  }
-
-  async renderUrl(url: string, options?: PdfRenderOptions): Promise<Uint8Array> {
-    return this.render(async (page) => page.goto(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
+  /**
+   * Renders HTML to pdf stream
+   * @param html html to render
+   * @param options render options
+   * @returns pdf stream
+   */
+  renderHtmlStream(html: string, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+    return this.renderStream(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
   }
 
   /**
-   * renders a pdf template
+   * Renders HTML to pdf
+   * @param html html to render
+   * @param options render options
+   * @returns pdf bytes
+   */
+  async renderHtml(html: string, options?: PdfRenderOptions): Promise<Uint8Array> {
+    const stream = this.renderHtmlStream(html, options);
+    return readBinaryStream(stream);
+  }
+
+  /**
+   * Renders an url to pdf stream
+   * @param url url to load and render
+   * @param options render options
+   * @returns pdf stream
+   */
+  renderUrlStream(url: string, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+    return this.renderStream(async (page) => {
+      await page.goto(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
+    }, options);
+  }
+
+  /**
+   * Renders an url to pdf
+   * @param url url to load and render
+   * @param options render options
+   * @returns pdf bytes
+   */
+  async renderUrl(url: string, options?: PdfRenderOptions): Promise<Uint8Array> {
+    const stream = this.renderUrlStream(url, options);
+    return readBinaryStream(stream);
+  }
+
+  /**
+   * Renders a template to pdf
    * @param key template key
    * @param templateContext context for template rendering
    * @param options additional options, overwrites options specified in template
-   * @returns PDF bytes
+   * @returns pdf bytes
    */
-  async renderTemplate(key: string, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
-    const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(key, templateContext);
-    return this.renderHtml(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options });
+  renderTemplateStream(key: string, templateContext?: object, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+    return this.renderStream(async (page) => {
+      const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(key, templateContext);
+      await page.setContent(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load', ...options });
+
+      return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options };
+    }, options);
   }
 
-  private async render(handler: (page: puppeteer.Page) => unknown, options: PdfRenderOptions = {}): Promise<Uint8Array> {
-    return this.pool.use(async (browser) => {
-      const page = await browser.newPage();
+  /**
+   * Renders a template to pdf
+   * @param key template key
+   * @param templateContext context for template rendering
+   * @param options additional options, overwrites options specified in template
+   * @returns pdf bytes
+   */
+  async renderTemplate(key: string, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
+    const stream = this.renderTemplateStream(key, templateContext, options);
+    return readBinaryStream(stream);
+  }
+
+  private renderStream(handler: (page: puppeteer.Page) => Promise<PdfRenderOptions | undefined | void>, options: PdfRenderOptions = {}): ReadableStream<Uint8Array> {
+    return readableStreamFromPromise(async () => {
+      const browser = await this.pool.get();
 
       try {
-        await handler(page);
+        let page: puppeteer.Page;
 
-        const margin = isUndefined(options.margin)
-          ? undefined
-          : isObject(options.margin)
-            ? options.margin
-            : {
-              top: options.margin,
-              bottom: options.margin,
-              right: options.margin,
-              left: options.margin
-            };
+        try {
+          page = await browser.newPage();
+        }
+        catch (error) {
+          await this.pool.disposeInstance(browser);
+          throw error;
+        }
 
-        const result = await page.pdf({
-          format: options.format ?? 'a4',
-          scale: options.scale,
-          landscape: options.landscape,
-          width: options.width,
-          height: options.height,
-          omitBackground: options.omitDefaultBackground,
-          printBackground: options.renderBackground,
-          margin,
-          displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
-          headerTemplate: options.headerTemplate,
-          footerTemplate: options.footerTemplate
+        const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
+
+        const optionsFromHandler = await handler(page) ?? {};
+
+        const mergedOptions: PdfRenderOptions = { ...optionsFromHandler, ...options };
+        const createPdfOptions: puppeteer.PDFOptions = this.convertOptions(mergedOptions);
+        const pdfStream = await page.createPDFStream(createPdfOptions);
+
+        return finalizeStream(getReadableStreamFromIterable<Uint8Array>(pdfStream), async () => {
+          clearTimeout(timeoutRef);
+
+          try {
+            await page.close();
+          }
+          catch (error) {
+            this.logger.error(error as Error);
+            throw error;
+          }
+          finally {
+            await this.pool.release(browser);
+          }
         });
-
-        return result;
       }
-      finally {
-        await page.close();
+      catch (error) {
+        await this.pool.release(browser);
+        throw error;
       }
     });
+  }
+
+  private convertOptions(options: PdfRenderOptions): puppeteer.PDFOptions {
+    const margin = isUndefined(options.margin)
+      ? undefined
+      : isObject(options.margin)
+        ? options.margin
+        : {
+          top: options.margin,
+          bottom: options.margin,
+          right: options.margin,
+          left: options.margin
+        };
+
+    return {
+      format: options.format ?? 'a4',
+      scale: options.scale,
+      landscape: options.landscape,
+      width: options.width,
+      height: options.height,
+      omitBackground: options.omitDefaultBackground,
+      printBackground: options.renderBackground,
+      margin,
+      displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
+      headerTemplate: options.headerTemplate,
+      footerTemplate: options.footerTemplate
+    };
   }
 }
 

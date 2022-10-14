@@ -3,9 +3,9 @@ import { toArray } from '#/utils/array/array';
 import { isArray, isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
 import type { SchemaTestable } from '../schema';
 import type { ResolvedValueType, ValueType } from '../types';
-import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType } from '../types';
+import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes } from '../types';
 
-export function getValueType(value: unknown): ResolvedValueType<any> {
+export function getValueType(value: unknown): ResolvedValueType {
   if (isUndefined(value)) {
     return 'undefined';
   }
@@ -15,6 +15,17 @@ export function getValueType(value: unknown): ResolvedValueType<any> {
   }
 
   return (value as object).constructor as AbstractConstructor;
+}
+
+export function includesValueType(valueType: ValueType, valueTypes: OneOrMany<ValueType>): boolean {
+  const resolvedValueTypes = resolveValueTypes(valueTypes);
+  const resolvedValueType = resolveValueType(valueType);
+
+  if (isArray(resolvedValueTypes)) {
+    return resolvedValueTypes.includes(resolvedValueType);
+  }
+
+  return resolvedValueType == resolvedValueTypes;
 }
 
 export function getValueTypeName(valueType: ValueType): string {
@@ -30,7 +41,7 @@ export function getSchemaTypeNames(schema: SchemaTestable): string[] {
     .map((valueType) => (isString(valueType) ? valueType : valueType.name));
 }
 
-export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType<any>[] {
+export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType[] {
   if (isTypeSchema(schema)) {
     return [resolveValueType(schema.type)];
   }

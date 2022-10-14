@@ -1,6 +1,6 @@
 import { reflectionRegistry } from '#/reflection';
 import type { AbstractConstructor } from '#/types';
-import { assertDefinedPass } from '#/utils';
+import { assertDefinedPass } from '#/utils/type-guards';
 import type { InjectionToken } from './token';
 import { getTokenName } from './token';
 
@@ -14,7 +14,7 @@ export type ResolveChainNode =
   | ResolveChainNodeBase<'property'> & { constructor: AbstractConstructor, property: PropertyKey, token: InjectionToken };
 
 export class ResolveChain {
-  private readonly nodes: readonly ResolveChainNode[];
+  readonly nodes: readonly ResolveChainNode[];
 
   get length(): number {
     return this.nodes.length;
@@ -22,6 +22,11 @@ export class ResolveChain {
 
   constructor(nodes?: ResolveChainNode[]) {
     this.nodes = nodes ?? [];
+  }
+
+  static startWith(token: InjectionToken): ResolveChain {
+    const chain = new ResolveChain();
+    return chain.addToken(token);
   }
 
   addToken(token: InjectionToken): ResolveChain {

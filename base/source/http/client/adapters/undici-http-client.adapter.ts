@@ -1,18 +1,16 @@
 import { container, injectArg, singleton } from '#/container';
-import type { HttpBodyType } from '#/http';
 import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
-import type { HttpBody } from '#/http/types';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
 import type { IncomingHttpHeaders } from 'http';
-import type { Readable } from 'stream';
+import { Readable } from 'stream';
+import type { ReadableStream } from 'stream/web';
 import type { Dispatcher } from 'undici';
 import { errors as undiciErrors, request } from 'undici';
 import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
 import { HttpClientResponse } from '../http-client-response';
 import { HttpClientAdapter } from '../http-client.adapter';
-import { setBody } from './utils';
 
 export type UndiciHttpClientAdapterOptions = {
   dispatcher?: Dispatcher
@@ -31,31 +29,34 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
   }
 
   // eslint-disable-next-line max-lines-per-function, max-statements
-  async call<T extends HttpBodyType>(httpClientRequest: HttpClientRequest<T>): Promise<HttpClientResponse<T>> {
+  async call(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse> {
     let body: DispatchOptions['body'];
 
     if (isDefined(httpClientRequest.body?.json)) {
       body = JSON.stringify(httpClientRequest.body!.json);
     }
-    else if (isDefined(httpClientRequest.body?.buffer)) {
-      body = httpClientRequest.body!.buffer;
-    }
     else if (isDefined(httpClientRequest.body?.text)) {
       body = httpClientRequest.body!.text;
     }
+    else if (isDefined(httpClientRequest.body?.buffer)) {
+      body = httpClientRequest.body!.buffer;
+    }
+    else if (isDefined(httpClientRequest.body?.blob)) {
+      body = Readable.from(httpClientRequest.body!.blob.stream() as ReadableStream);
+    }
     else if (isDefined(httpClientRequest.body?.stream)) {
-      body = httpClientRequest.body!.stream as unknown as DispatchOptions['body'];
+      body = Readable.from(httpClientRequest.body!.stream as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.form)) {
-      const searchParams = new URLSearchParams();
+      const params = new URLSearchParams();
 
       for (const [key, entry] of httpClientRequest.body!.form.normalizedEntries()) {
         for (const value of toArray(entry)) {
-          searchParams.append(key, value);
+          params.append(key, value);
         }
       }
 
-      body = searchParams.toString();
+      body = params.toString();
     }
 
     try {
@@ -69,20 +70,14 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
         dispatcher: this.options.dispatcher
       });
 
-      const httpClientResponse = new HttpClientResponse<T>({
+      const httpClientResponse = new HttpClientResponse({
         request: httpClientRequest,
         statusCode: response.statusCode,
         statusMessage: '?',
         headers: new HttpHeaders(response.headers),
-        body: response.body as unknown as HttpBody<T>,
-        closeHandler: () => (response.body as Readable).destroy()
+        body: response.body,
+        closeHandler: () => response.body.destroy()
       });
-
-      await setBody(httpClientResponse, httpClientRequest.responseType);
-
-      if ((response.statusCode >= 400 && response.statusCode <= 500)) {
-        throw new HttpError(HttpErrorReason.ErrorResponse, httpClientRequest, httpClientResponse, `status code ${response.statusCode}`);
-      }
 
       return httpClientResponse;
     }
@@ -93,7 +88,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
             : (error instanceof undiciErrors.RequestAbortedError) ? HttpErrorReason.Cancelled
               : HttpErrorReason.Unknown;
 
-        throw new HttpError(reason, httpClientRequest, undefined, error);
+        throw new HttpError(reason, httpClientRequest, undefined, undefined, error);
       }
 
       throw error;

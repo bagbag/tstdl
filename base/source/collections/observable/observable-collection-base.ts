@@ -1,7 +1,5 @@
-import { firstValueFrom } from '#/rxjs/compat';
 import type { Observable } from 'rxjs';
-import { merge, Subject } from 'rxjs';
-import { distinctUntilChanged, filter, map, mapTo, share, shareReplay, skip, startWith } from 'rxjs/operators';
+import { firstValueFrom, distinctUntilChanged, filter, map, merge, share, shareReplay, skip, startWith, Subject } from 'rxjs';
 import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
 
 export abstract class ObservableCollectionBase<T, TThis extends ObservableCollection<T>> implements ObservableCollection<T> {
@@ -82,7 +80,7 @@ export abstract class ObservableCollectionBase<T, TThis extends ObservableCollec
 
     this.empty$ = this.length$.pipe(
       filter((length) => length == 0),
-      mapTo(undefined)
+      map(() => undefined)
     );
   }
 

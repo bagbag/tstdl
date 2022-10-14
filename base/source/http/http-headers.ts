@@ -7,6 +7,8 @@ import type { HttpValueObject, NormalizedHttpValueObject } from './types';
 
 export type HttpHeadersObject = HttpValueObject;
 
+export type HttpHeadersInput = HttpValueMapInput;
+
 export type NormalizedHttpHeadersObject = NormalizedHttpValueObject;
 
 export class HttpHeaders extends HttpValueMap<HttpHeaders> {

@@ -31,32 +31,25 @@ type UsersApiDefinition = typeof usersApiDefinition;
 const usersApiDefinition = defineApi({
   resource: 'users', // /api/:version/users
   endpoints: {
-    load() {
-      return {
-        method: 'GET',
-        resource: ':id', // => /api/v1/users/:id
-        version: 1,
-        parameters: object({
-          id: number({ coerce: true })
-        }),
-        result: User
-      };
+    load: {
+      method: 'GET', // GET is default
+      resource: ':id', // => /api/v1/users/:id
+      version: 1,
+      parameters: object({
+        id: number({ coerce: true })
+      }),
+      result: User
     },
-    loadAll() {
-      return {
-        method: 'GET', // => /api/v1/users
-        result: array(User)
-      };
+    loadAll: { // => /api/v1/users
+      result: array(User)
     },
-    delete() {
-      return {
-        method: 'DELETE',
-        resource: ':id', // => /api/v1/users/:id
-        parameters: object({
-          id: number({ coerce: true })
-        }),
-        result: boolean()
-      };
+    delete: {
+      method: 'DELETE',
+      resource: ':id', // => /api/v1/users/:id
+      parameters: object({
+        id: number({ coerce: true })
+      }),
+      result: boolean()
     }
   }
 });

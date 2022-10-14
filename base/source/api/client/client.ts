@@ -1,10 +1,10 @@
 import type { Injectable } from '#/container';
 import { container, resolveArgumentType } from '#/container';
-import type { HttpClientOptions, HttpClientResponse } from '#/http/client';
+import type { HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
-import { isArray, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
@@ -64,7 +64,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
     const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
 
     const apiEndpointFunction = {
-      async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject): Promise<unknown> {
+      async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject, requestBody?: any): Promise<unknown> {
         const context: ApiClientHttpRequestContext = { endpoint };
         const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
@@ -72,11 +72,12 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           method,
           url: resource,
           parameters,
+          body: getRequestBody(requestBody),
           context
         });
 
         const response = await this[httpClientSymbol].rawRequest(request);
-        return getBody(response, endpoint.result);
+        return getResponseBody(response, endpoint.result);
       }
     }[name];
 
@@ -91,10 +92,45 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   return api as unknown as ApiClient<T>;
 }
 
-function getBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResult | undefined): unknown {
-  if (isUndefined(schema)) {
+function getRequestBody(body: unknown): HttpRequestBody | undefined {
+  if (isUndefined(body)) {
     return undefined;
   }
 
-  return Schema.parse(schema, response.body, { mask: true });
+  if (isUint8Array(body)) {
+    return { buffer: body };
+  }
+
+  if (isReadableStream(body)) {
+    return { stream: body };
+  }
+
+  if (isBlob(body)) {
+    return { blob: body };
+  }
+
+  if (isString(body)) {
+    return { text: body };
+  }
+
+  return { json: body as any };
+}
+
+async function getResponseBody(response: HttpClientResponse, schema: ApiEndpointDefinitionResult | undefined): Promise<unknown> {
+  if (isUndefined(schema)) {
+    response.close();
+    return undefined;
+  }
+
+  const body = response.hasBody
+    ? (schema == ReadableStream)
+      ? response.body.readAsBinaryStream()
+      : (schema == Uint8Array)
+        ? await response.body.readAsBuffer()
+        : (schema == String)
+          ? await response.body.readAsText()
+          : await response.body.read()
+    : undefined;
+
+  return Schema.parse(schema, body, { mask: true }) as Promise<unknown>;
 }

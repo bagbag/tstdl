@@ -362,6 +362,10 @@ export class MongoBaseRepository<T extends Entity> {
 
   async hasMany(ids: string[]): Promise<string[]> {
     const filter: Filter = { _id: { $in: ids } };
+    return this.getIdsByFilter(filter as Filter<T>);
+  }
+
+  async getIdsByFilter<U extends T>(filter: Filter<U>): Promise<string[]> {
     const result = await this.collection.distinct('_id', filter as Filter<T>);
     return result;
   }

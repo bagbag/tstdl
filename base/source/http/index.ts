@@ -1,5 +1,6 @@
 export * from './client';
 export * from './cookie-parser';
+export * from './http-body';
 export * from './http-form';
 export * from './http-headers';
 export * from './http-query';
@@ -7,3 +8,4 @@ export * from './http-url-parameters';
 export * from './http-value-map';
 export * from './http.error';
 export * from './types';
+export * from './utils';

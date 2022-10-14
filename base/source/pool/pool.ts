@@ -2,18 +2,22 @@ import { ArrayList } from '#/data-structures';
 import { Set } from '#/data-structures/set';
 import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
+import type { Logger } from '#/logger';
+import { isDefined } from '#/utils/type-guards';
 import { cpus } from 'os';
-import { firstValueFrom, race } from 'rxjs';
 
 export type PoolOptions = {
   /**
    * maximum number of instances
    * @default number of cpu cores
    */
-  size?: number,
+  size?: number
+};
 
+export type PoolUseOptions = {
   /**
-   * dipose instances on error instead of reusing them
+   * Dipose used instance on error instead of reusing it.
+   * @default false
    */
   disposeOnError?: boolean
 };
@@ -21,31 +25,127 @@ export type PoolOptions = {
 export type PoolInstanceFactory<T> = () => T | Promise<T>;
 export type PoolInstanceDisposer<T> = (instance: T) => any | Promise<any>;
 
-const placeholder = Symbol('pool placeholder');
-
-export class Pool<T> implements AsyncDisposable {
+export class Pool<T extends object> implements AsyncDisposable {
   private readonly size: number;
   private readonly disposeOnError: boolean;
   private readonly freeInstances: ArrayList<T>;
   private readonly usedInstances: Set<T>;
   private readonly factory: PoolInstanceFactory<T>;
   private readonly disposer: PoolInstanceDisposer<T>;
+  private readonly logger: Logger;
 
+  private placeholderInstances: number;
   private disposed: boolean;
 
   get length(): number {
-    return this.freeInstances.size + this.usedInstances.size;
+    return this.freeInstances.size + this.usedInstances.size + this.placeholderInstances;
   }
 
-  constructor(factory: PoolInstanceFactory<T>, disposer: PoolInstanceDisposer<T>, options?: PoolOptions) {
+  constructor(factory: PoolInstanceFactory<T>, disposer: PoolInstanceDisposer<T>, logger: Logger, options?: PoolOptions) {
     this.size = options?.size ?? cpus().length;
-    this.disposeOnError = options?.disposeOnError ?? true;
     this.factory = factory;
     this.disposer = disposer;
+    this.logger = logger;
 
     this.freeInstances = new ArrayList();
     this.usedInstances = new Set();
+    this.placeholderInstances = 0;
     this.disposed = false;
+  }
+
+  async get(): Promise<T> {
+    if (this.disposed) {
+      throw new Error('Pool was disposed.');
+    }
+
+    if (this.freeInstances.hasItems) {
+      const instance = this.freeInstances.removeFirst();
+      this.usedInstances.add(instance);
+
+      return instance;
+    }
+
+    if (this.length < this.size) {
+      this.placeholderInstances++;
+
+      try {
+        const newInstance = await this.factory();
+
+        if (this.disposed) {
+          await this.disposer(newInstance);
+          throw new Error('Pool was disposed.');
+        }
+
+        this.usedInstances.add(newInstance);
+        return newInstance;
+      }
+      finally {
+        this.placeholderInstances--;
+      }
+    }
+
+    while (!this.freeInstances.hasItems) {
+      await this.freeInstances.$onItems;
+    }
+
+    return this.get();
+  }
+
+  async release(instance: T): Promise<void> {
+    if (!this.usedInstances.has(instance)) {
+      throw new Error('Instance is not from this pool.');
+    }
+
+    this.usedInstances.delete(instance);
+    this.freeInstances.add(instance);
+  }
+
+
+  /**
+   * Get an instance from the pool and use it
+   * @param handler consumer of instance
+   * @returns instance
+   */
+  async use<R>(handler: (instance: T) => R | Promise<R>, options: PoolUseOptions = {}): Promise<R> {
+    const instance = await this.get();
+
+    try {
+      const result = await handler(instance);
+      await this.release(instance);
+
+      return result;
+    }
+    catch (error) {
+      if (options.disposeOnError == true) {
+        try {
+          await this.disposeInstance(instance);
+        }
+        catch (disposeError) {
+          this.logger.error(disposeError as Error);
+        }
+      }
+      else {
+        await this.release(instance);
+      }
+
+      throw error;
+    }
+  }
+
+  async disposeInstance(instance: T): Promise<void> {
+    let index: number | undefined;
+
+    if (this.usedInstances.has(instance)) {
+      this.usedInstances.delete(instance);
+    }
+    else if (isDefined(index = this.freeInstances.indexOf(instance))) {
+      this.freeInstances.removeAt(index);
+    }
+    else {
+      throw new Error('Instance is not from this pool.');
+    }
+
+    await this.disposer(instance);
   }
 
   async dispose(): Promise<void> {
@@ -55,70 +155,20 @@ export class Pool<T> implements AsyncDisposable {
   async [disposeAsync](): Promise<void> {
     this.disposed = true;
 
+    if (this.length == 0) {
+      return;
+    }
+
     while (this.freeInstances.size > 0) {
       const instance = this.freeInstances.removeFirst();
       await this.disposer(instance);
     }
 
     for (const instance of this.usedInstances) {
-      if ((instance as any)[placeholder] != true) {
-        await this.disposer(instance);
-      }
-
+      await this.disposer(instance);
       this.usedInstances.delete(instance);
     }
-  }
 
-  // eslint-disable-next-line max-lines-per-function, max-statements
-  async use<R>(handler: (instance: T) => R | Promise<R>): Promise<R> {
-    let instance: T;
-
-    if (this.freeInstances.hasItems) {
-      instance = this.freeInstances.removeFirst();
-    }
-    else {
-      if (this.length >= this.size) {
-        await firstValueFrom(race(this.freeInstances.change$, this.usedInstances.change$));
-        return this.use(handler);
-      }
-
-      const tempInstance = { [placeholder]: true } as unknown as T;
-      this.usedInstances.add(tempInstance);
-
-      try {
-        instance = await this.factory();
-
-        if (this.disposed) {
-          await this.disposer(instance);
-          throw new Error('Pool was disposed.');
-        }
-      }
-      finally {
-        this.usedInstances.delete(tempInstance);
-      }
-    }
-
-    this.usedInstances.add(instance);
-
-    try {
-      const result = await handler(instance);
-      return result;
-    }
-    catch (error) {
-      try {
-        if (this.disposeOnError) {
-          await this.disposer(instance);
-        }
-      }
-      finally {
-        this.usedInstances.delete(instance);
-      }
-
-      throw error;
-    }
-    finally {
-      this.usedInstances.delete(instance);
-      this.freeInstances.add(instance);
-    }
+    await this[disposeAsync]();
   }
 }

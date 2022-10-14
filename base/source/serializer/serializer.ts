@@ -182,7 +182,7 @@ export function serialize(_value: any, options: SerializationOptions = {}, refer
     return result;
   }
 
-  throw new Error(`unsupported type '${type as string}'`);
+  throw new Error(`Unsupported type '${type as string}'.`);
 }
 
 export function deserialize<T>(serialized: Serialized<T>, options?: SerializationOptions): T;
@@ -334,7 +334,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
       result = deserializedObject;
     }
     else {
-      throw new Error(`unsupported constructor ${constructor.name}`);
+      throw new Error(`Unsupported constructor ${constructor.name}.`);
     }
 
     if (depth == 0) {
@@ -344,7 +344,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
     return result;
   }
 
-  throw new Error(`unsupported type '${type}'`);
+  throw new Error(`Unsupported type '${type}'.`);
 }
 
 function getTypeString<T extends string>(type: T): TypeField<T> {

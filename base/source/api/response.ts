@@ -36,7 +36,7 @@ const errorHandlers = new Map<string, ErrorHandler<any, any>>();
 
 export function registerErrorHandler<T extends CustomError, TData extends ErrorHandlerData>(constructor: CustomErrorStatic<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
   if (errorHandlers.has(constructor.errorName)) {
-    throw new Error(`a handler for ${constructor.errorName} already registered`);
+    throw new Error(`A handler for ${constructor.errorName} already registered.`);
   }
 
   errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
@@ -118,7 +118,7 @@ export function parseResponse<T>(response: Response<T>): T {
     throw parseErrorResponse(response);
   }
 
-  throw new Error('unsupported response');
+  throw new Error('Unsupported response.');
 }
 
 export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError?: true): Error;
@@ -158,7 +158,7 @@ registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new For
 registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
 registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
 registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
-registerErrorHandler(NotImplementedError, 404, () => undefined, (_, error) => new NotImplementedError(error.message));
+registerErrorHandler(NotImplementedError, 501, () => undefined, (_, error) => new NotImplementedError(error.message));
 registerErrorHandler(NotSupportedError, 400, () => undefined, (_, error) => new NotSupportedError(error.message));
 registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
 registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));

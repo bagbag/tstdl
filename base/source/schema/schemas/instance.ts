@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { NormalizeValueType, TypeSchema, ValueType } from '../types';
-import { typeSchema } from '../types';
+import type { ValueSchema, ValueSchemaOptions, ValueType } from '../types';
+import { valueSchema } from '../types';
 
-export function instance<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {
-  return typeSchema<T>(type);
+export type InstanceOptions = ValueSchemaOptions;
+
+export function instance<T>(type: ValueType<T>, options?: InstanceOptions): ValueSchema<T> {
+  return valueSchema(type, options);
 }

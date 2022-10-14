@@ -5,7 +5,7 @@ const nsPerUs = 1e3;
 let getBegin: () => any;
 let getDuration: (begin: any) => number;
 
-if (typeof process == 'object' && typeof process.hrtime == 'function') {
+if ((typeof process == 'object') && (typeof process.hrtime == 'function')) {
   getBegin = () => process.hrtime();
   getDuration = (begin: [number, number]) => {
     const [secondsDiff, nanosecondsDiff] = process.hrtime(begin);
@@ -14,7 +14,7 @@ if (typeof process == 'object' && typeof process.hrtime == 'function') {
     return nanoseconds;
   };
 }
-else if (typeof performance == 'object' && typeof performance.now == 'function') {
+else if ((typeof performance != 'undefined') && (typeof performance.now == 'function')) {
   getBegin = () => performance.now();
   getDuration = (begin: number) => (performance.now() - begin) * nsPerMs;
 }

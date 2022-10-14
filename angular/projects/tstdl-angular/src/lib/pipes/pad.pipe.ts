@@ -9,7 +9,7 @@ export class PadPipe implements PipeTransform {
     const inputType = typeof input;
 
     if (inputType != 'string' && inputType != 'number') {
-      throw new Error(`padding for type ${inputType} not supported`);
+      throw new Error(`Padding for type ${inputType} not supported.`);
     }
 
     const text = inputType == 'string' ? (input as string) : (input as number).toString();

@@ -25,4 +25,4 @@ async function test(): Promise<void> {
   console.log(result.fields);
 }
 
-void Application.run(test);
+Application.run(test);

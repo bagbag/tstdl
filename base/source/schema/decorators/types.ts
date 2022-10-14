@@ -6,7 +6,6 @@ export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allo
   factory?: SchemaFactoryFunction<any>
 };
 
-
 export type SchemaPropertyReflectionData = {
   schema?: OneOrMany<SchemaTestable>,
   array?: boolean,

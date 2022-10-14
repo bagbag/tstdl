@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
+import { toArray } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
-import type { Coercible, SchemaValueConstraint, SchemaValueTransformer, ValueSchema } from '../types';
+import type { SchemaValueConstraint, SchemaValueTransformer, ValueSchema, ValueSchemaOptions } from '../types';
 import { typeSchema, valueSchema } from '../types';
 
-export type StringOptions = Coercible & {
+export type StringOptions = ValueSchemaOptions & {
   /** trim */
   trim?: boolean,
 
@@ -35,20 +36,20 @@ export type StringOptions = Coercible & {
 };
 
 export function string(options: StringOptions = {}): ValueSchema<string> {
-  const constraints: SchemaValueConstraint[] = [];
-  const transformers: SchemaValueTransformer[] = [];
+  const valueConstraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
+  const transformers: SchemaValueTransformer[] = toArray(options.transformers ?? []);
 
   if (isDefined(options.minimumLength)) {
-    constraints.push(new MinimumLengthConstraint(options.minimumLength));
+    valueConstraints.push(new MinimumLengthConstraint(options.minimumLength));
   }
 
   if (isDefined(options.maximumLength)) {
-    constraints.push(new MaximumLengthConstraint(options.maximumLength));
+    valueConstraints.push(new MaximumLengthConstraint(options.maximumLength));
   }
 
   if (isDefined(options.pattern)) {
     const pattern = RegExp(options.pattern, options.patternFlags);
-    constraints.push(new PatternConstraint(pattern, options.patternName));
+    valueConstraints.push(new PatternConstraint(pattern, options.patternName));
   }
 
   if (isDefined(options.trim)) {
@@ -64,8 +65,8 @@ export function string(options: StringOptions = {}): ValueSchema<string> {
   }
 
   return valueSchema(typeSchema(globalThis.String), {
-    coerce: options.coerce,
-    valueConstraints: constraints,
+    ...options,
+    valueConstraints,
     transformers
   });
 }

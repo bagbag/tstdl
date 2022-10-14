@@ -2,11 +2,14 @@
 
 import type { Decorator } from '#/reflection';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { TypeSchema } from '../types';
-import { typeSchema } from '../types';
+import type { Schema } from '../schema';
+import type { ValueSchemaOptions } from '../types';
+import { valueSchema } from '../types';
 
-export function readableStream(): TypeSchema<globalThis.ReadableStream> {
-  return typeSchema(globalThis.ReadableStream);
+export type ReadableStreamOptions = ValueSchemaOptions;
+
+export function readableStream(options?: ReadableStreamOptions): Schema<globalThis.ReadableStream> {
+  return valueSchema(globalThis.ReadableStream, options);
 }
 
 export function ReadableStream(): Decorator<'property' | 'accessor'> {

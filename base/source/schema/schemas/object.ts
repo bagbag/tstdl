@@ -10,9 +10,9 @@ export function explicitObject<T extends Record>(properties: ObjectSchemaPropert
   return object(properties, options) as any as ObjectSchema<T>;
 }
 
-export function object<T extends Record>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<SimplifiedOptionalize<T>, SimplifiedOptionalize<T>> {
+export function object<T extends Record>(properties: ObjectSchemaProperties<T>, options?: ObjectOptions<T>): ObjectSchema<SimplifiedOptionalize<T>> {
   return objectSchema({
     properties,
     ...options
-  }) as unknown as ObjectSchema<SimplifiedOptionalize<T>, SimplifiedOptionalize<T>>;
+  }) as unknown as ObjectSchema<SimplifiedOptionalize<T>>;
 }
