@@ -260,7 +260,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     return response;
   }
 
-  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable<UndefinableJson> | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
+  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
     let body: Awaited<ReturnType<typeof this.getBody>> | undefined;
 
     if (request.hasBody) {

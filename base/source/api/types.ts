@@ -25,7 +25,7 @@ export type EndpointRegistrationOptions = {
 export type ApiEndpointMethod = HttpMethod;
 
 export type ApiEndpointDefinitionParameters = SchemaTestable;
-export type ApiEndpointDefinitionBody = SchemaTestable<UndefinableJson> | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
+export type ApiEndpointDefinitionBody = SchemaTestable | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
 export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
