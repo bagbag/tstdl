@@ -1,22 +1,23 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { OneOrMany } from '#/types';
+import { toArray } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { ArrayMaximumLengthConstraint } from '../array-constraints';
 import type { SchemaTestable } from '../schema';
-import type { Coercible, SchemaArrayConstraint, ValueSchema } from '../types';
+import type { SchemaArrayConstraint, ValueSchema, ValueSchemaOptions } from '../types';
 import { valueSchema } from '../types';
 
-export type ArrayOptions = Coercible & {
-  /** minimum length */
+export type ArrayOptions = ValueSchemaOptions & {
+  /** minimum array length */
   minimumLength?: number,
 
-  /** maximum length */
+  /** maximum array length */
   maximumLength?: number
 };
 
-export function array<T, O = T>(innerValues: OneOrMany<SchemaTestable<T, O>>, options: ArrayOptions = {}): ValueSchema<T, O[]> {
-  const arrayConstraints: SchemaArrayConstraint[] = [];
+export function array<T>(innerValues: OneOrMany<SchemaTestable<T>>, options: ArrayOptions = {}): ValueSchema<T[]> {
+  const arrayConstraints: SchemaArrayConstraint[] = toArray(options.arrayConstraints ?? []);
 
   if (isDefined(options.minimumLength)) {
     arrayConstraints.push(new ArrayMaximumLengthConstraint(options.minimumLength));
@@ -27,8 +28,8 @@ export function array<T, O = T>(innerValues: OneOrMany<SchemaTestable<T, O>>, op
   }
 
   return valueSchema<any>(innerValues, {
+    ...options,
     array: true,
-    coerce: options.coerce,
     arrayConstraints
   });
 }

@@ -1,38 +1,29 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import type { AbstractConstructor, OneOrMany, TypedOmit } from '#/types';
-import { isDefined } from '#/utils/type-guards';
+import type { AbstractConstructor, OneOrMany } from '#/types';
 import { createSchemaValueTransformerDecorator } from '../decorators';
 import type { TransformResult, ValueType } from '../types';
 import { SchemaValueTransformer } from '../types';
 
-export type GenericTransformFunction<T, O> = (value: T) => TypedOmit<TransformResult<O>, 'success'>;
+export type GenericTransformFunction<T, O> = (value: T) => TransformResult<O>;
 
-export class GenericTransformer<T, O, TransformOutput> extends SchemaValueTransformer<T, O, TransformOutput> {
-  readonly sourceType: OneOrMany<ValueType<T>>;
-  readonly targetType: ValueType<TransformOutput>;
-  readonly transformFunction: GenericTransformFunction<O, TransformOutput>;
+export class GenericTransformer<T, O> extends SchemaValueTransformer<T, O> {
+  readonly sourceType?: OneOrMany<ValueType<T>>;
+  readonly transformFunction: GenericTransformFunction<T, O>;
 
-  constructor(sourceType: OneOrMany<ValueType<T>>, targetType: AbstractConstructor<TransformOutput>, transformFunction: GenericTransformFunction<O, TransformOutput>) {
+  constructor(transformFunction: GenericTransformFunction<T, O>, sourceType?: OneOrMany<ValueType<T>>) {
     super();
 
     this.sourceType = sourceType;
-    this.targetType = targetType;
     this.transformFunction = transformFunction;
   }
 
-  transform(value: O): TransformResult<TransformOutput> {
-    const result = this.transformFunction(value);
-
-    if (isDefined(result.error)) {
-      return { success: false, error: result.error };
-    }
-
-    return { success: true, value: result.value! };
+  transform(value: T): TransformResult<O> {
+    return this.transformFunction(value);
   }
 }
 
-export function Transform<T, O, TransformOutput>(sourceType: OneOrMany<AbstractConstructor<T>>, targetType: AbstractConstructor, transformFunction: GenericTransformFunction<O, TransformOutput>): Decorator<'property' | 'accessor'> {
-  return createSchemaValueTransformerDecorator(new GenericTransformer(sourceType, targetType, transformFunction));
+export function Transform<T, O>(transformFunction: GenericTransformFunction<T, O>, sourceType?: OneOrMany<AbstractConstructor<T>>): Decorator<'property' | 'accessor'> {
+  return createSchemaValueTransformerDecorator(new GenericTransformer(transformFunction, sourceType));
 }

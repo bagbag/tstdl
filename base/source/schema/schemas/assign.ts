@@ -5,11 +5,11 @@ import type { Merge } from 'type-fest';
 import type { ObjectSchema, ObjectSchemaOrType } from '../types';
 import { getObjectSchema } from '../utils';
 
-export function assign<T1, O1, T2, O2>(schema1: ObjectSchemaOrType<T1, O1>, schema2: ObjectSchemaOrType<T2, O2>): ObjectSchema<Merge<T1, T2>, Merge<O1, O2>>;
-export function assign<T1, O1, T2, O2, T3, O3>(schema1: ObjectSchemaOrType<T1, O1>, schema2: ObjectSchemaOrType<T2, O2>, schema3: ObjectSchemaOrType<T3, O3>): ObjectSchema<Merge<Merge<T1, T2>, T3>, Merge<Merge<O1, O2>, O3>>;
-export function assign<T1, O1, T2, O2, T3, O3, T4, O4>(schema1: ObjectSchemaOrType<T1, O1>, schema2: ObjectSchemaOrType<T2, O2>, schema3: ObjectSchemaOrType<T3, O3>, schema4: ObjectSchemaOrType<T4, O4>): ObjectSchema<Merge<Merge<Merge<T1, T2>, T3>, T4>, Merge<Merge<Merge<O1, O2>, O3>, O4>>;
-export function assign<T1, O1, T2, O2, T3, O3, T4, O4, T5, O5>(schema1: ObjectSchemaOrType<T1, O1>, schema2: ObjectSchemaOrType<T2, O2>, schema3: ObjectSchemaOrType<T3, O3>, schema4: ObjectSchemaOrType<T4, O4>, schema5: ObjectSchemaOrType<T5, O5>): ObjectSchema<Merge<Merge<Merge<Merge<T1, T2>, T3>, T4>, T5>, Merge<Merge<Merge<Merge<O1, O2>, O3>, O4>, O5>>;
-export function assign<T1, O1, T2, O2, T3, O3, T4, O4, T5, O5, T6 extends Record, O6 extends Record>(schema1: ObjectSchemaOrType<T1, O1>, schema2: ObjectSchemaOrType<T2, O2>, schema3: ObjectSchemaOrType<T3, O3>, schema4: ObjectSchemaOrType<T4, O4>, schema5: ObjectSchemaOrType<T5, O5>, schema6: ObjectSchemaOrType<T6, O6>): ObjectSchema<Merge<Merge<Merge<Merge<Merge<T1, T2>, T3>, T4>, T5>, T6>, Merge<Merge<Merge<Merge<Merge<O1, O2>, O3>, O4>, O5>, O6>>;
+export function assign<T1, T2>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>): ObjectSchema<Merge<T1, T2>>;
+export function assign<T1, T2, T3>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>, schema3: ObjectSchemaOrType<T3>): ObjectSchema<Merge<Merge<T1, T2>, T3>>;
+export function assign<T1, T2, T3, T4>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>, schema3: ObjectSchemaOrType<T3>, schema4: ObjectSchemaOrType<T4>): ObjectSchema<Merge<Merge<Merge<T1, T2>, T3>, T4>>;
+export function assign<T1, T2, T3, T4, T5>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>, schema3: ObjectSchemaOrType<T3>, schema4: ObjectSchemaOrType<T4>, schema5: ObjectSchemaOrType<T5>): ObjectSchema<Merge<Merge<Merge<Merge<T1, T2>, T3>, T4>, T5>>;
+export function assign<T1, T2, T3, T4, T5, T6 extends Record>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>, schema3: ObjectSchemaOrType<T3>, schema4: ObjectSchemaOrType<T4>, schema5: ObjectSchemaOrType<T5>, schema6: ObjectSchemaOrType<T6>): ObjectSchema<Merge<Merge<Merge<Merge<Merge<T1, T2>, T3>, T4>, T5>, T6>>;
 export function assign(...inputs: ObjectSchemaOrType[]): ObjectSchema {
   const schemas = inputs.map(getObjectSchema);
   assert(schemas.length >= 2, 'Assign requires at least 2 schemas.');

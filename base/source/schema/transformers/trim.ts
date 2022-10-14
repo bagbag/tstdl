@@ -5,12 +5,11 @@ import { createSchemaValueTransformerDecorator } from '../decorators';
 import type { TransformResult } from '../types';
 import { SchemaValueTransformer, typeSchema } from '../types';
 
-export class TrimTransformer extends SchemaValueTransformer<string, string, string> {
+export class TrimTransformer extends SchemaValueTransformer<string, string> {
   readonly sourceType = String;
-  readonly targetType = String;
 
   transform(value: string): TransformResult<string> {
-    return { success: true, value: value.trim() };
+    return value.trim();
   }
 }
 

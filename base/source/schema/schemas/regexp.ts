@@ -3,15 +3,13 @@
 import type { Decorator } from '#/reflection';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { Schema } from '../schema';
-import type { Coercible } from '../types';
-import { typeSchema, valueSchema } from '../types';
+import type { ValueSchemaOptions } from '../types';
+import { valueSchema } from '../types';
 
-export type RegExpSchemaOptions = Coercible;
+export type RegExpSchemaOptions = ValueSchemaOptions;
 
-export function regexp(options: RegExpSchemaOptions = {}): Schema<globalThis.RegExp> {
-  return valueSchema(typeSchema(globalThis.RegExp), {
-    coerce: options.coerce
-  });
+export function regexp(options?: RegExpSchemaOptions): Schema<globalThis.RegExp> {
+  return valueSchema(globalThis.RegExp, options);
 }
 
 export function RegExp(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {

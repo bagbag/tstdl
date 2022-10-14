@@ -2,43 +2,36 @@
 
 import type { JsonPath } from '#/json-path/json-path';
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
-import { filterObject } from '#/utils/object/object';
+import { filterObject, hasOwnProperty } from '#/utils/object/object';
 import { isArray, isDefined, isFunction, isObject } from '#/utils/type-guards';
 import type { NormalizedSchema, Schema, SchemaTestable } from './schema';
 import type { SchemaError } from './schema.error';
 
 declare const schemaOutputTypeSymbol: unique symbol;
 
-export type SchemaFactoryFunction<T, O = T> = (data: T) => NormalizeValueType<O>;
-export type SchemaFactory<T, O = T> =
+export type SchemaFactoryFunction<T> = (data: T) => NormalizeValueType<T>;
+export type SchemaFactory<T> =
   | { type: Type<T>, builder?: undefined }
-  | { type?: undefined, builder: SchemaFactoryFunction<T, O> };
+  | { type?: undefined, builder: SchemaFactoryFunction<T> };
 
-export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<SchemaTestable<any, T[K]>> };
-export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<any, T[K]> };
-
-export type SchemaInput<T extends SchemaTestable> =
-  | T extends ObjectSchema<infer U, any> ? U
-  : T extends ValueSchema<infer U, any> ? U
-  : T extends TypeSchema<infer U> ? U
-  : T extends ValueType<infer U> ? NormalizeValueType<U>
-  : never;
+export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<SchemaTestable<T[K]>> };
+export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<T[K]> };
 
 export type SchemaOutput<T extends SchemaTestable> =
-  | T extends ObjectSchema<any, infer O> ? O
-  : T extends ValueSchema<any, infer O> ? O
-  : T extends TypeSchema<infer O> ? O
+  | T extends ObjectSchema<infer O> ? NormalizeValueType<O>
+  : T extends ValueSchema<infer O> ? NormalizeValueType<O>
+  : T extends TypeSchema<infer O> ? NormalizeValueType<O>
   : T extends ValueType<infer O> ? NormalizeValueType<O>
   : never;
 
 export type TupleSchemaOutput<T extends readonly SchemaTestable[]> = { [P in keyof T]: SchemaOutput<T[P]> };
 
-export type ObjectSchemaOrType<T = any, O = T> = ObjectSchema<T, O> | AbstractConstructor<O>;
+export type ObjectSchemaOrType<T = any> = ObjectSchema<T> | AbstractConstructor<T>;
 
-export type ObjectSchema<T = any, O = T> = {
-  [schemaOutputTypeSymbol]?: O,
+export type ObjectSchema<T = any> = {
+  [schemaOutputTypeSymbol]?: T,
   sourceType?: ValueType,
-  factory?: SchemaFactory<T, O>,
+  factory?: SchemaFactory<T>,
   properties: ObjectSchemaProperties<T>,
   mask?: boolean,
   allowUnknownProperties?: OneOrMany<SchemaTestable>
@@ -48,9 +41,9 @@ export type TypeSchema<T = any> = { type: ValueType<T> };
 
 export type NormalizedTypeSchema<T = any> = { foo: ResolvedValueType<T> };
 
-export type ValueSchema<T = unknown, O = T> = {
-  [schemaOutputTypeSymbol]?: O,
-  schema: OneOrMany<SchemaTestable<T, O>>,
+export type ValueSchema<T = unknown> = {
+  [schemaOutputTypeSymbol]?: T,
+  schema: OneOrMany<SchemaTestable<T>>,
   array?: boolean,
   optional?: boolean,
   nullable?: boolean,
@@ -65,23 +58,25 @@ export type ValueSchema<T = unknown, O = T> = {
   valueConstraints?: OneOrMany<SchemaValueConstraint>
 };
 
-export type NormalizedObjectSchema<T = any, O = T> = {
-  [schemaOutputTypeSymbol]?: O,
-  factory?: SchemaFactory<T, O>,
+export type ValueSchemaOptions = TypedOmit<ValueSchema, 'schema' | typeof schemaOutputTypeSymbol>;
+
+export type NormalizedObjectSchema<T = any> = {
+  [schemaOutputTypeSymbol]?: T,
+  factory?: SchemaFactory<T>,
   properties: NormalizedObjectSchemaProperties<T>,
   mask?: boolean,
   allowUnknownProperties: Set<Schema>
 };
 
-export type NormalizedValueSchema<T = any, O = T> = {
-  [schemaOutputTypeSymbol]?: O,
-  schema: Set<Schema<T, O>>,
+export type NormalizedValueSchema<T = any> = {
+  [schemaOutputTypeSymbol]?: T,
+  schema: Set<Schema<T>>,
   array: boolean,
   optional: boolean,
   nullable: boolean,
   coerce: boolean,
   coercers: Map<ValueType, SchemaValueCoercer[]>,
-  transformers: readonly SchemaValueTransformer<any, any, any>[],
+  transformers: readonly SchemaValueTransformer[],
   arrayConstraints: readonly SchemaArrayConstraint[],
   valueConstraints: readonly SchemaValueConstraint[]
 };
@@ -141,11 +136,10 @@ export abstract class SchemaValueConstraint {
   abstract validate(value: unknown, path: JsonPath, context: ConstraintContext): ConstraintResult;
 }
 
-export abstract class SchemaValueTransformer<T = any, O = T, TransformOutput = O> {
-  abstract readonly sourceType: OneOrMany<ValueType<T>>;
-  abstract readonly targetType: ValueType<TransformOutput>;
+export abstract class SchemaValueTransformer<T = any, O = any> {
+  abstract readonly sourceType?: OneOrMany<ValueType<T>>;
 
-  abstract transform(value: O, path: JsonPath, context: TransformerContext): TransformResult<TransformOutput>;
+  abstract transform(value: T, path: JsonPath, context: TransformerContext): TransformResult<O>;
 }
 
 export abstract class SchemaValueCoercer {
@@ -186,44 +180,54 @@ export type CoerceResult =
   | { success: true, value: any, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
-export type TransformResult<T> =
-  | { success: true, value: T, error?: undefined }
-  | { success: false, value?: undefined, error: SchemaError };
+
+export const transformErrorResultSymbol = Symbol('Transform error');
+export type TransformErrorResult = { [transformErrorResultSymbol]: SchemaError };
+
+export type TransformResult<T> = T | TransformErrorResult;
+
+export function transformErrorResult(error: SchemaError): TransformErrorResult {
+  return { [transformErrorResultSymbol]: error };
+}
+
+export function isTransformErrorResult(value: any): value is TransformErrorResult {
+  return isObject(value) && hasOwnProperty(value as TransformErrorResult, transformErrorResultSymbol);
+}
 
 export function objectSchemaProperties<T extends Record>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
   return filterObject(properties, isDefined) as ObjectSchemaProperties<T>;
 }
 
-export function objectSchema<T extends Record, O extends Record = T>(schema: ObjectSchema<T, O>): ObjectSchema<T, O> {
-  return filterObject(schema, isDefined) as ObjectSchema<T, O>;
+export function objectSchema<T extends Record>(schema: ObjectSchema<T>): ObjectSchema<T> {
+  return filterObject(schema, isDefined) as ObjectSchema<T>;
 }
 
-export function valueSchema<T, O = T>(schema: OneOrMany<SchemaTestable<T, O>>, options?: TypedOmit<ValueSchema<T, O>, 'schema'>): ValueSchema<T, O> {
-  return filterObject({ schema, ...options }, isDefined) as ValueSchema<T, O>;
+export function valueSchema<T>(schema: OneOrMany<SchemaTestable<T>>, options?: TypedOmit<ValueSchema<NormalizeValueType<T>>, 'schema'>): ValueSchema<T> {
+  return filterObject({ schema, ...options }, isDefined) as ValueSchema<T>;
 }
 
 export function typeSchema<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {
   return { type } as TypeSchema<NormalizeValueType<T>>;
 }
 
-export function isSchema<T, O>(value: any): value is Schema<T, O> {
+export function isSchema<T>(value: any): value is Schema<T> {
   return isObjectSchema(value) || isValueSchema(value) || isTypeSchema(value);
 }
 
-export function isObjectSchema<T extends Record, O extends Record>(schema: Schema<T, O>): schema is ObjectSchema<T, O>;
-export function isObjectSchema<T extends Record, O extends Record>(schema: any): schema is ObjectSchema<T, O>; // eslint-disable-line @typescript-eslint/unified-signatures
+export function isObjectSchema<T extends Record>(schema: Schema<T>): schema is ObjectSchema<T>;
+export function isObjectSchema<T extends Record>(schema: any): schema is ObjectSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isObjectSchema(schema: any): schema is ObjectSchema {
   return isObject((schema as Partial<ObjectSchema> | undefined)?.properties);
 }
 
-export function isValueSchema<T, O>(schema: Schema<T, O>): schema is ValueSchema<T, O>;
-export function isValueSchema<T, O>(schema: any): schema is ValueSchema<T, O>; // eslint-disable-line @typescript-eslint/unified-signatures
+export function isValueSchema<T>(schema: Schema<T>): schema is ValueSchema<T>;
+export function isValueSchema<T>(schema: any): schema is ValueSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isValueSchema(schema: any): schema is ValueSchema {
   return isObject(schema) && isDefined((schema as ValueSchema | undefined)?.schema);
 }
 
-export function isTypeSchema<T, O>(schema: Schema<T, O>): schema is TypeSchema<O>;
-export function isTypeSchema<T, O>(schema: any): schema is TypeSchema<O>; // eslint-disable-line @typescript-eslint/unified-signatures
+export function isTypeSchema<T>(schema: Schema<T>): schema is TypeSchema<T>;
+export function isTypeSchema<T>(schema: any): schema is TypeSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isTypeSchema(schema: any): schema is TypeSchema {
   if (!isObject(schema)) {
     return false;
@@ -249,7 +253,7 @@ export function isDeferredValueType(value: any): value is DeferredValueType {
 
 export function resolveValueTypes<T>(valueTypes: OneOrMany<ValueType<T>>): OneOrMany<ResolvedValueType<T>> {
   if (isArray(valueTypes)) {
-    return valueTypes.flatMap((valueType) => resolveValueTypes(valueType));
+    return valueTypes.map(resolveValueType);
   }
 
   return resolveValueType(valueTypes);
@@ -261,7 +265,7 @@ export function resolveValueType<T>(valueType: ValueType<T>): ResolvedValueType<
     : valueType as ResolvedValueType<T>;
 }
 
-export function valueTypesOrSchemasToSchemas<T, O>(valueTypesOrSchemas: OneOrMany<SchemaTestable<T, O>>): OneOrMany<Schema<T, O>> {
+export function valueTypesOrSchemasToSchemas<T>(valueTypesOrSchemas: OneOrMany<SchemaTestable<T>>): OneOrMany<Schema<T>> {
   if (isArray(valueTypesOrSchemas)) {
     return valueTypesOrSchemas.map(schemaTestableToSchema);
   }
@@ -269,10 +273,10 @@ export function valueTypesOrSchemasToSchemas<T, O>(valueTypesOrSchemas: OneOrMan
   return schemaTestableToSchema(valueTypesOrSchemas);
 }
 
-export function schemaTestableToSchema<T, O>(valueTypeOrSchema: SchemaTestable<T, O>): Schema<T, O> {
-  if (isSchema<T, O>(valueTypeOrSchema)) {
+export function schemaTestableToSchema<T>(valueTypeOrSchema: SchemaTestable<T>): Schema<T> {
+  if (isSchema<T>(valueTypeOrSchema)) {
     return valueTypeOrSchema;
   }
 
-  return typeSchema(valueTypeOrSchema) as TypeSchema<O>;
+  return typeSchema(valueTypeOrSchema) as TypeSchema<T>;
 }

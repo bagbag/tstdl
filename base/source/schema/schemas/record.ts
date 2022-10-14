@@ -7,7 +7,7 @@ import { objectSchema } from '../types';
 
 export type RecordOptions<T extends Record = Record> = TypedOmit<ObjectSchema<T>, 'properties' | 'allowUnknownProperties' | 'mask'>;
 
-export function record<T, O>(valueType: OneOrMany<SchemaTestable<T, O>>, options?: RecordOptions): ObjectSchema<Record<any, O>> {
+export function record<T>(valueType: OneOrMany<SchemaTestable<T>>, options?: RecordOptions): ObjectSchema<Record<any, T>> {
   return objectSchema({
     properties: {},
     allowUnknownProperties: valueType,

@@ -18,17 +18,15 @@ export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: tru
 export const tryGetObjectSchemaFromReflection = memoizeSingle(_tryGetObjectSchemaFromReflection, { weak: true });
 
 
-export function getObjectSchema<T, O = T>(schemaOrType: ObjectSchemaOrType<T, O>): ObjectSchema<T, O> {
-  return (
-    isFunction(schemaOrType)
-      ? getObjectSchemaFromReflection(schemaOrType)
-      : schemaOrType
-  ) as ObjectSchema<T, O>;
+export function getObjectSchema<T>(schemaOrType: ObjectSchemaOrType<T>): ObjectSchema<T> {
+  return isFunction(schemaOrType)
+    ? getObjectSchemaFromReflection(schemaOrType)
+    : schemaOrType;
 }
 
-function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
+function _normalizeSchema<T>(schema: Schema<T>): NormalizedSchema<T> {
   if (isObjectSchema(schema)) {
-    return normalizeObjectSchema(schema) as NormalizedSchema<T, O>;
+    return normalizeObjectSchema(schema) as NormalizedSchema<T>;
   }
 
   if (isValueSchema(schema)) {
@@ -42,8 +40,8 @@ function _normalizeSchema<T, O>(schema: Schema<T, O>): NormalizedSchema<T, O> {
   throw new Error('Unsupported schema.');
 }
 
-function _normalizeObjectSchema<T, O>(schema: ObjectSchema<T, O>): NormalizedObjectSchema<T, O> {
-  const normalizedSchema: NormalizedObjectSchema<T, O> = {
+function _normalizeObjectSchema<T>(schema: ObjectSchema<T>): NormalizedObjectSchema<T> {
+  const normalizedSchema: NormalizedObjectSchema<T> = {
     factory: schema.factory,
     properties: mapObjectValues(schema.properties, (propertyValueType) => valueTypesOrSchemasToSchemas(propertyValueType)) as NormalizedObjectSchemaProperties<T>,
     mask: schema.mask,
@@ -53,8 +51,8 @@ function _normalizeObjectSchema<T, O>(schema: ObjectSchema<T, O>): NormalizedObj
   return normalizedSchema;
 }
 
-function _normalizeValueSchema<T, O>(schema: ValueSchema<T, O>): NormalizedValueSchema<T, O> {
-  const normalizedValueSchema: NormalizedValueSchema<T, O> = {
+function _normalizeValueSchema<T>(schema: ValueSchema<T>): NormalizedValueSchema<T> {
+  const normalizedValueSchema: NormalizedValueSchema<T> = {
     schema: new Set(toArray(schema.schema).map(schemaTestableToSchema)),
     array: schema.array ?? false,
     optional: schema.optional ?? false,
@@ -87,8 +85,8 @@ function _normalizeTypeSchema<T>(schema: TypeSchema<T>): NormalizedTypeSchema<T>
   return normalizedSchema;
 }
 
-function _getArrayItemSchema<T, O>(schema: ValueSchema<T, O>): ValueSchema<T, O> {
-  const itemSchema: ValueSchema<T, O> = {
+function _getArrayItemSchema<T>(schema: ValueSchema<T>): ValueSchema<T> {
+  const itemSchema: ValueSchema<T> = {
     schema: schema.schema,
     transformers: schema.transformers,
     valueConstraints: schema.valueConstraints

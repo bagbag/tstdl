@@ -1,5 +1,5 @@
 import { JsonPath } from '#/json-path';
-import type { Record } from '#/types';
+import type { ObjectLiteral, Record } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { noop } from '#/utils/noop';
 import { objectKeys } from '#/utils/object/object';
@@ -12,13 +12,12 @@ import { regExpCoercer } from './coercers/regexp.coercer';
 import { stringCoercer } from './coercers/string.coercer';
 import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
 import { SchemaError } from './schema.error';
-import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types';
-import { isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, schemaTestableToSchema, valueSchema } from './types';
-import { getArrayItemSchema, getSchemaTypeNames, getValueType, getValueTypeName, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
+import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, resolveValueType, resolveValueTypes, SchemaContext, SchemaOutput, schemaTestableToSchema, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, transformErrorResultSymbol, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, valueSchema, ValueType } from './types';
+import { getArrayItemSchema, getSchemaTypeNames, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
 
-export type Schema<T = any, O = T> = ObjectSchema<T, O> | ValueSchema<T, O> | TypeSchema<O>;
-export type SchemaTestable<T = any, O = T> = Schema<T, O> | ValueType<O>;
-export type NormalizedSchema<T = any, O = T> = NormalizedObjectSchema<T, O> | NormalizedValueSchema<T, O> | NormalizedTypeSchema<O>;
+export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T> | TypeSchema<T>;
+export type SchemaTestable<T = any> = Schema<T> | ValueType<T>;
+export type NormalizedSchema<T = any> = NormalizedObjectSchema<T> | NormalizedValueSchema<T> | NormalizedTypeSchema<T>;
 
 
 const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
@@ -46,7 +45,7 @@ export const Schema = {
     }
   },
 
-  test<T, O>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+  test<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
     const normalizedOptions: SchemaTestOptions = { fastErrors: true, ...options };
 
     const schema = schemaTestableToSchema(schemaOrValueType);
@@ -63,14 +62,14 @@ export const Schema = {
     return { valid: false, error: new SchemaError(result.error.message, { ...result.error }) };
   },
 
-  validate<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): boolean {
+  validate<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): boolean {
     const schema = schemaTestableToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
     return result.valid;
   },
 
-  parse<T, O = T>(schemaOrValueType: SchemaTestable<T, O>, value: unknown, options?: SchemaTestOptions): O {
+  parse<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): T {
     const schema = schemaTestableToSchema(schemaOrValueType);
     const result = this.test(schema, value, options);
 
@@ -87,7 +86,7 @@ export const Schema = {
 
     return {
       [name](...unsafeArgs: unknown[]): SchemaOutput<R> {
-        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
+        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
         const unsafeResult = handler(...safeArgs);
 
         return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
@@ -101,7 +100,7 @@ export const Schema = {
 
     return {
       async [name](...unsafeArgs: unknown[]): Promise<SchemaOutput<R>> {
-        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>;
+        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
         const unsafeResult = await handler(...safeArgs);
 
         return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
@@ -121,7 +120,7 @@ function getFunctionParametersSchema<T extends readonly SchemaTestable[]>(argume
   return schema;
 }
 
-export function testWithFastError<T, O = T>(schema: Schema<T, O>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+export function testWithFastError<T>(schema: Schema<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
   initialize();
 
   if (isValueSchema(schema)) {
@@ -164,14 +163,14 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
 }
 
 // eslint-disable-next-line complexity
-function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+function testObject<T>(objectSchema: ObjectSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
   if (!(value instanceof Object)) {
     return { valid: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path, { fast: options.fastErrors }) };
   }
 
   const schema = normalizeObjectSchema(objectSchema as ObjectSchema);
   const mask = schema.mask ?? options.mask ?? false;
-  const resultValue: O = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
+  const resultValue: T = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
 
   const schemaPropertyKeys = objectKeys(schema.properties);
   const valuePropertyKeys = objectKeys(value);
@@ -189,7 +188,7 @@ function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, 
       return propertyResult;
     }
 
-    resultValue[key as keyof O] = propertyResult.value;
+    resultValue[key as keyof T] = propertyResult.value;
   }
 
   if (schema.allowUnknownProperties.size > 0) {
@@ -200,7 +199,7 @@ function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, 
         return propertyResult;
       }
 
-      resultValue[key as keyof O] = propertyResult.value;
+      resultValue[key as keyof T] = propertyResult.value;
     }
   }
 
@@ -210,15 +209,15 @@ function testObject<T, O = T>(objectSchema: ObjectSchema<T, O>, value: unknown, 
 }
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
-function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<O> {
+function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
   const normalizedValueSchema = normalizeValueSchema(schema);
 
   if (normalizedValueSchema.optional && isUndefined(value)) {
-    return { valid: true, value: value as unknown as O };
+    return { valid: true, value: value as unknown as T };
   }
 
   if (normalizedValueSchema.nullable && isNull(value)) {
-    return { valid: true, value: value as unknown as O };
+    return { valid: true, value: value as unknown as T };
   }
 
   const context: SchemaContext = {
@@ -257,12 +256,12 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
       validatedItems.push(result.value);
     }
 
-    return { valid: true, value: validatedItems as unknown as O };
+    return { valid: true, value: validatedItems as unknown as T };
   }
 
-  let valueType!: ResolvedValueType;
   let valueTestResult!: SchemaTestResult<unknown>;
   let resultValue: unknown;
+  let valueType!: ResolvedValueType;
 
   function updateCurrentState(newValue: unknown): void {
     valueTestResult = isValidValue(normalizedValueSchema.schema, newValue, options, path);
@@ -304,28 +303,7 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     return valueTestResult;
   }
 
-  if (normalizedValueSchema.transformers.length > 0) {
-    let transformedValue = resultValue;
-
-    for (const transformer of normalizedValueSchema.transformers) {
-      const transformResult = transformer.transform(transformedValue, path, context);
-
-      if (!transformResult.success) {
-        return { valid: false, error: transformResult.error };
-      }
-
-      transformedValue = transformResult.value;
-    }
-
-    updateCurrentState(transformedValue);
-
-    if (!valueTestResult.valid) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-      const typeString = getValueTypeName(valueType);
-      throw new Error(`Transformers resulted in invalid type (${typeString}).`);
-    }
-  }
-
-  {
+  if (normalizedValueSchema.valueConstraints.length > 0) {
     const errors: SchemaError[] = [];
 
     for (const constraint of normalizedValueSchema.valueConstraints) {
@@ -341,7 +319,23 @@ function testValue<T, O = T>(schema: ValueSchema<T, O>, value: unknown, options:
     }
   }
 
-  return { valid: true, value: resultValue as O };
+  if (normalizedValueSchema.transformers.length > 0) {
+    for (const transformer of normalizedValueSchema.transformers) {
+      if (isDefined(transformer.sourceType) && !includesValueType(valueType, resolveValueTypes(transformer.sourceType))) {
+        continue;
+      }
+
+      const transformResult = transformer.transform(resultValue, path, context) as TransformResult<T & ObjectLiteral>;
+
+      if (isTransformErrorResult(transformResult)) {
+        return { valid: false, error: transformResult[transformErrorResultSymbol] };
+      }
+
+      return { valid: true, value: transformResult };
+    }
+  }
+
+  return { valid: true, value: resultValue as T };
 }
 
 function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options: SchemaTestOptions, path: JsonPath): SchemaTestResult<T> {

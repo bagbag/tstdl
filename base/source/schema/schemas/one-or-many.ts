@@ -3,18 +3,18 @@
 import type { OneOrMany } from '#/types';
 import { toArray } from '#/utils/array';
 import type { SchemaTestable } from '../schema';
-import type { ValueSchema } from '../types';
-import { array } from './array';
+import type { ValueSchema, ValueSchemaOptions } from '../types';
+import { array, ArrayOptions } from './array';
 import { union } from './union';
 
-export type OneOrManyOptions = {
-  /** minimum array length */
-  minimumLength?: number,
+export type OneOrManyOptions = ValueSchemaOptions & Pick<ArrayOptions, 'minimumLength' | 'maximumLength'>;
 
-  /** maximum array length */
-  maximumLength?: number
-};
-
-export function oneOrMany<T, O = T>(innerValues: OneOrMany<SchemaTestable<T, O>>, options: OneOrManyOptions = {}): ValueSchema<T, O | O[]> {
-  return union(array(innerValues, options), ...toArray(innerValues)) as ValueSchema<T, O | O[]>;
+export function oneOrMany<T>(innerValues: OneOrMany<SchemaTestable<T>>, options?: OneOrManyOptions): ValueSchema<T | T[]> {
+  return union(
+    [
+      array(innerValues, { minimumLength: options?.minimumLength, maximumLength: options?.maximumLength }),
+      ...toArray(innerValues)
+    ],
+    options
+  ) as ValueSchema<T | T[]>;
 }
