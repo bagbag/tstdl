@@ -9,7 +9,7 @@ import type { SchemaError } from './schema.error';
 
 declare const schemaOutputTypeSymbol: unique symbol;
 
-export type SchemaFactoryFunction<T> = (data: T) => NormalizeValueType<T>;
+export type SchemaFactoryFunction<T> = (data: T) => T;
 export type SchemaFactory<T> =
   | { type: Type<T>, builder?: undefined }
   | { type?: undefined, builder: SchemaFactoryFunction<T> };
@@ -18,9 +18,9 @@ export type ObjectSchemaProperties<T> = { [K in keyof T]-?: OneOrMany<SchemaTest
 export type NormalizedObjectSchemaProperties<T> = { [K in keyof T]-?: Schema<T[K]> };
 
 export type SchemaOutput<T extends SchemaTestable> =
-  | T extends ObjectSchema<infer O> ? NormalizeValueType<O>
-  : T extends ValueSchema<infer O> ? NormalizeValueType<O>
-  : T extends TypeSchema<infer O> ? NormalizeValueType<O>
+  | T extends ObjectSchema<infer O> ? O
+  : T extends ValueSchema<infer O> ? O
+  : T extends TypeSchema<infer O> ? O
   : T extends ValueType<infer O> ? NormalizeValueType<O>
   : never;
 
@@ -202,7 +202,7 @@ export function objectSchema<T extends Record>(schema: ObjectSchema<T>): ObjectS
   return filterObject(schema, isDefined) as ObjectSchema<T>;
 }
 
-export function valueSchema<T>(schema: OneOrMany<SchemaTestable<T>>, options?: TypedOmit<ValueSchema<NormalizeValueType<T>>, 'schema'>): ValueSchema<T> {
+export function valueSchema<T>(schema: OneOrMany<SchemaTestable<T>>, options?: TypedOmit<ValueSchema<T>, 'schema'>): ValueSchema<T> {
   return filterObject({ schema, ...options }, isDefined) as ValueSchema<T>;
 }
 
@@ -278,5 +278,5 @@ export function schemaTestableToSchema<T>(valueTypeOrSchema: SchemaTestable<T>):
     return valueTypeOrSchema;
   }
 
-  return typeSchema(valueTypeOrSchema) as TypeSchema<T>;
+  return typeSchema(valueTypeOrSchema) as Schema<T>;
 }
