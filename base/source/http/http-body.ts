@@ -34,7 +34,7 @@ export class HttpBody {
     return readBodyAsText(this.body, this.headers, options);
   }
 
-  async readAsJson<T extends UndefinableJson = UndefinableJson>(options?: ReadBodyOptions): Promise<T> {
+  async readAsJson<T = UndefinableJson>(options?: ReadBodyOptions): Promise<T> {
     ensureBodyExists(this.body);
     return readBodyAsJson(this.body, this.headers, options) as Promise<T>;
   }

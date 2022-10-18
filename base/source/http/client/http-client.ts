@@ -99,7 +99,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     return response.body.readAsText();
   }
 
-  async getJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+  async getJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('GET', url, { ...options });
     return response.body.readAsJson();
   }
@@ -139,7 +139,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     return response.body.readAsText();
   }
 
-  async postJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+  async postJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('POST', url, { ...options });
     return response.body.readAsJson();
   }
@@ -165,7 +165,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     return response.body.readAsText();
   }
 
-  async putJson<T extends UndefinableJson = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+  async putJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('PUT', url, { ...options });
     return response.body.readAsJson();
   }
@@ -191,7 +191,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     return response.body.readAsText();
   }
 
-  async patchJson<T extends UndefinableJson = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+  async patchJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('PATCH', url, { ...options });
     return response.body.readAsJson();
   }
@@ -217,7 +217,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
     return response.body.readAsText();
   }
 
-  async deleteJson<T extends UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
+  async deleteJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('DELETE', url, { ...options });
     return response.body.readAsJson<T>();
   }
