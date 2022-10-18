@@ -7,7 +7,7 @@ import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } f
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
 import type { SchemaValueConstraint, SchemaValueTransformer, ValueSchema, ValueSchemaOptions } from '../types';
-import { typeSchema, valueSchema } from '../types';
+import { valueSchema } from '../types';
 
 export type StringOptions = ValueSchemaOptions & {
   /** trim */
@@ -64,13 +64,13 @@ export function string(options: StringOptions = {}): ValueSchema<string> {
     transformers.push(new UppercaseTransformer());
   }
 
-  return valueSchema(typeSchema(globalThis.String), {
+  return valueSchema<string>(String, {
     ...options,
     valueConstraints,
     transformers
   });
 }
 
-export function String(options?: StringOptions): Decorator<'property' | 'accessor'> {
+export function StringProperty(options?: StringOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(string(options));
 }

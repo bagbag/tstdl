@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
+import type { Decorator } from '#/reflection';
 import type { OneOrMany } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { ArrayMaximumLengthConstraint } from '../array-constraints';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
 import type { SchemaTestable } from '../schema';
 import type { SchemaArrayConstraint, ValueSchema, ValueSchemaOptions } from '../types';
 import { valueSchema } from '../types';
@@ -32,4 +34,8 @@ export function array<T>(innerValues: OneOrMany<SchemaTestable<T>>, options: Arr
     array: true,
     arrayConstraints
   });
+}
+
+export function Array(innerValues: OneOrMany<SchemaTestable>, options?: ArrayOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(array(innerValues, options));
 }

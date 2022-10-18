@@ -8,10 +8,10 @@ import { valueSchema } from '../types';
 
 export type RegExpSchemaOptions = ValueSchemaOptions;
 
-export function regexp(options?: RegExpSchemaOptions): Schema<globalThis.RegExp> {
-  return valueSchema(globalThis.RegExp, options);
+export function regexp(options?: RegExpSchemaOptions): Schema<RegExp> {
+  return valueSchema(RegExp, options);
 }
 
-export function RegExp(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {
+export function RegExpProperty(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(regexp(options));
 }

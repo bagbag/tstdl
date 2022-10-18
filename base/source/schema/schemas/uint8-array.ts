@@ -8,7 +8,7 @@ import { MaximumLengthConstraint } from '../constraints/maximum-length';
 import { MinimumLengthConstraint } from '../constraints/minimum-length';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
 import type { SchemaValueCoercer, SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { typeSchema, valueSchema } from '../types';
+import { valueSchema } from '../types';
 
 export type Uint8ArraySchemaOptions = ValueSchemaOptions & {
   /** Minimum byte length */
@@ -18,7 +18,7 @@ export type Uint8ArraySchemaOptions = ValueSchemaOptions & {
   maximumLength?: number
 };
 
-export function uint8Array(options: Uint8ArraySchemaOptions = {}): ValueSchema<globalThis.Uint8Array> {
+export function uint8Array(options: Uint8ArraySchemaOptions = {}): ValueSchema<Uint8Array> {
   const coercers: SchemaValueCoercer[] = toArray(options.coercers ?? []);
   const valueConstraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
 
@@ -34,13 +34,13 @@ export function uint8Array(options: Uint8ArraySchemaOptions = {}): ValueSchema<g
     valueConstraints.push(new MaximumLengthConstraint(options.maximumLength));
   }
 
-  return valueSchema(typeSchema(globalThis.Uint8Array), {
+  return valueSchema(Uint8Array, {
     ...options,
     coercers,
     valueConstraints
   });
 }
 
-export function Uint8Array(options?: Uint8ArraySchemaOptions): Decorator<'property' | 'accessor'> {
+export function Uint8ArrayProperty(options?: Uint8ArraySchemaOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(uint8Array(options));
 }

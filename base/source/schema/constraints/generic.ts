@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { JsonPath } from '#/json-path/json-path';
-import type { Decorator } from '#/reflection';
 import type { OneOrMany } from '#/types';
 import { isBoolean } from '#/utils/type-guards';
-import { createSchemaValueConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
 import type { ConstraintContext, ConstraintResult } from '../types';
 import { SchemaValueConstraint } from '../types';
@@ -38,9 +36,4 @@ export class GenericConstraint<T> extends SchemaValueConstraint {
 
     return result;
   }
-}
-
-export function Constraint<T>(constraintFunction: GenericConstraintFunction<T>, expects?: OneOrMany<string>): Decorator<'property' | 'accessor'> {
-  const constraint = new GenericConstraint(constraintFunction, expects);
-  return createSchemaValueConstraintDecorator(constraint);
 }

@@ -10,5 +10,3 @@ export function constraint<T>(schema: SchemaTestable<T>, constraintFunction: Gen
     valueConstraints: new GenericConstraint(constraintFunction, expects)
   });
 }
-
-/* decorator is in file of GenericConstraint */

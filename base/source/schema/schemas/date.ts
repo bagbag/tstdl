@@ -6,7 +6,7 @@ import { isDefined } from '#/utils/type-guards';
 import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { typeSchema, valueSchema } from '../types';
+import { valueSchema } from '../types';
 
 export type DateOptions = ValueSchemaOptions & {
   minimum?: Date | number,
@@ -24,12 +24,12 @@ export function date(options: DateOptions = {}): ValueSchema<Date> {
     constraints.push(new MaximumDateConstraint(options.maximum));
   }
 
-  return valueSchema(typeSchema(globalThis.Date), {
+  return valueSchema(Date, {
     ...options,
     valueConstraints: constraints
   });
 }
 
-export function Date(options?: DateOptions): Decorator<'property' | 'accessor'> {
+export function DateProperty(options?: DateOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(date(options));
 }

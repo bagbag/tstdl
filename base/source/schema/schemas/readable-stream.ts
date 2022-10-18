@@ -8,10 +8,10 @@ import { valueSchema } from '../types';
 
 export type ReadableStreamOptions = ValueSchemaOptions;
 
-export function readableStream(options?: ReadableStreamOptions): Schema<globalThis.ReadableStream> {
-  return valueSchema(globalThis.ReadableStream, options);
+export function readableStream(options?: ReadableStreamOptions): Schema<ReadableStream> {
+  return valueSchema(ReadableStream, options);
 }
 
-export function ReadableStream(): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(readableStream());
+export function ReadableStreamProperty(options?: ReadableStreamOptions): Decorator<'property' | 'accessor'> {
+  return createSchemaPropertyDecoratorFromSchema(readableStream(options));
 }

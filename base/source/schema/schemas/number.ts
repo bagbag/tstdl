@@ -8,7 +8,7 @@ import { MaximumConstraint } from '../constraints/maximum';
 import { MinimumConstraint } from '../constraints/minimum';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import type { SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { typeSchema, valueSchema } from '../types';
+import { valueSchema } from '../types';
 
 export type NumberOptions = ValueSchemaOptions & {
   minimum?: number,
@@ -31,12 +31,12 @@ export function number(options: NumberOptions = {}): ValueSchema<number> {
     valueConstraints.push(integerConstraint);
   }
 
-  return valueSchema(typeSchema(globalThis.Number), {
+  return valueSchema<number>(Number, {
     ...options,
     valueConstraints
   });
 }
 
-export function Number(options?: NumberOptions): Decorator<'property' | 'accessor'> {
+export function NumberProperty(options?: NumberOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(number(options));
 }

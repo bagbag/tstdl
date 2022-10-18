@@ -8,9 +8,9 @@ import { valueSchema } from '../types';
 export type BooleanOptions = ValueSchemaOptions;
 
 export function boolean(options: BooleanOptions = {}): ValueSchema<boolean> {
-  return valueSchema<boolean>(globalThis.Boolean, options);
+  return valueSchema<boolean>(Boolean, options);
 }
 
-export function Boolean(options?: BooleanOptions): Decorator<'property' | 'accessor'> {
+export function BooleanProperty(options?: BooleanOptions): Decorator<'property' | 'accessor'> {
   return createSchemaPropertyDecoratorFromSchema(boolean(options));
 }
