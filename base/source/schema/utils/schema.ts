@@ -1,3 +1,4 @@
+import type { TypeMetadata } from '#/reflection/registry';
 import { reflectionRegistry } from '#/reflection/registry';
 import type { AbstractConstructor, Type } from '#/types';
 import { toArray } from '#/utils/array/array';
@@ -112,7 +113,37 @@ function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Obj
     return null;
   }
 
-  const typeData = metadata.data.tryGet<SchemaTypeReflectionData>('schema');
+  const typeData = metadata.data.tryGet<SchemaTypeReflectionData>('schema') ?? {};
+
+  const dataSchema = isTypeSchema(typeData.schema)
+    ? getObjectSchema(typeData.schema.type as Type<T>)
+    : isObjectSchema(typeData.schema)
+      ? typeData.schema
+      : isFunction(typeData.schema)
+        ? getObjectSchema(typeData.schema as Type)
+        : undefined;
+
+  const schema: ObjectSchema = objectSchema({
+    sourceType: type,
+    factory: isDefined(typeData.factory) ? { builder: typeData.factory } : { type: type as Type },
+    properties: dataSchema?.properties ?? getObjectSchemaPropertiesFromReflection<T>(metadata, type),
+    mask: typeData.mask ?? dataSchema?.mask,
+    allowUnknownProperties: ((isUndefined(typeData.allowUnknownProperties) || (isArray(typeData.allowUnknownProperties) && (typeData.allowUnknownProperties.length == 0))) ? undefined : typeData.allowUnknownProperties) ?? dataSchema?.allowUnknownProperties
+  });
+
+  if (isUndefined(dataSchema)) {
+    const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
+
+    if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
+      const parentSchema = getObjectSchemaFromReflection(prototype);
+      return assign(parentSchema, schema) as ObjectSchema<T>;
+    }
+  }
+
+  return schema;
+}
+
+function getObjectSchemaPropertiesFromReflection<T>(metadata: TypeMetadata, type: AbstractConstructor<T>): ObjectSchemaProperties<T> {
   const properties: ObjectSchemaProperties<T> = {} as ObjectSchemaProperties<T>;
 
   for (const [key, propertyMetadata] of metadata.properties) {
@@ -136,20 +167,5 @@ function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Obj
     });
   }
 
-  const schema: ObjectSchema = objectSchema({
-    sourceType: type,
-    factory: isDefined(typeData?.factory) ? { builder: typeData!.factory } : { type: type as Type },
-    properties,
-    mask: typeData?.mask,
-    allowUnknownProperties: (isUndefined(typeData?.allowUnknownProperties) || (isArray(typeData?.allowUnknownProperties) && (typeData?.allowUnknownProperties.length == 0))) ? undefined : typeData?.allowUnknownProperties
-  });
-
-  const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
-
-  if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
-    const parentSchema = getObjectSchemaFromReflection(prototype);
-    return assign(parentSchema, schema) as ObjectSchema<T>;
-  }
-
-  return schema;
+  return properties;
 }

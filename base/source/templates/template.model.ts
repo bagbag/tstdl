@@ -1,7 +1,7 @@
-import { Any, any, object, Optional, Property, Type } from '#/schema';
+import { Any, any, object, Optional, Property, Class } from '#/schema';
 import type { PickBy, Record, SimplifyObject } from '#/types';
 
-@Type({ allowUnknownProperties: any() })
+@Class({ allowUnknownProperties: any() })
 export class TemplateField<Resolver extends string = string, Renderer extends string = string, Options = any> {
   @Property()
   resolver: Resolver;
