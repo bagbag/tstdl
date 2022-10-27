@@ -58,7 +58,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   for (const [name, endpoint] of endpointsEntries) {
     const methods = isArray(endpoint.method) ? endpoint.method : [endpoint.method ?? 'GET'];
-    const resource = getFullApiEndpointResource({ api: definition, endpoint, prefix: options.prefix });
+    const resource = getFullApiEndpointResource({ api: definition, endpoint, defaultPrefix: options.prefix });
 
     const hasGet = methods.includes('GET');
     const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';

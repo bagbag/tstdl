@@ -11,7 +11,8 @@ import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-
 import { HttpServerResponse } from '#/http/server';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
-import { cancelableTimeout, decodeTextStream, encodeUtf8Stream, timeout } from '#/utils';
+import { SeverSentEvents } from '#/sse';
+import { cancelableTimeout, decodeTextStream, encodeUtf8Stream, isDefined, timeout } from '#/utils';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream';
 import { Agent } from 'undici';
 
@@ -27,6 +28,15 @@ const streamingApiDefinition = defineApi({
       resource: 'echo',
       body: ReadableStream,
       result: ReadableStream
+    },
+    events: {
+      method: 'GET',
+      resource: 'events',
+      result: ReadableStream,
+      cors: {
+        accessControlAllowOrigin: '*',
+        accessControlAllowMethods: 'GET'
+      }
     }
   }
 });
@@ -41,6 +51,14 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
       },
       body: {
         stream: body
+      }
+    });
+  }
+
+  events(_data: ApiRequestData<StreamingApiDefinition, 'events'>): ApiServerResult<StreamingApiDefinition, 'events'> {
+    return HttpServerResponse.fromObject({
+      body: {
+        events: eventsSource()
       }
     });
   }
@@ -69,18 +87,37 @@ async function clientTest(): Promise<void> {
     logger.info(`response: "${responseChunk}"\n`);
   }
 
-  await Application.shutdown();
+  // await Application.shutdown();
 }
 
-async function main(): Promise<void> {
+function main(): void {
   configureNodeHttpServer(true);
   configureApiServer({ controllers: [StreamingApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
 
-  Application.registerModule(WebServerModule);
-  await Application.run();
+  Application.run(WebServerModule);
 }
 
-void main();
+main();
 void clientTest().catch((error) => logger.error(error as Error));
+
+
+function eventsSource(): SeverSentEvents {
+  const events = new SeverSentEvents();
+
+  void (async () => {
+    for (let i = 1; i <= 10; i++) {
+      if (events.closed || isDefined(events.error)) {
+        return;
+      }
+
+      await events.sendJson({ name: 'time', id: i.toString(), data: { dateTime: `${new Date().toLocaleString()}`, uptime: performance.now() }, retry: 1000 });
+      await timeout(1000);
+    }
+
+    await events.close();
+  })().catch((error) => console.error(error));
+
+  return events;
+}

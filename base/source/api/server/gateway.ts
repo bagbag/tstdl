@@ -16,7 +16,7 @@ import { toArray } from '#/utils/array';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
 import { deferThrow } from '#/utils/throw';
-import { isArray, isBlob, isDefined, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { isArray, isBlob, isDefined, isNull, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
 import { mebibyte } from '#/utils/units';
 import 'urlpattern-polyfill';
 import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
@@ -43,10 +43,10 @@ export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServer
 
 export type ApiGatewayOptions = {
   /**
-   * Api prefix
-   * @default api/
+   * Api prefix. Pass `null` to disable prefix.
+   * @default api
    */
-  prefix?: string,
+  prefix?: string | null,
 
   /** Initial middlewares */
   middlewares?: ApiGatewayMiddleware[],
@@ -93,7 +93,7 @@ export type ApiMetadata = {
 })
 export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private readonly logger: Logger;
-  private readonly prefix: string;
+  private readonly prefix: string | null;
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: ApiGatewayMiddleware[];
   private readonly supressedErrors: Set<Type<Error>>;
@@ -107,7 +107,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     this.logger = logger;
     this.options = options;
 
-    this.prefix = options.prefix ?? 'api/';
+    this.prefix = isNull(options.prefix) ? null : (options.prefix ?? 'api');
     this.apis = new Map();
     this.middlewares = options.middlewares ?? [];
     this.supressedErrors = new Set(options.supressedErrors);
@@ -139,7 +139,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       const versionArray = isUndefined(endpointDefinition.version) ? [1] : toArray(endpointDefinition.version);
 
       for (const version of versionArray) {
-        const resource = getFullApiEndpointResource({ api: definition, endpoint: endpointDefinition, prefix: this.prefix, explicitVersion: version });
+        const resource = getFullApiEndpointResource({ api: definition, endpoint: endpointDefinition, defaultPrefix: this.prefix, explicitVersion: version });
         const methods = isArray(endpointDefinition.method) ? endpointDefinition.method : [endpointDefinition.method ?? 'GET'];
 
         if (methods.length == 0) {
@@ -177,18 +177,34 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     }
   }
 
-  async handleHttpServerRequestContext({ request, respond }: HttpServerRequestContext): Promise<void> {
+  async handleHttpServerRequestContext({ request, respond, close }: HttpServerRequestContext): Promise<void> {
+    let responded = false;
+
     try {
       const { api, patternResult } = this.getApiMetadata(request.url);
       const endpoint = api.endpoints.get(request.method)!;
 
       const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
+
+      responded = true;
       await respond(response);
     }
     catch (error) {
       try {
         const response = handleApiError(error, this.supressedErrors, this.logger);
-        await respond(response);
+
+        if (responded) {
+          await close();
+        }
+        else {
+          try {
+            await respond(response);
+          }
+          catch (errorRespondError) {
+            this.logger.error(errorRespondError as Error);
+            await close();
+          }
+        }
       }
       catch { /* ignore */ }
     }

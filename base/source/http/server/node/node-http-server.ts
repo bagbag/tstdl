@@ -151,7 +151,10 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
     const item: HttpServerRequestContext<NodeHttpServerContext> = {
       request: httpRequest,
       respond: getResponder(response),
-      context
+      context,
+      async close() {
+        return new Promise<void>((resolve) => response.end(resolve));
+      }
     };
 
     return item;
@@ -183,6 +186,9 @@ function writeHeaders(response: HttpServerResponse, httpResponse: ServerResponse
   else if (isDefined(response.body?.stream)) {
     httpResponse.setHeader('Content-Type', 'application/octet-stream');
   }
+  else if (isDefined(response.body?.events)) {
+    httpResponse.setHeader('Content-Type', 'text/event-stream');
+  }
 
   for (const [name, value] of response.headers.normalizedEntries()) {
     httpResponse.setHeader(name, value);
@@ -204,16 +210,22 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
         : isDefined(response.body?.buffer) ? response.body!.buffer
           : undefined;
 
+  const streamData = isDefined(simpleData) ? undefined
+    : isDefined(response.body?.stream) ? response.body!.stream
+      : isDefined(response.body?.events) ? response.body!.events.readable
+        : undefined;
+
   if (isDefined(simpleData)) {
     const bytes = isString(simpleData) ? encodeUtf8(simpleData) : simpleData;
+
     if (!httpResponse.hasHeader('Content-Length')) {
       httpResponse.setHeader('Content-Length', bytes.byteLength);
     }
 
     await write(httpResponse, bytes);
   }
-  else if (isDefined(response.body?.stream)) {
-    for await (const chunk of getReadableStreamIterable(response.body!.stream)) {
+  else if (isDefined(streamData)) {
+    for await (const chunk of getReadableStreamIterable<Uint8Array | string>(streamData)) {
       await write(httpResponse, chunk);
     }
   }

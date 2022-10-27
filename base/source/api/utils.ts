@@ -6,15 +6,18 @@ import type { ApiDefinition, ApiEndpointDefinition } from './types';
 type GetApiEndpointUrlData = {
   api: ApiDefinition,
   endpoint: ApiEndpointDefinition,
-  prefix: string | undefined,
+  defaultPrefix: string | undefined | null,
   explicitVersion?: number | null
 };
 
-export function getFullApiEndpointResource({ api, endpoint, prefix, explicitVersion }: GetApiEndpointUrlData): string {
+export function getFullApiEndpointResource({ api, endpoint, defaultPrefix, explicitVersion }: GetApiEndpointUrlData): string {
   const version = toArray(isDefined(explicitVersion) ? explicitVersion : endpoint.version).sort(compareByValueDescending)[0];
-  const versionPrefix = isNull(version) ? '' : `v${version ?? 1}/`;
-  const rootResource = endpoint.rootResource ?? api.resource;
-  const subResource = isDefined(endpoint.resource) ? `/${endpoint.resource}` : '';
+  const versionPrefix = isNull(version) ? undefined : `v${version ?? 1}`;
+  const rootResource = (isNull(endpoint.rootResource) ? '' : endpoint.rootResource) ?? api.resource;
+  const prefix = (isNull(endpoint.prefix) ? '' : endpoint.prefix) ?? (isNull(api.prefix) ? '' : api.prefix) ?? (isNull(defaultPrefix) ? undefined : (defaultPrefix ?? 'api'));
 
-  return `/${prefix ?? 'api/'}${versionPrefix}${rootResource}${subResource}`;
+  const parts = [prefix, versionPrefix, rootResource, endpoint.resource];
+  const path = parts.filter(isDefined).filter((part) => part.length > 0).join('/');
+
+  return `/${path}`;
 }

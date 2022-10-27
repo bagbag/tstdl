@@ -1,7 +1,7 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
 import type { SchemaOutput, SchemaTestable } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT, UndefinableJson } from '#/types';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -47,9 +47,14 @@ export type ApiEndpointDefinition = {
   method?: OneOrMany<ApiEndpointMethod>,
 
   /**
+   * Endpoint prefix. Overwrites default from api and gateway.
+   */
+  prefix?: string | null,
+
+  /**
    * Root resource path. Overwrites default from {@link ApiDefinition}.
    */
-  rootResource?: string,
+  rootResource?: string | null,
 
   /**
    * sub resource in api
@@ -77,7 +82,16 @@ export type ApiEndpointDefinition = {
 };
 
 export type ApiDefinition = {
+  /**
+   * Default root resource for endpoints.
+   */
   resource: string,
+
+  /**
+   * Endpoint prefix. Overwrites default from gateway.
+   */
+  prefix?: string | null,
+
   endpoints: Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>
 };
 

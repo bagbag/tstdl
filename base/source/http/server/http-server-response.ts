@@ -1,3 +1,4 @@
+import type { SeverSentEvents } from '#/sse';
 import type { UndefinableJson } from '#/types';
 import type { HttpHeadersInput } from '../http-headers';
 import { HttpHeaders } from '../http-headers';
@@ -10,7 +11,8 @@ export type HttpServerResponseOptions = {
     stream?: ReadableStream<Uint8Array>,
     buffer?: Uint8Array,
     text?: string,
-    json?: UndefinableJson
+    json?: UndefinableJson,
+    events?: SeverSentEvents
   }
 };
 
@@ -22,7 +24,8 @@ export class HttpServerResponse {
     stream?: ReadableStream<Uint8Array>,
     buffer?: Uint8Array,
     text?: string,
-    json?: UndefinableJson
+    json?: UndefinableJson,
+    events?: SeverSentEvents
   };
 
   constructor(response: HttpServerResponseOptions = {}) {
