@@ -1,30 +1,10 @@
 import { SchemaError } from '#/schema';
-import { ValidationError } from '../error/validation.error';
-
-export type SerializedValidationError = {
-  message: string,
-  details?: any,
-  inner?: SerializedValidationError[]
-};
 
 export type SerializedSchemaError = {
   message: string,
   details?: any,
   path: string
 };
-
-export function serializeValidationError(error: ValidationError): SerializedValidationError {
-  return {
-    message: error.message,
-    details: error.details,
-    inner: error.inner?.map(serializeValidationError)
-  };
-}
-
-export function deserializeValidationError(serializedError: SerializedValidationError): ValidationError {
-  const inner = serializedError.inner?.map(deserializeValidationError);
-  return new ValidationError(serializedError.message, { details: serializedError.details, inner });
-}
 
 export function serializeSchemaError(error: SchemaError): SerializedSchemaError {
   return {

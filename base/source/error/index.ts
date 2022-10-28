@@ -13,4 +13,3 @@ export * from './not-implemented.error';
 export * from './not-supported.error';
 export * from './unauthorized.error';
 export * from './unsupported-media-type.error';
-export * from './validation.error';

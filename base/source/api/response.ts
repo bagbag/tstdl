@@ -1,9 +1,9 @@
 import { SchemaError } from '#/schema/schema.error';
 import type { CustomError, CustomErrorStatic } from '../error';
-import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError, ValidationError } from '../error';
+import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
 import type { UndefinableJson } from '../types';
 import { isDefined, isFunction, isObject, isString } from '../utils/type-guards';
-import { deserializeSchemaError, deserializeValidationError, serializeSchemaError, serializeValidationError } from './default-error-handlers';
+import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers';
 
 export type ErrorHandlerData = undefined | UndefinableJson;
 
@@ -163,5 +163,4 @@ registerErrorHandler(NotSupportedError, 400, () => undefined, (_, error) => new 
 registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
 registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
 registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
-registerErrorHandler(ValidationError, 400, serializeValidationError, deserializeValidationError);
 registerErrorHandler(SchemaError, 400, serializeSchemaError, deserializeSchemaError);
