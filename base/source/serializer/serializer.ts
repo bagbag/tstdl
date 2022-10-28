@@ -215,7 +215,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
       }
     }
 
-    const entries = Object.entries(serialized as Record);
+    const entries = objectEntries<StringMap>(serialized as Record);
     const isNonPrimitive = (entries.length == 1) && entries[0]![0].startsWith('<') && entries[0]![0].endsWith('>');
 
     if (isNonPrimitive) {

@@ -3,7 +3,7 @@ import type { Record, StringMap } from '#/types';
 import { clone } from '../clone';
 import { isArray, isDate, isDefined, isFunction, isNotNull, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards';
 import { getCachedDereference } from './dereference';
-import { hasOwnProperty, mapObjectValues } from './object';
+import { hasOwnProperty, mapObjectValues, objectKeys } from './object';
 
 export type Decycled<T> = { __type: T } & Record<string>;
 
@@ -80,7 +80,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
       }
     }
     else if (isObject(node) && isNotNull(node)) {
-      for (const key of Object.keys(node)) {
+      for (const key of objectKeys(node)) {
         const ref = getRef((node as StringMap)[key]);
 
         if (isDefined(ref)) {

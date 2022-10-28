@@ -2,7 +2,7 @@
 
 import type { Entity } from '#/database';
 import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
-import { hasOwnProperty } from '#/utils/object/object';
+import { hasOwnProperty, objectEntries, objectValues } from '#/utils/object/object';
 import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
 import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/lib/api/types';
 import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
@@ -12,7 +12,7 @@ import { BoolQueryBuilder } from './query-builder';
 export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
   const defaultBoolQueryBuilder = new BoolQueryBuilder();
 
-  const queryEntries = Object.entries(query);
+  const queryEntries = objectEntries(query);
 
   // eslint-disable-next-line no-unreachable-loop
   for (const [rawProperty, value] of queryEntries) {
@@ -124,7 +124,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       canHandleProperty = true;
     }
 
-    if (Object.values(range).length > 0) {
+    if (objectValues(range).length > 0) {
       const rangeQuery: ElasticRangeQuery = { range: { [property]: range } };
       defaultBoolQueryBuilder.must(rangeQuery);
     }

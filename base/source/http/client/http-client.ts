@@ -7,6 +7,7 @@ import { encodeBase64 } from '#/utils/base64';
 import { encodeUtf8 } from '#/utils/encoding';
 import type { AsyncMiddleware, AsyncMiddlewareHandler, AsyncMiddlewareNext } from '#/utils/middleware';
 import { composeAsyncMiddleware } from '#/utils/middleware';
+import { objectEntries } from '#/utils/object/object';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise';
 import { isDefined, isObject, isUndefined } from '#/utils/type-guards';
 import { buildUrl } from '#/utils/url-builder';
@@ -346,7 +347,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
   const isGetOrHead = (request.method == 'GET') || (request.method == 'HEAD');
 
   let url: URL;
-  const filteredParameterEntries = Object.entries(request.parameters ?? {}).filter(([_, value]) => isDefined(value));
+  const filteredParameterEntries = objectEntries(request.parameters ?? {}).filter(([_, value]) => isDefined(value));
   const filteredParameters = Object.fromEntries(filteredParameterEntries);
   let parameterEntries = new Set(filteredParameterEntries);
 
@@ -357,7 +358,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
     const { parsedUrl, parametersRest } = buildUrl(request.url, filteredParameters, { arraySeparator: request.urlParametersSeparator });
 
     url = new URL(parsedUrl, baseUrl);
-    parameterEntries = new Set(Object.entries(parametersRest));
+    parameterEntries = new Set(objectEntries(parametersRest));
   }
 
   if (request.mapParametersToBody && !isGetOrHead && isUndefined(request.body)) {
@@ -374,7 +375,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
       }
 
       for (const val of toArray(value)) {
-        url.searchParams.append(parameter, normalizeSingleHttpValue(val));
+        url.searchParams.append(parameter as string, normalizeSingleHttpValue(val));
       }
 
       parameterEntries.delete(entry);

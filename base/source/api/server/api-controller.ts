@@ -2,6 +2,7 @@
 import type { InjectableOptionsWithoutLifecycle } from '#/container';
 import { singleton } from '#/container';
 import type { Constructor, Type } from '#/types';
+import { objectEntries } from '#/utils/object/object';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiController, ApiDefinition } from '../types';
 
@@ -53,7 +54,7 @@ export function implementApi<T extends ApiDefinition>(definition: T, implementat
 
   apiController(definition)(api);
 
-  const implementationEntries = Object.entries(implementation);
+  const implementationEntries = objectEntries(implementation);
 
   for (const [name, handler] of implementationEntries) {
     Object.defineProperty(api.prototype, name, {

@@ -2,6 +2,7 @@ import { BadRequestError } from '#/error/bad-request.error';
 import type { OneOrMany, Record } from '#/types';
 import { toArray } from '#/utils/array';
 import { isIterable } from '#/utils/iterable-helpers/is-iterable';
+import { objectEntries } from '#/utils/object/object';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
 import type { HttpValue, NormalizedHttpValue, NormalizedHttpValueObject } from './types';
 import { denormalizeHttpValue, normalizeHttpValue } from './types';
@@ -87,7 +88,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
   }
 
   setMany(input: HttpValueMapInput): void {
-    const iterable = isIterable(input) ? input : Object.entries(input);
+    const iterable = isIterable(input) ? input : objectEntries(input);
 
     for (const [key, value] of iterable) {
       if (isDefined(value)) {

@@ -1,3 +1,5 @@
+import { objectKeys } from './object';
+
 export const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
   apply: true,
   construct: true,
@@ -16,6 +18,6 @@ export const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
 
 export type ReflectMethodsReturnTypeMap = { [P in keyof ProxyHandler<object>]-?: ReturnType<Required<ProxyHandler<object>>[P]> };
 
-export const reflectMethods = Object.keys(reflectMethodsMap) as unknown as (keyof typeof reflectMethodsMap)[];
+export const reflectMethods = objectKeys(reflectMethodsMap);
 
 export const propertyReflectMethods = new Set<keyof ProxyHandler<object>>(['defineProperty', 'deleteProperty', 'get', 'getOwnPropertyDescriptor', 'has', 'set']);

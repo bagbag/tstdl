@@ -2,6 +2,7 @@ import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
 import type { HttpMethod } from '#/http/types';
 import type { SchemaOutput, SchemaTestable } from '#/schema';
 import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
+import { objectEntries } from '#/utils/object/object';
 import { isFunction } from '#/utils/type-guards';
 import type { ApiGatewayMiddlewareContext } from './server';
 
@@ -165,5 +166,5 @@ export function normalizedApiDefinitionEndpoints<T extends ApiDefinition['endpoi
 }
 
 export function normalizedApiDefinitionEndpointsEntries<T extends ApiDefinition['endpoints']>(apiDefinition: T): [keyof T, ApiEndpointDefinition][] {
-  return Object.entries(apiDefinition).map(([key, def]): [string, ApiEndpointDefinition] => [key, isFunction(def) ? def() : def]);
+  return objectEntries(apiDefinition).map(([key, def]): [string, ApiEndpointDefinition] => [key as string, isFunction(def) ? def() : def]);
 }

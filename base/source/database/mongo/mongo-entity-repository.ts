@@ -6,6 +6,7 @@ import { EntityRepository } from '#/database';
 import type { Logger } from '#/logger';
 import type { Record } from '#/types';
 import { equals } from '#/utils/equals';
+import { objectEntries, objectKeys } from '#/utils/object';
 import { _throw } from '#/utils/throw';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { Collection } from './classes';
@@ -80,7 +81,7 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
     this.indexes = indexes?.map(normalizeIndex);
 
     this.baseRepository = new MongoBaseRepository(collection);
-    this.transformerMappingMap = new Map(Object.entries(transformer.mapping ?? {}) as [keyof T, MappingItem<T, TDb>][]);
+    this.transformerMappingMap = new Map(objectEntries(transformer.mapping ?? {}) as [keyof T, MappingItem<T, TDb>][]);
   }
 
   async [afterResolve](): Promise<void> {
@@ -356,7 +357,7 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateFilter<TDb> {
     const transformedPatch: Record = {};
 
-    for (const [property, value] of Object.entries(patch)) {
+    for (const [property, value] of objectEntries(patch)) {
       const mapping = this.transformerMappingMap.get(property as keyof T);
 
       if (isDefined(mapping)) {
@@ -373,7 +374,7 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
 
 function normalizeIndex<T extends Entity<any>>(index: TypedIndexDescription<T>): TypedIndexDescription<T> {
   const { name: providedName, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const name = providedName ?? Object.keys(index.key).join('_');
+  const name = providedName ?? objectKeys(index.key).join('_');
 
   return { name, ...indexRest };
 }

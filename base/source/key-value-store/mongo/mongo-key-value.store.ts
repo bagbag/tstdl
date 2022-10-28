@@ -4,6 +4,7 @@ import type { UpdateFilter } from '#/database/mongo';
 import { KeyValueStore } from '#/key-value-store';
 import type { StringMap } from '#/types';
 import { currentTimestamp } from '#/utils/date-time';
+import { objectEntries } from '#/utils/object/object';
 import { assertStringPass, isUndefined } from '#/utils/type-guards';
 import type { MongoKeyValue } from './mongo-key-value.model';
 import { MongoKeyValueRepository } from './mongo-key-value.repository';
@@ -51,7 +52,7 @@ export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> 
 
     const bulk = this.keyValueRepository.baseRepository.bulk();
 
-    for (const [key, value] of Object.entries(keyValues)) {
+    for (const [key, value] of objectEntries<StringMap>(keyValues)) {
       const update: UpdateFilter<MongoKeyValue> = {
         $set: { value, updated: timestamp },
         $setOnInsert: { _id: getNewId() }

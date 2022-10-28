@@ -3,6 +3,7 @@ import type { Entity, MaybeNewEntity } from '#/database';
 import { Enumerable } from '#/enumerable';
 import { NotFoundError } from '#/error/not-found.error';
 import type { Record } from '#/types';
+import { objectKeys } from '#/utils/object';
 import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
 import type { FindOneAndUpdateOptions, IndexDescription } from 'mongodb';
 import type { Collection } from './classes';
@@ -137,7 +138,7 @@ export class MongoBaseRepository<T extends Entity> {
     const operations = mapped.map((o) => o.operation as UpdateOneOperation<T>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
     assertDefined(result.upsertedIds);
-    const entities = Object.keys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number]!.document));
+    const entities = objectKeys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number]!.document));
 
     return entities;
   }

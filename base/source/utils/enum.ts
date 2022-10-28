@@ -1,6 +1,7 @@
 import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationObject, EnumerationValue } from '#/types';
 import { randomItem } from './array/array';
 import { memoizeSingle } from './function';
+import { objectEntries } from './object/object';
 
 const memoizedEnumEntries = memoizeSingle(_enumEntries, { weak: true });
 const memoizedEnumKeys = memoizeSingle(_enumKeys, { weak: true });
@@ -23,7 +24,7 @@ export function randomEnumValue<T extends EnumerationObject>(enumeration: T): En
 }
 
 function _enumEntries<T extends EnumerationObject>(enumeration: T): EnumerationEntries<T> {
-  return Object.entries(enumeration)
+  return objectEntries<EnumerationObject>(enumeration)
     .filter((entry): entry is EnumerationEntry<T> => Number.isNaN(Number(entry[0]))) as EnumerationEntries<T>;
 }
 

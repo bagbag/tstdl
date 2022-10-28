@@ -2,6 +2,7 @@ import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/databas
 import { compareByValueSelectionOrdered } from '#/utils/comparison';
 import { FactoryMap } from '#/utils/factory-map';
 import { normalizeText } from '#/utils/helpers';
+import { objectEntries } from '#/utils/object/object';
 import { intersectSets, unionSets } from '#/utils/set';
 import { Timer } from '#/utils/timer';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards';
@@ -52,7 +53,7 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
     }
 
     const timer = new Timer(true);
-    const entries = Object.entries(queryOrCursor);
+    const entries = objectEntries(queryOrCursor);
 
     let items: T[];
 

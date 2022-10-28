@@ -2,6 +2,7 @@ import type { Entity, QueryTypes } from '#/database';
 import { allQueryTypes } from '#/database';
 import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
 import type { Record } from '#/types';
+import { objectEntries } from '#/utils/object/object';
 import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
 import type { RootFilterOperators } from 'mongodb';
 import type { MongoDocument } from './model';
@@ -12,7 +13,7 @@ const operatorsSet = new Set(allQueryTypes);
 
 export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<T>, mappingMap: TransformerMappingMap<T, TDb> = new Map(), transform?: MappingItemTransformer): Filter<TDb> {
   let filterQuery: Filter = {};
-  const entries = Object.entries(query) as [QueryTypes, any][];
+  const entries = objectEntries(query) as [QueryTypes, any][];
 
   for (const [property, value] of entries) {
     const mapping = mappingMap.get(property as keyof T);
@@ -54,7 +55,7 @@ function convertInnerQuery(query: object, transform?: MappingItemTransformer, ma
     return transform?.(query) ?? query;
   }
 
-  const queryEntries = Object.entries(query) as [QueryTypes, any][];
+  const queryEntries = objectEntries(query) as [QueryTypes, any][];
 
   if (queryEntries.length > 1) {
     const operators = queryEntries.map((entry) => entry[0]);

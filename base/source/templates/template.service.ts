@@ -1,5 +1,6 @@
 import { inject, optional, singleton } from '#/container';
 import type { Record } from '#/types';
+import { objectEntries } from '#/utils/object/object';
 import { _throw } from '#/utils/throw';
 import { isString } from '#/utils/type-guards';
 import { TemplateRendererProvider } from './template-renderer.provider';
@@ -38,7 +39,7 @@ export class TemplateService {
       options: template.options
     };
 
-    for (const [key, field] of Object.entries(template.fields)) {
+    for (const [key, field] of objectEntries(template.fields)) {
       const resolver = this.templateResolverProvider.get(field.resolver);
       const renderer = this.templateRendererProvider.get(field.renderer);
 

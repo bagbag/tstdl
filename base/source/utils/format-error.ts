@@ -1,5 +1,6 @@
 import type { Record, UndefinableJson } from '#/types';
 import { decycle } from './object/decycle';
+import { objectKeys } from './object/object';
 import { isDefined, isFunction, isUndefined } from './type-guards';
 
 export type FormatErrorOptions = {
@@ -60,7 +61,7 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   }
 
   const decycledRest = isDefined(rest) ? decycle(rest) : undefined;
-  const restString = (((includeRest == true) || ((includeRest == 'if-no-extra-info') && isUndefined(extraInfo))) && isDefined(decycledRest) && (Object.keys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycledRest, null, 2)}` : '';
+  const restString = (((includeRest == true) || ((includeRest == 'if-no-extra-info') && isUndefined(extraInfo))) && isDefined(decycledRest) && (objectKeys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycledRest, null, 2)}` : '';
   const extraInfoString = isDefined(extraInfo) ? `\n${JSON.stringify(extraInfo, null, 2)}` : '';
   const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
 

@@ -1,7 +1,7 @@
 import { singleton } from '#/container';
 import type { ObjectLiteral, Record } from '#/types';
 import { memoizeSingle } from '#/utils/function/memoize';
-import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync } from '#/utils/object/object';
+import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object';
 import { isDefined, isFunction, isString } from '#/utils/type-guards';
 import * as handlebars from 'handlebars';
 import { TemplateResolverProvider } from '../template-resolver.provider';
@@ -131,8 +131,8 @@ function getPartialHelpersDeep(partial: HandlebarsTemplateRenderObject | Handleb
     return [];
   }
 
-  const entries = Object.entries(partial.options?.helpers ?? {});
-  const childEntries = Object.values(partial.options?.partials ?? {}).flatMap(getPartialHelpersDeep);
+  const entries = objectEntries(partial.options?.helpers ?? {});
+  const childEntries = objectValues(partial.options?.partials ?? {}).flatMap(getPartialHelpersDeep);
 
   return [...entries, ...childEntries];
 }

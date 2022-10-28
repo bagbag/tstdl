@@ -1,5 +1,6 @@
 import type { OneOrMany, Record } from '#/types';
 import { toArray } from '#/utils/array/array';
+import { objectEntries } from '#/utils/object/object';
 import type { Simplify } from 'type-fest';
 import type { ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties } from '../types';
 import { objectSchema } from '../types';
@@ -9,7 +10,7 @@ export function pick<T extends Record, K extends keyof T>(schemaOrType: ObjectSc
   const schema = getObjectSchema(schemaOrType);
   const keys = toArray(key);
 
-  const entries = Object.entries(schema.properties);
+  const entries = objectEntries(schema.properties);
   const pickedEntries = entries.filter(([propertyKey]) => keys.includes(propertyKey as K));
 
   const pickedSchema = objectSchema({

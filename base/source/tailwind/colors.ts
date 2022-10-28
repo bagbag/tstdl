@@ -1,4 +1,5 @@
 import type { Theme } from '#/css/theme';
+import { objectEntries } from '#/utils/object/object';
 import { isString } from '#/utils/type-guards';
 
 export type TailwindPalette = {
@@ -18,7 +19,7 @@ export type TailwindPalette = {
 };
 
 export function generateTailwindColors(theme: Theme): Record<string, TailwindPalette> {
-  const entries = Object.entries(theme.colors)
+  const entries = objectEntries(theme.colors)
     .map(([colorName, value]) => {
       const name = isString(value) ? colorName : (value.name ?? colorName);
       return [name, generateTailwindPalette(name)];
