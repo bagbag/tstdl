@@ -235,7 +235,7 @@ export function enumerationLocalization<T extends Enumeration>(enumeration: T, l
 
 export function autoEnumerationLocalization<T extends Enumeration>(enumeration: T): EnumerationLocalizationEntry<T> {
   if (isObject(enumeration)) {
-    return [enumeration, Object.fromEntries(enumEntries(enumeration as EnumerationObject)) as EnumerationLocalization<T>];
+    return [enumeration, Object.fromEntries(enumEntries(enumeration as EnumerationObject).map(([key, value]) => [value, key])) as EnumerationLocalization<T>];
   }
 
   const arrayEntries = (enumeration as EnumerationArray).map((value) => [value, value] as const);
