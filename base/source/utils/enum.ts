@@ -2,10 +2,15 @@ import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationO
 import { randomItem } from './array/array';
 import { memoizeSingle } from './function';
 import { objectEntries } from './object/object';
+import { isNumber } from './type-guards';
 
 const memoizedEnumEntries = memoizeSingle(_enumEntries, { weak: true });
 const memoizedEnumKeys = memoizeSingle(_enumKeys, { weak: true });
 const memoizedEnumValues = memoizeSingle(_enumValues, { weak: true });
+
+export function enumValueName<T extends EnumerationObject>(enumeration: T, value: T[keyof T]): string {
+  return isNumber(value) ? enumeration[value]?.toString() ?? value.toString() : value;
+}
 
 export function enumEntries<T extends EnumerationObject>(enumeration: T): EnumerationEntries<T> {
   return memoizedEnumEntries(enumeration);

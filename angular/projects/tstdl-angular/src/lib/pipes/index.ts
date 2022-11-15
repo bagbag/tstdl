@@ -4,6 +4,7 @@ export * from './date-time.pipe';
 export * from './decycle.pipe';
 export * from './duration.pipe';
 export * from './dynamic-text.pipe';
+export * from './localize-enum.pipe';
 export * from './localize.pipe';
 export * from './number-locale.pipe';
 export * from './numeric-date-to-date-time.pipe';

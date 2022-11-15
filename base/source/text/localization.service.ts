@@ -1,9 +1,10 @@
 import { singleton } from '#/container';
-import type { Record } from '#/types';
+import type { Enumeration, EnumerationValue, Record } from '#/types';
+import { enumValueName } from '#/utils/enum';
 import { deepEntries } from '#/utils/object/object';
 import type { PropertyName } from '#/utils/object/property-name';
 import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
-import { assertDefinedPass, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards';
+import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, map } from 'rxjs';
 
@@ -19,9 +20,14 @@ export type LocalizeItem<Parameters = void> = string | LocalizeFunction<Paramete
 // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 type LocalizationTemplate = { [key: string]: LocalizeItem<any> | LocalizationTemplate };
 
-export type Localization<T extends LocalizationTemplate = LocalizationTemplate> = {
+export type EnumerationLocalization<T extends Enumeration = Enumeration> = { [P in EnumerationValue<T>]: LocalizeItem<any> };
+
+export type EnumerationLocalizationEntry<T extends Enumeration = Enumeration> = [T, EnumerationLocalization<T>];
+
+export type Localization<T extends LocalizationTemplate = LocalizationTemplate, Enums extends Enumeration[] = []> = {
   language: Language,
-  keys: T
+  keys: T,
+  enums: { [P in keyof Enums]: EnumerationLocalizationEntry<Enums[P]> }
 };
 
 declare const parametersSymbol: unique symbol;
@@ -30,8 +36,8 @@ export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSym
 
 export type LocalizationData<Parameters = any> =
   | LocalizationKey
-  | { key: LocalizationKey, parameters?: void }
-  | LocalizationDataObject<Parameters>;
+  | LocalizationDataObject<Parameters>
+  | { key: LocalizationKey, parameters?: void };
 
 export type LocalizationDataObject<Parameters> = {
   key: LocalizationKey<Parameters>,
@@ -64,13 +70,14 @@ export function localizationData<T>(data: LocalizationData<T>): LocalizationData
  * @param localization
  * @returns
  */
-export function getLocalizationKeys<T extends Localization>(_localization?: T): LocalizationKeys<T['keys']> {
+export function getLocalizationKeys<T extends Localization<any, any>>(_localization?: T): LocalizationKeys<T['keys']> {
   return getPropertyNameProxy() as unknown as LocalizationKeys<T['keys']>;
 }
 
 type MappedLocalization = {
   language: Language,
-  keys: Map<string, string | LocalizeFunction<unknown>>
+  keys: Map<string, string | LocalizeFunction<unknown>>,
+  enums: Map<Enumeration, EnumerationLocalization>
 };
 
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
@@ -80,6 +87,14 @@ export class LocalizationService {
   private readonly localizations: Map<string, MappedLocalization>;
   private readonly activeLanguageSubject: BehaviorSubject<Language | undefined>;
   private readonly availableLanguagesSubject: BehaviorSubject<Language[]>;
+
+  private get activeLocalization(): MappedLocalization | undefined {
+    if (isUndefined(this.activeLanguage)) {
+      throw new Error('Language not set.');
+    }
+
+    return this.localizations.get(this.activeLanguage.code);
+  }
 
   get availableLanguages(): readonly Language[] {
     return this.availableLanguagesSubject.value;
@@ -168,6 +183,24 @@ export class LocalizationService {
 
     const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
 
+    return this.localizeItem(key, templateOrFunction, parameters);
+  }
+
+  localizeEnum<T extends Enumeration>(enumeration: T, value: EnumerationValue<T>, parameters?: unknown): string {
+    const key = isArray(enumeration) ? value : enumValueName(enumeration, value);
+    const item = this.activeLocalization?.enums.get(enumeration)?.[value];
+    return this.localizeItem(key, item, parameters);
+  }
+
+  localize$<Parameters>(data: LocalizationData<Parameters>): Observable<string> {
+    return this.activeLanguage$.pipe(map(() => this.localize(data)));
+  }
+
+  localizeEnum$<T extends Enumeration>(enumeration: T, value: EnumerationValue<T>, parameters?: unknown): Observable<string> {
+    return this.activeLanguage$.pipe(map(() => this.localizeEnum(enumeration, value, parameters)));
+  }
+
+  private localizeItem(key: string | number, templateOrFunction: string | LocalizeFunction<any> | undefined, parameters: unknown): string {
     if (isUndefined(templateOrFunction)) {
       return `__${key}__`;
     }
@@ -194,16 +227,17 @@ export class LocalizationService {
     result += template.slice(currentIndex);
     return result;
   }
-
-  localize$<Parameters>(data: LocalizationData<Parameters>): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localize(data)));
-  }
 }
 
-function buildMappedLocalization({ language, keys }: Localization): MappedLocalization {
+export function enumerationLocalization<T extends Enumeration>(enumeration: T, localization: EnumerationLocalization<T>): EnumerationLocalizationEntry<T> {
+  return [enumeration, localization];
+}
+
+function buildMappedLocalization({ language, keys, enums }: Localization): MappedLocalization {
   const mappedLocalization: MappedLocalization = {
     language,
-    keys: new Map(deepEntries(keys))
+    keys: new Map(deepEntries(keys)),
+    enums: new Map(enums)
   };
 
   return mappedLocalization;
