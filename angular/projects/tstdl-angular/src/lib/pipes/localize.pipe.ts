@@ -1,9 +1,9 @@
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
+import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
+import { isLocalizationKey, LocalizationService } from '@tstdl/base/text';
 import { isNull } from '@tstdl/base/utils';
 import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
-import type { LocalizationData, LocalizationKey } from '../services';
-import { isLocalizationKey, LocalizationService } from '../services';
 
 @Pipe({
   name: 'localize',

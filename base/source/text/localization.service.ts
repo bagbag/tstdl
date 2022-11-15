@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { Enumerable } from '@tstdl/base/enumerable';
-import type { StringMap } from '@tstdl/base/types';
-import { assertDefinedPass, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '@tstdl/base/utils';
-import type { PropertyName } from '@tstdl/base/utils/object';
-import { deepEntries, getPropertyNameProxy, isPropertyName, propertyName } from '@tstdl/base/utils/object';
+import { singleton } from '#/container';
+import type { Record } from '#/types';
+import { deepEntries } from '#/utils/object/object';
+import type { PropertyName } from '#/utils/object/property-name';
+import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
+import { assertDefinedPass, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, map } from 'rxjs';
 
@@ -29,7 +29,7 @@ declare const parametersSymbol: unique symbol;
 export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]: Parameters };
 
 export type LocalizationData<Parameters = any> =
-  LocalizationKey
+  | LocalizationKey
   | { key: LocalizationKey, parameters?: void }
   | LocalizationDataObject<Parameters>;
 
@@ -75,9 +75,7 @@ type MappedLocalization = {
 
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
 
-@Injectable({
-  providedIn: 'root'
-})
+@singleton()
 export class LocalizationService {
   private readonly localizations: Map<string, MappedLocalization>;
   private readonly activeLanguageSubject: BehaviorSubject<Language | undefined>;
@@ -116,7 +114,7 @@ export class LocalizationService {
         this.setLocalization(localization);
       }
 
-      const availableLanguages = Enumerable.from(this.localizations).map(([, loc]) => loc.language).toArray();
+      const availableLanguages = [...this.localizations].map(([, loc]) => loc.language);
       this.availableLanguagesSubject.next(availableLanguages);
     }
   }
@@ -179,7 +177,7 @@ export class LocalizationService {
     }
 
     const template = templateOrFunction;
-    const templateParameters = ((isNotNull(parameters) && isObject(parameters)) ? parameters : {}) as StringMap;
+    const templateParameters = ((isNotNull(parameters) && isObject(parameters)) ? parameters : {}) as Record<string>;
     const matches = template.matchAll(parametersPattern);
 
     let currentIndex = 0;

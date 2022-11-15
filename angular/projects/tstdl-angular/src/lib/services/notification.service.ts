@@ -1,6 +1,6 @@
+import type { LocalizableText } from '@tstdl/base/text';
 import type { Record, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
-import type { LocalizableText } from '../models';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
 export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {

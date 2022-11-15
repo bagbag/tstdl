@@ -1,6 +1,6 @@
-import { Property, Type } from '#/schema';
+import { Property, Class } from '#/schema';
 
-@Type()
+@Class()
 class TestEntity {
   @Property()
   name: string;

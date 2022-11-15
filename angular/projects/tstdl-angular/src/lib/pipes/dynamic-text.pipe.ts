@@ -1,10 +1,10 @@
 import { AsyncPipe } from '@angular/common';
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
+import type { DynamicText } from '@tstdl/base/text';
+import { LocalizationService } from '@tstdl/base/text';
 import { isNullOrUndefined } from '@tstdl/base/utils/type-guards';
 import { isObservable } from 'rxjs';
-import type { DynamicText } from '../models';
-import { LocalizationService } from '../services';
 import { OptionalLocalizePipe } from './optional-localize.pipe';
 
 @Pipe({

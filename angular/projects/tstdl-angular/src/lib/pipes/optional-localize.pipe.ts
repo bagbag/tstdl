@@ -1,6 +1,6 @@
 import { Pipe } from '@angular/core';
+import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
 import { isString } from '@tstdl/base/utils';
-import type { LocalizationData, LocalizationKey } from '../services';
 import { LocalizePipe } from './localize.pipe';
 
 @Pipe({

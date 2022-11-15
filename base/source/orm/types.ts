@@ -1,9 +1,9 @@
 import { NotSupportedError } from '#/error/not-supported.error';
 import { reflectionRegistry } from '#/reflection';
-import type { ResolvedValueType } from '#/schema';
-import { getSchemaFromReflection, getSchemaValueTypes, isValueSchema } from '#/schema';
-import type { OneOrMany, Record, Type } from '#/types';
+import { getSchemaValueTypes, getValueTypeName, isValueSchema, ResolvedValueType, tryGetObjectSchemaFromReflection } from '#/schema';
+import { OneOrMany, Record, Type } from '#/types';
 import { toArray } from '#/utils/array';
+import { objectEntries } from '#/utils/object/object';
 import { isNotNull } from '#/utils/type-guards';
 
 export type EntityDefinition = {
@@ -18,7 +18,6 @@ export type EntityPropertyType = 'any' | 'string' | 'number' | 'boolean';
 export type PropertyDefinition = {
   type: OneOrMany<EntityPropertyType>,
   array?: boolean,
-  optional?: boolean,
   nullable?: boolean,
   unique?: boolean
 };
@@ -35,24 +34,22 @@ export function getEntityDefinitionFromSchema(type: Type): EntityDefinition | nu
     return null;
   }
 
-  const properties: Record<string, PropertyDefinition> = {};
+  const properties: Record<PropertyKey, PropertyDefinition> = {};
 
-  const schema = getSchemaFromReflection(type);
+  const schema = tryGetObjectSchemaFromReflection(type);
 
   if (isNotNull(schema)) {
-    for (const [key, property] of Object.entries(schema.properties)) {
+    for (const [key, property] of objectEntries(schema.properties)) {
       const valueTypes = getSchemaValueTypes(property);
       const valueTypesWithoutNullAndUndefined = valueTypes.filter((valueType) => (valueType != 'null') && (valueType != 'undefined'));
 
       const types = toArray(valueTypesWithoutNullAndUndefined).map(schemaValueTypeToEntityPropertyType);
 
-
       properties[key] = {
         type: (types.length > 1) ? types : types[0]!,
         array: (isValueSchema(property) && (property.array == true)),
-        optional: valueTypes.includes('undefined') || (isValueSchema(property) && (property.optional == true)),
-        nullable: valueTypes.includes('null') || (isValueSchema(property) && (property.nullable == true))
-      }
+        nullable: valueTypes.includes('null') || valueTypes.includes('undefined') || (isValueSchema(property) && ((property.nullable == true) || (property.optional == true)))
+      };
     }
   }
 
@@ -86,5 +83,5 @@ function schemaValueTypeToEntityPropertyType(valueType: ResolvedValueType): Enti
     return 'any';
   }
 
-  throw new NotSupportedError(`ValueType ${valueType} not supported.`);
+  throw new NotSupportedError(`ValueType ${getValueTypeName(valueType)} not supported.`);
 }

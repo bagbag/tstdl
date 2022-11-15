@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.80.0",
+  "version": "0.81.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -15,7 +15,7 @@
     "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
-    "luxon": "^3.0",
+    "luxon": "^3.1",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.5",
     "type-fest": "^2.19"
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/chroma-js": "2.1",
     "@types/koa__router": "12.0",
-    "@types/luxon": "3.0",
+    "@types/luxon": "3.1",
     "@types/minio": "7.0",
     "@types/mjml": "4.7",
     "@types/node": "18",
@@ -37,9 +37,9 @@
     "typescript-transform-paths": "3.4"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.4",
+    "@elastic/elasticsearch": "^8.5",
     "@koa/router": "^12.0",
-    "@tstdl/angular": "^0.80.0",
+    "@tstdl/angular": "^0.81.0",
     "chroma-js": "^2.4",
     "got": "^12.5",
     "handlebars": "^4.7",
