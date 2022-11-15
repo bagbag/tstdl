@@ -1,6 +1,6 @@
 import { singleton } from '#/container';
-import type { Enumeration, EnumerationValue, Record } from '#/types';
-import { enumValueName } from '#/utils/enum';
+import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types';
+import { enumEntries, enumValueName } from '#/utils/enum';
 import { deepEntries } from '#/utils/object/object';
 import type { PropertyName } from '#/utils/object/property-name';
 import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
@@ -116,7 +116,7 @@ export class LocalizationService {
     this.availableLanguages$ = this.availableLanguagesSubject.asObservable();
   }
 
-  registerLocalization(...localizations: Localization[]): void {
+  registerLocalization(...localizations: Localization<any, any>[]): void {
     for (const localization of localizations) {
       if (this.localizations.has(localization.language.code)) {
         throw new Error(`Localization ${localization.language.name} (${localization.language.code}) already registered.`);
@@ -152,7 +152,7 @@ export class LocalizationService {
     this.activeLanguageSubject.next(language);
   }
 
-  setLocalization(localization: Localization): void {
+  setLocalization(localization: Localization<any, any>): void {
     this.setLanguage(localization.language);
   }
 
@@ -231,6 +231,15 @@ export class LocalizationService {
 
 export function enumerationLocalization<T extends Enumeration>(enumeration: T, localization: EnumerationLocalization<T>): EnumerationLocalizationEntry<T> {
   return [enumeration, localization];
+}
+
+export function autoEnumerationLocalization<T extends Enumeration>(enumeration: T): EnumerationLocalizationEntry<T> {
+  if (isObject(enumeration)) {
+    return [enumeration, Object.fromEntries(enumEntries(enumeration as EnumerationObject)) as EnumerationLocalization<T>];
+  }
+
+  const arrayEntries = (enumeration as EnumerationArray).map((value) => [value, value] as const);
+  return [enumeration, Object.fromEntries(arrayEntries) as EnumerationLocalization<T>];
 }
 
 function buildMappedLocalization({ language, keys, enums }: Localization): MappedLocalization {
