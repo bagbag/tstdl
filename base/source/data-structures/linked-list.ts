@@ -2,7 +2,7 @@
 // eslint-disable-next-line max-classes-per-file
 import type { TryDereference } from '#/serializer/serializable';
 import { Serializable, serializable } from '#/serializer/serializable';
-import type { Predicate } from '#/utils/iterable-helpers';
+import type { Predicate } from '#/utils/iterable-helpers/types';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { List } from './list';
 

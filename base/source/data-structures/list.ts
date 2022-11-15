@@ -1,4 +1,4 @@
-import type { Predicate } from '#/utils/iterable-helpers';
+import type { Predicate } from '#/utils/iterable-helpers/types';
 import { isDefined } from '#/utils/type-guards';
 import { Collection } from './collection';
 import { IndexOutOfBoundsError } from './index-out-of-bounds.error';

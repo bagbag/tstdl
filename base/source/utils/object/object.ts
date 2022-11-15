@@ -1,5 +1,7 @@
 import type { ObjectLiteral, PickBy, Record } from '#/types';
-import { filterAsync, mapAsync, toArrayAsync } from '../async-iterable-helpers';
+import { filterAsync } from '../async-iterable-helpers/filter';
+import { mapAsync } from '../async-iterable-helpers/map';
+import { toArrayAsync } from '../async-iterable-helpers/to-array';
 import { isArray, isObject, isSymbol, isUndefined } from '../type-guards';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {

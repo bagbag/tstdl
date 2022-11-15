@@ -1,5 +1,5 @@
 import type { AnyIterable } from '../any-iterable-iterator';
-import type { TypePredicate } from '../iterable-helpers';
+import type { TypePredicate } from '../iterable-helpers/types';
 import { filterAsync } from './filter';
 import type { AsyncPredicate } from './types';
 

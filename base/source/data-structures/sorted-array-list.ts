@@ -4,7 +4,7 @@ import type { TryDereference } from '#/serializer';
 import { Serializable, serializable } from '#/serializer';
 import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySearchLast } from '#/utils/binary-search';
 import { compareByValue } from '#/utils/comparison';
-import type { Predicate } from '#/utils/iterable-helpers';
+import type { Predicate } from '#/utils/iterable-helpers/types';
 import { Comparator } from '#/utils/sort';
 import { isUndefined } from '#/utils/type-guards';
 import { List } from './list';

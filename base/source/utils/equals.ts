@@ -4,7 +4,7 @@ import type { BinaryData, Record } from '#/types';
 import { toArray } from './array';
 import { toUint8Array } from './binary';
 import { compareByValue } from './comparison';
-import { sort } from './iterable-helpers';
+import { sort } from './iterable-helpers/sort';
 import type { Comparator } from './sort';
 import { isDefined } from './type-guards';
 

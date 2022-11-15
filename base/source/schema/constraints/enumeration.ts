@@ -3,7 +3,7 @@
 import type { JsonPath } from '#/json-path/json-path';
 import type { Enumeration, EnumerationValue, OneOrMany } from '#/types';
 import { enumValues } from '#/utils/enum';
-import { distinct } from '#/utils/iterable-helpers';
+import { distinct } from '#/utils/iterable-helpers/distinct';
 import { isArray, isString } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
 import type { ConstraintContext, ConstraintResult } from '../types';

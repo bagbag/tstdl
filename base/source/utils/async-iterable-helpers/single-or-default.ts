@@ -1,5 +1,5 @@
 import type { AnyIterable } from '../any-iterable-iterator';
-import type { TypePredicate } from '../iterable-helpers';
+import type { TypePredicate } from '../iterable-helpers/types';
 import type { AsyncPredicate } from './types';
 
 export async function singleOrDefaultAsync<T, D, TPredicate extends T = T>(iterable: AnyIterable<T>, defaultValue: D, predicate: TypePredicate<T, TPredicate> | AsyncPredicate<T> = (() => true)): Promise<TPredicate | D> {

@@ -1,7 +1,8 @@
 import type { AnyIterable } from '#/utils/any-iterable-iterator';
 import type { Comparator } from '#/utils/sort';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, IterableItemMetadata, IteratorFunction, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, Predicate, range, reduce, Reducer, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, TypePredicate, whileSync } from '../utils/iterable-helpers';
+import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
 import { isNotNullOrUndefined } from '../utils/type-guards';
 import { AsyncEnumerable, setEnumerable } from './async-enumerable';
 import type { EnumerableMethods } from './enumerable-methods';

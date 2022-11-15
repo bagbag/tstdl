@@ -1,5 +1,6 @@
 import { compareByValueSelection } from '#/utils/comparison';
-import { group, sort } from '#/utils/iterable-helpers';
+import { group } from '#/utils/iterable-helpers/group';
+import { sort } from '#/utils/iterable-helpers/sort';
 import { isDefined } from '#/utils/type-guards';
 import { MultiError } from '../error/multi.error';
 import { parallelForEach } from '../utils/async-iterable-helpers/parallel';

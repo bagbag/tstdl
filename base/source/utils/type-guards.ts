@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line */
 
 import { supportsBlob, supportsReadableStream } from '#/supports';
-import type { AbstractConstructor, ObjectLiteral, TypedArray } from '#/types';
-import { AssertionError } from '../error';
+import type { AbstractConstructor, TypedArray } from '#/types';
+import { AssertionError } from '../error/assertion.error';
 
 export type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
 export type InferIsNotType<ValueType, T> = T extends (value: any) => value is infer R ? Exclude<ValueType, R> : never;
@@ -91,7 +91,7 @@ export function assertNotSymbol<T>(value: T, message: AssertionMessage = 'Expect
 export function assertSymbolPass(value: any, message?: AssertionMessage): InferIsType<typeof isSymbol> { assertSymbol(value, message); return value; }
 export function assertNotSymbolPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isSymbol> { assertNotSymbol(value, message); return value; }
 
-export function isObject<T extends object = object>(value: any): value is T { return isNotNullOrUndefined(value) && ((Reflect.getPrototypeOf(value as ObjectLiteral) == Object.prototype) || isNull(Reflect.getPrototypeOf(value as ObjectLiteral))); }
+export function isObject<T extends object = object>(value: any): value is T { return (value as object | undefined)?.constructor == Object; }
 export function isNotObject<T>(value: T): value is InferIsNotType<T, typeof isObject> { return !isObject(value); }
 export function assertObject<T extends object = object>(value: any, message: AssertionMessage = 'Expected value to be object.'): asserts value is InferIsType<typeof isObject<T>> { assert(isObject(value), message); }
 export function assertNotObject<T>(value: T, message: AssertionMessage = 'Expected value to not be object.'): asserts value is InferIsNotType<T, typeof isObject> { assert(isNotObject(value), message); }

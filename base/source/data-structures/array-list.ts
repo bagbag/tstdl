@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import type { Predicate } from '#/utils/iterable-helpers';
+import type { Predicate } from '#/utils/iterable-helpers/types';
 import { List } from './list';
 
 export class ArrayList<T> extends List<T, ArrayList<T>> {

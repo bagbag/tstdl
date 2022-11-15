@@ -1,5 +1,5 @@
 import { ObservableFinalizationRegistry } from '#/memory';
-import { drain } from '#/utils/iterable-helpers';
+import { drain } from '#/utils/iterable-helpers/drain';
 import { isDefined, isUndefined } from '#/utils/type-guards';
 import { takeUntil } from 'rxjs';
 import { Collection } from './collection';

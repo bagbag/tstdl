@@ -5,7 +5,7 @@ import type { ObjectLiteral } from '#/types';
 import type { Stream, Transform } from 'stream';
 import type { ReadableStream as NodeReadableStream } from 'stream/web';
 import type * as ZlibType from 'zlib';
-import { isAsyncIterable } from './async-iterable-helpers';
+import { isAsyncIterable } from './async-iterable-helpers/is-async-iterable';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { ForwardRef } from './object';
