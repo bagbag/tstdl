@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.81.5",
+  "version": "0.81.6",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -33,7 +33,7 @@
     "eslint": "8",
     "ttypescript": "1.5",
     "typedoc": "0.23",
-    "typescript": "4.9",
+    "typescript": "4.8",
     "typescript-transform-paths": "3.4"
   },
   "peerDependencies": {
