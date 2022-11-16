@@ -88,6 +88,16 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     this.clear();
   }
 
+  includes(item: T): boolean {
+    for (const entry of this) {
+      if (entry === item) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   add(item: T): void {
     this.increaseBufferSizeIfNeeded();
 

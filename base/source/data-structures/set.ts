@@ -11,6 +11,10 @@ export class Set<T> extends Collection<T, Set<T>> implements globalThis.Set<T> {
     this.updateSize();
   }
 
+  includes(item: T): boolean {
+    return this.has(item);
+  }
+
   add(item: T): this {
     this.backingSet.add(item);
     this.updateSize();

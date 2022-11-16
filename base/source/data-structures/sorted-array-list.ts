@@ -6,7 +6,7 @@ import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySear
 import { compareByValue } from '#/utils/comparison';
 import type { Predicate } from '#/utils/iterable-helpers/types';
 import { Comparator } from '#/utils/sort';
-import { isUndefined } from '#/utils/type-guards';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import { List } from './list';
 
 export type RangeType = 'inclusive' | 'exclusive';
@@ -80,6 +80,11 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     }
 
     return undefined;
+  }
+
+  includes(item: T): boolean {
+    const index = this.fastIndexOf(item);
+    return isDefined(index);
   }
 
   /** same as {@link add} as it is sorted */

@@ -114,6 +114,8 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     this.changeSubject.next(this as unknown as TThis);
   }
 
+  abstract includes(item: T): boolean;
+
   /** add item to collection */
   abstract add(item: T): void;
 

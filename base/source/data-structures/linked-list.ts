@@ -177,6 +177,16 @@ export class LinkedList<T> extends List<T, LinkedList<T>> implements Serializabl
     this.emitChange();
   }
 
+  includes(item: T): boolean {
+    for (const entry of this) {
+      if (entry === item) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   add(item: T): LinkedListNode<T> {
     const node: LinkedListNode<T> = {
       item,

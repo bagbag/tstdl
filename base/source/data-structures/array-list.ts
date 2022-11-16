@@ -63,6 +63,10 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
     return undefined;
   }
 
+  includes(item: T): boolean {
+    return this.backingArray.includes(item);
+  }
+
   prepend(item: T): void {
     this.backingArray.unshift(item);
     this.updateSize();

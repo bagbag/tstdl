@@ -35,6 +35,14 @@ export class IterableWeakMap<K extends object, V> extends Collection<[K, V], Ite
     }
   }
 
+  includes([key, value]: [K, V]): boolean {
+    if (!this.has(key)) {
+      return false;
+    }
+
+    return this.get(key) == value;
+  }
+
   has(key: K): boolean {
     return this.weakMap.has(key);
   }

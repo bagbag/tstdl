@@ -31,6 +31,14 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefM
     this._clear();
   }
 
+  includes([key, value]: [K, V]): boolean {
+    if (!this.has(key)) {
+      return false;
+    }
+
+    return this.get(key) == value;
+  }
+
   has(key: K): boolean {
     return isDefined(this.get(key));
   }

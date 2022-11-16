@@ -11,6 +11,14 @@ export class Map<K, V> extends Collection<[K, V], Map<K, V>> implements globalTh
     this.updateSize();
   }
 
+  includes([key, value]: [K, V]): boolean {
+    if (!this.has(key)) {
+      return false;
+    }
+
+    return this.get(key) == value;
+  }
+
   set(key: K, value: V): this {
     this.backingMap.set(key, value);
     this.updateSize();

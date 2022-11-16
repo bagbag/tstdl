@@ -27,6 +27,14 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     this.rootNode = createNode(undefined, undefined, this.newMapProvider);
   }
 
+  includes([key, value]: [K, T]): boolean {
+    if (!this.has(key)) {
+      return false;
+    }
+
+    return this.get(key) == value;
+  }
+
   add(value: [K, T]): void {
     this.set(value[0], value[1]);
   }
@@ -106,19 +114,19 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     return this.items();
   }
 
-  *keys(): IterableIterator<K> {
+  * keys(): IterableIterator<K> {
     for (const item of this) {
       yield item[0];
     }
   }
 
-  *values(): IterableIterator<T> {
+  * values(): IterableIterator<T> {
     for (const item of this) {
       yield item[1];
     }
   }
 
-  *items(): IterableIterator<[K, T]> {
+  * items(): IterableIterator<[K, T]> {
     const queue = new CircularBuffer<[any[], Node]>();
     queue.add([[], this.rootNode]);
 
