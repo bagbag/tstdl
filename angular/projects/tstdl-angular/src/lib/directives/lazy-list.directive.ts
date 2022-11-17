@@ -10,7 +10,8 @@ type ElementOrElementRef = Element | ElementRef<Element>;
 
 @Directive({
   selector: '[tslLazyList]',
-  exportAs: 'lazyList'
+  exportAs: 'lazyList',
+  standalone: true
 })
 export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> implements AfterViewInit {
   private readonly changeDetector: ChangeDetectorRef;

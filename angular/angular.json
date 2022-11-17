@@ -2,58 +2,63 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "newProjectRoot": "projects",
+  "schematics": {
+    "@schematics/angular:class": {
+      "skipTests": true
+    },
+    "@schematics/angular:component": {
+      "style": "scss",
+      "changeDetection": "OnPush",
+      "skipTests": true,
+      "standalone": true
+    },
+    "@schematics/angular:directive": {
+      "skipTests": true,
+      "standalone": true
+    },
+    "@schematics/angular:guard": {
+      "skipTests": true
+    },
+    "@schematics/angular:interceptor": {
+      "skipTests": true
+    },
+    "@schematics/angular:pipe": {
+      "skipTests": true,
+      "standalone": true
+    },
+    "@schematics/angular:resolver": {
+      "skipTests": true
+    },
+    "@schematics/angular:service": {
+      "skipTests": true
+    }
+  },
   "projects": {
     "tstdl-angular": {
       "projectType": "library",
       "root": "projects/tstdl-angular",
       "sourceRoot": "projects/tstdl-angular/src",
-      "schematics": {
-        "@schematics/angular:component": {
-          "style": "scss",
-          "skipTests": true,
-          "changeDetection": "OnPush"
-        },
-        "@schematics/angular:class": {
-          "skipTests": true
-        },
-        "@schematics/angular:directive": {
-          "skipTests": true
-        },
-        "@schematics/angular:guard": {
-          "skipTests": true
-        },
-        "@schematics/angular:interceptor": {
-          "skipTests": true
-        },
-        "@schematics/angular:module": {},
-        "@schematics/angular:pipe": {
-          "skipTests": true
-        },
-        "@schematics/angular:service": {
-          "skipTests": true
-        },
-        "@schematics/angular:application": {
-          "strict": true
-        }
-      },
       "prefix": "tsl",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:ng-packagr",
           "options": {
-            "tsConfig": "projects/tstdl-angular/tsconfig.lib.json",
             "project": "projects/tstdl-angular/ng-package.json"
           },
           "configurations": {
             "production": {
               "tsConfig": "projects/tstdl-angular/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/tstdl-angular/tsconfig.lib.json"
             }
-          }
+          },
+          "defaultConfiguration": "production"
         }
       }
     }
   },
   "cli": {
-    "analytics": "44ff302b-c6ea-4ed9-a1e1-884d5e25a0f1"
+    "analytics": false
   }
 }

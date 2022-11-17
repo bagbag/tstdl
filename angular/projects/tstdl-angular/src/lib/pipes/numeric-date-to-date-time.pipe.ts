@@ -5,7 +5,8 @@ import type { DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
 
 @Pipe({
-  name: 'numericDateToDateTime'
+  name: 'numericDateToDateTime',
+  standalone: true
 })
 export class NumericDateToDateTimePipe implements PipeTransform {
   transform(value: number, options?: DateTimeJSOptions): DateTime {

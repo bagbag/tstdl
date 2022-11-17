@@ -4,7 +4,7 @@ import { isArray, isString } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'numberLocale',
-  pure: true
+  standalone: true
 })
 export class NumberLocalePipe implements PipeTransform {
   transform(value: number, locales: string | string[], options?: Intl.NumberFormatOptions): string;

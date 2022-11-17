@@ -4,7 +4,8 @@ import type { SerializationOptions } from '@tstdl/base/serializer';
 import { serialize } from '@tstdl/base/serializer';
 
 @Pipe({
-  name: 'serialize'
+  name: 'serialize',
+  standalone: true
 })
 export class SerializePipe implements PipeTransform {
   transform(value: unknown, options?: SerializationOptions): unknown {

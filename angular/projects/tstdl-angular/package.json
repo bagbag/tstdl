@@ -1,9 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.81.1",
-  "publishConfig": {
-    "access": "public"
-  },
+  "version": "0.81.2",
   "dependencies": {
     "tslib": "^2.4"
   },

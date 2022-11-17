@@ -4,7 +4,8 @@ import type { SafeUrl } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
 
 @Pipe({
-  name: 'safeUrl'
+  name: 'safeUrl',
+  standalone: true
 })
 export class SafeUrlPipe implements PipeTransform {
   private readonly domSanitizer: DomSanitizer;

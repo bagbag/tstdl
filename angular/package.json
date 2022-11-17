@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:watch": "ng build --watch --configuration development",
     "build:prod": "ng build --configuration production",
     "pub": "npm run build:prod && npm publish dist/tstdl-angular/"
   },
@@ -26,11 +27,9 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^15.0",
-    "@angular-devkit/core": "^15.0",
     "@angular/cli": "^15.0",
     "@angular/compiler-cli": "^15.0",
     "@types/luxon": "3.1",
-    "@types/node": ">=18",
     "@typescript-eslint/eslint-plugin": "5",
     "@typescript-eslint/parser": "5",
     "eslint": "8",

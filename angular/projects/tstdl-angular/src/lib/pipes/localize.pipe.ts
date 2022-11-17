@@ -7,17 +7,20 @@ import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
 
 @Pipe({
   name: 'localize',
-  pure: false
+  pure: false,
+  standalone: true
 })
 export class LocalizePipe implements PipeTransform, OnDestroy {
   private readonly transformSubject: Subject<LocalizationData>;
   private readonly destroySubject: Subject<void>;
 
-  private value: string;
+  private value: string | null;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
     this.destroySubject = new Subject();
     this.transformSubject = new Subject();
+
+    this.value = null;
 
     this.transformSubject
       .pipe(

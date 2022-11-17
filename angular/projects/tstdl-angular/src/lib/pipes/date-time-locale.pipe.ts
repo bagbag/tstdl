@@ -5,7 +5,8 @@ import type { DateTimeFormatOptions, LocaleOptions } from 'luxon';
 import { DateTime } from 'luxon';
 
 @Pipe({
-  name: 'dateTimeLocale'
+  name: 'dateTimeLocale',
+  standalone: true
 })
 export class DateTimeLocalePipe implements PipeTransform {
   transform(dateTimeOrTimestamp: DateTime | number, format?: keyof typeof DateTime | DateTimeFormatOptions, options?: LocaleOptions): string {

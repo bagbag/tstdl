@@ -5,7 +5,8 @@ import { LocalizePipe } from './localize.pipe';
 
 @Pipe({
   name: 'optionalLocalize',
-  pure: false
+  pure: false,
+  standalone: true
 })
 export class OptionalLocalizePipe extends LocalizePipe {
   override transform(localizationKeyOrString: LocalizationKey | string | null): string | null;

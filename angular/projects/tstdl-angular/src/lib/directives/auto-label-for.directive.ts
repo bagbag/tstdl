@@ -4,7 +4,8 @@ import { isDefined, isUndefined } from '@tstdl/base/utils';
 import type { AutoIdDirective } from './auto-id.directive';
 
 @Directive({
-  selector: 'label, [tslAutoFor]'
+  selector: 'label, [tslAutoFor]',
+  standalone: true
 })
 export class AutoForDirective implements AfterViewInit {
   private readonly elementRef: ElementRef;

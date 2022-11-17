@@ -2,7 +2,8 @@ import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
 
 @Pipe({
-  name: 'pad'
+  name: 'pad',
+  standalone: true
 })
 export class PadPipe implements PipeTransform {
   transform(input: string | number, length: number, fillString: string | number = ' ', position: 'start' | 'end' = 'start'): string {
@@ -13,7 +14,7 @@ export class PadPipe implements PipeTransform {
     }
 
     const text = inputType == 'string' ? (input as string) : (input as number).toString();
-    const pad = (position == 'start' ? String.prototype.padStart : String.prototype.padEnd).bind(text);
+    const pad = position == 'start' ? String.prototype.padStart.bind(text) : String.prototype.padEnd.bind(text);
     return pad(length, fillString.toString());
   }
 }

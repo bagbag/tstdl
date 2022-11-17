@@ -11,7 +11,8 @@ import { LifecycleUtils } from '../utils';
  * Uses a div of size {@link intrinsicWidth} and {@link intrinsicHeight} to track visibility using {@link IntersectionObserver}
  */
 @Directive({
-  selector: '[tslLazy]'
+  selector: '[tslLazy]',
+  standalone: true
 })
 export class LazyDirective extends LifecycleUtils<LazyDirective> implements AfterViewInit, OnDestroy {
   private readonly templateRef: TemplateRef<any>;

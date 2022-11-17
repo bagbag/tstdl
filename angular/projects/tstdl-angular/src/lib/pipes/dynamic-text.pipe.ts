@@ -9,7 +9,8 @@ import { OptionalLocalizePipe } from './optional-localize.pipe';
 
 @Pipe({
   name: 'dynamicText',
-  pure: false
+  pure: false,
+  standalone: true
 })
 export class DynamicTextPipe implements PipeTransform, OnDestroy {
   private readonly asyncPipe: AsyncPipe;

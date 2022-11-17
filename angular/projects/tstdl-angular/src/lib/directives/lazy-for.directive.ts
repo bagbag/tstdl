@@ -22,7 +22,8 @@ export type LazyForContext<T, U extends Iterable<U>> = {
 };
 
 @Directive({
-  selector: '[tslLazyFor]'
+  selector: '[tslLazyFor]',
+  standalone: true
 })
 export class LazyForDirective<T, U extends Iterable<T>> extends LifecycleUtils<LazyForDirective<T, U>> implements AfterViewInit {
   private readonly changeDetector: ChangeDetectorRef;

@@ -24,7 +24,8 @@ type LetInput<T> = LetAsyncInput<T> | T;
 type LetOutput<T> = T extends LetAsyncInput<infer U> ? U : T;
 
 @Directive({
-  selector: '[tslLet]'
+  selector: '[tslLet]',
+  standalone: true
 })
 export class LetDirective<T> implements OnDestroy {
   static ngTemplateGuard_tslLet: 'binding'; // eslint-disable-line @typescript-eslint/naming-convention

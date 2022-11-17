@@ -3,7 +3,8 @@ import { Pipe } from '@angular/core';
 import { decycle } from '@tstdl/base/utils/object/decycle';
 
 @Pipe({
-  name: 'decycle'
+  name: 'decycle',
+  standalone: true
 })
 export class DecyclePipe implements PipeTransform {
   transform(value: unknown, replacer?: (value: any) => any): unknown {

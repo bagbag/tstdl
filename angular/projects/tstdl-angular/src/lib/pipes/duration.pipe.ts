@@ -5,7 +5,8 @@ import type { DurationObjectUnits, DurationOptions } from 'luxon';
 import { Duration } from 'luxon';
 
 @Pipe({
-  name: 'duration'
+  name: 'duration',
+  standalone: true
 })
 export class DurationPipe implements PipeTransform {
   transform(millisecondsOrObject: number | Duration | DurationObjectUnits, format: string, options?: DurationOptions, formatOptions?: Parameters<Duration['toFormat']>[1]): string {

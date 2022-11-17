@@ -4,7 +4,8 @@ import { Alphabet, getRandomString } from '@tstdl/base/utils';
 
 @Directive({
   selector: 'input, [tslAutoId]',
-  exportAs: 'autoId'
+  exportAs: 'autoId',
+  standalone: true
 })
 export class AutoIdDirective implements OnInit {
   private readonly elementRef: ElementRef;

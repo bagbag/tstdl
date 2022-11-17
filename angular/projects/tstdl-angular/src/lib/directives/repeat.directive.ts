@@ -8,7 +8,8 @@ export interface RepeatContext {
 }
 
 @Directive({
-  selector: '[tslRepeat]'
+  selector: '[tslRepeat]',
+  standalone: true
 })
 export class RepeatDirective extends LifecycleUtils<RepeatDirective> {
   /** how many times to repeat */

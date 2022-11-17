@@ -2,7 +2,8 @@ import { Directive, ElementRef, HostListener, Input } from '@angular/core';
 import { isRegExp, isString, isUndefined } from '@tstdl/base/utils';
 
 @Directive({
-  selector: 'input[tslInputPattern]'
+  selector: 'input[tslInputPattern]',
+  standalone: true
 })
 export class InputPatternDirective {
   private readonly element: HTMLInputElement;

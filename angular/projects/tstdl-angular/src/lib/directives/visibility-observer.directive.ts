@@ -1,25 +1,26 @@
 import type { OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { Directive, ElementRef, EventEmitter, Input, Output, Renderer2 } from '@angular/core';
-import { isDefined, isNull, isNullOrUndefined, isNumber } from '@tstdl/base/utils';
+import { isDefined, isNull, isNullOrUndefined, isNumber, isUndefined } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, filter, map } from 'rxjs';
 
 @Directive({
   selector: '[visibilityObserver]',
-  exportAs: 'visibilityObserver'
+  exportAs: 'visibilityObserver',
+  standalone: true
 })
 export class VisibilityObserverDirective implements OnDestroy, OnInit, OnChanges {
   private readonly renderer: Renderer2;
   private readonly isVisibleSubject: BehaviorSubject<boolean>;
   private readonly visibilitySubject: BehaviorSubject<number>;
 
-  private observer: IntersectionObserver;
+  private observer: IntersectionObserver | undefined;
 
   readonly elementRef: ElementRef<HTMLElement>;
   readonly isVisible$: Observable<boolean>;
   readonly visibility$: Observable<number>;
 
-  @Input('visibilityObserver') dataAttribute: string;
+  @Input('visibilityObserver') dataAttribute: string | undefined;
   @Input('visibilityTreshold') treshold: number;
   @Input('visibilityMargin') margin: string;
   @Input('visibilityRoot') root: HTMLElement | number | null | undefined;
@@ -87,9 +88,7 @@ export class VisibilityObserverDirective implements OnDestroy, OnInit, OnChanges
   }
 
   private setupObserver(): void {
-    if (isDefined(this.observer)) {
-      this.unobserve();
-    }
+    this.unobserve();
 
     let root: HTMLElement | null = isNullOrUndefined(this.root)
       ? null
@@ -112,6 +111,10 @@ export class VisibilityObserverDirective implements OnDestroy, OnInit, OnChanges
   }
 
   private unobserve(): void {
+    if (isUndefined(this.observer)) {
+      return;
+    }
+
     this.observer.unobserve(this.elementRef.nativeElement);
     this.observer.disconnect();
   }

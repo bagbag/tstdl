@@ -13,17 +13,20 @@ type EnumLocalizationData = {
 
 @Pipe({
   name: 'localizeEnum',
-  pure: false
+  pure: false,
+  standalone: true
 })
 export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
   private readonly transformSubject: Subject<EnumLocalizationData>;
   private readonly destroySubject: Subject<void>;
 
-  private value: string;
+  private value: string | null;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
     this.destroySubject = new Subject();
     this.transformSubject = new Subject();
+
+    this.value = null;
 
     this.transformSubject
       .pipe(
