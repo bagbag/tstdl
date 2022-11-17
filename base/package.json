@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.81.6",
+  "version": "0.81.7",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -47,7 +47,7 @@
     "koa": "^2.13",
     "minio": "^7.0",
     "mjml": "^4.13",
-    "mongodb": "4.11",
+    "mongodb": "4.12",
     "nodemailer": "^6.8",
     "puppeteer": "^19.2",
     "undici": "^5.12",
