@@ -4,7 +4,8 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
   selector: 'tsl-skeleton',
   templateUrl: './skeleton.component.html',
   styleUrls: ['./skeleton.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true
 })
 export class SkeletonComponent {
   @Input()
