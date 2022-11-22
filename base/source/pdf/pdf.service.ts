@@ -95,7 +95,7 @@ export type PdfTemplateOptions = PdfRenderOptions;
 
 export class PdfTemplate extends Template<{ header: false, body: true, footer: false }, PdfRenderOptions> {
   @Optional()
-  override options?: PdfTemplateOptions;
+  declare options?: PdfTemplateOptions;
 }
 
 @singleton()

@@ -10,7 +10,7 @@ export type SearchCursorOptions<T extends Entity> = QueryOptions<T> & {
 declare const type: unique symbol;
 
 export abstract class SearchIndex<T extends Entity> {
-  readonly [type]: T;
+  declare [type]: T;
 
   /**
    * search all entities using an automatic cursor

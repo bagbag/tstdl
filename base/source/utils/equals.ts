@@ -6,9 +6,18 @@ import { toUint8Array } from './binary';
 import { compareByValue } from './comparison';
 import { sort } from './iterable-helpers/sort';
 import type { Comparator } from './sort';
-import { isDefined } from './type-guards';
+import { isDefined, isNotNull, isNull } from './type-guards';
 
-const defaultArrayEqualsComparator = (a: unknown, b: unknown): boolean => a === b;
+export interface Equals<T = unknown> {
+  [Equals.symbol](other: T): boolean;
+}
+
+const equalsSymbol: unique symbol = Symbol('equals');
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
+export const Equals = {
+  symbol: equalsSymbol
+} as const;
 
 export type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
 
@@ -19,7 +28,7 @@ export type ArrayEqualsOptions<A, B> = {
 
 export function arrayEquals<A, B>(a: readonly A[], b: readonly B[], options?: ArrayEqualsOptions<A, B>): boolean {
   const _sort = options?.sort ?? false;
-  const comparator = options?.comparator ?? defaultArrayEqualsComparator;
+  const comparator = options?.comparator ?? equals;
 
   if (a.length != b.length) {
     return false;
@@ -74,7 +83,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
         : false;
 
     case 'object':
-      if (a === null || b === null) { // hasn't passed equals check at top, so one must be a true object
+      if (isNull(a) || isNull(b)) { // hasn't passed equals check at top, so one must be a true object
         return false;
       }
 
@@ -97,8 +106,16 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
           : a === b;
       }
 
-      if (aPrototype != Object.prototype && aPrototype !== null) { // checking a is enough, because b must have equal prototype (checked above)
-        throw new Error('equals only supports plain objects, arrays and primitives');
+      if (Equals.symbol in a) {
+        return (a as Equals)[Equals.symbol](b);
+      }
+
+      if (Equals.symbol in b) {
+        return (b as Equals)[Equals.symbol](a);
+      }
+
+      if ((aPrototype != Object.prototype) && isNotNull(aPrototype)) { // checking a is enough, because b must have equal prototype (checked above)
+        throw new Error('Equals only supports literal objects, arrays, primitives and Equals interface implementations.');
       }
 
       if (options.deep == false) {

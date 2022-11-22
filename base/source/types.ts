@@ -22,6 +22,9 @@ export type Nested<T> = T | NestedObject<T> | NestedArray<T>;
 export type NestedObject<T> = { [key: string]: Nested<T> };
 export type NestedArray<T> = T[];
 
+export type FilledArray<T> = [T, ...(T)[]];
+export type ReadonlyFilledArray<T> = readonly [T, ... (T)[]];
+
 export type Primitive = string | number | boolean | bigint | null | undefined | symbol;
 export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
