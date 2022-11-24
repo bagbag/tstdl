@@ -1,4 +1,4 @@
-import type { LocalizableText } from '@tstdl/base/text';
+import type { DynamicText } from '@tstdl/base/text';
 import type { Record, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
 
@@ -16,7 +16,7 @@ export type MessageBoxInputOutput<T extends MessageBoxInput> =
   : never;
 
 export type MessageBoxAction<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
-  text: LocalizableText,
+  text: DynamicText,
   value?: T,
   disableOnInvalidInputs?: boolean,
   handler?: (value: T, inputs: MessageBoxInputsOutput<I>) => any | Promise<any>
@@ -35,8 +35,8 @@ type MessageBoxInputBase<Type extends MessageBoxInputType> = { type: Type };
 export type MessageBoxTextInput = MessageBoxInputBase<MessageBoxTextInputType> & {
   inputType?: InputType,
   mode?: InputMode,
-  label?: LocalizableText,
-  placeholder?: LocalizableText,
+  label?: DynamicText,
+  placeholder?: DynamicText,
   initialValue?: any,
   required?: boolean,
   attributes?: TypedOmit<InputAttributes, 'type' | 'mode' | 'placeholder' | 'required' | 'value'>,
@@ -44,12 +44,12 @@ export type MessageBoxTextInput = MessageBoxInputBase<MessageBoxTextInputType> &
 };
 
 export type MessageBoxSelectInputItem<T> = {
-  label: LocalizableText,
+  label: DynamicText,
   value: T
 };
 
 export type MessageBoxSelectInput<T> = MessageBoxInputBase<MessageBoxSelectInputType> & {
-  label?: LocalizableText,
+  label?: DynamicText,
   items: MessageBoxSelectInputItem<T>[],
   initialValue?: T,
   required?: boolean
@@ -59,9 +59,9 @@ export type MessageBoxInput<T = any> = MessageBoxTextInput | MessageBoxSelectInp
 
 export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
   type?: NotificationType,
-  header?: LocalizableText,
-  subHeader?: LocalizableText,
-  message?: LocalizableText,
+  header?: DynamicText,
+  subHeader?: DynamicText,
+  message?: DynamicText,
   actions?: MessageBoxAction<T>[],
   inputs?: I,
   backdropDismiss?: boolean
@@ -69,8 +69,8 @@ export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInput
 
 export type NotifyData = {
   type?: NotificationType,
-  header?: LocalizableText,
-  message: LocalizableText,
+  header?: DynamicText,
+  message: DynamicText,
   duration?: number
 };
 

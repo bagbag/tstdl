@@ -49,7 +49,7 @@
     "mjml": "^4.13",
     "mongodb": "4.12",
     "nodemailer": "^6.8",
-    "puppeteer": "^19.2",
+    "puppeteer": "^19.3",
     "undici": "^5.12",
     "urlpattern-polyfill": "^6.0"
   },
