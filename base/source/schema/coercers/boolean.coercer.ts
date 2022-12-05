@@ -27,7 +27,7 @@ export class BooleanCoercer extends SchemaValueCoercer {
         return { success: true, value: false };
 
       default:
-        return { success: false, error: SchemaError.couldNotCoerce(Boolean, value.toString(), path, undefined, { fast: context.options.fastErrors }) };
+        return { success: false, error: SchemaError.couldNotCoerce(Boolean, value.toString(), path, { fast: context.options.fastErrors }) };
     }
   }
 }

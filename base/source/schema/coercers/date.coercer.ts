@@ -13,7 +13,7 @@ export class DateCoercer extends SchemaValueCoercer {
     const date = new Date(parseValue);
 
     if (Number.isNaN(date.getTime())) {
-      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, value.toString(), path, undefined, { fast: context.options.fastErrors }) };
+      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, value.toString(), path, { fast: context.options.fastErrors }) };
     }
 
     return { success: true, value: date };

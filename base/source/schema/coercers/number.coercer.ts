@@ -11,7 +11,7 @@ export class NumberCoercer extends SchemaValueCoercer {
     const result = Number(value);
 
     if (Number.isNaN(result)) {
-      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, value.toString(), path, 'Value is not a number.', { fast: context.options.fastErrors }) };
+      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, value.toString(), path, { fast: context.options.fastErrors, customMessage: 'Value is not a number.' }) };
     }
 
     return { success: true, value: result };

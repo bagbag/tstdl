@@ -19,7 +19,7 @@ export class RegExpCoercer extends SchemaValueCoercer {
       return { success: true, value: RegExp(value, this.flags) };
     }
     catch (error) {
-      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, 'invalid regexp pattern', path, (error as Error).message, { fast: context.options.fastErrors }) };
+      return { success: false, error: SchemaError.couldNotCoerce(this.targetType, 'invalid regexp pattern', path, { fast: context.options.fastErrors, customMessage: (error as Error).message }) };
     }
   }
 }

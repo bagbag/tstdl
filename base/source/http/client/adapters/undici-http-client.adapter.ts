@@ -7,7 +7,6 @@ import { Readable } from 'stream';
 import type { ReadableStream } from 'stream/web';
 import type { Dispatcher } from 'undici';
 import { errors as undiciErrors, request } from 'undici';
-import type { DispatchOptions } from 'undici/types/dispatcher';
 import type { HttpClientRequest } from '../http-client-request';
 import { HttpClientResponse } from '../http-client-response';
 import { HttpClientAdapter } from '../http-client.adapter';
@@ -30,7 +29,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
 
   // eslint-disable-next-line max-lines-per-function, max-statements
   async call(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse> {
-    let body: DispatchOptions['body'];
+    let body: Dispatcher.DispatchOptions['body'];
 
     if (isDefined(httpClientRequest.body?.json)) {
       body = JSON.stringify(httpClientRequest.body!.json);

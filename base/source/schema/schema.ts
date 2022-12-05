@@ -4,7 +4,7 @@ import { toArray } from '#/utils/array/array';
 import { noop } from '#/utils/noop';
 import { objectKeys } from '#/utils/object/object';
 import { differenceSets } from '#/utils/set';
-import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
+import { isArray, isDefined, isFunction, isNull, isUndefined } from '#/utils/type-guards';
 import { booleanCoercer } from './coercers/boolean.coercer';
 import { dateCoercer } from './coercers/date.coercer';
 import { numberCoercer } from './coercers/number.coercer';
@@ -151,9 +151,18 @@ function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestO
 
     const objectSchema = tryGetObjectSchemaFromReflection(resolvedValueType);
 
-    if (isNotNull(objectSchema)) {
-      return testObject(objectSchema as ObjectSchema, value, options, path);
+    if (isNull(objectSchema)) {
+      return {
+        valid: false,
+        error: new SchemaError('Could not get schema from class (missing decorator?).', {
+          path,
+          fast: options.fastErrors,
+          inner: SchemaError.expectedButGot(resolvedValueType, getValueType(value), path, { fast: options.fastErrors })
+        })
+      };
     }
+
+    return testObject(objectSchema as ObjectSchema, value, options, path);
   }
   else if ((resolvedValueType == 'null' && isNull(value)) || (resolvedValueType == 'undefined' && isUndefined(value)) || (resolvedValueType == 'any')) {
     return { valid: true, value: value as T };

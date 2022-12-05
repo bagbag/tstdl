@@ -41,7 +41,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotName = isString(got) ? got : getValueTypeName(got);
 
@@ -49,12 +49,13 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
       ? expectedNames[0]!
       : `[${expectedNames.join(', ')}]`;
 
-    const message = `Expected ${expectedString} but got ${gotName}.`;
+    const customMessage = isDefined(options.customMessage) ? `: ${options.customMessage}` : '.';
+    const message = `Expected ${expectedString} but got ${gotName}${customMessage}`;
     return new SchemaError(message, { path, ...options });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, customMessage: string | undefined, options: TypedOmit<SchemaErrorOptions, 'path'>): SchemaError {
+  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
     const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
     const gotText = isString(got) ? got : getValueTypeName(got);
 
@@ -62,7 +63,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
       ? expectedNames[0]!
       : `[${expectedNames.join(', ')}]`;
 
-    const customMessageString = isDefined(customMessage) ? `: ${customMessage}` : '.';
+    const customMessageString = isDefined(options.customMessage) ? `: ${options.customMessage}` : '.';
     const errorMessage = `Could not coerce ${gotText} to ${expectedString}${customMessageString}`;
     return new SchemaError(errorMessage, { path, ...options });
   }
