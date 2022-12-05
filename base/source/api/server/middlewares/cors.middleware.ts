@@ -51,10 +51,11 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
 
     if (isDefined(cors.autoAccessControlAllowOrigin) && !response.headers.has('Access-Control-Allow-Origin')) {
       const value = await resolveApiEndpointDataProvider(request, context, cors.autoAccessControlAllowOrigin);
-      const allowed = isDefined(value) && toArray(value).includes(request.url.origin);
+      const origin = request.headers.tryGetSingle('Origin') as string;
+      const allowed = isDefined(value) && toArray(value).includes(origin);
 
       if (allowed) {
-        response.headers.setIfMissing('Access-Control-Allow-Origin', request.url.origin);
+        response.headers.setIfMissing('Access-Control-Allow-Origin', origin);
       }
     }
 

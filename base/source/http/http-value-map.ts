@@ -35,7 +35,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
     const lowercasedKey = this.normalizeKey(key);
 
     if (!this.has(lowercasedKey)) {
-      throw new BadRequestError(`missing ${lowercasedKey} ${this.valueType}`);
+      throw new BadRequestError(`Missing ${lowercasedKey} ${this.valueType}`);
     }
 
     return this.map.get(lowercasedKey)!.value;
@@ -52,7 +52,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
     const value = this.tryGetSingle(lowercasedKey);
 
     if (isUndefined(value)) {
-      throw new BadRequestError(`missing ${lowercasedKey} ${this.valueType}`);
+      throw new BadRequestError(`Missing ${lowercasedKey} ${this.valueType}`);
     }
 
     return value;
@@ -64,7 +64,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
     const value = this.map.get(lowercasedKey)?.value;
 
     if (isArray(value)) {
-      throw new BadRequestError(`invalid ${lowercasedKey} ${this.valueType}. Expected single value`);
+      throw new BadRequestError(`Invalid ${lowercasedKey} ${this.valueType}. Expected single value`);
     }
 
     return value;
