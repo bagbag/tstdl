@@ -32,12 +32,13 @@ export type ApiEndpointDefinitionResult = SchemaTestable | typeof String | typeo
 export type ApiEndpointDataProvider<T> = T | ((request: HttpServerRequest, context: ApiGatewayMiddlewareContext) => T | Promise<T>);
 
 export type ApiEndpointDefinitionCors = {
-  accessControlAllowCredentials?: ApiEndpointDataProvider<boolean>,
-  accessControlAllowHeaders?: ApiEndpointDataProvider<OneOrMany<string>>,
-  accessControlAllowMethods?: ApiEndpointDataProvider<OneOrMany<HttpMethod>>,
-  accessControlAllowOrigin?: ApiEndpointDataProvider<string>,
-  accessControlExposeHeaders?: ApiEndpointDataProvider<OneOrMany<string>>,
-  accessControlMaxAge?: ApiEndpointDataProvider<number>
+  accessControlAllowCredentials?: ApiEndpointDataProvider<boolean | undefined>,
+  accessControlAllowHeaders?: ApiEndpointDataProvider<OneOrMany<string> | undefined>,
+  accessControlAllowMethods?: ApiEndpointDataProvider<OneOrMany<HttpMethod> | undefined>,
+  accessControlAllowOrigin?: ApiEndpointDataProvider<string | undefined>,
+  autoAccessControlAllowOrigin?: ApiEndpointDataProvider<OneOrMany<string> | undefined>,
+  accessControlExposeHeaders?: ApiEndpointDataProvider<OneOrMany<string> | undefined>,
+  accessControlMaxAge?: ApiEndpointDataProvider<number | undefined>
 };
 
 export type ApiEndpointDefinition = {

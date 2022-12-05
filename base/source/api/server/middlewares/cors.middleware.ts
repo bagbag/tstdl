@@ -1,6 +1,7 @@
 import type { ApiEndpointDefinitionCors, ApiEndpointMethod } from '#/api/types';
 import { resolveApiEndpointDataProvider } from '#/api/types';
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
+import { toArray } from '#/utils/array';
 import type { AsyncMiddlewareNext } from '#/utils/middleware';
 import { isDefined } from '#/utils/type-guards';
 import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext } from '../gateway';
@@ -27,25 +28,34 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
         response.headers.setIfMissing('Access-Control-Allow-Credentials', 'true');
       }
 
-      if (isDefined(cors.accessControlAllowHeaders)) {
+      if (isDefined(cors.accessControlAllowHeaders) && !request.headers.has('Access-Control-Allow-Headers')) {
         const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowHeaders);
         response.headers.setIfMissing('Access-Control-Allow-Headers', value);
       }
 
-      if (isDefined(cors.accessControlExposeHeaders)) {
+      if (isDefined(cors.accessControlExposeHeaders) && !request.headers.has('Access-Control-Expose-Headers')) {
         const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlExposeHeaders);
         response.headers.setIfMissing('Access-Control-Expose-Headers', value);
       }
 
-      if (isDefined(cors.accessControlMaxAge)) {
+      if (isDefined(cors.accessControlMaxAge) && !request.headers.has('Access-Control-Max-Age')) {
         const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlMaxAge);
         response.headers.setIfMissing('Access-Control-Max-Age', value);
       }
     }
 
-    if (isDefined(cors.accessControlAllowOrigin)) {
+    if (isDefined(cors.accessControlAllowOrigin) && !response.headers.has('Access-Control-Allow-Origin')) {
       const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowOrigin);
       response.headers.setIfMissing('Access-Control-Allow-Origin', value);
+    }
+
+    if (isDefined(cors.autoAccessControlAllowOrigin) && !response.headers.has('Access-Control-Allow-Origin')) {
+      const value = await resolveApiEndpointDataProvider(request, context, cors.autoAccessControlAllowOrigin);
+      const allowed = isDefined(value) && toArray(value).includes(request.url.origin);
+
+      if (allowed) {
+        response.headers.setIfMissing('Access-Control-Allow-Origin', request.url.origin);
+      }
     }
 
     return response;
