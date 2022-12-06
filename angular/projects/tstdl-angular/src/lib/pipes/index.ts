@@ -8,6 +8,7 @@ export * from './localize-enum.pipe';
 export * from './localize.pipe';
 export * from './number-locale.pipe';
 export * from './numeric-date-to-date-time.pipe';
+export * from './numeric-time-to-date-time.pipe';
 export * from './optional-localize.pipe';
 export * from './pad.pipe';
 export * from './safe-url.pipe';
