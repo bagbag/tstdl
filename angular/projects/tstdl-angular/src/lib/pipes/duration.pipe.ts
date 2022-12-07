@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { isNumber } from '@tstdl/base/utils';
+import { isNull, isNumber } from '@tstdl/base/utils';
 import type { DurationObjectUnits, DurationOptions } from 'luxon';
 import { Duration } from 'luxon';
 
@@ -9,7 +9,11 @@ import { Duration } from 'luxon';
   standalone: true
 })
 export class DurationPipe implements PipeTransform {
-  transform(millisecondsOrObject: number | Duration | DurationObjectUnits, format: string, options?: DurationOptions, formatOptions?: Parameters<Duration['toFormat']>[1]): string {
+  transform(millisecondsOrObject: number | Duration | DurationObjectUnits | null, format: string, options?: DurationOptions, formatOptions?: Parameters<Duration['toFormat']>[1]): string | null {
+    if (isNull(millisecondsOrObject)) {
+      return null;
+    }
+
     const duration = isNumber(millisecondsOrObject)
       ? Duration.fromMillis(millisecondsOrObject, options)
       : millisecondsOrObject instanceof Duration

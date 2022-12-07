@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
   standalone: true
 })
 export class NumericDateToDateTimePipe implements PipeTransform {
-  transform(value: number, options?: DateTimeJSOptions): DateTime | null {
+  transform(value: number | null, options?: DateTimeJSOptions): DateTime | null {
     if (isNull(value)) {
       return null;
     }
