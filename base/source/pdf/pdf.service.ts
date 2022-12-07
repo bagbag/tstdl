@@ -1,5 +1,4 @@
-import type { AfterResolve } from '#/container';
-import { afterResolve, resolveArg, singleton } from '#/container';
+import { AfterResolve, afterResolve, Injectable, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
@@ -9,6 +8,7 @@ import { Pool } from '#/pool';
 import { Enumeration, Optional } from '#/schema';
 import type { TemplateField } from '#/templates';
 import { Template, TemplateService } from '#/templates';
+import { Record } from '#/types';
 import { finalizeStream } from '#/utils/stream/finalize-stream';
 import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise';
@@ -46,6 +46,9 @@ export class PdfMarginObject {
 }
 
 export class PdfRenderOptions {
+  @Optional()
+  language?: string;
+
   @Optional()
   omitDefaultBackground?: boolean;
 
@@ -98,18 +101,37 @@ export class PdfTemplate extends Template<{ header: false, body: true, footer: f
   declare options?: PdfTemplateOptions;
 }
 
+export type PdfServiceOptions = {
+  language?: string
+};
+
+export type PdfServiceArgument = PdfServiceOptions;
+
 @singleton()
-export class PdfService implements AsyncDisposable, AfterResolve {
+export class PdfService implements AsyncDisposable, AfterResolve, Injectable<PdfServiceArgument> {
   private readonly templateService: TemplateService;
   private readonly logger: Logger;
   private readonly pool: Pool<puppeteer.Browser>;
+  private readonly options: PdfServiceOptions;
 
-  constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger) {
+
+  declare [resolveArgumentType]: PdfServiceArgument;
+
+  constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
     this.templateService = templateService;
     this.logger = logger;
+    this.options = options;
+
+    const args = ['--font-render-hinting=none'];
+    const env: Record<string, string> = {};
+
+    if (isDefined(options.language)) {
+      args.push(`--lang=${options.language}`);
+      env['LANGUAGE'] = options.language;
+    }
 
     this.pool = new Pool(
-      async () => puppeteer.launch(),
+      async () => puppeteer.launch({ headless: true, args, env }),
       async (browser) => browser.close(),
       logger
     );
@@ -212,6 +234,10 @@ export class PdfService implements AsyncDisposable, AfterResolve {
         catch (error) {
           await this.pool.disposeInstance(browser);
           throw error;
+        }
+
+        if (isDefined(options.language)) {
+          page.setExtraHTTPHeaders({ 'Accept-Language': options.language });
         }
 
         const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
