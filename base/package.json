@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.81.18",
+  "version": "0.81.19",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -49,7 +49,7 @@
     "mjml": "^4.13",
     "mongodb": "4.12",
     "nodemailer": "^6.8",
-    "puppeteer": "^19.3",
+    "puppeteer": "^19.4",
     "undici": "^5.13",
     "urlpattern-polyfill": "^6.0"
   },

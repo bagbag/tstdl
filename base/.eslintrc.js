@@ -156,7 +156,6 @@ module.exports = {
         'protected-instance-field',
         'public-instance-field',
 
-        'private-abstract-field',
         'protected-abstract-field',
         'public-abstract-field',
 
@@ -182,7 +181,6 @@ module.exports = {
 
         'public-abstract-method',
         'protected-abstract-method',
-        'private-abstract-method',
 
         'public-method',
         'protected-method',
