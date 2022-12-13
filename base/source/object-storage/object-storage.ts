@@ -1,10 +1,14 @@
 import type { Injectable } from '#/container';
 import { resolveArgumentType } from '#/container';
-import type { ObjectInformation, ObjectStorageObject } from './object';
+import type { ObjectMetadata, ObjectStorageObject } from './object';
+
+export type UploadObjectOptions = {
+  metadata?: ObjectMetadata
+};
 
 export type ObjectStorageArgument = string;
 
-export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInformation, O extends ObjectStorageObject<OI> = ObjectStorageObject<OI>> implements Injectable<ObjectStorageArgument> {
+export abstract class ObjectStorage implements Injectable<ObjectStorageArgument> {
   /**
    * object storage module
    */
@@ -27,34 +31,33 @@ export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInforma
    * @param key object key
    * @param content content of object
    */
-  abstract uploadObject(key: string, content: ArrayBuffer): Promise<void>;
+  abstract uploadObject(key: string, content: Uint8Array, options?: UploadObjectOptions): Promise<void>;
 
   /**
-   * gets an url which can be used to upload the object without further authorization
+   * get an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */
   abstract getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
 
   /**
-   * gets all objects
+   * get all objects
    */
-  abstract getObjects(): Promise<OI[]>;
+  abstract getObjects(): Promise<ObjectStorageObject[]>;
 
   /**
-   * gets object
+   * get all objects
+   */
+  abstract getObjectsCursor(): AsyncIterable<ObjectStorageObject>;
+
+  /**
+   * get object
    * @param key object key
    */
-  abstract getObject(key: string): Promise<O>;
+  abstract getObject(key: string): Promise<ObjectStorageObject>;
 
   /**
-   * gets object information
-   * @param key object key
-   */
-  abstract getObjectInformation(key: string): Promise<OI>;
-
-  /**
-   * gets object resource uri
+   * get object resource uri
    * @param key object key
    */
   abstract getResourceUri(key: string): Promise<string>;
@@ -63,10 +66,10 @@ export abstract class ObjectStorage<OI extends ObjectInformation = ObjectInforma
    * get stream of object content
    * @param key object key
    */
-  abstract getContentStream(key: string): AsyncIterable<Uint8Array>;
+  abstract getContentStream(key: string): ReadableStream<Uint8Array>;
 
   /**
-   * gets an url which can be used to download the object without further authorization
+   * get an url which can be used to download the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */

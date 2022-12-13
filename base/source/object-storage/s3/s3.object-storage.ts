@@ -1,13 +1,15 @@
 import { singleton } from '#/container';
 import { AsyncEnumerable } from '#/enumerable';
-import type { ObjectInformation } from '#/object-storage';
-import { ObjectStorage } from '#/object-storage';
+import { ObjectStorage, ObjectStorageObject } from '#/object-storage';
 import { now } from '#/utils/date-time';
+import { readableStreamFromPromise } from '#/utils/stream';
 import { readBinaryStream } from '#/utils/stream/stream-reader';
 import { assertStringPass, isObject } from '#/utils/type-guards';
-import type { BucketItem } from 'minio';
+import type { BucketItem, BucketItemStat } from 'minio';
 import { Client } from 'minio';
-import type { S3Object, S3ObjectInformation } from './s3.object';
+import { Readable } from 'stream';
+import type { ReadableStream as NodeReadableStream } from 'stream/web';
+import { S3Object } from './s3.object';
 import { S3ObjectStorageProvider } from './s3.object-storage-provider';
 
 @singleton({
@@ -15,7 +17,7 @@ import { S3ObjectStorageProvider } from './s3.object-storage-provider';
     useFactory: (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
   }
 })
-export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object> {
+export class S3ObjectStorage extends ObjectStorage {
   private readonly client: Client;
   private readonly bucket: string;
   private readonly prefix: string;
@@ -54,65 +56,59 @@ export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object
     }
   }
 
-  async uploadObject(key: string, content: ArrayBuffer): Promise<void> {
+  async statObject(key: string): Promise<BucketItemStat> {
     const bucketKey = this.getBucketKey(key);
-    const buffer = Buffer.from(content);
-
-    await this.client.putObject(this.bucket, bucketKey, buffer);
+    return this.client.statObject(this.bucket, bucketKey);
   }
 
-  async getObjects(): Promise<S3ObjectInformation[]> {
-    const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
-    const bucketItems = await AsyncEnumerable.from<BucketItem>(stream).toArray();
-    const objectInformations = bucketItems.map((item): S3ObjectInformation => ({
-      module: this.module,
-      key: this.getKey(item.name),
-      resourceUri: `s3://${this.bucket}/${item.name}`,
-      contentLength: item.size
-    }));
-
-    return objectInformations;
+  async uploadObject(key: string, content: Uint8Array): Promise<void> {
+    const bucketKey = this.getBucketKey(key);
+    await this.client.putObject(this.bucket, bucketKey, Buffer.from(content));
   }
 
-  async getObject(key: string): Promise<S3Object> {
+  async uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>): Promise<void> {
     const bucketKey = this.getBucketKey(key);
-    const stat = await this.client.statObject(this.bucket, bucketKey);
+    await this.client.putObject(this.bucket, bucketKey, Readable.fromWeb(stream as NodeReadableStream));
+  }
+
+  async getContent(key: string): Promise<Uint8Array> {
+    const bucketKey = this.getBucketKey(key);
     const result = await this.client.getObject(this.bucket, bucketKey);
-    const content = await readBinaryStream(result);
-
-    const object: S3Object = {
-      module: this.module,
-      key,
-      resourceUri: `s3://${this.bucket}/${bucketKey}`,
-      contentLength: stat.size,
-      content
-    };
-
-    return object;
+    return readBinaryStream(result);
   }
 
-  async getObjectInformation(key: string): Promise<ObjectInformation> {
+  getContentStream(key: string): ReadableStream<Uint8Array> {
     const bucketKey = this.getBucketKey(key);
-    const stat = await this.client.statObject(this.bucket, bucketKey);
 
-    const information: S3ObjectInformation = {
-      module: this.module,
-      key,
-      resourceUri: `s3://${this.bucket}/${bucketKey}`,
-      contentLength: stat.size
-    };
+    return readableStreamFromPromise(async () => {
+      const readable = await this.client.getObject(this.bucket, bucketKey);
+      return Readable.toWeb(readable) as ReadableStream<Uint8Array>;
+    });
+  }
 
-    return information;
+  async getObjects(): Promise<S3Object[]> {
+    const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
+
+    return AsyncEnumerable.from<BucketItem>(stream)
+      .map((item) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this))
+      .toArray();
+  }
+
+  getObjectsCursor(): AsyncIterable<ObjectStorageObject> {
+    const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
+
+    return AsyncEnumerable.from<BucketItem>(stream)
+      .map((item) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this));
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async getObject(key: string): Promise<S3Object> {
+    const resourceUri = this.getResourceUriSync(key);
+    return new S3Object(this.module, key, resourceUri, undefined, this);
   }
 
   async getResourceUri(key: string): Promise<string> { // eslint-disable-line @typescript-eslint/require-await
-    const bucketKey = this.getBucketKey(key);
-    return `s3://${this.bucket}/${bucketKey}`;
-  }
-
-  async *getContentStream(key: string): AsyncIterable<Uint8Array> {
-    const bucketKey = this.getBucketKey(key);
-    yield* await this.client.getObject(this.bucket, bucketKey);
+    return this.getResourceUriSync(key);
   }
 
   async getDownloadUrl(key: string, expirationTimestamp: number): Promise<string> {
@@ -137,6 +133,11 @@ export class S3ObjectStorage extends ObjectStorage<S3ObjectInformation, S3Object
   async deleteObjects(keys: string[]): Promise<void> {
     const bucketKeys = keys.map((key) => this.getBucketKey(key));
     await this.client.removeObjects(this.bucket, bucketKeys);
+  }
+
+  private getResourceUriSync(key: string): string {
+    const bucketKey = this.getBucketKey(key);
+    return `s3://${this.bucket}/${bucketKey}`;
   }
 
   private getBucketKey(key: string): string {
