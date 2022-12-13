@@ -34,6 +34,13 @@ export abstract class ObjectStorage implements Injectable<ObjectStorageArgument>
   abstract uploadObject(key: string, content: Uint8Array, options?: UploadObjectOptions): Promise<void>;
 
   /**
+   * uploads an object stream
+   * @param key object key
+   * @param stream stream of object
+   */
+  abstract uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
+
+  /**
    * get an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
