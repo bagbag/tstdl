@@ -27,9 +27,9 @@ export type JwtTokenParseResult<T extends JwtToken = JwtToken> = {
     signature: string
   },
   bytes: {
-    header: ArrayBuffer,
-    payload: ArrayBuffer,
-    signature: ArrayBuffer
+    header: Uint8Array,
+    payload: Uint8Array,
+    signature: Uint8Array
   },
   string: {
     header: string,

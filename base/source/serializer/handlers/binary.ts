@@ -1,15 +1,21 @@
 
 import type { TypedArray } from '#/types';
 import { decodeBase64, encodeBase64 } from '#/utils/base64';
+import { toArrayBuffer } from '#/utils/binary';
 
-type TypedArrayConstructor = new (arrayOrArrayBuffer: ArrayBufferLike) => TypedArray;
+interface TypedArrayConstructor {
+  readonly BYTES_PER_ELEMENT: number;
+
+  new(buffer: ArrayBufferLike, byteOffset?: number, length?: number): TypedArray;
+}
 
 export function serializeArrayBuffer(buffer: ArrayBuffer): string {
   return encodeBase64(buffer);
 }
 
 export function deserializeArrayBuffer(data: string): ArrayBuffer {
-  return decodeBase64(data);
+  const uint8Array = decodeBase64(data);
+  return toArrayBuffer(uint8Array);
 }
 
 export function serializeTypedArray(array: TypedArray): string {
@@ -18,7 +24,8 @@ export function serializeTypedArray(array: TypedArray): string {
 
 export function getTypedArrayDeserializer(constructor: TypedArrayConstructor): (data: string) => TypedArray {
   function deserializeTypedArray(data: string): TypedArray {
-    return new constructor(decodeBase64(data));
+    const uint8Array = decodeBase64(data);
+    return new constructor(uint8Array.buffer, uint8Array.byteOffset, uint8Array.byteLength / constructor.BYTES_PER_ELEMENT);
   }
 
   return deserializeTypedArray;

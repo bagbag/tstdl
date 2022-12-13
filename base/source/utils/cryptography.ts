@@ -77,7 +77,7 @@ export const wrapKey = (subtle! as SubtleCrypto | undefined)?.wrapKey.bind(subtl
  */
 export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: BinaryData | string): CryptionResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
-  const encryptedBuffer = subtle.encrypt(algorithm, key, bytes) as Promise<ArrayBuffer>;
+  const encryptedBuffer = subtle.encrypt(algorithm, key, bytes);
 
   return {
     toBuffer: async () => encryptedBuffer,
@@ -94,8 +94,8 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
  * @param key key
  * @param data data to decrypt
  */
-export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: ArrayBuffer): DecryptionResult {
-  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes) as Promise<ArrayBuffer>;
+export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: BinaryData): DecryptionResult {
+  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes);
 
   return {
     toBuffer: async () => decryptedBuffer,

@@ -1,11 +1,11 @@
 /* eslint-disable no-bitwise */
 
 import { supportsBuffer } from '#/supports';
-import type { TypedArray } from '../types';
+import type { BinaryData } from '../types';
 import { toUint8Array } from './binary';
 import { isArrayBuffer, isDefined } from './type-guards';
 
-export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOffset?: number, bytesLength?: number): string {
+export function encodeBase64(array: BinaryData, bytesOffset?: number, bytesLength?: number): string {
   let arrayBuffer: ArrayBuffer;
   let offset: number | undefined;
   let length: number | undefined;
@@ -28,20 +28,20 @@ export function encodeBase64(array: ArrayBuffer | TypedArray | DataView, bytesOf
   return encodeBase64Fallback(array);
 }
 
-export function decodeBase64(base64: string): ArrayBuffer {
+export function decodeBase64(base64: string): Uint8Array {
   if (supportsBuffer) {
     const buffer = Buffer.from(base64, 'base64');
-    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+    return buffer;
   }
 
   return decodeBase64Fallback(base64);
 }
 
-export function encodeBase64Url(array: TypedArray | ArrayBuffer, bytesOffset?: number, length?: number): string {
+export function encodeBase64Url(array: BinaryData, bytesOffset?: number, length?: number): string {
   return base64ToBase64Url(encodeBase64(array, bytesOffset, length));
 }
 
-export function decodeBase64Url(base64Url: string): ArrayBuffer {
+export function decodeBase64Url(base64Url: string): Uint8Array {
   return decodeBase64(base64UrlToBase64(base64Url));
 }
 
@@ -58,7 +58,7 @@ export function base64UrlToBase64(input: string): string {
     .replace(/_/ug, '/');
 }
 
-function encodeBase64Fallback(data: ArrayBuffer | TypedArray | DataView): string {
+function encodeBase64Fallback(data: BinaryData): string {
   const bytes = toUint8Array(data);
 
   let nMod3 = 2;

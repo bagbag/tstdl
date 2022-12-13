@@ -3,6 +3,23 @@ import type { BinaryData, TypedArray } from '#/types';
 import { assert, isArrayBuffer } from './type-guards';
 
 /**
+ * Get ArrayBuffer from binary data
+ * @param data data to get ArrayBuffer from
+ * @param clone force cloning (might still clone if datas underlying buffer is larger than its view)
+ */
+export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBuffer {
+  if (isArrayBuffer(data)) {
+    return clone ? data.slice(0) : data;
+  }
+
+  if (!clone && (data.byteOffset == 0) && (data.byteLength == data.buffer.byteLength)) {
+    return data.buffer;
+  }
+
+  return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+}
+
+/**
  * eslint-disable-next-line @typescript-eslint/no-shadow
  * convert to Uint8Array
  * @param data binary data
@@ -18,7 +35,7 @@ export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Arr
   const { buffer, byteOffset, byteLength } = (data as TypedArray | DataView);
 
   return clone
-    ? new Uint8Array(buffer.slice(byteOffset, byteLength))
+    ? new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength))
     : new Uint8Array(buffer, byteOffset, byteLength);
 }
 

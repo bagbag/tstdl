@@ -30,7 +30,7 @@ export function encodeUtf8Stream(): TransformStream<string, Uint8Array> {
  * @param encoding encoding, defaults to utf8
  * @returns decoded string
  */
-export function decodeText(buffer: ArrayBuffer, encoding?: string): string {
+export function decodeText(buffer: BinaryData, encoding?: string): string {
   const decoder = new TextDecoder(encoding, { fatal: true });
   return decoder.decode(buffer);
 }
@@ -40,7 +40,7 @@ export function decodeText(buffer: ArrayBuffer, encoding?: string): string {
  * @param encoding encoding, defaults to utf8
  * @returns stream of decoded string
  */
-export function decodeTextStream(encoding?: string): TransformStream<BufferSource, string> {
+export function decodeTextStream(encoding?: string): TransformStream<BinaryData, string> {
   return new TextDecoderStream(encoding, { fatal: true });
 }
 

@@ -35,7 +35,7 @@ export function zBase32Encode(buffer: BinaryData): string {
 }
 
 // eslint-disable-next-line max-statements
-export function zBase32Decode(input: string): ArrayBuffer {
+export function zBase32Decode(input: string): Uint8Array {
   const bytes = new Uint8Array((input.length * 5 / 8) | 0);
 
   let bits = 0;
@@ -59,5 +59,5 @@ export function zBase32Decode(input: string): ArrayBuffer {
     }
   }
 
-  return bytes.buffer;
+  return bytes;
 }
