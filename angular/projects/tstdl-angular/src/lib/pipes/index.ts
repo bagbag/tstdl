@@ -12,6 +12,7 @@ export * from './numeric-time-to-date-time.pipe';
 export * from './optional-localize.pipe';
 export * from './pad.pipe';
 export * from './safe-html.pipe';
+export * from './safe-resource-url.pipe';
 export * from './safe-url.pipe';
 export * from './serialize.pipe';
 export * from './timestamp-to-date-time.pipe';
