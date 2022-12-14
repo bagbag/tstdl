@@ -122,7 +122,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
     this.logger = logger;
     this.options = options;
 
-    const args = ['--font-render-hinting=none'];
+    const args = ['--font-render-hinting=none', '--disable-web-security', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'];
     const env: Record<string, string> = {};
 
     if (isDefined(options.language)) {
