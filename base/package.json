@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.81.22",
+  "version": "0.81.23",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -17,7 +17,7 @@
   "dependencies": {
     "luxon": "^3.1",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7.6",
+    "rxjs": "^7.8",
     "type-fest": "^2.19"
   },
   "devDependencies": {
@@ -47,7 +47,7 @@
     "koa": "^2.14",
     "minio": "^7.0",
     "mjml": "^4.13",
-    "mongodb": "4.12",
+    "mongodb": "4.13",
     "nodemailer": "^6.8",
     "puppeteer": "^19.4",
     "undici": "^5.14",

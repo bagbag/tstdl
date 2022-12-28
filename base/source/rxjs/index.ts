@@ -1,5 +1,6 @@
 export * from './cast';
 export * from './intersection-observer';
+export * from './media-query';
 export * from './mutation-observer';
 export * from './noop';
 export * from './performance-observer';

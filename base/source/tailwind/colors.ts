@@ -1,6 +1,5 @@
-import type { Theme } from '#/css/theme';
-import { objectEntries } from '#/utils/object/object';
-import { isString } from '#/utils/type-guards';
+import type { Theme } from '#/theme';
+import { objectKeys } from '#/utils/object/object';
 
 export type TailwindPalette = {
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -18,12 +17,14 @@ export type TailwindPalette = {
   /* eslint-enable @typescript-eslint/naming-convention */
 };
 
-export function generateTailwindColors(theme: Theme): Record<string, TailwindPalette> {
-  const entries = objectEntries(theme.colors)
-    .map(([colorName, value]) => {
-      const name = isString(value) ? colorName : (value.name ?? colorName);
-      return [name, generateTailwindPalette(name)];
-    });
+export function generateTailwindColorsFromTheme(theme: Theme): Record<string, TailwindPalette> {
+  const colors = objectKeys(theme.palette);
+  return generateTailwindColorsFromThemeColors(colors);
+}
+
+export function generateTailwindColorsFromThemeColors(colors: string[]): Record<string, TailwindPalette> {
+  const entries = colors
+    .flatMap((color) => [[color, generateTailwindPalette(color)], [`${color}-contrast`, generateTailwindPalette(color)]]);
 
   return Object.fromEntries(entries) as Record<string, TailwindPalette>;
 }
