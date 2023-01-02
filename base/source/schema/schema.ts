@@ -232,7 +232,7 @@ function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTes
         return testValue(schema, [value], options, path);
       }
 
-      throw SchemaError.expectedButGot(Array, getValueType(value), path, { fast: options.fastErrors });
+      return { valid: false, error: SchemaError.expectedButGot(Array, getValueType(value), path, { fast: options.fastErrors }) };
     }
 
     for (const arrayConstraint of normalizedValueSchema.arrayConstraints) {

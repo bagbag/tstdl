@@ -2,7 +2,7 @@
 
 import type { Decorator } from '#/reflection';
 import type { OneOrMany as OneOrManyType } from '#/types';
-import { toArray } from '#/utils/array';
+import { toArray } from '#/utils/array/array';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
 import type { SchemaTestable } from '../schema';
 import type { ValueSchema, ValueSchemaOptions } from '../types';
