@@ -2,7 +2,7 @@ import { singleton } from '#/container';
 import type { UnionToTuple } from '#/types';
 import { createArray } from '#/utils/array/array';
 import { objectEntries, objectKeys } from '#/utils/object/object';
-import { isDefined, isObject, isString } from '#/utils/type-guards';
+import { isObject, isString } from '#/utils/type-guards';
 import * as chroma from 'chroma-js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
@@ -123,7 +123,7 @@ function calculateTheme<Colors extends string = string>(theme: Theme<Colors>): C
 }
 
 function generateColorTones(base: string | chroma.Color): ColorTones {
-  const colors = generateColors([base], undefined, 10, true, true);
+  const colors = generateColors(base, 10);
 
   return {
     base: isString(base) ? base : base.hex(),
@@ -156,77 +156,25 @@ function generateContrastColorTones(base: string | chroma.Color, tones: ColorTon
   };
 }
 
-/**
- * stolen from <https://github.com/gka/palettes/blob/master/src/PalettePreview.svelte>
- */
-function generateColors(baseColors: (string | chroma.Color)[], divergingColors: (string | chroma.Color)[] | undefined, colorCount: number, bezier: boolean, correctLightness: boolean): string[] {
-  const diverging = isDefined(divergingColors) && (divergingColors.length > 0);
-  const even = (colorCount % 2) == 0;
-  const numColorsLeft = diverging ? Math.ceil(colorCount / 2) + (even ? 1 : 0) : colorCount;
-  const numColorsRight = diverging ? Math.ceil(colorCount / 2) + (even ? 1 : 0) : 0;
+function generateColors(baseColor: string | chroma.Color, colorCount: number, { bezier = true, correctLightness = true }: { bezier?: boolean, correctLightness?: boolean } = {}): string[] {
+  const generatedColors = autoGradient(baseColor, colorCount);
 
-  const genColors = (baseColors.length > 0)
-    ? (baseColors.length > 1)
-      ? baseColors
-      : autoColors(baseColors[0]!, numColorsLeft, diverging)
-    : [];
-
-  const genColors2 = diverging
-    ? (divergingColors.length > 1)
-      ? divergingColors
-      : autoColors(divergingColors[0]!, numColorsRight, diverging, true)
-    : [];
-
-  const stepsLeft = (baseColors.length > 0)
-    ? (bezier ? chroma.bezier(genColors as string[]).scale() : chroma.scale(genColors))
-      .correctLightness(correctLightness)
-      .colors(numColorsLeft)
-    : [];
-
-  const stepsRight = diverging
-    ? ((bezier && (divergingColors.length > 1)) ? chroma.bezier(genColors2 as string[]).scale() : chroma.scale(genColors2))
-      .correctLightness(correctLightness)
-      .colors(numColorsRight)
-    : [];
-
-  const steps = (even && diverging ? stepsLeft.slice(0, stepsLeft.length - 1) : stepsLeft).concat(stepsRight.slice(1));
-  return steps;
-}
-
-function autoColors(color: string | chroma.Color, numColors: number, diverging: boolean, reverse: boolean = false): chroma.Color[] {
-  if (diverging) {
-    const colors = autoGradient(color, 3, diverging).concat(chroma('#f5f5f5'));
-
-    if (reverse) {
-      return colors.reverse();
-    }
-
-    return colors;
+  if (!bezier && !correctLightness) {
+    return generatedColors.map((color) => color.hex());
   }
 
-  return autoGradient(color, numColors, diverging);
+  const scale = (bezier ? chroma.bezier(generatedColors as any as string[]).scale() : chroma.scale(generatedColors));
+
+  const colors = scale
+    .correctLightness(correctLightness)
+    .colors(colorCount);
+
+  return colors;
 }
 
-function autoGradient(color: string | chroma.Color, numColors: number, diverging: boolean): chroma.Color[] {
-  const lab = chroma(color).lab();
-  const lRange = 100 * ((0.95 - 1) / numColors);
-  const lStep = lRange / (numColors - 1);
-  const lStart = (100 - lRange) * 0.5;
-  const range = createArray(numColors, (i) => lStart + (i * lStep));
+function autoGradient(color: string | chroma.Color, numColors: number): chroma.Color[] {
+  const [, a, b] = chroma(color).lab();
+  const step = 100 / (numColors + 1);
 
-  let offset = 0;
-
-  if (!diverging) {
-    offset = 9999;
-
-    for (let i = 0; i < numColors; i++) {
-      const diff = lab[0] - range[i]!;
-
-      if (Math.abs(diff) < Math.abs(offset)) {
-        offset = diff;
-      }
-    }
-  }
-
-  return range.map((l) => chroma.lab(l + offset, lab[1], lab[2]));
+  return createArray(numColors, (i) => chroma.lab(100 - ((i + 1) * step), a, b));
 }
