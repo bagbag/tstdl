@@ -1,4 +1,4 @@
-import { singleton } from '#/container';
+import { inject, injectionToken, singleton } from '#/container';
 import type { UnionToTuple } from '#/types';
 import { createArray } from '#/utils/array/array';
 import { first } from '#/utils/iterable-helpers/first';
@@ -57,6 +57,8 @@ const black = chroma('black');
 
 export const themeColorTones = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
+export const DEFAULT_THEME = injectionToken('DEFAULT_THEME');
+
 @singleton()
 export class ThemeService<Colors extends string = string> {
   private readonly themeSubject: BehaviorSubject<Theme<Colors>>;
@@ -75,7 +77,7 @@ export class ThemeService<Colors extends string = string> {
     return this.calculatedThemeSubject.value;
   }
 
-  constructor(defaultTheme: Theme<Colors>) {
+  constructor(@inject(DEFAULT_THEME) defaultTheme: Theme<Colors>) {
     this.defaultTheme = defaultTheme;
     this.colors = objectKeys(defaultTheme.palette) as typeof this['colors'];
 
