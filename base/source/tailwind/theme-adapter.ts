@@ -1,5 +1,8 @@
 import type { Theme } from '#/theme';
 import { objectKeys } from '#/utils/object/object';
+import { hyphenate } from '#/utils/string/hypenate';
+
+const colorTypeSuffixes = ['', '-text', '-background', '-border'];
 
 export type TailwindPalette = {
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -24,12 +27,8 @@ export function generateTailwindColorsFromTheme(theme: Theme): Record<string, Ta
 
 export function generateTailwindColorsFromThemeColors(colors: readonly string[]): Record<string, TailwindPalette> {
   const entries = colors
-    .flatMap((color) => [
-      [color, generateTailwindPalette(color)],
-      [`${color}-text`, generateTailwindPalette(color)],
-      [`${color}-background`, generateTailwindPalette(color)],
-      [`${color}-border`, generateTailwindPalette(color)]
-    ]);
+    .map(hyphenate)
+    .flatMap((color) => colorTypeSuffixes.map((suffix) => [`${color}${suffix}`, generateTailwindPalette(color)]));
 
   return Object.fromEntries(entries) as Record<string, TailwindPalette>;
 }
