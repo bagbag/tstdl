@@ -22,7 +22,7 @@ export function generateTailwindColorsFromTheme(theme: Theme): Record<string, Ta
   return generateTailwindColorsFromThemeColors(colors);
 }
 
-export function generateTailwindColorsFromThemeColors(colors: string[]): Record<string, TailwindPalette> {
+export function generateTailwindColorsFromThemeColors(colors: readonly string[]): Record<string, TailwindPalette> {
   const entries = colors
     .flatMap((color) => [
       [color, generateTailwindPalette(color)],
