@@ -1,8 +1,10 @@
 import { singleton } from '#/container';
 import type { UnionToTuple } from '#/types';
 import { createArray } from '#/utils/array/array';
+import { first } from '#/utils/iterable-helpers/first';
+import { sort } from '#/utils/iterable-helpers/sort';
 import { objectEntries, objectKeys } from '#/utils/object/object';
-import { isObject, isString } from '#/utils/type-guards';
+import { isDefined, isObject, isString } from '#/utils/type-guards';
 import * as chroma from 'chroma-js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
@@ -10,7 +12,8 @@ import { BehaviorSubject } from 'rxjs';
 export type CalculatedPalette<Colors extends string = string> = {
   [Color in Colors]: {
     main: ColorTones,
-    contrast: ColorTones
+    text: ColorTones,
+    border?: ColorTones
   };
 };
 
@@ -21,11 +24,13 @@ export type CalculatedTheme<Colors extends string = string> = {
 
 export type PaletteColor = string | {
   main: string,
-  contrast?: string
+  text?: string,
+  border?: string
 };
 
 export type Theme<Colors extends string = string> = {
   name: string,
+  textColors?: string[],
   palette: Palette<Colors>
 };
 
@@ -92,11 +97,8 @@ export class ThemeService<Colors extends string = string> {
   }
 }
 
-function getContrastColor(color: string | chroma.Color): string {
-  const contrastWhite = chroma.contrast(color, white);
-  const contrastBlack = chroma.contrast(color, black);
-
-  return (contrastWhite > contrastBlack) ? '#ffffff' : '#000000';
+function getTextColor(textColors: (string | chroma.Color)[], color: string | chroma.Color): string {
+  return first(sort(textColors, (a, b) => chroma.contrast(color, a) - chroma.contrast(color, b)));
 }
 
 function calculateTheme<Colors extends string = string>(theme: Theme<Colors>): CalculatedTheme<Colors> {
@@ -107,15 +109,19 @@ function calculateTheme<Colors extends string = string>(theme: Theme<Colors>): C
     palette: {} as CalculatedPalette<Colors>
   };
 
+  const textColors = (isDefined(theme.textColors) && (theme.textColors.length > 0)) ? theme.textColors : [black, white];
+
   for (const [color, palette] of entries) {
     const mainBase = isString(palette) ? palette : palette.main;
-    const contrastBase = (isObject(palette) ? palette.contrast : undefined) ?? getContrastColor(mainBase);
+    const textBase = (isObject(palette) ? palette.text : undefined) ?? getTextColor(textColors, mainBase);
+    const borderBase = isString(palette) ? undefined : palette.border;
 
     const mainTones = generateColorTones(mainBase);
 
     calculatedTheme.palette[color] = {
       main: mainTones,
-      contrast: generateContrastColorTones(contrastBase, mainTones)
+      text: generateTextColorTones(textBase, textColors, mainTones),
+      border: isDefined(borderBase) ? generateColorTones(borderBase) : undefined
     };
   }
 
@@ -140,19 +146,19 @@ function generateColorTones(base: string | chroma.Color): ColorTones {
   };
 }
 
-function generateContrastColorTones(base: string | chroma.Color, tones: ColorTones): ColorTones {
+function generateTextColorTones(textBaseColor: string, textColors: (string | chroma.Color)[], tones: ColorTones): ColorTones {
   return {
-    base: isString(base) ? base : base.hex(),
-    50: getContrastColor(tones[50]),
-    100: getContrastColor(tones[100]),
-    200: getContrastColor(tones[200]),
-    300: getContrastColor(tones[300]),
-    400: getContrastColor(tones[400]),
-    500: getContrastColor(tones[500]),
-    600: getContrastColor(tones[600]),
-    700: getContrastColor(tones[700]),
-    800: getContrastColor(tones[800]),
-    900: getContrastColor(tones[900])
+    base: textBaseColor,
+    50: getTextColor(textColors, tones[50]),
+    100: getTextColor(textColors, tones[100]),
+    200: getTextColor(textColors, tones[200]),
+    300: getTextColor(textColors, tones[300]),
+    400: getTextColor(textColors, tones[400]),
+    500: getTextColor(textColors, tones[500]),
+    600: getTextColor(textColors, tones[600]),
+    700: getTextColor(textColors, tones[700]),
+    800: getTextColor(textColors, tones[800]),
+    900: getTextColor(textColors, tones[900])
   };
 }
 
