@@ -19,6 +19,10 @@ export type ReadBodyOptions = {
   maxBytes?: number
 };
 
+export type ReadBodyAsJsonOptions = ReadBodyOptions & {
+  fallbackToText?: boolean
+};
+
 export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): ReadableStream<Uint8Array> {
   ensureSize(headers.contentLength ?? 0, options);
 
@@ -92,20 +96,24 @@ export function readBodyAsTextStream(body: Body, headers: HttpHeaders, options?:
   return stream.pipeThrough(decodeTextStream(headers.charset));
 }
 
-export async function readBodyAsJson(body: Body, headers: HttpHeaders, options?: ReadBodyOptions): Promise<UndefinableJson> {
+export async function readBodyAsJson(body: Body, headers: HttpHeaders, options?: ReadBodyAsJsonOptions): Promise<UndefinableJson> {
   const text = await readBodyAsText(body, headers, options);
 
   try {
     return JSON.parse(text) as UndefinableJson;
   }
   catch (error: unknown) {
+    if (options?.fallbackToText == true) {
+      return text;
+    }
+
     throw new UnsupportedMediaTypeError(`Expected valid application/json body: ${(error as Error).message}`);
   }
 }
 
 export async function readBody(body: Body, headers: HttpHeaders, options?: ReadBodyOptions): Promise<string | UndefinableJson | Uint8Array> {
   if (headers.contentType?.includes('json') == true) {
-    return readBodyAsJson(body, headers, options);
+    return readBodyAsJson(body, headers, { ...options, fallbackToText: true });
   }
 
   if (headers.contentType?.includes('text') == true) {
