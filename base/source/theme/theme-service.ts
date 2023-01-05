@@ -100,7 +100,7 @@ export class ThemeService<Colors extends string = string> {
 }
 
 function getTextColor(textColors: (string | chroma.Color)[], color: string | chroma.Color): string {
-  return first(sort(textColors, (a, b) => chroma.contrast(color, a) - chroma.contrast(color, b)));
+  return first(sort(textColors, (a, b) => chroma.contrast(color, b) - chroma.contrast(color, a)));
 }
 
 function calculateTheme<Colors extends string = string>(theme: Theme<Colors>): CalculatedTheme<Colors> {
