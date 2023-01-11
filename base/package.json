@@ -18,7 +18,7 @@
     "luxon": "^3.2",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.8",
-    "type-fest": "^2.19"
+    "type-fest": "^3.5"
   },
   "devDependencies": {
     "@types/chroma-js": "2.1",
@@ -37,20 +37,20 @@
     "typescript-transform-paths": "3.4"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.5",
+    "@elastic/elasticsearch": "^8.6",
     "@koa/router": "^12.0",
     "@tstdl/angular": "^0.81.0",
     "chroma-js": "^2.4",
     "got": "^12.5",
     "handlebars": "^4.7",
-    "knex": "^2.3",
+    "knex": "^2.4",
     "koa": "^2.14",
     "minio": "^7.0",
     "mjml": "^4.13",
     "mongodb": "4.13",
     "nodemailer": "^6.8",
-    "puppeteer": "^19.4",
-    "undici": "^5.14",
+    "puppeteer": "^19.5",
+    "undici": "^5.15",
     "urlpattern-polyfill": "^6.0"
   },
   "peerDependenciesMeta": {
