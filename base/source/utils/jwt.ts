@@ -1,5 +1,6 @@
 import { InvalidTokenError, UnauthorizedError } from '../error';
-import type { BinaryData, StringMap } from '../types';
+import type { BinaryData, OneOrMany, StringMap } from '../types';
+import { toArray } from './array/array';
 import { decodeBase64Url, encodeBase64Url } from './base64';
 import type { HashAlgorithm, Key } from './cryptography';
 import { importHmacKey, sign } from './cryptography';
@@ -13,7 +14,7 @@ export type JwtTokenHeader<T extends StringMap = StringMap> = {
   typ: 'JWT'
 } & T;
 
-export type JwtToken<THeader extends JwtTokenHeader = JwtTokenHeader, TPayload = StringMap> = {
+export type JwtToken<TPayload = StringMap, THeader extends JwtTokenHeader = JwtTokenHeader> = {
   readonly header: THeader,
   readonly payload: TPayload
 };
@@ -99,15 +100,19 @@ export async function createJwtTokenString<T extends JwtToken = JwtToken>(jwtTok
   return tokenString;
 }
 
-export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtToken>(tokenString: string, key: Key | string): Promise<T> {
+export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtToken>(tokenString: string, allowedAlgorithms: OneOrMany<JwtTokenAlgorithm>, key: Key | string): Promise<T> {
   try {
     const { encoded, bytes, token } = parseJwtTokenString<T>(tokenString);
+
+    if (!toArray(allowedAlgorithms).includes(token.header.alg)) {
+      throw new UnauthorizedError('Invalid signature algorithm.');
+    }
 
     const calculatedSignature = await getSignature(encodeUtf8(`${encoded.header}.${encoded.payload}`), token.header.alg, key);
     const validSignature = binaryEquals(calculatedSignature, bytes.signature);
 
     if (!validSignature) {
-      throw new UnauthorizedError('invalid token signature');
+      throw new UnauthorizedError('Invalid token signature.');
     }
 
     return token;
@@ -117,7 +122,7 @@ export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtTok
       throw error;
     }
 
-    throw new UnauthorizedError('invalid token');
+    throw new UnauthorizedError('Invalid token.');
   }
 }
 

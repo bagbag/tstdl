@@ -88,7 +88,7 @@ export class OidcService<Data = any> {
     return oidcState;
   }
 
-  async getToken(parameters: OidcGetTokenParameters): Promise<OidcToken> {
+  async getToken(parameters: OidcGetTokenParameters, additionalData?: Record<string, string>): Promise<OidcToken> {
     const oidcConfiguration = await this.oidcConfigurationService.getConfiguration(parameters.endpoint);
 
     const headers = new HttpHeaders();
@@ -107,7 +107,8 @@ export class OidcService<Data = any> {
           scope: parameters.scope,
           code: parameters.code,
           code_verifier: parameters.codeVerifier,
-          redirect_uri: parameters.redirectUri
+          redirect_uri: parameters.redirectUri,
+          ...additionalData
           /* eslint-enable @typescript-eslint/naming-convention */
         };
 
@@ -117,8 +118,8 @@ export class OidcService<Data = any> {
         formData = {
           /* eslint-disable @typescript-eslint/naming-convention */
           grant_type: 'client_credentials',
-
-          scope: parameters.scope
+          scope: parameters.scope,
+          ...additionalData
           /* eslint-enable @typescript-eslint/naming-convention */
         };
 
