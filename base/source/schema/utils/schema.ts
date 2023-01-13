@@ -136,7 +136,7 @@ function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Obj
 
     if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
       const parentSchema = getObjectSchemaFromReflection(prototype);
-      return assign(parentSchema, schema) as ObjectSchema as ObjectSchema<T>;
+      return assign(parentSchema, schema) as ObjectSchema<T>;
     }
   }
 
