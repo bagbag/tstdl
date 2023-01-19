@@ -5,7 +5,7 @@ import { Lock } from '#/lock';
 import type { MessageBus } from '#/message-bus';
 import { MessageBusProvider } from '#/message-bus';
 import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue';
-import { defaultQueueConfig, Queue, QueueConfig, UniqueTagStrategy } from '#/queue';
+import { defaultJobPriority, defaultQueueConfig, Queue, QueueConfig, UniqueTagStrategy } from '#/queue';
 import { Alphabet } from '#/utils/alphabet';
 import type { BackoffOptions } from '#/utils/backoff';
 import { backoffGenerator } from '#/utils/backoff';
@@ -68,7 +68,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async enqueue(data: T, options: EnqueueOptions = {}): Promise<Job<T>> {
-    const { tag = null, uniqueTag, priority = 0 } = options;
+    const { tag = null, uniqueTag, priority = defaultJobPriority } = options;
 
     const newJob: NewMongoJob<T> = {
       queue: this.queueKey,
@@ -98,7 +98,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     const keepOld: NewMongoJob<T>[] = [];
     const takeNew: NewMongoJob<T>[] = [];
 
-    for (const { data, tag = null, uniqueTag, priority = 0 } of items) {
+    for (const { data, tag = null, uniqueTag, priority = defaultJobPriority } of items) {
       const newMongoJob: NewMongoJob<T> = {
         queue: this.queueKey,
         jobId: getNewId(),

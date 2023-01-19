@@ -2,7 +2,7 @@ import type { EmbeddedViewRef, OnDestroy } from '@angular/core';
 import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewContainerRef } from '@angular/core';
 import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
 import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
-import type { Observable, Subscription } from 'rxjs';
+import type { Observable, ReadableStreamLike, Subscription } from 'rxjs';
 import { catchError, distinctUntilChanged, EMPTY, from, isObservable, of, ReplaySubject, switchMap, tap } from 'rxjs';
 
 export type LetContext<T> = {
@@ -17,7 +17,7 @@ type LetAsyncInput<T> =
   | Observable<T>
   | AsyncIterable<T>
   | PromiseLike<T>
-  | ReadableStream<T>;
+  | ReadableStreamLike<T>;
 
 type LetInput<T> = LetAsyncInput<T> | T;
 
@@ -123,5 +123,5 @@ function isAsyncInput<T>(value: any): value is LetAsyncInput<T> {
   return isObservable(value)
     || isAsyncIterable(value)
     || isFunction((value as PromiseLike<any> | undefined)?.then) // eslint-disable-line @typescript-eslint/unbound-method
-    || isFunction((value as ReadableStream | undefined)?.getReader); // eslint-disable-line @typescript-eslint/unbound-method
+    || isFunction((value as ReadableStreamLike<any> | undefined)?.getReader); // eslint-disable-line @typescript-eslint/unbound-method
 }

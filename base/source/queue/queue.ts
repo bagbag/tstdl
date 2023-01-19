@@ -8,10 +8,18 @@ export type JobTag = string | number | null;
 
 export type Job<T> = {
   id: string,
+
+  /**
+   * The lower the number, the higher the priority.
+   * @default 1000
+   */
   priority: number,
+
   tag: JobTag,
   data: T
 };
+
+export const defaultJobPriority = 1000;
 
 export enum UniqueTagStrategy {
   KeepOld = 0,

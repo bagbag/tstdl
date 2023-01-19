@@ -1,5 +1,5 @@
 import { supportsBuffer } from '#/supports';
-import type { BinaryData, TypedArray } from '#/types';
+import type { BinaryData } from '#/types';
 import { assert, isArrayBuffer } from './type-guards';
 
 /**
@@ -32,7 +32,7 @@ export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Arr
       : new Uint8Array(data);
   }
 
-  const { buffer, byteOffset, byteLength } = (data as TypedArray | DataView);
+  const { buffer, byteOffset, byteLength } = data;
 
   return clone
     ? new Uint8Array(buffer.slice(byteOffset, byteOffset + byteLength))

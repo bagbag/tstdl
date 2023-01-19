@@ -11,6 +11,8 @@ export class HttpBody {
   private readonly body: HttpBodySource;
   private readonly headers: HttpHeaders;
 
+  private bodyAlreadyRead: boolean;
+
   get available(): boolean {
     return isNotNullOrUndefined(this.body);
   }
@@ -22,46 +24,54 @@ export class HttpBody {
   constructor(body: HttpBodySource, headers: HttpHeaders) {
     this.body = body;
     this.headers = headers;
+
+    this.bodyAlreadyRead = false;
   }
 
   async readAsBuffer(options?: ReadBodyOptions): Promise<Uint8Array> {
-    ensureBodyExists(this.body);
-    return readBodyAsBuffer(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBodyAsBuffer(this.body!, this.headers, options);
   }
 
   async readAsText(options?: ReadBodyOptions): Promise<string> {
-    ensureBodyExists(this.body);
-    return readBodyAsText(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBodyAsText(this.body!, this.headers, options);
   }
 
   async readAsJson<T = UndefinableJson>(options?: ReadBodyOptions): Promise<T> {
-    ensureBodyExists(this.body);
-    return readBodyAsJson(this.body, this.headers, options) as Promise<T>;
+    this.prepareBodyRead();
+    return readBodyAsJson(this.body!, this.headers, options) as Promise<T>;
   }
 
   async read(options?: ReadBodyOptions): Promise<string | UndefinableJson | Uint8Array> {
-    ensureBodyExists(this.body);
-    return readBody(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBody(this.body!, this.headers, options);
   }
 
   readAsBinaryStream(options?: ReadBodyOptions): ReadableStream<Uint8Array> {
-    ensureBodyExists(this.body);
-    return readBodyAsBinaryStream(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBodyAsBinaryStream(this.body!, this.headers, options);
   }
 
   readAsTextStream(options?: ReadBodyOptions): ReadableStream<string> {
-    ensureBodyExists(this.body);
-    return readBodyAsTextStream(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBodyAsTextStream(this.body!, this.headers, options);
   }
 
   readAsStream(options?: ReadBodyOptions): ReadableStream<string> | ReadableStream<Uint8Array> {
-    ensureBodyExists(this.body);
-    return readBodyAsStream(this.body, this.headers, options);
+    this.prepareBodyRead();
+    return readBodyAsStream(this.body!, this.headers, options);
   }
-}
 
-function ensureBodyExists(body: HttpBodySource): asserts body is Exclude<HttpBodySource, undefined> {
-  if (isNullOrUndefined(body)) {
-    throw new Error('Body not available');
+  private prepareBodyRead(): void {
+    if (isNullOrUndefined(this.body)) {
+      throw new Error('Body not available.');
+    }
+
+    if (this.bodyAlreadyRead) {
+      throw new Error('Body was already read.');
+    }
+
+    this.bodyAlreadyRead = true;
   }
 }

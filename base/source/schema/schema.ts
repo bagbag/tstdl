@@ -5,15 +5,11 @@ import { noop } from '#/utils/noop';
 import { objectKeys } from '#/utils/object/object';
 import { differenceSets } from '#/utils/set';
 import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
-import { booleanCoercer } from './coercers/boolean.coercer';
-import { dateCoercer } from './coercers/date.coercer';
-import { numberCoercer } from './coercers/number.coercer';
-import { regExpCoercer } from './coercers/regexp.coercer';
-import { stringCoercer } from './coercers/string.coercer';
-import { uint8ArrayCoercer } from './coercers/uint8-array.coercer';
+import { booleanCoercer, dateCoercer, numberCoercer, regExpCoercer, stringCoercer, uint8ArrayCoercer } from './coercers';
 import { SchemaError } from './schema.error';
-import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, resolveValueType, resolveValueTypes, SchemaContext, SchemaOutput, schemaTestableToSchema, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, transformErrorResultSymbol, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, valueSchema, ValueType } from './types';
-import { getArrayItemSchema, getSchemaTypeNames, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types';
+import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol, valueSchema } from './types';
+import { getArrayItemSchema, getSchemaTypeNames, getSchemaValueTypes, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
 
 export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T> | TypeSchema<T>;
 export type SchemaTestable<T = any> = Schema<T> | ValueType<T>;
@@ -24,8 +20,8 @@ const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
 
 let initialize = (): void => {
   Schema.registerDefaultCoercer(numberCoercer);
-  Schema.registerDefaultCoercer(stringCoercer);
   Schema.registerDefaultCoercer(booleanCoercer);
+  Schema.registerDefaultCoercer(stringCoercer);
   Schema.registerDefaultCoercer(dateCoercer);
   Schema.registerDefaultCoercer(regExpCoercer);
   Schema.registerDefaultCoercer(uint8ArrayCoercer);
@@ -273,10 +269,13 @@ function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTes
 
   /** try to coerce */
   if (!valueTestResult.valid) {
+    const targetTypes = getSchemaValueTypes(schema);
+
     const coercers = [
       ...(normalizedValueSchema.coercers.get(valueType) ?? []),
       ...((normalizedValueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
-    ];
+    ]
+      .filter((coercer) => includesValueType(coercer.targetType, targetTypes));
 
     const errors: SchemaError[] = [];
     let success = false;

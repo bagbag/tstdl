@@ -43,7 +43,11 @@ export function currentTimestamp(): number {
 }
 
 export function currentTimestampSeconds(): number {
-  return Math.floor(Date.now() / 1000);
+  return timestampToTimestampSeconds(currentTimestamp());
+}
+
+export function timestampToTimestampSeconds(timestamp: number): number {
+  return Math.floor(timestamp / 1000);
 }
 
 export function currentDate(): number {
