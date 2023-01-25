@@ -2,16 +2,17 @@
 
 import type { Decorator } from '#/reflection';
 import type { Enumeration as EnumerationType, EnumerationValue } from '#/types';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { EnumerationConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type EnumerationOptions = ValueSchemaOptions;
 
 export function enumeration<T extends EnumerationType>(enumerationValue: T, options?: EnumerationOptions): ValueSchema<EnumerationValue<T>> {
-  const valueConstraints: SchemaValueConstraint[] = toArray(options?.valueConstraints ?? []);
+  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options?.valueConstraints ?? []);
 
   const enumerationConstraint = new EnumerationConstraint(enumerationValue);
   valueConstraints.push(enumerationConstraint);

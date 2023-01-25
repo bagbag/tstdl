@@ -4,8 +4,8 @@ import type { JsonPath } from '#/json-path/json-path';
 import type { Decorator } from '#/reflection';
 import { createSchemaArrayConstraintDecorator } from '../decorators';
 import { SchemaError } from '../schema.error';
-import type { ConstraintContext, ConstraintResult } from '../types';
-import { SchemaArrayConstraint } from '../types';
+import { SchemaArrayConstraint } from '../types/schema-array-constraint';
+import type { ConstraintContext, ConstraintResult } from '../types/types';
 
 export class MinimumArrayLengthConstraint extends SchemaArrayConstraint {
   private readonly minimumLength: number;

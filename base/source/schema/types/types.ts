@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { JsonPath } from '#/json-path/json-path';
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
-import { filterObject, hasOwnProperty } from '#/utils/object/object';
-import { isArray, isDefined, isFunction, isObject } from '#/utils/type-guards';
-import type { NormalizedSchema, Schema, SchemaTestable } from './schema';
-import type { SchemaError } from './schema.error';
+import { filterObject, hasOwnProperty, objectEntries, objectKeys } from '#/utils/object/object';
+import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards';
+import type { NormalizedSchema, Schema, SchemaTestable } from '../schema';
+import type { SchemaError } from '../schema.error';
+import type { SchemaArrayConstraint } from './schema-array-constraint';
+import type { SchemaValueCoercer } from './schema-value-coercer';
+import type { SchemaValueConstraint } from './schema-value-constraint';
+import type { SchemaValueTransformer } from './schema-value-transformer';
 
 declare const schemaOutputTypeSymbol: unique symbol;
 
@@ -123,31 +126,7 @@ export type Coercible = { coerce?: boolean };
 export const primitiveConstructors: ValueType[] = [String, Number, Boolean, Symbol as unknown as AbstractConstructor, BigInt as unknown as AbstractConstructor, Function, 'undefined', 'null'];
 export const primitiveConstructorSet = new Set(primitiveConstructors);
 
-export abstract class SchemaArrayConstraint {
-  abstract validate(value: readonly unknown[], path: JsonPath, context: ConstraintContext): ConstraintResult;
-}
-
 export type OptionKeys<T extends Record> = readonly (keyof T)[];
-
-export abstract class SchemaValueConstraint {
-  abstract readonly suitableTypes: OneOrMany<ValueType>;
-  abstract readonly expects: OneOrMany<string>;
-
-  abstract validate(value: unknown, path: JsonPath, context: ConstraintContext): ConstraintResult;
-}
-
-export abstract class SchemaValueTransformer<T = any, O = any> {
-  abstract readonly sourceType?: OneOrMany<ValueType<T>>;
-
-  abstract transform(value: T, path: JsonPath, context: TransformerContext): TransformResult<O>;
-}
-
-export abstract class SchemaValueCoercer {
-  abstract readonly sourceType: OneOrMany<ValueType>;
-  abstract readonly targetType: ValueType;
-
-  abstract coerce(value: unknown, path: JsonPath, context: CoercerContext): CoerceResult;
-}
 
 export type SchemaTestOptions = {
   /**
@@ -195,15 +174,15 @@ export function isTransformErrorResult(value: any): value is TransformErrorResul
 }
 
 export function objectSchemaProperties<T extends Record>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
-  return filterObject(properties, isDefined) as ObjectSchemaProperties<T>;
+  return optimizeObjectSchemaProperties(properties);
 }
 
 export function objectSchema<T extends Record>(schema: ObjectSchema<T>): ObjectSchema<T> {
-  return filterObject(schema, isDefined) as ObjectSchema<T>;
+  return optimizeObjectSchema(schema);
 }
 
 export function valueSchema<T>(schema: OneOrMany<SchemaTestable<T>>, options?: TypedOmit<ValueSchema<T>, 'schema'>): ValueSchema<T> {
-  return filterObject({ schema, ...options }, isDefined) as ValueSchema<T>;
+  return optimizeValueSchema({ schema, ...options });
 }
 
 export function typeSchema<T>(type: ValueType<T>): TypeSchema<NormalizeValueType<T>> {
@@ -214,19 +193,19 @@ export function isSchema<T>(value: any): value is Schema<T> {
   return isObjectSchema(value) || isValueSchema(value) || isTypeSchema(value);
 }
 
-export function isObjectSchema<T extends Record>(schema: Schema<T>): schema is ObjectSchema<T>;
-export function isObjectSchema<T extends Record>(schema: any): schema is ObjectSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
+export function isObjectSchema<T extends Record = any>(schema: SchemaTestable<T>): schema is ObjectSchema<T>;
+export function isObjectSchema<T extends Record = any>(schema: any): schema is ObjectSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isObjectSchema(schema: any): schema is ObjectSchema {
   return isObject((schema as Partial<ObjectSchema> | undefined)?.properties);
 }
 
-export function isValueSchema<T>(schema: Schema<T>): schema is ValueSchema<T>;
+export function isValueSchema<T>(schema: SchemaTestable<T>): schema is ValueSchema<T>;
 export function isValueSchema<T>(schema: any): schema is ValueSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isValueSchema(schema: any): schema is ValueSchema {
   return isObject(schema) && isDefined((schema as ValueSchema | undefined)?.schema);
 }
 
-export function isTypeSchema<T>(schema: Schema<T>): schema is TypeSchema<T>;
+export function isTypeSchema<T>(schema: SchemaTestable<T>): schema is TypeSchema<T>;
 export function isTypeSchema<T>(schema: any): schema is TypeSchema<T>; // eslint-disable-line @typescript-eslint/unified-signatures
 export function isTypeSchema(schema: any): schema is TypeSchema {
   if (!isObject(schema)) {
@@ -245,7 +224,7 @@ export function isTypeSchema(schema: any): schema is TypeSchema {
     );
 }
 
-export function isDeferredValueType<T>(value: ValueType<T>): value is DeferredValueType<T>;
+export function isDeferredValueType<T>(value: SchemaTestable<T>): value is DeferredValueType<T>;
 export function isDeferredValueType(value: any): value is DeferredValueType;
 export function isDeferredValueType(value: any): value is DeferredValueType {
   return isObject(value) && isFunction((value as DeferredValueType).deferred);
@@ -279,4 +258,105 @@ export function schemaTestableToSchema<T>(valueTypeOrSchema: SchemaTestable<T>):
   }
 
   return typeSchema(valueTypeOrSchema) as Schema<T>;
+}
+
+export function optimizeObjectSchema<T>(schema: ObjectSchema<T>): ObjectSchema<T> {
+  return {
+    ...filterObject(schema, isDefined),
+    properties: optimizeObjectSchemaProperties(schema.properties)
+  };
+}
+
+export function optimizeObjectSchemaProperties<T>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
+  const entries = objectEntries(properties)
+    .map(([property, innerSchema]) => [property, optimizeSchema(innerSchema)] as const);
+
+  return Object.fromEntries(entries) as ObjectSchemaProperties<T>;
+}
+
+export function optimizeValueSchema<T>(schema: ValueSchema<T>): ValueSchema<T> {
+  const optimized = optimizeSchema(schema);
+  return isValueSchema<T>(optimized) ? optimized : { schema: optimized };
+}
+
+export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMany<SchemaTestable<T>> { // eslint-disable-line complexity
+  if (isArray(schema)) {
+    if (schema.length == 1) {
+      return optimizeSchema(schema[0]!);
+    }
+
+    return schema.flatMap(optimizeSchema);
+  }
+
+  if (isFunction(schema) || isString(schema) || isDeferredValueType(schema)) {
+    return schema;
+  }
+
+  if (isTypeSchema(schema)) {
+    return schema.type;
+  }
+
+  if (isValueSchema(schema)) {
+    const entries = objectEntries(schema).filter(([, value]) => isDefined(value));
+
+    if (entries.length == 1) {
+      if (!isArray(schema.schema)) {
+        return optimizeSchema(schema.schema);
+      }
+      else if (schema.schema.length == 1) {
+        return optimizeSchema(schema.schema[0]!);
+      }
+
+      return schema.schema.map(optimizeSchema) as SchemaTestable<T>[];
+    }
+
+    const combinedProperties = new Set([...objectKeys(schema), ...objectKeys(schema.schema)]);
+
+    if (
+      isValueSchema(schema.schema)
+      && !combinedProperties.has('array')
+      && !combinedProperties.has('coerce')
+      && !combinedProperties.has('coercers')
+      && !combinedProperties.has('transformers')
+      && !combinedProperties.has('arrayConstraints')
+      && !combinedProperties.has('valueConstraints')
+    ) {
+      return {
+        schema: optimizeSchema(schema.schema.schema as SchemaTestable<T>),
+        ...filterObject({
+          optional: ((schema.optional ?? false) || (schema.schema.optional ?? false)) ? true : undefined,
+          nullable: ((schema.nullable ?? false) || (schema.schema.nullable ?? false)) ? true : undefined
+        }, isDefined)
+      };
+    }
+
+    const { schema: innerSchema, optional, nullable, coercers, transformers, arrayConstraints, valueConstraints, ...rest } = schema;
+
+    return filterObject({
+      schema: optimizeSchema(innerSchema),
+      optional: (optional ?? false) ? true : undefined,
+      nullable: (nullable ?? false) ? true : undefined,
+      coercers: optimizeOneOrMany(coercers),
+      transformers: optimizeOneOrMany(transformers),
+      arrayConstraints: optimizeOneOrMany(arrayConstraints),
+      valueConstraints: optimizeOneOrMany(valueConstraints),
+      ...rest
+    } satisfies ValueSchema<T>, isDefined) as ValueSchema<T>;
+  }
+
+  return optimizeObjectSchema(schema);
+}
+
+function optimizeOneOrMany<T>(values: OneOrMany<T> | undefined): OneOrMany<T> | undefined {
+  if (isArray(values)) {
+    if (values.length == 0) {
+      return undefined;
+    }
+
+    if (values.length == 1) {
+      return values[0];
+    }
+  }
+
+  return values;
 }

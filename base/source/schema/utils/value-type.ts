@@ -2,8 +2,8 @@ import type { AbstractConstructor, OneOrMany } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { isArray, isFunction, isNull, isString, isUndefined } from '#/utils/type-guards';
 import type { SchemaTestable } from '../schema';
-import type { ResolvedValueType, ValueType } from '../types';
-import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes } from '../types';
+import type { ResolvedValueType, ValueType } from '../types/types';
+import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes } from '../types/types';
 
 export function getValueType(value: unknown): ResolvedValueType {
   if (isUndefined(value)) {

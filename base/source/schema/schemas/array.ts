@@ -2,13 +2,14 @@
 
 import type { Decorator } from '#/reflection';
 import type { OneOrMany } from '#/types';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { ArrayMaximumLengthConstraint } from '../array-constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
 import type { SchemaTestable } from '../schema';
-import type { SchemaArrayConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaArrayConstraint } from '../types/schema-array-constraint';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type ArrayOptions = ValueSchemaOptions & {
   /** minimum array length */
@@ -19,7 +20,7 @@ export type ArrayOptions = ValueSchemaOptions & {
 };
 
 export function array<T>(innerValues: OneOrMany<SchemaTestable<T>>, options: ArrayOptions = {}): ValueSchema<T[]> {
-  const arrayConstraints: SchemaArrayConstraint[] = toArray(options.arrayConstraints ?? []);
+  const arrayConstraints: SchemaArrayConstraint[] = toArrayCopy(options.arrayConstraints ?? []);
 
   if (isDefined(options.minimumLength)) {
     arrayConstraints.push(new ArrayMaximumLengthConstraint(options.minimumLength));

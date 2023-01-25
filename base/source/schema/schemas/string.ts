@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
 import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
-import type { SchemaValueConstraint, SchemaValueTransformer, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { SchemaValueTransformer } from '../types/schema-value-transformer';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type StringOptions = ValueSchemaOptions & {
   /** trim */
@@ -36,8 +38,8 @@ export type StringOptions = ValueSchemaOptions & {
 };
 
 export function string(options: StringOptions = {}): ValueSchema<string> {
-  const valueConstraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
-  const transformers: SchemaValueTransformer[] = toArray(options.transformers ?? []);
+  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
+  const transformers: SchemaValueTransformer[] = toArrayCopy(options.transformers ?? []);
 
   if (isDefined(options.minimumLength)) {
     valueConstraints.push(new MinimumLengthConstraint(options.minimumLength));

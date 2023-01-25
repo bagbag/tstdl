@@ -3,8 +3,8 @@
 import type { JsonPath } from '#/json-path/json-path';
 import { isPrimitive } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
-import type { ConstraintContext, ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ConstraintContext, ConstraintResult } from '../types/types';
 import { getValueType, getValueTypeName } from '../utils';
 
 export class LiteralConstraint extends SchemaValueConstraint {

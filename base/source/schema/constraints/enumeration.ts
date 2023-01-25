@@ -6,15 +6,15 @@ import { enumValues } from '#/utils/enum';
 import { distinct } from '#/utils/iterable-helpers/distinct';
 import { isArray, isString } from '#/utils/type-guards';
 import { SchemaError } from '../schema.error';
-import type { ConstraintContext, ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
-import { getValueType } from '../utils';
+import { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ConstraintContext, ConstraintResult } from '../types/types';
+import { getValueType } from '../utils/value-type';
 
 export class EnumerationConstraint extends SchemaValueConstraint {
-  private readonly allowedValuesSet: Set<EnumerationValue>;
   private readonly allowedValuesString: string;
 
   readonly enumeration: Enumeration;
+  readonly allowedValuesSet: Set<EnumerationValue>;
   readonly suitableTypes: SchemaValueConstraint['suitableTypes'];
   readonly expects: OneOrMany<string>;
 

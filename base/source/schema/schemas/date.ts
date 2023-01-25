@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type DateOptions = ValueSchemaOptions & {
   minimum?: Date | number,
@@ -14,7 +15,7 @@ export type DateOptions = ValueSchemaOptions & {
 };
 
 export function date(options: DateOptions = {}): ValueSchema<Date> {
-  const constraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
+  const constraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
 
   if (isDefined(options.minimum)) {
     constraints.push(new MinimumDateConstraint(options.minimum));

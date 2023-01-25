@@ -1,5 +1,6 @@
 import { toArray } from '#/utils/array/array';
 import { compareByValueDescending } from '#/utils/comparison';
+import { sort } from '#/utils/iterable-helpers';
 import { isDefined, isNull } from '#/utils/type-guards';
 import type { ApiDefinition, ApiEndpointDefinition } from './types';
 
@@ -11,7 +12,8 @@ type GetApiEndpointUrlData = {
 };
 
 export function getFullApiEndpointResource({ api, endpoint, defaultPrefix, explicitVersion }: GetApiEndpointUrlData): string {
-  const version = toArray(isDefined(explicitVersion) ? explicitVersion : endpoint.version).sort(compareByValueDescending)[0];
+  const versionArray = toArray(isDefined(explicitVersion) ? explicitVersion : endpoint.version);
+  const version = sort(versionArray, compareByValueDescending)[0];
   const versionPrefix = isNull(version) ? undefined : `v${version ?? 1}`;
   const rootResource = (isNull(endpoint.rootResource) ? '' : endpoint.rootResource) ?? api.resource;
   const prefix = (isNull(endpoint.prefix) ? '' : endpoint.prefix) ?? (isNull(api.prefix) ? '' : api.prefix) ?? (isNull(defaultPrefix) ? undefined : (defaultPrefix ?? 'api'));

@@ -8,8 +8,11 @@ import { merge } from '#/utils/merge';
 import { filterObject } from '#/utils/object';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
 import type { Schema } from '../schema';
-import type { SchemaArrayConstraint, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer } from '../types';
-import { isValueSchema, valueSchema } from '../types';
+import type { SchemaArrayConstraint } from '../types/schema-array-constraint';
+import type { SchemaValueCoercer } from '../types/schema-value-coercer';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { SchemaValueTransformer } from '../types/schema-value-transformer';
+import { isValueSchema, valueSchema } from '../types/types';
 import type { PropertyOptions, SchemaPropertyReflectionData } from './types';
 
 export function createSchemaPropertyDecorator(options: PropertyOptions): Decorator<'property' | 'accessor'> {

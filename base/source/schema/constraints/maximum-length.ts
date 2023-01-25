@@ -5,8 +5,8 @@ import type { Decorator } from '#/reflection';
 import { isArrayBuffer, isArrayBufferView } from '#/utils/type-guards';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintContext, ConstraintResult } from '../types';
-import { SchemaValueConstraint } from '../types';
+import { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ConstraintContext, ConstraintResult } from '../types/types';
 
 export class MaximumLengthConstraint extends SchemaValueConstraint {
   private readonly maximumLength: number;

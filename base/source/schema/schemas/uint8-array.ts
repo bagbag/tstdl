@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { uint8ArrayCoercer } from '../coercers/uint8-array.coercer';
 import { MaximumLengthConstraint } from '../constraints/maximum-length';
 import { MinimumLengthConstraint } from '../constraints/minimum-length';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
-import type { SchemaValueCoercer, SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaValueCoercer } from '../types/schema-value-coercer';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type Uint8ArraySchemaOptions = ValueSchemaOptions & {
   /** Minimum byte length */
@@ -19,8 +21,8 @@ export type Uint8ArraySchemaOptions = ValueSchemaOptions & {
 };
 
 export function uint8Array(options: Uint8ArraySchemaOptions = {}): ValueSchema<Uint8Array> {
-  const coercers: SchemaValueCoercer[] = toArray(options.coercers ?? []);
-  const valueConstraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
+  const coercers: SchemaValueCoercer[] = toArrayCopy(options.coercers ?? []);
+  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
 
   if (options.coerce == true) {
     coercers.push(uint8ArrayCoercer);

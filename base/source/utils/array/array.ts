@@ -1,8 +1,33 @@
 import { randomInt } from '../math';
-import { isDefined } from '../type-guards';
+import { isArray, isDefined } from '../type-guards';
 
-export function toArray<T>(value: T | T[] | readonly T[]): T[] {
-  return Array.isArray(value) ? value : [value] as T[];
+/**
+ * Returns value as is, if it is an array, otherwise puts the single value into an array.
+ */
+export function toArray<T>(value: T | T[]): T[];
+export function toArray<T>(value: T | readonly T[]): readonly T[];
+export function toArray<T>(value: T | T[] | readonly T[]): readonly T[] {
+  return isArray(value) ? value : [value] as T[];
+}
+
+/**
+ * Return copy of value, if it is an array, otherwise puts the single value into an array.
+ */
+export function toArrayCopy<T>(value: T | T[] | readonly T[]): T[] {
+  return isArray(value) ? [...value] : [value] as T[];
+}
+
+/**
+ * Returns element of value at index 0, if it is an array and has exactly one element, otherweise returns value as is.
+ */
+export function extractValueOfArrayIfSingleElement<T>(value: T | T[]): T | T[];
+export function extractValueOfArrayIfSingleElement<T>(value: T | readonly T[]): T | readonly T[];
+export function extractValueOfArrayIfSingleElement<T>(value: T | T[] | readonly T[]): T | readonly T[] {
+  if (isArray(value)) {
+    return (value.length == 1) ? value[0]! : value;
+  }
+
+  return value;
 }
 
 /**

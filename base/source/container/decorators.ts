@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { createClassDecorator, createDecorator } from '#/reflection';
 import type { Decorator } from '#/reflection';
+import { createClassDecorator, createDecorator } from '#/reflection';
 import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array';
 import { isDefined, isFunction } from '#/utils/type-guards';

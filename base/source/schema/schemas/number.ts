@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection';
-import { toArray } from '#/utils/array/array';
+import { toArrayCopy } from '#/utils/array/array';
 import { isDefined } from '#/utils/type-guards';
 import { integerConstraint } from '../constraints/integer';
 import { MaximumConstraint } from '../constraints/maximum';
 import { MinimumConstraint } from '../constraints/minimum';
 import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { SchemaValueConstraint, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types';
+import { valueSchema } from '../types/types';
 
 export type NumberOptions = ValueSchemaOptions & {
   minimum?: number,
@@ -17,7 +18,7 @@ export type NumberOptions = ValueSchemaOptions & {
 };
 
 export function number(options: NumberOptions = {}): ValueSchema<number> {
-  const valueConstraints: SchemaValueConstraint[] = toArray(options.valueConstraints ?? []);
+  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
 
   if (isDefined(options.minimum)) {
     valueConstraints.push(new MinimumConstraint(options.minimum));

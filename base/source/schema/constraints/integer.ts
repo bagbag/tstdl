@@ -4,8 +4,9 @@ import type { JsonPath } from '#/json-path/json-path';
 import type { Decorator } from '#/reflection';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils';
 import { SchemaError } from '../schema.error';
-import type { ConstraintContext, ConstraintResult } from '../types';
-import { SchemaValueConstraint, typeSchema } from '../types';
+import { SchemaValueConstraint } from '../types/schema-value-constraint';
+import type { ConstraintContext, ConstraintResult } from '../types/types';
+import { typeSchema } from '../types/types';
 
 export class IntegerConstraint extends SchemaValueConstraint {
   readonly suitableTypes = Number;
