@@ -109,7 +109,7 @@ export function getObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): 
 function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): ObjectSchema<T> | null {
   const metadata = reflectionRegistry.getMetadata(type);
 
-  if (!metadata.registered) {
+  if (isUndefined(metadata)) {
     return null;
   }
 

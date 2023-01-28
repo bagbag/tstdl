@@ -1,3 +1,4 @@
+import { DetailsError } from '#/error/details.error';
 import { isDefined, isFunction, isNumber, isObject, isUndefined } from '#/utils/type-guards';
 import type { DecoratorData } from './types';
 import { getConstructor } from './utils';
@@ -63,5 +64,5 @@ export function getDecoratorData(target: object, propertyKey?: string | symbol, 
     };
   }
 
-  throw new Error('unknown type');
+  throw new DetailsError('unknown type', { type: constructor, isStatic, propertyKey, descriptorOrParameterIndex });
 }

@@ -1,4 +1,4 @@
-import type { OneOrMany, Record } from '#/types';
+import type { ObjectLiteral, OneOrMany } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { objectEntries } from '#/utils/object/object';
 import type { Simplify } from 'type-fest';
@@ -6,7 +6,7 @@ import type { ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties } from '.
 import { objectSchema } from '../types';
 import { getObjectSchema } from '../utils/schema';
 
-export function omit<T extends Record, K extends keyof T>(schemaOrType: ObjectSchemaOrType<T>, keys: OneOrMany<K>): ObjectSchema<Simplify<Omit<T, K>>> {
+export function omit<T extends ObjectLiteral, K extends keyof T>(schemaOrType: ObjectSchemaOrType<T>, keys: OneOrMany<K>): ObjectSchema<Simplify<Omit<T, K>>> {
   const schema = getObjectSchema(schemaOrType);
   const keyArray = toArray(keys);
 

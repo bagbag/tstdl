@@ -1,4 +1,4 @@
-import type { Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types';
+import type { AbstractConstructor, Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types';
 import { toArray } from '#/utils/array/array';
 import { noop } from '#/utils/noop';
 import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
@@ -126,37 +126,37 @@ export function wrapDecorator<T extends DecoratorUnion>(decorator: T, options?: 
   return wrappedDecorator as T;
 }
 
-export function getConstructor<T extends Constructor = Constructor>(constructorOrTarget: object): T {
+export function getConstructor<T extends AbstractConstructor = AbstractConstructor>(constructorOrTarget: object): T {
   return isFunction<T>(constructorOrTarget)
     ? constructorOrTarget
     : (constructorOrTarget.constructor as T);
 }
 
-export function getTypeInfoString(type: Constructor): string {
+export function getTypeInfoString(type: AbstractConstructor): string {
   const lines: string[] = [];
 
   const metadata = reflectionRegistry.getMetadata(type);
-  const constructorParameters = metadata.parameters?.map((parameter) => parameter.type?.name ?? '<unknown>').join(', ') ?? '?';
+  const constructorParameters = metadata?.parameters?.map((parameter) => parameter.type?.name ?? '<unknown>').join(', ') ?? '?';
 
-  lines.push(`${metadata.constructor.name}(${constructorParameters})`);
+  lines.push(`${type.name}(${constructorParameters})`);
 
-  for (const [key, propertyMetadata] of metadata.staticProperties) {
+  for (const [key, propertyMetadata] of (metadata?.staticProperties ?? [])) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
     lines.push(`  static ${propertyKey}: ${propertyMetadata.type.name}`);
   }
 
-  for (const [key, methodMetadata] of metadata.staticMethods) {
+  for (const [key, methodMetadata] of (metadata?.staticMethods ?? [])) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
     const parameters = methodMetadata.parameters.map((parameter) => parameter.type.name).join(', ');
     lines.push(`  static ${propertyKey}(${parameters}): ${methodMetadata.returnType?.name ?? 'void'}`);
   }
 
-  for (const [key, propertyMetadata] of metadata.properties) {
+  for (const [key, propertyMetadata] of (metadata?.properties ?? [])) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
     lines.push(`  ${propertyKey}: ${propertyMetadata.type.name}`);
   }
 
-  for (const [key, methodMetadata] of metadata.methods) {
+  for (const [key, methodMetadata] of (metadata?.methods ?? [])) {
     const propertyKey = isSymbol(key) ? `[${key.toString()}]` : key;
     const parameters = methodMetadata.parameters.map((parameter) => parameter.type.name).join(', ');
     lines.push(`  ${propertyKey}(${parameters}): ${methodMetadata.returnType?.name ?? 'void'}`);

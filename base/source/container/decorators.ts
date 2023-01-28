@@ -43,7 +43,7 @@ export function injectable<T = any, A = any>(options: InjectableOptions<T, A> = 
     handler: (data) => {
       const { alias: aliases, provider, ...registrationOptions } = options;
 
-      const targetProvider: Provider = provider ?? { useClass: data.constructor };
+      const targetProvider: Provider = provider ?? { useClass: (data.constructor as Constructor) };
       container.register(data.constructor, targetProvider, registrationOptions);
 
       if (isDefined(aliases)) {

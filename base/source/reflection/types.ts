@@ -1,4 +1,4 @@
-import type { Constructor, Record } from '#/types';
+import type { AbstractConstructor, Constructor, Record } from '#/types';
 import type { UnionToIntersection } from 'type-fest';
 import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry';
 
@@ -57,7 +57,7 @@ export type DecoratorMap = DecoratorTypeMap<{
 
 export type DecoratorDataBase<Type extends string> = {
   type: Type,
-  constructor: Constructor,
+  constructor: AbstractConstructor,
   prototype: object
 };
 

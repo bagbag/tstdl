@@ -3,7 +3,7 @@ import type { AbstractConstructor, Writable } from '#/types';
 import { FactoryMap } from '#/utils/factory-map';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
-import { isUndefined } from '#/utils/type-guards';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import { getDecoratorData } from './decorator-data';
 import { ReflectionDataMap } from './reflection-data-map';
 import type { DecoratorData } from './types';
@@ -18,20 +18,18 @@ export type MetadataBase<T extends MetadataType> = {
 
 export type TypeMetadata = MetadataBase<'type'> & {
   readonly constructor: AbstractConstructor,
+  readonly parent: AbstractConstructor | null,
 
-  /** may be undefined if class has no constructor */
+  /** undefined if class has no constructor */
   readonly parameters: ConstructorParameterMetadata[] | undefined,
-  readonly properties: Map<string | symbol, PropertyMetadata>,
-  readonly staticProperties: Map<string | symbol, PropertyMetadata>,
-  readonly methods: Map<string | symbol, MethodMetadata>,
-  readonly staticMethods: Map<string | symbol, MethodMetadata>,
-  readonly data: ReflectionDataMap,
 
-  /** whether the type is known in reflection registry and contains metadata */
-  readonly registered: boolean
+  readonly properties: ReadonlyMap<string | symbol, PropertyMetadata>,
+  readonly staticProperties: ReadonlyMap<string | symbol, PropertyMetadata>,
+  readonly methods: ReadonlyMap<string | symbol, MethodMetadata>,
+  readonly staticMethods: ReadonlyMap<string | symbol, MethodMetadata>,
+
+  readonly data: ReflectionDataMap
 };
-
-type WritableTypeMetadata = Writable<TypeMetadata>;
 
 export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
@@ -62,23 +60,30 @@ export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMe
 
 export class ReflectionRegistry {
   private readonly metadataMap: WeakMap<AbstractConstructor, TypeMetadata>;
+  private readonly finalizedTypesSet: WeakSet<AbstractConstructor>;
 
   constructor() {
     this.metadataMap = new WeakMap();
+    this.finalizedTypesSet = new WeakSet();
   }
 
   hasType(type: AbstractConstructor): boolean {
-    return this.metadataMap.has(type) && this.getMetadata(type).registered;
+    return this.metadataMap.has(type);
   }
 
-  getMetadata(type: AbstractConstructor): TypeMetadata {
-    if (!this.metadataMap.has(type)) {
-      const metadata = this.initializeType(type);
-      this.metadataMap.set(type, metadata);
-      return metadata;
+  getMetadata(type: AbstractConstructor): TypeMetadata | undefined {
+    const metadata = this.metadataMap.get(type);
+
+    if (isDefined(metadata) && !this.finalizedTypesSet.has(type)) {
+      (metadata as Writable<TypeMetadata>).properties = new Map(metadata.properties);
+      (metadata as Writable<TypeMetadata>).staticProperties = new Map(metadata.staticProperties);
+      (metadata as Writable<TypeMetadata>).methods = new Map(metadata.methods);
+      (metadata as Writable<TypeMetadata>).staticMethods = new Map(metadata.staticMethods);
+
+      this.finalizedTypesSet.add(type);
     }
 
-    return this.metadataMap.get(type)!;
+    return metadata;
   }
 
   register(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): DecoratorData {
@@ -89,9 +94,7 @@ export class ReflectionRegistry {
   }
 
   registerDecoratorData(data: DecoratorData): ReflectionMetadata {
-    const metadata = this.getMetadata(data.constructor);
-
-    (metadata as WritableTypeMetadata).registered = true;
+    const metadata = this.getOrInitializeMetadata(data.constructor);
 
     if (data.type == 'class') {
       return metadata;
@@ -128,11 +131,26 @@ export class ReflectionRegistry {
     this.metadataMap.delete(type);
   }
 
+  getOrInitializeMetadata(type: AbstractConstructor): TypeMetadata {
+    if (this.finalizedTypesSet.has(type)) {
+      throw new Error('Reflection data was accessed before registration was done.');
+    }
+
+    if (!this.metadataMap.has(type)) {
+      const metadata = this.initializeType(type);
+      this.metadataMap.set(type, metadata);
+      return metadata;
+    }
+
+    return this.metadataMap.get(type)!;
+  }
+
   // eslint-disable-next-line max-lines-per-function
   private initializeType(type: AbstractConstructor): TypeMetadata {
     return lazyObject<TypeMetadata>({
       metadataType: 'type',
       constructor: lazyObjectValue(type),
+      parent: lazyObjectValue(Reflect.getPrototypeOf(type) as AbstractConstructor | null),
       parameters: {
         initializer() {
           const parametersTypes = getParameterTypes(type);
@@ -169,8 +187,7 @@ export class ReflectionRegistry {
           return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
         })
       },
-      data: { initializer: () => new ReflectionDataMap() },
-      registered: false
+      data: { initializer: () => new ReflectionDataMap() }
     });
   }
 }

@@ -103,7 +103,7 @@ export class Container {
    */
   register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options: RegistrationOptions<T, A> = {}): void {
     if (isClassProvider(provider) && !isStubClass(provider.useClass)) {
-      const injectable = reflectionRegistry.hasType(provider.useClass) && reflectionRegistry.getMetadata(provider.useClass).data.has(injectMetadataSymbol);
+      const injectable = reflectionRegistry.getMetadata(provider.useClass)?.data.has(injectMetadataSymbol) ?? false;
 
       if (!injectable) {
         throw new Error(`${provider.useClass.name} is not injectable.`);
@@ -261,7 +261,7 @@ export class Container {
     if (isClassProvider(registration.provider)) {
       const typeMetadata = reflectionRegistry.getMetadata(registration.provider.useClass);
 
-      if (!typeMetadata.data.has(injectMetadataSymbol)) {
+      if (isUndefined(typeMetadata) || !typeMetadata.data.has(injectMetadataSymbol)) {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable.`, chain);
       }
 
@@ -402,7 +402,7 @@ export class Container {
     if (isClassProvider(registration.provider)) {
       const typeMetadata = reflectionRegistry.getMetadata(registration.provider.useClass);
 
-      if (!typeMetadata.data.has(injectMetadataSymbol)) {
+      if (isUndefined(typeMetadata) || !typeMetadata.data.has(injectMetadataSymbol)) {
         throw new ResolveError(`${registration.provider.useClass.name} is not injectable.`, chain);
       }
 

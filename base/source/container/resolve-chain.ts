@@ -58,7 +58,7 @@ export class ResolveChain {
         case 'parameter':
           const metadata = reflectionRegistry.getMetadata(node.constructor);
           const prefix = '_, '.repeat(node.index);
-          const suffix = ', _'.repeat(assertDefinedPass(metadata.parameters, 'missing parameters metadata').length - node.index - 1);
+          const suffix = ', _'.repeat(assertDefinedPass(metadata?.parameters, 'missing parameters metadata').length - node.index - 1);
           chainString += `(${prefix}${tokenName}${suffix})`;
           break;
 

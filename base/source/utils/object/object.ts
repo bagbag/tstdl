@@ -5,8 +5,7 @@ import { toArrayAsync } from '../async-iterable-helpers/to-array';
 import { isArray, isObject, isSymbol, isUndefined } from '../type-guards';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
-  // eslint-disable-next-line prefer-object-has-own
-  return Object.prototype.hasOwnProperty.call(obj, key);
+  return Object.hasOwn(obj, key);
 }
 
 /**
