@@ -20,3 +20,5 @@ export type MailData = {
    */
   headers?: Record<string, string | string[]>
 };
+
+export type DefaultMailData = Partial<MailData>;

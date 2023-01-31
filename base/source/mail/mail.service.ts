@@ -9,12 +9,16 @@ import { isDefined } from '#/utils/type-guards';
 import { MailLogRepository } from './mail-log.repository';
 import { MailClient } from './mail.client';
 import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models';
+import { DefaultMailData } from './models';
+import { MAIL_DEFAULT_DATA } from './tokens';
+
 
 @singleton()
 export class MailService {
   private readonly mailClient: MailClient;
   private readonly templateService: TemplateService;
   private readonly mailLogRepository: MailLogRepository | undefined;
+  private readonly defaultData: DefaultMailData;
   private readonly logger: Logger;
   private readonly mailDataSourceTemplateKey: WeakMap<MailData, string>;
 
@@ -22,24 +26,28 @@ export class MailService {
     mailClient: MailClient,
     templateService: TemplateService,
     @inject(MailLogRepository) @optional() mailLogRepository: MailLogRepository | undefined,
+    @inject(MAIL_DEFAULT_DATA) defaultData: DefaultMailData,
     @resolveArg<LoggerArgument>(MailService.name) logger: Logger
   ) {
     this.mailClient = mailClient;
     this.templateService = templateService;
     this.mailLogRepository = mailLogRepository;
+    this.defaultData = defaultData;
     this.logger = logger;
 
     this.mailDataSourceTemplateKey = new WeakMap();
   }
 
   async send(mailData: MailData): Promise<MailSendResult> {
+    const data: MailData = { ...this.defaultData, ...mailData };
+
     let mailLog: MailLog | undefined;
 
     if (isDefined(this.mailLogRepository)) {
       const log: NewMailLog = {
         timestamp: currentTimestamp(),
-        templateKey: this.mailDataSourceTemplateKey.get(mailData) ?? null,
-        data: mailData,
+        templateKey: this.mailDataSourceTemplateKey.get(data) ?? null,
+        data,
         sendResult: null,
         errors: null
       };
@@ -48,7 +56,7 @@ export class MailService {
     }
 
     try {
-      const result = await this.mailClient.send(mailData);
+      const result = await this.mailClient.send(data);
 
       if (isDefined(mailLog)) {
         await this.mailLogRepository!.patch(mailLog, { sendResult: result });
