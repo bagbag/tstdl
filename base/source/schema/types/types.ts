@@ -310,24 +310,26 @@ export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMa
       return schema.schema.map(optimizeSchema) as SchemaTestable<T>[];
     }
 
-    const combinedProperties = new Set([...objectKeys(schema), ...objectKeys(schema.schema)]);
+    if (isValueSchema(schema.schema)) {
+      const combinedProperties = new Set([...objectKeys(schema), ...objectKeys(schema.schema)]);
 
-    if (
-      isValueSchema(schema.schema)
-      && !combinedProperties.has('array')
-      && !combinedProperties.has('coerce')
-      && !combinedProperties.has('coercers')
-      && !combinedProperties.has('transformers')
-      && !combinedProperties.has('arrayConstraints')
-      && !combinedProperties.has('valueConstraints')
-    ) {
-      return {
-        schema: optimizeSchema(schema.schema.schema as SchemaTestable<T>),
-        ...filterObject({
-          optional: ((schema.optional ?? false) || (schema.schema.optional ?? false)) ? true : undefined,
-          nullable: ((schema.nullable ?? false) || (schema.schema.nullable ?? false)) ? true : undefined
-        }, isDefined)
-      };
+      if (
+        isValueSchema(schema.schema)
+        && !combinedProperties.has('array')
+        && !combinedProperties.has('coerce')
+        && !combinedProperties.has('coercers')
+        && !combinedProperties.has('transformers')
+        && !combinedProperties.has('arrayConstraints')
+        && !combinedProperties.has('valueConstraints')
+      ) {
+        return {
+          schema: optimizeSchema(schema.schema.schema as SchemaTestable<T>),
+          ...filterObject({
+            optional: ((schema.optional ?? false) || (schema.schema.optional ?? false)) ? true : undefined,
+            nullable: ((schema.nullable ?? false) || (schema.schema.nullable ?? false)) ? true : undefined
+          }, isDefined)
+        };
+      }
     }
 
     const { schema: innerSchema, optional, nullable, coercers, transformers, arrayConstraints, valueConstraints, ...rest } = schema;
