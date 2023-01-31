@@ -322,14 +322,12 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
       throw error;
     }
 
-    const body = error.response?.body;
-
-    if (isDefined(body)) {
-      if (!isErrorResponse(body) || !hasErrorHandler(body)) {
+    if (isDefined(error.responseBody)) {
+      if (!isErrorResponse(error.responseBody) || !hasErrorHandler(error.responseBody)) {
         throw error;
       }
 
-      const parsedError = parseErrorResponse(body, false);
+      const parsedError = parseErrorResponse(error.responseBody, false);
 
       if (isDefined(parsedError)) {
         throw parsedError;
