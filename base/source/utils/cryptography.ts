@@ -1,9 +1,8 @@
 import type { BinaryData, TypedExtract } from '#/types';
-import type * as NodeCrypto from 'crypto';
 import { encodeBase64, encodeBase64Url } from './base64';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding';
 import { getRandomBytes } from './random';
-import { isDefined, isString, isUndefined } from './type-guards';
+import { isDefined, isString } from './type-guards';
 import { zBase32Encode } from './z-base32';
 
 export type AesMode = 'CBC' | 'CTR' | 'GCM' | 'KW';
@@ -42,32 +41,7 @@ export interface DigestResult extends CryptionResult { }
 
 export interface SignResult extends CryptionResult { }
 
-let subtle: SubtleCrypto;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  subtle = globalThis?.crypto?.subtle;
-
-  if (isUndefined(subtle)) {
-    // eslint-disable-next-line no-eval
-    subtle = ((eval('require(\'crypto\')') as typeof NodeCrypto).webcrypto as any as { subtle: SubtleCrypto }).subtle;
-  }
-}
-catch (error: unknown) {
-  if (isUndefined(subtle!)) {
-    console.error('could not find SubtleCrypto implementation', error);
-  }
-}
-
-/* eslint-disable */
-export const deriveBits = (subtle! as SubtleCrypto | undefined)?.deriveBits.bind(subtle!)!;
-export const deriveKey = (subtle! as SubtleCrypto | undefined)?.deriveKey.bind(subtle!)!;
-export const exportKey = (subtle! as SubtleCrypto | undefined)?.exportKey.bind(subtle!)!;
-export const generateKey = (subtle! as SubtleCrypto | undefined)?.generateKey.bind(subtle!)!;
-export const importKey = (subtle! as SubtleCrypto | undefined)?.importKey.bind(subtle!)!;
-export const unwrapKey = (subtle! as SubtleCrypto | undefined)?.unwrapKey.bind(subtle!)!;
-export const wrapKey = (subtle! as SubtleCrypto | undefined)?.wrapKey.bind(subtle!)!;
-/* eslint-enable */
+const subtle = globalThis.crypto.subtle;
 
 /**
  * encrypt data
@@ -170,13 +144,13 @@ export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature
  * @param extractable whether the key can be used for exportKey
  */
 export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
-  const _key = isString(key) ? encodeUtf8(key) : key;
+  const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
-  if (isBinaryKey(_key)) {
-    return subtle.importKey('raw', _key, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  if (isBinaryKey(binaryKey)) {
+    return subtle.importKey('raw', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
   }
 
-  return subtle.importKey('jwk', _key, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  return subtle.importKey('jwk', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
 }
 
 /**
@@ -187,13 +161,13 @@ export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key
  * @param extractable whether the key can be used for exportKey
  */
 export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 128 | 192 | 256, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
-  const _key = isString(key) ? encodeUtf8(key) : key;
+  const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
-  if (isBinaryKey(_key)) {
-    return subtle.importKey('raw', _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  if (isBinaryKey(binaryKey)) {
+    return subtle.importKey('raw', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
   }
 
-  return subtle.importKey('jwk', _key, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  return subtle.importKey('jwk', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
 }
 
 /**
@@ -203,13 +177,13 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
  * @param extractable whether the key can be used for exportKey
  */
 export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extractable: boolean = false): Promise<CryptoKey> {
-  const _key = isString(key) ? encodeUtf8(key) : key;
+  const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
-  if (isBinaryKey(_key)) {
-    return subtle.importKey('spki', _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  if (isBinaryKey(binaryKey)) {
+    return subtle.importKey('spki', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
   }
 
-  return subtle.importKey('jwk', _key, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  return subtle.importKey('jwk', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
 }
 
 /**
@@ -218,8 +192,8 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
  * @param extractable whether the key can be used for exportKey
  */
 export async function importPbkdf2Key(key: BinaryData | string, extractable: boolean = false): Promise<CryptoKey> {
-  const _key = isString(key) ? encodeUtf8(key) : key;
-  return subtle.importKey('raw', _key, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
+  const binaryKey = isString(key) ? encodeUtf8(key) : key;
+  return subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
 }
 
 /**

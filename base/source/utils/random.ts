@@ -1,37 +1,7 @@
-import type * as NodeCrypto from 'crypto';
 import { Alphabet } from './alphabet';
-
-type NodeCryptoType = typeof NodeCrypto;
 
 const bufferSize = 20480;
 const bufferBypassThreshold = (bufferSize / 2) + 1;
-
-let nodeCrypto: NodeCryptoType | undefined;
-
-try {
-  // eslint-disable-next-line no-eval
-  nodeCrypto = eval('require(\'crypto\')') as NodeCryptoType;
-}
-catch {
-  // ignore
-}
-
-function getNodeCryptoRandomBytes(size: number): Uint8Array {
-  const buffer = nodeCrypto!.randomBytes(size);
-  const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
-
-  return uint8Array;
-}
-
-function getBrowserCryptoRandomBytes(size: number): Uint8Array {
-  const uint8Array = new Uint8Array(size);
-  return globalThis.crypto.getRandomValues(uint8Array);
-}
-
-const randomBytes: (size: number) => Uint8Array
-  = (nodeCrypto != undefined)
-    ? getNodeCryptoRandomBytes
-    : getBrowserCryptoRandomBytes;
 
 let randomBytesBuffer = new Uint8Array();
 let randomBytesBufferIndex = 0;
@@ -47,11 +17,11 @@ let randomBytesBufferIndex = 0;
  */
 export function getRandomBytes(count: number, allowUnsafe: boolean = false): Uint8Array {
   if (!allowUnsafe || (count >= bufferBypassThreshold)) {
-    return randomBytes(count);
+    return globalThis.crypto.getRandomValues(new Uint8Array(count));
   }
 
   if (count > (randomBytesBuffer.byteLength - randomBytesBufferIndex)) {
-    randomBytesBuffer = randomBytes(bufferSize);
+    randomBytesBuffer = globalThis.crypto.getRandomValues(new Uint8Array(bufferSize));
     randomBytesBufferIndex = 0;
   }
 
