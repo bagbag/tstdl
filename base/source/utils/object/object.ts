@@ -91,7 +91,7 @@ export function getGetter<T extends ObjectLiteral, U extends keyof T>(obj: T, pr
   return getter;
 }
 
-export function deepEntries(object: ObjectLiteral, keepInnerObjects: boolean = false, prefix?: string): [string, any][] {
+export function deepObjectEntries(object: ObjectLiteral, keepInnerObjects: boolean = false, prefix?: string): [string, any][] {
   const allEntries = objectEntries(object) as [string, any][];
 
   for (const entry of allEntries) {
@@ -104,7 +104,7 @@ export function deepEntries(object: ObjectLiteral, keepInnerObjects: boolean = f
     ? allEntries
     : allEntries.map(([key, value]) => [`${prefix}${key}`, value] as const);
 
-  let entries: [string, any][] = [];
+  const entries: [string, any][] = [];
 
   for (const [key, value] of rawEntries) {
     if (isObject(value) || isArray(value)) {
@@ -112,7 +112,8 @@ export function deepEntries(object: ObjectLiteral, keepInnerObjects: boolean = f
         entries.push([key, value]);
       }
 
-      entries = [...entries, ...deepEntries(value, keepInnerObjects, `${key}.`)];
+      const innerEntries = deepObjectEntries(value, keepInnerObjects, `${key}.`);
+      entries.push(...innerEntries);
     }
     else {
       entries.push([key, value]);

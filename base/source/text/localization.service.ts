@@ -1,7 +1,7 @@
 import { singleton } from '#/container';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types';
 import { enumEntries, enumValueName } from '#/utils/enum';
-import { deepEntries } from '#/utils/object/object';
+import { deepObjectEntries } from '#/utils/object/object';
 import type { PropertyName } from '#/utils/object/property-name';
 import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
 import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards';
@@ -245,7 +245,7 @@ export function autoEnumerationLocalization<T extends Enumeration>(enumeration: 
 function buildMappedLocalization({ language, keys, enums }: Localization): MappedLocalization {
   const mappedLocalization: MappedLocalization = {
     language,
-    keys: new Map(deepEntries(keys)),
+    keys: new Map(deepObjectEntries(keys)),
     enums: new Map(enums)
   };
 
