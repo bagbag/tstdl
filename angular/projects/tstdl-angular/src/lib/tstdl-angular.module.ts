@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { configureTstdl } from '@tstdl/base';
-import { CardComponent, ColoredProgressbarComponent, IndeterminateProgressBarComponent, SkeletonComponent } from './components';
+import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, SkeletonComponent } from './components';
+import { CardActionDirective, CardBodyDirective, CardComponent, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective } from './components/card';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DecyclePipe, DurationPipe, DynamicTextPipe, LocalizeEnumPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeHtmlPipe, SafeResourceUrlPipe, SafeUrlPipe, SerializePipe, TimestampToDateTimePipe } from './pipes';
 import { TstdlBridgeService } from './services/tstdl-bridge.service';
@@ -34,7 +35,14 @@ const directives = [
   LazyListDirective,
   LetDirective,
   RepeatDirective,
-  VisibilityObserverDirective
+  VisibilityObserverDirective,
+
+  /* card */
+  CardActionDirective,
+  CardBodyDirective,
+  CardFooterDirective,
+  CardHeaderDirective,
+  CardSubHeaderDirective
 ];
 
 const components = [

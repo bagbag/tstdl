@@ -1,6 +1,7 @@
 import { Directive } from '@angular/core';
 
 @Directive({
-  selector: '[tslCardHeader]'
+  selector: '[tslCardHeader]',
+  standalone: true
 })
 export class CardHeaderDirective { }

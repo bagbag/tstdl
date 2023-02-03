@@ -15,7 +15,7 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
   selector: 'tsl-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  imports: [CommonModule, ColoredProgressbarComponent, IndeterminateProgressBarComponent],
+  imports: [CommonModule, ColoredProgressbarComponent, IndeterminateProgressBarComponent, CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   animations: [

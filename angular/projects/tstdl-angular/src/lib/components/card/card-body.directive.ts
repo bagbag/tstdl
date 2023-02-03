@@ -1,7 +1,8 @@
 import { Directive, HostBinding, Input } from '@angular/core';
 
 @Directive({
-  selector: '[tslCardBody]'
+  selector: '[tslCardBody]',
+  standalone: true
 })
 export class CardBodyDirective {
   @HostBinding('class.-mx-6')
