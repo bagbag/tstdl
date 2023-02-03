@@ -22,10 +22,10 @@ const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a
 export class ColoredProgressbarComponent extends LifecycleUtils<ColoredProgressbarComponent> {
   @Input() progress: number | undefined;
 
-  @HostBinding('class.rounded-full')
+  @HostBinding('class.tw-rounded-full')
   @Input() rounded: boolean;
 
-  @HostBinding('style.background-color')
+  @HostBinding('style.tw-background-color')
   get backgroundColor(): string {
     return progressColorScaler(this.progress).alpha(0.3).hex();
   }

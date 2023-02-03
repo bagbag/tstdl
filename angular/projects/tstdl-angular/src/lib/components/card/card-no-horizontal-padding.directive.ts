@@ -4,7 +4,7 @@ import { Directive } from '@angular/core';
   selector: '[tslCardNoHorizontalPadding]',
   standalone: true,
   host: {
-    '[class.-mx-6]': 'true'
+    '[class.-tw-mx-6]': 'true'
   }
 })
 export class CardNoHorizontalPaddingDirective { }
