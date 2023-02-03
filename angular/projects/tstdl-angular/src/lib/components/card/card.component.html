@@ -7,14 +7,14 @@
     <ng-content select="[tslCardHeader]"></ng-content>
   </span>
 
-  <span *ngIf="cardSubHeaders.length > 0" class="tsl-card-sub-header tsl-contents tsl-text-sm tsl-text-text-secondary">
+  <span *ngIf="cardSubHeaders.length > 0" class="tsl-card-sub-header tsl-contents tsl-text-sm">
     <ng-content select="[tslCardSubHeader]"></ng-content>
   </span>
 </div>
 
 <div *ngIf="headerSeparator && hasHeader && hasBody" class="tsl-w-12 tsl-ml-6 tsl-border-0 tsl-border-t-[1px] tsl-border-b-[1px] tsl-border-solid tsl-border-border"></div>
 
-<div *ngIf="hasBody" class="tsl-card-body tsl-grow tsl-grid tsl-gap-4 tsl-text-text-secondary">
+<div *ngIf="hasBody" class="tsl-card-body tsl-grow tsl-grid tsl-gap-4">
   <ng-content select="[tslCardBody]"></ng-content>
 </div>
 
@@ -22,7 +22,7 @@
                          class="tsl-w-auto -tsl-mx-6 -tsl-mb-4 tsl-mt-4 !tsl-h-[2px]"
                          [progress]="progress"></tsl-colored-progressbar>
 
-<div *ngIf="hasFooter" class="tsl-card-footer tsl-relative -tsl-mx-6 -tsl-mb-5 tsl-px-6 tsl-py-3" [class.bg-bg-primary-600]="!noFooterBackground" [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)">
+<div *ngIf="hasFooter" class="tsl-card-footer tsl-relative -tsl-mx-6 -tsl-mb-5 tsl-px-6 tsl-py-3" [class.!tsl-bg-none]="!noFooterBackground" [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)">
   <div *ngIf="(progress == undefined) && footerSeparator && (hasHeader || hasBody)" class="tsl-absolute tsl-top-0 tsl-inset-x-0 tsl-border-0 tsl-border-t-2 tsl-border-solid tsl-border-border"></div>
 
   <ng-content select="[tslCardFooter]"></ng-content>

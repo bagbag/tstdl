@@ -8,20 +8,20 @@
 
 .tsl-card-header {
   background-color: var(--tsl-card-header-background-color, inherit);
-  color: var(--tsl-card-header-color, var(--tsl-primary-color));
+  color: var(--tsl-card-header-color, var(--tsl-primary-text-color));
 }
 
 .tsl-card-sub-header {
   background-color: var(--tsl-card-sub-header-background-color, inherit);
-  color: var(--tsl-card-sub-header-color, var(--tsl-tertiary-color));
+  color: var(--tsl-card-sub-header-color, var(--tsl-tertiary-text-color));
 }
 
 .tsl-card-body {
   background-color: var(--tsl-card-body-background-color, inherit);
-  color: var(--tsl-card-body-color, var(--tsl-secondary-color));
+  color: var(--tsl-card-body-color, var(--tsl-secondary-text-color));
 }
 
 .tsl-card-footer {
   background-color: var(--tsl-card-footer-background-color, var(--tsl-tertiary-background-color));
-  color: var(--tsl-card-footer-color, var(--tsl-tertiary-color));
+  color: var(--tsl-card-footer-color, var(--tsl-tertiary-text-color));
 }
