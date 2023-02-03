@@ -1,47 +1,47 @@
 :host {
-  --skeleton-border-radius: 0px;
-  --skeleton-pulse-size: 5px;
-  --skeleton-pulse-duration: 1.25s;
-  --skeleton-pulse-scale: 0.98;
-  --skeleton-color: rgba(0, 0, 0, 0.15) !important;
-  --skeleton-pulse-color: rgba(0, 0, 0, 0.1) !important;
-  --skeleton-pulse-shadow-color: rgba(0, 0, 0, 0.1) !important;
-  --skeleton-pulse-shadow-color-fadeout: rgba(0, 0, 0, 0) !important;
+  --tsl-skeleton-border-radius: 0px;
+  --tsl-skeleton-pulse-size: 5px;
+  --tsl-skeleton-pulse-duration: 1.25s;
+  --tsl-skeleton-pulse-scale: 0.98;
+  --tsl-skeleton-color: rgba(0, 0, 0, 0.15) !important;
+  --tsl-skeleton-pulse-color: rgba(0, 0, 0, 0.1) !important;
+  --tsl-skeleton-pulse-shadow-color: rgba(0, 0, 0, 0.1) !important;
+  --tsl-skeleton-pulse-shadow-color-fadeout: rgba(0, 0, 0, 0) !important;
 
   display: block;
-  background: var(--skeleton-color);
-  border-radius: var(--skeleton-border-radius);
+  background: var(--tsl-skeleton-color);
+  border-radius: var(--tsl-skeleton-border-radius);
   height: 0.65em;
   width: 10em;
   transform: scale(1);
   transform-origin: top left;
-  animation: pulse var(--skeleton-pulse-duration) infinite;
+  animation: pulse var(--tsl-skeleton-pulse-duration) infinite;
 }
 
 :host.dark:not(.light),
 .dark :host:not(.light) {
-  --skeleton-color: rgba(255, 255, 255, 0.2) !important;
-  --skeleton-pulse-color: rgba(255, 255, 255, 0.15) !important;
-  --skeleton-pulse-shadow-color: rgba(255, 255, 255, 0.15) !important;
-  --skeleton-pulse-shadow-color-fadeout: rgba(255, 255, 255, 0) !important;
+  --tsl-skeleton-color: rgba(255, 255, 255, 0.2) !important;
+  --tsl-skeleton-pulse-color: rgba(255, 255, 255, 0.15) !important;
+  --tsl-skeleton-pulse-shadow-color: rgba(255, 255, 255, 0.15) !important;
+  --tsl-skeleton-pulse-shadow-color-fadeout: rgba(255, 255, 255, 0) !important;
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(var(--skeleton-pulse-scale));
-    background: var(--skeleton-color);
-    box-shadow: 0 0 0 0 var(--skeleton-pulse-shadow-color);
+    transform: scale(var(--tsl-skeleton-pulse-scale));
+    background: var(--tsl-skeleton-color);
+    box-shadow: 0 0 0 0 var(--tsl-skeleton-pulse-shadow-color);
   }
 
   80% {
     transform: scale(1);
-    background: var(--skeleton-pulse-color);
-    box-shadow: 0 0 0 var(--skeleton-pulse-size) var(--skeleton-pulse-shadow-color-fadeout);
+    background: var(--tsl-skeleton-pulse-color);
+    box-shadow: 0 0 0 var(--tsl-skeleton-pulse-size) var(--tsl-skeleton-pulse-shadow-color-fadeout);
   }
 
   100% {
-    transform: scale(var(--skeleton-pulse-scale));
-    background: var(--skeleton-color);
-    box-shadow: 0 0 0 0 var(--skeleton-pulse-shadow-color-fadeout);
+    transform: scale(var(--tsl-skeleton-pulse-scale));
+    background: var(--tsl-skeleton-color);
+    box-shadow: 0 0 0 0 var(--tsl-skeleton-pulse-shadow-color-fadeout);
   }
 }

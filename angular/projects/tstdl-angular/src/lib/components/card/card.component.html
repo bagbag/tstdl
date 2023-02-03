@@ -1,33 +1,33 @@
-<div *ngIf="loading" @fadeInOut class="tw-absolute tw-top-0 tw-inset-x-0">
+<div *ngIf="loading" @fadeInOut class="tsl-absolute tsl-top-0 tsl-inset-x-0">
   <tsl-indeterminate-progress-bar></tsl-indeterminate-progress-bar>
 </div>
 
 <div *ngIf="(cardHeaders.length + cardSubHeaders.length) > 0">
-  <span *ngIf="cardHeaders.length > 0" class="tw-contents tw-text-xl tw-font-medium">
+  <span *ngIf="cardHeaders.length > 0" class="tsl-card-header tsl-contents tsl-text-xl tsl-font-medium">
     <ng-content select="[tslCardHeader]"></ng-content>
   </span>
 
-  <span *ngIf="cardSubHeaders.length > 0" class="tw-contents tw-text-sm tw-text-text-secondary">
+  <span *ngIf="cardSubHeaders.length > 0" class="tsl-card-sub-header tsl-contents tsl-text-sm tsl-text-text-secondary">
     <ng-content select="[tslCardSubHeader]"></ng-content>
   </span>
 </div>
 
-<div *ngIf="headerSeparator && hasHeader && hasBody" class="tw-w-12 tw-ml-6 tw-border-0 tw-border-t-[1px] tw-border-b-[1px] tw-border-solid tw-border-border"></div>
+<div *ngIf="headerSeparator && hasHeader && hasBody" class="tsl-w-12 tsl-ml-6 tsl-border-0 tsl-border-t-[1px] tsl-border-b-[1px] tsl-border-solid tsl-border-border"></div>
 
-<div *ngIf="hasBody" class="tw-grow tw-grid tw-gap-4 tw-text-text-secondary">
+<div *ngIf="hasBody" class="tsl-card-body tsl-grow tsl-grid tsl-gap-4 tsl-text-text-secondary">
   <ng-content select="[tslCardBody]"></ng-content>
 </div>
 
 <tsl-colored-progressbar *ngIf="progress != undefined"
-                         class="tw-w-auto -tw-mx-6 -tw-mb-4 tw-mt-4 !tw-h-[2px]"
+                         class="tsl-w-auto -tsl-mx-6 -tsl-mb-4 tsl-mt-4 !tsl-h-[2px]"
                          [progress]="progress"></tsl-colored-progressbar>
 
-<div *ngIf="hasFooter" class="tw-relative -tw-mx-6 -tw-mb-5 tw-px-6 tw-py-3" [class.bg-bg-primary-600]="!noFooterBackground" [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)">
-  <div *ngIf="(progress == undefined) && footerSeparator && (hasHeader || hasBody)" class="tw-absolute tw-top-0 tw-inset-x-0 tw-border-0 tw-border-t-2 tw-border-solid tw-border-border"></div>
+<div *ngIf="hasFooter" class="tsl-card-footer tsl-relative -tsl-mx-6 -tsl-mb-5 tsl-px-6 tsl-py-3" [class.bg-bg-primary-600]="!noFooterBackground" [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)">
+  <div *ngIf="(progress == undefined) && footerSeparator && (hasHeader || hasBody)" class="tsl-absolute tsl-top-0 tsl-inset-x-0 tsl-border-0 tsl-border-t-2 tsl-border-solid tsl-border-border"></div>
 
   <ng-content select="[tslCardFooter]"></ng-content>
 
-  <div *ngIf="hasAction" class="tw-flex tw-justify-end tw-gap-2">
+  <div *ngIf="hasAction" class="tsl-flex tsl-justify-end tsl-gap-2">
     <ng-content select="[tslCardAction]"></ng-content>
   </div>
 </div>

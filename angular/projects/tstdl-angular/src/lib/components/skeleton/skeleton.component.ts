@@ -26,18 +26,18 @@ export class SkeletonComponent {
   height: string | null | undefined;
 
   @Input()
-  @HostBinding('style.--skeleton-border-radius')
+  @HostBinding('style.--tsl-skeleton-border-radius')
   borderRadius: string | null | undefined;
 
   @Input()
-  @HostBinding('style.--skeleton-pulse-size')
+  @HostBinding('style.--tsl-skeleton-pulse-size')
   pulseSize: string | null | undefined;
 
   @Input()
-  @HostBinding('style.--skeleton-pulse-scale')
+  @HostBinding('style.--tsl-skeleton-pulse-scale')
   pulseScale: number | string | null | undefined;
 
   @Input()
-  @HostBinding('style.--skeleton-pulse-duration')
+  @HostBinding('style.--tsl-skeleton-pulse-duration')
   pulseDuration: string | null | undefined;
 }

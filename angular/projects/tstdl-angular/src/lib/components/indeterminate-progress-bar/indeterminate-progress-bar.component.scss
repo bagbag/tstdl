@@ -1,12 +1,13 @@
 :host {
-  display: block;
-  position: relative;
-  height: 0.5rem;
-  overflow: hidden;
-  border-radius: 9999px;
+  --tsl-indeterminate-progress-bar-background-color: unset;
+  --tsl-indeterminate-progress-bar-color: unset;
+
+  background-color: var(--tsl-indeterminate-progress-bar-background-color, var(--tsl-tertiary-background-color));
 }
 
 .progress {
+  background-color: var(--tsl-indeterminate-progress-bar-color, var(--tsl-primary-color));
+
   animation-duration: 2s;
   animation-iteration-count: infinite;
   animation-name: indeterminate-progress-bar;

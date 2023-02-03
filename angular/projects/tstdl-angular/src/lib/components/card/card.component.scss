@@ -3,13 +3,25 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 5rem auto 5rem;
 
-  position: relative;
-  display: flex;
+  background-color: var(--tsl-card-background-color, var(--tsl-secondary-background-color));
+}
 
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
+.tsl-card-header {
+  background-color: var(--tsl-card-header-background-color, inherit);
+  color: var(--tsl-card-header-color, var(--tsl-primary-color));
+}
 
-  border-radius: 0.75rem;
-  overflow: hidden;
+.tsl-card-sub-header {
+  background-color: var(--tsl-card-sub-header-background-color, inherit);
+  color: var(--tsl-card-sub-header-color, var(--tsl-tertiary-color));
+}
+
+.tsl-card-body {
+  background-color: var(--tsl-card-body-background-color, inherit);
+  color: var(--tsl-card-body-color, var(--tsl-secondary-color));
+}
+
+.tsl-card-footer {
+  background-color: var(--tsl-card-footer-background-color, var(--tsl-tertiary-background-color));
+  color: var(--tsl-card-footer-color, var(--tsl-tertiary-color));
 }
