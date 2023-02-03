@@ -1,0 +1,7 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  transition: background-color 500ms cubic-bezier(1, 0, 0.4, 1);
+}

@@ -1,8 +1,8 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.82.0",
+  "version": "0.82.1",
   "dependencies": {
-    "tslib": "^2.4"
+    "tslib": "^2.5"
   },
   "peerDependencies": {
     "@angular/common": ">=15.0",
