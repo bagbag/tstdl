@@ -2,7 +2,7 @@ import { container } from '#/container';
 import { configureMail, MailService } from '#/mail';
 import { NodemailerMailClient } from '#/mail/clients/nodemailer.mail-client';
 import { configureTemplates } from '#/templates';
-import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.provider-template';
+import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider';
 import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
 import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
 import { configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver';

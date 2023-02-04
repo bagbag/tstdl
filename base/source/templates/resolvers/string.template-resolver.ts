@@ -5,7 +5,6 @@ import { TemplateField } from '../template.model';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
 import { TemplateResolver } from '../template.resolver';
 
-
 export class StringTemplateField<Renderer extends string = string, Options = any> extends TemplateField<'string', Renderer, Options> {
   @Property()
   template: string;
@@ -21,7 +20,7 @@ export class StringTemplateResolver extends TemplateResolver<StringTemplateField
     return (resolver == 'string');
   }
 
-  async resolve(field: StringTemplateField): Promise<string> {
+  resolve(field: StringTemplateField): string {
     return field.template;
   }
 }

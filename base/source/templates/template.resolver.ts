@@ -1,6 +1,6 @@
 import type { TemplateField } from './template.model';
 
-export abstract class TemplateResolver<T extends TemplateField = TemplateField> {
+export abstract class TemplateResolver<T extends TemplateField = TemplateField, V = unknown> {
   abstract canHandle(resolver: string): boolean;
-  abstract resolve(field: T): Promise<string>;
+  abstract resolve(field: T): V | Promise<V>;
 }

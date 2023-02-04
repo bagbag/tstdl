@@ -2,7 +2,7 @@ import { singleton } from '#/container';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer';
 import { TemplateRenderer } from '../template.renderer';
 
-export type StringTemplateRenderObject = TemplateRenderObject<'string', undefined>;
+export type StringTemplateRenderObject = TemplateRenderObject<'string', undefined, string>;
 
 @singleton()
 export class StringTemplateRenderer extends TemplateRenderer<'string', undefined> {
@@ -14,7 +14,7 @@ export class StringTemplateRenderer extends TemplateRenderer<'string', undefined
     return (type == 'string');
   }
 
-  async _render({ template }: StringTemplateRenderObject, _context?: object): Promise<TemplateRenderResult> {
+  _render({ template }: StringTemplateRenderObject, _context?: object): TemplateRenderResult {
     return template;
   }
 }

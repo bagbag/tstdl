@@ -83,6 +83,8 @@ export type ApiEndpointDefinition = {
   cors?: ApiEndpointDefinitionCors
 };
 
+export type ApiEndpointsDefinition = Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>;
+
 export type ApiDefinition = {
   /**
    * Default root resource for endpoints.
@@ -94,7 +96,7 @@ export type ApiDefinition = {
    */
   prefix?: string | null,
 
-  endpoints: Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>
+  endpoints: ApiEndpointsDefinition
 };
 
 export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];

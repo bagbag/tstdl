@@ -88,7 +88,7 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
     }
 
     const resolver = this.templateResolverProvider.get(partial.resolver);
-    return resolver.resolve(partial) as unknown as Promise<handlebars.TemplateDelegate>;
+    return resolver.resolve(partial) as Promise<handlebars.TemplateDelegate>;
   }
 }
 

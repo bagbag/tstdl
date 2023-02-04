@@ -1,8 +1,12 @@
+import { Schema, SchemaTestable } from '#/schema';
+import { isDefined } from '#/utils/type-guards';
+
 export type TemplateRenderResult = string;
 
-export type TemplateRenderObject<Renderer extends string = string, Options = any> = {
+export type TemplateRenderObject<Renderer extends string = string, Options = any, V = unknown> = {
   renderer: Renderer,
-  template: string,
+  template: V,
+  contextSchema?: SchemaTestable,
   options?: Options
 };
 
@@ -17,7 +21,11 @@ export abstract class TemplateRenderer<Renderer extends string = string, Options
   readonly [templateRendererOptions]: Options;
 
   async render(template: TemplateRenderObject<Renderer, Options>, context?: object): Promise<TemplateRenderResult> {
-    return this._render(template, context);
+    const parsedContext = isDefined(template.contextSchema)
+      ? Schema.parse(template.contextSchema, context)
+      : context;
+
+    return this._render(template, parsedContext);
   }
 
   abstract canHandleType(type: string): boolean;

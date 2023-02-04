@@ -126,10 +126,11 @@ export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtTok
   }
 }
 
-async function getSignature(data: BinaryData, algorithm: JwtTokenAlgorithm, key: Key | string): Promise<ArrayBuffer> {
+async function getSignature(data: BinaryData, algorithm: JwtTokenAlgorithm, secret: Key | string): Promise<ArrayBuffer> {
   const hashAlgorithm = getHmacHashAlgorithm(algorithm);
-  const hmacKey = await importHmacKey(hashAlgorithm, key, false);
+  const hmacKey = await importHmacKey(hashAlgorithm, secret, false);
   const hmacSignature = sign('HMAC', hmacKey, data);
+
   return hmacSignature.toBuffer();
 }
 

@@ -2,7 +2,6 @@ import { container } from '#/container';
 import { connect, disposer } from '#/core';
 import { Logger } from '#/logger';
 import { assertDefined, isObject, isString } from '#/utils/type-guards';
-import * as Mongo from 'mongodb';
 import type { Entity } from '../entity';
 import type { DatabaseArgument, MongoClientArgument } from './classes';
 import { Collection, Database, MongoClient } from './classes';
@@ -25,9 +24,6 @@ export function configureMongo(config: Partial<MongoModuleConfig>): void {
   mongoModuleConfig.defaultDatabase = config.defaultDatabase ?? mongoModuleConfig.defaultDatabase;
   mongoModuleConfig.defaultConnection = config.defaultConnection ?? mongoModuleConfig.defaultConnection;
   mongoModuleConfig.logPrefix = config.logPrefix ?? mongoModuleConfig.logPrefix;
-
-  const mongoLogger = container.resolve(Logger, mongoModuleConfig.logPrefix);
-  Mongo.Logger.setCurrentLogger((message, parameters) => mongoLogger.verbose(JSON.stringify({ message, parameters }, undefined, 2)));
 }
 
 container.registerSingleton(MongoClient, {

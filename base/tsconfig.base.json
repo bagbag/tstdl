@@ -41,6 +41,11 @@
     "useDefineForClassFields": true,
     "useUnknownInCatchVariables": true,
 
+    /* jsx */
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+
+    /* misc */
     "skipLibCheck": true
   },
   "exclude": ["dist/"]

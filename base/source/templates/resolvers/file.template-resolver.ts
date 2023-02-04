@@ -2,11 +2,11 @@ import type { Injectable } from '#/container';
 import { injectArg, resolveArgumentType, singleton } from '#/container';
 import { BadRequestError } from '#/error/bad-request.error';
 import { Property } from '#/schema';
-import { TypedOmit } from '#/types';
+import type { TypedOmit } from '#/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { TemplateField } from '../template.model';
-import { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
+import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
 import { TemplateResolver } from '../template.resolver';
 
 export type FileTemplateProviderConfig = {

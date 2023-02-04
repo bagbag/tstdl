@@ -51,7 +51,7 @@ export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
 export type Sort<T = any> = {
-  field: (Extract<keyof T, string> | '$score'),
+  field: Extract<keyof T, string> | '$score',
   order?: Order
 };
 

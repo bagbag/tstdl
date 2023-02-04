@@ -4,7 +4,7 @@ import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, Compa
 import type { Record } from '#/types';
 import { objectEntries } from '#/utils/object/object';
 import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
-import type { RootFilterOperators } from 'mongodb';
+import type { Filter as MongoFilter, RootFilterOperators } from 'mongodb';
 import type { MongoDocument } from './model';
 import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository';
 import type { Filter, SortArrayItem } from './types';
@@ -20,15 +20,15 @@ export function convertQuery<T extends Entity, TDb extends Entity>(query: Query<
 
     switch (property) {
       case '$and':
-        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$and = (value as LogicalAndQuery['$and']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoFilter<any>);
         break;
 
       case '$or':
-        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$or = (value as LogicalOrQuery['$or']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoFilter<any>);
         break;
 
       case '$nor':
-        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoDocument<TDb>);
+        (filterQuery as RootFilterOperators<MongoDocument<TDb>>).$nor = (value as LogicalNorQuery['$nor']).map((innerQuery) => convertQuery(innerQuery as Query<T>, mappingMap, transform) as MongoFilter<any>);
         break;
 
       default:

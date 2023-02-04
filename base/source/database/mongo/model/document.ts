@@ -71,17 +71,6 @@ export function toMongoDocumentWithoutId<T extends Entity>(entity: MaybeNewEntit
   return document;
 }
 
-export function toMongoDocumentWithId<T extends Entity>(entity: MaybeNewEntity<T>): MongoDocument<T> {
-  const { id, ...entityRest } = entity;
-
-  const document = {
-    _id: id ?? getNewId(),
-    ...entityRest
-  } as MongoDocument<T>;
-
-  return document;
-}
-
 export function mongoDocumentFromMaybeNewEntity<T extends Entity>(entity: MaybeNewEntity<T>): MongoDocument<T> {
   const { id, ...entityRest } = entity;
 

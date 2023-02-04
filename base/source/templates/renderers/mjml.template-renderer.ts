@@ -12,7 +12,7 @@ export type MjmlRendererOptions = Pick<MJMLParsingOptions, 'fonts' | 'keepCommen
 
 export type MjmlRendererString = 'mjml' | `mjml-${string}`;
 
-export type MjmlTemplateRenderObject = TemplateRenderObject<MjmlRendererString, MjmlRendererOptions>;
+export type MjmlTemplateRenderObject = TemplateRenderObject<MjmlRendererString, MjmlRendererOptions, string>;
 
 @singleton()
 export class MjmlTemplateRenderer extends TemplateRenderer<MjmlRendererString, MjmlRendererOptions> {
