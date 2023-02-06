@@ -1,4 +1,4 @@
-import type { OneOrMany } from '#/types';
+import type { OneOrMany, WritableOneOrMany } from '#/types';
 import { isArray, isNull } from '#/utils/type-guards';
 
 export type HttpValue = string | number | boolean | null;
@@ -7,7 +7,7 @@ export type NormalizedHttpValue = string;
 
 export type HttpValueObject = Record<string, OneOrMany<HttpValue>>;
 
-export type NormalizedHttpValueObject = Record<string, OneOrMany<string>>;
+export type NormalizedHttpValueObject = Record<string, WritableOneOrMany<string>>;
 
 export type HttpMethod =
   | 'HEAD'
@@ -18,7 +18,7 @@ export type HttpMethod =
   | 'DELETE'
   | 'OPTIONS';
 
-export function normalizeHttpValue(value: OneOrMany<HttpValue>): OneOrMany<string> {
+export function normalizeHttpValue(value: OneOrMany<HttpValue>): WritableOneOrMany<string> {
   if (isArray(value)) {
     return value.map(normalizeSingleHttpValue);
   }

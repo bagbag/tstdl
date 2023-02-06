@@ -2,7 +2,6 @@ import { container, injectArg, singleton } from '#/container';
 import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
 import { toArray } from '#/utils/array';
 import { isDefined } from '#/utils/type-guards';
-import type { IncomingHttpHeaders } from 'http';
 import { Readable } from 'stream';
 import type { ReadableStream } from 'stream/web';
 import type { Dispatcher } from 'undici';
@@ -62,7 +61,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
       const response = await request(httpClientRequest.url, {
         method: httpClientRequest.method,
         signal: httpClientRequest.abortToken.asAbortSignal,
-        headers: httpClientRequest.headers.asNormalizedObject() as IncomingHttpHeaders,
+        headers: httpClientRequest.headers.asNormalizedObject(),
         body,
         headersTimeout: httpClientRequest.timeout,
         bodyTimeout: httpClientRequest.timeout,

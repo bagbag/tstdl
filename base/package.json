@@ -52,7 +52,7 @@
     "preact-render-to-string": "^5.2.6",
     "preact": "^10.11.3",
     "puppeteer": "^19.6",
-    "undici": "^5.17",
+    "undici": "^5.18",
     "urlpattern-polyfill": "^6.0"
   },
   "peerDependenciesMeta": {
