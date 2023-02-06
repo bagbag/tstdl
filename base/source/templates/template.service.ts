@@ -9,6 +9,7 @@ import type { Template } from './template.model';
 import { TemplateProvider } from './template.provider';
 
 export type TemplateServiceRenderResult<T extends Template = Template> = {
+  name: string,
   fields: Record<keyof T['fields'], string>,
   options: T['options']
 };
@@ -29,12 +30,16 @@ export class TemplateService {
     this.templateResolverProvider = templateResolverProvider;
   }
 
-  async render<T extends Template = Template>(key: string, templateContext?: object): Promise<TemplateServiceRenderResult<T>>;
-  async render<T extends Template = Template>(template: T, templateContext?: object): Promise<TemplateServiceRenderResult<T>>;
+  async get<T extends Template = Template>(key: string): Promise<T> {
+    const template = await this.templateProvider.get(key);
+    return template as T;
+  }
+
   async render<T extends Template = Template>(keyOrTemplate: string | T, templateContext?: object): Promise<TemplateServiceRenderResult<T>> {
-    const template = isString(keyOrTemplate) ? await this.templateProvider.get(keyOrTemplate) : keyOrTemplate;
+    const template = isString(keyOrTemplate) ? await this.get(keyOrTemplate) : keyOrTemplate;
 
     const result: TemplateServiceRenderResult<T> = {
+      name: template.name,
       fields: {} as any,
       options: template.options
     };

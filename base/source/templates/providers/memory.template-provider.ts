@@ -17,7 +17,7 @@ export class MemoryTemplateProvider extends TemplateProvider {
     this.map.set(key, template);
   }
 
-  async get(key: string): Promise<Template> {
+  get(key: string): Template {
     const template = this.map.get(key);
 
     if (isUndefined(template)) {

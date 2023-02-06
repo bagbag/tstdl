@@ -7,7 +7,7 @@ function HelloJsx({ name }: { name: string }): VNode {
   return <h1>Hello {name}!</h1>;
 }
 
-export const template = simpleTemplate(
+export const template = simpleTemplate('hello-jsx',
   jsxTemplateField<JsxTemplateRenderer>({
     renderer: 'jsx',
     template: HelloJsx

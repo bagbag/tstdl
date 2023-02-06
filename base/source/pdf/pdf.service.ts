@@ -1,4 +1,5 @@
-import { AfterResolve, afterResolve, Injectable, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
+import type { AfterResolve, Injectable } from '#/container';
+import { afterResolve, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container';
 import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable/disposable';
 import { disposeAsync } from '#/disposable/disposable';
@@ -8,7 +9,7 @@ import { Pool } from '#/pool';
 import { Enumeration, Optional } from '#/schema';
 import type { TemplateField } from '#/templates';
 import { Template, TemplateService } from '#/templates';
-import { Record } from '#/types';
+import type { Record } from '#/types';
 import { finalizeStream } from '#/utils/stream/finalize-stream';
 import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise';
@@ -200,9 +201,9 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options additional options, overwrites options specified in template
    * @returns pdf bytes
    */
-  renderTemplateStream(key: string, templateContext?: object, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+  renderTemplateStream(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => {
-      const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(key, templateContext);
+      const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(keyOrTemplate, templateContext);
       await page.setContent(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load', ...options });
 
       return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options };
@@ -216,8 +217,8 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options additional options, overwrites options specified in template
    * @returns pdf bytes
    */
-  async renderTemplate(key: string, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
-    const stream = this.renderTemplateStream(key, templateContext, options);
+  async renderTemplate(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
+    const stream = this.renderTemplateStream(keyOrTemplate, templateContext, options);
     return readBinaryStream(stream);
   }
 
@@ -237,7 +238,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
         }
 
         if (isDefined(options.language)) {
-          page.setExtraHTTPHeaders({ 'Accept-Language': options.language });
+          await page.setExtraHTTPHeaders({ 'Accept-Language': options.language });
         }
 
         const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
@@ -298,8 +299,9 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
   }
 }
 
-export function pdfTemplate(fields: { body: TemplateField, header?: TemplateField, footer?: TemplateField }, options?: PdfTemplateOptions): PdfTemplate {
+export function pdfTemplate(name: string, fields: { body: TemplateField, header?: TemplateField, footer?: TemplateField }, options?: PdfTemplateOptions): PdfTemplate {
   return {
+    name,
     fields,
     options
   };

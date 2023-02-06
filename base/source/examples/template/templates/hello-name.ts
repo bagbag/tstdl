@@ -3,7 +3,7 @@ import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebar
 import { stringTemplateField } from '#/templates/resolvers/string.template-resolver';
 import { assertFunction } from '#/utils/type-guards';
 
-const template = simpleTemplate(
+const template = simpleTemplate('hello-name',
   stringTemplateField<HandlebarsTemplateRenderer>({
     renderer: 'handlebars',
     template: '{{#fooBlockHelper this "A test argument"}}{{>fooPartial hobby="Music" }}{{/fooBlockHelper}}',

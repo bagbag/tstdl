@@ -12,7 +12,6 @@ import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from
 import { DefaultMailData } from './models';
 import { MAIL_DEFAULT_DATA } from './tokens';
 
-
 @singleton()
 export class MailService {
   private readonly mailClient: MailClient;
@@ -20,7 +19,6 @@ export class MailService {
   private readonly mailLogRepository: MailLogRepository | undefined;
   private readonly defaultData: DefaultMailData;
   private readonly logger: Logger;
-  private readonly mailDataSourceTemplateKey: WeakMap<MailData, string>;
 
   constructor(
     mailClient: MailClient,
@@ -34,11 +32,12 @@ export class MailService {
     this.mailLogRepository = mailLogRepository;
     this.defaultData = defaultData;
     this.logger = logger;
-
-    this.mailDataSourceTemplateKey = new WeakMap();
   }
 
-  async send(mailData: MailData): Promise<MailSendResult> {
+  async send(mailData: MailData): Promise<MailSendResult>;
+  /** @deprecated internal */
+  async send(mailData: MailData, templateName?: string): Promise<MailSendResult>;
+  async send(mailData: MailData, templateName?: string): Promise<MailSendResult> {
     const data: MailData = { ...this.defaultData, ...mailData };
 
     let mailLog: MailLog | undefined;
@@ -46,7 +45,7 @@ export class MailService {
     if (isDefined(this.mailLogRepository)) {
       const log: NewMailLog = {
         timestamp: currentTimestamp(),
-        templateKey: this.mailDataSourceTemplateKey.get(data) ?? null,
+        template: templateName ?? null,
         data,
         sendResult: null,
         errors: null
@@ -78,12 +77,11 @@ export class MailService {
     }
   }
 
-  async sendTemplate(key: string, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: object): Promise<MailSendResult> {
-    const { fields: { subject, html, text } } = await this.templateService.render<MailTemplate>(key, templateContext);
+  async sendTemplate(keyOrTemplate: string | MailTemplate, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: object): Promise<MailSendResult> {
+    const { name, fields: { subject, html, text } } = await this.templateService.render<MailTemplate>(keyOrTemplate, templateContext);
 
     const fullMailData = { ...mailData, subject, content: { html, text } };
 
-    this.mailDataSourceTemplateKey.set(fullMailData, key);
-    return this.send(fullMailData);
+    return this.send(fullMailData, name);
   }
 }

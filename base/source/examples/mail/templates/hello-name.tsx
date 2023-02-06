@@ -19,7 +19,7 @@ function HelloMail({ name }: { name: string }): VNode {
   );
 }
 
-const template = mailTemplate({
+const template = mailTemplate('hello-name', {
   subject: stringTemplateField<HandlebarsTemplateRenderer>({ renderer: 'handlebars', template: 'Hello {{ name }} in subject!' }),
   html: jsxTemplateField<MjmlTemplateRenderer>({ renderer: 'mjml-jsx', template: HelloMail }),
   text: stringTemplateField<HandlebarsTemplateRenderer>({ renderer: 'handlebars', template: 'Hello {{ name }} in text!' })

@@ -4,7 +4,7 @@ import type { MailSendResult } from './mail-send-result.model';
 
 export type MailLog = Entity & {
   timestamp: number,
-  templateKey: string | null,
+  template: string | null,
   data: MailData,
   sendResult: MailSendResult | null,
   errors: string[] | null

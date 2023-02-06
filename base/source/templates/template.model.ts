@@ -1,4 +1,4 @@
-import { Any, any, object, Optional, Property, Class } from '#/schema';
+import { Any, any, Class, object, Optional, Property } from '#/schema';
 import type { PickBy, Record, SimplifyObject } from '#/types';
 
 @Class({ allowUnknownProperties: any() })
@@ -20,6 +20,10 @@ export type TemplateFields<Fields extends Record<string, boolean>, Resolver exte
 >;
 
 export abstract class Template<Fields extends Record<string, boolean> = Record<string, boolean>, TemplateOptions = any> {
+  /** name of template */
+  @Property()
+  name: string;
+
   @Property({ schema: object({}, { allowUnknownProperties: TemplateField }) })
   fields: TemplateFields<Fields>;
 
@@ -28,8 +32,9 @@ export abstract class Template<Fields extends Record<string, boolean> = Record<s
   options?: TemplateOptions;
 }
 
-export function simpleTemplate(template: TemplateField): Template {
+export function simpleTemplate(name: string, template: TemplateField): Template {
   return {
+    name,
     fields: {
       template
     }

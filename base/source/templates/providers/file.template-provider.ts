@@ -29,7 +29,7 @@ export class FileTemplateProvider extends TemplateProvider implements Injectable
     this.basePath = path.resolve(basePath);
   }
 
-  async get(key: string): Promise<Template> {
+  async get<T extends Template = Template>(key: string): Promise<T> {
     if (!keyPattern.test(key)) {
       throw new BadRequestError('Illegal template key. Only a-z, A-Z, 0-9, _ and - are allowed.');
     }
@@ -43,7 +43,7 @@ export class FileTemplateProvider extends TemplateProvider implements Injectable
     const templateModule = await import(filePath) as { template?: unknown, default?: unknown };
     const fileContent = templateModule.template ?? templateModule.default;
 
-    return Schema.parse(Template, fileContent);
+    return Schema.parse(Template, fileContent) as T;
   }
 }
 

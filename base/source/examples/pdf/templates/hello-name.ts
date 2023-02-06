@@ -9,7 +9,7 @@ function reverse(value: unknown): string {
   return (value as string).split('').reverse().join('');
 }
 
-const template = pdfTemplate({
+const template = pdfTemplate('hello-name', {
   body: fileTemplateField<HandlebarsTemplateRenderer>({
     renderer: 'handlebars',
     templateFile: resolve(__dirname.replace('dist', 'source'), 'hello-name.hbs'),
