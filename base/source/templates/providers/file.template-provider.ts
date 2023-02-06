@@ -40,8 +40,9 @@ export class FileTemplateProvider extends TemplateProvider implements Injectable
       throw new BadRequestError(`Illegal file path. Must be inside "${this.basePath}".`);
     }
 
-    const templateModule = await import(filePath) as { default: unknown };
-    const fileContent = templateModule.default;
+    const templateModule = await import(filePath) as { template?: unknown, default?: unknown };
+    const fileContent = templateModule.template ?? templateModule.default;
+
     return Schema.parse(Template, fileContent);
   }
 }

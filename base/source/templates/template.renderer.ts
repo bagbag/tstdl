@@ -1,4 +1,6 @@
-import { Schema, SchemaTestable } from '#/schema';
+import type { SchemaTestable } from '#/schema';
+import { Schema } from '#/schema';
+import type { Record } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 
 export type TemplateRenderResult = string;
@@ -6,7 +8,7 @@ export type TemplateRenderResult = string;
 export type TemplateRenderObject<Renderer extends string = string, Options = any, V = unknown> = {
   renderer: Renderer,
   template: V,
-  contextSchema?: SchemaTestable,
+  contextSchema?: SchemaTestable<Record>,
   options?: Options
 };
 
