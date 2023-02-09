@@ -125,7 +125,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
     });
 
     const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(subject, additionalAuthenticationData);
-    const { token, jsonToken } = await this.createToken(tokenPayload!, session.id, end, now);
+    const { token, jsonToken } = await this.createToken(tokenPayload!, subject, session.id, end, now);
     const refreshToken = await this.createRefreshToken(subject, session.id, end);
 
     await this.sessionRepository.extend(session.id, {
@@ -161,7 +161,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
     const now = currentTimestamp();
     const newEnd = now + this.sessionTimeToLive;
     const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(session.subject, additionalAuthenticationData);
-    const { token, jsonToken } = await this.createToken(tokenPayload!, sessionId, newEnd, now);
+    const { token, jsonToken } = await this.createToken(tokenPayload!, session.subject, sessionId, newEnd, now);
     const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
 
     await this.sessionRepository.extend(sessionId, {
@@ -188,7 +188,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
     return validatedToken;
   }
 
-  private async createToken(additionalTokenPayload: AdditionalTokenPayload, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  private async createToken(additionalTokenPayload: AdditionalTokenPayload, subject: string, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: this.tokenVersion,
       alg: 'HS256',
@@ -201,6 +201,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
       exp: timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
       refreshTokenExp: timestampToTimestampSeconds(refreshTokenExpiration),
       sessionId,
+      subject,
       ...additionalTokenPayload
     };
 

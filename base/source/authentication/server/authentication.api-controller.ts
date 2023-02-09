@@ -20,7 +20,7 @@ export class AuthenticationApiController<TokenPayload extends TokenPayloadBase, 
   }
 
   async token({ parameters, request }: ApiRequestData<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'token'>): Promise<ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'token'>> {
-    const authenticationResult = await this.authenticationService.authenticate(parameters.secret, parameters.subject);
+    const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
 
     if (!authenticationResult.success) {
       throw new UnauthorizedError('Invalid credentials.');

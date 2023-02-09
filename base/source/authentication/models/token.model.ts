@@ -8,6 +8,8 @@ export type TokenHeader = {
 
 export type Token<AdditionalTokenPayload = Record<never>> = JwtToken<AdditionalTokenPayload & TokenPayloadBase, JwtTokenHeader<TokenHeader>>;
 
+export type TokenPayload<T> = T & TokenPayloadBase;
+
 export type RefreshTokenPayload = {
   /** expiration timestamp in seconds */
   exp: number,

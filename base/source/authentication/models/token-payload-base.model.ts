@@ -19,4 +19,7 @@ export class TokenPayloadBase {
 
   @Property()
   sessionId: string;
+
+  @Property()
+  subject: string;
 }
