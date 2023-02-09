@@ -16,9 +16,6 @@ export class AuthenticationSession {
   end: number;
 
   @Property()
-  tokenId: string;
-
-  @Property()
   refreshTokenHashVersion: number;
 
   @Property()
@@ -37,9 +34,6 @@ export class NewAuthenticationSession {
 
   @Property()
   end: number;
-
-  @Property()
-  tokenId: string;
 
   @Property()
   refreshTokenHashVersion: number;

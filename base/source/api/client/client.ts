@@ -4,6 +4,7 @@ import type { HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/h
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
+import { toTitleCase } from '#/utils/string/title-case';
 import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
@@ -31,7 +32,7 @@ export const apiDefinitionSymbol = Symbol('ApiDefinition');
 // eslint-disable-next-line max-lines-per-function
 export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions = {}): ApiClient<T> {
   const { resource: path, endpoints } = definition;
-  const constructedApiName = (path[0]?.toUpperCase() ?? '') + path.slice(1);
+  const constructedApiName = toTitleCase(path[0] ?? '');
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {

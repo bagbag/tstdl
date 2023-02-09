@@ -1,16 +1,26 @@
-import type { Logger } from '#/logger';
+import { injectable } from '#/container';
+import { Logger } from '#/logger';
+import { assertStringPass, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { defer, fromEvent, map, of, switchMap } from 'rxjs';
-import { isUndefined } from '../../utils/type-guards';
 import type { MessageBus } from '../message-bus';
 import { MessageBusBase } from '../message-bus-base';
+import { BroadcastChannelMessageBusProvider } from './broadcast-channel-message-bus-provider';
 
 /** return values wrapped in Promise for polyfills which returns promises */
 interface PromisifiedBroadcastChannel extends BroadcastChannel {
-  close(...args: Parameters<BroadcastChannel['close']>): Promise<ReturnType<BroadcastChannel['close']>>;
-  postMessage(...args: Parameters<BroadcastChannel['postMessage']>): Promise<ReturnType<BroadcastChannel['postMessage']>>;
+  close(...args: Parameters<BroadcastChannel['close']>): void | Promise<void>;
+  postMessage(...args: Parameters<BroadcastChannel['postMessage']>): void | Promise<void>;
 }
 
+@injectable({
+  provider: {
+    useFactory: (argument, context) => {
+      const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');
+      return context.resolve(BroadcastChannelMessageBusProvider).get(channel);
+    }
+  }
+})
 export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
   private readonly channelProvider: () => PromisifiedBroadcastChannel;
 
@@ -45,7 +55,7 @@ export class BroadcastChannelMessageBus<T> extends MessageBusBase<T> implements 
     await this.channel.postMessage(message);
   }
 
-  protected async _disposeAsync(): Promise<void> {
+  protected async _dispose(): Promise<void> {
     await this._channel?.close();
     this._channel = undefined;
   }

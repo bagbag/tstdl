@@ -5,7 +5,6 @@ import { disposeAsync } from '../disposable';
 import { CancellationToken } from '../utils/cancellation-token';
 import { MessageBus } from './message-bus';
 
-
 export abstract class MessageBusBase<T> extends MessageBus<T> {
   private readonly logger: Logger;
   private readonly publishSubject: Subject<T>;
@@ -52,7 +51,7 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
     this.disposeToken.set();
     this.publishSubject.complete();
 
-    return this._disposeAsync();
+    return this._dispose();
   }
 
   private async _publishAndForget(message: T): Promise<void> {
@@ -70,5 +69,5 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
    */
   protected abstract _publish(message: T): void | Promise<void>;
 
-  protected abstract _disposeAsync(): void | Promise<void>;
+  protected abstract _dispose(): void | Promise<void>;
 }

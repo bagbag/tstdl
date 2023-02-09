@@ -10,7 +10,7 @@ import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
 import { array, boolean, number, object, Property } from '#/schema';
-import { timeout } from '#/utils';
+import { timeout } from '#/utils/timing';
 import { Agent } from 'undici';
 
 class User {
@@ -93,7 +93,7 @@ async function clientTest(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  configureNodeHttpServer(true);
+  configureNodeHttpServer();
   configureApiServer({ controllers: [UserApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });

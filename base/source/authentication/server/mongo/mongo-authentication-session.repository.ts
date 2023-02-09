@@ -3,9 +3,9 @@ import { forwardArg, resolveArgumentType, singleton } from '#/container';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
 import { Logger } from '#/logger';
+import type { AuthenticationSession, NewAuthenticationSession } from '../../models';
 import type { AuthenticationSessionExtendData } from '../authentication-session.repository';
 import { AuthenticationSessionRepository } from '../authentication-session.repository';
-import type { AuthenticationSession, NewAuthenticationSession } from '../models';
 
 export type MongoAuthenticationSessionRepositoryConfig = {
   config?: MongoAuthenticationSessionRepositoryArgument

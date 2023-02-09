@@ -18,7 +18,6 @@ export const normalizeTypeSchema = memoizeSingle(_normalizeTypeSchema, { weak: t
 export const getArrayItemSchema = memoizeSingle(_getArrayItemSchema, { weak: true });
 export const tryGetObjectSchemaFromReflection = memoizeSingle(_tryGetObjectSchemaFromReflection, { weak: true });
 
-
 export function getObjectSchema<T>(schemaOrType: ObjectSchemaOrType<T>): ObjectSchema<T> {
   return isFunction(schemaOrType)
     ? getObjectSchemaFromReflection(schemaOrType)

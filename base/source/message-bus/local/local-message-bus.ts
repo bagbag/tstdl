@@ -38,7 +38,7 @@ export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<
     this.subject.next({ source: this.source, message });
   }
 
-  _disposeAsync(): void {
-    void 0;
+  _dispose(): void {
+    this.subject.complete();
   }
 }

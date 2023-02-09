@@ -85,18 +85,18 @@ export type ApiEndpointDefinition = {
 
 export type ApiEndpointsDefinition = Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>;
 
-export type ApiDefinition = {
+export type ApiDefinition<Resource extends string = string, Endpoints extends ApiEndpointsDefinition = ApiEndpointsDefinition> = {
   /**
    * Default root resource for endpoints.
    */
-  resource: string,
+  resource: Resource,
 
   /**
    * Endpoint prefix. Overwrites default from gateway.
    */
   prefix?: string | null,
 
-  endpoints: ApiEndpointsDefinition
+  endpoints: Endpoints
 };
 
 export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];

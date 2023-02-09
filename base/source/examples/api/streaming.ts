@@ -12,8 +12,10 @@ import { HttpServerResponse } from '#/http/server';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
 import { SeverSentEvents } from '#/sse';
-import { cancelableTimeout, decodeTextStream, encodeUtf8Stream, isDefined, timeout } from '#/utils';
+import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream';
+import { cancelableTimeout, timeout } from '#/utils/timing';
+import { isDefined } from '#/utils/type-guards';
 import { Agent } from 'undici';
 
 const logger = container.resolve(CORE_LOGGER);
@@ -91,7 +93,7 @@ async function clientTest(): Promise<void> {
 }
 
 function main(): void {
-  configureNodeHttpServer(true);
+  configureNodeHttpServer();
   configureApiServer({ controllers: [StreamingApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });

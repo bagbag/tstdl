@@ -1,9 +1,8 @@
 import type { NewEntity } from '#/database';
-import type { AuthenticationSession } from './models';
+import type { AuthenticationSession } from '../models';
 
 export type AuthenticationSessionExtendData = {
   end: number,
-  tokenId: string,
   refreshTokenHashVersion: number,
   refreshTokenSalt: Uint8Array,
   refreshTokenHash: Uint8Array

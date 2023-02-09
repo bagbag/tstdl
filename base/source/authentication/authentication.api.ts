@@ -1,47 +1,63 @@
-import type { ApiEndpointsDefinition } from '#/api/types';
-import { Property } from '#/schema/decorators/property';
+import type { ApiDefinition, ApiEndpointsDefinition } from '#/api/types';
+import { defineApi } from '#/api/types';
+import type { SchemaTestable } from '#/schema/schema';
+import { assign } from '#/schema/schemas/assign';
 import { literal } from '#/schema/schemas/literal';
-import type { ObjectSchema, SchemaOutput } from '#/schema/types/types';
-import type { AbstractConstructor } from '#/types';
+import { number } from '#/schema/schemas/number';
+import { emptyObjectSchema, explicitObject } from '#/schema/schemas/object';
+import { string } from '#/schema/schemas/string';
+import { unknown } from '#/schema/schemas/unknown';
+import type { ObjectSchemaOrType } from '#/schema/types';
 import { TokenPayloadBase } from './models';
 
-export class GetTokenParameters {
-  @Property()
-  subject: string;
+type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> =
+  typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;
 
-  @Property()
-  secret: string;
-}
+type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+
+export type AuthenticationApiDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> =
+  ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+
+export const authenticationApiDefinition = defineApi({
+  resource: 'auth',
+  endpoints: {
+    ...getAuthenticationApiEndpointsDefinition(emptyObjectSchema, unknown())
+  }
+});
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiEndpointsDefinition<
-  AuthenticationDataSchema extends ObjectSchema<GetTokenParameters> | AbstractConstructor<GetTokenParameters>,
-  TokenPayloadSchema extends ObjectSchema<TokenPayloadBase> | AbstractConstructor<TokenPayloadBase>
->(
-  options: {
-    tokenPayloadSchema?: TokenPayloadSchema,
-    authenticationDataSchema?: AuthenticationDataSchema
-  } = {}
+export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>(
+  additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
+  authenticationDataSchema: SchemaTestable<AuthenticationData>
 ) {
-  const tokenParametersSchema = (options.authenticationDataSchema ?? GetTokenParameters) as ObjectSchema<SchemaOutput<AuthenticationDataSchema>> | AbstractConstructor<SchemaOutput<AuthenticationDataSchema>>
-  const tokenResultSchema = (options.tokenPayloadSchema ?? TokenPayloadBase) as ObjectSchema<SchemaOutput<TokenPayloadSchema>> | AbstractConstructor<SchemaOutput<TokenPayloadSchema>>;
+  const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema);
 
   return {
     token: {
       resource: 'token',
       method: 'POST',
-      parameters: tokenParametersSchema,
+      parameters: explicitObject({
+        subject: string(),
+        secret: string(),
+        data: authenticationDataSchema
+      }),
       result: tokenResultSchema
     },
     refresh: {
       resource: 'refresh',
       method: 'POST',
+      parameters: explicitObject({
+        data: authenticationDataSchema
+      }),
       result: tokenResultSchema
     },
     endSession: {
       resource: 'end-session',
       method: 'POST',
       result: literal('ok' as const)
+    },
+    timestamp: {
+      result: number()
     }
   } satisfies ApiEndpointsDefinition;
 }

@@ -108,10 +108,10 @@ export type NormalizeValueType<T> =
 
 export type NormalizeToValueType<T> =
   T extends string | String ? typeof String
-  : T extends number ? typeof Number
-  : T extends boolean ? typeof Boolean
-  : T extends bigint ? typeof BigInt
-  : T extends symbol ? typeof Symbol
+  : T extends number | Number ? typeof Number
+  : T extends boolean | Boolean ? typeof Boolean
+  : T extends bigint | BigInt ? typeof BigInt
+  : T extends symbol | Symbol ? typeof Symbol
   : T extends undefined ? 'undefined'
   : T extends null ? 'null'
   : T extends any ? 'any'

@@ -23,8 +23,8 @@ export function toArrayCopy<T>(value: T | T[] | readonly T[]): T[] {
 export function extractValueOfArrayIfSingleElement<T>(value: T | T[]): T | T[];
 export function extractValueOfArrayIfSingleElement<T>(value: T | readonly T[]): T | readonly T[];
 export function extractValueOfArrayIfSingleElement<T>(value: T | T[] | readonly T[]): T | readonly T[] {
-  if (isArray(value)) {
-    return (value.length == 1) ? value[0]! : value;
+  if (isArray(value) && (value.length == 1)) {
+    return value[0]!;
   }
 
   return value;

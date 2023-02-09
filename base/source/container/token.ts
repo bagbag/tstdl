@@ -1,11 +1,11 @@
-import type { Constructor } from '#/types';
+import type { AbstractConstructor } from '#/types';
 import { isFunction, isString } from '#/utils/type-guards';
 
 declare const parameter: unique symbol;
 
 export type ParameterizedInjectionToken<T, A> = SimpleInjectionToken<T> & { [parameter]?: A };
 
-export type SimpleInjectionToken<T> = Constructor<T> | Function | object | string | symbol;
+export type SimpleInjectionToken<T> = AbstractConstructor<T> | object | string | symbol;
 
 export type InjectionToken<T = any, A = any> = SimpleInjectionToken<T> | ParameterizedInjectionToken<T, A>;
 

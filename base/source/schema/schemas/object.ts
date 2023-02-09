@@ -16,3 +16,5 @@ export function object<T extends Record>(properties: ObjectSchemaProperties<T>, 
     ...options
   }) as unknown as ObjectSchema<SimplifiedOptionalize<T>>;
 }
+
+export const emptyObjectSchema = explicitObject<{}>({});

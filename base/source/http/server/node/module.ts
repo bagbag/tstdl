@@ -3,10 +3,8 @@ import { HttpServer } from '../http-server';
 import { NodeHttpServer } from './node-http-server';
 
 /**
- * @param register whether to register for {@link HttpServer}
+ * registers {@link HttpServer} in global container
  */
-export function configureNodeHttpServer(register: boolean = true): void {
-  if (register) {
-    container.register(HttpServer, { useToken: NodeHttpServer });
-  }
+export function configureNodeHttpServer(): void {
+  container.registerSingleton(HttpServer, { useToken: NodeHttpServer });
 }

@@ -1,11 +1,12 @@
 import type { Injectable } from '#/container';
 import { forwardArg, resolveArgumentType, singleton } from '#/container';
-import { getNewId, MaybeNewEntity } from '#/database';
+import type { MaybeNewEntity } from '#/database';
+import { getNewId } from '#/database';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
 import { Logger } from '#/logger';
+import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../../models';
 import { AuthenticationCredentialsRepository } from '../authentication-credentials.repository';
-import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../models';
 
 export type MongoAuthenticationCredentialsRepositoryConfig = {
   config?: MongoAuthenticationCredentialsRepositoryArgument
@@ -28,8 +29,8 @@ export class MongoAuthenticationCredentialsRepository extends AuthenticationCred
     this.repository = repository;
   }
 
-  async tryLoad(id: string): Promise<AuthenticationCredentials | undefined> {
-    return this.repository.tryLoad(id);
+  async tryLoadBySubject(subject: string): Promise<AuthenticationCredentials | undefined> {
+    return this.repository.tryLoadByFilter({ subject });
   }
 
   async save(credentials: AuthenticationCredentials | NewAuthenticationCredentials): Promise<void> {

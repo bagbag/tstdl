@@ -62,6 +62,6 @@ function convertConfig(config: MailClientConfig): SMTPTransport.Options {
  */
 export function configureNodemailerMailClient(register: boolean = true): void {
   if (register) {
-    container.register(NodemailerMailClient, { useToken: MailClient });
+    container.registerSingleton(NodemailerMailClient, { useToken: MailClient });
   }
 }

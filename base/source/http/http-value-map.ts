@@ -32,13 +32,13 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** get value. Throws if entry not set */
   get(key: string): OneOrMany<HttpValue> {
-    const lowercasedKey = this.normalizeKey(key);
+    const normalizedKey = this.normalizeKey(key);
 
-    if (!this.has(lowercasedKey)) {
-      throw new BadRequestError(`Missing ${lowercasedKey} ${this.valueType}`);
+    if (!this.has(normalizedKey)) {
+      throw new BadRequestError(`Missing ${normalizedKey} ${this.valueType}`);
     }
 
-    return this.map.get(lowercasedKey)!.value;
+    return this.map.get(normalizedKey)!.value;
   }
 
   /** try to get value */
@@ -48,11 +48,11 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** get single value, throws if multiple values are set */
   getSingle(key: string): HttpValue {
-    const lowercasedKey = this.normalizeKey(key);
-    const value = this.tryGetSingle(lowercasedKey);
+    const normalizedKey = this.normalizeKey(key);
+    const value = this.tryGetSingle(normalizedKey);
 
     if (isUndefined(value)) {
-      throw new BadRequestError(`Missing ${lowercasedKey} ${this.valueType}`);
+      throw new BadRequestError(`Missing ${normalizedKey} ${this.valueType}`);
     }
 
     return value;
@@ -60,11 +60,11 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** try to get single value, throws if multiple values are set */
   tryGetSingle(key: string): HttpValue | undefined {
-    const lowercasedKey = this.normalizeKey(key);
-    const value = this.map.get(lowercasedKey)?.value;
+    const normalizedKey = this.normalizeKey(key);
+    const value = this.map.get(normalizedKey)?.value;
 
     if (isArray(value)) {
-      throw new BadRequestError(`Invalid ${lowercasedKey} ${this.valueType}. Expected single value`);
+      throw new BadRequestError(`Invalid ${normalizedKey} ${this.valueType}. Expected single value.`);
     }
 
     return value;
@@ -99,11 +99,11 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** add value to existing entry or create new entry */
   append(key: string, value: OneOrMany<HttpValue>): void {
-    const lowercasedKey = this.normalizeKey(key);
-    const existing = this.tryGet(lowercasedKey);
+    const normalizedKey = this.normalizeKey(key);
+    const existing = this.tryGet(normalizedKey);
     const newValue = isUndefined(existing) ? value : [...toArray(existing), ...toArray(value)];
 
-    this.set(lowercasedKey, newValue);
+    this.set(normalizedKey, newValue);
   }
 
   /** remove entry */

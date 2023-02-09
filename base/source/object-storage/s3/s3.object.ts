@@ -1,9 +1,8 @@
 import type { ObjectMetadata } from '#/object-storage';
 import { ObjectStorageObject } from '#/object-storage';
-import { isUndefined } from '#/utils';
+import { isUndefined } from '#/utils/type-guards';
 import type { BucketItemStat } from 'minio';
 import type { S3ObjectStorage } from './s3.object-storage';
-
 
 export class S3Object extends ObjectStorageObject {
   private readonly storage: S3ObjectStorage;
@@ -31,7 +30,6 @@ export class S3Object extends ObjectStorageObject {
       const stat = await this.stat();
       this.contentLength = stat.size;
     }
-
 
     return this.contentLength;
   }

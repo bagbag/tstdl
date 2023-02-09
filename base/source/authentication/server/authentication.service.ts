@@ -1,27 +1,21 @@
-import { inject, singleton } from '#/container';
+import { inject, optional, singleton } from '#/container';
 import { UnauthorizedError } from '#/error';
 import { InvalidTokenError } from '#/error/invalid-token.error';
+import type { Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { importPbkdf2Key } from '#/utils/cryptography';
-import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time';
+import { currentTimestamp, currentTimestampSeconds, timestampToTimestampSeconds } from '#/utils/date-time';
 import { binaryEquals } from '#/utils/equals';
-import type { JwtToken, JwtTokenHeader } from '#/utils/jwt';
 import { createJwtTokenString, parseAndValidateJwtTokenString } from '#/utils/jwt';
 import { getRandomBytes, getRandomString } from '#/utils/random';
 import { isUndefined } from '#/utils/type-guards';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units';
+import type { NewAuthenticationCredentials, RefreshToken, Token } from '../models';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
 import { AuthenticationSessionRepository } from './authentication-session.repository';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
-import type { NewAuthenticationCredentials, TokenPayloadBase } from './models';
+import { getTokenFromString } from './helper';
 import { AUTHENTICATION_SERVICE_OPTIONS } from './tokens';
-
-
-export type Token<AdditionalTokenPayload> = JwtToken<AdditionalTokenPayload & TokenPayloadBase, JwtTokenHeader<TokenHeader>>;
-
-export type TokenHeader = {
-  v: number
-};
 
 export type AuthenticationServiceOptions = {
   /** Secret used for signing tokens */
@@ -37,28 +31,33 @@ export type AuthenticationServiceOptions = {
   sessionTimeToLive?: number
 };
 
-export type AuthenticationResult = {
+export type AuthenticationResult =
+  | { success: true, subject: string }
+  | { success: false, subject?: undefined };
+
+export type TokenResult<AdditionalTokenPayload = Record<never>> = {
   token: string,
+  jsonToken: Token<AdditionalTokenPayload>,
   refreshToken: string
 };
 
 type CreateTokenResult<AdditionalTokenPayload> = {
-  header: Token<AdditionalTokenPayload>['header'],
-  payload: Token<AdditionalTokenPayload>['payload'],
-  token: string
+  token: string,
+  jsonToken: Token<AdditionalTokenPayload>
 };
 
 type CreateRefreshTokenResult = {
   token: string,
+  jsonToken: RefreshToken,
   salt: Uint8Array,
   hash: Uint8Array
 };
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticationData> {
+export class AuthenticationService<AdditionalTokenPayload = Record<never>, AdditionalAuthenticationData = Record<never>> {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
-  private readonly tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AdditionalAuthenticationData>;
+  private readonly tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AdditionalAuthenticationData> | undefined;
 
   private readonly secret: string;
   private readonly tokenVersion: number;
@@ -68,7 +67,7 @@ export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticat
   constructor(
     credentialsService: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
-    tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AdditionalAuthenticationData>,
+    @optional() tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AdditionalAuthenticationData>,
     @inject(AUTHENTICATION_SERVICE_OPTIONS) options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsService;
@@ -95,41 +94,48 @@ export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticat
     await this.credentialsRepository.save(credentials);
   }
 
-  async authenticate(subject: string, secret: string): Promise<boolean> {
-    const credentials = await this.credentialsRepository.tryLoad(subject);
+  async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
+    const credentials = await this.credentialsRepository.tryLoadBySubject(subject);
 
     if (isUndefined(credentials)) {
-      return false;
+      return { success: false };
     }
 
     const hash = await this.getHash(secret, credentials.salt);
-    return binaryEquals(hash, credentials.hash);
-  }
+    const valid = binaryEquals(hash, credentials.hash);
 
-  async getToken(subject: string, secret: string, additionalAuthenticationData: AdditionalAuthenticationData): Promise<AuthenticationResult> {
-    const isAuthenticated = await this.authenticate(subject, secret);
-
-    if (!isAuthenticated) {
-      throw new UnauthorizedError('Invalid credentials.');
+    if (valid) {
+      return { success: true, subject: credentials.subject };
     }
 
+    return { success: false };
+  }
+
+  async getToken(subject: string, additionalAuthenticationData: AdditionalAuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
     const now = currentTimestamp();
+    const end = now + this.sessionTimeToLive;
 
-    const tokenPayload = await this.tokenPayloadProviderService.getTokenPayload(subject, additionalAuthenticationData);
-    const { token, payload } = await this.createToken(tokenPayload, now);
-    const refreshToken = await this.createRefreshToken();
-
-    await this.sessionRepository.insert({
+    const session = await this.sessionRepository.insert({
       subject,
       begin: now,
-      end: now + this.sessionTimeToLive,
-      tokenId: payload.jti,
+      end,
+      refreshTokenHashVersion: 0,
+      refreshTokenSalt: new Uint8Array(),
+      refreshTokenHash: new Uint8Array()
+    });
+
+    const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(subject, additionalAuthenticationData);
+    const { token, jsonToken } = await this.createToken(tokenPayload!, session.id, end, now);
+    const refreshToken = await this.createRefreshToken(subject, session.id, end);
+
+    await this.sessionRepository.extend(session.id, {
+      end,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: refreshToken.salt,
       refreshTokenHash: refreshToken.hash
     });
 
-    return { token, refreshToken: refreshToken.token };
+    return { token, jsonToken, refreshToken: refreshToken.token };
   }
 
   async endSession(sessionId: string): Promise<void> {
@@ -137,9 +143,12 @@ export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticat
     await this.sessionRepository.end(sessionId, now);
   }
 
-  async refresh(sessionId: string, refreshToken: string, additionalAuthenticationData: AdditionalAuthenticationData): Promise<AuthenticationResult> {
+  async refresh(refreshToken: string, additionalAuthenticationData: AdditionalAuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+    const validatedToken = await this.validateRefreshToken(refreshToken);
+    const sessionId = validatedToken.payload.sessionId;
+
     const session = await this.sessionRepository.load(sessionId);
-    const hash = await this.getHash(refreshToken, session.refreshTokenSalt);
+    const hash = await this.getHash(validatedToken.payload.secret, session.refreshTokenSalt);
 
     if (session.end <= currentTimestamp()) {
       throw new UnauthorizedError('Session is ended.');
@@ -150,32 +159,36 @@ export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticat
     }
 
     const now = currentTimestamp();
-    const tokenPayload = await this.tokenPayloadProviderService.getTokenPayload(session.subject, additionalAuthenticationData);
-    const { token, payload } = await this.createToken(tokenPayload, now);
-    const newRefreshToken = await this.createRefreshToken();
+    const newEnd = now + this.sessionTimeToLive;
+    const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(session.subject, additionalAuthenticationData);
+    const { token, jsonToken } = await this.createToken(tokenPayload!, sessionId, newEnd, now);
+    const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
 
     await this.sessionRepository.extend(sessionId, {
-      end: now + this.sessionTimeToLive,
-      tokenId: payload.jti,
+      end: newEnd,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: newRefreshToken.salt,
       refreshTokenHash: newRefreshToken.hash
     });
 
-    return { token, refreshToken: newRefreshToken.token };
+    return { token, jsonToken, refreshToken: newRefreshToken.token };
   }
 
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {
-    const validatedToken = await parseAndValidateJwtTokenString<Token<AdditionalTokenPayload>>(token, 'HS256', this.secret);
+    return getTokenFromString(token, this.tokenVersion, this.secret);
+  }
 
-    if (validatedToken.header.v != this.tokenVersion) {
-      throw new InvalidTokenError('Invalid token version.');
+  async validateRefreshToken(token: string): Promise<RefreshToken> {
+    const validatedToken = await parseAndValidateJwtTokenString<RefreshToken>(token, 'HS256', this.secret);
+
+    if (validatedToken.payload.exp <= currentTimestampSeconds()) {
+      throw new InvalidTokenError('Token expired.');
     }
 
     return validatedToken;
   }
 
-  private async createToken(additionalTokenPayload: AdditionalTokenPayload, timestamp: number = currentTimestamp()): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  private async createToken(additionalTokenPayload: AdditionalTokenPayload, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: this.tokenVersion,
       alg: 'HS256',
@@ -186,23 +199,42 @@ export class AuthenticationService<AdditionalTokenPayload, AdditionalAuthenticat
       jti: getRandomString(24, Alphabet.LowerUpperCaseNumbers),
       iat: timestampToTimestampSeconds(timestamp),
       exp: timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
+      refreshTokenExp: timestampToTimestampSeconds(refreshTokenExpiration),
+      sessionId,
       ...additionalTokenPayload
     };
 
-    const token = await createJwtTokenString<Token<AdditionalTokenPayload>>({
+    const jsonToken: Token<AdditionalTokenPayload> = {
       header,
       payload
-    }, this.secret);
+    };
 
-    return { header, payload, token };
+    const token = await createJwtTokenString<Token<AdditionalTokenPayload>>(jsonToken, this.secret);
+
+    return { token, jsonToken };
   }
 
-  private async createRefreshToken(): Promise<CreateRefreshTokenResult> {
-    const token = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
+  private async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number): Promise<CreateRefreshTokenResult> {
+    const secret = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
     const salt = getRandomBytes(32);
-    const hash = await this.getHash(token, salt);
+    const hash = await this.getHash(secret, salt);
 
-    return { token, salt, hash: new Uint8Array(hash) };
+    const jsonToken: RefreshToken = {
+      header: {
+        alg: 'HS256',
+        typ: 'JWT'
+      },
+      payload: {
+        exp: timestampToTimestampSeconds(expirationTimestamp),
+        subject,
+        sessionId,
+        secret
+      }
+    };
+
+    const token = await createJwtTokenString<RefreshToken>(jsonToken, this.secret);
+
+    return { token, jsonToken, salt, hash: new Uint8Array(hash) };
   }
 
   private async getHash(secret: string, salt: BinaryData): Promise<Uint8Array> {

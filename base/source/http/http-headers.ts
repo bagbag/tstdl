@@ -13,7 +13,7 @@ export type NormalizedHttpHeadersObject = NormalizedHttpValueObject;
 
 export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   get accept(): string | undefined {
-    return this.getStringHeader('Accept');
+    return this.tryGetStringHeader('Accept');
   }
 
   set accept(value: string | undefined) {
@@ -21,7 +21,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   }
 
   get contentType(): string | undefined {
-    return this.getStringHeader('Content-Type');
+    return this.tryGetStringHeader('Content-Type');
   }
 
   set contentType(value: string | undefined) {
@@ -29,7 +29,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   }
 
   get contentLength(): number | undefined {
-    return this.getNumberHeader('Content-Length');
+    return this.tryGetNumberHeader('Content-Length');
   }
 
   set contentLength(value: number | undefined) {
@@ -37,7 +37,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   }
 
   get contentDisposition(): string | undefined {
-    return this.getStringHeader('Content-Disposition');
+    return this.tryGetStringHeader('Content-Disposition');
   }
 
   set contentDisposition(value: string | undefined) {
@@ -45,7 +45,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   }
 
   get contentEncoding(): string | undefined {
-    return this.getStringHeader('Content-Encoding');
+    return this.tryGetStringHeader('Content-Encoding');
   }
 
   set contentEncoding(value: string | undefined) {
@@ -53,7 +53,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
   }
 
   get authorization(): string | undefined {
-    return this.getStringHeader('Authorization');
+    return this.tryGetStringHeader('Authorization');
   }
 
   set authorization(value: string | undefined) {
@@ -80,7 +80,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
     return new HttpHeaders(this);
   }
 
-  private getNumberHeader(name: string): number | undefined {
+  private tryGetNumberHeader(name: string): number | undefined {
     const value = this.tryGet(name);
 
     if (isNullOrUndefined(value)) {
@@ -95,20 +95,20 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
       const numberValue = Number(value);
 
       if (Number.isNaN(numberValue)) {
-        throw new BadRequestError(`invalid ${name} header`);
+        throw new BadRequestError(`Invalid ${name} header.`);
       }
 
       return numberValue;
     }
 
     if (isNotNumber(value)) {
-      throw new BadRequestError(`invalid ${name} header`);
+      throw new BadRequestError(`Invalid ${name} header.`);
     }
 
     return value;
   }
 
-  private getStringHeader(name: string): string | undefined {
+  private tryGetStringHeader(name: string): string | undefined {
     const value = this.tryGet(name);
 
     if (isNullOrUndefined(value)) {
@@ -116,7 +116,7 @@ export class HttpHeaders extends HttpValueMap<HttpHeaders> {
     }
 
     if (isNotString(value)) {
-      throw new BadRequestError(`invalid ${name} header`);
+      throw new BadRequestError(`Invalid ${name} header.`);
     }
 
     return value;
