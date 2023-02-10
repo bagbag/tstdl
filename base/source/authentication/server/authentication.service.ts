@@ -1,5 +1,5 @@
-import { inject, optional, singleton } from '#/container';
-import { UnauthorizedError } from '#/error';
+import type { AfterResolve } from '#/container';
+import { afterResolve, inject, optional, singleton } from '#/container';
 import { InvalidTokenError } from '#/error/invalid-token.error';
 import type { Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
@@ -18,7 +18,7 @@ import { getTokenFromString } from './helper';
 import { AUTHENTICATION_SERVICE_OPTIONS } from './tokens';
 
 export type AuthenticationServiceOptions = {
-  /** Secret used for signing tokens */
+  /** Secret used for signing tokens and refreshTokens */
   secret: string,
 
   /** Token version, forces refresh on mismatch (useful if payload changes) */
@@ -53,8 +53,10 @@ type CreateRefreshTokenResult = {
   hash: Uint8Array
 };
 
+const SIGNING_SECRETS_LENGTH = 512;
+
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload = Record<never>, AdditionalAuthenticationData = Record<never>> {
+export class AuthenticationService<AdditionalTokenPayload = Record<never>, AdditionalAuthenticationData = Record<never>> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
   private readonly tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AdditionalAuthenticationData> | undefined;
@@ -63,6 +65,9 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
   private readonly tokenVersion: number;
   private readonly tokenTimeToLive: number;
   private readonly sessionTimeToLive: number;
+
+  private derivedTokenSigningSecret: Uint8Array;
+  private derivedRefreshTokenSigningSecret: Uint8Array;
 
   constructor(
     credentialsService: AuthenticationCredentialsRepository,
@@ -78,6 +83,14 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
     this.tokenVersion = options.version ?? 1;
     this.tokenTimeToLive = options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
     this.sessionTimeToLive = options.sessionTimeToLive ?? (5 * millisecondsPerDay);
+  }
+
+  async [afterResolve](): Promise<void> {
+    await this.initialize();
+  }
+
+  async initialize(): Promise<void> {
+    await this.deriveSigningSecrets();
   }
 
   async setCredentials(subject: string, secret: string): Promise<void> {
@@ -151,11 +164,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
     const hash = await this.getHash(validatedToken.payload.secret, session.refreshTokenSalt);
 
     if (session.end <= currentTimestamp()) {
-      throw new UnauthorizedError('Session is ended.');
+      throw new InvalidTokenError('Session is expired.');
     }
 
     if (!binaryEquals(hash, session.refreshTokenHash)) {
-      throw new UnauthorizedError('Invalid refresh token.');
+      throw new InvalidTokenError('Invalid refresh token.');
     }
 
     const now = currentTimestamp();
@@ -175,11 +188,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
   }
 
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {
-    return getTokenFromString(token, this.tokenVersion, this.secret);
+    return getTokenFromString(token, this.tokenVersion, this.derivedTokenSigningSecret);
   }
 
   async validateRefreshToken(token: string): Promise<RefreshToken> {
-    const validatedToken = await parseAndValidateJwtTokenString<RefreshToken>(token, 'HS256', this.secret);
+    const validatedToken = await parseAndValidateJwtTokenString<RefreshToken>(token, 'HS256', this.derivedRefreshTokenSigningSecret);
 
     if (validatedToken.payload.exp <= currentTimestampSeconds()) {
       throw new InvalidTokenError('Token expired.');
@@ -210,7 +223,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
       payload
     };
 
-    const token = await createJwtTokenString<Token<AdditionalTokenPayload>>(jsonToken, this.secret);
+    const token = await createJwtTokenString<Token<AdditionalTokenPayload>>(jsonToken, this.derivedTokenSigningSecret);
 
     return { token, jsonToken };
   }
@@ -233,12 +246,21 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Addit
       }
     };
 
-    const token = await createJwtTokenString<RefreshToken>(jsonToken, this.secret);
+    const token = await createJwtTokenString<RefreshToken>(jsonToken, this.derivedRefreshTokenSigningSecret);
 
     return { token, jsonToken, salt, hash: new Uint8Array(hash) };
   }
 
-  private async getHash(secret: string, salt: BinaryData): Promise<Uint8Array> {
+  private async deriveSigningSecrets(): Promise<void> {
+    const key = await importPbkdf2Key(this.secret);
+    const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key, SIGNING_SECRETS_LENGTH * 2);
+    const bufferSize = SIGNING_SECRETS_LENGTH / 8;
+
+    this.derivedTokenSigningSecret = new Uint8Array(hash.slice(0, bufferSize));
+    this.derivedRefreshTokenSigningSecret = new Uint8Array(hash.slice(bufferSize));
+  }
+
+  private async getHash(secret: string | BinaryData, salt: BinaryData): Promise<Uint8Array> {
     const key = await importPbkdf2Key(secret);
     const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 250000, salt }, key, 512);
 

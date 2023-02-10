@@ -18,12 +18,23 @@ type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload = unknown, Auth
 export type AuthenticationApiDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
 
-export const authenticationApiDefinition = defineApi({
-  resource: 'auth',
-  endpoints: {
-    ...getAuthenticationApiEndpointsDefinition(emptyObjectSchema, unknown())
-  }
-});
+export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown());
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export function getAuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalEndpoints>(
+  additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
+  authenticationDataSchema: SchemaTestable<AuthenticationData>,
+  resource?: string,
+  additionalEndpoints?: AdditionalEndpoints
+) {
+  return defineApi({
+    resource: resource ?? 'auth',
+    endpoints: {
+      ...getAuthenticationApiEndpointsDefinition(additionalTokenPayloadSchema, authenticationDataSchema),
+      ...additionalEndpoints
+    }
+  });
+}
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>(

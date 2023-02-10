@@ -1,15 +1,18 @@
 import type { ApiClient } from '#/api/client';
 import type { AfterResolve } from '#/container';
 import { afterResolve, inject, optional, resolveArg, singleton } from '#/container';
+import { disposer } from '#/core';
+import { AsyncDisposable, disposeAsync } from '#/disposable';
+import { InvalidTokenError } from '#/error/invalid-token.error';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
-import type { MessageBusArgument } from '#/message-bus';
 import { MessageBus } from '#/message-bus';
+import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestampSeconds } from '#/utils/date-time';
-import { timeout } from '#/utils/timing';
-import { isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards';
+import { cancelableTimeout } from '#/utils/timing';
+import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, filter, firstValueFrom, map, Subject } from 'rxjs';
+import { BehaviorSubject, filter, firstValueFrom, map, race, Subject } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api';
 import type { TokenPayload } from '../models';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens';
@@ -18,12 +21,13 @@ const tokenStorageKey = 'AuthenticationService:token';
 const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> implements AfterResolve {
+export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> implements AfterResolve, AsyncDisposable {
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
-  private readonly tokenUpdateBus: MessageBus<void>;
+  private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined> | undefined;
   private readonly logger: Logger;
+  private readonly disposeToken: CancellationToken;
 
   private authenticationData: AuthenticationData | undefined;
 
@@ -32,9 +36,21 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
   readonly definedToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
   readonly loggedIn$: Observable<boolean>;
 
+  get loggedIn(): boolean {
+    return isDefined(this.tokenSubject.value);
+  }
+
+  get token(): TokenPayload<AdditionalTokenPayload> | undefined {
+    return this.tokenSubject.value;
+  }
+
+  get definedToken(): TokenPayload<AdditionalTokenPayload> {
+    return assertDefinedPass(this.tokenSubject.value, 'No token available.');
+  }
+
   constructor(
     @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
-    @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<void>,
+    @inject(MessageBus, tokenUpdateBusName) @optional() tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined> | undefined,
     @inject(INITIAL_AUTHENTICATION_DATA) @optional() initialAuthenticationData: AuthenticationData | undefined,
     @resolveArg<LoggerArgument>('AuthenticationService') logger: Logger
   ) {
@@ -43,6 +59,7 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
     this.authenticationData = initialAuthenticationData;
     this.logger = logger;
 
+    this.disposeToken = new CancellationToken();
     this.errorSubject = new Subject();
     this.tokenSubject = new BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
 
@@ -54,13 +71,25 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
 
   [afterResolve](): void {
     this.initialize();
+    disposer.add(this);
   }
 
   initialize(): void {
     this.loadToken();
-    this.tokenUpdateBus.messages$.subscribe(() => this.loadToken());
+    this.tokenUpdateBus?.messages$.subscribe((token) => this.tokenSubject.next(token));
 
     void this.refreshLoop();
+  }
+
+  async [disposeAsync](): Promise<void> {
+    await this.dispose();
+  }
+
+  async dispose(): Promise<void> {
+    this.disposeToken.set();
+    await this.tokenUpdateBus?.dispose();
+    this.tokenSubject.complete();
+    this.errorSubject.complete();
   }
 
   setAdditionalData(data: AuthenticationData): void {
@@ -73,13 +102,16 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
     }
 
     const token = await this.client.token({ subject, secret, data: this.authenticationData });
-    this.tokenSubject.next(token as TokenPayload<AdditionalTokenPayload>);
+    this.setNewToken(token);
   }
 
   async logout(): Promise<void> {
-    await this.client.endSession();
-    this.saveToken(undefined);
-    this.tokenSubject.next(undefined);
+    try {
+      await this.client.endSession();
+    }
+    finally {
+      this.setNewToken(undefined);
+    }
   }
 
   async refresh(data?: AuthenticationData): Promise<void> {
@@ -87,9 +119,14 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
       this.setAdditionalData(data);
     }
 
-    const token = await this.client.refresh({ data: this.authenticationData });
-    this.saveToken(token);
-    this.tokenSubject.next(token as TokenPayload<AdditionalTokenPayload>);
+    try {
+      const token = await this.client.refresh({ data: this.authenticationData });
+      this.setNewToken(token);
+    }
+    catch (error) {
+      await this.handleError(error as Error);
+      throw error;
+    }
   }
 
   private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
@@ -120,23 +157,39 @@ export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> i
     this.tokenSubject.next(token);
   }
 
-  private async refreshLoop(): Promise<void> {
-    while (true) {
-      try {
-        const token = await firstValueFrom(this.definedToken$);
+  private setNewToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
+    this.saveToken(token);
+    this.tokenSubject.next(token);
+    this.tokenUpdateBus?.publishAndForget(token);
+  }
 
-        if (currentTimestampSeconds() >= (token.exp - 30)) {
+  private async refreshLoop(): Promise<void> {
+    while (this.disposeToken.isUnset) {
+      try {
+        const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
+
+        if (isUndefined(token)) {
+          return;
+        }
+
+        if (currentTimestampSeconds() >= (token.exp - 60)) {
           await this.refresh();
         }
+
+        await cancelableTimeout(2500, this.disposeToken);
       }
-      catch (error) {
-        this.logger.error(error as Error);
-        this.errorSubject.next(error as Error);
-        await timeout(2500);
+      catch {
+        await cancelableTimeout(5000, this.disposeToken);
       }
-      finally {
-        await timeout(2500);
-      }
+    }
+  }
+
+  private async handleError(error: Error): Promise<void> {
+    this.logger.error(error);
+    this.errorSubject.next(error);
+
+    if (error instanceof InvalidTokenError) {
+      await this.logout();
     }
   }
 }

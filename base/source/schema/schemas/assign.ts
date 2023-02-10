@@ -32,5 +32,8 @@ export function assign(...inputs: ObjectSchemaOrType[]): ObjectSchema {
     result = rest;
   }
 
+  result.sourceType = undefined;
+  result.factory = undefined;
+
   return result;
 }

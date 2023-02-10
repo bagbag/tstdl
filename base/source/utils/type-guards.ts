@@ -28,7 +28,7 @@ export function assertNotType<T>(type: AbstractConstructor<T>, value: any, messa
 export function assertTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): T { assertType(type, value, message); return value; }
 export function assertNotTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): InferIsNotType<T, typeof isType> { assertNotType(type, value, message); return value; }
 
-export function isUndefined(value: any): value is undefined { return value === undefined; }
+export function isUndefined(value: any): value is undefined | void { return value === undefined; }
 export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return !isUndefined(value); }
 export function assertUndefined(value: any, message: AssertionMessage = 'Expected value to be undefined.'): asserts value is InferIsType<typeof isUndefined> { assert(isUndefined(value), message); }
 export function assertDefined<T>(value: T, message: AssertionMessage = 'Expected value to not be undefined.'): asserts value is InferIsNotType<T, typeof isUndefined> { assert(isDefined(value), message); }

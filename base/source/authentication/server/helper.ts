@@ -35,7 +35,7 @@ export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerReq
   return undefined;
 }
 
-export async function tryGetTokenFromRequest<AdditionalTokenPayload = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string): Promise<Token<AdditionalTokenPayload> | undefined> {
+export async function tryGetTokenFromRequest<AdditionalTokenPayload = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload> | undefined> {
   const tokenString = tryGetAuthorizationTokenStringFromRequest(request);
 
   if (isUndefined(tokenString)) {
@@ -45,7 +45,7 @@ export async function tryGetTokenFromRequest<AdditionalTokenPayload = Record<nev
   return getTokenFromString(tokenString, tokenVersion, secret);
 }
 
-export async function getTokenFromRequest<AdditionalTokenPayload = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string): Promise<Token<AdditionalTokenPayload>> {
+export async function getTokenFromRequest<AdditionalTokenPayload = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
   const token = await tryGetTokenFromRequest<AdditionalTokenPayload>(request, tokenVersion, secret);
 
   if (isUndefined(token)) {
@@ -55,7 +55,7 @@ export async function getTokenFromRequest<AdditionalTokenPayload = Record<never>
   return token;
 }
 
-export async function getTokenFromString<AdditionalTokenPayload = Record<never>>(tokenString: string, tokenVersion: number, secret: string): Promise<Token<AdditionalTokenPayload>> {
+export async function getTokenFromString<AdditionalTokenPayload = Record<never>>(tokenString: string, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
   if (isUndefined(tokenString)) {
     throw new UnauthorizedError('Missing authorization.');
   }

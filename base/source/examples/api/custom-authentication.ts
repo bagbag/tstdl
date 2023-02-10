@@ -1,32 +1,57 @@
 /* eslint-disable max-classes-per-file */
+import { compileClient } from '#/api/client';
 import { configureApiServer } from '#/api/server';
 import { Application } from '#/application';
-import { AuthenticationApiClient, AuthenticationService as AuthenticationClientService, configureAuthenticationClient } from '#/authentication/client';
+import { getAuthenticationApiDefinition } from '#/authentication/authentication.api';
+import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient } from '#/authentication/client';
+import { AuthenticationTokenPayloadProvider } from '#/authentication/server/authentication-token-payload.provider';
 import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller';
 import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service';
 import { configureAuthenticationServer } from '#/authentication/server/module';
 import { configureMongoAuthenticationCredentialsRepository, MongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository';
 import { configureMongoAuthenticationSessionRepository, MongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository';
-import { container } from '#/container';
+import { container, singleton } from '#/container';
 import { HTTP_CLIENT_OPTIONS } from '#/http';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { configureLocalMessageBus } from '#/message-bus/local';
 import { WebServerModule } from '#/module/modules';
+import { Property } from '#/schema';
 import { timeout } from '#/utils/timing';
 import { Agent } from 'undici';
+
+class CustomTokenPaylod {
+  @Property()
+  deviceRegistrationId: string;
+}
+
+class AuthenticationData {
+  @Property()
+  deviceId: string;
+}
+
+@singleton()
+class CustomTokenPayloadProvider extends AuthenticationTokenPayloadProvider<CustomTokenPaylod, AuthenticationData> {
+  getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
+    return { deviceRegistrationId: `registration:${authenticationData.deviceId}` };
+  }
+}
 
 configureAuthenticationServer({
   serviceOptions: { secret: 'djp0fq23576aq' },
   credentialsRepository: MongoAuthenticationCredentialsRepository,
-  sessionRepository: MongoAuthenticationSessionRepository
+  sessionRepository: MongoAuthenticationSessionRepository,
+  tokenPayloadProvider: CustomTokenPayloadProvider
 });
 
 configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
 configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
 
+const customAuthenticationApiDefinition = getAuthenticationApiDefinition(CustomTokenPaylod, AuthenticationData);
+const CustomAuthenticationApiClient = compileClient(customAuthenticationApiDefinition);
+
 configureAuthenticationClient({
-  authenticationApiClient: AuthenticationApiClient
+  authenticationApiClient: CustomAuthenticationApiClient
 });
 
 configureLocalMessageBus();
@@ -39,10 +64,10 @@ async function serverTest(): Promise<void> {
 async function clientTest(): Promise<void> {
   await timeout(250); // allow server to initialize
 
-  const authenticationService = container.resolve(AuthenticationClientService);
+  const authenticationService = container.resolve<AuthenticationClientService<CustomTokenPaylod, AuthenticationData>>(AuthenticationClientService);
   authenticationService.initialize();
 
-  await authenticationService.login('foobar', 'supersecret');
+  await authenticationService.login('foobar', 'supersecret', { deviceId: 'my-device' });
   authenticationService.token$.subscribe((token) => console.log({ token }));
 }
 

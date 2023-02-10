@@ -6,7 +6,7 @@ import type { AuthenticationApiDefinition } from '../authentication.api';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens';
 
 export type AuthenticationModuleConfig = {
-  authenticationApiClient: Type<ApiClientImplementation<AuthenticationApiDefinition>>,
+  authenticationApiClient: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>,
   initialAuthenticationData: unknown
 };
 
