@@ -5,20 +5,19 @@ import { HttpServerResponse } from '#/http/server';
 import { currentTimestamp } from '#/utils/date-time';
 import type { AuthenticationApiDefinition } from '../authentication.api';
 import { authenticationApiDefinition } from '../authentication.api';
-import type { TokenPayloadBase } from '../models';
 import type { TokenResult } from './authentication.service';
 import { AuthenticationService } from './authentication.service';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper';
 
 @apiController(authenticationApiDefinition)
-export class AuthenticationApiController<TokenPayload extends TokenPayloadBase, AuthenticationData> implements ApiController<AuthenticationApiDefinition<TokenPayload, AuthenticationData>> {
-  readonly authenticationService: AuthenticationService<TokenPayload, AuthenticationData>;
+export class AuthenticationApiController<AdditionalTokenPayload, AuthenticationData> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
+  readonly authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>;
 
-  constructor(authenticationService: AuthenticationService<TokenPayload, AuthenticationData>) {
+  constructor(authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>) {
     this.authenticationService = authenticationService;
   }
 
-  async token({ parameters }: ApiRequestData<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'token'>): Promise<ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'token'>> {
+  async token({ parameters }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>> {
     const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
 
     if (!authenticationResult.success) {
@@ -27,17 +26,17 @@ export class AuthenticationApiController<TokenPayload extends TokenPayloadBase, 
 
     const result = await this.authenticationService.getToken(authenticationResult.subject, parameters.data);
 
-    return this.getAuthenticationResponse(result);
+    return this.getTokenResponse(result);
   }
 
-  async refresh({ request, parameters }: ApiRequestData<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'refresh'>): Promise<ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'refresh'>> {
+  async refresh({ request, parameters }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>> {
     const tokenString = tryGetAuthorizationTokenStringFromRequest(request, 'refreshToken') ?? '';
     const result = await this.authenticationService.refresh(tokenString, parameters.data);
 
-    return this.getAuthenticationResponse(result);
+    return this.getTokenResponse(result);
   }
 
-  async endSession({ request }: ApiRequestData<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'endSession'>> {
+  async endSession({ request }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>> {
     const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
     const token = await this.authenticationService.validateToken(tokenString);
     await this.authenticationService.endSession(token.payload.sessionId);
@@ -45,12 +44,12 @@ export class AuthenticationApiController<TokenPayload extends TokenPayloadBase, 
     return 'ok';
   }
 
-  timestamp(): ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'timestamp'> {
+  timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'timestamp'> {
     return currentTimestamp();
   }
 
-  private getAuthenticationResponse({ token, jsonToken, refreshToken }: TokenResult<TokenPayload>): HttpServerResponse {
-    const result: ApiServerResult<AuthenticationApiDefinition<TokenPayload, AuthenticationData>, 'token'> = jsonToken.payload;
+  private getTokenResponse({ token, jsonToken, refreshToken }: TokenResult<AdditionalTokenPayload>): HttpServerResponse {
+    const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'> = jsonToken.payload as ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>;
 
     return new HttpServerResponse({
       cookies: {
