@@ -5,4 +5,3 @@ export * from './authentication.api-controller';
 export * from './authentication.service';
 export * from './helper';
 export * from './module';
-export * from './tokens';

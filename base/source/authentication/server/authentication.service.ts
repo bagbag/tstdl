@@ -1,6 +1,7 @@
 import type { AfterResolve } from '#/container';
 import { afterResolve, inject, optional, singleton } from '#/container';
 import { InvalidTokenError } from '#/error/invalid-token.error';
+import { NumberProperty, Property } from '#/schema';
 import type { Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { importPbkdf2Key } from '#/utils/cryptography';
@@ -15,21 +16,24 @@ import { AuthenticationCredentialsRepository } from './authentication-credential
 import { AuthenticationSessionRepository } from './authentication-session.repository';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
 import { getTokenFromString } from './helper';
-import { AUTHENTICATION_SERVICE_OPTIONS } from './tokens';
 
-export type AuthenticationServiceOptions = {
+export class AuthenticationServiceOptions {
   /** Secret used for signing tokens and refreshTokens */
-  secret: string,
+  @Property()
+  secret: string;
 
   /** Token version, forces refresh on mismatch (useful if payload changes) */
-  version?: number,
+  @NumberProperty({ optional: true })
+  version?: number;
 
   /** How long a token is valid */
-  tokenTimeToLive?: number,
+  @NumberProperty({ optional: true })
+  tokenTimeToLive?: number;
 
   /** How long a session is valid after a refreshed. Cannot be refreshed (new token issued) after it timed out. */
-  sessionTimeToLive?: number
-};
+  @NumberProperty({ optional: true })
+  sessionTimeToLive?: number;
+}
 
 export type AuthenticationResult =
   | { success: true, subject: string }
@@ -73,7 +77,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     credentialsRepository: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
     @inject(AuthenticationTokenPayloadProvider) @optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
-    @inject(AUTHENTICATION_SERVICE_OPTIONS) options: AuthenticationServiceOptions
+    options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsRepository;
     this.sessionRepository = sessionRepository;

@@ -4,8 +4,7 @@ import { isDefined } from '#/utils/type-guards';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
 import { AuthenticationSessionRepository } from './authentication-session.repository';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
-import type { AuthenticationServiceOptions } from './authentication.service';
-import { AUTHENTICATION_SERVICE_OPTIONS } from './tokens';
+import { AuthenticationServiceOptions } from './authentication.service';
 
 export type AuthenticationModuleConfig = {
   serviceOptions: AuthenticationServiceOptions,
@@ -15,7 +14,7 @@ export type AuthenticationModuleConfig = {
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
-  container.register(AUTHENTICATION_SERVICE_OPTIONS, { useValue: config.serviceOptions });
+  container.register(AuthenticationServiceOptions, { useValue: config.serviceOptions });
   container.registerSingleton(AuthenticationCredentialsRepository, { useToken: config.credentialsRepository });
   container.registerSingleton(AuthenticationSessionRepository, { useToken: config.sessionRepository });
 
