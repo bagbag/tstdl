@@ -11,7 +11,7 @@ export type AuthenticationModuleConfig = {
   serviceOptions: AuthenticationServiceOptions,
   credentialsRepository: Type<AuthenticationCredentialsRepository>,
   sessionRepository: Type<AuthenticationSessionRepository>,
-  tokenPayloadProvider?: Type<AuthenticationTokenPayloadProvider>
+  tokenPayloadProvider?: Type<AuthenticationTokenPayloadProvider<any, any>>
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {

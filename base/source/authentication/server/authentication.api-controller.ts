@@ -2,6 +2,7 @@ import { apiController } from '#/api/server';
 import type { ApiController, ApiRequestData, ApiServerResult } from '#/api/types';
 import { UnauthorizedError } from '#/error/unauthorized.error';
 import { HttpServerResponse } from '#/http/server';
+import type { Record } from '#/types';
 import { currentTimestamp } from '#/utils/date-time';
 import type { AuthenticationApiDefinition } from '../authentication.api';
 import { authenticationApiDefinition } from '../authentication.api';
@@ -10,7 +11,7 @@ import { AuthenticationService } from './authentication.service';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper';
 
 @apiController(authenticationApiDefinition)
-export class AuthenticationApiController<AdditionalTokenPayload, AuthenticationData> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
+export class AuthenticationApiController<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
   readonly authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>;
 
   constructor(authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>) {

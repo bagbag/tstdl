@@ -8,14 +8,15 @@ import { emptyObjectSchema, explicitObject } from '#/schema/schemas/object';
 import { string } from '#/schema/schemas/string';
 import { unknown } from '#/schema/schemas/unknown';
 import type { ObjectSchemaOrType } from '#/schema/types';
+import type { Record } from '#/types';
 import { TokenPayloadBase } from './models';
 
-type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> =
+type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
   typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;
 
-type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
 
-export type AuthenticationApiDefinition<AdditionalTokenPayload = unknown, AuthenticationData = unknown> =
+export type AuthenticationApiDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
 
 export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown());

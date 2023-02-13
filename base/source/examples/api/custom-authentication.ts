@@ -1,9 +1,7 @@
 /* eslint-disable max-classes-per-file */
-import { compileClient } from '#/api/client';
 import { configureApiServer } from '#/api/server';
 import { Application } from '#/application';
-import { getAuthenticationApiDefinition } from '#/authentication/authentication.api';
-import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient } from '#/authentication/client';
+import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client';
 import { AuthenticationTokenPayloadProvider } from '#/authentication/server/authentication-token-payload.provider';
 import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller';
 import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service';
@@ -47,8 +45,7 @@ configureAuthenticationServer({
 configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
 configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
 
-const customAuthenticationApiDefinition = getAuthenticationApiDefinition(CustomTokenPaylod, AuthenticationData);
-const CustomAuthenticationApiClient = compileClient(customAuthenticationApiDefinition);
+const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData);
 
 configureAuthenticationClient({
   authenticationApiClient: CustomAuthenticationApiClient

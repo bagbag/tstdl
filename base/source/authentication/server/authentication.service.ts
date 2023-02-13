@@ -56,10 +56,10 @@ type CreateRefreshTokenResult = {
 const SIGNING_SECRETS_LENGTH = 512;
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = Record<never>> implements AfterResolve {
+export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
-  private readonly tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
+  private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
 
   private readonly secret: string;
   private readonly tokenVersion: number;
@@ -70,14 +70,14 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private derivedRefreshTokenSigningSecret: Uint8Array;
 
   constructor(
-    credentialsService: AuthenticationCredentialsRepository,
+    credentialsRepository: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
-    @optional() tokenPayloadProviderService: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData>,
+    @inject(AuthenticationTokenPayloadProvider) @optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
     @inject(AUTHENTICATION_SERVICE_OPTIONS) options: AuthenticationServiceOptions
   ) {
-    this.credentialsRepository = credentialsService;
+    this.credentialsRepository = credentialsRepository;
     this.sessionRepository = sessionRepository;
-    this.tokenPayloadProviderService = tokenPayloadProviderService;
+    this.tokenPayloadProvider = tokenPayloadProvider;
 
     this.secret = options.secret;
     this.tokenVersion = options.version ?? 1;
@@ -137,7 +137,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       refreshTokenHash: new Uint8Array()
     });
 
-    const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(subject, authenticationData);
+    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(subject, authenticationData);
     const { token, jsonToken } = await this.createToken(tokenPayload!, subject, session.id, end, now);
     const refreshToken = await this.createRefreshToken(subject, session.id, end);
 
@@ -173,7 +173,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
     const now = currentTimestamp();
     const newEnd = now + this.sessionTimeToLive;
-    const tokenPayload = await this.tokenPayloadProviderService?.getTokenPayload(session.subject, authenticationData);
+    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData);
     const { token, jsonToken } = await this.createToken(tokenPayload!, session.subject, sessionId, newEnd, now);
     const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
 
