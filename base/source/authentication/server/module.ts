@@ -3,6 +3,7 @@ import type { Type } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
 import { AuthenticationSessionRepository } from './authentication-session.repository';
+import { AuthenticationSubjectResolver } from './authentication-subject.resolver';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
 import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service';
 
@@ -13,7 +14,8 @@ export type AuthenticationModuleConfig = {
 
   /** override default AuthenticationService */
   authenticationService?: Type<AuthenticationService<any, any>>,
-  tokenPayloadProvider?: Type<AuthenticationTokenPayloadProvider<any, any>>
+  tokenPayloadProvider?: Type<AuthenticationTokenPayloadProvider<any, any>>,
+  subjectResolver?: Type<AuthenticationSubjectResolver>
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
@@ -27,5 +29,9 @@ export function configureAuthenticationServer(config: AuthenticationModuleConfig
 
   if (isDefined(config.tokenPayloadProvider)) {
     container.registerSingleton(AuthenticationTokenPayloadProvider, { useToken: config.tokenPayloadProvider });
+  }
+
+  if (isDefined(config.subjectResolver)) {
+    container.registerSingleton(AuthenticationSubjectResolver, { useToken: config.subjectResolver });
   }
 }

@@ -14,6 +14,7 @@ import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units';
 import type { NewAuthenticationCredentials, RefreshToken, Token } from '../models';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
 import { AuthenticationSessionRepository } from './authentication-session.repository';
+import { AuthenticationSubjectResolver } from './authentication-subject.resolver';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
 import { getTokenFromString } from './helper';
 
@@ -64,6 +65,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
   private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
+  private readonly subjectResolver: AuthenticationSubjectResolver | undefined;
 
   private readonly secret: string;
   private readonly tokenVersion: number;
@@ -76,11 +78,13 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   constructor(
     credentialsRepository: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
+    @inject(AuthenticationSubjectResolver) @optional() subjectResolver: AuthenticationSubjectResolver | undefined,
     @inject(AuthenticationTokenPayloadProvider) @optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
     options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsRepository;
     this.sessionRepository = sessionRepository;
+    this.subjectResolver = subjectResolver;
     this.tokenPayloadProvider = tokenPayloadProvider;
 
     this.secret = options.secret;
@@ -98,11 +102,13 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async setCredentials(subject: string, secret: string): Promise<void> {
+    const actualSubject = await this.getActualSubject(subject);
+
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
 
     const credentials: NewAuthenticationCredentials = {
-      subject,
+      subject: actualSubject,
       hashVersion: 1,
       salt,
       hash
@@ -112,7 +118,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
-    const credentials = await this.credentialsRepository.tryLoadBySubject(subject);
+    const actualSubject = await this.getActualSubject(subject);
+    const credentials = await this.credentialsRepository.tryLoadBySubject(actualSubject);
 
     if (isUndefined(credentials)) {
       return { success: false };
@@ -129,11 +136,12 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async getToken(subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+    const actualSubject = await this.getActualSubject(subject);
     const now = currentTimestamp();
     const end = now + this.sessionTimeToLive;
 
     const session = await this.sessionRepository.insert({
-      subject,
+      subject: actualSubject,
       begin: now,
       end,
       refreshTokenHashVersion: 0,
@@ -141,9 +149,9 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       refreshTokenHash: new Uint8Array()
     });
 
-    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(subject, authenticationData);
-    const { token, jsonToken } = await this.createToken(tokenPayload!, subject, session.id, end, now);
-    const refreshToken = await this.createRefreshToken(subject, session.id, end);
+    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(actualSubject, authenticationData);
+    const { token, jsonToken } = await this.createToken(tokenPayload!, actualSubject, session.id, end, now);
+    const refreshToken = await this.createRefreshToken(actualSubject, session.id, end);
 
     await this.sessionRepository.extend(session.id, {
       end,
@@ -203,6 +211,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     }
 
     return validatedToken;
+  }
+
+  private async getActualSubject(subject: string): Promise<string> {
+    return this.subjectResolver?.resolveSubject(subject) ?? subject;
   }
 
   private async createToken(additionalTokenPayload: AdditionalTokenPayload, subject: string, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
