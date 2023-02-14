@@ -1,6 +1,6 @@
 import type { ApiClient } from '#/api/client';
 import { compileClient } from '#/api/client';
-import { singleton } from '#/container';
+import { replaceClass, singleton } from '#/container';
 import { HttpClient } from '#/http/client/http-client';
 import type { SchemaTestable } from '#/schema/schema';
 import { emptyObjectSchema } from '#/schema/schemas/object';
@@ -25,4 +25,7 @@ export function getAuthenticationApiClient<AdditionalTokenPayload, Authenticatio
   return AuthenticationApiClient;
 }
 
-export const AuthenticationApiClient = getAuthenticationApiClient(emptyObjectSchema, unknown());
+const defaultAuthenticationApiClient = getAuthenticationApiClient(emptyObjectSchema, unknown());
+
+@replaceClass(defaultAuthenticationApiClient)
+export class AuthenticationApiClient extends defaultAuthenticationApiClient { }

@@ -2,11 +2,13 @@ import type { ApiClient } from '#/api/client';
 import type { AfterResolve } from '#/container';
 import { afterResolve, inject, optional, resolveArg, singleton } from '#/container';
 import { disposer } from '#/core';
-import { AsyncDisposable, disposeAsync } from '#/disposable';
+import type { AsyncDisposable } from '#/disposable';
+import { disposeAsync } from '#/disposable';
 import { InvalidTokenError } from '#/error/invalid-token.error';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import { MessageBus } from '#/message-bus';
+import type { Record } from '#/types';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { currentTimestampSeconds } from '#/utils/date-time';
 import { cancelableTimeout } from '#/utils/timing';
@@ -21,7 +23,7 @@ const tokenStorageKey = 'AuthenticationService:token';
 const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload, AuthenticationData> implements AfterResolve, AsyncDisposable {
+export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
