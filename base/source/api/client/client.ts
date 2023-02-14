@@ -74,6 +74,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           url: resource,
           parameters,
           body: getRequestBody(requestBody),
+          credentials: (endpoint.credentials == true) ? 'include' : undefined,
           context
         });
 
