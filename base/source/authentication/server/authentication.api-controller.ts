@@ -42,7 +42,17 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
     const token = await this.authenticationService.validateToken(tokenString);
     await this.authenticationService.endSession(token.payload.sessionId);
 
-    return 'ok';
+    const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'> = 'ok';
+
+    return new HttpServerResponse({
+      cookies: {
+        authorization: { value: '', expires: -1 },
+        refreshToken: { value: '', expires: -1 }
+      },
+      body: {
+        json: result
+      }
+    });
   }
 
   timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'timestamp'> {
@@ -54,7 +64,7 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
 
     return new HttpServerResponse({
       cookies: {
-        authorization: { value: `Bearer ${token}`, httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.refreshTokenExp * 1000 },
+        authorization: { value: `Bearer ${token}`, httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.exp * 1000 },
         refreshToken: { value: `Bearer ${refreshToken}`, httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.refreshTokenExp * 1000 }
       },
       body: {
