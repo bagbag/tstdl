@@ -22,13 +22,8 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
     const isOptions = (request.method == 'OPTIONS');
     const isGet = (request.method == 'GET');
 
-    const allowCredentials = ((isOptions || isGet) && (isDefined(cors.accessControlAllowCredentials) && (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowCredentials)))) ?? endpointDefinition?.credentials ?? false;
 
-    if (allowCredentials) {
-      response.headers.setIfMissing('Access-Control-Allow-Credentials', 'true');
-    }
-
-    if (request.method == 'OPTIONS') {
+    if (isOptions) {
       const allowMethods = (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowMethods)) ?? [...context.api.endpoints.keys()].join(', ');
 
       response.headers.setIfMissing('Access-Control-Allow-Methods', allowMethods);
@@ -46,6 +41,16 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
       if (isDefined(cors.accessControlMaxAge) && !request.headers.has('Access-Control-Max-Age')) {
         const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlMaxAge);
         response.headers.setIfMissing('Access-Control-Max-Age', value);
+      }
+    }
+
+    if (isOptions || isGet) {
+      const allowCredentials = isDefined(cors.accessControlAllowCredentials)
+        ? await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowCredentials)
+        : endpointDefinition?.credentials;
+
+      if (allowCredentials == true) {
+        response.headers.setIfMissing('Access-Control-Allow-Credentials', 'true');
       }
     }
 
