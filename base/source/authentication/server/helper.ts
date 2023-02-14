@@ -1,6 +1,5 @@
 import { BadRequestError } from '#/error/bad-request.error';
 import { InvalidTokenError } from '#/error/invalid-token.error';
-import { UnauthorizedError } from '#/error/unauthorized.error';
 import type { HttpServerRequest } from '#/http/server';
 import type { OneOrMany, Record } from '#/types';
 import { currentTimestampSeconds } from '#/utils/date-time';
@@ -49,7 +48,7 @@ export async function getTokenFromRequest<AdditionalTokenPayload = Record<never>
   const token = await tryGetTokenFromRequest<AdditionalTokenPayload>(request, tokenVersion, secret);
 
   if (isUndefined(token)) {
-    throw new UnauthorizedError('Missing authorization.');
+    throw new InvalidTokenError('Missing authorization token');
   }
 
   return token;
@@ -57,17 +56,17 @@ export async function getTokenFromRequest<AdditionalTokenPayload = Record<never>
 
 export async function getTokenFromString<AdditionalTokenPayload = Record<never>>(tokenString: string, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
   if (isUndefined(tokenString)) {
-    throw new UnauthorizedError('Missing authorization.');
+    throw new InvalidTokenError('Missing authorization token');
   }
 
   const validatedToken = await parseAndValidateJwtTokenString<Token<AdditionalTokenPayload>>(tokenString, 'HS256', secret);
 
   if (validatedToken.header.v != tokenVersion) {
-    throw new InvalidTokenError('Invalid token version.');
+    throw new InvalidTokenError('Invalid token version');
   }
 
   if (validatedToken.payload.exp <= currentTimestampSeconds()) {
-    throw new InvalidTokenError('Token expired.');
+    throw new InvalidTokenError('Token expired');
   }
 
   return validatedToken;
