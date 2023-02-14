@@ -16,12 +16,9 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
     const response = await next(request);
 
     const requestMethod = request.headers.tryGetSingle('Access-Control-Request-Method') ?? request.method;
+    const isOptions = (request.method == 'OPTIONS');
     const endpointDefinition = context.api.endpoints.get(requestMethod as ApiEndpointMethod)?.definition;
     const cors = { ...options.default, ...endpointDefinition?.cors };
-
-    const isOptions = (request.method == 'OPTIONS');
-    const isGet = (request.method == 'GET');
-
 
     if (isOptions) {
       const allowMethods = (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowMethods)) ?? [...context.api.endpoints.keys()].join(', ');
@@ -44,7 +41,7 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
       }
     }
 
-    if (isOptions || isGet) {
+    if (!request.headers.has('Access-Control-Allow-Credentials')) {
       const allowCredentials = isDefined(cors.accessControlAllowCredentials)
         ? await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowCredentials)
         : endpointDefinition?.credentials;
