@@ -48,11 +48,10 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** get single value, throws if multiple values are set */
   getSingle(key: string): HttpValue {
-    const normalizedKey = this.normalizeKey(key);
-    const value = this.tryGetSingle(normalizedKey);
+    const value = this.tryGetSingle(key);
 
     if (isUndefined(value)) {
-      throw new BadRequestError(`Missing ${normalizedKey} ${this.valueType}`);
+      throw new BadRequestError(`Missing ${key} ${this.valueType}`);
     }
 
     return value;
@@ -64,7 +63,7 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
     const value = this.map.get(normalizedKey)?.value;
 
     if (isArray(value)) {
-      throw new BadRequestError(`Invalid ${normalizedKey} ${this.valueType}. Expected single value.`);
+      throw new BadRequestError(`Invalid ${key} ${this.valueType}. Expected single value.`);
     }
 
     return value;
@@ -99,11 +98,10 @@ export abstract class HttpValueMap<TThis extends HttpValueMap<any>> implements I
 
   /** add value to existing entry or create new entry */
   append(key: string, value: OneOrMany<HttpValue>): void {
-    const normalizedKey = this.normalizeKey(key);
-    const existing = this.tryGet(normalizedKey);
+    const existing = this.tryGet(key);
     const newValue = isUndefined(existing) ? value : [...toArray(existing), ...toArray(value)];
 
-    this.set(normalizedKey, newValue);
+    this.set(key, newValue);
   }
 
   /** remove entry */
