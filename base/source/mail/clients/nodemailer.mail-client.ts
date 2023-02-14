@@ -1,18 +1,17 @@
-import { container, inject, injectArg, singleton } from '#/container';
+import { container, injectArg, singleton } from '#/container';
 import type { WritableOneOrMany } from '#/types';
 import { isUndefined } from '#/utils/type-guards';
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
 import { MailClient, MailClientConfig } from '../mail.client';
 import type { MailAddress, MailData, MailSendResult } from '../models';
-import { MAIL_CLIENT_CONFIG } from '../tokens';
 import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-disable-line @typescript-eslint/no-require-imports
 
 @singleton()
 export class NodemailerMailClient extends MailClient {
   private readonly transporter: Transporter<SMTPTransport.SentMessageInfo>;
 
-  constructor(@inject(MAIL_CLIENT_CONFIG) @injectArg() config: MailClientConfig) {
+  constructor(@injectArg() config: MailClientConfig) {
     super();
 
     const options = convertConfig(config);

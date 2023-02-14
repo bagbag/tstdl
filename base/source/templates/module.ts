@@ -1,5 +1,6 @@
-import { container, stubClass } from '#/container';
+import { container } from '#/container';
 import type { Type } from '#/types';
+import { isDefined } from '#/utils/type-guards';
 import { StringTemplateRenderer } from './renderers/string.template-renderer';
 import { StringTemplateResolver } from './resolvers/string.template-resolver';
 import { TemplateProvider } from './template.provider';
@@ -8,18 +9,16 @@ import type { TemplateResolver } from './template.resolver';
 import { TEMPLATE_RENDERERS, TEMPLATE_RESOLVERS } from './tokens';
 
 export type TemplateModuleConfig = {
-  templateProvider: Type<TemplateProvider>,
+  templateProvider: Type<TemplateProvider> | undefined,
   templateResolvers: Type<TemplateResolver>[],
   templateRenderers: Type<TemplateRenderer>[]
 };
 
 export const templateModuleConfig: TemplateModuleConfig = {
-  templateProvider: stubClass(TemplateProvider),
+  templateProvider: undefined,
   templateResolvers: [StringTemplateResolver],
   templateRenderers: [StringTemplateRenderer]
 };
-
-container.registerSingleton(TemplateProvider, { useTokenProvider: () => templateModuleConfig.templateProvider });
 
 container.registerSingleton(TEMPLATE_RESOLVERS, {
   useFactory: (_, context) => {
@@ -52,8 +51,11 @@ container.registerSingleton(TEMPLATE_RENDERERS, {
 /**
  * configure mail module
  */
-export function configureTemplates({ templateProvider, templateResolvers, templateRenderers }: Partial<TemplateModuleConfig> = {}): void {
-  templateModuleConfig.templateProvider = templateProvider ?? templateModuleConfig.templateProvider;
-  templateModuleConfig.templateResolvers = [...new Set([...templateModuleConfig.templateResolvers, ...(templateResolvers ?? [])])];
-  templateModuleConfig.templateRenderers = [...new Set([...templateModuleConfig.templateRenderers, ...(templateRenderers ?? [])])];
+export function configureTemplates(config: Partial<TemplateModuleConfig> = {}): void {
+  if (isDefined(config.templateProvider)) {
+    container.registerSingleton(TemplateProvider, { useToken: config.templateProvider });
+  }
+
+  templateModuleConfig.templateResolvers = [...new Set([...templateModuleConfig.templateResolvers, ...(config.templateResolvers ?? [])])];
+  templateModuleConfig.templateRenderers = [...new Set([...templateModuleConfig.templateRenderers, ...(config.templateRenderers ?? [])])];
 }

@@ -1,24 +1,16 @@
-import { container, stubClass } from '#/container';
+import { container } from '#/container';
 import type { Type } from '#/types';
 import { isDefined } from '#/utils/type-guards';
 import { MailLogRepository } from './mail-log.repository';
-import type { MailClientConfig } from './mail.client';
-import { MailClient } from './mail.client';
+import { MailClient, MailClientConfig } from './mail.client';
 import type { DefaultMailData } from './models';
-import { MAIL_CLIENT_CONFIG, MAIL_DEFAULT_DATA } from './tokens';
+import { MAIL_DEFAULT_DATA } from './tokens';
 
 export type MailModuleConfig = {
   clientConfig: MailClientConfig,
   client: Type<MailClient>,
-  logRepository: Type<MailLogRepository> | undefined,
+  logRepository: Type<MailLogRepository>,
   defaultData: DefaultMailData
-};
-
-export const mailModuleConfig: MailModuleConfig = {
-  clientConfig: { host: '127.0.0.1', port: 25 },
-  client: stubClass(MailClient),
-  logRepository: stubClass(MailLogRepository),
-  defaultData: {}
 };
 
 /**
@@ -26,7 +18,7 @@ export const mailModuleConfig: MailModuleConfig = {
  */
 export function configureMail({ clientConfig, client, logRepository, defaultData }: Partial<MailModuleConfig>): void {
   if (isDefined(clientConfig)) {
-    container.registerSingleton(MAIL_CLIENT_CONFIG, { useValue: clientConfig });
+    container.registerSingleton(MailClientConfig, { useValue: clientConfig });
   }
 
   if (isDefined(client)) {

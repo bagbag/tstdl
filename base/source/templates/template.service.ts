@@ -21,7 +21,7 @@ export class TemplateService {
   private readonly templateResolverProvider: TemplateResolverProvider;
 
   constructor(
-    @optional() @inject(TemplateProvider) templateProvider: TemplateProvider | undefined,
+    @inject(TemplateProvider) @optional() templateProvider: TemplateProvider | undefined,
     templateRendererProvider: TemplateRendererProvider,
     templateResolverProvider: TemplateResolverProvider
   ) {
