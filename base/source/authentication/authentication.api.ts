@@ -53,7 +53,8 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
         secret: string(),
         data: authenticationDataSchema
       }),
-      result: tokenResultSchema
+      result: tokenResultSchema,
+      credentials: true
     },
     refresh: {
       resource: 'refresh',
@@ -61,12 +62,14 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
       parameters: explicitObject({
         data: authenticationDataSchema
       }),
-      result: tokenResultSchema
+      result: tokenResultSchema,
+      credentials: true
     },
     endSession: {
       resource: 'end-session',
       method: 'POST',
-      result: literal('ok' as const)
+      result: literal('ok' as const),
+      credentials: true
     },
     timestamp: {
       result: number()

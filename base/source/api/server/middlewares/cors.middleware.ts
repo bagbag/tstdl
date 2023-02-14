@@ -16,17 +16,22 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
     const response = await next(request);
 
     const requestMethod = request.headers.tryGetSingle('Access-Control-Request-Method') ?? request.method;
-    const cors = { ...options.default, ...context.api.endpoints.get(requestMethod as ApiEndpointMethod)?.definition.cors };
+    const endpointDefinition = context.api.endpoints.get(requestMethod as ApiEndpointMethod)?.definition;
+    const cors = { ...options.default, ...endpointDefinition?.cors };
+
+    const isOptions = (request.method == 'OPTIONS');
+    const isGet = (request.method == 'GET');
+
+    const allowCredentials = ((isOptions || isGet) && (isDefined(cors.accessControlAllowCredentials) && (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowCredentials)))) ?? endpointDefinition?.credentials ?? false;
+
+    if (allowCredentials) {
+      response.headers.setIfMissing('Access-Control-Allow-Credentials', 'true');
+    }
 
     if (request.method == 'OPTIONS') {
       const allowMethods = (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowMethods)) ?? [...context.api.endpoints.keys()].join(', ');
-      const allowCredentials = isDefined(cors.accessControlAllowCredentials) && (await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowCredentials));
 
       response.headers.setIfMissing('Access-Control-Allow-Methods', allowMethods);
-
-      if (allowCredentials) {
-        response.headers.setIfMissing('Access-Control-Allow-Credentials', 'true');
-      }
 
       if (isDefined(cors.accessControlAllowHeaders) && !request.headers.has('Access-Control-Allow-Headers')) {
         const value = await resolveApiEndpointDataProvider(request, context, cors.accessControlAllowHeaders);

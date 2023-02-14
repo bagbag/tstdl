@@ -38,6 +38,7 @@ export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url
   urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
   headers?: HttpHeadersObject | HttpHeaders,
   query?: HttpQueryObject | HttpQuery,
+  credentials?: HttpRequestCredentials,
   authorization?: HttpRequestAuthorization,
   body?: {
     text?: string,
@@ -49,12 +50,12 @@ export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url
   abortToken?: ReadonlyCancellationToken
 };
 
+export type HttpRequestCredentials = 'omit' | 'same-origin' | 'include';
+
 export type HttpClientRequestObject = HttpClientRequestOptions & {
   url: string,
   method?: HttpMethod
 };
-
-export type CredentialsOptions = 'omit' | 'same-origin' | 'include';
 
 export class HttpClientRequest implements Disposable {
   private readonly _abortToken: CancellationToken;
@@ -110,9 +111,9 @@ export class HttpClientRequest implements Disposable {
    * // -> http://domain.tld/search?categories=3&categories=8&limit=10
    */
   query: HttpQuery;
+  credentials: HttpRequestCredentials | undefined;
   authorization: HttpRequestAuthorization | undefined;
   body: HttpRequestBody | undefined;
-  credentials: CredentialsOptions;
 
   /**
    * request timeout in milliseconds
@@ -159,7 +160,7 @@ export class HttpClientRequest implements Disposable {
     this.query = new HttpQuery(requestOptions.query);
     this.authorization = requestOptions.authorization;
     this.body = normalizeBody(requestOptions.body);
-    this.credentials = requestOptions.credentials ?? 'omit';
+    this.credentials = requestOptions.credentials;
     this.timeout = requestOptions.timeout ?? 30000;
     this.throwOnNon200 = requestOptions.throwOnNon200 ?? true;
     this.context = requestOptions.context ?? {};

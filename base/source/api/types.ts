@@ -48,14 +48,10 @@ export type ApiEndpointDefinition = {
    */
   method?: OneOrMany<ApiEndpointMethod>,
 
-  /**
-   * Endpoint prefix. Overwrites default from api and gateway.
-   */
+  /** Endpoint prefix. Overwrites default from api and gateway. */
   prefix?: string | null,
 
-  /**
-   * Root resource path. Overwrites default from {@link ApiDefinition}.
-   */
+  /** Root resource path. Overwrites default from {@link ApiDefinition}. */
   rootResource?: string | null,
 
   /**
@@ -74,12 +70,17 @@ export type ApiEndpointDefinition = {
   body?: ApiEndpointDefinitionBody,
   result?: ApiEndpointDefinitionResult,
 
-  /**
-   * Maximum size of request body. Useful to prevent harmful requests.
-   */
+  /** Maximum size of request body. Useful to prevent harmful requests. */
   maxBytes?: number,
   description?: string,
   data?: any,
+
+  /**
+   * If true, sets browsers fetch to { credentials: 'include' } and enables 'Access-Control-Allow-Credentials' header
+   * @default false
+   */
+  credentials?: boolean,
+
   cors?: ApiEndpointDefinitionCors
 };
 
