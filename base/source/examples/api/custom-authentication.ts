@@ -9,8 +9,8 @@ import { configureAuthenticationServer } from '#/authentication/server/module';
 import { configureMongoAuthenticationCredentialsRepository, MongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository';
 import { configureMongoAuthenticationSessionRepository, MongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository';
 import { container, singleton } from '#/container';
-import { HTTP_CLIENT_OPTIONS } from '#/http';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
+import { configureHttpClient } from '#/http/client/module';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { configureLocalMessageBus } from '#/message-bus/local';
 import { WebServerModule } from '#/module/modules';
@@ -72,8 +72,7 @@ function main(): void {
   configureNodeHttpServer();
   configureApiServer({ controllers: [AuthenticationApiController] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
-
-  container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
+  configureHttpClient({ baseUrl: 'http://localhost:8000' });
 
   Application.run(WebServerModule);
 }

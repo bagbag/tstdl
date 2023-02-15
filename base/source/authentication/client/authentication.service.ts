@@ -44,6 +44,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   readonly token$: Observable<TokenPayload<AdditionalTokenPayload> | undefined>;
   readonly definedToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
+  readonly validToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
 
   readonly subject$: Observable<string | undefined>;
   readonly definedSubject$: Observable<string>;
@@ -82,6 +83,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     return this.definedToken.sessionId;
   }
 
+  get hasValidToken(): boolean {
+    return (this.token?.exp ?? 0) > currentTimestampSeconds();
+  }
+
   constructor(
     @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
     @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
@@ -104,6 +109,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.error$ = this.errorSubject.asObservable();
     this.token$ = this.tokenSubject.asObservable();
     this.definedToken$ = this.token$.pipe(filter(isDefined));
+    this.validToken$ = this.definedToken$.pipe(filter((token) => token.exp < currentTimestampSeconds()));
     this.subject$ = this.token$.pipe(map((token) => token?.subject), distinctUntilChanged());
     this.definedSubject$ = this.subject$.pipe(filter(isDefined));
     this.sessionId$ = this.token$.pipe(map((token) => token?.sessionId), distinctUntilChanged());

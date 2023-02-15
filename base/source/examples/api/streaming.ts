@@ -6,8 +6,8 @@ import { apiController, configureApiServer } from '#/api/server';
 import { Application } from '#/application';
 import { container } from '#/container';
 import { CORE_LOGGER } from '#/core';
-import { HTTP_CLIENT_OPTIONS } from '#/http';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
+import { configureHttpClient } from '#/http/client/module';
 import { HttpServerResponse } from '#/http/server';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
@@ -96,7 +96,7 @@ function main(): void {
   configureNodeHttpServer();
   configureApiServer({ controllers: [StreamingApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
-  container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
+  configureHttpClient({ baseUrl: 'http://localhost:8000' });
 
   Application.run(WebServerModule);
 }

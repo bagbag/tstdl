@@ -73,10 +73,11 @@ export type ApiEndpointDefinition = {
   /** Maximum size of request body. Useful to prevent harmful requests. */
   maxBytes?: number,
   description?: string,
-  data?: any,
+  data?: Record,
 
   /**
-   * If true, sets browsers fetch to { credentials: 'include' } and enables 'Access-Control-Allow-Credentials' header
+   * If true, sets browsers fetch to { credentials: 'include' } and enables 'Access-Control-Allow-Credentials' header.
+   *
    * @default false
    */
   credentials?: boolean,

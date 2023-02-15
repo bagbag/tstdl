@@ -1,6 +1,6 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response';
 import type { Injectable } from '#/container';
-import { inject, injectArg, injectionToken, optional, resolveArgumentType, singleton } from '#/container';
+import { injectArg, optional, resolveArgumentType, singleton } from '#/container';
 import type { OneOrMany, UndefinableJson } from '#/types';
 import { toArray } from '#/utils/array';
 import { encodeBase64 } from '#/utils/base64';
@@ -15,34 +15,15 @@ import { HttpHeaders } from '../http-headers';
 import { HttpError, HttpErrorReason } from '../http.error';
 import type { HttpMethod, HttpValue } from '../types';
 import { normalizeHttpValue, normalizeSingleHttpValue } from '../types';
+import { HttpClientOptions } from './http-client-options';
 import type { HttpClientRequestOptions } from './http-client-request';
 import { HttpClientRequest } from './http-client-request';
 import type { HttpClientResponse } from './http-client-response';
 import { HttpClientAdapter } from './http-client.adapter';
 
-export type HttpClientOptions = {
-  /**
-   * base url for requests when only path is provided
-   */
-  baseUrl?: string,
-
-  /**
-   * middlewares to add
-   */
-  middleware?: HttpClientMiddleware[],
-
-  /**
-   * enables parsing of response errors with registered error handlers via {@link parseErrorResponse}
-   * @default true
-   */
-  enableErrorHandling?: boolean
-};
-
 export type HttpClientHandler = AsyncMiddlewareHandler<HttpClientRequest, HttpClientResponse>;
 export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
 export type HttpClientMiddlewareNext = AsyncMiddlewareNext<HttpClientRequest, HttpClientResponse>;
-
-export const HTTP_CLIENT_OPTIONS = injectionToken<HttpClientOptions>(Symbol('HttpClientOptions'));
 
 export type HttpClientArgument = HttpClientOptions;
 
@@ -58,7 +39,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
 
   readonly [resolveArgumentType]: HttpClientOptions;
 
-  constructor(adapter: HttpClientAdapter, @inject(HTTP_CLIENT_OPTIONS) @optional() @injectArg() options: HttpClientOptions = {}) {
+  constructor(adapter: HttpClientAdapter, @optional() @injectArg() options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;
 

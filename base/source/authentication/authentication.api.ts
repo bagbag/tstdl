@@ -37,6 +37,8 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload, Authentic
   });
 }
 
+export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
+
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
@@ -54,7 +56,10 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
         data: authenticationDataSchema
       }),
       result: tokenResultSchema,
-      credentials: true
+      credentials: true,
+      data: {
+        [dontWaitForValidToken]: true
+      }
     },
     refresh: {
       resource: 'refresh',
@@ -63,7 +68,10 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
         data: authenticationDataSchema
       }),
       result: tokenResultSchema,
-      credentials: true
+      credentials: true,
+      data: {
+        [dontWaitForValidToken]: true
+      }
     },
     endSession: {
       resource: 'end-session',

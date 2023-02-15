@@ -5,8 +5,8 @@ import { compileClient } from '#/api/client';
 import { apiController, configureApiServer } from '#/api/server';
 import { Application } from '#/application';
 import { container } from '#/container';
-import { HTTP_CLIENT_OPTIONS } from '#/http';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
+import { configureHttpClient } from '#/http/client/module';
 import { configureNodeHttpServer } from '#/http/server/node';
 import { WebServerModule } from '#/module/modules';
 import { array, boolean, number, object, Property } from '#/schema';
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   configureNodeHttpServer();
   configureApiServer({ controllers: [UserApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
-  container.register(HTTP_CLIENT_OPTIONS, { useValue: { baseUrl: 'http://localhost:8000' } });
+  configureHttpClient({ baseUrl: 'http://localhost:8000' });
 
   Application.registerModule(WebServerModule);
   await Application.run();
