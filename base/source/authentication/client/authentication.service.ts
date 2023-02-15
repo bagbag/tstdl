@@ -5,6 +5,8 @@ import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable';
 import { disposeAsync } from '#/disposable';
 import { InvalidTokenError } from '#/error/invalid-token.error';
+import type { LockArgument } from '#/lock';
+import { Lock } from '#/lock';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
 import type { MessageBusArgument } from '#/message-bus';
@@ -22,6 +24,8 @@ import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens
 
 const tokenStorageKey = 'AuthenticationService:token';
 const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
+const loggedOutBusName = 'AuthenticationService:loggedOut';
+const refreshLockResource = 'AuthenticationService:refresh';
 
 @singleton()
 export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
@@ -29,6 +33,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly errorSubject: Subject<Error>;
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
+  private readonly loggedOutBus: MessageBus<void>;
+  private readonly refreshLock: Lock;
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
 
@@ -45,9 +51,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   readonly sessionId$: Observable<string | undefined>;
   readonly definedSessionId$: Observable<string>;
 
-  readonly loggedIn$: Observable<boolean>;
+  readonly isLoggedIn$: Observable<boolean>;
+  readonly loggedOut$: Observable<void>;
 
-  get loggedIn(): boolean {
+  get isLoggedIn(): boolean {
     return isDefined(this.tokenSubject.value);
   }
 
@@ -78,11 +85,15 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   constructor(
     @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
     @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
+    @resolveArg<MessageBusArgument>(loggedOutBusName) loggedOutBus: MessageBus<void>,
+    @resolveArg<LockArgument>(refreshLockResource) refreshLock: Lock,
     @inject(INITIAL_AUTHENTICATION_DATA) @optional() initialAuthenticationData: AuthenticationData | undefined,
     @resolveArg<LoggerArgument>('AuthenticationService') logger: Logger
   ) {
     this.client = client;
     this.tokenUpdateBus = tokenUpdateBus;
+    this.loggedOutBus = loggedOutBus;
+    this.refreshLock = refreshLock;
     this.authenticationData = initialAuthenticationData;
     this.logger = logger;
 
@@ -97,7 +108,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.definedSubject$ = this.subject$.pipe(filter(isDefined));
     this.sessionId$ = this.token$.pipe(map((token) => token?.sessionId), distinctUntilChanged());
     this.definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
-    this.loggedIn$ = this.token$.pipe(map(isDefined), distinctUntilChanged());
+    this.isLoggedIn$ = this.token$.pipe(map(isDefined), distinctUntilChanged());
+    this.loggedOut$ = loggedOutBus.allMessages$;
   }
 
   [afterResolve](): void {
@@ -142,6 +154,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     }
     finally {
       this.setNewToken(undefined);
+      this.loggedOutBus.publishAndForget();
     }
   }
 
@@ -197,15 +210,17 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private async refreshLoop(): Promise<void> {
     while (this.disposeToken.isUnset) {
       try {
-        const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
+        await this.refreshLock.use(0, false, async () => {
+          const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
 
-        if (isUndefined(token)) {
-          return;
-        }
+          if (isUndefined(token)) {
+            return;
+          }
 
-        if (currentTimestampSeconds() >= (token.exp - 60)) {
-          await this.refresh();
-        }
+          if (currentTimestampSeconds() >= (token.exp - 60)) {
+            await this.refresh();
+          }
+        });
 
         await cancelableTimeout(2500, this.disposeToken);
       }

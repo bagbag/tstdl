@@ -20,7 +20,7 @@ export interface LockController {
   readonly lost: boolean;
 
   /** manually release lock */
-  release(): Promise<void>;
+  release(): void | Promise<void>;
 }
 
 /** resource */
@@ -48,7 +48,7 @@ export abstract class Lock implements Injectable<LockArgument> {
    * @param throwOnFail throw if resource is locked and we couldn't acquire it in the specified timeout
    * @param func function to run when lock is acquired
    */
-  abstract using<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>>;
+  abstract use<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>>;
 
   /** check if resource is locked */
   abstract exists(): Promise<boolean>;

@@ -12,7 +12,7 @@ import { MongoLockRepository } from './mongo-lock-repository';
 
 const collectionArgumentProvider = (): CollectionArgument<MongoLockEntity> => assertDefinedPass(mongoLockModuleConfig.lockEntityRepositoryConfig, 'mongo lock module not configured');
 
-@singleton({ defaultArgument: '' })
+@singleton()
 export class MongoLockProvider extends LockProvider {
   private readonly lockRepository: MongoLockRepository;
   private readonly logger: Logger;

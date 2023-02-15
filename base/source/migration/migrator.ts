@@ -56,7 +56,7 @@ export class Migrator {
     const lock = this.lockProvider.get(`${name}`);
 
     // eslint-disable-next-line max-statements, max-lines-per-function
-    const { result } = await lock.using(30000, true, async (): Promise<MigrationResult<T>[]> => {
+    const { result } = await lock.use(30000, true, async (): Promise<MigrationResult<T>[]> => {
       const results: MigrationResult<T>[] = [];
 
       while (true) {

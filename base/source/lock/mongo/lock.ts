@@ -59,7 +59,7 @@ export class MongoLock extends Lock {
 
     if (result == false) {
       if (throwOnFail) {
-        throw new Error('failed to acquire lock');
+        throw new Error('Failed to acquire lock.');
       }
 
       return false as AcquireResult<Throw>;
@@ -99,7 +99,7 @@ export class MongoLock extends Lock {
     return controller as AcquireResult<Throw>;
   }
 
-  async using<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>> {
+  async use<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>> {
     const controller = await this.acquire(timeout, throwOnFail) as AcquireResult<false>;
 
     if (controller == false) {

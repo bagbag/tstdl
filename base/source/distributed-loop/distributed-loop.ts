@@ -70,7 +70,7 @@ export class DistributedLoop implements Injectable<DistributedLoopArgument> {
         while (!stopToken.isSet) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
           timer.restart();
 
-          await lock.using(undefined, false, async () => {
+          await lock.use(undefined, false, async () => {
             await func(controller);
 
             const timeLeft = interval - timer.milliseconds;

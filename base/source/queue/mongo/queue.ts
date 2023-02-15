@@ -202,7 +202,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   async dequeueMany(count: number): Promise<Job<T>[]> {
     const batch = getRandomString(20, Alphabet.LowerUpperCaseNumbers);
 
-    await this.lock.using(10000, true, async () => {
+    await this.lock.use(10000, true, async () => {
       const { filter } = getDequeueFindParameters(this.queueKey, this.maxTries, this.processTimeout, batch);
 
       await this.repository.baseRepository.collection.aggregate([
