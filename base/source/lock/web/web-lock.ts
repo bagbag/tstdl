@@ -9,12 +9,12 @@ import { WebLockProvider } from './web-lock.provider';
 
 @injectable({
   provider: {
-    useFactory: async (argument, context) => {
+    useFactory: (argument, context) => {
       const arg = argument as LockArgument;
       const prefix = isObject(arg) ? assertStringPass(arg.prefix, 'invalid lock argument') : undefined;
       const resource = assertStringPass(isObject(arg) ? arg.resource : arg, 'invalid lock argument');
 
-      const provider = await context.resolveAsync(WebLockProvider, prefix);
+      const provider = context.resolve(WebLockProvider, prefix);
       return provider.get(resource);
     }
   }
