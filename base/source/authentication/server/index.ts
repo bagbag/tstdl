@@ -1,3 +1,4 @@
+export * from './authentication-api-request-token.provider';
 export * from './authentication-credentials.repository';
 export * from './authentication-session.repository';
 export * from './authentication-subject.resolver';
