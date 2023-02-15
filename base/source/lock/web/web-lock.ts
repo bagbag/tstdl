@@ -49,15 +49,17 @@ export class WebLock extends Lock {
         }
 
         acquirePromise.resolve(controller);
-        return releasePromise;
+        await releasePromise;
       }
-    ).catch((error) => {
-      if (throwOnFail) {
-        acquirePromise.reject(error);
-      }
-
-      acquirePromise.resolve(false as AcquireResult<Throw>);
-    });
+    )
+      .catch((error) => {
+        if (throwOnFail) {
+          acquirePromise.reject(error);
+        }
+        else {
+          acquirePromise.resolve(false as AcquireResult<Throw>);
+        }
+      });
 
     return acquirePromise;
   }

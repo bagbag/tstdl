@@ -84,11 +84,11 @@ export class DeferredPromise<T = void> implements Promise<T> {
 
   private ensurePendingState(): void {
     if (this.resolved) {
-      throw new Error('promise already resolved');
+      throw new Error('Promise already resolved.');
     }
 
     if (this.rejected) {
-      throw new Error('promise already rejected');
+      throw new Error('Promise already rejected.');
     }
   }
 }
