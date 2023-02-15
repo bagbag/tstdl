@@ -17,7 +17,7 @@ export function configureHttpClient({ adapter, ...rest }: HttpClientModuleConfig
 
   options = {
     ...options,
-    baseUrl: rest.baseUrl,
+    baseUrl: rest.baseUrl ?? options.baseUrl,
     middleware: [...(options.middleware ?? []), ...(rest.middleware ?? [])],
     enableErrorHandling: rest.enableErrorHandling ?? options.enableErrorHandling
   };

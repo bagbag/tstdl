@@ -5,7 +5,6 @@ import { disposer } from '#/core';
 import type { AsyncDisposable } from '#/disposable';
 import { disposeAsync } from '#/disposable';
 import { InvalidTokenError } from '#/error/invalid-token.error';
-import type { LockArgument } from '#/lock';
 import { Lock } from '#/lock';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
@@ -34,7 +33,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly loggedOutBus: MessageBus<void>;
-  private readonly refreshLock: Lock;
+  private readonly refreshLock: Lock | undefined;
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
 
@@ -91,7 +90,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
     @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
     @resolveArg<MessageBusArgument>(loggedOutBusName) loggedOutBus: MessageBus<void>,
-    @resolveArg<LockArgument>(refreshLockResource) refreshLock: Lock,
+    @inject(Lock, refreshLockResource) @optional() refreshLock: Lock | undefined,
     @inject(INITIAL_AUTHENTICATION_DATA) @optional() initialAuthenticationData: AuthenticationData | undefined,
     @resolveArg<LoggerArgument>('AuthenticationService') logger: Logger
   ) {
@@ -216,23 +215,30 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private async refreshLoop(): Promise<void> {
     while (this.disposeToken.isUnset) {
       try {
-        await this.refreshLock.use(0, false, async () => {
-          const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
-
-          if (isUndefined(token)) {
-            return;
-          }
-
-          if (currentTimestampSeconds() >= (token.exp - 60)) {
-            await this.refresh();
-          }
-        });
+        if (isDefined(this.refreshLock)) {
+          await this.refreshLock.use(0, false, async () => this.refreshLoopIteration());
+        }
+        else {
+          await this.refreshLoopIteration();
+        }
 
         await cancelableTimeout(2500, this.disposeToken);
       }
       catch {
         await cancelableTimeout(5000, this.disposeToken);
       }
+    }
+  }
+
+  private async refreshLoopIteration(): Promise<void> {
+    const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
+
+    if (isUndefined(token)) {
+      return;
+    }
+
+    if (currentTimestampSeconds() >= (token.exp - 60)) {
+      await this.refresh();
     }
   }
 
