@@ -5,7 +5,7 @@ import type { OneOrMany, Record } from '#/types';
 import { currentTimestampSeconds } from '#/utils/date-time';
 import { parseAndValidateJwtTokenString } from '#/utils/jwt';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
-import type { Token } from '../models';
+import type { RefreshToken, Token } from '../models';
 
 /**
  *
@@ -65,9 +65,23 @@ export async function getTokenFromString<AdditionalTokenPayload = Record<never>>
     throw new InvalidTokenError('Invalid token version');
   }
 
-  if (validatedToken.payload.exp <= currentTimestampSeconds()) {
+  if ((validatedToken.payload.exp + 2500) <= currentTimestampSeconds()) {
     throw new InvalidTokenError('Token expired');
   }
 
   return validatedToken;
+}
+
+export async function getRefreshTokenFromString(tokenString: string, secret: string | BinaryData): Promise<RefreshToken> {
+  if (isUndefined(tokenString)) {
+    throw new InvalidTokenError('Missing refresh token');
+  }
+
+  const validatedRefreshToken = await parseAndValidateJwtTokenString<RefreshToken>(tokenString, 'HS256', secret);
+
+  if (validatedRefreshToken.payload.exp <= currentTimestampSeconds()) {
+    throw new InvalidTokenError('Refresh token expired.');
+  }
+
+  return validatedRefreshToken;
 }

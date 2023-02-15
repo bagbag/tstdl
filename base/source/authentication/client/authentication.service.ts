@@ -108,7 +108,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.error$ = this.errorSubject.asObservable();
     this.token$ = this.tokenSubject.asObservable();
     this.definedToken$ = this.token$.pipe(filter(isDefined));
-    this.validToken$ = this.definedToken$.pipe(filter((token) => token.exp < currentTimestampSeconds()));
+    this.validToken$ = this.definedToken$.pipe(filter((token) => token.exp > currentTimestampSeconds()));
     this.subject$ = this.token$.pipe(map((token) => token?.subject), distinctUntilChanged());
     this.definedSubject$ = this.subject$.pipe(filter(isDefined));
     this.sessionId$ = this.token$.pipe(map((token) => token?.sessionId), distinctUntilChanged());

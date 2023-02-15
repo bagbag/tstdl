@@ -5,9 +5,9 @@ import { NumberProperty, Property } from '#/schema';
 import type { Record } from '#/types';
 import { Alphabet } from '#/utils/alphabet';
 import { importPbkdf2Key } from '#/utils/cryptography';
-import { currentTimestamp, currentTimestampSeconds, timestampToTimestampSeconds } from '#/utils/date-time';
+import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time';
 import { binaryEquals } from '#/utils/equals';
-import { createJwtTokenString, parseAndValidateJwtTokenString } from '#/utils/jwt';
+import { createJwtTokenString } from '#/utils/jwt';
 import { getRandomBytes, getRandomString } from '#/utils/random';
 import { isUndefined } from '#/utils/type-guards';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units';
@@ -16,7 +16,7 @@ import { AuthenticationCredentialsRepository } from './authentication-credential
 import { AuthenticationSessionRepository } from './authentication-session.repository';
 import { AuthenticationSubjectResolver } from './authentication-subject.resolver';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
-import { getTokenFromString } from './helper';
+import { getRefreshTokenFromString, getTokenFromString } from './helper';
 
 export class AuthenticationServiceOptions {
   /** Secret used for signing tokens and refreshTokens */
@@ -204,13 +204,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async validateRefreshToken(token: string): Promise<RefreshToken> {
-    const validatedToken = await parseAndValidateJwtTokenString<RefreshToken>(token, 'HS256', this.derivedRefreshTokenSigningSecret);
-
-    if (validatedToken.payload.exp <= currentTimestampSeconds()) {
-      throw new InvalidTokenError('Token expired.');
-    }
-
-    return validatedToken;
+    return getRefreshTokenFromString(token, this.derivedRefreshTokenSigningSecret);
   }
 
   private async getActualSubject(subject: string): Promise<string> {
