@@ -14,8 +14,8 @@ export class AuthenticationApiRequestTokenProvider extends ApiRequestTokenProvid
     this.authenticationService = authenticationService;
   }
 
-  async getToken<T>({ request }: ApiRequestData): Promise<T> {
-    const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
+  async getToken<T>(data: ApiRequestData): Promise<T> {
+    const tokenString = tryGetAuthorizationTokenStringFromRequest(data.request) ?? '';
     const token = await this.authenticationService.validateToken(tokenString);
 
     return token as T;

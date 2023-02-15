@@ -256,15 +256,11 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       ? Schema.parse(context.endpoint.definition.parameters, parameters)
       : parameters;
 
-    const provider = this.requestTokenProvider;
-
     const requestContext: ApiRequestContext = {
       parameters: validatedParameters,
       body,
       request,
-      async getToken() {
-        return provider.getToken(this);
-      }
+      getToken: async () => this.requestTokenProvider.getToken(requestContext)
     };
 
     const result = await context.endpoint.implementation(requestContext);
