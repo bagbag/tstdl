@@ -14,7 +14,7 @@ import { currentTimestampSeconds } from '#/utils/date-time';
 import { cancelableTimeout } from '#/utils/timing';
 import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, filter, firstValueFrom, map, race, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api';
 import type { TokenPayload } from '../models';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens';
@@ -34,8 +34,16 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private authenticationData: AuthenticationData | undefined;
 
   readonly error$: Observable<Error>;
+
   readonly token$: Observable<TokenPayload<AdditionalTokenPayload> | undefined>;
   readonly definedToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
+
+  readonly subject$: Observable<string | undefined>;
+  readonly definedSubject$: Observable<string>;
+
+  readonly sessionId$: Observable<string | undefined>;
+  readonly definedSessionId$: Observable<string>;
+
   readonly loggedIn$: Observable<boolean>;
 
   get loggedIn(): boolean {
@@ -48,6 +56,22 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   get definedToken(): TokenPayload<AdditionalTokenPayload> {
     return assertDefinedPass(this.tokenSubject.value, 'No token available.');
+  }
+
+  get subject(): string | undefined {
+    return this.token?.subject;
+  }
+
+  get definedSubject(): string {
+    return this.definedToken.subject;
+  }
+
+  get sessionId(): string | undefined {
+    return this.token?.sessionId;
+  }
+
+  get definedSessionId(): string {
+    return this.definedToken.sessionId;
   }
 
   constructor(
@@ -68,7 +92,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.error$ = this.errorSubject.asObservable();
     this.token$ = this.tokenSubject.asObservable();
     this.definedToken$ = this.token$.pipe(filter(isDefined));
-    this.loggedIn$ = this.token$.pipe(map(isDefined));
+    this.subject$ = this.token$.pipe(map((token) => token?.subject), distinctUntilChanged());
+    this.definedSubject$ = this.subject$.pipe(filter(isDefined));
+    this.sessionId$ = this.token$.pipe(map((token) => token?.sessionId), distinctUntilChanged());
+    this.definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
+    this.loggedIn$ = this.token$.pipe(map(isDefined), distinctUntilChanged());
   }
 
   [afterResolve](): void {
