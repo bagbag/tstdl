@@ -1,14 +1,16 @@
 import { apiController } from '#/api/server';
 import type { ApiController, ApiRequestData, ApiServerResult } from '#/api/types';
 import { UnauthorizedError } from '#/error/unauthorized.error';
-import { HttpServerResponse } from '#/http/server';
-import type { Record } from '#/types';
+import { HttpServerResponse, SetCookieObject } from '#/http/server';
+import type { Record, TypedOmit } from '#/types';
 import { currentTimestamp } from '#/utils/date-time';
 import type { AuthenticationApiDefinition } from '../authentication.api';
 import { authenticationApiDefinition } from '../authentication.api';
 import type { TokenResult } from './authentication.service';
 import { AuthenticationService } from './authentication.service';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper';
+
+const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' };
 
 @apiController(authenticationApiDefinition)
 export class AuthenticationApiController<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
@@ -46,8 +48,8 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
 
     return new HttpServerResponse({
       cookies: {
-        authorization: { value: '', expires: -1 },
-        refreshToken: { value: '', expires: -1 }
+        authorization: { value: '', ...cookieBaseOptions, expires: -1 },
+        refreshToken: { value: '', ...cookieBaseOptions, expires: -1 }
       },
       body: {
         json: result
@@ -64,8 +66,8 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
 
     return new HttpServerResponse({
       cookies: {
-        authorization: { value: `Bearer ${token}`, path: '/', httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.exp * 1000 },
-        refreshToken: { value: `Bearer ${refreshToken}`, path: '/', httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.refreshTokenExp * 1000 }
+        authorization: { value: `Bearer ${token}`, ...cookieBaseOptions, expires: jsonToken.payload.exp * 1000 },
+        refreshToken: { value: `Bearer ${refreshToken}`, ...cookieBaseOptions, expires: jsonToken.payload.refreshTokenExp * 1000 }
       },
       body: {
         json: result
