@@ -1,6 +1,6 @@
 import type { Disposable } from '#/disposable';
 import { dispose } from '#/disposable';
-import type { StringMap, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types';
+import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
 import { CancellationToken } from '#/utils/cancellation-token';
 import { clone } from '#/utils/clone';
@@ -127,7 +127,7 @@ export class HttpClientRequest implements Disposable {
    *
    * will not be used for actual request
    */
-  context: StringMap;
+  context: Record<string>;
 
   /**
    * can be used to cancel the request. Throws HttpError

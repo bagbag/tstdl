@@ -223,7 +223,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
 
   async rawRequest(request: HttpClientRequest): Promise<HttpClientResponse> {
     const preparedRequest = this.prepareRequest(request);
-    return this.callHandler(preparedRequest, undefined);
+    return this.callHandler(preparedRequest, request.context);
   }
 
   private updateHandlers(): void {
