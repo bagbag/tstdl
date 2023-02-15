@@ -1,4 +1,4 @@
-import { InvalidTokenError, UnauthorizedError } from '../error';
+import { InvalidTokenError } from '../error/invalid-token.error';
 import type { BinaryData, OneOrMany, StringMap } from '../types';
 import { toArray } from './array/array';
 import { decodeBase64Url, encodeBase64Url } from './base64';
@@ -42,7 +42,8 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
   const splits = tokenString.split('.');
 
   if (splits.length != 3) {
-    throw new InvalidTokenError('Invalid token format');
+    const message = (tokenString.length > 0) ? 'Invalid token format' : 'Missing authorization token';
+    throw new InvalidTokenError(message);
   }
 
   const [encodedHeader, encodedPayload, encodedSignature] = splits;
