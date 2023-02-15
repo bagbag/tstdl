@@ -7,6 +7,7 @@ import { disposeAsync } from '#/disposable';
 import { InvalidTokenError } from '#/error/invalid-token.error';
 import type { LoggerArgument } from '#/logger';
 import { Logger } from '#/logger';
+import type { MessageBusArgument } from '#/message-bus';
 import { MessageBus } from '#/message-bus';
 import type { Record } from '#/types';
 import { CancellationToken } from '#/utils/cancellation-token';
@@ -27,7 +28,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
-  private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined> | undefined;
+  private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
 
@@ -76,7 +77,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   constructor(
     @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
-    @inject(MessageBus, tokenUpdateBusName) @optional() tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined> | undefined,
+    @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
     @inject(INITIAL_AUTHENTICATION_DATA) @optional() initialAuthenticationData: AuthenticationData | undefined,
     @resolveArg<LoggerArgument>('AuthenticationService') logger: Logger
   ) {
@@ -106,7 +107,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   initialize(): void {
     this.loadToken();
-    this.tokenUpdateBus?.messages$.subscribe((token) => this.tokenSubject.next(token));
+    this.tokenUpdateBus.messages$.subscribe((token) => this.tokenSubject.next(token));
 
     void this.refreshLoop();
   }
@@ -117,9 +118,9 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   async dispose(): Promise<void> {
     this.disposeToken.set();
-    await this.tokenUpdateBus?.dispose();
     this.tokenSubject.complete();
     this.errorSubject.complete();
+    await this.tokenUpdateBus.dispose();
   }
 
   setAdditionalData(data: AuthenticationData): void {
@@ -190,7 +191,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private setNewToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
     this.saveToken(token);
     this.tokenSubject.next(token);
-    this.tokenUpdateBus?.publishAndForget(token);
+    this.tokenUpdateBus.publishAndForget(token);
   }
 
   private async refreshLoop(): Promise<void> {

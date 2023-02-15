@@ -42,7 +42,7 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
   const splits = tokenString.split('.');
 
   if (splits.length != 3) {
-    throw new InvalidTokenError('invalid token format');
+    throw new InvalidTokenError('Invalid token format');
   }
 
   const [encodedHeader, encodedPayload, encodedSignature] = splits;
@@ -66,21 +66,26 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
     payload: textDecoder.decode(bytes.payload)
   };
 
-  const header = JSON.parse(string.header) as T['header'];
-  const payload = JSON.parse(string.payload) as T['payload'];
+  try {
+    const header = JSON.parse(string.header) as T['header'];
+    const payload = JSON.parse(string.payload) as T['payload'];
 
-  const token: JwtToken = {
-    header,
-    payload
-  };
+    const token: JwtToken = {
+      header,
+      payload
+    };
 
-  return {
-    raw: tokenString,
-    token: token as T,
-    encoded,
-    bytes,
-    string
-  };
+    return {
+      raw: tokenString,
+      token: token as T,
+      encoded,
+      bytes,
+      string
+    };
+  }
+  catch {
+    throw new InvalidTokenError('Invalid token format');
+  }
 }
 
 export async function createJwtTokenString<T extends JwtToken = JwtToken>(jwtToken: T, key: Key | string): Promise<string> {
@@ -105,24 +110,24 @@ export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtTok
     const { encoded, bytes, token } = parseJwtTokenString<T>(tokenString);
 
     if (!toArray(allowedAlgorithms).includes(token.header.alg)) {
-      throw new UnauthorizedError('Invalid signature algorithm.');
+      throw new InvalidTokenError('Invalid signature algorithm');
     }
 
     const calculatedSignature = await getSignature(encodeUtf8(`${encoded.header}.${encoded.payload}`), token.header.alg, key);
     const validSignature = binaryEquals(calculatedSignature, bytes.signature);
 
     if (!validSignature) {
-      throw new UnauthorizedError('Invalid token signature.');
+      throw new InvalidTokenError('Invalid token signature');
     }
 
     return token;
   }
   catch (error: unknown) {
-    if (error instanceof UnauthorizedError) {
+    if (error instanceof InvalidTokenError) {
       throw error;
     }
 
-    throw new UnauthorizedError('Invalid token.');
+    throw new InvalidTokenError('Invalid token');
   }
 }
 
