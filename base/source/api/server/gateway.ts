@@ -23,10 +23,10 @@ import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
+import { ApiRequestTokenProvider } from './api-request-token.provider';
 import { handleApiError } from './error-handler';
 import type { CorsMiddlewareOptions } from './middlewares';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
-import { ApiRequestTokenProvider } from './api-request-token.provider';
 import { API_MODULE_OPTIONS } from './tokens';
 
 const defaultMaxBytes = 10 * mebibyte;
