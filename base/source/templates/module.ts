@@ -29,8 +29,7 @@ container.registerSingleton(TEMPLATE_RESOLVERS, {
       })();
     }
 
-    const resolves = templateModuleConfig.templateResolvers.map((type) => context.resolve(type));
-    return resolves.map((type) => context.resolve(type));
+    return templateModuleConfig.templateResolvers.map((type) => context.resolve(type));
   }
 });
 
@@ -43,8 +42,7 @@ container.registerSingleton(TEMPLATE_RENDERERS, {
       })();
     }
 
-    const resolves = templateModuleConfig.templateRenderers.map((type) => context.resolve(type));
-    return resolves.map((type) => context.resolve(type));
+    return templateModuleConfig.templateRenderers.map((type) => context.resolve(type));
   }
 });
 

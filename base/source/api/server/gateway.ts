@@ -19,13 +19,14 @@ import { deferThrow } from '#/utils/throw';
 import { isArray, isBlob, isDefined, isNull, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
 import { mebibyte } from '#/utils/units';
 import 'urlpattern-polyfill';
-import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestData } from '../types';
+import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestContext } from '../types';
 import { normalizedApiDefinitionEndpointsEntries } from '../types';
 import { getFullApiEndpointResource } from '../utils';
 import { getApiControllerDefinition } from './api-controller';
 import { handleApiError } from './error-handler';
 import type { CorsMiddlewareOptions } from './middlewares';
 import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares';
+import { ApiRequestTokenProvider } from './api-request-token.provider';
 import { API_MODULE_OPTIONS } from './tokens';
 
 const defaultMaxBytes = 10 * mebibyte;
@@ -92,6 +93,7 @@ export type ApiMetadata = {
   defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions
 })
 export class ApiGateway implements Injectable<ApiGatewayOptions> {
+  private readonly requestTokenProvider: ApiRequestTokenProvider;
   private readonly logger: Logger;
   private readonly prefix: string | null;
   private readonly apis: Map<string, ApiItem>;
@@ -103,7 +105,8 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
   readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(@resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
+  constructor(requestTokenProvider: ApiRequestTokenProvider, @resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
+    this.requestTokenProvider = requestTokenProvider;
     this.logger = logger;
     this.options = options;
 
@@ -253,13 +256,18 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       ? Schema.parse(context.endpoint.definition.parameters, parameters)
       : parameters;
 
-    const requestData: ApiRequestData = {
+    const provider = this.requestTokenProvider;
+
+    const requestContext: ApiRequestContext = {
       parameters: validatedParameters,
       body,
-      request
+      request,
+      async getToken() {
+        return provider.getToken(this);
+      }
     };
 
-    const result = await context.endpoint.implementation(requestData);
+    const result = await context.endpoint.implementation(requestContext);
 
     if (result instanceof HttpServerResponse) {
       return result;

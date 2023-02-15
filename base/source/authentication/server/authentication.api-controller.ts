@@ -1,5 +1,5 @@
 import { apiController } from '#/api/server';
-import type { ApiController, ApiRequestData, ApiServerResult } from '#/api/types';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types';
 import { UnauthorizedError } from '#/error/unauthorized.error';
 import { HttpServerResponse, SetCookieObject } from '#/http/server';
 import type { Record, TypedOmit } from '#/types';
@@ -20,7 +20,7 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
     this.authenticationService = authenticationService;
   }
 
-  async token({ parameters }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>> {
+  async token({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'token'>> {
     const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
 
     if (!authenticationResult.success) {
@@ -32,14 +32,14 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
     return this.getTokenResponse(result);
   }
 
-  async refresh({ request, parameters }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>> {
+  async refresh({ request, parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'refresh'>> {
     const tokenString = tryGetAuthorizationTokenStringFromRequest(request, 'refreshToken') ?? '';
     const result = await this.authenticationService.refresh(tokenString, parameters.data);
 
     return this.getTokenResponse(result);
   }
 
-  async endSession({ request }: ApiRequestData<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>> {
+  async endSession({ request }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>> {
     const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
     const token = await this.authenticationService.validateToken(tokenString);
     await this.authenticationService.endSession(token.payload.sessionId);

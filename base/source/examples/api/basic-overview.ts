@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api';
 import { defineApi } from '#/api';
 import { compileClient } from '#/api/client';
 import { apiController, configureApiServer } from '#/api/server';
@@ -56,7 +56,7 @@ const usersApiDefinition = defineApi({
 
 @apiController(usersApiDefinition)
 class UserApi implements ApiController<UsersApiDefinition> {
-  load({ parameters }: ApiRequestData<UsersApiDefinition, 'load'>): ApiServerResult<UsersApiDefinition, 'load'> {
+  load({ parameters }: ApiRequestContext<UsersApiDefinition, 'load'>): ApiServerResult<UsersApiDefinition, 'load'> {
     return users.find((user) => user.id == parameters.id)!;
   }
 
@@ -64,7 +64,7 @@ class UserApi implements ApiController<UsersApiDefinition> {
     return users;
   }
 
-  delete({ parameters }: ApiRequestData<UsersApiDefinition, 'delete'>): ApiServerResult<UsersApiDefinition, 'delete'> {
+  delete({ parameters }: ApiRequestContext<UsersApiDefinition, 'delete'>): ApiServerResult<UsersApiDefinition, 'delete'> {
     const index = users.findIndex((user) => user.id == parameters.id);
 
     if (index == -1) {

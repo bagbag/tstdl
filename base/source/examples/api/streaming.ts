@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { ApiController, ApiRequestData, ApiServerResult } from '#/api';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api';
 import { defineApi } from '#/api';
 import { compileClient } from '#/api/client';
 import { apiController, configureApiServer } from '#/api/server';
@@ -45,7 +45,7 @@ const streamingApiDefinition = defineApi({
 
 @apiController(streamingApiDefinition)
 class StreamingApi implements ApiController<StreamingApiDefinition> {
-  echo({ request, body }: ApiRequestData<StreamingApiDefinition, 'echo'>): ApiServerResult<StreamingApiDefinition, 'echo'> {
+  echo({ request, body }: ApiRequestContext<StreamingApiDefinition, 'echo'>): ApiServerResult<StreamingApiDefinition, 'echo'> {
     return HttpServerResponse.fromObject({
       headers: {
         'Content-Type': request.headers.contentType,
@@ -57,7 +57,7 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
     });
   }
 
-  events(_data: ApiRequestData<StreamingApiDefinition, 'events'>): ApiServerResult<StreamingApiDefinition, 'events'> {
+  events(_data: ApiRequestContext<StreamingApiDefinition, 'events'>): ApiServerResult<StreamingApiDefinition, 'events'> {
     return HttpServerResponse.fromObject({
       body: {
         events: eventsSource()

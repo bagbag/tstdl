@@ -134,8 +134,12 @@ export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends Ap
   request: HttpServerRequest
 };
 
+export type ApiRequestContext<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = ApiRequestData<T, K> & {
+  getToken<Token>(): Promise<Token>
+};
+
 export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  (requestData: ApiRequestData<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
+  (requestData: ApiRequestContext<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
   ApiClientBody<T, K> extends never
