@@ -25,7 +25,7 @@ export class WebLock extends Lock {
   }
 
   async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> {
-    const acquirePromise = new DeferredPromise<AcquireResult<Throw>>();
+    const acquirePromise = new DeferredPromise<boolean>();
     const releasePromise = new DeferredPromise();
 
     const controller: LockController = {
@@ -45,23 +45,32 @@ export class WebLock extends Lock {
       },
       async (lock) => {
         if (isNull(lock)) {
-          throw new Error('Failed to acquire lock.');
+          acquirePromise.resolve(false);
+          return;
         }
 
-        acquirePromise.resolve(controller);
+        acquirePromise.resolve(true);
         await releasePromise;
       }
     )
-      .catch((error) => {
-        if (throwOnFail) {
-          acquirePromise.reject(error);
-        }
-        else {
-          acquirePromise.resolve(false as AcquireResult<Throw>);
-        }
-      });
+      .catch((error) => acquirePromise.reject(error));
 
-    return acquirePromise;
+    try {
+      const success = await acquirePromise;
+
+      if (!success) {
+        throw new Error('Failed to acquire lock.');
+      }
+
+      return controller;
+    }
+    catch (error) {
+      if (throwOnFail) {
+        throw error;
+      }
+
+      return false as AcquireResult<Throw>;
+    }
   }
 
   async use<Throw extends boolean, R>(timeout: number | undefined, throwOnFail: Throw, func: LockedFunction<R>): Promise<UsingResult<Throw, R>> {
