@@ -64,8 +64,8 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
 
     return new HttpServerResponse({
       cookies: {
-        authorization: { value: `Bearer ${token}`, httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.exp * 1000 },
-        refreshToken: { value: `Bearer ${refreshToken}`, httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.refreshTokenExp * 1000 }
+        authorization: { value: `Bearer ${token}`, path: '/', httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.exp * 1000 },
+        refreshToken: { value: `Bearer ${refreshToken}`, path: '/', httpOnly: true, secure: true, sameSite: 'strict', expires: jsonToken.payload.refreshTokenExp * 1000 }
       },
       body: {
         json: result

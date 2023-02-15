@@ -72,6 +72,7 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
       credentials: true
     },
     timestamp: {
+      resource: 'timestamp',
       result: number()
     }
   } satisfies ApiEndpointsDefinition;
