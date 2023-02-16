@@ -157,6 +157,8 @@ export type DeepReadonly<T> = T extends BuiltIn ? T : T extends (any[] | readonl
 export type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 export type DeepReadonlyArray<T> = readonly DeepReadonly<T>[];
 
+export type ReplaceKey<T, K extends keyof T, U> = SimplifyObject<{ [P in keyof T]: P extends K ? U : T[P] }>;
+
 export type DeepPartial<T> = T extends BuiltIn
   ? T
   : T extends any[] ? DeepPartialArray<T[number]>
