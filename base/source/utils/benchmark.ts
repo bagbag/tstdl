@@ -87,7 +87,7 @@ export function timedBenchmark(milliseconds: number, fn: (run: number) => any, w
  * @param fn the function to benchmark
  * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export async function benchmarkAsync(runs: number, fn: (run: number) => Promise<void>, warmupDuration: number = 500): Promise<BenchmarkResult> {
+export async function benchmarkAsync(runs: number, fn: (run: number) => Promise<any>, warmupDuration: number = 500): Promise<BenchmarkResult> {
   await warmupAsync(fn, warmupDuration);
 
   const timer = new Timer(true);
@@ -107,7 +107,7 @@ export async function benchmarkAsync(runs: number, fn: (run: number) => Promise<
  * @param fn the function to benchmark
  * @param warmupDuration run the function for specified duration in milliseconds to warm it up
  */
-export async function timedBenchmarkAsync(milliseconds: number, fn: (run: number) => Promise<void>, warmupDuration: number = 500): Promise<BenchmarkResult> {
+export async function timedBenchmarkAsync(milliseconds: number, fn: (run: number) => Promise<any>, warmupDuration: number = 500): Promise<BenchmarkResult> {
   await warmupAsync(fn, warmupDuration);
 
   const timer = new Timer(true);
@@ -137,7 +137,7 @@ function calculateResult(runs: number, time: number): BenchmarkResult {
   };
 }
 
-function warmup(fn: (runs: number) => void, duration: number): void {
+function warmup(fn: (runs: number) => any, duration: number): void {
   if (duration <= 0) {
     return;
   }
@@ -150,7 +150,7 @@ function warmup(fn: (runs: number) => void, duration: number): void {
   }
 }
 
-async function warmupAsync(fn: (runs: number) => Promise<void>, duration: number): Promise<void> {
+async function warmupAsync(fn: (runs: number) => Promise<any>, duration: number): Promise<void> {
   if (duration <= 0) {
     return;
   }
