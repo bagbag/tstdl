@@ -1,0 +1,28 @@
+<ng-container *ngIf="item">
+  <ng-container *ngIf="item.templateRef; else valueTemplate" [ngTemplateOutlet]="item!.templateRef"></ng-container>
+
+  <ng-template #valueTemplate>
+    <ng-container *ngIf="actualValueType != undefined; else noValue">
+      <ng-container *ngIf="actualValue != undefined; else noValue" [ngSwitch]="actualValueType">
+        <ng-container *ngSwitchCase="'plain'">{{ actualValue }}</ng-container>
+        <ng-container *ngSwitchCase="'text'">{{ actualValue | dynamicText }}</ng-container>
+        <ng-container *ngSwitchCase="'number'">{{ actualValue | numberLocale:numberFormat }}</ng-container>
+        <ng-container *ngSwitchCase="'boolean'">{{ (actualValue ?? false) ? 'Ja' : 'Nein' }}</ng-container>
+        <ng-container *ngSwitchCase="'percent'">{{ actualValue | numberLocale:percentFormat }}</ng-container>
+        <ng-container *ngSwitchCase="'percent-point'">{{ (actualValue / 100) | numberLocale:percentPointFormat }}</ng-container>
+        <ng-container *ngSwitchCase="'currency'">{{ actualValue | numberLocale:currencyFormat }}</ng-container>
+        <ng-container *ngSwitchCase="'date'">{{ actualValue | dateTimeLocale:(dateTimeFormat ?? dateShort) }}</ng-container>
+        <ng-container *ngSwitchCase="'numeric-date'">{{ actualValue | numericDateToDateTime | dateTimeLocale:(dateTimeFormat ?? dateShort) }}</ng-container>
+        <ng-container *ngSwitchCase="'time'">{{ actualValue | dateTimeLocale:(dateTimeFormat ?? timeShort) }}</ng-container>
+        <ng-container *ngSwitchCase="'numeric-time'">{{ actualValue | numericTimeToDateTime | dateTimeLocale:(dateTimeFormat ?? timeShort) }}</ng-container>
+        <ng-container *ngSwitchCase="'enum'">
+          <ng-container *ngIf="item.enum; else missingEnum">{{ actualValue | localizeEnum:item.enum }}</ng-container>
+          <ng-template #missingEnum>MISSING_ENUM</ng-template>
+        </ng-container>
+      </ng-container>
+
+      <ng-container *ngIf="item.suffix"> {{ item.suffix }}</ng-container>
+    </ng-container>
+  </ng-template>
+  <ng-template #noValue>Keine Angabe</ng-template>
+</ng-container>

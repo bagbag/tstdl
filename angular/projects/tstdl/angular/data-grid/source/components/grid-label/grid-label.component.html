@@ -1,0 +1,2 @@
+<ng-container *ngIf="templateRef" [ngTemplateOutlet]="templateRef"></ng-container>
+<span *ngIf="label != undefined" [outerHTML]="(label | dynamicText) + (colon ? ':' : '')"></span>

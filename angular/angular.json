@@ -34,31 +34,43 @@
     }
   },
   "projects": {
-    "tstdl-angular": {
+    "@tstdl/angular": {
       "projectType": "library",
-      "root": "projects/tstdl-angular",
-      "sourceRoot": "projects/tstdl-angular/src",
+      "root": "projects/tstdl/angular",
+      "sourceRoot": "projects/tstdl/angular/lib",
       "prefix": "tsl",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:ng-packagr",
           "options": {
-            "project": "projects/tstdl-angular/ng-package.json"
+            "project": "projects/tstdl/angular/ng-package.json"
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/tstdl-angular/tsconfig.lib.prod.json"
+              "tsConfig": "projects/tstdl/angular/tsconfig.lib.prod.json"
             },
             "development": {
-              "tsConfig": "projects/tstdl-angular/tsconfig.lib.json"
+              "tsConfig": "projects/tstdl/angular/tsconfig.lib.json"
             }
           },
           "defaultConfiguration": "production"
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/tstdl/angular/**/*.ts",
+              "projects/tstdl/angular/**/*.html"
+            ]
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "schematicCollections": [
+      "@angular-eslint/schematics"
+    ]
   }
 }

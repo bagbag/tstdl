@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "../../../dist/tstdl/angular",
+  "lib": {
+    "entryFile": "lib/public-api.ts"
+  },
+  "assets": [
+    { "input": "lib", "glob": "*.css", "output": "" }
+  ]
+}

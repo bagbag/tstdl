@@ -1,5 +1,5 @@
-*/node_modules/
-*/dist/
+node_modules/
+dist/
 /base/source/test*.ts
 /angular-test
 /base/doc

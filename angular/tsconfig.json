@@ -3,6 +3,7 @@
   "extends": "@tstdl/base",
   "compileOnSave": false,
   "compilerOptions": {
+    "rootDir": "./",
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
@@ -13,7 +14,12 @@
     "module": "es2022",
     "useDefineForClassFields": false,
     "paths": {
-      "tstdl-angular": ["dist/tstdl-angular"]
+      "@tstdl/angular/*": [
+        "projects/tstdl/angular/lib/*",
+      ],
+      "@tstdl/angular": [
+        "projects/tstdl/angular/lib",
+      ]
     },
     "lib": ["es2022", "dom"]
   },

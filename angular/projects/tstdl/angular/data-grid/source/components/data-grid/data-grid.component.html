@@ -1,0 +1,60 @@
+<h4 *ngIf="heading" class="tsl-bg-neutral-300 tsl-px-2 tsl-py-0.5 tsl-text-base tsl-font-bold">{{ heading | dynamicText }}</h4>
+
+<div *ngIf="actualDisplayType == 'items'" class="tsl-grid" [ngClass]="columnClasses[columns]">
+  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+  <div *ngIf="empty" class="tsl-text-center tsl-py-2" [ngClass]="colSpanClasses[columns]">Keine Angaben</div>
+
+  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
+    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
+      <div class="tsl-flex tsl-flex-col tsl-gap-1.5 tsl-p-2 tsl-border-neutral-500/35"
+           [ngClass]="colSpanClasses[item?.colSpan ?? 0] + ' ' + rowSpanClasses[item?.rowSpan ?? 0]"
+           [class.tsl-border-t]="!firstRow"
+           [class.tsl-bg-neutral-100]="oddRow">
+        <ng-container *ngIf="item">
+          <tsl-grid-label [item]="item"></tsl-grid-label>
+          <tsl-grid-value [item]="item"></tsl-grid-value>
+        </ng-container>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>
+
+<div *ngIf="actualDisplayType == 'table'" class="tsl-grid" [ngClass]="columnClasses[columns]">
+  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+  <div *ngIf="empty" class="tsl-text-center tsl-py-2" [ngClass]="colSpanClasses[columns]">Keine Angaben</div>
+
+  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
+    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
+      <tsl-grid-value [item]="item"
+                      class="tsl-px-2 tsl-py-1.5 tsl-border-neutral-500/35"
+                      [class.tsl-border-t]="!firstRow"
+                      [class.tsl-bg-neutral-100]="oddRow"></tsl-grid-value>
+    </ng-container>
+  </ng-container>
+</div>
+
+<div *ngIf="actualDisplayType == 'columns'" class="tsl-grid" [ngClass]="columnClasses[columns * 2]">
+  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+  <div *ngIf="empty" class="tsl-text-center tsl-py-2" [ngClass]="colSpanClasses[columns]">Keine Angaben</div>
+
+  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
+    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
+      <tsl-grid-label [item]="item"
+                      class="tsl-p-2 tsl-border-neutral-500/35"
+                      [class.tsl-border-t]="!firstRow"
+                      [class.tsl-bg-neutral-100]="oddRow"></tsl-grid-label>
+
+      <tsl-grid-value [item]="item"
+                      class="tsl-p-2 tsl-border-neutral-500/35"
+                      [class.tsl-border-t]="!firstRow"
+                      [class.tsl-bg-neutral-100]="oddRow"></tsl-grid-value>
+    </ng-container>
+  </ng-container>
+</div>
+
+<ng-template #headerRow>
+  <tsl-grid-label *ngFor="let headerItem of headerItemRefs; let first = first; let last = last; trackBy: trackBy"
+                  [headerItem]="headerItem"
+                  class="tsl-px-2 tsl-pb-1.5 tsl-bg-neutral-300"
+                  [class.tsl-pt-1.5]="heading == undefined"></tsl-grid-label>
+</ng-template>

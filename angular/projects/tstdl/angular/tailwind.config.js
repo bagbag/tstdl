@@ -2,7 +2,7 @@
 module.exports = {
   prefix: 'tsl-',
   mode: 'jit',
-  content: ['./projects/tstdl-angular/src/lib/**/*.{html,ts,css,scss}'],
+  content: ['./projects/tstdl/angular/**/*.{html,ts}'],
   corePlugins: {
     preflight: false
   },
