@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { DateTimeLocalePipe, DynamicTextPipe, LocalizeEnumPipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe } from '@tstdl/angular';
+
 import { DataGridComponent } from './components/data-grid/data-grid.component';
 import { GridLabelComponent } from './components/grid-label/grid-label.component';
 import { GridValueComponent } from './components/grid-value/grid-value.component';
@@ -40,4 +41,4 @@ import { GridRowDirective } from './directives/grid-row.directive';
     GridRowDirective
   ]
 })
-export class DataGridModule { }
+export class TstdlDataGridModule { }
