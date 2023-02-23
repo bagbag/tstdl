@@ -1,6 +1,6 @@
 import type { Injectable } from '#/container';
 import { container, resolveArgumentType } from '#/container';
-import type { HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client';
+import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client';
 import { HttpClient, HttpClientRequest } from '#/http/client';
 import { Schema } from '#/schema';
 import type { UndefinableJsonObject } from '#/types';
@@ -36,13 +36,13 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {
-    [apiName]: class implements Injectable<HttpClientOptions> {
+    [apiName]: class implements Injectable<HttpClient | HttpClientOptions> {
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
       readonly [resolveArgumentType]: HttpClientOptions;
-      constructor(httpClient: HttpClient) {
-        this[httpClientSymbol] = httpClient;
+      constructor(httpClientOrOptions: HttpClient | HttpClientArgument) {
+        this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : container.resolve(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;
       }
     }
@@ -50,7 +50,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   container.registerSingleton(api, {
     useFactory: (argument, context) => {
-      const httpClient = context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions);
+      const httpClient = (argument instanceof HttpClient) ? argument : context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions);
       return new api(httpClient);
     }
   });

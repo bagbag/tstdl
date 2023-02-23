@@ -1,19 +1,25 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { isNull, numericTimeToTimeObject } from '@tstdl/base/utils';
-import { DateTime, DateTimeJSOptions } from 'luxon';
+import { isNullOrUndefined, numericTimeToTimeObject } from '@tstdl/base/utils';
+import type { DateTimeJSOptions } from 'luxon';
+import { DateTime } from 'luxon';
 
 @Pipe({
   name: 'numericTimeToDateTime',
   standalone: true
 })
 export class NumericTimeToDateTimePipe implements PipeTransform {
-  transform(numericTime: number | null, options?: DateTimeJSOptions): DateTime | null {
-    if (isNull(numericTime)) {
+  transform(numericTime: number | null | undefined, options?: DateTimeJSOptions): DateTime | null {
+    if (isNullOrUndefined(numericTime)) {
       return null;
     }
 
-    const { hour, minute, second, millisecond } = numericTimeToTimeObject(numericTime);
-    return DateTime.fromObject({ hour, minute, second, millisecond }, options);
+    const timeObject = numericTimeToTimeObject(numericTime);
+
+    if (Number.isNaN(timeObject.hour)) {
+      return DateTime.invalid('NaN time');
+    }
+
+    return DateTime.fromObject(timeObject, options);
   }
 }

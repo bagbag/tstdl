@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ErrorHandler } from '@angular/core';
 import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
+import { Logger } from '@tstdl/base/logger';
 import type { FormatErrorOptions } from '@tstdl/base/utils';
 import { formatError } from '@tstdl/base/utils';
 import type { Observable, OperatorFunction } from 'rxjs';
 import { catchError, Subject, throwError } from 'rxjs';
-import { Logger } from './logger.service';
 import { NotificationService } from './notification.service';
 
 export type ErrorHandlerServiceOptions = {

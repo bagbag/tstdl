@@ -1,5 +1,5 @@
 import type { AfterContentInit, OnChanges } from '@angular/core';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Inject, Input, Optional, QueryList } from '@angular/core';
 import type { DynamicText } from '@tstdl/base/text';
 import type { Record } from '@tstdl/base/types';
 import { isDefined } from '@tstdl/base/utils';
@@ -9,6 +9,8 @@ import { GridColumnDirective } from '../../directives/grid-column.directive';
 import { GridHeaderItemDirective } from '../../directives/grid-header-item.directive';
 import { GridItemDirective } from '../../directives/grid-item.directive';
 import { GridRowDirective } from '../../directives/grid-row.directive';
+import { DataGridDefaultOptions } from '../../models';
+import { DATA_GRID_OPTIONS } from '../../tokens';
 
 export type DataGridDisplayType = 'columns' | 'table' | 'items';
 
@@ -80,7 +82,10 @@ export class DataGridComponent implements AfterContentInit, OnChanges {
 
   @Input() heading: DynamicText | undefined;
   @Input() displayType: DataGridDisplayType;
-  @Input() itemColumns: keyof typeof columnClasses;
+  @Input() itemColumns: number;
+  @Input() booleanTrueText: DynamicText | null | undefined;
+  @Input() booleanFalseText: DynamicText | null | undefined;
+  @Input() noValueText: DynamicText | null | undefined;
 
   @ContentChildren(GridHeaderItemDirective) headerItemRefs: QueryList<GridHeaderItemDirective>;
   @ContentChildren(GridItemDirective) itemRefs: QueryList<GridItemDirective>;
@@ -95,11 +100,15 @@ export class DataGridComponent implements AfterContentInit, OnChanges {
     return this.matrix.length == 0;
   }
 
-  constructor(changeDetector: ChangeDetectorRef) {
+  constructor(changeDetector: ChangeDetectorRef, @Inject(DATA_GRID_OPTIONS) @Optional() options: DataGridDefaultOptions | null) {
     this.changeDetector = changeDetector;
 
+    this.itemColumns = options?.itemColumns ?? 4;
+    this.booleanTrueText = options?.booleanTrueText;
+    this.booleanFalseText = options?.booleanFalseText;
+    this.noValueText = options?.noValueText;
+
     this.contentInit = false;
-    this.itemColumns = 4;
   }
 
   ngAfterContentInit(): void {

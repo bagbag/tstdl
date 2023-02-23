@@ -5,15 +5,17 @@ import type { GridValue } from '../models/grid-value';
 import type { GridValueType } from '../models/grid-value-type';
 import { GRID_CONTENT } from './grid-content';
 import { GridLabelDirective } from './grid-label.directive';
+import { GridValueDirective } from './grid-value.directive';
 
 @Directive({
-  selector: 'tsl-data-grid [gridItem]',
+  selector: '[gridItem]',
+  exportAs: 'gridItem',
   providers: [
     { provide: GRID_CONTENT, useExisting: GridItemDirective }
   ]
 })
 export class GridItemDirective {
-  readonly templateRef: TemplateRef<void> | null;
+  private readonly templateRef: TemplateRef<void> | null;
 
   @Input() label: DynamicText | null | undefined;
   @Input() value: GridValue | null | undefined;
@@ -23,8 +25,25 @@ export class GridItemDirective {
   @Input() suffix: string | null | undefined;
   @Input() colSpan: number | null | undefined;
   @Input() rowSpan: number | null | undefined;
+  @Input() booleanTrueText: DynamicText | null | undefined;
+  @Input() booleanFalseText: DynamicText | null | undefined;
+  @Input() noValueText: DynamicText | null | undefined;
 
-  @ContentChild(GridLabelDirective) labelRef: GridLabelDirective | undefined;
+  @ContentChild(GridLabelDirective) labelRef: GridLabelDirective | null | undefined;
+  @ContentChild(GridValueDirective) valueRef: GridValueDirective | null | undefined;
+
+  @Input()
+  set gridItem(label: DynamicText | null | undefined) {
+    this.label = label;
+  }
+
+  get labelTemplateRef(): TemplateRef<void> | null | undefined {
+    return this.labelRef?.templateRef;
+  }
+
+  get valueTemplateRef(): TemplateRef<void> | null | undefined {
+    return this.templateRef ?? this.valueRef?.templateRef;
+  }
 
   constructor(@Inject(TemplateRef) @Optional() templateRef: TemplateRef<void> | null) {
     this.templateRef = templateRef;

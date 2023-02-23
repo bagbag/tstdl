@@ -19,6 +19,12 @@
       ],
       "@tstdl/angular": [
         "projects/tstdl/angular/lib",
+      ],
+      "@tstdl/angular/data-grid/*": [
+        "projects/tstdl/angular/data-grid/*",
+      ],
+      "@tstdl/angular/data-grid": [
+        "projects/tstdl/angular/data-grid",
       ]
     },
     "lib": ["es2022", "dom"]

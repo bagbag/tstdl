@@ -1,5 +1,6 @@
 import type { OnChanges } from '@angular/core';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import type { DynamicText } from '@tstdl/base/text';
 import { isBoolean, isDate, isNotNullOrUndefined, isNullOrUndefined, isNumber, isString } from '@tstdl/base/utils';
 import { DateTime, Duration } from 'luxon';
 import type { GridItemDirective } from '../../directives/grid-item.directive';
@@ -37,7 +38,11 @@ export class GridValueComponent implements OnChanges {
 
   @Input() item: GridItemDirective | null | undefined;
   @Input() numberFormat: Intl.NumberFormatOptions | null | undefined;
-  @Input() dateTimeFormat: Intl.DateTimeFormatOptions | null | undefined;
+  @Input() dateFormat: Intl.DateTimeFormatOptions | null | undefined;
+  @Input() timeFormat: Intl.DateTimeFormatOptions | null | undefined;
+  @Input() booleanTrueText: DynamicText | null | undefined;
+  @Input() booleanFalseText: DynamicText | null | undefined;
+  @Input() noValueText: DynamicText | null | undefined;
 
   get percentFormat(): Intl.NumberFormatOptions {
     return { style: 'percent', minimumFractionDigits: 2, ...this.numberFormat };

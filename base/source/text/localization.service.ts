@@ -1,6 +1,9 @@
-import { singleton } from '#/container';
+import { resolveArg, singleton } from '#/container';
+import type { LoggerArgument } from '#/logger';
+import { Logger } from '#/logger';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types';
 import { enumEntries, enumValueName } from '#/utils/enum';
+import { memoizeSingle } from '#/utils/function/memoize';
 import { deepObjectEntries } from '#/utils/object/object';
 import type { PropertyName } from '#/utils/object/property-name';
 import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
@@ -52,6 +55,12 @@ export type LocalizationKeys<T extends LocalizationTemplate> = {
   : LocalizationKey;
 };
 
+type MappedLocalization = {
+  language: Language,
+  keys: Map<string, string | LocalizeFunction<unknown>>,
+  enums: Map<Enumeration, EnumerationLocalization>
+};
+
 export function isLocalizationKey(value: any): value is LocalizationKey {
   return isPropertyName(value);
 }
@@ -74,23 +83,21 @@ export function getLocalizationKeys<T extends Localization<any, any>>(_localizat
   return getPropertyNameProxy() as unknown as LocalizationKeys<T['keys']>;
 }
 
-type MappedLocalization = {
-  language: Language,
-  keys: Map<string, string | LocalizeFunction<unknown>>,
-  enums: Map<Enumeration, EnumerationLocalization>
-};
+export const autoEnumerationLocalization = memoizeSingle(_autoEnumerationLocalization, { weak: true });
 
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
+const warnedMissingKeys = new Set<string>();
 
 @singleton()
 export class LocalizationService {
+  private readonly logger: Logger;
   private readonly localizations: Map<string, MappedLocalization>;
   private readonly activeLanguageSubject: BehaviorSubject<Language | undefined>;
   private readonly availableLanguagesSubject: BehaviorSubject<Language[]>;
 
   private get activeLocalization(): MappedLocalization | undefined {
     if (isUndefined(this.activeLanguage)) {
-      throw new Error('Language not set.');
+      return undefined;
     }
 
     return this.localizations.get(this.activeLanguage.code);
@@ -107,7 +114,9 @@ export class LocalizationService {
   readonly activeLanguage$: Observable<Language | undefined>;
   readonly availableLanguages$: Observable<readonly Language[]>;
 
-  constructor() {
+  constructor(@resolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
+    this.logger = logger;
+
     this.localizations = new Map();
     this.activeLanguageSubject = new BehaviorSubject<Language | undefined>(undefined);
     this.availableLanguagesSubject = new BehaviorSubject<Language[]>([]);
@@ -173,15 +182,18 @@ export class LocalizationService {
 
   // eslint-disable-next-line max-statements
   localize<Parameters>(data: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
-    if (isUndefined(this.activeLanguage)) {
-      throw new Error('Language not set.');
-    }
-
     const dataIsLocalizationKey = isLocalizationKey(data);
     const key = dataIsLocalizationKey ? data[propertyName] : (data as LocalizationDataObject<unknown>).key[propertyName];
     const parameters = dataIsLocalizationKey ? {} : (data as LocalizationDataObject<unknown>).parameters;
 
-    const templateOrFunction = this.localizations.get(this.activeLanguage.code)?.keys.get(key);
+    const templateOrFunction = isDefined(this.activeLanguage) ? this.localizations.get(this.activeLanguage.code)?.keys.get(key) : undefined;
+
+    if (isUndefined(templateOrFunction)) {
+      if (!warnedMissingKeys.has(key)) {
+        this.logger.warn(`Localization for ${key} not available.`);
+        warnedMissingKeys.add(key);
+      }
+    }
 
     return this.localizeItem(key, templateOrFunction, parameters);
   }
@@ -189,6 +201,11 @@ export class LocalizationService {
   localizeEnum<T extends Enumeration>(enumeration: T, value: EnumerationValue<T>, parameters?: unknown): string {
     const key = isArray(enumeration) ? value : enumValueName(enumeration, value);
     const item = this.activeLocalization?.enums.get(enumeration)?.[value];
+
+    if (isUndefined(item)) {
+      return autoEnumerationLocalization(enumeration)[1][value] as string;
+    }
+
     return this.localizeItem(key, item, parameters);
   }
 
@@ -221,7 +238,7 @@ export class LocalizationService {
 
       result += template.slice(currentIndex, index);
       result += templateParameters[parameterName] ?? `__${parameterName}__`;
-      currentIndex = index! + match!.length;
+      currentIndex = index! + match.length;
     }
 
     result += template.slice(currentIndex);
@@ -233,7 +250,7 @@ export function enumerationLocalization<T extends Enumeration>(enumeration: T, l
   return [enumeration, localization];
 }
 
-export function autoEnumerationLocalization<T extends Enumeration>(enumeration: T): EnumerationLocalizationEntry<T> {
+function _autoEnumerationLocalization<T extends Enumeration>(enumeration: T): EnumerationLocalizationEntry<T> {
   if (isObject(enumeration)) {
     return [enumeration, Object.fromEntries(enumEntries(enumeration as EnumerationObject).map(([key, value]) => [value, key])) as EnumerationLocalization<T>];
   }

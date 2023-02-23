@@ -1,0 +1,80 @@
+<div class="tsl-flex tsl-flex-col tsl-gap-20">
+  <tsl-data-grid heading="Item-based Data Grid">
+    <ng-container gridItem="Item 1" value="Value 1"></ng-container>
+    <ng-container gridItem="Item 2" value="Value 2"></ng-container>
+    <ng-container gridItem="Item 3" value="Value 3"></ng-container>
+    <ng-container gridItem="Item 4" value="Value 4"></ng-container>
+    <ng-container gridItem="Item 5" value="Value 5"></ng-container>
+    <ng-container gridItem="Item 6" value="Value 6"></ng-container>
+    <ng-container gridItem="Item 7" value="Value 7"></ng-container>
+    <ng-container gridItem="Item 8" value="Value 8"></ng-container>
+  </tsl-data-grid>
+
+  <tsl-data-grid heading="Column-based Data Grid">
+    <ng-container gridColumn>
+      <ng-container gridItem="Col 1 Row 1" value="value"></ng-container>
+      <ng-container gridItem="Col 1 Row 2" value="value"></ng-container>
+      <ng-container gridItem="Col 1 Row 3" value="value"></ng-container>
+    </ng-container>
+
+    <ng-container gridColumn>
+      <ng-container gridItem="Col 2 Row 1" value="value"></ng-container>
+      <ng-container gridItem="Col 2 Row 2" value="value"></ng-container>
+      <ng-container gridItem="Col 2 Row 3" value="value"></ng-container>
+    </ng-container>
+  </tsl-data-grid>
+
+  <tsl-data-grid heading="Row-based Data Grid">
+    <ng-container gridRow>
+      <ng-container gridItem="Row 1 Col 1" value="value"></ng-container>
+      <ng-container gridItem="Row 1 Col 2" value="value"></ng-container>
+      <ng-container gridItem="Row 1 Col 3" value="value"></ng-container>
+    </ng-container>
+
+    <ng-container gridRow>
+      <ng-container gridItem="Row 2 Col 1" value="value"></ng-container>
+      <ng-container gridItem="Row 2 Col 2" value="value"></ng-container>
+      <ng-container gridItem="Row 2 Col 3" value="value"></ng-container>
+    </ng-container>
+  </tsl-data-grid>
+
+  <tsl-data-grid heading="Data types">
+    <ng-container gridItem="Plain" value="Hello World"></ng-container>
+    <ng-container gridItem="Number" [value]="1234.56"></ng-container>
+    <ng-container gridItem="Percent (0.5525)" [value]="0.5525" valueType="percent"></ng-container>
+    <ng-container gridItem="Percent point (55.25)" [value]="55.25" valueType="percent-point"></ng-container>
+    <ng-container gridItem="Currency" [value]="9999.99" valueType="currency"></ng-container>
+    <ng-container gridItem="Date" [value]="now" valueType="date"></ng-container>
+    <ng-container gridItem="Numeric date" [value]="12345" valueType="numeric-date"></ng-container>
+    <ng-container gridItem="Time" [value]="now" valueType="time"></ng-container>
+    <ng-container gridItem="Numeric time" [value]="63455"></ng-container>
+    <ng-container gridItem="Text" value="string, localization key, or observable of those"></ng-container>
+    <ng-container gridItem="Boolean" [value]="true"></ng-container>
+    <ng-container gridItem="Enum" [value]="MyEnum.MyFoo" [enum]="MyEnum"></ng-container>
+  </tsl-data-grid>
+
+  <tsl-data-grid heading="label and value template">
+    <!-- This is an example of a structural value template -->
+    <span *gridItem="'Foo'" class="tsl-rounded-full tsl-ring tsl-px-2 tsl-py-0.5">simple structural custom value template</span>
+
+    <!-- This is an example of a value template -->
+    <ng-template gridItem="Bar">
+      <span class="tsl-rounded-full tsl-ring tsl-px-2 tsl-py-0.5">simple custom value template</span>
+    </ng-template>
+
+    <!--
+    This is an example of a "complex" template based item. Supports templates for labels and values.
+    Requires the usage of gridItem as an attribute directive (<ng-container gridItem>, *not* <ng-container *gridItem>).
+    <span *gridValue> and <div *gridLabel> could also be <ng-template gridLabel> and <ng-template gridValue> instead.
+    -->
+    <ng-container gridItem>
+      <span *gridLabel class="tsl-bg-green-300 tsl-px-2 tsl-py-0.5">Custom label template</span>
+
+      <div *gridValue class="tsl-flex tsl-items-center tsl-gap-2">
+        <div class="tsl-w-2 tsl-h-2 tsl-bg-red-500"></div>
+        <div>Custom value template</div>
+        <div class="tsl-w-2 tsl-h-2 tsl-bg-red-500"></div>
+      </div>
+    </ng-container>
+  </tsl-data-grid>
+</div>

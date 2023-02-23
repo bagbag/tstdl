@@ -3,7 +3,8 @@ import { GRID_CONTENT } from './grid-content';
 import { GridItemDirective } from './grid-item.directive';
 
 @Directive({
-  selector: 'tsl-data-grid [gridColumn]',
+  selector: '[gridColumn]',
+  exportAs: 'gridColumn',
   providers: [
     { provide: GRID_CONTENT, useExisting: GridColumnDirective }
   ]

@@ -1,7 +1,8 @@
 import { Directive, Inject, Optional, TemplateRef } from '@angular/core';
 
 @Directive({
-  selector: 'tsl-data-grid [gridValue]'
+  selector: '[gridValue]',
+  exportAs: 'gridValue'
 })
 export class GridValueDirective {
   readonly templateRef: TemplateRef<void> | null;

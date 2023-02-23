@@ -2,7 +2,8 @@ import { Directive, Inject, Input, Optional, TemplateRef } from '@angular/core';
 import type { DynamicText } from '@tstdl/base/text';
 
 @Directive({
-  selector: 'tsl-data-grid [gridHeaderItem]'
+  selector: '[gridHeaderItem]',
+  exportAs: 'gridHeaderItem'
 })
 export class GridHeaderItemDirective {
   readonly templateRef: TemplateRef<void> | null;

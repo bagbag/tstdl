@@ -5,10 +5,7 @@ import type { LoggerArgument } from './logger';
 import { Logger, LogLevel } from './logger';
 import { ConsoleLogger } from './logger/console';
 import { timeout } from './utils/timing';
-
-let coreLogPrefix = 'Core';
-let logLevel = LogLevel.Debug;
-let loggerToken: InjectionToken<Logger, LoggerArgument> = ConsoleLogger;
+import { assertDefinedPass } from './utils/type-guards';
 
 export const CORE_LOGGER = injectionToken<Logger>('CORE_LOGGER');
 
@@ -45,23 +42,19 @@ export async function disposeInstances(): Promise<void> {
 }
 
 export type CoreConfiguration = {
-  coreLogPrefix?: string,
+  logger?: InjectionToken<Logger, LoggerArgument>,
   logLevel?: LogLevel,
-  loggerToken?: InjectionToken<Logger, LoggerArgument>
+  coreLogPrefix?: string
 };
 
-export function configureTstdl(config?: CoreConfiguration): void {
-  coreLogPrefix = config?.coreLogPrefix ?? coreLogPrefix;
-  logLevel = config?.logLevel ?? logLevel;
-  loggerToken = config?.loggerToken ?? loggerToken;
+export function configureTstdl(config: CoreConfiguration = {}): void {
+  container.register(Logger, { useToken: config.logger ?? ConsoleLogger });
+
+  container.registerSingleton<LogLevel, LogLevel>(
+    LogLevel,
+    { useFactory: (level) => assertDefinedPass(level, 'LogLevel argument not provided') },
+    { defaultArgumentProvider: () => config.logLevel ?? LogLevel.Trace }
+  );
+
+  container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => config.coreLogPrefix });
 }
-
-container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => coreLogPrefix });
-
-container.registerSingleton<LogLevel, LogLevel>(
-  LogLevel,
-  { useFactory: (level) => level ?? LogLevel.Trace },
-  { defaultArgumentProvider: () => logLevel }
-);
-
-container.register(Logger, { useTokenProvider: () => loggerToken });

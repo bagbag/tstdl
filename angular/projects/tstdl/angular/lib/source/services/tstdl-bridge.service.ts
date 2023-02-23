@@ -18,12 +18,11 @@ export class TstdlBridgeService {
 
   private readonly privateApplicationRef: PrivateApplicationRef;
   private readonly injector: Injector;
-  private readonly logger: Logger;
+  private logger: Logger;
 
   constructor(applicationRef: ApplicationRef, injector: Injector) {
     this.privateApplicationRef = applicationRef as unknown as PrivateApplicationRef;
     this.injector = injector;
-    this.logger = container.resolve(Logger);
   }
 
   initialize(): void {
@@ -32,6 +31,8 @@ export class TstdlBridgeService {
     }
 
     TstdlBridgeService.initialized = true;
+
+    this.logger = container.resolve(Logger);
 
     if (!container.hasRegistration(HttpClientAdapter)) {
       configureAngularHttpClientAdapter(true);
