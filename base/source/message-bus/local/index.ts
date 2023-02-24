@@ -1,3 +1,3 @@
-export * from './local-message-bus';
-export * from './local-message-bus-provider';
-export * from './module';
+export * from './local-message-bus-provider.js';
+export * from './local-message-bus.js';
+export * from './module.js';

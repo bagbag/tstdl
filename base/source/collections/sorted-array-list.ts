@@ -1,8 +1,8 @@
-import { compareByValue } from '#/utils/comparison';
-import type { Comparator } from '#/utils/sort';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '../utils/binary-search';
-import type { SortedList } from './sorted-list';
+import { compareByValue } from '#/utils/comparison.js';
+import type { Comparator } from '#/utils/sort.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '../utils/binary-search.js';
+import type { SortedList } from './sorted-list.js';
 
 export class SortedArrayList<T extends TComparator, TComparator = T> implements SortedList<T> {
   private readonly comparator: Comparator<TComparator>;

@@ -1,4 +1,4 @@
-import type { Predicate } from './types';
+import type { Predicate } from './types.js';
 
 export function* whileSync<T>(iterable: Iterable<T>, predicate: Predicate<T>): IterableIterator<T> {
   let index = 0;

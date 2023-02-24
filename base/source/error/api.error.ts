@@ -1,5 +1,5 @@
-import { CustomError } from './custom.error';
-import type { ErrorResponse } from '../api/response';
+import { CustomError } from './custom.error.js';
+import type { ErrorResponse } from '../api/response.js';
 
 export class ApiError extends CustomError {
   static readonly errorName = 'ApiError';

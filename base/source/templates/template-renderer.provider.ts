@@ -1,6 +1,6 @@
-import { inject, singleton } from '#/container';
-import type { TemplateRenderer } from './template.renderer';
-import { TEMPLATE_RENDERERS } from './tokens';
+import { inject, singleton } from '#/container/index.js';
+import type { TemplateRenderer } from './template.renderer.js';
+import { TEMPLATE_RENDERERS } from './tokens.js';
 
 @singleton()
 export class TemplateRendererProvider {

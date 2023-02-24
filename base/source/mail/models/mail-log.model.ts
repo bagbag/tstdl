@@ -1,6 +1,6 @@
-import type { Entity, NewEntity } from '#/database';
-import type { MailData } from './mail-data.model';
-import type { MailSendResult } from './mail-send-result.model';
+import type { Entity, NewEntity } from '#/database/index.js';
+import type { MailData } from './mail-data.model.js';
+import type { MailSendResult } from './mail-send-result.model.js';
 
 export type MailLog = Entity & {
   timestamp: number,

@@ -1,4 +1,4 @@
-import type { Writable } from './types';
+import type { Writable } from './types.js';
 
 export function polyfillAsyncIteratorSymbol(): void {
   const hasAsyncIteratorSymbol = 'asyncIterator' in Symbol;

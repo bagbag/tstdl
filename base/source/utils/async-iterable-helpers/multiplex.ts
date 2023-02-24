@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { createArray } from '../array';
-import { FeedableAsyncIterable } from '../feedable-async-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { createArray } from '../array/array.js';
+import { FeedableAsyncIterable } from '../feedable-async-iterable.js';
 
 export function multiplexAsync<T>(iterable: AnyIterable<T>, count: number, bufferSize: number): AsyncIterable<T>[] {
   if (bufferSize <= 0) {

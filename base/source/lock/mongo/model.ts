@@ -1,4 +1,4 @@
-import type { Entity } from '#/database';
+import type { Entity } from '#/database/index.js';
 
 export type MongoLockEntity = Entity & {
   resource: string,

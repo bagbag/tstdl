@@ -1,11 +1,11 @@
-import { container } from '#/container';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
-import { AuthenticationSessionRepository } from './authentication-session.repository';
-import { AuthenticationSubjectResolver } from './authentication-subject.resolver';
-import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
-import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service';
+import { container } from '#/container/index.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
+import { AuthenticationSessionRepository } from './authentication-session.repository.js';
+import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
+import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider.js';
+import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service.js';
 
 export type AuthenticationModuleConfig = {
   serviceOptions: AuthenticationServiceOptions,

@@ -1,4 +1,4 @@
-import type { IteratorFunction } from './types';
+import type { IteratorFunction } from './types.js';
 
 export function* distinct<TIn>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, any> = (item) => item): IterableIterator<TIn> {
   const items = new Set();

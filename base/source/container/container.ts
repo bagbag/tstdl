@@ -1,26 +1,26 @@
-import { CircularBuffer } from '#/data-structures/circular-buffer';
-import { MultiKeyMap } from '#/data-structures/multi-key-map';
-import type { ConstructorParameterMetadata, PropertyMetadata, TypeMetadata } from '#/reflection';
-import { reflectionRegistry } from '#/reflection';
-import type { Constructor, Record, TypedOmit } from '#/types';
-import { mapAsync } from '#/utils/async-iterable-helpers/map';
-import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array';
-import { ForwardRef } from '#/utils/object/forward-ref';
-import { objectEntries } from '#/utils/object/object';
-import { isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards';
+import { CircularBuffer } from '#/data-structures/circular-buffer.js';
+import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
+import type { ConstructorParameterMetadata, PropertyMetadata, TypeMetadata } from '#/reflection/index.js';
+import { reflectionRegistry } from '#/reflection/index.js';
+import type { Constructor, Record, TypedOmit } from '#/types.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { ForwardRef } from '#/utils/object/forward-ref.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isDefined, isFunction, isPromise, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
-import type { AfterResolve, Injectable, InjectableArgument } from './interfaces';
-import { afterResolve } from './interfaces';
-import type { Provider } from './provider';
-import { isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './provider';
-import { ResolveChain } from './resolve-chain';
-import { ResolveError } from './resolve.error';
-import type { InjectionToken } from './token';
-import { getTokenName } from './token';
-import type { InjectMetadata } from './type-info';
-import type { ArgumentProvider, Mapper, ResolveContext } from './types';
-import { isStubClass } from './utils';
+import type { AfterResolve, Injectable, InjectableArgument } from './interfaces.js';
+import { afterResolve } from './interfaces.js';
+import type { Provider } from './provider.js';
+import { isClassProvider, isFactoryProvider, isTokenProvider, isValueProvider } from './provider.js';
+import { ResolveChain } from './resolve-chain.js';
+import { ResolveError } from './resolve.error.js';
+import type { InjectionToken } from './token.js';
+import { getTokenName } from './token.js';
+import type { InjectMetadata } from './type-info.js';
+import type { ArgumentProvider, Mapper, ResolveContext } from './types.js';
+import { isStubClass } from './utils.js';
 
 export const injectMetadataSymbol = Symbol('Inject metadata');
 
@@ -290,6 +290,14 @@ export class Container {
       const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
       const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
 
+      if (isPromise(arg)) {
+        throw new ResolveError(`Cannot evaluate async argument provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
+      }
+
+      if (isPromise(innerToken)) {
+        throw new ResolveError(`Cannot evaluate async token provider for token ${getTokenName(token)} in synchronous resolve, use resolveAsync instead.`, chain);
+      }
+
       instance = this._resolve<T, A>(innerToken, false, arg, context, chain.addToken(innerToken), false);
     }
 
@@ -429,8 +437,8 @@ export class Container {
     }
 
     if (isTokenProvider(registration.provider)) {
-      const arg = resolveArgument ?? registration.provider.argument ?? registration.provider.argumentProvider?.();
-      const innerToken = registration.provider.useToken ?? registration.provider.useTokenProvider();
+      const arg = resolveArgument ?? registration.provider.argument ?? await registration.provider.argumentProvider?.();
+      const innerToken = registration.provider.useToken ?? await registration.provider.useTokenProvider();
 
       instance = await this._resolveAsync<T, A>(innerToken, false, arg, context, chain.addToken(innerToken), false);
     }

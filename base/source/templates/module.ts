@@ -1,12 +1,12 @@
-import { container } from '#/container';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import { StringTemplateRenderer } from './renderers/string.template-renderer';
-import { StringTemplateResolver } from './resolvers/string.template-resolver';
-import { TemplateProvider } from './template.provider';
-import type { TemplateRenderer } from './template.renderer';
-import type { TemplateResolver } from './template.resolver';
-import { TEMPLATE_RENDERERS, TEMPLATE_RESOLVERS } from './tokens';
+import { container } from '#/container/index.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { StringTemplateRenderer } from './renderers/string.template-renderer.js';
+import { StringTemplateResolver } from './resolvers/string.template-resolver.js';
+import { TemplateProvider } from './template.provider.js';
+import type { TemplateRenderer } from './template.renderer.js';
+import type { TemplateResolver } from './template.resolver.js';
+import { TEMPLATE_RENDERERS, TEMPLATE_RESOLVERS } from './tokens.js';
 
 export type TemplateModuleConfig = {
   templateProvider: Type<TemplateProvider> | undefined,

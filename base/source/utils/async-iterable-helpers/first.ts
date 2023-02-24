@@ -1,7 +1,7 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import type { TypePredicate } from '../iterable-helpers/types';
-import { filterAsync } from './filter';
-import type { AsyncPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import type { TypePredicate } from '../iterable-helpers/types.js';
+import { filterAsync } from './filter.js';
+import type { AsyncPredicate } from './types.js';
 
 export async function firstAsync<T, TPredicate extends T = T>(iterable: AnyIterable<T>, predicate?: TypePredicate<T, TPredicate> | AsyncPredicate<T>): Promise<TPredicate> {
   const source = (predicate == undefined) ? iterable : filterAsync(iterable, predicate);

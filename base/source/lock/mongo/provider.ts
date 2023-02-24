@@ -1,14 +1,14 @@
-import { injectArg, resolveArg, resolveArgProvider, singleton } from '#/container';
-import type { CollectionArgument } from '#/database/mongo';
-import type { Lock } from '#/lock';
-import { LockProvider } from '#/lock';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import { assertDefinedPass } from '#/utils/type-guards';
-import { MongoLock } from './lock';
-import type { MongoLockEntity } from './model';
-import { mongoLockModuleConfig } from './module';
-import { MongoLockRepository } from './mongo-lock-repository';
+import { injectArg, resolveArg, resolveArgProvider, singleton } from '#/container/index.js';
+import type { CollectionArgument } from '#/database/mongo/index.js';
+import type { Lock } from '#/lock/index.js';
+import { LockProvider } from '#/lock/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import { assertDefinedPass } from '#/utils/type-guards.js';
+import { MongoLock } from './lock.js';
+import type { MongoLockEntity } from './model.js';
+import { mongoLockModuleConfig } from './module.js';
+import { MongoLockRepository } from './mongo-lock-repository.js';
 
 const collectionArgumentProvider = (): CollectionArgument<MongoLockEntity> => assertDefinedPass(mongoLockModuleConfig.lockEntityRepositoryConfig, 'mongo lock module not configured');
 

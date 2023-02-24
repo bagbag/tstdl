@@ -1,4 +1,4 @@
-import { compareByValue } from './comparison';
+import { compareByValue } from './comparison.js';
 
 export type Comparator<T> = (a: T, b: T) => number;
 export type AsyncComparator<T> = (a: T, b: T) => number | Promise<number>;

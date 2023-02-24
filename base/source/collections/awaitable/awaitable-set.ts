@@ -1,4 +1,4 @@
-import { DeferredPromise } from '../../promise/deferred-promise';
+import { DeferredPromise } from '../../promise/deferred-promise.js';
 
 export class AwaitableSet<T> implements Set<T> {
   private readonly backingSet: Set<T>;

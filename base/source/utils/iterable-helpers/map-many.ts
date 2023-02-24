@@ -1,4 +1,4 @@
-import type { IteratorFunction } from './types';
+import type { IteratorFunction } from './types.js';
 
 export function* mapMany<TIn, TOut>(iterable: Iterable<TIn>, mapper: IteratorFunction<TIn, Iterable<TOut>>): IterableIterator<TOut> {
   let index = 0;

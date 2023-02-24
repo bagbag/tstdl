@@ -1,4 +1,4 @@
-import { isUndefined } from './type-guards';
+import { isUndefined } from './type-guards.js';
 
 export const configValidators = {
   integer: /^-?\d+$/u,

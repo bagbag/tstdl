@@ -1,4 +1,4 @@
-import type { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator.js';
 
 export async function* defaultIfEmptyAsync<T, TDefault>(iterable: AnyIterable<T>, defaultValue: TDefault): AsyncIterableIterator<T | TDefault> {
   let empty = true;

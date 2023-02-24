@@ -1,14 +1,15 @@
-import { container, injectArg, singleton } from '#/container';
-import { HttpError, HttpErrorReason, HttpHeaders } from '#/http';
-import { toArray } from '#/utils/array';
-import { isDefined } from '#/utils/type-guards';
-import { Readable } from 'stream';
-import type { ReadableStream } from 'stream/web';
+import { container, injectArg, singleton } from '#/container/index.js';
+import { HttpHeaders } from '#/http/http-headers.js';
+import { HttpError, HttpErrorReason } from '#/http/http.error.js';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { Readable } from 'node:stream';
+import type { ReadableStream } from 'node:stream/web';
 import type { Dispatcher } from 'undici';
 import { errors as undiciErrors, request } from 'undici';
-import type { HttpClientRequest } from '../http-client-request';
-import { HttpClientResponse } from '../http-client-response';
-import { HttpClientAdapter } from '../http-client.adapter';
+import type { HttpClientRequest } from '../http-client-request.js';
+import { HttpClientResponse } from '../http-client-response.js';
+import { HttpClientAdapter } from '../http-client.adapter.js';
 
 export type UndiciHttpClientAdapterOptions = {
   dispatcher?: Dispatcher

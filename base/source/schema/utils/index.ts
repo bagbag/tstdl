@@ -1,2 +1,2 @@
-export * from './schema';
-export * from './value-type';
+export * from './schema.js';
+export * from './value-type.js';

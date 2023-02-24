@@ -1,8 +1,8 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { concatAsync } from './concat';
-import { mapAsync } from './map';
-import { toArrayAsync } from './to-array';
-import type { AsyncIteratorFunction } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { concatAsync } from './concat.js';
+import { mapAsync } from './map.js';
+import { toArrayAsync } from './to-array.js';
+import type { AsyncIteratorFunction } from './types.js';
 
 export async function* differenceAsync<T>(baseIterable: AnyIterable<T>, iterable: AnyIterable<T>, selector: AsyncIteratorFunction<T, any> = (item) => item): AsyncIterableIterator<T> {
   const diffItems = mapAsync(iterable, selector);

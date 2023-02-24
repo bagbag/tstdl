@@ -1,4 +1,4 @@
-import type { Template, TemplateField } from '#/templates';
+import type { Template, TemplateField } from '#/templates/template.model.js';
 
 export type MailTemplate = Template<{ subject: false, html: false, text: false }, undefined>;
 

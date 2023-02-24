@@ -1,2 +1,2 @@
-export * from './async-enumerable';
-export * from './enumerable';
+export * from './async-enumerable.js';
+export * from './enumerable.js';

@@ -1,2 +1,2 @@
-export * from './maximum-length';
-export * from './minimum-length';
+export * from './maximum-length.js';
+export * from './minimum-length.js';

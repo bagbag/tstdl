@@ -1,23 +1,23 @@
 /* eslint-disable max-classes-per-file */
-import type { AfterResolve } from '#/container';
-import { afterResolve } from '#/container';
-import type { Entity, Query, QueryOptions } from '#/database';
-import { BadRequestError } from '#/error/bad-request.error';
-import { MultiError } from '#/error/multi.error';
-import type { Logger } from '#/logger';
-import type { SearchResult, SearchResultItem } from '#/search-index';
-import { SearchIndex, SearchIndexError } from '#/search-index';
-import { decodeBase64, encodeBase64 } from '#/utils/base64';
-import { decodeText, encodeUtf8 } from '#/utils/encoding';
-import { filterObject } from '#/utils/object/object';
-import { isDefined, isNumber, isString } from '#/utils/type-guards';
+import type { AfterResolve } from '#/container/index.js';
+import { afterResolve } from '#/container/index.js';
+import type { Entity, Query, QueryOptions } from '#/database/index.js';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { MultiError } from '#/error/multi.error.js';
+import type { Logger } from '#/logger/index.js';
+import type { SearchResult, SearchResultItem } from '#/search-index/index.js';
+import { SearchIndex, SearchIndexError } from '#/search-index/index.js';
+import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
+import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
+import { filterObject } from '#/utils/object/object.js';
+import { isDefined, isNumber, isString } from '#/utils/type-guards.js';
 import type { Client } from '@elastic/elasticsearch';
-import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types';
-import type { ElasticSearchIndexConfig } from './config';
-import { KeywordRewriter } from './keyword-rewriter';
-import type { ElasticIndexMapping, SortCombinations } from './model';
-import { convertQuery } from './query-converter';
-import { convertSort } from './sort-converter';
+import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types.js';
+import type { ElasticSearchIndexConfig } from './config.js';
+import { KeywordRewriter } from './keyword-rewriter.js';
+import type { ElasticIndexMapping, SortCombinations } from './model/index.js';
+import { convertQuery } from './query-converter.js';
+import { convertSort } from './sort-converter.js';
 
 type CursorData<T extends Entity = Entity> = {
   query: QueryDslQueryContainer,

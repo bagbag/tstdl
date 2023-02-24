@@ -1,9 +1,9 @@
 /* eslint-disable no-bitwise */
 
-import { supportsBuffer } from '#/supports';
-import type { BinaryData } from '../types';
-import { toUint8Array } from './binary';
-import { isArrayBuffer, isDefined } from './type-guards';
+import { supportsBuffer } from '#/supports.js';
+import type { BinaryData } from '../types.js';
+import { toUint8Array } from './binary.js';
+import { isArrayBuffer, isDefined } from './type-guards.js';
 
 export function encodeBase64(array: BinaryData, bytesOffset?: number, bytesLength?: number): string {
   let arrayBuffer: ArrayBuffer;

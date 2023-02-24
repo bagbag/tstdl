@@ -1,8 +1,8 @@
-import { toArray } from '#/utils/array/array';
-import { compareByValueDescending } from '#/utils/comparison';
-import { sort } from '#/utils/iterable-helpers';
-import { isDefined, isNull } from '#/utils/type-guards';
-import type { ApiDefinition, ApiEndpointDefinition } from './types';
+import { toArray } from '#/utils/array/array.js';
+import { compareByValueDescending } from '#/utils/comparison.js';
+import { sort } from '#/utils/iterable-helpers/sort.js';
+import { isDefined, isNull } from '#/utils/type-guards.js';
+import type { ApiDefinition, ApiEndpointDefinition } from './types.js';
 
 type GetApiEndpointUrlData = {
   api: ApiDefinition,

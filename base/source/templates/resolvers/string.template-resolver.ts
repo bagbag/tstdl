@@ -1,9 +1,9 @@
-import { singleton } from '#/container';
-import { Property } from '#/schema';
-import type { TypedOmit } from '#/types';
-import { TemplateField } from '../template.model';
-import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
-import { TemplateResolver } from '../template.resolver';
+import { singleton } from '#/container/index.js';
+import { Property } from '#/schema/index.js';
+import type { TypedOmit } from '#/types.js';
+import { TemplateField } from '../template.model.js';
+import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
+import { TemplateResolver } from '../template.resolver.js';
 
 export class StringTemplateField<Renderer extends string = string, Options = any> extends TemplateField<'string', Renderer, Options> {
   @Property()

@@ -1,4 +1,4 @@
-import type { MailAddress } from './mail-address.model';
+import type { MailAddress } from './mail-address.model.js';
 
 export type MailSendResult = {
   messageId: string,

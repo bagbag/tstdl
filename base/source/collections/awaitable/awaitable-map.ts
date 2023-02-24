@@ -1,5 +1,5 @@
-import { DeferredPromise } from '../../promise/deferred-promise';
-import { differenceMaps, intersectMaps, unionMaps } from '../../utils/map';
+import { DeferredPromise } from '../../promise/deferred-promise.js';
+import { differenceMaps, intersectMaps, unionMaps } from '../../utils/map.js';
 
 export class AwaitableMap<K, V> implements Map<K, V> {
   private readonly backingMap: Map<K, V>;

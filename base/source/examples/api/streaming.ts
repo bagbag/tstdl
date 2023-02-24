@@ -1,21 +1,21 @@
 /* eslint-disable max-classes-per-file */
-import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api';
-import { defineApi } from '#/api';
-import { compileClient } from '#/api/client';
-import { apiController, configureApiServer } from '#/api/server';
-import { Application } from '#/application';
-import { container } from '#/container';
-import { CORE_LOGGER } from '#/core';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
-import { configureHttpClient } from '#/http/client/module';
-import { HttpServerResponse } from '#/http/server';
-import { configureNodeHttpServer } from '#/http/server/node';
-import { WebServerModule } from '#/module/modules';
-import { SeverSentEvents } from '#/sse';
-import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding';
-import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream';
-import { cancelableTimeout, timeout } from '#/utils/timing';
-import { isDefined } from '#/utils/type-guards';
+import { compileClient } from '#/api/client/client.js';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
+import { defineApi } from '#/api/index.js';
+import { apiController, configureApiServer } from '#/api/server/index.js';
+import { Application } from '#/application/application.js';
+import { container } from '#/container/index.js';
+import { CORE_LOGGER } from '#/core.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureHttpClient } from '#/http/client/module.js';
+import { HttpServerResponse } from '#/http/server/index.js';
+import { configureNodeHttpServer } from '#/http/server/node/index.js';
+import { WebServerModule } from '#/module/modules/web-server.module.js';
+import { SeverSentEvents } from '#/sse/server-sent-events.js';
+import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding.js';
+import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream/index.js';
+import { cancelableTimeout, timeout } from '#/utils/timing.js';
+import { isDefined } from '#/utils/type-guards.js';
 import { Agent } from 'undici';
 
 const logger = container.resolve(CORE_LOGGER);
@@ -69,7 +69,7 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
 async function* counter(): AsyncIterableIterator<string> {
   let currentNumber = 0;
 
-  while (Application.shutdownToken.isUnset && (currentNumber < 15)) {
+  while (Application.shutdownToken.isUnset && (currentNumber < 10)) {
     yield (`${++currentNumber}`).toString();
     logger.info(`yield: "${currentNumber}"`);
     await cancelableTimeout(1000, Application.shutdownToken);
@@ -89,7 +89,7 @@ async function clientTest(): Promise<void> {
     logger.info(`response: "${responseChunk}"\n`);
   }
 
-  // await Application.shutdown();
+  await Application.shutdown();
 }
 
 function main(): void {

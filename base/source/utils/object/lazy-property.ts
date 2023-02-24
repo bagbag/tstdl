@@ -1,6 +1,6 @@
-import type { IfUnknown } from '#/types';
-import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards';
-import { filterObject, hasOwnProperty, objectEntries } from './object';
+import type { IfUnknown } from '#/types.js';
+import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards.js';
+import { filterObject, hasOwnProperty, objectEntries } from './object.js';
 
 const lazyObjectValueSymbol = Symbol('LazyObjectValue');
 

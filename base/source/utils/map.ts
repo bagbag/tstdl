@@ -1,4 +1,4 @@
-import { compareByValueSelectionDescending } from './comparison';
+import { compareByValueSelectionDescending } from './comparison.js';
 
 export function intersectMaps<K, V>(...maps: Map<K, V>[]): [K, V][] {
   if (maps.length == 0) {

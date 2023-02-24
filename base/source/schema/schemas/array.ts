@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import type { OneOrMany } from '#/types';
-import { toArrayCopy } from '#/utils/array/array';
-import { isDefined } from '#/utils/type-guards';
-import { ArrayMaximumLengthConstraint } from '../array-constraints';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
-import type { SchemaTestable } from '../schema';
-import type { SchemaArrayConstraint } from '../types/schema-array-constraint';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types';
-import { valueSchema } from '../types/types';
+import type { Decorator } from '#/reflection/index.js';
+import type { OneOrMany } from '#/types.js';
+import { toArrayCopy } from '#/utils/array/array.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { ArrayMaximumLengthConstraint } from '../array-constraints/maximum-length.js';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
+import type { SchemaTestable } from '../schema.js';
+import type { SchemaArrayConstraint } from '../types/schema-array-constraint.js';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
+import { valueSchema } from '../types/types.js';
 
 export type ArrayOptions = ValueSchemaOptions & {
   /** minimum array length */

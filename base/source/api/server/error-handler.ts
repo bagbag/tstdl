@@ -1,9 +1,9 @@
-import type { CustomError, CustomErrorStatic } from '#/error/custom.error';
-import { HttpServerResponse } from '#/http/server';
-import type { Logger } from '#/logger';
-import type { Type } from '#/types';
-import { formatError } from '#/utils/format-error';
-import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response';
+import type { CustomError, CustomErrorStatic } from '#/error/custom.error.js';
+import { HttpServerResponse } from '#/http/server/index.js';
+import type { Logger } from '#/logger/index.js';
+import type { Type } from '#/types.js';
+import { formatError } from '#/utils/format-error.js';
+import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response.js';
 
 export function handleApiError(error: unknown, supressedErrors: Set<Type<Error>>, logger: Logger): HttpServerResponse {
   const response = new HttpServerResponse();

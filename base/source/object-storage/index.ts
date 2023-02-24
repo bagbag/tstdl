@@ -1,3 +1,3 @@
-export * from './object';
-export * from './object-storage';
-export * from './object-storage-provider';
+export * from './object.js';
+export * from './object-storage.js';
+export * from './object-storage-provider.js';

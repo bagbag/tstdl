@@ -1,4 +1,4 @@
-import type { Entity, NewEntity } from '#/database';
+import type { Entity, NewEntity } from '#/database/index.js';
 
 export type OidcState<Data = any> = Entity & {
   value: string,

@@ -1,3 +1,3 @@
-export * from './enqueue-batch';
-export * from './provider';
-export * from './queue';
+export * from './enqueue-batch.js';
+export * from './provider.js';
+export * from './queue.js';

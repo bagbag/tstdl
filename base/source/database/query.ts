@@ -1,5 +1,5 @@
-import type { Flatten, StringMap } from '#/types';
-import type { Geometry } from '#/types/geo-json';
+import type { Flatten, StringMap } from '#/types.js';
+import type { Geometry } from '#/types/geo-json.js';
 
 export type QueryOptions<T = any> = {
   sort?: Sort<T>[],

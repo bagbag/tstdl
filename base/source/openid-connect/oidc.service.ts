@@ -1,20 +1,20 @@
-import { inject, optional as injectOptional, singleton } from '#/container';
-import { ForbiddenError } from '#/error/forbidden.error';
-import { NotImplementedError } from '#/error/not-implemented.error';
-import type { HttpRequestAuthorization } from '#/http/client';
-import { HttpClient } from '#/http/client';
-import { HttpHeaders } from '#/http/http-headers';
-import { object, optional, Schema, string } from '#/schema';
-import type { Json, Record } from '#/types';
-import { Alphabet } from '#/utils/alphabet';
-import { digest } from '#/utils/cryptography';
-import { currentTimestamp } from '#/utils/date-time';
-import { getRandomString } from '#/utils/random';
-import { assertDefinedPass, isUndefined } from '#/utils/type-guards';
-import { OidcConfigurationService } from './oidc-configuration.service';
-import type { NewOidcState, OidcState } from './oidc-state.model';
-import { OidcStateRepository } from './oidc-state.repository';
-import type { OidcGetTokenParameters, OidcInitParameters, OidcInitResult, OidcRefreshTokenParameters, OidcToken } from './oidc.service-model';
+import { inject, optional as injectOptional, singleton } from '#/container/index.js';
+import { ForbiddenError } from '#/error/forbidden.error.js';
+import { NotImplementedError } from '#/error/not-implemented.error.js';
+import type { HttpRequestAuthorization } from '#/http/client/index.js';
+import { HttpClient } from '#/http/client/index.js';
+import { HttpHeaders } from '#/http/http-headers.js';
+import { object, optional, Schema, string } from '#/schema/index.js';
+import type { Json, Record } from '#/types.js';
+import { Alphabet } from '#/utils/alphabet.js';
+import { digest } from '#/utils/cryptography.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import { getRandomString } from '#/utils/random.js';
+import { assertDefinedPass, isUndefined } from '#/utils/type-guards.js';
+import { OidcConfigurationService } from './oidc-configuration.service.js';
+import type { NewOidcState, OidcState } from './oidc-state.model.js';
+import { OidcStateRepository } from './oidc-state.repository.js';
+import type { OidcGetTokenParameters, OidcInitParameters, OidcInitResult, OidcRefreshTokenParameters, OidcToken } from './oidc.service-model.js';
 
 const tokenResponseSchema = object({
   /* eslint-disable @typescript-eslint/naming-convention */

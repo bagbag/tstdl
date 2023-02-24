@@ -1,22 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import { NotImplementedError } from '#/error/not-implemented.error';
-import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer';
-import { deserialize, registerSerializer, serialize } from '#/serializer';
-import type { Record, TypedOmit } from '#/types';
-import { hasOwnProperty } from '#/utils/object';
-import { reflectMethods } from '#/utils/proxy';
-import { getRandomString } from '#/utils/random';
-import { _throw } from '#/utils/throw';
-import { assert, isDefined } from '#/utils/type-guards';
+import { NotImplementedError } from '#/error/not-implemented.error.js';
+import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer/index.js';
+import { deserialize, registerSerializer, serialize } from '#/serializer/index.js';
+import type { Record, TypedOmit } from '#/types.js';
+import { hasOwnProperty } from '#/utils/object/object.js';
+import { reflectMethods } from '#/utils/proxy.js';
+import { getRandomString } from '#/utils/random.js';
+import { _throw } from '#/utils/throw.js';
+import { assert, isDefined } from '#/utils/type-guards.js';
 import { filter, Subject, takeUntil } from 'rxjs';
-import type { MessagePortRpcEndpointSource } from './endpoints/message-port.rpc-endpoint';
-import { MessagePortRpcEndpoint } from './endpoints/message-port.rpc-endpoint';
-import type { RpcConnectMessage, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote, RpcRemoteInput } from './model';
-import { createRpcMessage } from './model';
-import { RpcEndpoint } from './rpc-endpoint';
-import { RpcError, RpcRemoteError } from './rpc-error';
+import type { MessagePortRpcEndpointSource } from './endpoints/message-port.rpc-endpoint.js';
+import { MessagePortRpcEndpoint } from './endpoints/message-port.rpc-endpoint.js';
+import type { RpcConnectMessage, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote, RpcRemoteInput } from './model.js';
+import { createRpcMessage } from './model.js';
+import { RpcEndpoint } from './rpc-endpoint.js';
+import { RpcError, RpcRemoteError } from './rpc-error.js';
 
 export type RpcEndpointSource = RpcEndpoint | MessagePortRpcEndpointSource;
 

@@ -1,5 +1,5 @@
 /* eslint-disable no-bitwise */
-import { SeededRandomNumberGenerator } from './seeded';
+import { SeededRandomNumberGenerator } from './seeded.js';
 
 const maxValue = (2 ** 32) - 1;
 const nextDivisor = 2 ** 32;

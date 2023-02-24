@@ -1,9 +1,9 @@
-import { ArrayList } from '#/data-structures';
-import { Set } from '#/data-structures/set';
-import type { AsyncDisposable } from '#/disposable/disposable';
-import { disposeAsync } from '#/disposable/disposable';
-import type { Logger } from '#/logger';
-import { isDefined } from '#/utils/type-guards';
+import { ArrayList } from '#/data-structures/array-list.js';
+import { Set } from '#/data-structures/set.js';
+import type { AsyncDisposable } from '#/disposable/disposable.js';
+import { disposeAsync } from '#/disposable/disposable.js';
+import type { Logger } from '#/logger/index.js';
+import { isDefined } from '#/utils/type-guards.js';
 import { cpus } from 'os';
 
 export type PoolOptions = {

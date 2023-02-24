@@ -1,10 +1,10 @@
-import { container } from '#/container';
-import type { PickBy, ReplaceKey } from '#/types';
-import { isString } from '#/utils/type-guards';
+import { container } from '#/container/index.js';
+import type { PickBy, ReplaceKey } from '#/types.js';
+import { isString } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { combineLatest, isObservable, map, of, switchMap } from 'rxjs';
-import type { LocalizableText } from './localizable-text.model';
-import { LocalizationService } from './localization.service';
+import type { LocalizableText } from './localizable-text.model.js';
+import { LocalizationService } from './localization.service.js';
 
 export type DynamicText = LocalizableText | Observable<LocalizableText>;
 

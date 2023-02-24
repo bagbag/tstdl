@@ -1,10 +1,10 @@
-import { optional, singleton } from '#/container';
-import { HttpClient } from '#/http/client';
-import { currentTimestamp } from '#/utils/date-time';
-import { isDefined } from '#/utils/type-guards';
-import { millisecondsPerMinute } from '#/utils/units';
-import type { OidcConfiguration } from './oidc-configuration.service';
-import { OidcConfigurationService } from './oidc-configuration.service';
+import { optional, singleton } from '#/container/index.js';
+import { HttpClient } from '#/http/client/http-client.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { millisecondsPerMinute } from '#/utils/units.js';
+import type { OidcConfiguration } from './oidc-configuration.service.js';
+import { OidcConfigurationService } from './oidc-configuration.service.js';
 
 type OidcConfigurationCache = {
   expiration: number,

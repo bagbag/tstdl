@@ -1,11 +1,11 @@
-import type { Injectable } from '#/container';
-import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
-import { getNewId } from '#/database';
-import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo';
-import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
-import { Logger } from '#/logger';
-import { UniqueTagStrategy } from '#/queue';
-import type { MongoJob, NewMongoJob } from './job';
+import type { Injectable } from '#/container/index.js';
+import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { getNewId } from '#/database/index.js';
+import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo/index.js';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { Logger } from '#/logger/index.js';
+import { UniqueTagStrategy } from '#/queue/index.js';
+import type { MongoJob, NewMongoJob } from './job.js';
 
 const indexes: TypedIndexDescription<MongoJob<any>>[] = [
   { key: { queue: 1, jobId: 1 }, unique: true },

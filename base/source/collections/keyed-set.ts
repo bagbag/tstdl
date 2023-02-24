@@ -1,4 +1,4 @@
-import { Enumerable } from '../enumerable';
+import { map } from '#/utils/iterable-helpers/map.js';
 
 export enum KeyedSetMode {
   Keep = 0,
@@ -62,7 +62,7 @@ export class KeyedSet<T> implements Set<T> {
   }
 
   *entries(): IterableIterator<[T, T]> {
-    yield* Enumerable.from(this.backingMap.values()).map((value): [T, T] => [value, value]);
+    yield* map(this.backingMap.values(), (value): [T, T] => [value, value]);
   }
 
   keys(): IterableIterator<T> {

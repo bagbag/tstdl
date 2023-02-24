@@ -1,9 +1,9 @@
-import type { Record, StringMap } from '#/types';
+import type { Record, StringMap } from '#/types.js';
 import type { Observable } from 'rxjs';
 import { debounceTime, defaultIfEmpty, firstValueFrom, merge, Subject, takeUntil } from 'rxjs';
-import { CancellationToken } from './cancellation-token';
-import { timeout } from './timing';
-import { isDefined, isObject, isUndefined } from './type-guards';
+import { CancellationToken } from './cancellation-token.js';
+import { timeout } from './timing.js';
+import { isDefined, isObject, isUndefined } from './type-guards.js';
 
 const defaultDebounceTime = 5000;
 const defaultRetryDelay = 10000;

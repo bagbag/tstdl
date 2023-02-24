@@ -1,10 +1,10 @@
-import type { Injectable } from '#/container';
-import { injectArg, resolveArgumentType, singleton } from '#/container';
-import { BadRequestError } from '#/error/bad-request.error';
-import { Schema } from '#/schema';
-import * as path from 'path';
-import { Template } from '../template.model';
-import { TemplateProvider } from '../template.provider';
+import type { Injectable } from '#/container/index.js';
+import { injectArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { Schema } from '#/schema/index.js';
+import * as path from 'node:path';
+import { Template } from '../template.model.js';
+import { TemplateProvider } from '../template.provider.js';
 
 export type FileTemplateProviderConfig = {
   basePath?: string

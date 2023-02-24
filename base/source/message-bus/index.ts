@@ -1,3 +1,3 @@
-export * from './message-bus';
-export * from './message-bus-base';
-export * from './message-bus-provider';
+export * from './message-bus-base.js';
+export * from './message-bus-provider.js';
+export * from './message-bus.js';

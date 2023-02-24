@@ -1,8 +1,8 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import { toArray } from '#/utils/array';
-import { isDefined, isFunction } from '#/utils/type-guards';
-import { LogLevel } from './level';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined, isFunction } from '#/utils/type-guards.js';
+import { LogLevel } from './level.js';
 
 export type LogEntry = string;
 export type LogEntryProvider = () => LogEntry;

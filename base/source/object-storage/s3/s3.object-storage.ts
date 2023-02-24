@@ -1,17 +1,18 @@
-import { singleton } from '#/container';
-import { AsyncEnumerable } from '#/enumerable';
-import type { ObjectStorageObject, UploadObjectOptions } from '#/object-storage';
-import { ObjectStorage } from '#/object-storage';
-import { now } from '#/utils/date-time';
-import { readableStreamFromPromise } from '#/utils/stream';
-import { readBinaryStream } from '#/utils/stream/stream-reader';
-import { assertStringPass, isObject } from '#/utils/type-guards';
+import { singleton } from '#/container/index.js';
+import type { UploadObjectOptions } from '#/object-storage/index.js';
+import { ObjectStorage } from '#/object-storage/index.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { now } from '#/utils/date-time.js';
+import { readableStreamFromPromise } from '#/utils/stream/index.js';
+import { readBinaryStream } from '#/utils/stream/stream-reader.js';
+import { assertStringPass, isObject } from '#/utils/type-guards.js';
 import type { BucketItem, BucketItemStat } from 'minio';
 import { Client } from 'minio';
-import { Readable } from 'stream';
-import type { ReadableStream as NodeReadableStream } from 'stream/web';
-import { S3Object } from './s3.object';
-import { S3ObjectStorageProvider } from './s3.object-storage-provider';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import { S3ObjectStorageProvider } from './s3.object-storage-provider.js';
+import { S3Object } from './s3.object.js';
 
 @singleton({
   provider: {
@@ -88,18 +89,12 @@ export class S3ObjectStorage extends ObjectStorage {
   }
 
   async getObjects(): Promise<S3Object[]> {
-    const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
-
-    return AsyncEnumerable.from<BucketItem>(stream)
-      .map((item) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this))
-      .toArray();
+    return toArrayAsync(this.getObjectsCursor());
   }
 
-  getObjectsCursor(): AsyncIterable<ObjectStorageObject> {
+  getObjectsCursor(): AsyncIterable<S3Object> {
     const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
-
-    return AsyncEnumerable.from<BucketItem>(stream)
-      .map((item) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this));
+    return mapAsync(stream, (item: BucketItem) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this))
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await

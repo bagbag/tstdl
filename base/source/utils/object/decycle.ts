@@ -1,9 +1,9 @@
-import { JsonPath } from '#/json-path';
-import type { Record, StringMap } from '#/types';
-import { clone } from '../clone';
-import { isArray, isDate, isDefined, isFunction, isNotNull, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards';
-import { getCachedDereference } from './dereference';
-import { hasOwnProperty, mapObjectValues, objectKeys } from './object';
+import { JsonPath } from '#/json-path/json-path.js';
+import type { Record, StringMap } from '#/types.js';
+import { clone } from '../clone.js';
+import { isArray, isDate, isDefined, isFunction, isNotNull, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards.js';
+import { getCachedDereference } from './dereference.js';
+import { hasOwnProperty, mapObjectValues, objectKeys } from './object.js';
 
 export type Decycled<T> = { __type: T } & Record<string>;
 

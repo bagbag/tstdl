@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Entity } from '#/database';
-import type { DeepFlatten, StringMap, TypedOmit } from '#/types';
-import { mergeObjects } from '#/utils/object/merge';
-import type { MappingBooleanProperty, MappingByteNumberProperty, MappingDateProperty, MappingDoubleNumberProperty, MappingFloatNumberProperty, MappingGeoPointProperty, MappingHalfFloatNumberProperty, MappingIntegerNumberProperty, MappingKeywordProperty, MappingLongNumberProperty, MappingNestedProperty, MappingObjectProperty, MappingPropertyBase, MappingScaledFloatNumberProperty, MappingShortNumberProperty, MappingTextProperty, MappingTypeMapping, MappingUnsignedLongNumberProperty } from '@elastic/elasticsearch/lib/api/types';
+import type { Entity } from '#/database/index.js';
+import type { DeepFlatten, StringMap, TypedOmit } from '#/types.js';
+import { mergeObjects } from '#/utils/object/merge.js';
+import type { MappingBooleanProperty, MappingByteNumberProperty, MappingDateProperty, MappingDoubleNumberProperty, MappingFloatNumberProperty, MappingGeoPointProperty, MappingHalfFloatNumberProperty, MappingIntegerNumberProperty, MappingKeywordProperty, MappingLongNumberProperty, MappingNestedProperty, MappingObjectProperty, MappingPropertyBase, MappingScaledFloatNumberProperty, MappingShortNumberProperty, MappingTextProperty, MappingTypeMapping, MappingUnsignedLongNumberProperty } from '@elastic/elasticsearch/lib/api/types.js';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 

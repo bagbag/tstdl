@@ -1,11 +1,11 @@
-import { injectable } from '#/container';
-import { DeferredPromise } from '#/promise/deferred-promise';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { assertStringPass, isDefined, isNull, isObject } from '#/utils/type-guards';
+import { injectable } from '#/container/index.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { assertStringPass, isDefined, isNull, isObject } from '#/utils/type-guards.js';
 import { map, timer } from 'rxjs';
-import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock';
-import { Lock } from '../lock';
-import { WebLockProvider } from './web-lock.provider';
+import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock.js';
+import { Lock } from '../lock.js';
+import { WebLockProvider } from './web-lock.provider.js';
 
 @injectable({
   provider: {

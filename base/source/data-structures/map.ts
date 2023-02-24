@@ -1,4 +1,4 @@
-import { Collection } from './collection';
+import { Collection } from './collection.js';
 
 export class Map<K, V> extends Collection<[K, V], Map<K, V>> implements globalThis.Map<K, V> {
   private readonly backingMap: globalThis.Map<K, V>;

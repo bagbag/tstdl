@@ -1,6 +1,6 @@
-import { supportsBuffer } from '#/supports';
-import type { BinaryData } from '#/types';
-import { assert, isArrayBuffer } from './type-guards';
+import { supportsBuffer } from '#/supports.js';
+import type { BinaryData } from '#/types.js';
+import { assert, isArrayBuffer } from './type-guards.js';
 
 /**
  * Get ArrayBuffer from binary data

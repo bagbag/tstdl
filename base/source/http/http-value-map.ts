@@ -1,11 +1,11 @@
-import { BadRequestError } from '#/error/bad-request.error';
-import type { OneOrMany, Record } from '#/types';
-import { toArray } from '#/utils/array';
-import { isIterable } from '#/utils/iterable-helpers/is-iterable';
-import { objectEntries } from '#/utils/object/object';
-import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
-import type { HttpValue, NormalizedHttpValue, NormalizedHttpValueObject } from './types';
-import { denormalizeHttpValue, normalizeHttpValue } from './types';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import type { OneOrMany, Record } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { isIterable } from '#/utils/iterable-helpers/is-iterable.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { HttpValue, NormalizedHttpValue, NormalizedHttpValueObject } from './types.js';
+import { denormalizeHttpValue, normalizeHttpValue } from './types.js';
 
 export type HttpValueMapInput = Record<string, OneOrMany<HttpValue> | undefined> | Iterable<[string, OneOrMany<HttpValue> | undefined]>;
 

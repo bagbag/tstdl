@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import { NotImplementedError } from '#/error/not-implemented.error';
-import type { TryDereference } from '#/serializer';
-import { Serializable, serializable } from '#/serializer';
-import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySearchLast } from '#/utils/binary-search';
-import { compareByValue } from '#/utils/comparison';
-import type { Predicate } from '#/utils/iterable-helpers/types';
-import { Comparator } from '#/utils/sort';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { List } from './list';
+import { NotImplementedError } from '#/error/not-implemented.error.js';
+import type { TryDereference } from '#/serializer/serializable.js';
+import { Serializable, serializable } from '#/serializer/serializable.js';
+import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySearchLast } from '#/utils/binary-search.js';
+import { compareByValue } from '#/utils/comparison.js';
+import type { Predicate } from '#/utils/iterable-helpers/types.js';
+import type { Comparator } from '#/utils/sort.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { List } from './list.js';
 
 export type RangeType = 'inclusive' | 'exclusive';
 

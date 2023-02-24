@@ -1,5 +1,5 @@
-import type { DeepFlatten, DeepNonNullable, Record } from '#/types';
-import { assertString, assertStringPass, isDefined, isUndefined } from '../type-guards';
+import type { DeepFlatten, DeepNonNullable, Record } from '#/types.js';
+import { assertString, assertStringPass, isDefined, isUndefined } from '../type-guards.js';
 
 export const propertyName = Symbol('PropertyName');
 export const cast = Symbol('cast');
@@ -22,7 +22,7 @@ export function isPropertyName(value: any): value is PropertyName {
  * @param options.prefix name prefix
  *
  * @example
- * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils/object';
+ * import { getPropertyNameProxy, propertyName } from '@tstdl/base/utils/object.js';
  *
  * const name = getPropertyNameProxy<MyType>().foo.bar[propertyName];
  *

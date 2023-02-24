@@ -1,8 +1,8 @@
-import type { ApiRequestData } from '#/api';
-import { ApiRequestTokenProvider } from '#/api/server/api-request-token.provider';
-import { singleton } from '#/container';
-import { AuthenticationService } from './authentication.service';
-import { tryGetAuthorizationTokenStringFromRequest } from './helper';
+import type { ApiRequestData } from '#/api/index.js';
+import { ApiRequestTokenProvider } from '#/api/server/api-request-token.provider.js';
+import { singleton } from '#/container/index.js';
+import { AuthenticationService } from './authentication.service.js';
+import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 
 @singleton()
 export class AuthenticationApiRequestTokenProvider extends ApiRequestTokenProvider {

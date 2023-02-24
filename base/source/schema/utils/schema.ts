@@ -1,15 +1,15 @@
-import type { TypeMetadata } from '#/reflection/registry';
-import { reflectionRegistry } from '#/reflection/registry';
-import type { AbstractConstructor, Type } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { memoizeSingle } from '#/utils/function/memoize';
-import { mapObjectValues } from '#/utils/object/object';
-import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
-import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types';
-import type { NormalizedSchema, Schema } from '../schema';
-import { assign } from '../schemas/assign';
-import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types';
-import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, valueTypesOrSchemasToSchemas } from '../types';
+import type { TypeMetadata } from '#/reflection/registry.js';
+import { reflectionRegistry } from '#/reflection/registry.js';
+import type { AbstractConstructor, Type } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { memoizeSingle } from '#/utils/function/memoize.js';
+import { mapObjectValues } from '#/utils/object/object.js';
+import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
+import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
+import type { NormalizedSchema, Schema } from '../schema.js';
+import { assign } from '../schemas/assign.js';
+import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types/index.js';
+import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, valueTypesOrSchemasToSchemas } from '../types/index.js';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
 export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });

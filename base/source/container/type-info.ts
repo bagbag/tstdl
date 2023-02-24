@@ -1,5 +1,5 @@
-import type { InjectionToken } from './token';
-import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types';
+import type { InjectionToken } from './token.js';
+import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types.js';
 
 export type InjectMetadata = {
   /** token overwrite by inject decorator */

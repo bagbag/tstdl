@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, max-lines-per-function, max-statements, complexity */
 
-import { CircularBuffer } from '#/data-structures/circular-buffer';
-import { SortedArrayList } from '#/data-structures/sorted-array-list';
-import type { Constructor, Record, StringMap } from '#/types';
-import { compareByValueSelection } from '#/utils/comparison';
-import { ForwardRef } from '#/utils/object/forward-ref';
-import { objectEntries } from '#/utils/object/object';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import type { DereferenceCallback } from './serializable';
-import { getSerializerByTypeName, getTypeNameByConstructor, isRawSerializable } from './serializable';
-import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RawNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types';
-import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, rawNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types';
+import { CircularBuffer } from '#/data-structures/circular-buffer.js';
+import { SortedArrayList } from '#/data-structures/sorted-array-list.js';
+import type { Constructor, Record, StringMap } from '#/types.js';
+import { compareByValueSelection } from '#/utils/comparison.js';
+import { ForwardRef } from '#/utils/object/forward-ref.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { DereferenceCallback } from './serializable.js';
+import { getSerializerByTypeName, getTypeNameByConstructor, isRawSerializable } from './serializable.js';
+import type { BigintNonPrimitive, CustomNonPrimitive, FunctionNonPrimitive, GlobalSymbolNonPrimitive, RawNonPrimitive, RefNonPrimitive, SerializationOptions, Serialized, SerializedData, StringSerialized, TypeField, UndefinedNonPrimitive } from './types.js';
+import { bigintNonPrimitiveType, functionNonPrimitiveType, globalSymbolNonPrimitiveType, rawNonPrimitiveType, refNonPrimitiveType, undefinedNonPrimitiveType } from './types.js';
 
 type QueueItem = () => void;
 

@@ -1,2 +1,2 @@
-export * from './memoize';
-export * from './throttle';
+export * from './memoize.js';
+export * from './throttle.js';

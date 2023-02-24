@@ -1,7 +1,7 @@
-import type { Entity } from '#/database';
-import type { Paths, TypedOmit } from '#/types';
+import type { Entity } from '#/database/index.js';
+import type { Paths, TypedOmit } from '#/types.js';
 import type * as Mongo from 'mongodb';
-import type { MongoDocument } from './model';
+import type { MongoDocument } from './model/document.js';
 
 export type MongoConnection = {
   url: string

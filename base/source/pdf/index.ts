@@ -1,1 +1,1 @@
-export * from './pdf.service';
+export * from './pdf.service.js';

@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import { toArrayCopy } from '#/utils/array/array';
-import { isDefined } from '#/utils/type-guards';
-import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { SchemaValueTransformer } from '../types/schema-value-transformer';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types';
-import { valueSchema } from '../types/types';
+import { Decorator } from '#/reflection/types.js';
+import { toArrayCopy } from '#/utils/array/array.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints/index.js';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
+import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers/index.js';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { SchemaValueTransformer } from '../types/schema-value-transformer.js';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
+import { valueSchema } from '../types/types.js';
 
 export type StringOptions = ValueSchemaOptions & {
   /** trim */

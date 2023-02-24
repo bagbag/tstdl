@@ -1,7 +1,7 @@
-import type { Record } from '#/types';
-import { merge } from '#/utils/merge';
-import { objectEntries } from '#/utils/object/object';
-import { isUndefined } from '#/utils/type-guards';
+import type { Record } from '#/types.js';
+import { merge } from '#/utils/merge.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isUndefined } from '#/utils/type-guards.js';
 
 export class ReflectionDataMap {
   private readonly data: Map<PropertyKey, any>;

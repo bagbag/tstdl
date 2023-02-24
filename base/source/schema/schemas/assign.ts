@@ -1,8 +1,8 @@
-import { toArray } from '#/utils/array/array';
-import { assert } from '#/utils/type-guards';
+import { toArray } from '#/utils/array/array.js';
+import { assert } from '#/utils/type-guards.js';
 import type { Merge } from 'type-fest';
-import type { ObjectSchema, ObjectSchemaOrType } from '../types';
-import { getObjectSchema } from '../utils';
+import type { ObjectSchema, ObjectSchemaOrType } from '../types/index.js';
+import { getObjectSchema } from '../utils/index.js';
 
 export function assign<T1, T2>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>): ObjectSchema<Merge<T1, T2>>;
 export function assign<T1, T2, T3>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>, schema3: ObjectSchemaOrType<T3>): ObjectSchema<Merge<Merge<T1, T2>, T3>>;

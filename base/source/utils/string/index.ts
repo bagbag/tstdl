@@ -1,2 +1,2 @@
-export * from './hypenate';
-export * from './title-case';
+export * from './hypenate.js';
+export * from './title-case.js';

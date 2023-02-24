@@ -1,12 +1,12 @@
-import type { Injectable } from '#/container';
-import { forwardArg, resolveArgumentType, singleton } from '#/container';
-import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
-import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
-import { Logger } from '#/logger';
+import type { Injectable } from '#/container/index.js';
+import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { Logger } from '#/logger/index.js';
 import type { Binary } from 'mongodb';
-import type { AuthenticationSession, NewAuthenticationSession } from '../../models';
-import type { AuthenticationSessionExtendData } from '../authentication-session.repository';
-import { AuthenticationSessionRepository } from '../authentication-session.repository';
+import type { AuthenticationSession, NewAuthenticationSession } from '../../models/index.js';
+import type { AuthenticationSessionExtendData } from '../authentication-session.repository.js';
+import { AuthenticationSessionRepository } from '../authentication-session.repository.js';
 
 export type MongoAuthenticationSessionRepositoryConfig = MongoAuthenticationSessionRepositoryArgument;
 

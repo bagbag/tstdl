@@ -1,9 +1,9 @@
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { bufferCount, filter, map } from 'rxjs';
-import { compareByValue } from './comparison';
-import { average } from './math';
-import { timeout } from './timing';
+import { compareByValue } from './comparison.js';
+import { average } from './math.js';
+import { timeout } from './timing.js';
 
 export enum AggregationMode {
   Minimum = 0,

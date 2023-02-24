@@ -1,6 +1,6 @@
-import type { AbstractConstructor } from '#/types';
-import type { Container } from './container';
-import type { InjectionToken } from './token';
+import type { AbstractConstructor } from '#/types.js';
+import type { Container } from './container.js';
+import type { InjectionToken } from './token.js';
 
 export type ResolveContext = Pick<Container, 'resolve' | 'resolveAsync'> & {
   isAsync: boolean

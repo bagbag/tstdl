@@ -1,8 +1,8 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import { millisecondsPerMinute } from '#/utils/units';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
-import { QueueEnqueueBatch } from './enqueue-batch';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import { millisecondsPerMinute } from '#/utils/units.js';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
+import { QueueEnqueueBatch } from './enqueue-batch.js';
 
 export type JobTag = string | number | null;
 

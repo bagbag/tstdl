@@ -1,4 +1,4 @@
-import { CustomError } from './custom.error';
+import { CustomError } from './custom.error.js';
 
 export class InvalidTokenError extends CustomError {
   static readonly errorName = 'InvalidTokenError';

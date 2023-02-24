@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { BinaryData, Record } from '#/types';
-import { toArray } from './array';
-import { toUint8Array } from './binary';
-import { compareByValue } from './comparison';
-import { sort } from './iterable-helpers/sort';
-import type { Comparator } from './sort';
-import { isDefined, isNotNull, isNull } from './type-guards';
+import type { BinaryData, Record } from '#/types.js';
+import { toArray } from './array/array.js';
+import { toUint8Array } from './binary.js';
+import { compareByValue } from './comparison.js';
+import { sort } from './iterable-helpers/sort.js';
+import type { Comparator } from './sort.js';
+import { isDefined, isNotNull, isNull } from './type-guards.js';
 
 export interface Equals<T = unknown> {
   [Equals.symbol](other: T): boolean;

@@ -1,6 +1,6 @@
-import { clamp } from './math';
-import { noop } from './noop';
-import { Timer } from './timer';
+import { clamp } from './math.js';
+import { noop } from './noop.js';
+import { Timer } from './timer.js';
 
 let microsecondsPerTimerRead = 0;
 

@@ -1,7 +1,7 @@
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
-import { round } from '#/utils/math';
-import { Timer } from '#/utils/timer';
-import type { ApiGatewayMiddlewareNext } from '../gateway';
+import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
+import { round } from '#/utils/math.js';
+import { Timer } from '#/utils/timer.js';
+import type { ApiGatewayMiddlewareNext } from '../gateway.js';
 
 export async function responseTimeMiddleware(request: HttpServerRequest, next: ApiGatewayMiddlewareNext): Promise<HttpServerResponse> {
   const timer = new Timer(true);

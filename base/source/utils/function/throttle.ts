@@ -1,4 +1,4 @@
-import { currentTimestamp } from '../date-time';
+import { currentTimestamp } from '../date-time.js';
 
 export const didNotRun = Symbol('did-not-run');
 

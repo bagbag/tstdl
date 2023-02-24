@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { Timer } from '../timer';
-import { immediate } from '../timing';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { Timer } from '../timer.js';
+import { immediate } from '../timing.js';
 
 export async function* interruptEveryAsync<T>(iterable: AnyIterable<T>, every: number): AsyncIterableIterator<T> {
   let counter = 0;

@@ -1,5 +1,5 @@
-import { singleton } from '#/container';
-import type { ApiRequestData } from '../types';
+import { singleton } from '#/container/index.js';
+import type { ApiRequestData } from '../types.js';
 
 export abstract class ApiRequestTokenProvider {
   abstract getToken<T>(requestData: ApiRequestData): T | Promise<T>;

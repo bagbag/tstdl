@@ -1,8 +1,8 @@
-import { objectEntries } from '#/utils/object';
-import { hyphenate } from '#/utils/string';
-import { isDefined } from '#/utils/type-guards';
-import type { CalculatedPalette, ThemeService } from '../theme-service';
-import { themeColorTones } from '../theme-service';
+import { objectEntries } from '#/utils/object/object.js';
+import { hyphenate } from '#/utils/string/hypenate.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { CalculatedPalette, ThemeService } from '../theme-service.js';
+import { themeColorTones } from '../theme-service.js';
 
 export interface CssThemeAdapter {
   destroy(): void;

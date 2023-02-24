@@ -1,7 +1,7 @@
-import type { Injectable } from '#/container';
-import { injectable, injectArg, resolveArgumentType } from '#/container';
-import type { Entity } from '#/database';
-import { isString } from '#/utils/type-guards';
+import type { Injectable } from '#/container/index.js';
+import { injectable, injectArg, resolveArgumentType } from '#/container/index.js';
+import type { Entity } from '#/database/index.js';
+import { isString } from '#/utils/type-guards.js';
 
 export type ElasticSearchIndexConfigArgument<T extends Entity = Entity> = string | ElasticSearchIndexConfig<T>;
 

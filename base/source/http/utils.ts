@@ -1,17 +1,17 @@
-import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error';
-import { NotSupportedError } from '#/error/not-supported.error';
-import { UnsupportedMediaTypeError } from '#/error/unsupported-media-type.error';
-import type { HttpHeaders } from '#/http/http-headers';
-import type { UndefinableJson } from '#/types';
-import type { AnyIterable } from '#/utils/any-iterable-iterator';
-import { isAnyIterable } from '#/utils/any-iterable-iterator';
-import type { CompressionAlgorithm } from '#/utils/compression';
-import { decompress, decompressStream } from '#/utils/compression';
-import { decodeText, decodeTextStream } from '#/utils/encoding';
-import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter';
-import { sizeLimitTransform } from '#/utils/stream/size-limited-stream';
-import { readBinaryStream } from '#/utils/stream/stream-reader';
-import { isArrayBuffer, isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards';
+import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error.js';
+import { NotSupportedError } from '#/error/not-supported.error.js';
+import { UnsupportedMediaTypeError } from '#/error/unsupported-media-type.error.js';
+import type { HttpHeaders } from '#/http/http-headers.js';
+import type { UndefinableJson } from '#/types.js';
+import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
+import { isAnyIterable } from '#/utils/any-iterable-iterator.js';
+import type { CompressionAlgorithm } from '#/utils/compression.js';
+import { decompress, decompressStream } from '#/utils/compression.js';
+import { decodeText, decodeTextStream } from '#/utils/encoding.js';
+import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter.js';
+import { sizeLimitTransform } from '#/utils/stream/size-limited-stream.js';
+import { readBinaryStream } from '#/utils/stream/stream-reader.js';
+import { isArrayBuffer, isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 
 type Body = Uint8Array | Blob | AnyIterable<Uint8Array> | ReadableStream<Uint8Array>;
 

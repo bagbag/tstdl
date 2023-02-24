@@ -1,4 +1,4 @@
-import type { Predicate, TypePredicate } from './types';
+import type { Predicate, TypePredicate } from './types.js';
 
 export function single<T, TPredicate extends T = T>(iterable: Iterable<T>, predicate: TypePredicate<T, TPredicate> | Predicate<T> = (() => true)): TPredicate {
   let matched = false;

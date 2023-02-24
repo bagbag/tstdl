@@ -1,14 +1,14 @@
-import { apiController } from '#/api/server';
-import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types';
-import { UnauthorizedError } from '#/error/unauthorized.error';
-import { HttpServerResponse, SetCookieObject } from '#/http/server';
-import type { Record, TypedOmit } from '#/types';
-import { currentTimestamp } from '#/utils/date-time';
-import type { AuthenticationApiDefinition } from '../authentication.api';
-import { authenticationApiDefinition } from '../authentication.api';
-import type { TokenResult } from './authentication.service';
-import { AuthenticationService } from './authentication.service';
-import { tryGetAuthorizationTokenStringFromRequest } from './helper';
+import { apiController } from '#/api/server/index.js';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
+import { UnauthorizedError } from '#/error/unauthorized.error.js';
+import { HttpServerResponse, SetCookieObject } from '#/http/server/index.js';
+import type { Record, TypedOmit } from '#/types.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import type { AuthenticationApiDefinition } from '../authentication.api.js';
+import { authenticationApiDefinition } from '../authentication.api.js';
+import type { TokenResult } from './authentication.service.js';
+import { AuthenticationService } from './authentication.service.js';
+import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 
 const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' };
 

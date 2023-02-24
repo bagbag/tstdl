@@ -1,19 +1,19 @@
-import type { Disposable } from '#/disposable';
-import { dispose } from '#/disposable';
-import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { clone } from '#/utils/clone';
-import { isDefined, isString, isUndefined } from '#/utils/type-guards';
-import type { HttpFormObject } from '../http-form';
-import { HttpForm } from '../http-form';
-import type { HttpHeadersObject } from '../http-headers';
-import { HttpHeaders } from '../http-headers';
-import type { HttpQueryObject } from '../http-query';
-import { HttpQuery } from '../http-query';
-import type { HttpUrlParametersObject } from '../http-url-parameters';
-import { HttpUrlParameters } from '../http-url-parameters';
-import type { HttpMethod } from '../types';
+import type { Disposable } from '#/disposable/index.js';
+import { dispose } from '#/disposable/index.js';
+import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { clone } from '#/utils/clone.js';
+import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
+import type { HttpFormObject } from '../http-form.js';
+import { HttpForm } from '../http-form.js';
+import type { HttpHeadersObject } from '../http-headers.js';
+import { HttpHeaders } from '../http-headers.js';
+import type { HttpQueryObject } from '../http-query.js';
+import { HttpQuery } from '../http-query.js';
+import type { HttpUrlParametersObject } from '../http-url-parameters.js';
+import { HttpUrlParameters } from '../http-url-parameters.js';
+import type { HttpMethod } from '../types.js';
 
 /** only one type at a time is supported. If multiple are set, behaviour is undefined */
 export type HttpRequestBody = {

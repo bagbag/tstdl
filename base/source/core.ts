@@ -1,11 +1,11 @@
-import type { InjectionToken } from './container';
-import { container, injectionToken } from './container';
-import { AsyncDisposer } from './disposable';
-import type { LoggerArgument } from './logger';
-import { Logger, LogLevel } from './logger';
-import { ConsoleLogger } from './logger/console';
-import { timeout } from './utils/timing';
-import { assertDefinedPass } from './utils/type-guards';
+import type { InjectionToken } from './container/index.js';
+import { container, injectionToken } from './container/index.js';
+import { AsyncDisposer } from './disposable/async-disposer.js';
+import { ConsoleLogger } from './logger/console/logger.js';
+import type { LoggerArgument } from './logger/index.js';
+import { Logger, LogLevel } from './logger/index.js';
+import { timeout } from './utils/timing.js';
+import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
 export const CORE_LOGGER = injectionToken<Logger>('CORE_LOGGER');
 
@@ -44,8 +44,10 @@ export async function disposeInstances(): Promise<void> {
 export type CoreConfiguration = {
   logger?: InjectionToken<Logger, LoggerArgument>,
   logLevel?: LogLevel,
-  coreLogPrefix?: string
+  coreLogPrefix?: string;
 };
+
+let coreLogPrefix: string | undefined;
 
 export function configureTstdl(config: CoreConfiguration = {}): void {
   container.register(Logger, { useToken: config.logger ?? ConsoleLogger });
@@ -56,5 +58,11 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
     { defaultArgumentProvider: () => config.logLevel ?? LogLevel.Trace }
   );
 
-  container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => config.coreLogPrefix });
+  if (isDefined(config.coreLogPrefix)) {
+    coreLogPrefix = config.coreLogPrefix;
+  }
 }
+
+container.register(Logger, { useToken: ConsoleLogger });
+container.register(LogLevel, { useValue: LogLevel.Trace });
+container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => coreLogPrefix });

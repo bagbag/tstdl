@@ -1,13 +1,13 @@
-import { Application } from '#/application';
-import { container } from '#/container';
-import { configureTstdl } from '#/core';
-import { PdfService } from '#/pdf/pdf.service';
-import { configureTemplates } from '#/templates';
-import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider';
-import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
-import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
-import { resolve } from 'path';
+import { Application } from '#/application/application.js';
+import { container } from '#/container/index.js';
+import { configureTstdl } from '#/core.js';
+import { PdfService } from '#/pdf/pdf.service.js';
+import { configureTemplates } from '#/templates/module.js';
+import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider.js';
+import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer.js';
+import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
+import { resolve } from 'node:path';
 
 configureTstdl();
 

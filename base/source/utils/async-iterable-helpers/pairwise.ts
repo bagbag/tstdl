@@ -1,5 +1,5 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
 
 export function pairwiseAsync<T>(iterable: AnyIterable<T>): AsyncIterableIterator<[T, T]> {
   return isAsyncIterable(iterable)

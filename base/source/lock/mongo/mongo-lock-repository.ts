@@ -1,12 +1,12 @@
-import type { Injectable } from '#/container';
-import { forwardArg, resolveArgumentType, singleton } from '#/container';
-import { getNewId } from '#/database';
-import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo';
-import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
-import { Logger } from '#/logger';
-import { now } from '#/utils/date-time';
+import type { Injectable } from '#/container/index.js';
+import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { getNewId } from '#/database/index.js';
+import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo/index.js';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { Logger } from '#/logger/index.js';
+import { now } from '#/utils/date-time.js';
 import { MongoError } from 'mongodb';
-import type { MongoLockEntity } from './model';
+import type { MongoLockEntity } from './model.js';
 
 const indexes: TypedIndexDescription<MongoLockEntity>[] = [
   { key: { resource: 1 }, unique: true },

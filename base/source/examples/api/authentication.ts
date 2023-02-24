@@ -1,19 +1,18 @@
 /* eslint-disable max-classes-per-file */
-import { configureApiServer } from '#/api/server';
-import { Application } from '#/application';
-import { AuthenticationApiClient, AuthenticationService as AuthenticationClientService, configureAuthenticationClient } from '#/authentication/client';
-import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller';
-import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service';
-import { configureAuthenticationServer } from '#/authentication/server/module';
-import { configureMongoAuthenticationCredentialsRepository, MongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository';
-import { configureMongoAuthenticationSessionRepository, MongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository';
-import { container } from '#/container';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
-import { configureHttpClient } from '#/http/client/module';
-import { configureNodeHttpServer } from '#/http/server/node';
-import { configureLocalMessageBus } from '#/message-bus/local';
-import { WebServerModule } from '#/module/modules';
-import { timeout } from '#/utils/timing';
+import { configureApiServer } from '#/api/server/index.js';
+import { Application } from '#/application/application.js';
+import { AuthenticationApiClient } from '#/authentication/client/api.client.js';
+import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient } from '#/authentication/client/index.js';
+import { AuthenticationApiController, AuthenticationService as AuthenticationServerService, configureAuthenticationServer } from '#/authentication/server/index.js';
+import { configureMongoAuthenticationCredentialsRepository, MongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository.js';
+import { configureMongoAuthenticationSessionRepository, MongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository.js';
+import { container } from '#/container/index.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureHttpClient } from '#/http/client/module.js';
+import { configureNodeHttpServer } from '#/http/server/node/module.js';
+import { configureLocalMessageBus } from '#/message-bus/local/module.js';
+import { WebServerModule } from '#/module/modules/web-server.module.js';
+import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
 configureAuthenticationServer({

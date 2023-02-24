@@ -1,8 +1,8 @@
-import { reflectionRegistry } from '#/reflection';
-import type { AbstractConstructor } from '#/types';
-import { assertDefinedPass } from '#/utils/type-guards';
-import type { InjectionToken } from './token';
-import { getTokenName } from './token';
+import { reflectionRegistry } from '#/reflection/index.js';
+import type { AbstractConstructor } from '#/types.js';
+import { assertDefinedPass } from '#/utils/type-guards.js';
+import type { InjectionToken } from './token.js';
+import { getTokenName } from './token.js';
 
 export type ResolveChainNodeBase<Type extends string> = {
   type: Type

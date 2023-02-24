@@ -1,7 +1,7 @@
-import { compareByValue } from '#/utils/comparison';
-import { Enumerable } from '../enumerable';
-import type { Comparator } from '../utils/sort';
-import { SortedArrayList } from './sorted-array-list';
+import { compareByValue } from '#/utils/comparison.js';
+import { map } from '#/utils/iterable-helpers/map.js';
+import type { Comparator } from '../utils/sort.js';
+import { SortedArrayList } from './sorted-array-list.js';
 
 export class SortedMap<K extends KComparator, V, KComparator = K> {
   private readonly comparator: Comparator<[KComparator, undefined | V]>;
@@ -25,13 +25,11 @@ export class SortedMap<K extends KComparator, V, KComparator = K> {
   }
 
   *keys(): IterableIterator<K> {
-    yield* Enumerable.from(this.backingSortedArray)
-      .map(([key]) => key);
+    yield* map(this.backingSortedArray, ([key]) => key);
   }
 
   *values(): IterableIterator<V> {
-    yield* Enumerable.from(this.backingSortedArray)
-      .map(([, value]) => value);
+    yield* map(this.backingSortedArray, ([, value]) => value);
   }
 
   clear(): void {

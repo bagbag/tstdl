@@ -1,5 +1,5 @@
-import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error';
-import type { BinaryData } from '#/types';
+import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error.js';
+import type { BinaryData } from '#/types.js';
 
 export function sizeLimitTransform<T extends BinaryData>(maxBytes: number, writableStrategy?: QueuingStrategy<T>, readableStrategy?: QueuingStrategy<T>): TransformStream<T, T> {
   let totalLength = 0;

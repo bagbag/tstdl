@@ -1,3 +1,3 @@
-export * from './s3.object';
-export * from './s3.object-storage';
-export * from './s3.object-storage-provider';
+export * from './s3.object.js';
+export * from './s3.object-storage.js';
+export * from './s3.object-storage-provider.js';

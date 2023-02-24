@@ -1,6 +1,6 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import type { ObjectMetadata, ObjectStorageObject } from './object';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import type { ObjectMetadata, ObjectStorageObject } from './object.js';
 
 export type UploadObjectOptions = {
   metadata?: ObjectMetadata

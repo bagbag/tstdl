@@ -1,6 +1,6 @@
-import { CustomError } from '#/error/custom.error';
-import { formatError } from '#/utils/format-error';
-import { isDefined, isObject } from '#/utils/type-guards';
+import { CustomError } from '#/error/custom.error.js';
+import { formatError } from '#/utils/format-error.js';
+import { isDefined, isObject } from '#/utils/type-guards.js';
 
 export class RpcError extends CustomError {
   static readonly errorName = 'RpcError';

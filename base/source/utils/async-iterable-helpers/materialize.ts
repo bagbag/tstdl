@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
-import { toArrayAsync } from './to-array';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import { toArrayAsync } from './to-array.js';
 
 export function materializeAsync<T>(iterable: AnyIterable<T>): AsyncIterable<T> {
   return (isAsyncIterable(iterable))

@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this, @typescript-eslint/no-empty-function */
 
-import { LogLevel } from '../level';
-import { Logger } from '../logger';
+import { LogLevel } from '../level.js';
+import { Logger } from '../logger.js';
 
 export class NoopLogger extends Logger {
   constructor() {

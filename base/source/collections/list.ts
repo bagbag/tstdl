@@ -1,4 +1,4 @@
-import type { Collection } from './collection';
+import type { Collection } from './collection.js';
 
 export interface List<T> extends Collection<T> {
   get(index: number): T;

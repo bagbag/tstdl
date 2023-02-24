@@ -1,4 +1,4 @@
-import { FactoryMap } from './factory-map';
+import { FactoryMap } from './factory-map.js';
 
 export type Builder<T> = () => T;
 export type AsyncBuilder<T> = () => Promise<T>;

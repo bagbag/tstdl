@@ -1,9 +1,9 @@
-import type { Decorator } from '#/reflection';
-import type { OneOrMany } from '#/types';
-import { createSchemaPropertyDecorator } from '../decorators/utils';
-import type { SchemaTestable } from '../schema';
-import type { ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { Decorator } from '#/reflection/index.js';
+import type { OneOrMany } from '#/types.js';
+import { createSchemaPropertyDecorator } from '../decorators/utils.js';
+import type { SchemaTestable } from '../schema.js';
+import { valueSchema } from '../types/index.js';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
 
 export type OptionalOptions = ValueSchemaOptions;
 

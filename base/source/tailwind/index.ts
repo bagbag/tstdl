@@ -1,1 +1,1 @@
-export * from './theme-adapter';
+export * from './theme-adapter.js';

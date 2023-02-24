@@ -1,10 +1,10 @@
-import { container } from '#/container';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import { MailLogRepository } from './mail-log.repository';
-import { MailClient, MailClientConfig } from './mail.client';
-import type { DefaultMailData } from './models';
-import { MAIL_DEFAULT_DATA } from './tokens';
+import { container } from '#/container/index.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { MailLogRepository } from './mail-log.repository.js';
+import { MailClient, MailClientConfig } from './mail.client.js';
+import type { DefaultMailData } from './models/index.js';
+import { MAIL_DEFAULT_DATA } from './tokens.js';
 
 export type MailModuleConfig = {
   clientConfig: MailClientConfig,

@@ -1,2 +1,2 @@
-export * from './authentication.api';
-export * from './models';
+export * from './authentication.api.js';
+export * from './models/index.js';

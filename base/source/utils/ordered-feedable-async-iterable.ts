@@ -1,4 +1,4 @@
-import { FeedableAsyncIterable } from './feedable-async-iterable';
+import { FeedableAsyncIterable } from './feedable-async-iterable.js';
 
 export class OrderedFeedableAsyncIterable<T> implements Omit<FeedableAsyncIterable<T>, 'feed'> {
   private readonly inBuffer: Map<number, T>;

@@ -10,6 +10,6 @@
  * @module
  */
 
-export * from './default-error-handlers';
-export * from './response';
-export * from './types';
+export * from './default-error-handlers.js';
+export * from './response.js';
+export * from './types.js';

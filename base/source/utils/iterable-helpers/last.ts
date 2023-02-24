@@ -1,5 +1,5 @@
-import { filter } from './filter';
-import type { Predicate, TypePredicate } from './types';
+import { filter } from './filter.js';
+import type { Predicate, TypePredicate } from './types.js';
 
 export function last<T, TPredicate extends T = T>(iterable: Iterable<T>, predicate?: Predicate<T> | TypePredicate<T, TPredicate>): TPredicate {
   const source = (predicate == undefined) ? iterable : filter<T, TPredicate>(iterable, predicate);

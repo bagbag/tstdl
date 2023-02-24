@@ -1,11 +1,11 @@
-import type { AnyIterable } from '#/utils/any-iterable-iterator';
-import type { Comparator } from '#/utils/sort';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
-import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers';
-import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers';
-import { isNotNullOrUndefined } from '../utils/type-guards';
-import { AsyncEnumerable, setEnumerable } from './async-enumerable';
-import type { EnumerableMethods } from './enumerable-methods';
+import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
+import type { Comparator } from '#/utils/sort.js';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
+import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers/index.js';
+import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers/index.js';
+import { isNotNullOrUndefined } from '../utils/type-guards.js';
+import { AsyncEnumerable, setEnumerable } from './async-enumerable.js';
+import type { EnumerableMethods } from './enumerable-methods.js';
 
 let asyncEnumerable: undefined | (<T>(source: AnyIterable<T>) => AsyncEnumerable<T>);
 

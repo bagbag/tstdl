@@ -1,10 +1,10 @@
-import type { JsonPath } from '#/json-path/json-path';
-import { testWithFastError } from '../schema';
-import { SchemaError } from '../schema.error';
-import { array } from '../schemas/array';
-import { number } from '../schemas/number';
-import type { CoercerContext, CoerceResult } from '../types';
-import { SchemaValueCoercer } from '../types';
+import type { JsonPath } from '#/json-path/json-path.js';
+import { testWithFastError } from '../schema.js';
+import { SchemaError } from '../schema.error.js';
+import { array } from '../schemas/array.js';
+import { number } from '../schemas/number.js';
+import type { CoercerContext, CoerceResult } from '../types/index.js';
+import { SchemaValueCoercer } from '../types/index.js';
 
 const byteNumberArraySchema = array(number({ integer: true, minimum: 0, maximum: 255 }));
 

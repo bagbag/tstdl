@@ -1,2 +1,2 @@
-export * from './key-value-store.provider';
-export * from './key-value.store';
+export * from './key-value-store.provider.js';
+export * from './key-value.store.js';

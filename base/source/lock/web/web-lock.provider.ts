@@ -1,7 +1,7 @@
-import { injectArg, singleton } from '#/container';
-import type { Lock } from '#/lock';
-import { LockProvider } from '#/lock';
-import { WebLock } from './web-lock';
+import { injectArg, singleton } from '#/container/index.js';
+import type { Lock } from '#/lock/index.js';
+import { LockProvider } from '#/lock/index.js';
+import { WebLock } from './web-lock.js';
 
 @singleton()
 export class WebLockProvider extends LockProvider {

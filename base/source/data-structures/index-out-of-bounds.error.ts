@@ -1,5 +1,5 @@
-import { CustomError } from '#/error/custom.error';
-import { isDefined } from '#/utils/type-guards';
+import { CustomError } from '#/error/custom.error.js';
+import { isDefined } from '#/utils/type-guards.js';
 
 export class IndexOutOfBoundsError extends CustomError {
   constructor({ index, count, size }: { index: number, count?: number, size?: number }) {

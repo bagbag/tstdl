@@ -1,5 +1,5 @@
-import type { TryDereference } from '../serializable';
-import type { Serialized } from '../types';
+import type { TryDereference } from '../serializable.js';
+import type { Serialized } from '../types.js';
 
 type SetData = Serialized<any>[];
 

@@ -1,11 +1,11 @@
-import { injectable } from '#/container';
-import { Logger } from '#/logger';
-import { assertStringPass, isUndefined } from '#/utils/type-guards';
+import { injectable } from '#/container/index.js';
+import { Logger } from '#/logger/index.js';
+import { assertStringPass, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { defer, fromEvent, map, of, switchMap } from 'rxjs';
-import type { MessageBus } from '../message-bus';
-import { MessageBusBase } from '../message-bus-base';
-import { BroadcastChannelMessageBusProvider } from './broadcast-channel-message-bus-provider';
+import { MessageBusBase } from '../message-bus-base.js';
+import type { MessageBus } from '../message-bus.js';
+import { BroadcastChannelMessageBusProvider } from './broadcast-channel-message-bus-provider.js';
 
 /** return values wrapped in Promise for polyfills which returns promises */
 interface PromisifiedBroadcastChannel extends BroadcastChannel {

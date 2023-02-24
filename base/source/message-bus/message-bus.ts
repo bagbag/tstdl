@@ -1,8 +1,8 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
 import type { Observable } from 'rxjs';
-import type { AsyncDisposable } from '../disposable';
-import { disposeAsync } from '../disposable';
+import type { AsyncDisposable } from '../disposable/disposable.js';
+import { disposeAsync } from '../disposable/disposable.js';
 
 export type MessageBusArgument = string;
 

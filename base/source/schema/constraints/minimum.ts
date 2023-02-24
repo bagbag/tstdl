@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { JsonPath } from '#/json-path/json-path';
-import type { Decorator } from '#/reflection';
-import { createSchemaValueConstraintDecorator } from '../decorators/utils';
-import { SchemaError } from '../schema.error';
-import { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { ConstraintContext, ConstraintResult } from '../types/types';
-import { typeSchema } from '../types/types';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { Decorator } from '#/reflection/index.js';
+import { createSchemaValueConstraintDecorator } from '../decorators/utils.js';
+import { SchemaError } from '../schema.error.js';
+import { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { ConstraintContext, ConstraintResult } from '../types/types.js';
+import { typeSchema } from '../types/types.js';
 
 export class MinimumConstraint extends SchemaValueConstraint {
   private readonly minimum: number;

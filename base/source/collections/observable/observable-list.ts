@@ -1,7 +1,7 @@
 import type { Observable } from 'rxjs';
-import type { List } from '../list';
-import type { SortedList } from '../sorted-list';
-import type { ObservableCollection } from './observable-collection';
+import type { List } from '../list.js';
+import type { SortedList } from '../sorted-list.js';
+import type { ObservableCollection } from './observable-collection.js';
 
 export type ObservableListIndexedEvent<T> = {
   value: T,

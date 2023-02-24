@@ -1,8 +1,8 @@
-import type { JsonPath } from '#/json-path';
-import { isBigInt } from '#/utils/type-guards';
-import { SchemaError } from '../schema.error';
-import type { CoercerContext, CoerceResult } from '../types';
-import { SchemaValueCoercer } from '../types';
+import type { JsonPath } from '#/json-path/json-path.js';
+import { isBigInt } from '#/utils/type-guards.js';
+import { SchemaError } from '../schema.error.js';
+import type { CoercerContext, CoerceResult } from '../types/index.js';
+import { SchemaValueCoercer } from '../types/index.js';
 
 export class DateCoercer extends SchemaValueCoercer {
   readonly sourceType = [Number, String, BigInt];

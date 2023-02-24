@@ -1,5 +1,5 @@
-import type { RpcEndpointSource } from '#/rpc';
-import { Rpc } from '#/rpc';
+import type { RpcEndpointSource } from '#/rpc/index.js';
+import { Rpc } from '#/rpc/index.js';
 
 export type ThreadWorker = (...args: any[]) => any | Promise<any>;
 

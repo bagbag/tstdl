@@ -1,9 +1,9 @@
-import { BadRequestError } from '#/error/bad-request.error';
-import { numberPattern } from '#/utils/patterns';
-import { isNotNumber, isNotString, isNullOrUndefined, isNumber, isString, isUndefined } from '#/utils/type-guards';
-import type { HttpValueMapInput } from './http-value-map';
-import { HttpValueMap } from './http-value-map';
-import type { HttpValueObject, NormalizedHttpValueObject } from './types';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { numberPattern } from '#/utils/patterns.js';
+import { isNotNumber, isNotString, isNullOrUndefined, isNumber, isString, isUndefined } from '#/utils/type-guards.js';
+import type { HttpValueMapInput } from './http-value-map.js';
+import { HttpValueMap } from './http-value-map.js';
+import type { HttpValueObject, NormalizedHttpValueObject } from './types.js';
 
 export type HttpHeadersObject = HttpValueObject;
 

@@ -1,11 +1,11 @@
-import type { SetCookieOptions } from '#/cookie/cookie';
-import { formatSetCookie } from '#/cookie/cookie';
-import type { SeverSentEvents } from '#/sse';
-import type { Record } from '#/types';
-import { objectEntries } from '#/utils/object/object';
-import { isDefined } from '#/utils/type-guards';
-import type { HttpHeadersInput } from '../http-headers';
-import { HttpHeaders } from '../http-headers';
+import type { SetCookieOptions } from '#/cookie/cookie.js';
+import { formatSetCookie } from '#/cookie/cookie.js';
+import type { SeverSentEvents } from '#/sse/server-sent-events.js';
+import type { Record } from '#/types.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { HttpHeadersInput } from '../http-headers.js';
+import { HttpHeaders } from '../http-headers.js';
 
 export type SetCookieObject = SetCookieOptions & {
   value: string

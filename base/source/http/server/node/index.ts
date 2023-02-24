@@ -1,2 +1,2 @@
-export * from './module';
-export * from './node-http-server';
+export * from './module.js';
+export * from './node-http-server.js';

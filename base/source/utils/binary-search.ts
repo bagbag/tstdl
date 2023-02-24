@@ -1,5 +1,5 @@
-import { compareByValue } from './comparison';
-import type { Comparator } from './sort';
+import { compareByValue } from './comparison.js';
+import type { Comparator } from './sort.js';
 
 export type BinarySearchOptions = {
   /** minimum index to search at */

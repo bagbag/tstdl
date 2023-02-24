@@ -1,13 +1,13 @@
-import { resolveArg, singleton } from '#/container';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types';
-import { enumEntries, enumValueName } from '#/utils/enum';
-import { memoizeSingle } from '#/utils/function/memoize';
-import { deepObjectEntries } from '#/utils/object/object';
-import type { PropertyName } from '#/utils/object/property-name';
-import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name';
-import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards';
+import { resolveArg, singleton } from '#/container/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
+import { enumEntries, enumValueName } from '#/utils/enum.js';
+import { memoizeSingle } from '#/utils/function/memoize.js';
+import { deepObjectEntries } from '#/utils/object/object.js';
+import type { PropertyName } from '#/utils/object/property-name.js';
+import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
+import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, map } from 'rxjs';
 

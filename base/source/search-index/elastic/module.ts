@@ -1,12 +1,12 @@
-import { container, injectionToken } from '#/container';
-import { connect, disposer } from '#/core';
-import type { Entity } from '#/database';
-import { Logger } from '#/logger';
-import { assert, assertDefined, isArray, isObject, isString } from '#/utils/type-guards';
+import { container, injectionToken } from '#/container/index.js';
+import { connect, disposer } from '#/core.js';
+import type { Entity } from '#/database/index.js';
+import { Logger } from '#/logger/index.js';
+import { assert, assertDefined, isArray, isObject, isString } from '#/utils/type-guards.js';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
-import type { ElasticSearchIndexConfigArgument } from './config';
-import { ElasticSearchIndexConfig } from './config';
+import type { ElasticSearchIndexConfigArgument } from './config.js';
+import { ElasticSearchIndexConfig } from './config.js';
 
 export type ElasticsearchModuleConfig = {
   defaultOptions: ClientOptions,

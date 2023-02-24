@@ -1,8 +1,8 @@
-import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationObject, EnumerationValue } from '#/types';
-import { randomItem } from './array/array';
-import { memoizeSingle } from './function';
-import { objectEntries } from './object/object';
-import { isNumber } from './type-guards';
+import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationObject, EnumerationValue } from '#/types.js';
+import { randomItem } from './array/array.js';
+import { memoizeSingle } from './function/memoize.js';
+import { objectEntries } from './object/object.js';
+import { isNumber } from './type-guards.js';
 
 const memoizedEnumEntries = memoizeSingle(_enumEntries, { weak: true });
 const memoizedEnumKeys = memoizeSingle(_enumKeys, { weak: true });

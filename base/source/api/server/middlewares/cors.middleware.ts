@@ -1,10 +1,10 @@
-import type { ApiEndpointDefinitionCors, ApiEndpointMethod } from '#/api/types';
-import { resolveApiEndpointDataProvider } from '#/api/types';
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
-import { toArray } from '#/utils/array';
-import type { AsyncMiddlewareNext } from '#/utils/middleware';
-import { isDefined } from '#/utils/type-guards';
-import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext } from '../gateway';
+import type { ApiEndpointDefinitionCors, ApiEndpointMethod } from '#/api/types.js';
+import { resolveApiEndpointDataProvider } from '#/api/types.js';
+import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
+import { toArray } from '#/utils/array/array.js';
+import type { AsyncMiddlewareNext } from '#/utils/middleware.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext } from '../gateway.js';
 
 export type CorsMiddlewareOptions = {
   default?: ApiEndpointDefinitionCors

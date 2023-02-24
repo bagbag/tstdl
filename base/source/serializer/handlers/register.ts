@@ -1,12 +1,12 @@
-import { supportsBuffer } from '#/supports';
-import { isDefined } from '#/utils/type-guards';
-import type { registerRawSerializable, registerSerializer } from '../serializable';
-import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary';
-import { deserializeDate, serializeDate } from './date';
-import { deserializeError, serializeError } from './error';
-import { deserializeMap, serializeMap } from './map';
-import { deserializeRegExp, serializeRegExp } from './regex';
-import { deserializeSet, serializeSet } from './set';
+import { supportsBuffer } from '#/supports.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { registerRawSerializable, registerSerializer } from '../serializable.js';
+import { deserializeArrayBuffer, deserializeBuffer, getTypedArrayDeserializer, serializeArrayBuffer, serializeBuffer, serializeTypedArray } from './binary.js';
+import { deserializeDate, serializeDate } from './date.js';
+import { deserializeError, serializeError } from './error.js';
+import { deserializeMap, serializeMap } from './map.js';
+import { deserializeRegExp, serializeRegExp } from './regex.js';
+import { deserializeSet, serializeSet } from './set.js';
 
 const typedArrays = [
   globalThis.Int8Array,

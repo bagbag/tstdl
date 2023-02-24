@@ -1,4 +1,4 @@
-import { isFunction } from '#/utils/type-guards';
+import { isFunction } from '#/utils/type-guards.js';
 
 export const dispose: unique symbol = Symbol('dispose');
 export const disposeAsync: unique symbol = Symbol('disposeAsync');

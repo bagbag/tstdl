@@ -1,2 +1,2 @@
-export * from './lock';
-export * from './provider';
+export * from './lock.js';
+export * from './provider.js';

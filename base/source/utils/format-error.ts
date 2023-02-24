@@ -1,7 +1,7 @@
-import type { Record, UndefinableJson } from '#/types';
-import { decycle } from './object/decycle';
-import { objectKeys } from './object/object';
-import { isDefined, isFunction, isUndefined } from './type-guards';
+import type { Record, UndefinableJson } from '#/types.js';
+import { decycle } from './object/decycle.js';
+import { objectKeys } from './object/object.js';
+import { isDefined, isFunction, isUndefined } from './type-guards.js';
 
 export type FormatErrorOptions = {
   /**

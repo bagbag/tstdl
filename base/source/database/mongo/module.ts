@@ -1,12 +1,12 @@
-import { container } from '#/container';
-import { connect, disposer } from '#/core';
-import { Logger } from '#/logger';
-import { assertDefined, isObject, isString } from '#/utils/type-guards';
-import type { Entity } from '../entity';
-import type { DatabaseArgument, MongoClientArgument } from './classes';
-import { Collection, Database, MongoClient } from './classes';
-import type { MongoDocument } from './model';
-import type { MongoConnection } from './types';
+import { container } from '#/container/index.js';
+import { connect, disposer } from '#/core.js';
+import { Logger } from '#/logger/index.js';
+import { assertDefined, isObject, isString } from '#/utils/type-guards.js';
+import type { Entity } from '../entity.js';
+import type { DatabaseArgument, MongoClientArgument } from './classes.js';
+import { Collection, Database, MongoClient } from './classes.js';
+import type { MongoDocument } from './model/document.js';
+import type { MongoConnection } from './types.js';
 
 export type MongoModuleConfig = {
   defaultConnection: MongoConnection,

@@ -1,6 +1,6 @@
-import type { HttpValueMapInput } from './http-value-map';
-import { HttpValueMap } from './http-value-map';
-import type { HttpValueObject, NormalizedHttpValueObject } from './types';
+import type { HttpValueMapInput } from './http-value-map.js';
+import { HttpValueMap } from './http-value-map.js';
+import type { HttpValueObject, NormalizedHttpValueObject } from './types.js';
 
 export type HttpQueryObject = HttpValueObject;
 

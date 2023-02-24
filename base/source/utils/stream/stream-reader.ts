@@ -1,9 +1,9 @@
-import { BadRequestError } from '#/error/bad-request.error';
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAnyIterable } from '../any-iterable-iterator';
-import { concatArrayBufferViews } from '../binary';
-import { isDefined } from '../type-guards';
-import { getReadableStreamIterable } from './readable-stream-adapter';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAnyIterable } from '../any-iterable-iterator.js';
+import { concatArrayBufferViews } from '../binary.js';
+import { isDefined } from '../type-guards.js';
+import { getReadableStreamIterable } from './readable-stream-adapter.js';
 
 // eslint-disable-next-line max-statements
 export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array> | ReadableStream<Uint8Array>, length?: number): Promise<Uint8Array> {

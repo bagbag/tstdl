@@ -1,9 +1,9 @@
-import { SchemaError } from '#/schema/schema.error';
-import type { CustomError, CustomErrorStatic } from '../error';
-import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error';
-import type { UndefinableJson } from '../types';
-import { isDefined, isFunction, isObject, isString } from '../utils/type-guards';
-import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers';
+import { SchemaError } from '#/schema/schema.error.js';
+import type { CustomError, CustomErrorStatic } from '../error/index.js';
+import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error/index.js';
+import type { UndefinableJson } from '../types.js';
+import { isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
+import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers.js';
 
 export type ErrorHandlerData = undefined | UndefinableJson;
 

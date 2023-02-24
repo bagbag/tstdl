@@ -1,10 +1,10 @@
-import { container, injectArg, singleton } from '#/container';
-import type { WritableOneOrMany } from '#/types';
-import { isUndefined } from '#/utils/type-guards';
+import { container, injectArg, singleton } from '#/container/index.js';
+import type { WritableOneOrMany } from '#/types.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
-import { MailClient, MailClientConfig } from '../mail.client';
-import type { MailAddress, MailData, MailSendResult } from '../models';
+import { MailClient, MailClientConfig } from '../mail.client.js';
+import type { MailAddress, MailData, MailSendResult } from '../models/index.js';
 import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-disable-line @typescript-eslint/no-require-imports
 
 @singleton()

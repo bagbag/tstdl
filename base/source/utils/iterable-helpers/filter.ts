@@ -1,4 +1,4 @@
-import type { Predicate, TypePredicate } from './types';
+import type { Predicate, TypePredicate } from './types.js';
 
 export function* filter<T, TPredicate extends T = T>(iterable: Iterable<T>, predicate: Predicate<T> | TypePredicate<T, TPredicate>): IterableIterator<TPredicate> {
   let index = 0;

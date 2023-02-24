@@ -1,8 +1,8 @@
-import type { ObjectMetadata } from '#/object-storage';
-import { ObjectStorageObject } from '#/object-storage';
-import { isUndefined } from '#/utils/type-guards';
+import type { ObjectMetadata } from '#/object-storage/object.js';
+import { ObjectStorageObject } from '#/object-storage/object.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import type { BucketItemStat } from 'minio';
-import type { S3ObjectStorage } from './s3.object-storage';
+import type { S3ObjectStorage } from './s3.object-storage.js';
 
 export class S3Object extends ObjectStorageObject {
   private readonly storage: S3ObjectStorage;

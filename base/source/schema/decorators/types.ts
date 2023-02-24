@@ -1,6 +1,6 @@
-import type { OneOrMany } from '#/types';
-import type { SchemaTestable } from '../schema';
-import type { ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, TypeSchema, ValueSchema, ValueType } from '../types';
+import type { OneOrMany } from '#/types.js';
+import type { SchemaTestable } from '../schema.js';
+import type { ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, TypeSchema, ValueSchema, ValueType } from '../types/index.js';
 
 export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allowUnknownProperties'>> & {
   schema?: ObjectSchema | TypeSchema | ValueType,

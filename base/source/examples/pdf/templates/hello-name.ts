@@ -1,9 +1,9 @@
-import { pdfTemplate } from '#/pdf';
-import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import type { StringTemplateRenderer } from '#/templates/renderers/string.template-renderer';
-import { fileTemplateField } from '#/templates/resolvers/file.template-resolver';
-import { stringTemplateField } from '#/templates/resolvers/string.template-resolver';
-import { resolve } from 'path';
+import { pdfTemplate } from '#/pdf/pdf.service.js';
+import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import type { StringTemplateRenderer } from '#/templates/renderers/string.template-renderer.js';
+import { fileTemplateField } from '#/templates/resolvers/file.template-resolver.js';
+import { stringTemplateField } from '#/templates/resolvers/string.template-resolver.js';
+import { resolve } from 'node:path';
 
 function reverse(value: unknown): string {
   return (value as string).split('').reverse().join('');

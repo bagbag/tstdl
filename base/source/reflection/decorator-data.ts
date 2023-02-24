@@ -1,7 +1,7 @@
-import { DetailsError } from '#/error/details.error';
-import { isDefined, isFunction, isNumber, isObject, isUndefined } from '#/utils/type-guards';
-import type { DecoratorData } from './types';
-import { getConstructor } from './utils';
+import { DetailsError } from '#/error/details.error.js';
+import { isDefined, isFunction, isNumber, isObject, isUndefined } from '#/utils/type-guards.js';
+import type { DecoratorData } from './types.js';
+import { getConstructor } from './utils.js';
 
 // eslint-disable-next-line max-lines-per-function
 export function getDecoratorData(target: object, propertyKey?: string | symbol, descriptorOrParameterIndex?: PropertyDescriptor | number): DecoratorData {

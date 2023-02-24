@@ -1,4 +1,4 @@
-import { Alphabet } from '#/utils/alphabet';
+import { Alphabet } from '#/utils/alphabet.js';
 
 export type DatabaseModuleConfig = {
   idLength: number,

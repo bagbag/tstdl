@@ -1,4 +1,4 @@
-import type { Predicate, TypePredicate } from './types';
+import type { Predicate, TypePredicate } from './types.js';
 
 export function singleOrDefault<T, D, TPredicate extends T = T>(iterable: Iterable<T>, defaultValue: D, predicate: TypePredicate<T, TPredicate> | Predicate<T> = (() => true)): TPredicate | D {
   let matched = false;

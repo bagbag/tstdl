@@ -1,7 +1,7 @@
-import { simpleTemplate } from '#/templates';
-import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import { stringTemplateField } from '#/templates/resolvers/string.template-resolver';
-import { assertFunction } from '#/utils/type-guards';
+import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import { stringTemplateField } from '#/templates/resolvers/string.template-resolver.js';
+import { simpleTemplate } from '#/templates/template.model.js';
+import { assertFunction } from '#/utils/type-guards.js';
 
 const template = simpleTemplate('hello-name',
   stringTemplateField<HandlebarsTemplateRenderer>({

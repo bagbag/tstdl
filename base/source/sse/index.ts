@@ -1,1 +1,1 @@
-export * from './server-sent-events';
+export * from './server-sent-events.js';

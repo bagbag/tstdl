@@ -1,16 +1,16 @@
 /* eslint-disable max-classes-per-file */
-import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api';
-import { defineApi } from '#/api';
-import { compileClient } from '#/api/client';
-import { apiController, configureApiServer } from '#/api/server';
-import { Application } from '#/application';
-import { container } from '#/container';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
-import { configureHttpClient } from '#/http/client/module';
-import { configureNodeHttpServer } from '#/http/server/node';
-import { WebServerModule } from '#/module/modules';
-import { array, boolean, number, object, Property } from '#/schema';
-import { timeout } from '#/utils/timing';
+import { compileClient } from '#/api/client/index.js';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
+import { defineApi } from '#/api/index.js';
+import { apiController, configureApiServer } from '#/api/server/index.js';
+import { Application } from '#/application/application.js';
+import { container } from '#/container/index.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureHttpClient } from '#/http/client/module.js';
+import { configureNodeHttpServer } from '#/http/server/node/module.js';
+import { WebServerModule } from '#/module/modules/web-server.module.js';
+import { array, boolean, number, object, Property } from '#/schema/index.js';
+import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
 class User {

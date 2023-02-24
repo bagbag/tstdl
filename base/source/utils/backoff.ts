@@ -1,8 +1,8 @@
-import type { ReadonlyCancellationToken } from './cancellation-token';
-import { CancellationToken } from './cancellation-token';
-import { noop } from './noop';
-import { cancelableTimeout } from './timing';
-import { isDefined } from './type-guards';
+import type { ReadonlyCancellationToken } from './cancellation-token.js';
+import { CancellationToken } from './cancellation-token.js';
+import { noop } from './noop.js';
+import { cancelableTimeout } from './timing.js';
+import { isDefined } from './type-guards.js';
 
 export type BackoffStrategy = 'linear' | 'exponential';
 

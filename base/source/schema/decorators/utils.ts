@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator, PropertyMetadata } from '#/reflection';
-import { createPropertyOrAccessorDecorator } from '#/reflection';
-import type { OneOrMany } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { merge } from '#/utils/merge';
-import { filterObject } from '#/utils/object';
-import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
-import type { Schema } from '../schema';
-import type { SchemaArrayConstraint } from '../types/schema-array-constraint';
-import type { SchemaValueCoercer } from '../types/schema-value-coercer';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { SchemaValueTransformer } from '../types/schema-value-transformer';
-import { isValueSchema, valueSchema } from '../types/types';
-import type { PropertyOptions, SchemaPropertyReflectionData } from './types';
+import type { Decorator, PropertyMetadata } from '#/reflection/index.js';
+import { createPropertyOrAccessorDecorator } from '#/reflection/index.js';
+import type { OneOrMany } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { merge } from '#/utils/merge.js';
+import { filterObject } from '#/utils/object/object.js';
+import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { Schema } from '../schema.js';
+import type { SchemaArrayConstraint } from '../types/schema-array-constraint.js';
+import type { SchemaValueCoercer } from '../types/schema-value-coercer.js';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { SchemaValueTransformer } from '../types/schema-value-transformer.js';
+import { isValueSchema, valueSchema } from '../types/types.js';
+import type { PropertyOptions, SchemaPropertyReflectionData } from './types.js';
 
 export function createSchemaPropertyDecorator(options: PropertyOptions): Decorator<'property' | 'accessor'> {
   return createPropertyOrAccessorDecorator({

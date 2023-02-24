@@ -1,7 +1,7 @@
-import type { ApiClientImplementation } from '#/api';
-import { container, injectionToken } from '#/container';
-import type { AuthenticationApiDefinition } from '../authentication.api';
-import { AuthenticationApiClient } from './api.client';
+import type { ApiClientImplementation } from '#/api/index.js';
+import { container, injectionToken } from '#/container/index.js';
+import type { AuthenticationApiDefinition } from '../authentication.api.js';
+import { AuthenticationApiClient } from './api.client.js';
 
 export const AUTHENTICATION_API_CLIENT = injectionToken<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>('AUTHENTICATION_API_CLIENT');
 

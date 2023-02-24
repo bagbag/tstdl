@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 // eslint-disable-next-line max-classes-per-file
-import type { TryDereference } from '#/serializer/serializable';
-import { Serializable, serializable } from '#/serializer/serializable';
-import type { Predicate } from '#/utils/iterable-helpers/types';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { List } from './list';
+import type { TryDereference } from '#/serializer/serializable.js';
+import { Serializable, serializable } from '#/serializer/serializable.js';
+import type { Predicate } from '#/utils/iterable-helpers/types.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { List } from './list.js';
 
 export type LinkedListNode<T> = {
   /** item of node */

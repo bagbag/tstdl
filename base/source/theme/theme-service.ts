@@ -1,10 +1,10 @@
-import { inject, injectionToken, singleton } from '#/container';
-import type { UnionToTuple } from '#/types';
-import { createArray } from '#/utils/array/array';
-import { first } from '#/utils/iterable-helpers/first';
-import { sort } from '#/utils/iterable-helpers/sort';
-import { objectEntries, objectKeys } from '#/utils/object/object';
-import { isDefined, isObject, isString } from '#/utils/type-guards';
+import { inject, injectionToken, singleton } from '#/container/index.js';
+import type { UnionToTuple } from '#/types.js';
+import { createArray } from '#/utils/array/array.js';
+import { first } from '#/utils/iterable-helpers/first.js';
+import { sort } from '#/utils/iterable-helpers/sort.js';
+import { objectEntries, objectKeys } from '#/utils/object/object.js';
+import { isDefined, isObject, isString } from '#/utils/type-guards.js';
 import * as chroma from 'chroma-js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';

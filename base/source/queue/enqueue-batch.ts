@@ -1,4 +1,4 @@
-import type { EnqueueManyItem, EnqueueOptions, Job, Queue } from './queue';
+import type { EnqueueManyItem, EnqueueOptions, Job, Queue } from './queue.js';
 
 export interface QueueEnqueueBatchMethods<T> {
   add(...args: Parameters<Queue<T>['enqueue']>): void;

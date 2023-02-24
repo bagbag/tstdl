@@ -1,12 +1,12 @@
-import type { Injectable } from '#/container';
-import { injectable, injectArg, resolveArgumentType } from '#/container';
-import { LockProvider } from '#/lock';
-import { DeferredPromise } from '#/promise';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { Timer } from '#/utils/timer';
-import { cancelableTimeout } from '#/utils/timing';
-import type { LoopController } from './controller';
+import type { Injectable } from '#/container/index.js';
+import { injectable, injectArg, resolveArgumentType } from '#/container/index.js';
+import { LockProvider } from '#/lock/index.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { Timer } from '#/utils/timer.js';
+import { cancelableTimeout } from '#/utils/timing.js';
+import type { LoopController } from './controller.js';
 
 export type LoopFunction = (controller: LoopController) => any | Promise<any>;
 

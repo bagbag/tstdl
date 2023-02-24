@@ -1,6 +1,6 @@
-import type { Theme } from '#/theme';
-import { objectKeys } from '#/utils/object/object';
-import { hyphenate } from '#/utils/string/hypenate';
+import type { Theme } from '#/theme/theme-service.js';
+import { objectKeys } from '#/utils/object/object.js';
+import { hyphenate } from '#/utils/string/hypenate.js';
 
 const colorTypeSuffixes = ['', '-text', '-background', '-border'];
 

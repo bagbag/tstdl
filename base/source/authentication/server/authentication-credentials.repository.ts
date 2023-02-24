@@ -1,5 +1,5 @@
-import { Class } from '#/reflection';
-import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../models';
+import { Class } from '#/reflection/index.js';
+import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../models/index.js';
 
 @Class()
 export abstract class AuthenticationCredentialsRepository {

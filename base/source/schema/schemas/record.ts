@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { OneOrMany, Record, TypedOmit } from '#/types';
-import type { SchemaTestable } from '../schema';
-import type { ObjectSchema } from '../types';
-import { objectSchema } from '../types';
+import type { OneOrMany, Record, TypedOmit } from '#/types.js';
+import type { SchemaTestable } from '../schema.js';
+import type { ObjectSchema } from '../types/index.js';
+import { objectSchema } from '../types/index.js';
 
 export type RecordOptions<T extends Record = Record> = TypedOmit<ObjectSchema<T>, 'properties' | 'allowUnknownProperties' | 'mask'>;
 

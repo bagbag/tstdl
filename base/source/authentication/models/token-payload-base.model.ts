@@ -1,4 +1,4 @@
-import { Property } from '#/schema/decorators/property';
+import { Property } from '#/schema/decorators/property.js';
 
 export class TokenPayloadBase {
   /** token id */

@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import type { Decorator } from '#/reflection';
-import { createClassDecorator, createDecorator } from '#/reflection';
-import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types';
-import { toArray } from '#/utils/array';
-import { isDefined, isFunction } from '#/utils/type-guards';
-import type { Lifecycle, RegistrationOptions } from './container';
-import { container, injectMetadataSymbol } from './container';
-import type { Provider } from './provider';
-import type { InjectionToken } from './token';
-import type { InjectMetadata } from './type-info';
-import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types';
+import type { Decorator } from '#/reflection/index.js';
+import { createClassDecorator, createDecorator } from '#/reflection/index.js';
+import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined, isFunction } from '#/utils/type-guards.js';
+import type { Lifecycle, RegistrationOptions } from './container.js';
+import { container, injectMetadataSymbol } from './container.js';
+import type { Provider } from './provider.js';
+import type { InjectionToken } from './token.js';
+import type { InjectMetadata } from './type-info.js';
+import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types.js';
 
 type InjectDecorator = Decorator<'property' | 'accessor' | 'constructorParameter'>;
 

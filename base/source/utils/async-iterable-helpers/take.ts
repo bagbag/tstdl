@@ -1,4 +1,4 @@
-import type { AnyIterable } from '../any-iterable-iterator';
+import type { AnyIterable } from '../any-iterable-iterator.js';
 
 export async function* takeAsync<T>(iterable: AnyIterable<T>, count: number): AsyncIterableIterator<T> {
   if (count <= 0) {

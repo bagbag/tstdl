@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import { isDefined } from '#/utils/type-guards';
-import { createSchemaValueConstraintDecorator } from '../decorators/utils';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint';
-import { MaximumLengthConstraint } from './maximum-length';
-import { MinimumLengthConstraint } from './minimum-length';
+import type { Decorator } from '#/reflection/index.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { createSchemaValueConstraintDecorator } from '../decorators/utils.js';
+import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import { MaximumLengthConstraint } from './maximum-length.js';
+import { MinimumLengthConstraint } from './minimum-length.js';
 
 export type LengthConstraintOptions = {
   minimum?: number,

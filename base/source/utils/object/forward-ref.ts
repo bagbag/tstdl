@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-types */
 
-import { propertyReflectMethods, reflectMethods } from '../proxy';
-import { assert, isDefined, isUndefined } from '../type-guards';
-import type { LazyInitializerItem } from './lazy-property';
-import { lazyObject } from './lazy-property';
+import { propertyReflectMethods, reflectMethods } from '../proxy.js';
+import { assert, isDefined, isUndefined } from '../type-guards.js';
+import type { LazyInitializerItem } from './lazy-property.js';
+import { lazyObject } from './lazy-property.js';
 
 declare const isForwardRef: unique symbol;
 

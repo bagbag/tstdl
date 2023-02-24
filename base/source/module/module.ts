@@ -1,4 +1,4 @@
-import type { StringMap } from '#/types';
+import type { StringMap } from '#/types.js';
 
 export enum ModuleMetricType {
   Counter = 0,

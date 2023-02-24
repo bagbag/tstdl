@@ -1,8 +1,8 @@
-import { container } from '#/container';
-import { Lock } from '../lock';
-import { LockProvider } from '../provider';
-import { WebLock } from './web-lock';
-import { WebLockProvider } from './web-lock.provider';
+import { container } from '#/container/index.js';
+import { Lock } from '../lock.js';
+import { LockProvider } from '../provider.js';
+import { WebLock } from './web-lock.js';
+import { WebLockProvider } from './web-lock.provider.js';
 
 /**
  * Register {@link WebLock} and {@link WebLockProvider} for {@link Lock} and {@link LockProvider} in global container

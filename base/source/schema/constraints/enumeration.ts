@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { JsonPath } from '#/json-path/json-path';
-import type { Enumeration, EnumerationValue, OneOrMany } from '#/types';
-import { enumValues } from '#/utils/enum';
-import { distinct } from '#/utils/iterable-helpers/distinct';
-import { isArray, isString } from '#/utils/type-guards';
-import { SchemaError } from '../schema.error';
-import { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { ConstraintContext, ConstraintResult } from '../types/types';
-import { getValueType } from '../utils/value-type';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { Enumeration, EnumerationValue, OneOrMany } from '#/types.js';
+import { enumValues } from '#/utils/enum.js';
+import { distinct } from '#/utils/iterable-helpers/distinct.js';
+import { isArray, isString } from '#/utils/type-guards.js';
+import { SchemaError } from '../schema.error.js';
+import { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { ConstraintContext, ConstraintResult } from '../types/types.js';
+import { getValueType } from '../utils/value-type.js';
 
 export class EnumerationConstraint extends SchemaValueConstraint {
   private readonly allowedValuesString: string;

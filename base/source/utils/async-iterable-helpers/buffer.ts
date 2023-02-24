@@ -1,8 +1,8 @@
-import { CircularBuffer } from '#/data-structures/circular-buffer';
-import type { AnyIterable } from '../any-iterable-iterator';
-import { CancellationToken } from '../cancellation-token';
-import { hasOwnProperty } from '../object/object';
-import { takeUntilAsync } from './take-until';
+import { CircularBuffer } from '#/data-structures/circular-buffer.js';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { CancellationToken } from '../cancellation-token.js';
+import { hasOwnProperty } from '../object/object.js';
+import { takeUntilAsync } from './take-until.js';
 
 type BufferItem<T> =
   | { end: false, value: T }

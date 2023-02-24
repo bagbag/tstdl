@@ -1,9 +1,9 @@
-import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '#/utils/binary-search';
-import { compareByValue } from '#/utils/comparison';
-import type { Comparator } from '#/utils/sort';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import type { ObservableListIndexedEvent, ObservableSortedList } from './observable-list';
-import { ObservableListBase } from './observable-list-base';
+import { binarySearch, binarySearchFirst, binarySearchFirstIndexEqualOrLarger, binarySearchInsertionIndex, binarySearchLast, binarySearchLastIndexEqualOrSmaller } from '#/utils/binary-search.js';
+import { compareByValue } from '#/utils/comparison.js';
+import type { Comparator } from '#/utils/sort.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { ObservableListIndexedEvent, ObservableSortedList } from './observable-list.js';
+import { ObservableListBase } from './observable-list-base.js';
 
 export class ObservableSortedArrayList<T extends TComparator, TComparator = T> extends ObservableListBase<T, ObservableSortedArrayList<T>> implements ObservableSortedList<T, TComparator> {
   private readonly comparator: Comparator<TComparator>;

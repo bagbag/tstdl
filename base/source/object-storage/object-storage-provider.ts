@@ -1,4 +1,4 @@
-import type { ObjectStorage } from './object-storage';
+import type { ObjectStorage } from './object-storage.js';
 
 export abstract class ObjectStorageProvider<T extends ObjectStorage = ObjectStorage> {
   /**

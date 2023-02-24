@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import type { TypePredicate } from '../iterable-helpers/types';
-import type { AsyncPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import type { TypePredicate } from '../iterable-helpers/types.js';
+import type { AsyncPredicate } from './types.js';
 
 export async function singleOrDefaultAsync<T, D, TPredicate extends T = T>(iterable: AnyIterable<T>, defaultValue: D, predicate: TypePredicate<T, TPredicate> | AsyncPredicate<T> = (() => true)): Promise<TPredicate | D> {
   let matched = false;

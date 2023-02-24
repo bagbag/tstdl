@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import type { AbstractConstructor, OneOrMany } from '#/types';
-import { createSchemaValueTransformerDecorator } from '../decorators';
-import type { TransformResult, ValueType } from '../types';
-import { SchemaValueTransformer } from '../types';
+import type { Decorator } from '#/reflection/index.js';
+import type { AbstractConstructor, OneOrMany } from '#/types.js';
+import { createSchemaValueTransformerDecorator } from '../decorators/index.js';
+import type { TransformResult, ValueType } from '../types/index.js';
+import { SchemaValueTransformer } from '../types/index.js';
 
 export type GenericTransformFunction<T, O> = (value: T) => TransformResult<O>;
 

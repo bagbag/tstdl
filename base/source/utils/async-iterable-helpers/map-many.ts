@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
-import type { AsyncIteratorFunction } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import type { AsyncIteratorFunction } from './types.js';
 
 export function mapManyAsync<TIn, TOut>(iterable: AnyIterable<TIn>, mapper: AsyncIteratorFunction<TIn, AnyIterable<TOut>>): AsyncIterableIterator<TOut> {
   return isAsyncIterable(iterable)

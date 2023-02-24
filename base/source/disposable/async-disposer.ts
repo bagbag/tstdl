@@ -1,13 +1,13 @@
-import { compareByValueSelection } from '#/utils/comparison';
-import { group } from '#/utils/iterable-helpers/group';
-import { sort } from '#/utils/iterable-helpers/sort';
-import { isDefined } from '#/utils/type-guards';
-import { MultiError } from '../error/multi.error';
-import { parallelForEach } from '../utils/async-iterable-helpers/parallel';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token';
-import { CancellationToken } from '../utils/cancellation-token';
-import type { AsyncDisposable, Disposable } from './disposable';
-import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable';
+import { compareByValueSelection } from '#/utils/comparison.js';
+import { group } from '#/utils/iterable-helpers/group.js';
+import { sort } from '#/utils/iterable-helpers/sort.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { MultiError } from '../error/multi.error.js';
+import { parallelForEach } from '../utils/async-iterable-helpers/parallel/for-each.js';
+import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
+import { CancellationToken } from '../utils/cancellation-token.js';
+import type { AsyncDisposable, Disposable } from './disposable.js';
+import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable.js';
 
 const deferrerToken: unique symbol = Symbol('DeferrerToken');
 

@@ -1,8 +1,8 @@
-import { ObservableFinalizationRegistry } from '#/memory';
-import { drain } from '#/utils/iterable-helpers/drain';
-import { isDefined, isUndefined } from '#/utils/type-guards';
+import { ObservableFinalizationRegistry } from '#/memory/observable-finalization-registry.js';
+import { drain } from '#/utils/iterable-helpers/drain.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { takeUntil } from 'rxjs';
-import { Collection } from './collection';
+import { Collection } from './collection.js';
 
 type WeakMapEntry<K extends object, V> = { ref: WeakRef<K>, value: V };
 

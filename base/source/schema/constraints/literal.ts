@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { JsonPath } from '#/json-path/json-path';
-import { isPrimitive } from '#/utils/type-guards';
-import { SchemaError } from '../schema.error';
-import { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { ConstraintContext, ConstraintResult } from '../types/types';
-import { getValueType, getValueTypeName } from '../utils';
+import type { JsonPath } from '#/json-path/json-path.js';
+import { isPrimitive } from '#/utils/type-guards.js';
+import { SchemaError } from '../schema.error.js';
+import { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { ConstraintContext, ConstraintResult } from '../types/types.js';
+import { getValueType, getValueTypeName } from '../utils/value-type.js';
 
 export class LiteralConstraint extends SchemaValueConstraint {
   readonly literal: any;

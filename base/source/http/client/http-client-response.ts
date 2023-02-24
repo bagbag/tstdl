@@ -1,9 +1,9 @@
-import type { TypedOmit } from '#/types';
-import type { HttpBodySource } from '../http-body';
-import { HttpBody } from '../http-body';
-import type { HttpHeadersObject } from '../http-headers';
-import { HttpHeaders } from '../http-headers';
-import type { HttpClientRequest, HttpClientRequestObject } from './http-client-request';
+import type { TypedOmit } from '#/types.js';
+import type { HttpBodySource } from '../http-body.js';
+import { HttpBody } from '../http-body.js';
+import type { HttpHeadersObject } from '../http-headers.js';
+import { HttpHeaders } from '../http-headers.js';
+import type { HttpClientRequest, HttpClientRequestObject } from './http-client-request.js';
 
 export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'hasBody' | 'request' | 'headers' | 'close' | 'asObject'> & {
   request: HttpClientRequestObject,

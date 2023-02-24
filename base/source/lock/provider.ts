@@ -1,6 +1,6 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import type { Lock } from './lock';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import type { Lock } from './lock.js';
 
 /** prefix */
 export type LockProviderArgument = string;

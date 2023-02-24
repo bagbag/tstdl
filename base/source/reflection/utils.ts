@@ -1,10 +1,10 @@
-import type { AbstractConstructor, Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { noop } from '#/utils/noop';
-import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards';
-import { getDecoratorData } from './decorator-data';
-import { reflectionRegistry } from './registry';
-import type { CombinedDecoratorParameters, Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types';
+import type { AbstractConstructor, Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { noop } from '#/utils/noop.js';
+import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards.js';
+import { getDecoratorData } from './decorator-data.js';
+import { reflectionRegistry } from './registry.js';
+import type { CombinedDecoratorParameters, Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types.js';
 
 export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 

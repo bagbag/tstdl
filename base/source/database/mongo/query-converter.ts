@@ -1,13 +1,13 @@
-import type { Entity, QueryTypes } from '#/database';
-import { allQueryTypes } from '#/database';
-import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query';
-import type { Record } from '#/types';
-import { objectEntries } from '#/utils/object/object';
-import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
+import type { Entity, QueryTypes } from '#/database/index.js';
+import { allQueryTypes } from '#/database/index.js';
+import type { ComparisonAllQuery, ComparisonInQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, Sort } from '#/database/query.js';
+import type { Record } from '#/types.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { assertDefinedPass, isDefined, isObject, isPrimitive, isRegExp, isString } from '#/utils/type-guards.js';
 import type { Filter as MongoFilter, RootFilterOperators } from 'mongodb';
-import type { MongoDocument } from './model';
-import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository';
-import type { Filter, SortArrayItem } from './types';
+import type { MongoDocument } from './model/document.js';
+import type { MappingItemTransformer, TransformerMappingMap } from './mongo-entity-repository.js';
+import type { Filter, SortArrayItem } from './types.js';
 
 const operatorsSet = new Set(allQueryTypes);
 

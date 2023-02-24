@@ -1,4 +1,4 @@
-import type { Type } from '#/types';
+import type { Type } from '#/types.js';
 import 'reflect-metadata';
 
 export function getDesignType(target: object, propertyKey?: string | symbol): Type {

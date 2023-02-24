@@ -1,9 +1,9 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import { Property } from '#/schema/decorators/property';
-import { BooleanProperty } from '#/schema/schemas/boolean';
-import { Optional } from '#/schema/schemas/optional';
-import type { MailData, MailSendResult } from './models';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import { Property } from '#/schema/decorators/property.js';
+import { BooleanProperty } from '#/schema/schemas/boolean.js';
+import { Optional } from '#/schema/schemas/optional.js';
+import type { MailData, MailSendResult } from './models/index.js';
 
 export class MailClientAuthConfig {
   @Property()

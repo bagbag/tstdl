@@ -1,3 +1,3 @@
-export * from './module';
-export * from './web-lock';
-export * from './web-lock.provider';
+export * from './module.js';
+export * from './web-lock.js';
+export * from './web-lock.provider.js';

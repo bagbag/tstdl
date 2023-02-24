@@ -1,4 +1,4 @@
-import type { NotificationChannelJob } from './models';
+import type { NotificationChannelJob } from './models/notification-channel-job.model.js';
 
 export abstract class NotificationChannel {
   abstract type: string;

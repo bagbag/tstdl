@@ -1,6 +1,6 @@
-import { CustomError } from '#/error/custom.error';
-import { isDefined } from '#/utils/type-guards';
-import type { ResolveChain } from './resolve-chain';
+import { CustomError } from '#/error/custom.error.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { ResolveChain } from './resolve-chain.js';
 
 export class ResolveError extends CustomError {
   constructor(message: string, chain: ResolveChain, cause?: Error) {

@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 
-import type { Logger } from '#/logger';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { isDefined } from '#/utils/type-guards';
-import { container } from './container';
-import { CORE_LOGGER } from './core';
+import type { Logger } from '#/logger/index.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { container } from './container/container.js';
+import { CORE_LOGGER } from './core.js';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';

@@ -1,4 +1,4 @@
-import { Collection } from './collection';
+import { Collection } from './collection.js';
 
 export class Set<T> extends Collection<T, Set<T>> implements globalThis.Set<T> {
   private readonly backingSet: globalThis.Set<T>;

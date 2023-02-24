@@ -1,4 +1,4 @@
-import type { Predicate } from './types';
+import type { Predicate } from './types.js';
 
 export function* takeWhile<T>(iterable: Iterable<T>, yieldLastOnFalse: boolean, predicate: Predicate<T>): IterableIterator<T> {
   let index = 0;

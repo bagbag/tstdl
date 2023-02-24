@@ -1,4 +1,4 @@
-import { Coerce, Enumeration, Optional } from '#/schema';
+import { Coerce, Enumeration, Optional } from '#/schema/index.js';
 
 export enum ImageResizeMode {
   Fit = 'fit',

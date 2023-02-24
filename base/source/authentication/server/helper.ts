@@ -1,11 +1,11 @@
-import { BadRequestError } from '#/error/bad-request.error';
-import { InvalidTokenError } from '#/error/invalid-token.error';
-import type { HttpServerRequest } from '#/http/server';
-import type { OneOrMany, Record } from '#/types';
-import { currentTimestampSeconds } from '#/utils/date-time';
-import { parseAndValidateJwtTokenString } from '#/utils/jwt';
-import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
-import type { RefreshToken, Token } from '../models';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { InvalidTokenError } from '#/error/invalid-token.error.js';
+import type { HttpServerRequest } from '#/http/server/index.js';
+import type { OneOrMany, Record } from '#/types.js';
+import { currentTimestampSeconds } from '#/utils/date-time.js';
+import { parseAndValidateJwtTokenString } from '#/utils/jwt.js';
+import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { RefreshToken, Token } from '../models/index.js';
 
 /**
  *

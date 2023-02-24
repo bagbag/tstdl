@@ -1,7 +1,7 @@
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
-import { differenceSets } from '../set';
-import { isDefined } from '../type-guards';
+import { differenceSets } from '../set.js';
+import { isDefined } from '../type-guards.js';
 
 export class ArrayBacktracker<T> {
   private readonly recordMap: Map<T, boolean>;

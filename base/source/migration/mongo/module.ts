@@ -1,8 +1,8 @@
-import { container } from '#/container';
-import type { MongoRepositoryConfig } from '#/database/mongo';
-import type { MigrationState } from '#/migration';
-import { MigrationStateRepository } from '#/migration';
-import { MongoMigrationStateRepository } from './migration-state-repository';
+import { container } from '#/container/index.js';
+import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { MigrationStateRepository } from '#/migration/migration-state-repository.js';
+import type { MigrationState } from '#/migration/migration-state.js';
+import { MongoMigrationStateRepository } from './migration-state-repository.js';
 
 export type MongoMigrationStateRepositoryModuleConfig = {
   defaultMigrationStateRepositoryConfig: MongoRepositoryConfig<MigrationState> | undefined

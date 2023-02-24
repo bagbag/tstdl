@@ -1,5 +1,5 @@
-import type { AnyIterable, AnyIterator } from '../any-iterable-iterator';
-import { isAsyncIterable } from '../async-iterable-helpers/is-async-iterable';
+import type { AnyIterable, AnyIterator } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from '../async-iterable-helpers/is-async-iterable.js';
 
 export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, options: { close?: boolean } = {}): AsyncIterable<T> {
   const reader = stream.getReader();

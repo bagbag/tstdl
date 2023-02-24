@@ -1,6 +1,6 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
-import type { StringMap } from '../types';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
+import type { StringMap } from '../types.js';
 
 /** key value store module */
 export type KeyValueStoreArgument = string;

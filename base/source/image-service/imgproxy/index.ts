@@ -1,1 +1,1 @@
-export * from './imgproxy-image-service';
+export * from './imgproxy-image-service.js';

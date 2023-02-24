@@ -1,5 +1,5 @@
-import type { NewEntity } from '#/database';
-import type { AuthenticationSession } from '../models';
+import type { NewEntity } from '#/database/index.js';
+import type { AuthenticationSession } from '../models/authentication-session.model.js';
 
 export type AuthenticationSessionExtendData = {
   end: number,

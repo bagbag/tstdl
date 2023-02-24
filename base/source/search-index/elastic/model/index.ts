@@ -1,3 +1,3 @@
-export * from './elastic-query';
-export * from './index-mapping';
-export * from './sort';
+export * from './elastic-query.js';
+export * from './index-mapping.js';
+export * from './sort.js';

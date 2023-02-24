@@ -1,10 +1,10 @@
-import type { Entity, MaybeNewEntity } from '#/database';
+import type { Entity, MaybeNewEntity } from '#/database/index.js';
 import type { BulkWriteResult } from 'mongodb';
-import type { Collection } from './classes';
-import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model';
-import type { ReplaceOptions, UpdateOptions } from './mongo-base.repository';
-import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './operations';
-import type { BulkOperation, Filter, UpdateFilter } from './types';
+import type { Collection } from './classes.js';
+import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument } from './model/document.js';
+import type { ReplaceOptions, UpdateOptions } from './mongo-base.repository.js';
+import { deleteManyOperation, deleteOneOperation, insertOneOperation, replaceOneOperation, updateManyOperation, updateOneOperation } from './operations.js';
+import type { BulkOperation, Filter, UpdateFilter } from './types.js';
 
 export type BulkResult = {
   insertedCount: number,

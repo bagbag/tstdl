@@ -1,7 +1,7 @@
-import type { Entity, UpdateOptions } from '#/database';
-import type { MongoDocument } from './model/document';
-import type { ReplaceOptions } from './mongo-base.repository';
-import type { DeleteManyOperation, DeleteOneOperation, Filter, InsertOneOperation, ReplaceOneOperation, UpdateFilter, UpdateManyOperation, UpdateOneOperation } from './types';
+import type { Entity, UpdateOptions } from '#/database/index.js';
+import type { MongoDocument } from './model/document.js';
+import type { ReplaceOptions } from './mongo-base.repository.js';
+import type { DeleteManyOperation, DeleteOneOperation, Filter, InsertOneOperation, ReplaceOneOperation, UpdateFilter, UpdateManyOperation, UpdateOneOperation } from './types.js';
 
 export function insertOneOperation<T extends Entity>(document: MongoDocument<T>): InsertOneOperation<T> {
   const operation: InsertOneOperation<T> = {

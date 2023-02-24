@@ -1,4 +1,4 @@
-import { CustomError } from './custom.error';
+import { CustomError } from './custom.error.js';
 
 export class MultiError extends CustomError {
   static readonly errorName = 'MultiError';

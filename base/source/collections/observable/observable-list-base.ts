@@ -1,8 +1,8 @@
 import type { Observable } from 'rxjs';
 import { firstValueFrom, map, merge, share, Subject } from 'rxjs';
-import type { ObservableCollection } from './observable-collection';
-import { ObservableCollectionBase } from './observable-collection-base';
-import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list';
+import type { ObservableCollection } from './observable-collection.js';
+import { ObservableCollectionBase } from './observable-collection-base.js';
+import type { ObservableList, ObservableListIndexedChangeEvent, ObservableListIndexedEvent } from './observable-list.js';
 
 export abstract class ObservableListBase<T, TThis extends ObservableCollection<T>> extends ObservableCollectionBase<T, TThis> implements ObservableList<T> {
   private readonly addAtSubject: Subject<ObservableListIndexedEvent<T>[]>;

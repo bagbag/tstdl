@@ -1,9 +1,9 @@
-import type { Entity, MaybeNewEntity, NewEntity } from '#/database';
-import { getNewId } from '#/database';
-import { isDefined } from '#/utils/type-guards';
+import type { Entity, MaybeNewEntity, NewEntity } from '#/database/index.js';
+import { getNewId } from '#/database/index.js';
+import { isDefined } from '#/utils/type-guards.js';
 import type { OptionalId, OptionalUnlessRequiredId, WithId } from 'mongodb';
-import type { ProjectedEntity, Projection } from '../mongo-base.repository';
-import { ProjectionMode } from '../mongo-base.repository';
+import type { ProjectedEntity, Projection } from '../mongo-base.repository.js';
+import { ProjectionMode } from '../mongo-base.repository.js';
 
 export type MongoDocument<T extends MaybeNewEntity> = OptionalUnlessRequiredId<Omit<T, 'id'> & { _id: T['id'] }>;
 

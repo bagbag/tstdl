@@ -1,4 +1,4 @@
-import type { HttpClientMiddleware } from './http-client';
+import type { HttpClientMiddleware } from './http-client.js';
 
 export class HttpClientOptions {
   /**

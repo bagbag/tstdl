@@ -1,12 +1,12 @@
-import type { Injectable } from '#/container';
-import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
-import type { CollectionArgument, EntityTransformer, MongoRepositoryConfig, TypedIndexDescription } from '#/database/mongo';
-import { Collection, mapTo, MongoEntityRepository } from '#/database/mongo';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import type { TypedOmit } from '#/types';
-import type { OidcState } from './oidc-state.model';
-import { OidcStateRepository } from './oidc-state.repository';
+import type { Injectable } from '#/container/index.js';
+import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import type { CollectionArgument, EntityTransformer, MongoRepositoryConfig, TypedIndexDescription } from '#/database/mongo/index.js';
+import { Collection, mapTo, MongoEntityRepository } from '#/database/mongo/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import type { TypedOmit } from '#/types.js';
+import type { OidcState } from './oidc-state.model.js';
+import { OidcStateRepository } from './oidc-state.repository.js';
 
 export type MongoOidcState = TypedOmit<OidcState, 'expiration'> & { expiration: Date };
 

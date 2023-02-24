@@ -1,4 +1,4 @@
-import { timeout } from './timing';
+import { timeout } from './timing.js';
 
 export type ProviderFunction<T> = () => ProviderFunctionResult<T> | Promise<ProviderFunctionResult<T>>;
 

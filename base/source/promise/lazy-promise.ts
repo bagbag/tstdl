@@ -1,5 +1,5 @@
-import { lazyProperty } from '#/utils/object';
-import { isPromise } from '#/utils/type-guards';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
+import { isPromise } from '#/utils/type-guards.js';
 
 type PromiseExecutor<T> = (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void;
 

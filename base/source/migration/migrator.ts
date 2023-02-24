@@ -1,16 +1,16 @@
-import { resolveArg, singleton } from '#/container';
-import type { LockProviderArgument } from '#/lock';
-import { LockProvider } from '#/lock';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import { toArray } from '#/utils/array';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { compareByValueSelectionDescending } from '#/utils/comparison';
-import { round } from '#/utils/math';
-import { Timer } from '#/utils/timer';
-import { isDefined } from '#/utils/type-guards';
-import type { NewMigrationState } from './migration-state';
-import { MigrationStateRepository } from './migration-state-repository';
+import { resolveArg, singleton } from '#/container/index.js';
+import type { LockProviderArgument } from '#/lock/index.js';
+import { LockProvider } from '#/lock/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import { toArray } from '#/utils/array/array.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { compareByValueSelectionDescending } from '#/utils/comparison.js';
+import { round } from '#/utils/math.js';
+import { Timer } from '#/utils/timer.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { NewMigrationState } from './migration-state.js';
+import { MigrationStateRepository } from './migration-state-repository.js';
 
 export type MigrationDefinition<T = void> = {
   name: string,

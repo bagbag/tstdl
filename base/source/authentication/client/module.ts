@@ -1,11 +1,11 @@
-import type { ApiClientImplementation } from '#/api';
-import { container } from '#/container';
-import { configureHttpClient } from '#/http/client/module';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import type { AuthenticationApiDefinition } from '../authentication.api';
-import { waitForAuthenticationCredentialsMiddleware } from './http-client.middleware';
-import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens';
+import type { ApiClientImplementation } from '#/api/index.js';
+import { container } from '#/container/index.js';
+import { configureHttpClient } from '#/http/client/module.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { AuthenticationApiDefinition } from '../authentication.api.js';
+import { waitForAuthenticationCredentialsMiddleware } from './http-client.middleware.js';
+import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
 export type AuthenticationModuleConfig = {
   authenticationApiClient?: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>,

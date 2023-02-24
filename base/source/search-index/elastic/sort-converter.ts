@@ -1,6 +1,6 @@
-import type { Entity, Sort } from '#/database';
-import type { KeywordRewriter } from './keyword-rewriter';
-import type { SortCombinations, SortOrder } from './model';
+import type { Entity, Sort } from '#/database/index.js';
+import type { KeywordRewriter } from './keyword-rewriter.js';
+import type { SortCombinations, SortOrder } from './model/index.js';
 
 const renameMap = new Map([
   ['id', '_id'],

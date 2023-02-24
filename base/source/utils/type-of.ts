@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import { isNull } from './type-guards';
+import { isNull } from './type-guards.js';
 
 /**
  * get the type of value. Returns 'null' instead of 'object' for null, tries to distinguish between function and class and to get their names

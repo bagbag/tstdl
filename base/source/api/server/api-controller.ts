@@ -1,10 +1,10 @@
 /* eslint-disable max-classes-per-file */
-import type { InjectableOptionsWithoutLifecycle } from '#/container';
-import { singleton } from '#/container';
-import type { Constructor, Type } from '#/types';
-import { objectEntries } from '#/utils/object/object';
-import { isFunction } from '#/utils/type-guards';
-import type { ApiController, ApiDefinition } from '../types';
+import type { InjectableOptionsWithoutLifecycle } from '#/container/index.js';
+import { singleton } from '#/container/index.js';
+import type { Constructor, Type } from '#/types.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isFunction } from '#/utils/type-guards.js';
+import type { ApiController, ApiDefinition } from '../types.js';
 
 type ApiDefinitionProvider = () => ApiDefinition;
 

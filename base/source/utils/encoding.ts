@@ -1,8 +1,8 @@
-import { AssertionError } from '#/error/assertion.error';
-import type { BinaryData } from '#/types';
-import { createArray } from './array/array';
-import { toUint8Array } from './binary';
-import { isUndefined } from './type-guards';
+import { AssertionError } from '#/error/assertion.error.js';
+import type { BinaryData } from '#/types.js';
+import { createArray } from './array/array.js';
+import { toUint8Array } from './binary.js';
+import { isUndefined } from './type-guards.js';
 
 const byteToHex = createArray(2 ** 8, (i) => i).map((value) => value.toString(16).padStart(2, '0'));
 const hexToByte = new Map(byteToHex.map((hex, value) => [hex, value]));

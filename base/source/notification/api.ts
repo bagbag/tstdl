@@ -1,9 +1,9 @@
-import type { ApiServerResult } from '#/api';
-import { defineApi } from '#/api';
-import { apiController } from '#/api/server';
-import { array } from '#/schema';
-import { Notification } from './models';
-import { notificationModuleConfig } from './module';
+import { apiController } from '#/api/server/api-controller.js';
+import type { ApiServerResult } from '#/api/types.js';
+import { defineApi } from '#/api/types.js';
+import { array } from '#/schema/index.js';
+import { Notification } from './models/index.js';
+import { notificationModuleConfig } from './module.js';
 
 const notificationApiDefinition = defineApi({
   get resource() { return notificationModuleConfig.apiResource; },

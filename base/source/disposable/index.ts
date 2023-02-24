@@ -1,3 +1,3 @@
-export * from './async-disposer';
-export * from './disposable';
-export * from './using';
+export * from './async-disposer.js';
+export * from './disposable.js';
+export * from './using.js';

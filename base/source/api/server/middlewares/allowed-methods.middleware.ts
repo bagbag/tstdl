@@ -1,9 +1,9 @@
-import { MethodNotAllowedError } from '#/error/method-not-allowed.error';
-import type { HttpServerRequest } from '#/http/server';
-import { HttpServerResponse } from '#/http/server';
-import type { AsyncMiddlewareNext } from '#/utils/middleware';
-import { isUndefined } from '#/utils/type-guards';
-import type { ApiGatewayMiddlewareContext } from '../gateway';
+import { MethodNotAllowedError } from '#/error/method-not-allowed.error.js';
+import type { HttpServerRequest } from '#/http/server/index.js';
+import { HttpServerResponse } from '#/http/server/index.js';
+import type { AsyncMiddlewareNext } from '#/utils/middleware.js';
+import { isUndefined } from '#/utils/type-guards.js';
+import type { ApiGatewayMiddlewareContext } from '../gateway.js';
 
 export async function allowedMethodsMiddleware(request: HttpServerRequest, next: AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
   if (request.method != 'OPTIONS') {

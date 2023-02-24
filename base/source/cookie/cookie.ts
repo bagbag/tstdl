@@ -1,5 +1,5 @@
-import { NotSupportedError } from '#/error/not-supported.error';
-import { isDefined, isNumber, isUndefined } from '#/utils/type-guards';
+import { NotSupportedError } from '#/error/not-supported.error.js';
+import { isDefined, isNumber, isUndefined } from '#/utils/type-guards.js';
 
 export type SetCookieOptions = {
   domain?: string,

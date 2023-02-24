@@ -1,12 +1,12 @@
 /* eslint-disable max-classes-per-file */
-import type { AbstractConstructor, Writable } from '#/types';
-import { FactoryMap } from '#/utils/factory-map';
-import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property';
-import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { getDecoratorData } from './decorator-data';
-import { ReflectionDataMap } from './reflection-data-map';
-import type { DecoratorData } from './types';
+import type { AbstractConstructor, Writable } from '#/types.js';
+import { FactoryMap } from '#/utils/factory-map.js';
+import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property.js';
+import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { getDecoratorData } from './decorator-data.js';
+import { ReflectionDataMap } from './reflection-data-map.js';
+import type { DecoratorData } from './types.js';
 
 export type ReflectionMetadata = TypeMetadata | PropertyMetadata | MethodMetadata | ConstructorParameterMetadata | MethodParameterMetadata;
 

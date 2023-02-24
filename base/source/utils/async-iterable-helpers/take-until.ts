@@ -1,7 +1,7 @@
 import { firstValueFrom, map, race } from 'rxjs';
-import type { AnyIterable } from '../any-iterable-iterator';
-import type { ReadonlyCancellationToken } from '../cancellation-token';
-import { isAsyncIterable } from './is-async-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import type { ReadonlyCancellationToken } from '../cancellation-token.js';
+import { isAsyncIterable } from './is-async-iterable.js';
 
 export function takeUntilAsync<T>(iterable: AnyIterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
   return isAsyncIterable(iterable)

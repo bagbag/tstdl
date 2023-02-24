@@ -1,7 +1,7 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isIterable } from '../iterable-helpers/is-iterable';
-import { isDefined } from '../type-guards';
-import { isAsyncIterable } from './is-async-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isIterable } from '../iterable-helpers/is-iterable.js';
+import { isDefined } from '../type-guards.js';
+import { isAsyncIterable } from './is-async-iterable.js';
 
 export function iterableToAsyncIterator<T>(iterable: AnyIterable<T>): AsyncIterator<T> {
   let asyncIterator: AsyncIterator<T>;

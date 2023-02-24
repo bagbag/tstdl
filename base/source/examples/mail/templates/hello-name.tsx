@@ -1,8 +1,8 @@
-import { mailTemplate } from '#/mail';
-import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import type { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
-import { jsxTemplateField } from '#/templates/resolvers/jsx.template-resolver';
-import { stringTemplateField } from '#/templates/resolvers/string.template-resolver';
+import { mailTemplate } from '#/mail/index.js';
+import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import type { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer.js';
+import { jsxTemplateField } from '#/templates/resolvers/jsx.template-resolver.js';
+import { stringTemplateField } from '#/templates/resolvers/string.template-resolver.js';
 import type { VNode } from 'preact';
 
 function HelloMail({ name }: { name: string }): VNode {

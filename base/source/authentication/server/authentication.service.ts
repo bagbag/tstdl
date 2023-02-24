@@ -1,22 +1,22 @@
-import type { AfterResolve } from '#/container';
-import { afterResolve, inject, optional, singleton } from '#/container';
-import { InvalidTokenError } from '#/error/invalid-token.error';
-import { NumberProperty, Property } from '#/schema';
-import type { Record } from '#/types';
-import { Alphabet } from '#/utils/alphabet';
-import { importPbkdf2Key } from '#/utils/cryptography';
-import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time';
-import { binaryEquals } from '#/utils/equals';
-import { createJwtTokenString } from '#/utils/jwt';
-import { getRandomBytes, getRandomString } from '#/utils/random';
-import { isUndefined } from '#/utils/type-guards';
-import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units';
-import type { NewAuthenticationCredentials, RefreshToken, Token } from '../models';
-import { AuthenticationCredentialsRepository } from './authentication-credentials.repository';
-import { AuthenticationSessionRepository } from './authentication-session.repository';
-import { AuthenticationSubjectResolver } from './authentication-subject.resolver';
-import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider';
-import { getRefreshTokenFromString, getTokenFromString } from './helper';
+import type { AfterResolve } from '#/container/index.js';
+import { afterResolve, inject, optional, singleton } from '#/container/index.js';
+import { InvalidTokenError } from '#/error/invalid-token.error.js';
+import { NumberProperty, Property } from '#/schema/index.js';
+import type { Record } from '#/types.js';
+import { Alphabet } from '#/utils/alphabet.js';
+import { importPbkdf2Key } from '#/utils/cryptography.js';
+import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time.js';
+import { binaryEquals } from '#/utils/equals.js';
+import { createJwtTokenString } from '#/utils/jwt.js';
+import { getRandomBytes, getRandomString } from '#/utils/random.js';
+import { isUndefined } from '#/utils/type-guards.js';
+import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
+import type { NewAuthenticationCredentials, RefreshToken, Token } from '../models/index.js';
+import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
+import { AuthenticationSessionRepository } from './authentication-session.repository.js';
+import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
+import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider.js';
+import { getRefreshTokenFromString, getTokenFromString } from './helper.js';
 
 export class AuthenticationServiceOptions {
   /** Secret used for signing tokens and refreshTokens */

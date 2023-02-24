@@ -1,12 +1,12 @@
-import { inject, optional, singleton } from '#/container';
-import type { Record } from '#/types';
-import { objectEntries } from '#/utils/object/object';
-import { _throw } from '#/utils/throw';
-import { isString } from '#/utils/type-guards';
-import { TemplateRendererProvider } from './template-renderer.provider';
-import { TemplateResolverProvider } from './template-resolver.provider';
-import type { Template } from './template.model';
-import { TemplateProvider } from './template.provider';
+import { inject, optional, singleton } from '#/container/index.js';
+import type { Record } from '#/types.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { _throw } from '#/utils/throw.js';
+import { isString } from '#/utils/type-guards.js';
+import { TemplateRendererProvider } from './template-renderer.provider.js';
+import { TemplateResolverProvider } from './template-resolver.provider.js';
+import type { Template } from './template.model.js';
+import { TemplateProvider } from './template.provider.js';
 
 export type TemplateServiceRenderResult<T extends Template = Template> = {
   name: string,

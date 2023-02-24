@@ -1,4 +1,4 @@
-import type { ToJson } from '#/interfaces';
+import type { ToJson } from '#/interfaces.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, startWith, Subject } from 'rxjs';
 

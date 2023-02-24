@@ -1,4 +1,4 @@
-import type { AbstractConstructor, JsonPrimitive, Nested, Record, StringMap } from '#/types';
+import type { AbstractConstructor, JsonPrimitive, Nested, Record, StringMap } from '#/types.js';
 
 declare const serializedSymbol: unique symbol;
 declare const stringSerializedSymbol: unique symbol;

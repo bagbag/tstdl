@@ -1,8 +1,8 @@
-import type { StringMap } from '#/types';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { CancellationToken } from '#/utils/cancellation-token';
-import type { Module, ModuleMetric } from './module';
-import { ModuleState } from './module';
+import type { StringMap } from '#/types.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import type { Module, ModuleMetric } from './module.js';
+import { ModuleState } from './module.js';
 
 export abstract class ModuleBase implements Module {
   private runPromise: Promise<void>;

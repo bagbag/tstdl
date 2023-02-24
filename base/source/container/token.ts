@@ -1,5 +1,5 @@
-import type { AbstractConstructor, EnumerationObject } from '#/types';
-import { isFunction, isString } from '#/utils/type-guards';
+import type { AbstractConstructor, EnumerationObject } from '#/types.js';
+import { isFunction, isString } from '#/utils/type-guards.js';
 
 declare const parameter: unique symbol;
 

@@ -1,14 +1,14 @@
-import { container } from '#/container';
-import { configureMail, MailService } from '#/mail';
-import { NodemailerMailClient } from '#/mail/clients/nodemailer.mail-client';
-import { configureTemplates } from '#/templates';
-import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider';
-import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer';
-import { configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
-import { integer, string } from '#/utils/config-parser';
-import { resolve } from 'path';
-import { configureTstdl } from '../../core';
+import { container } from '#/container/index.js';
+import { NodemailerMailClient } from '#/mail/clients/nodemailer.mail-client.js';
+import { configureMail, MailService } from '#/mail/index.js';
+import { configureTemplates } from '#/templates/index.js';
+import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider.js';
+import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer.js';
+import { configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
+import { integer, string } from '#/utils/config-parser.js';
+import { resolve } from 'node:path';
+import { configureTstdl } from '../../core.js';
 
 configureTstdl();
 

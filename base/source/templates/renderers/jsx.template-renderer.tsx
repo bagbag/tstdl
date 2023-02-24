@@ -1,15 +1,16 @@
-import { singleton } from '#/container';
-import { assertNotNull } from '#/utils/type-guards';
+import { singleton } from '#/container/index.js';
+import { assertNotNull } from '#/utils/type-guards.js';
 import type { ComponentClass } from 'preact';
 import { Component } from 'preact';
 import { render } from 'preact-render-to-string';
-import type { JsxTemplate } from '../resolvers/jsx.template-resolver';
-import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer';
-import { TemplateRenderer } from '../template.renderer';
+import type { JsxTemplate } from '../resolvers/jsx.template-resolver.js';
+import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
+import { TemplateRenderer } from '../template.renderer.js';
 
-declare module 'preact/src/jsx' {
-  namespace JSXInternal { // eslint-disable-line @typescript-eslint/no-namespace
-    interface IntrinsicElements { // eslint-disable-line @typescript-eslint/consistent-indexed-object-style
+
+declare module 'preact' {
+  namespace JSX {
+    interface IntrinsicElements {
       [key: string]: any;
     }
   }
@@ -27,8 +28,8 @@ export class JsxTemplateRenderer extends TemplateRenderer<'jsx', undefined> {
     return (type == 'jsx');
   }
 
-  _render({ template }: JsxTemplateRenderObject, context?: object): TemplateRenderResult {
-    const node = isComponentClass(template) ? <template {...context}></template> : template(context, context);
+  _render({ template: TemplateComponent }: JsxTemplateRenderObject, context?: object): TemplateRenderResult {
+    const node = isComponentClass(TemplateComponent) ? <TemplateComponent {...context}></TemplateComponent> : TemplateComponent(context, context);
     assertNotNull(node, 'Template returned null');
 
     return render(node);

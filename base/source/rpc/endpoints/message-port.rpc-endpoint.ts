@@ -1,9 +1,9 @@
-import { isBrowser } from '#/environment';
+import { isBrowser } from '#/environment.js';
 import type { Observable } from 'rxjs';
 import { fromEvent, map } from 'rxjs';
 import type * as NodeWorkerThreads from 'worker_threads';
-import type { RpcMessage } from '../model';
-import { RpcEndpoint } from '../rpc-endpoint';
+import type { RpcMessage } from '../model.js';
+import { RpcEndpoint } from '../rpc-endpoint.js';
 
 type BrowserSource = Worker | MessagePort | Window | SharedWorker;
 type NodeSource = NodeWorkerThreads.MessagePort | NodeWorkerThreads.Worker;

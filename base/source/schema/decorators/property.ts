@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import type { OneOrMany, TypedOmit } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { isDefined, isFunction, isString, isUndefined } from '#/utils/type-guards';
-import type { ValueType } from '../types';
-import { typeSchema } from '../types';
-import type { PropertyOptions } from './types';
-import { createSchemaPropertyDecorator } from './utils';
+import type { Decorator } from '#/reflection/index.js';
+import type { OneOrMany, TypedOmit } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined, isFunction, isString, isUndefined } from '#/utils/type-guards.js';
+import type { ValueType } from '../types/index.js';
+import { typeSchema } from '../types/index.js';
+import type { PropertyOptions } from './types.js';
+import { createSchemaPropertyDecorator } from './utils.js';
 
 export function Property(options?: PropertyOptions): Decorator<'property' | 'accessor'>;
 export function Property(schema?: OneOrMany<ValueType>, options?: TypedOmit<PropertyOptions, 'schema'>): Decorator<'property' | 'accessor'>;

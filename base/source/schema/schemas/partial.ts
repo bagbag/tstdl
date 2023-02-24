@@ -1,11 +1,11 @@
-import type { OneOrMany, PartialProperty, Record } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { mapObjectValues } from '#/utils/object';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import type { ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties } from '../types';
-import { objectSchema } from '../types';
-import { getObjectSchema } from '../utils';
-import { optional } from './optional';
+import type { OneOrMany, PartialProperty, Record } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { mapObjectValues } from '#/utils/object/object.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { objectSchema } from '../types/index.js';
+import type { ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties } from '../types/types.js';
+import { getObjectSchema } from '../utils/schema.js';
+import { optional } from './optional.js';
 
 export function partial<T extends Record>(schema: ObjectSchemaOrType<T>): ObjectSchema<Partial<T>>;
 export function partial<T extends Record, K extends keyof T>(schema: ObjectSchemaOrType<T>, keys: OneOrMany<K>): ObjectSchema<PartialProperty<T, K>>;

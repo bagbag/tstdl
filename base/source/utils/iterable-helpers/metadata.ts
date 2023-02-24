@@ -1,4 +1,4 @@
-import type { IterableItemMetadata } from './types';
+import type { IterableItemMetadata } from './types.js';
 
 export function* metadata<T>(iterable: Iterable<T>): IterableIterator<IterableItemMetadata<T>> {
   let index = 0;

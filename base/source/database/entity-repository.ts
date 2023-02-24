@@ -1,5 +1,5 @@
-import type { Entity, MaybeNewEntity } from './entity';
-import type { Query, QueryOptions } from './query';
+import type { Entity, MaybeNewEntity } from './entity.js';
+import type { Query, QueryOptions } from './query.js';
 
 export declare const repositoryType: unique symbol;
 

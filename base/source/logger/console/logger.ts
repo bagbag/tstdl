@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 
-import { singleton } from '#/container';
-import type { Record } from '#/types';
-import { now } from '#/utils/date-time';
-import { formatError } from '#/utils/format-error';
-import { isDefined, isObject, isString } from '#/utils/type-guards';
-import { LogLevel } from '../level';
-import type { LogErrorOptions, LoggerArgument } from '../logger';
-import { Logger } from '../logger';
+import { singleton } from '#/container/index.js';
+import type { Record } from '#/types.js';
+import { now } from '#/utils/date-time.js';
+import { formatError } from '#/utils/format-error.js';
+import { isDefined, isObject, isString } from '#/utils/type-guards.js';
+import { LogLevel } from '../level.js';
+import type { LogErrorOptions, LoggerArgument } from '../logger.js';
+import { Logger } from '../logger.js';
 
 const levelFuncMap: Record<LogLevel, (message: string) => void> = {
   [LogLevel.Error]: console.error,

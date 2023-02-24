@@ -1,7 +1,7 @@
-import { singleton } from '#/container';
-import { currentTimestamp } from '#/utils/date-time';
-import type { NewNotification, Notification } from './models';
-import { NotificationRepository } from './notification.repository';
+import { singleton } from '#/container/index.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import type { NewNotification, Notification } from './models/notification.model.js';
+import { NotificationRepository } from './notification.repository.js';
 
 @singleton()
 export class NotificationService<T> {

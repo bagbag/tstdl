@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
-import type { AbstractType, Type } from '#/types';
-import { isString } from '#/utils/type-guards';
-import { container } from './container';
+import type { AbstractType, Type } from '#/types.js';
+import { isString } from '#/utils/type-guards.js';
+import { container } from './container.js';
 
 const isStubClassSymbol = Symbol('Stub class');
 

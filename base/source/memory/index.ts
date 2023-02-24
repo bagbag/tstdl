@@ -1,1 +1,1 @@
-export * from './observable-finalization-registry';
+export * from './observable-finalization-registry.js';

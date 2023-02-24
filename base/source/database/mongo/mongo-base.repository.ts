@@ -1,17 +1,16 @@
 
-import type { Entity, MaybeNewEntity } from '#/database';
-import { Enumerable } from '#/enumerable';
-import { NotFoundError } from '#/error/not-found.error';
-import type { Record } from '#/types';
-import { objectKeys } from '#/utils/object';
-import { assertDefined, isNullOrUndefined } from '#/utils/type-guards';
+import type { Entity, MaybeNewEntity } from '#/database/index.js';
+import { NotFoundError } from '#/error/not-found.error.js';
+import type { Record } from '#/types.js';
+import { objectKeys } from '#/utils/object/object.js';
+import { assertDefined, isNullOrUndefined } from '#/utils/type-guards.js';
 import type { FindOneAndUpdateOptions, IndexDescription } from 'mongodb';
-import type { Collection } from './classes';
-import type { MongoDocument } from './model';
-import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model';
-import { MongoBulk } from './mongo-bulk';
-import { replaceOneOperation, updateOneOperation } from './operations';
-import type { Filter, Sort, TypedIndexDescription, UpdateFilter, UpdateOneOperation } from './types';
+import type { Collection } from './classes.js';
+import type { MongoDocument } from './model/document.js';
+import { mongoDocumentFromMaybeNewEntity, toEntity, toMongoDocument, toMongoProjection, toNewEntity, toProjectedEntity } from './model/document.js';
+import { MongoBulk } from './mongo-bulk.js';
+import { replaceOneOperation, updateOneOperation } from './operations.js';
+import type { Filter, Sort, TypedIndexDescription, UpdateFilter, UpdateOneOperation } from './types.js';
 
 export const enum ProjectionMode {
   Include = 0,
@@ -130,15 +129,13 @@ export class MongoBaseRepository<T extends Entity> {
       return [];
     }
 
-    const mapped = Enumerable.from(items)
-      .map(({ filter, entity }) => ({ filter, document: mongoDocumentFromMaybeNewEntity(entity) }))
-      .map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document } as UpdateFilter<U>, { upsert: true }) }))
-      .toArray();
+    const documents = items.map(({ filter, entity }) => ({ filter, document: mongoDocumentFromMaybeNewEntity(entity) }));
+    const documentOperations = documents.map(({ filter, document }) => ({ document, operation: updateOneOperation(filter, { $setOnInsert: document } as UpdateFilter<U>, { upsert: true }) }));
+    const operations = documentOperations.map((o) => o.operation as UpdateOneOperation<T>);
 
-    const operations = mapped.map((o) => o.operation as UpdateOneOperation<T>);
     const result = await this.collection.bulkWrite(operations, { ordered: false });
     assertDefined(result.upsertedIds);
-    const entities = objectKeys(result.upsertedIds).map((index) => toEntity(mapped[index as unknown as number]!.document));
+    const entities = objectKeys(result.upsertedIds).map((index) => toEntity(documentOperations[index]!.document));
 
     return entities;
   }

@@ -1,13 +1,13 @@
-import { resolveArg, singleton } from '#/container';
-import { WeakRefMap } from '#/data-structures/weak-ref-map';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import { FactoryMap } from '#/utils/factory-map';
-import { isUndefined } from '#/utils/type-guards';
+import { resolveArg, singleton } from '#/container/index.js';
+import { WeakRefMap } from '#/data-structures/weak-ref-map.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import { FactoryMap } from '#/utils/factory-map.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import { Subject } from 'rxjs';
-import { MessageBusProvider } from '../message-bus-provider';
-import { LocalMessageBus } from './local-message-bus';
-import type { LocalMessageBusItem } from './types';
+import { MessageBusProvider } from '../message-bus-provider.js';
+import { LocalMessageBus } from './local-message-bus.js';
+import type { LocalMessageBusItem } from './types.js';
 
 @singleton()
 export class LocalMessageBusProvider extends MessageBusProvider {

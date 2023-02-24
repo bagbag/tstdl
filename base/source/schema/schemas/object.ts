@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Record, SimplifiedOptionalize, TypedOmit } from '#/types';
-import type { ObjectSchema, ObjectSchemaProperties } from '../types';
-import { objectSchema } from '../types';
+import type { Record, SimplifiedOptionalize, TypedOmit } from '#/types.js';
+import type { ObjectSchema, ObjectSchemaProperties } from '../types/index.js';
+import { objectSchema } from '../types/index.js';
 
 export type ObjectOptions<T extends Record = Record> = TypedOmit<ObjectSchema<T>, 'properties'>;
 

@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Entity } from '#/database';
-import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query';
-import { hasOwnProperty, objectEntries, objectValues } from '#/utils/object/object';
-import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils/type-guards';
-import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/lib/api/types';
-import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model';
-import { BoolQueryBuilder } from './query-builder';
+import type { Entity } from '#/database/index.js';
+import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query.js';
+import { hasOwnProperty, objectEntries, objectValues } from '#/utils/object/object.js';
+import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils/type-guards.js';
+import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/lib/api/types.js';
+import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model/index.js';
+import { BoolQueryBuilder } from './query-builder/index.js';
 
 // eslint-disable-next-line max-lines-per-function, max-statements, complexity
 export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {

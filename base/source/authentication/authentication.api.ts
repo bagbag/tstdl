@@ -1,15 +1,15 @@
-import type { ApiDefinition, ApiEndpointsDefinition } from '#/api/types';
-import { defineApi } from '#/api/types';
-import type { SchemaTestable } from '#/schema/schema';
-import { assign } from '#/schema/schemas/assign';
-import { literal } from '#/schema/schemas/literal';
-import { number } from '#/schema/schemas/number';
-import { emptyObjectSchema, explicitObject } from '#/schema/schemas/object';
-import { string } from '#/schema/schemas/string';
-import { unknown } from '#/schema/schemas/unknown';
-import type { ObjectSchemaOrType } from '#/schema/types';
-import type { Record } from '#/types';
-import { TokenPayloadBase } from './models';
+import type { ApiDefinition, ApiEndpointsDefinition } from '#/api/types.js';
+import { defineApi } from '#/api/types.js';
+import type { SchemaTestable } from '#/schema/schema.js';
+import { assign } from '#/schema/schemas/assign.js';
+import { literal } from '#/schema/schemas/literal.js';
+import { number } from '#/schema/schemas/number.js';
+import { emptyObjectSchema, explicitObject } from '#/schema/schemas/object.js';
+import { string } from '#/schema/schemas/string.js';
+import { unknown } from '#/schema/schemas/unknown.js';
+import type { ObjectSchemaOrType } from '#/schema/types/types.js';
+import type { Record } from '#/types.js';
+import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
 type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
   typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;

@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
-import type { AsyncPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import type { AsyncPredicate } from './types.js';
 
 export function filterAsync<T, TNew extends T = T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<TNew> {
   return isAsyncIterable(iterable)

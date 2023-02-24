@@ -1,9 +1,9 @@
-import { injectable, resolveArg } from '#/container';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import type { MessageBus } from '../message-bus';
-import type { MessageBusProvider } from '../message-bus-provider';
-import { BroadcastChannelMessageBus } from './broadcast-channel-message-bus';
+import { injectable, resolveArg } from '#/container/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import type { MessageBusProvider } from '../message-bus-provider.js';
+import type { MessageBus } from '../message-bus.js';
+import { BroadcastChannelMessageBus } from './broadcast-channel-message-bus.js';
 
 @injectable()
 export class BroadcastChannelMessageBusProvider implements MessageBusProvider {

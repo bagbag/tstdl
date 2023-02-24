@@ -1,6 +1,6 @@
-import { inject, singleton } from '#/container';
-import type { TemplateResolver } from './template.resolver';
-import { TEMPLATE_RESOLVERS } from './tokens';
+import { inject, singleton } from '#/container/index.js';
+import type { TemplateResolver } from './template.resolver.js';
+import { TEMPLATE_RESOLVERS } from './tokens.js';
 
 @singleton()
 export class TemplateResolverProvider {

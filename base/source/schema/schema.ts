@@ -1,15 +1,15 @@
-import { JsonPath } from '#/json-path';
-import type { ObjectLiteral, Record } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { noop } from '#/utils/noop';
-import { objectKeys } from '#/utils/object/object';
-import { differenceSets } from '#/utils/set';
-import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards';
-import { booleanCoercer, dateCoercer, numberCoercer, regExpCoercer, stringCoercer, uint8ArrayCoercer } from './coercers';
-import { SchemaError } from './schema.error';
-import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types';
-import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol, valueSchema } from './types';
-import { getArrayItemSchema, getSchemaTypeNames, getSchemaValueTypes, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils';
+import { JsonPath } from '#/json-path/index.js';
+import type { ObjectLiteral, Record } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { noop } from '#/utils/noop.js';
+import { objectKeys } from '#/utils/object/object.js';
+import { differenceSets } from '#/utils/set.js';
+import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
+import { booleanCoercer, dateCoercer, numberCoercer, regExpCoercer, stringCoercer, uint8ArrayCoercer } from './coercers/index.js';
+import { SchemaError } from './schema.error.js';
+import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types/index.js';
+import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol, valueSchema } from './types/index.js';
+import { getArrayItemSchema, getSchemaTypeNames, getSchemaValueTypes, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils/index.js';
 
 export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T> | TypeSchema<T>;
 export type SchemaTestable<T = any> = Schema<T> | ValueType<T>;

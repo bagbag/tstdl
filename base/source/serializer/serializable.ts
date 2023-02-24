@@ -1,6 +1,6 @@
-import type { AbstractConstructor, Record, Type, TypedOmit } from '#/types';
-import { isDefined, isFunction } from '#/utils/type-guards';
-import { registerDefaultSerializers } from './handlers';
+import type { AbstractConstructor, Record, Type, TypedOmit } from '#/types.js';
+import { isDefined, isFunction } from '#/utils/type-guards.js';
+import { registerDefaultSerializers } from './handlers/register.js';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Serializable = {

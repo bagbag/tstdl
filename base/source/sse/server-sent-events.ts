@@ -1,4 +1,4 @@
-import { isDefined } from '#/utils/type-guards';
+import { isDefined } from '#/utils/type-guards.js';
 
 export type SeverSentEventsEventBase<Data> = {
   /**

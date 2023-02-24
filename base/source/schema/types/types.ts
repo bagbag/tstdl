@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
-import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types';
-import { filterObject, hasOwnProperty, objectEntries, objectKeys } from '#/utils/object/object';
-import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards';
-import type { NormalizedSchema, Schema, SchemaTestable } from '../schema';
-import type { SchemaError } from '../schema.error';
-import type { SchemaArrayConstraint } from './schema-array-constraint';
-import type { SchemaValueCoercer } from './schema-value-coercer';
-import type { SchemaValueConstraint } from './schema-value-constraint';
-import type { SchemaValueTransformer } from './schema-value-transformer';
+import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types.js';
+import { filterObject, hasOwnProperty, objectEntries, objectKeys } from '#/utils/object/object.js';
+import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards.js';
+import type { NormalizedSchema, Schema, SchemaTestable } from '../schema.js';
+import type { SchemaError } from '../schema.error.js';
+import type { SchemaArrayConstraint } from './schema-array-constraint.js';
+import type { SchemaValueCoercer } from './schema-value-coercer.js';
+import type { SchemaValueConstraint } from './schema-value-constraint.js';
+import type { SchemaValueTransformer } from './schema-value-transformer.js';
 
 declare const schemaOutputTypeSymbol: unique symbol;
 

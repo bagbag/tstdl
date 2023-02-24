@@ -1,2 +1,2 @@
-export * from './thread-pool';
-export * from './thread-worker';
+export * from './thread-pool.js';
+export * from './thread-worker.js';

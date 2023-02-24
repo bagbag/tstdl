@@ -1,10 +1,10 @@
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
-import type { HttpMethod } from '#/http/types';
-import type { SchemaOutput, SchemaTestable } from '#/schema';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types';
-import { objectEntries } from '#/utils/object/object';
-import { isFunction } from '#/utils/type-guards';
-import type { ApiGatewayMiddlewareContext } from './server';
+import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
+import type { HttpMethod } from '#/http/types.js';
+import type { SchemaOutput, SchemaTestable } from '#/schema/index.js';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isFunction } from '#/utils/type-guards.js';
+import type { ApiGatewayMiddlewareContext } from './server/index.js';
 
 export type ApiRegistrationOptions = {
   name?: string,

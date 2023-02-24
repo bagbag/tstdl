@@ -1,7 +1,7 @@
 // https://mathiasbynens.be/notes/globalthis
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { StringMap } from './types';
+import type { StringMap } from './types.js';
 
 declare const __magic__: { globalThis: any };
 

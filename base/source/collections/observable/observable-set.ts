@@ -1,5 +1,5 @@
-import type { ObservableCollection } from './observable-collection';
-import { ObservableCollectionBase } from './observable-collection-base';
+import type { ObservableCollection } from './observable-collection.js';
+import { ObservableCollectionBase } from './observable-collection-base.js';
 
 export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<T>> implements Set<T>, ObservableCollection<T> {
   private readonly backingSet: Set<T>;

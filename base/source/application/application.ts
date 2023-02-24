@@ -1,19 +1,19 @@
-import { container, resolveArg, singleton } from '#/container';
-import { disposeInstances } from '#/core';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import type { Module } from '#/module/module';
-import { ModuleState } from '#/module/module';
-import { ModuleBase } from '#/module/module-base';
-import type { FunctionModuleFunction } from '#/module/modules/function.module';
-import { FunctionModule } from '#/module/modules/function.module';
-import { initializeSignals, shutdownToken } from '#/process-shutdown';
-import { DeferredPromise } from '#/promise/deferred-promise';
-import type { OneOrMany, Type } from '#/types';
-import { mapAsync } from '#/utils/async-iterable-helpers/map';
-import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array';
-import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { isUndefined } from '#/utils/type-guards';
+import { container, resolveArg, singleton } from '#/container/index.js';
+import { disposeInstances } from '#/core.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import type { Module } from '#/module/module.js';
+import { ModuleState } from '#/module/module.js';
+import { ModuleBase } from '#/module/module-base.js';
+import type { FunctionModuleFunction } from '#/module/modules/function.module.js';
+import { FunctionModule } from '#/module/modules/function.module.js';
+import { initializeSignals, shutdownToken } from '#/process-shutdown.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
+import type { OneOrMany, Type } from '#/types.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { isUndefined } from '#/utils/type-guards.js';
 
 /**
  * TODO

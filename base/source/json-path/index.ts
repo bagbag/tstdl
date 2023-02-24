@@ -1,1 +1,1 @@
-export * from './json-path';
+export * from './json-path.js';

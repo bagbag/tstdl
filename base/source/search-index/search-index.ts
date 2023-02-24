@@ -1,7 +1,7 @@
-import type { Entity } from '#/database';
-import type { Query, QueryOptions } from '#/database/query';
-import { isDefined } from '#/utils/type-guards';
-import type { SearchResult, SearchResultItem } from './search-result';
+import type { Entity } from '#/database/entity.js';
+import type { Query, QueryOptions } from '#/database/query.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { SearchResult, SearchResultItem } from './search-result.js';
 
 export type SearchCursorOptions<T extends Entity> = QueryOptions<T> & {
   batchSize?: number

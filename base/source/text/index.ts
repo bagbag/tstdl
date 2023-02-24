@@ -1,3 +1,3 @@
-export * from './dynamic-text.model';
-export * from './localizable-text.model';
-export * from './localization.service';
+export * from './dynamic-text.model.js';
+export * from './localizable-text.model.js';
+export * from './localization.service.js';

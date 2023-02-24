@@ -1,2 +1,2 @@
-export * from './notification-channel-job.model';
-export * from './notification.model';
+export * from './notification-channel-job.model.js';
+export * from './notification.model.js';

@@ -1,6 +1,6 @@
-import type { OneOrMany } from '#/types';
-import type { MailAddress } from './mail-address.model';
-import type { MailContent } from './mail-content.model';
+import type { OneOrMany } from '#/types.js';
+import type { MailAddress } from './mail-address.model.js';
+import type { MailContent } from './mail-content.model.js';
 
 export type MailData = {
   content: MailContent,

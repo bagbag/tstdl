@@ -1,9 +1,9 @@
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
-import type { Logger } from '#/logger';
-import type { Type } from '#/types';
-import type { AsyncMiddlewareNext } from '#/utils/middleware';
-import { handleApiError } from '../error-handler';
-import type { ApiGatewayMiddleware } from '../gateway';
+import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
+import type { Logger } from '#/logger/index.js';
+import type { Type } from '#/types.js';
+import type { AsyncMiddlewareNext } from '#/utils/middleware.js';
+import { handleApiError } from '../error-handler.js';
+import type { ApiGatewayMiddleware } from '../gateway.js';
 
 export function catchErrorMiddleware(supressedErrors: Set<Type<Error>>, logger: Logger): ApiGatewayMiddleware {
   // eslint-disable-next-line @typescript-eslint/no-shadow

@@ -1,6 +1,6 @@
-import { singleton } from '#/container';
-import { HttpClient } from '#/http/client';
-import { object, optional, Schema, string } from '#/schema';
+import { singleton } from '#/container/index.js';
+import { HttpClient } from '#/http/client/index.js';
+import { object, optional, Schema, string } from '#/schema/index.js';
 
 export type OidcConfiguration = {
   authorizationEndpoint: string,

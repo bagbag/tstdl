@@ -1,5 +1,5 @@
-import { IterableWeakMap } from '#/data-structures';
-import { MultiKeyMap } from '#/data-structures/multi-key-map';
+import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
+import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 
 export type MemoizeOptions = {
   /** Use WeakMap instead of Map for caching. Can be used with object parameters only */

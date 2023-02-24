@@ -1,14 +1,14 @@
-import type { Injectable } from '#/container';
-import { forwardArg, resolveArgumentType, singleton } from '#/container';
-import type { MaybeNewEntity } from '#/database';
-import { getNewId } from '#/database';
-import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo';
-import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo';
-import { Logger } from '#/logger';
-import { isUndefined } from '#/utils/type-guards';
+import type { Injectable } from '#/container/index.js';
+import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import type { MaybeNewEntity } from '#/database/index.js';
+import { getNewId } from '#/database/index.js';
+import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
+import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { Logger } from '#/logger/index.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import type { Binary } from 'mongodb';
-import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../../models';
-import { AuthenticationCredentialsRepository } from '../authentication-credentials.repository';
+import type { AuthenticationCredentials, NewAuthenticationCredentials } from '../../models/index.js';
+import { AuthenticationCredentialsRepository } from '../authentication-credentials.repository.js';
 
 export type MongoAuthenticationCredentialsRepositoryArgument = CollectionArgument<AuthenticationCredentials>;
 

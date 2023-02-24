@@ -1,6 +1,6 @@
-import type { EnumerationObject, EnumerationValue } from '#/types';
-import { enumValueName } from '#/utils/enum';
-import { CustomError } from './custom.error';
+import type { EnumerationObject, EnumerationValue } from '#/types.js';
+import { enumValueName } from '#/utils/enum.js';
+import { CustomError } from './custom.error.js';
 
 export class NotSupportedError extends CustomError {
   static readonly errorName = 'NotSupportedError';

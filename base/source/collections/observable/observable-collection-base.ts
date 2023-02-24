@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import { firstValueFrom, distinctUntilChanged, filter, map, merge, share, shareReplay, skip, startWith, Subject } from 'rxjs';
-import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection';
+import type { ObservableCollection, ObservableCollectionChangeEvent } from './observable-collection.js';
 
 export abstract class ObservableCollectionBase<T, TThis extends ObservableCollection<T>> implements ObservableCollection<T> {
   private readonly clearSubject: Subject<void>;

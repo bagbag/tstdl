@@ -1,4 +1,4 @@
-import { Property } from '#/schema';
+import { Property } from '#/schema/index.js';
 
 export class AuthenticationSession {
   @Property()

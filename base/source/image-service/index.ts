@@ -1,1 +1,1 @@
-export * from './image-service';
+export * from './image-service.js';

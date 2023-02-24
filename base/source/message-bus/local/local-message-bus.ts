@@ -1,12 +1,12 @@
-import { injectable } from '#/container';
-import { Logger } from '#/logger';
-import { assertStringPass } from '#/utils/type-guards';
+import { injectable } from '#/container/index.js';
+import { Logger } from '#/logger/index.js';
+import { assertStringPass } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { filter, map, Subject } from 'rxjs';
-import type { MessageBus } from '../message-bus';
-import { MessageBusBase } from '../message-bus-base';
-import { LocalMessageBusProvider } from './local-message-bus-provider';
-import type { LocalMessageBusItem } from './types';
+import { MessageBusBase } from '../message-bus-base.js';
+import type { MessageBus } from '../message-bus.js';
+import { LocalMessageBusProvider } from './local-message-bus-provider.js';
+import type { LocalMessageBusItem } from './types.js';
 
 @injectable({
   provider: {

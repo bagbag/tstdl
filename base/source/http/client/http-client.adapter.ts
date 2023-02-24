@@ -1,5 +1,5 @@
-import type { HttpClientRequest } from './http-client-request';
-import type { HttpClientResponse } from './http-client-response';
+import type { HttpClientRequest } from './http-client-request.js';
+import type { HttpClientResponse } from './http-client-response.js';
 
 export abstract class HttpClientAdapter {
   /**

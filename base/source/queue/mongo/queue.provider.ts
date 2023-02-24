@@ -1,14 +1,14 @@
-import type { Injectable } from '#/container';
-import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container';
-import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo';
-import type { LockProviderArgument } from '#/lock';
-import { LockProvider } from '#/lock';
-import { MessageBusProvider } from '#/message-bus';
-import type { QueueConfig } from '#/queue';
-import { Queue, QueueProvider } from '#/queue';
-import type { MongoJob } from './job';
-import { MongoJobRepository } from './mongo-job.repository';
-import { MongoQueue } from './queue';
+import type { Injectable } from '#/container/index.js';
+import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo/index.js';
+import type { LockProviderArgument } from '#/lock/index.js';
+import { LockProvider } from '#/lock/index.js';
+import { MessageBusProvider } from '#/message-bus/index.js';
+import type { QueueConfig } from '#/queue/index.js';
+import { Queue, QueueProvider } from '#/queue/index.js';
+import type { MongoJob } from './job.js';
+import { MongoJobRepository } from './mongo-job.repository.js';
+import { MongoQueue } from './queue.js';
 
 let defaultJobRepositoryConfig: CollectionArgument<MongoJob>;
 

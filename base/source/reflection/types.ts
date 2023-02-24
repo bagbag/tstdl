@@ -1,6 +1,6 @@
-import type { AbstractConstructor, Constructor, Record } from '#/types';
+import type { AbstractConstructor, Constructor, Record } from '#/types.js';
 import type { UnionToIntersection } from 'type-fest';
-import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry';
+import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry.js';
 
 export type DecoratorType = 'class' | 'property' | 'accessor' | 'method' | 'parameter' | 'methodParameter' | 'constructorParameter';
 export type DecoratorHandler<T extends DecoratorType = DecoratorType> = (data: DecoratorData<T>, metadata: DecoratorMetadata<T>, originalArguments: Parameters<DecoratorUnion<T>>) => DecoratorHandlerReturnType<T>;

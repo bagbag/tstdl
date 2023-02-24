@@ -1,7 +1,7 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { assert as assertHelper } from '../type-guards';
-import { isAsyncIterable } from './is-async-iterable';
-import type { AsyncPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { assert as assertHelper } from '../type-guards.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import type { AsyncPredicate } from './types.js';
 
 export function assertAsync<T, TPredicate extends T = T>(iterable: AnyIterable<T>, predicate: AsyncPredicate<T>): AsyncIterableIterator<TPredicate> {
   return isAsyncIterable(iterable)

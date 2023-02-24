@@ -1,4 +1,4 @@
-import type { JsonObject } from '#/types';
+import type { JsonObject } from '#/types.js';
 
 export type Position = [longitude: number, latitude: number, elevation?: number];
 

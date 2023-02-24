@@ -1,4 +1,4 @@
-import type { Entity } from '#/database';
+import type { Entity } from '#/database/index.js';
 
 export type MongoKeyValue<T = unknown> = Entity & {
   module: string,

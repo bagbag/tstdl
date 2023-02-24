@@ -1,6 +1,6 @@
-import { concat } from './concat';
-import { map } from './map';
-import type { IteratorFunction } from './types';
+import { concat } from './concat.js';
+import { map } from './map.js';
+import type { IteratorFunction } from './types.js';
 
 export function* difference<T>(baseIterable: Iterable<T>, iterable: Iterable<T>, selector: IteratorFunction<T, any> = (item) => item): IterableIterator<T> {
   const diffItems = map(iterable, selector);

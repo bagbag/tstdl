@@ -1,4 +1,4 @@
-import { SchemaError } from '#/schema';
+import { SchemaError } from '#/schema/index.js';
 
 export type SerializedSchemaError = {
   message: string,

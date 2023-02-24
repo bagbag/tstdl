@@ -1,8 +1,8 @@
-import { container } from '#/container';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import { HttpClientOptions } from './http-client-options';
-import { HttpClientAdapter } from './http-client.adapter';
+import { container } from '#/container/index.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { HttpClientOptions } from './http-client-options.js';
+import { HttpClientAdapter } from './http-client.adapter.js';
 
 export type HttpClientModuleConfig = HttpClientOptions & {
   adapter?: Type<HttpClientAdapter>

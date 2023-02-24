@@ -1,4 +1,4 @@
-import type { ElasticBooleanQuery, ElasticQuery } from '../model';
+import type { ElasticBooleanQuery, ElasticQuery } from '../model/elastic-query.js';
 
 export class BoolQueryBuilder {
   private readonly _must: ElasticQuery[];

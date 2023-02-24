@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
-import type { AsyncRetryPredicate } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import type { AsyncRetryPredicate } from './types.js';
 
 export function retryAsync<T>(iterable: AnyIterable<T>, throwOnRetryFalse: boolean, predicate: AsyncRetryPredicate<T>): AsyncIterableIterator<T> {
   return isAsyncIterable(iterable)

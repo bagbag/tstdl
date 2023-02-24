@@ -1,9 +1,9 @@
-import type { Record, TypedOmit, UndefinableJson } from '#/types';
-import type { ErrorExtraInfo } from '#/utils/format-error';
-import { propertyNameOf } from '#/utils/object/property-name';
-import { isDefined, isNotString, isString } from '#/utils/type-guards';
-import { CustomError } from '../error';
-import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, HttpClientResponseObject } from './client';
+import type { Record, TypedOmit, UndefinableJson } from '#/types.js';
+import type { ErrorExtraInfo } from '#/utils/format-error.js';
+import { propertyNameOf } from '#/utils/object/property-name.js';
+import { isDefined, isNotString, isString } from '#/utils/type-guards.js';
+import { CustomError } from '../error/custom.error.js';
+import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, HttpClientResponseObject } from './client/index.js';
 
 export enum HttpErrorReason {
   Unknown = 'Unknown',

@@ -1,6 +1,6 @@
-import { container } from '#/container';
-import { HttpServer } from '../http-server';
-import { NodeHttpServer } from './node-http-server';
+import { container } from '#/container/index.js';
+import { HttpServer } from '../http-server.js';
+import { NodeHttpServer } from './node-http-server.js';
 
 /**
  * registers {@link HttpServer} in global container

@@ -1,8 +1,8 @@
-import { container, inject, injectionToken, singleton } from '#/container';
-import { ObjectStorage, ObjectStorageProvider } from '#/object-storage';
-import { assertDefinedPass, assertStringPass, isDefined } from '#/utils/type-guards';
+import { container, inject, injectionToken, singleton } from '#/container/index.js';
+import { ObjectStorage, ObjectStorageProvider } from '#/object-storage/index.js';
+import { assertDefinedPass, assertStringPass, isDefined } from '#/utils/type-guards.js';
 import { Client } from 'minio';
-import { S3ObjectStorage } from './s3.object-storage';
+import { S3ObjectStorage } from './s3.object-storage.js';
 
 export const S3_OBJECT_STORAGE_PROVIDER_CONFIG = injectionToken<S3ObjectStorageProviderConfig>('S3_OBJECT_STORAGE_PROVIDER_CONFIG');
 

@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import { createSchemaValueTransformerDecorator } from '../decorators';
-import type { TransformResult } from '../types';
-import { SchemaValueTransformer, typeSchema } from '../types';
+import type { Decorator } from '#/reflection/index.js';
+import { createSchemaValueTransformerDecorator } from '../decorators/index.js';
+import type { TransformResult } from '../types/index.js';
+import { SchemaValueTransformer, typeSchema } from '../types/index.js';
 
 export class UppercaseTransformer extends SchemaValueTransformer<string, string> {
   readonly sourceType = String;

@@ -1,9 +1,9 @@
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import { CancellationToken } from '#/utils/cancellation-token';
-import { isArray, isDefined, isUndefined } from '#/utils/type-guards';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
+import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race, Subject } from 'rxjs';
-import { Collection } from './collection';
+import { Collection } from './collection.js';
 
 export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   private readonly maxBufferSizeSubject: BehaviorSubject<number | undefined>;

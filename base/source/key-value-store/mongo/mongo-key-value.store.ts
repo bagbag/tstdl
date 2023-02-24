@@ -1,13 +1,13 @@
-import { injectArg, singleton } from '#/container';
-import { getNewId } from '#/database';
-import type { UpdateFilter } from '#/database/mongo';
-import { KeyValueStore } from '#/key-value-store';
-import type { StringMap } from '#/types';
-import { currentTimestamp } from '#/utils/date-time';
-import { objectEntries } from '#/utils/object/object';
-import { assertStringPass, isUndefined } from '#/utils/type-guards';
-import type { MongoKeyValue } from './mongo-key-value.model';
-import { MongoKeyValueRepository } from './mongo-key-value.repository';
+import { injectArg, singleton } from '#/container/index.js';
+import { getNewId } from '#/database/index.js';
+import type { UpdateFilter } from '#/database/mongo/index.js';
+import { KeyValueStore } from '#/key-value-store/index.js';
+import type { StringMap } from '#/types.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { assertStringPass, isUndefined } from '#/utils/type-guards.js';
+import type { MongoKeyValue } from './mongo-key-value.model.js';
+import { MongoKeyValueRepository } from './mongo-key-value.repository.js';
 
 @singleton()
 export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> {

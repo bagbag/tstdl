@@ -1,7 +1,7 @@
 
-import type { TypedArray } from '#/types';
-import { decodeBase64, encodeBase64 } from '#/utils/base64';
-import { toArrayBuffer } from '#/utils/binary';
+import type { TypedArray } from '#/types.js';
+import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
+import { toArrayBuffer } from '#/utils/binary.js';
 
 interface TypedArrayConstructor {
   readonly BYTES_PER_ELEMENT: number;

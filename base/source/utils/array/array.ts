@@ -1,5 +1,5 @@
-import { randomInt } from '../math';
-import { isArray, isDefined } from '../type-guards';
+import { randomInt } from '../math.js';
+import { isArray, isDefined } from '../type-guards.js';
 
 /**
  * Returns value as is, if it is an array, otherwise puts the single value into an array.

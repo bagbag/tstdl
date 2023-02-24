@@ -1,4 +1,4 @@
-import type { IteratorFunction } from './types';
+import type { IteratorFunction } from './types.js';
 
 export function groupToSingleMap<TIn, TGroup>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, TGroup>): Map<TGroup, TIn> {
   const map = new Map<TGroup, TIn>();

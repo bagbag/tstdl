@@ -1,16 +1,16 @@
-import { inject, optional, resolveArg, singleton } from '#/container';
-import type { LoggerArgument } from '#/logger';
-import { Logger } from '#/logger';
-import { TemplateService } from '#/templates';
-import type { TypedOmit } from '#/types';
-import { currentTimestamp } from '#/utils/date-time';
-import { formatError } from '#/utils/format-error';
-import { isDefined } from '#/utils/type-guards';
-import { MailLogRepository } from './mail-log.repository';
-import { MailClient } from './mail.client';
-import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models';
-import { DefaultMailData } from './models';
-import { MAIL_DEFAULT_DATA } from './tokens';
+import { inject, optional, resolveArg, singleton } from '#/container/index.js';
+import type { LoggerArgument } from '#/logger/index.js';
+import { Logger } from '#/logger/index.js';
+import { TemplateService } from '#/templates/template.service.js';
+import type { TypedOmit } from '#/types.js';
+import { currentTimestamp } from '#/utils/date-time.js';
+import { formatError } from '#/utils/format-error.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { MailLogRepository } from './mail-log.repository.js';
+import { MailClient } from './mail.client.js';
+import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
+import { DefaultMailData } from './models/index.js';
+import { MAIL_DEFAULT_DATA } from './tokens.js';
 
 @singleton()
 export class MailService {

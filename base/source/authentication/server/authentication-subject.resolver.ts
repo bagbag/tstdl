@@ -1,4 +1,4 @@
-import { Class } from '#/reflection';
+import { Class } from '#/reflection/index.js';
 
 /**
  * Resolve a provided subject to the actual subject used for authentication.

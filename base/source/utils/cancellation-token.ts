@@ -1,8 +1,8 @@
-import { noopOperator } from '#/rxjs/noop';
+import { noopOperator } from '#/rxjs/noop.js';
 import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, map, skip, take } from 'rxjs';
-import { noop } from './noop';
-import { isBoolean, isUndefined } from './type-guards';
+import { noop } from './noop.js';
+import { isBoolean, isUndefined } from './type-guards.js';
 
 export type ConnectConfig = {
   /**

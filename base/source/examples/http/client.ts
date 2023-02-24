@@ -1,6 +1,6 @@
-import { container } from '#/container';
-import { HttpClient } from '#/http';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter';
+import { container } from '#/container/index.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { HttpClient } from '#/http/client/index.js';
 
 configureUndiciHttpClientAdapter();
 

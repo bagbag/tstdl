@@ -1,4 +1,4 @@
-import type { List } from './list';
+import type { List } from './list.js';
 
 export interface SortedList<T extends TComparator, TComparator = T> extends List<T> {
   getByComparison(value: TComparator): T | undefined;

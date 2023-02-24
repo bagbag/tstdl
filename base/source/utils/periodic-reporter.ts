@@ -1,8 +1,8 @@
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
-import { DeferredPromise } from '../promise/deferred-promise';
-import { CancellationToken } from './cancellation-token';
-import { cancelableTimeout } from './timing';
+import { DeferredPromise } from '../promise/deferred-promise.js';
+import { CancellationToken } from './cancellation-token.js';
+import { cancelableTimeout } from './timing.js';
 
 export class PeriodicReporter {
   private readonly reportSubject: Subject<number>;

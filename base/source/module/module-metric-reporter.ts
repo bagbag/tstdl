@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 
-import { Enumerable } from '#/enumerable';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { MetricAggregation, MetricAggregationOptions } from '#/utils/moving-metric';
-import { MovingMetric } from '#/utils/moving-metric';
-import { cancelableTimeout } from '#/utils/timing';
-import type { ModuleMetric } from './module';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { reduce } from '#/utils/iterable-helpers/reduce.js';
+import type { MetricAggregation, MetricAggregationOptions } from '#/utils/moving-metric.js';
+import { MovingMetric } from '#/utils/moving-metric.js';
+import { cancelableTimeout } from '#/utils/timing.js';
+import type { ModuleMetric } from './module.js';
 
 export type MetricReport<Aggregation extends MetricAggregation> = {
   displayName: string,
@@ -83,12 +83,11 @@ export class ModuleMetricReporter {
   }
 
   private updateNameLengths(): void {
-    this.longestGroupName = Enumerable.from(this.metricGroups)
-      .reduce((longest, { groupName }) => Math.max(longest, groupName.length), 0);
+    this.longestGroupName = reduce(this.metricGroups, (longest, { groupName }) => Math.max(longest, groupName.length), 0);
 
-    this.longestDisplayName = Enumerable.from(this.metricGroups)
-      .mapMany((group) => group.registrations)
-      .mapMany(({ reports }) => reports)
-      .reduce((longest, { displayName }) => Math.max(longest, displayName.length), 0);
+    this.longestDisplayName = this.metricGroups
+      .flatMap((group) => group.registrations)
+      .flatMap((registration) => registration.reports)
+      .reduce((longest, report) => Math.max(longest, report.displayName.length), 0);
   }
 }

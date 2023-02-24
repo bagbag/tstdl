@@ -1,3 +1,3 @@
-export * from './controller';
-export * from './distributed-loop';
-export * from './provider';
+export * from './controller.js';
+export * from './distributed-loop.js';
+export * from './provider.js';

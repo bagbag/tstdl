@@ -1,13 +1,13 @@
-import { Application } from '#/application';
-import { container } from '#/container';
-import { configureTstdl } from '#/core';
-import { configureTemplates, TemplateService } from '#/templates';
-import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider';
-import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer';
-import { JsxTemplateRenderer } from '#/templates/renderers/jsx.template-renderer';
-import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver';
-import { JsxTemplateResolver } from '#/templates/resolvers/jsx.template-resolver';
-import { resolve } from 'path';
+import { Application } from '#/application/application.js';
+import { container } from '#/container/index.js';
+import { configureTstdl } from '#/core.js';
+import { configureTemplates, TemplateService } from '#/templates/index.js';
+import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider.js';
+import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
+import { JsxTemplateRenderer } from '#/templates/renderers/jsx.template-renderer.js';
+import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
+import { JsxTemplateResolver } from '#/templates/resolvers/jsx.template-resolver.js';
+import { resolve } from 'node:path';
 
 configureTstdl();
 

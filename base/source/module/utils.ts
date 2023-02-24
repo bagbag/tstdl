@@ -1,5 +1,5 @@
-import type { Logger } from '#/logger';
-import type { Module } from './module';
+import type { Logger } from '#/logger/index.js';
+import type { Module } from './module.js';
 
 export async function runModules(modules: Module[], logger?: Logger): Promise<void> {
   const promises = modules.map(async (module) => {

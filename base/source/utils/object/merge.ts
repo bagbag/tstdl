@@ -1,8 +1,8 @@
-import type { Record } from '#/types';
-import { compareByValue } from '../comparison';
-import { arrayEquals } from '../equals';
-import { isArray, isPrimitive, isUndefined } from '../type-guards';
-import { hasOwnProperty, objectEntries } from './object';
+import type { Record } from '#/types.js';
+import { compareByValue } from '../comparison.js';
+import { arrayEquals } from '../equals.js';
+import { isArray, isPrimitive, isUndefined } from '../type-guards.js';
+import { hasOwnProperty, objectEntries } from './object.js';
 
 export type MergeObjectsOptions = {
   /**

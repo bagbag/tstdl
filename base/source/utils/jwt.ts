@@ -1,11 +1,11 @@
-import { InvalidTokenError } from '../error/invalid-token.error';
-import type { BinaryData, OneOrMany, StringMap } from '../types';
-import { toArray } from './array/array';
-import { decodeBase64Url, encodeBase64Url } from './base64';
-import type { HashAlgorithm, Key } from './cryptography';
-import { importHmacKey, sign } from './cryptography';
-import { encodeUtf8 } from './encoding';
-import { binaryEquals } from './equals';
+import { InvalidTokenError } from '../error/invalid-token.error.js';
+import type { BinaryData, OneOrMany, StringMap } from '../types.js';
+import { toArray } from './array/array.js';
+import { decodeBase64Url, encodeBase64Url } from './base64.js';
+import type { HashAlgorithm, Key } from './cryptography.js';
+import { importHmacKey, sign } from './cryptography.js';
+import { encodeUtf8 } from './encoding.js';
+import { binaryEquals } from './equals.js';
 
 export type JwtTokenAlgorithm = 'HS256' | 'HS384' | 'HS512';
 

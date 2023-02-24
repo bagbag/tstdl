@@ -1,4 +1,4 @@
-import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
+import type { QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types.js';
 
 export type ElasticQuery = QueryDslQueryContainer;
 

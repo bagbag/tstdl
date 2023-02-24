@@ -1,5 +1,5 @@
-import type { ObservableList, ObservableListIndexedEvent } from './observable-list';
-import { ObservableListBase } from './observable-list-base';
+import type { ObservableList, ObservableListIndexedEvent } from './observable-list.js';
+import { ObservableListBase } from './observable-list-base.js';
 
 export class ObservableArray<T> extends ObservableListBase<T, ObservableArray<T>> implements ObservableList<T> {
   backingArray: T[];

@@ -1,13 +1,13 @@
-import type { AsyncDisposable } from '#/disposable';
-import { disposeAsync } from '#/disposable';
-import { isNode } from '#/environment';
-import type { Logger } from '#/logger';
-import { Pool } from '#/pool';
-import { dynamicRequire } from '#/require';
-import type { RpcRemote } from '#/rpc';
-import { Rpc } from '#/rpc';
+import type { AsyncDisposable } from '#/disposable/index.js';
+import { disposeAsync } from '#/disposable/index.js';
+import { isNode } from '#/environment.js';
+import type { Logger } from '#/logger/index.js';
+import { Pool } from '#/pool/index.js';
+import { dynamicRequire } from '#/require.js';
+import type { RpcRemote } from '#/rpc/index.js';
+import { Rpc } from '#/rpc/index.js';
 import type * as NodeWorkerThreads from 'worker_threads';
-import type { ThreadWorker } from './thread-worker';
+import type { ThreadWorker } from './thread-worker.js';
 
 type ThreadPoolWorker = Worker | NodeWorkerThreads.Worker;
 

@@ -1,5 +1,5 @@
-import { Any, any, Class, object, Optional, Property } from '#/schema';
-import type { PickBy, Record, SimplifyObject } from '#/types';
+import { Any, any, Class, object, Optional, Property } from '#/schema/index.js';
+import type { PickBy, Record, SimplifyObject } from '#/types.js';
 
 @Class({ allowUnknownProperties: any() })
 export class TemplateField<Resolver extends string = string, Renderer extends string = string, Options = any> {

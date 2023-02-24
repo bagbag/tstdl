@@ -1,4 +1,4 @@
-import { objectKeys } from './object/object';
+import { objectKeys } from './object/object.js';
 
 export const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
   apply: true,

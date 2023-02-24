@@ -1,6 +1,6 @@
-import type { AsyncDisposable } from '#/disposable';
-import { disposeAsync } from '#/disposable';
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server';
+import type { AsyncDisposable } from '#/disposable/index.js';
+import { disposeAsync } from '#/disposable/index.js';
+import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
 
 export type HttpServerRequestContext<Context = unknown> = {
   request: HttpServerRequest,

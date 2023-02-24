@@ -1,7 +1,7 @@
-import { parseCookieString } from '#/cookie';
-import { lazyProperty } from '#/utils/object/lazy-property';
-import { isUndefined } from '#/utils/type-guards';
-import type { HttpHeaders } from './http-headers';
+import { parseCookieString } from '#/cookie/cookie.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
+import { isUndefined } from '#/utils/type-guards.js';
+import type { HttpHeaders } from './http-headers.js';
 
 export class CookieParser {
   private readonly cookies: Map<string, string>;

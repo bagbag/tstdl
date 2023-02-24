@@ -1,4 +1,4 @@
-import { NotSupportedError } from '#/error/not-supported.error';
+import { NotSupportedError } from '#/error/not-supported.error.js';
 
 /**
  * Generates a random value in interval [0, 1).

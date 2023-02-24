@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line */
 
-import { supportsBlob, supportsReadableStream } from '#/supports';
-import type { AbstractConstructor, TypedArray } from '#/types';
-import { AssertionError } from '../error/assertion.error';
+import { supportsBlob, supportsReadableStream } from '#/supports.js';
+import type { AbstractConstructor, TypedArray } from '#/types.js';
+import { AssertionError } from '../error/assertion.error.js';
 
 export type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
 export type InferIsNotType<ValueType, T> = T extends (value: any) => value is infer R ? Exclude<ValueType, R> : never;

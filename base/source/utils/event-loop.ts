@@ -1,8 +1,8 @@
-import type { Logger } from '../logger';
-import type { ReadonlyCancellationToken } from './cancellation-token';
-import { formatDuration } from './helpers';
-import { AggregationMode, PeriodicSampler } from './periodic-sampler';
-import { Timer } from './timer';
+import type { Logger } from '../logger/index.js';
+import type { ReadonlyCancellationToken } from './cancellation-token.js';
+import { formatDuration } from './helpers.js';
+import { AggregationMode, PeriodicSampler } from './periodic-sampler.js';
+import { Timer } from './timer.js';
 
 export async function measureEventLoopDelay(): Promise<number> {
   return new Promise<number>((resolve) => {

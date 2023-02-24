@@ -1,4 +1,4 @@
-import { Alphabet } from './alphabet';
+import { Alphabet } from './alphabet.js';
 
 const bufferSize = 20480;
 const bufferBypassThreshold = (bufferSize / 2) + 1;

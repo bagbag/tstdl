@@ -1,4 +1,4 @@
-import { Any, Array, Class, Property } from '#/schema';
+import { Any, Array, Class, Property } from '#/schema/index.js';
 
 export class Notification<T = unknown> {
   @Property()

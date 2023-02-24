@@ -1,3 +1,3 @@
-export * from './broadcast-channel-message-bus';
-export * from './broadcast-channel-message-bus-provider';
-export * from './module';
+export * from './broadcast-channel-message-bus-provider.js';
+export * from './broadcast-channel-message-bus.js';
+export * from './module.js';

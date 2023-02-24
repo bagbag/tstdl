@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { JsonPath } from '#/json-path/json-path';
-import type { Decorator } from '#/reflection';
-import { createSchemaArrayConstraintDecorator } from '../decorators';
-import { SchemaError } from '../schema.error';
-import { SchemaArrayConstraint } from '../types/schema-array-constraint';
-import type { ConstraintContext, ConstraintResult } from '../types/types';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { Decorator } from '#/reflection/index.js';
+import { createSchemaArrayConstraintDecorator } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
+import { SchemaArrayConstraint } from '../types/schema-array-constraint.js';
+import type { ConstraintContext, ConstraintResult } from '../types/types.js';
 
 export class ArrayMaximumLengthConstraint extends SchemaArrayConstraint {
   private readonly maximumLength: number;

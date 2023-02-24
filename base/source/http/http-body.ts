@@ -1,9 +1,9 @@
-import type { UndefinableJson } from '#/types';
-import type { AnyIterable } from '#/utils/any-iterable-iterator';
-import { isNotNullOrUndefined, isNullOrUndefined } from '#/utils/type-guards';
-import type { HttpHeaders } from './http-headers';
-import type { ReadBodyOptions } from './utils';
-import { readBody, readBodyAsBinaryStream, readBodyAsBuffer, readBodyAsJson, readBodyAsStream, readBodyAsText, readBodyAsTextStream } from './utils';
+import type { UndefinableJson } from '#/types.js';
+import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
+import { isNotNullOrUndefined, isNullOrUndefined } from '#/utils/type-guards.js';
+import type { HttpHeaders } from './http-headers.js';
+import type { ReadBodyOptions } from './utils.js';
+import { readBody, readBodyAsBinaryStream, readBodyAsBuffer, readBodyAsJson, readBodyAsStream, readBodyAsText, readBodyAsTextStream } from './utils.js';
 
 export type HttpBodySource = undefined | Uint8Array | Blob | AnyIterable<Uint8Array> | ReadableStream<Uint8Array>;
 

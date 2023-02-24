@@ -1,6 +1,6 @@
-import { singleton } from '#/container';
-import { LockProvider } from '#/lock';
-import { DistributedLoop } from './distributed-loop';
+import { singleton } from '#/container/index.js';
+import { LockProvider } from '#/lock/index.js';
+import { DistributedLoop } from './distributed-loop.js';
 
 @singleton()
 export class DistributedLoopProvider {

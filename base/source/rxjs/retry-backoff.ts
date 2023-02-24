@@ -1,5 +1,5 @@
-import type { BackoffOptions } from '#/utils/backoff';
-import { BackoffHelper } from '#/utils/backoff';
+import type { BackoffOptions } from '#/utils/backoff.js';
+import { BackoffHelper } from '#/utils/backoff.js';
 import type { MonoTypeOperatorFunction, Observable, ObservableInput } from 'rxjs';
 import { delayWhen, from, of, retryWhen, scan, tap, timer } from 'rxjs';
 

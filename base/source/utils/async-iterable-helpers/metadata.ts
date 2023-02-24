@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import type { IterableItemMetadata } from '../iterable-helpers/types';
-import { isAsyncIterable } from './is-async-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import type { IterableItemMetadata } from '../iterable-helpers/types.js';
+import { isAsyncIterable } from './is-async-iterable.js';
 
 export function metadataAsync<T>(iterable: AnyIterable<T>): AsyncIterableIterator<IterableItemMetadata<T>> {
   return (isAsyncIterable(iterable))

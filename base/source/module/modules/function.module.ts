@@ -1,6 +1,6 @@
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { Module } from '../module';
-import { ModuleBase } from '../module-base';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import type { Module } from '../module.js';
+import { ModuleBase } from '../module-base.js';
 
 export type FunctionModuleFunction = (cancellationToken: ReadonlyCancellationToken) => void | Promise<void>;
 

@@ -1,10 +1,10 @@
-import { container } from '#/container';
-import type { Type } from '#/types';
-import { isDefined } from '#/utils/type-guards';
-import { ensureApiController } from './api-controller';
-import { ApiRequestTokenProvider } from './api-request-token.provider';
-import type { ApiGatewayOptions } from './gateway';
-import { API_MODULE_OPTIONS } from './tokens';
+import { container } from '#/container/index.js';
+import type { Type } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { ensureApiController } from './api-controller.js';
+import { ApiRequestTokenProvider } from './api-request-token.provider.js';
+import type { ApiGatewayOptions } from './gateway.js';
+import { API_MODULE_OPTIONS } from './tokens.js';
 
 export type ApiModuleOptions = {
   controllers: Type[],

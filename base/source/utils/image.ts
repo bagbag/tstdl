@@ -1,7 +1,7 @@
-import { AssertionError } from '#/error/assertion.error';
+import { AssertionError } from '#/error/assertion.error.js';
 import { firstValueFrom, fromEvent, map, race, switchMap, throwError } from 'rxjs';
-import { FactoryMap } from './factory-map';
-import { assertNotNullPass, isFunction, isNull } from './type-guards';
+import { FactoryMap } from './factory-map.js';
+import { assertNotNullPass, isFunction, isNull } from './type-guards.js';
 
 const supportedImageDecoders = new FactoryMap<string, Promise<boolean>>(async (dataUrl) => _canDecodeImage(dataUrl));
 const supportedImageEncoders = new FactoryMap<string, boolean>((mimeType) => _canEncodeImage(mimeType));

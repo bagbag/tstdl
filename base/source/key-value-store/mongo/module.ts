@@ -1,10 +1,10 @@
-import { container } from '#/container';
-import type { MongoRepositoryConfig } from '#/database/mongo';
-import { KeyValueStoreProvider } from '../key-value-store.provider';
-import { KeyValueStore } from '../key-value.store';
-import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider';
-import type { MongoKeyValue } from './mongo-key-value.model';
-import { MongoKeyValueStore } from './mongo-key-value.store';
+import { container } from '#/container/index.js';
+import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { KeyValueStoreProvider } from '../key-value-store.provider.js';
+import { KeyValueStore } from '../key-value.store.js';
+import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider.js';
+import type { MongoKeyValue } from './mongo-key-value.model.js';
+import { MongoKeyValueStore } from './mongo-key-value.store.js';
 
 export type MongoKeyValueStoreModuleConfig = {
   defaultKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined

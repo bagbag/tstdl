@@ -1,5 +1,5 @@
-import { Class } from '#/reflection';
-import type { Record } from '#/types';
+import { Class } from '#/reflection/index.js';
+import type { Record } from '#/types.js';
 
 @Class()
 export abstract class AuthenticationTokenPayloadProvider<AdditionalTokenPayload = Record<never>, AuthenticationData = void> {

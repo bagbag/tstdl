@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 import { filter, firstValueFrom } from 'rxjs';
-import type { RpcMessage, RpcMessageValue, RpcResponseMessage } from './model';
+import type { RpcMessage, RpcMessageValue, RpcResponseMessage } from './model.js';
 
 
 export abstract class RpcEndpoint {

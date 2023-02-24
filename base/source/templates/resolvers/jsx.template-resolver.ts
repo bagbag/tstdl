@@ -1,10 +1,10 @@
-import { singleton } from '#/container';
-import { Property } from '#/schema';
-import type { TypedOmit } from '#/types';
+import { singleton } from '#/container/index.js';
+import { Property } from '#/schema/index.js';
+import type { TypedOmit } from '#/types.js';
 import type { ComponentClass, FunctionComponent } from 'preact';
-import { TemplateField } from '../template.model';
-import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
-import { TemplateResolver } from '../template.resolver';
+import { TemplateField } from '../template.model.js';
+import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
+import { TemplateResolver } from '../template.resolver.js';
 
 export type JsxTemplate = FunctionComponent<any> | ComponentClass<any, any>;
 

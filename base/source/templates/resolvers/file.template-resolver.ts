@@ -1,13 +1,13 @@
-import type { Injectable } from '#/container';
-import { injectArg, resolveArgumentType, singleton } from '#/container';
-import { BadRequestError } from '#/error/bad-request.error';
-import { Property } from '#/schema';
-import type { TypedOmit } from '#/types';
+import type { Injectable } from '#/container/index.js';
+import { injectArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { Property } from '#/schema/index.js';
+import type { TypedOmit } from '#/types.js';
 import * as fs from 'fs/promises';
-import * as path from 'path';
-import { TemplateField } from '../template.model';
-import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer';
-import { TemplateResolver } from '../template.resolver';
+import * as path from 'node:path';
+import { TemplateField } from '../template.model.js';
+import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
+import { TemplateResolver } from '../template.resolver.js';
 
 export type FileTemplateProviderConfig = {
   basePath?: string

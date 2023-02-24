@@ -1,13 +1,13 @@
-import { singleton } from '#/container';
-import type { ObjectLiteral, Record } from '#/types';
-import { memoizeSingle } from '#/utils/function/memoize';
-import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object';
-import { isDefined, isFunction, isString } from '#/utils/type-guards';
+import { singleton } from '#/container/index.js';
+import type { ObjectLiteral, Record } from '#/types.js';
+import { memoizeSingle } from '#/utils/function/memoize.js';
+import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object.js';
+import { isDefined, isFunction, isString } from '#/utils/type-guards.js';
 import * as handlebars from 'handlebars';
-import { TemplateResolverProvider } from '../template-resolver.provider';
-import type { TemplateField } from '../template.model';
-import type { TemplateRenderObject } from '../template.renderer';
-import { TemplateRenderer } from '../template.renderer';
+import { TemplateResolverProvider } from '../template-resolver.provider.js';
+import type { TemplateField } from '../template.model.js';
+import type { TemplateRenderObject } from '../template.renderer.js';
+import { TemplateRenderer } from '../template.renderer.js';
 
 export type HandlebarsTemplateHelperOptionsLocationItem = { line: number, column: number };
 

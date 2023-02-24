@@ -1,10 +1,10 @@
-import { container } from '#/container';
-import type { MongoRepositoryConfig } from '#/database/mongo';
-import { Lock } from '../lock';
-import { LockProvider } from '../provider';
-import { MongoLock } from './lock';
-import type { MongoLockEntity } from './model';
-import { MongoLockProvider } from './provider';
+import { container } from '#/container/index.js';
+import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { Lock } from '../lock.js';
+import { LockProvider } from '../provider.js';
+import { MongoLock } from './lock.js';
+import type { MongoLockEntity } from './model.js';
+import { MongoLockProvider } from './provider.js';
 
 export type MongoLockModuleConfig = {
   lockEntityRepositoryConfig: MongoRepositoryConfig<MongoLockEntity> | undefined

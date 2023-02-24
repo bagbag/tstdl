@@ -1,5 +1,5 @@
-import { isIterable } from '#/utils/iterable-helpers/is-iterable';
-import { assertDefinedPass, isArray, isDefined, isString, isSymbol, isUndefined } from '#/utils/type-guards';
+import { isIterable } from '#/utils/iterable-helpers/is-iterable.js';
+import { assertDefinedPass, isArray, isDefined, isString, isSymbol, isUndefined } from '#/utils/type-guards.js';
 
 const numberPattern = /^\d+$/u;
 const parsePattern = /(?:(?:^|\.)(?<dot>[^.[]+))|(?<root>^\$)|\[(?:(?:'(?<bracket>.+?)')|(?<index>\d+)|(?:Symbol\((?<symbol>.*)\)))\]|(?<error>.+?)/ug;

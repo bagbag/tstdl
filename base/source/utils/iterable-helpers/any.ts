@@ -1,4 +1,4 @@
-import type { Predicate } from './types';
+import type { Predicate } from './types.js';
 
 export function any<T>(iterable: Iterable<T>, predicate: Predicate<T> = (() => true)): boolean {
   let index = 0;

@@ -1,5 +1,5 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isFunction, isNotNullOrUndefined } from '../type-guards';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isFunction, isNotNullOrUndefined } from '../type-guards.js';
 
 export function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
   return isNotNullOrUndefined(value) && isFunction((value as AsyncIterable<T>)[Symbol.asyncIterator]);

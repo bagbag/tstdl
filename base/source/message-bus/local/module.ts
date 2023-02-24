@@ -1,8 +1,8 @@
-import { container } from '#/container';
-import { MessageBus } from '../message-bus';
-import { MessageBusProvider } from '../message-bus-provider';
-import { LocalMessageBus } from './local-message-bus';
-import { LocalMessageBusProvider } from './local-message-bus-provider';
+import { container } from '#/container/index.js';
+import { MessageBusProvider } from '../message-bus-provider.js';
+import { MessageBus } from '../message-bus.js';
+import { LocalMessageBusProvider } from './local-message-bus-provider.js';
+import { LocalMessageBus } from './local-message-bus.js';
 
 /**
  * registers {@link LocalMessageBus} and {@link LocalMessageBusProvider} in global container

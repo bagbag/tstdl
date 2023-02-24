@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import { assert, isArray } from '#/utils/type-guards';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators';
-import type { SchemaTestable } from '../schema';
-import type { SchemaOutput, ValueSchema, ValueSchemaOptions } from '../types';
-import { valueSchema } from '../types';
+import type { Decorator } from '#/reflection/index.js';
+import { assert, isArray } from '#/utils/type-guards.js';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
+import type { SchemaTestable } from '../schema.js';
+import type { SchemaOutput, ValueSchema, ValueSchemaOptions } from '../types/index.js';
+import { valueSchema } from '../types/index.js';
 
 export type UnionOptions = ValueSchemaOptions;
 

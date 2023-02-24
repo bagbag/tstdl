@@ -1,4 +1,4 @@
-import { assertDefined } from './type-guards';
+import { assertDefined } from './type-guards.js';
 
 interface FullyTypedAsyncIterableIterator<T, TReturn = any, TNext = undefined> extends AsyncIterator<T, TReturn, TNext> {
   [Symbol.asyncIterator](): AsyncIterableIterator<T>;

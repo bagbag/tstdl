@@ -1,5 +1,5 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isIterable } from '../iterable-helpers/is-iterable';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isIterable } from '../iterable-helpers/is-iterable.js';
 
 export async function toArrayAsync<T>(iterable: AnyIterable<T>): Promise<T[]> {
   if (isIterable(iterable)) {

@@ -1,5 +1,5 @@
-import type { Injectable } from '#/container';
-import { resolveArgumentType } from '#/container';
+import type { Injectable } from '#/container/index.js';
+import { resolveArgumentType } from '#/container/index.js';
 
 export type LockedFunction<R> = (controller: LockController) => R | Promise<R>;
 

@@ -1,12 +1,12 @@
-import type { CustomErrorOptions } from '#/error/custom.error';
-import { CustomError } from '#/error/custom.error';
-import type { JsonPath } from '#/json-path';
-import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types';
-import { toArray } from '#/utils/array/array';
-import type { ErrorExtraInfo } from '#/utils/format-error';
-import { isArray, isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards';
-import type { ValueType } from './types';
-import { getValueTypeName } from './utils';
+import type { CustomErrorOptions } from '#/error/custom.error.js';
+import { CustomError } from '#/error/custom.error.js';
+import type { JsonPath } from '#/json-path/index.js';
+import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import type { ErrorExtraInfo } from '#/utils/format-error.js';
+import { isArray, isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards.js';
+import type { ValueType } from './types/index.js';
+import { getValueTypeName } from './utils/index.js';
 
 export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,

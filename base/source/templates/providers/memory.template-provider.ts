@@ -1,7 +1,7 @@
-import { singleton } from '#/container';
-import { isUndefined } from '#/utils/type-guards';
-import type { Template } from '../template.model';
-import { TemplateProvider } from '../template.provider';
+import { singleton } from '#/container/index.js';
+import { isUndefined } from '#/utils/type-guards.js';
+import type { Template } from '../template.model.js';
+import { TemplateProvider } from '../template.provider.js';
 
 @singleton()
 export class MemoryTemplateProvider extends TemplateProvider {

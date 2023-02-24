@@ -1,14 +1,14 @@
-import type { Injectable } from '#/container';
-import { container, resolveArgumentType } from '#/container';
-import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client';
-import { HttpClient, HttpClientRequest } from '#/http/client';
-import { Schema } from '#/schema';
-import type { UndefinableJsonObject } from '#/types';
-import { toTitleCase } from '#/utils/string/title-case';
-import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards';
-import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types';
-import { normalizedApiDefinitionEndpointsEntries } from '../types';
-import { getFullApiEndpointResource } from '../utils';
+import type { Injectable } from '#/container/index.js';
+import { container, resolveArgumentType } from '#/container/index.js';
+import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client/index.js';
+import { HttpClient, HttpClientRequest } from '#/http/client/index.js';
+import { Schema } from '#/schema/index.js';
+import type { UndefinableJsonObject } from '#/types.js';
+import { toTitleCase } from '#/utils/string/title-case.js';
+import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
+import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types.js';
+import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
+import { getFullApiEndpointResource } from '../utils.js';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
 

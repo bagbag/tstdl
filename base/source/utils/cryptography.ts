@@ -1,9 +1,9 @@
-import type { BinaryData, TypedExtract } from '#/types';
-import { encodeBase64, encodeBase64Url } from './base64';
-import { decodeText, encodeHex, encodeUtf8 } from './encoding';
-import { getRandomBytes } from './random';
-import { isDefined, isString } from './type-guards';
-import { zBase32Encode } from './z-base32';
+import type { BinaryData, TypedExtract } from '#/types.js';
+import { encodeBase64, encodeBase64Url } from './base64.js';
+import { decodeText, encodeHex, encodeUtf8 } from './encoding.js';
+import { getRandomBytes } from './random.js';
+import { isDefined, isString } from './type-guards.js';
+import { zBase32Encode } from './z-base32.js';
 
 export type AesMode = 'CBC' | 'CTR' | 'GCM' | 'KW';
 export type EcdsaCurve = 'P-256' | 'P-384' | 'P-521';

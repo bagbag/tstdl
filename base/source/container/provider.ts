@@ -1,8 +1,8 @@
-import type { Constructor } from '#/types';
-import { hasOwnProperty } from '#/utils/object/object';
-import type { InjectableArgument } from './interfaces';
-import type { InjectionToken } from './token';
-import type { ResolveContext } from './types';
+import type { Constructor } from '#/types.js';
+import { hasOwnProperty } from '#/utils/object/object.js';
+import type { InjectableArgument } from './interfaces.js';
+import type { InjectionToken } from './token.js';
+import type { ResolveContext } from './types.js';
 
 export type Factory<T, A = any> = (argument: InjectableArgument<T, A> | undefined, context: ResolveContext) => T | Promise<T>;
 
@@ -25,13 +25,13 @@ export type TokenProvider<T = any, A = any> =
     useToken: InjectionToken<T, A>,
     useTokenProvider?: undefined,
     argument?: InjectableArgument<T, A>,
-    argumentProvider?: () => InjectableArgument<T, A>
+    argumentProvider?: () => InjectableArgument<T, A> | Promise<InjectableArgument<T, A>>
   }
   | {
     useToken?: undefined,
-    useTokenProvider: () => InjectionToken<T, A>,
+    useTokenProvider: () => InjectionToken<T, A> | Promise<InjectionToken<T, A>>,
     argument?: InjectableArgument<T, A>,
-    argumentProvider?: () => InjectableArgument<T, A>
+    argumentProvider?: () => InjectableArgument<T, A> | Promise<InjectableArgument<T, A>>
   };
 
 export type FactoryProvider<T = any, A = unknown> = {

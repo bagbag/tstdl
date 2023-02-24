@@ -1,17 +1,17 @@
-import type { AnyIterable } from '#/utils/any-iterable-iterator';
-import { isAnyIterable } from '#/utils/any-iterable-iterator';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { AsyncComparator } from '#/utils/sort';
-import { isNotNullOrUndefined } from '#/utils/type-guards';
+import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
+import { isAnyIterable } from '#/utils/any-iterable-iterator.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import type { AsyncComparator } from '#/utils/sort.js';
+import { isNotNullOrUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers';
-import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, includesAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers';
-import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable';
-import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel';
-import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers';
-import { range } from '../utils/iterable-helpers';
-import { Enumerable, setAsyncEnumerable } from './enumerable';
-import type { EnumerableMethods } from './enumerable-methods';
+import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers/index.js';
+import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, includesAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers/index.js';
+import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable.js';
+import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel/index.js';
+import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers/index.js';
+import { range } from '../utils/iterable-helpers/index.js';
+import type { EnumerableMethods } from './enumerable-methods.js';
+import { Enumerable, setAsyncEnumerable } from './enumerable.js';
 
 let enumerable: undefined | (<T>(source: Iterable<T>) => Enumerable<T>);
 

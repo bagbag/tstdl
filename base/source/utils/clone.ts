@@ -1,6 +1,6 @@
-import { supportsStructuredClone } from '#/supports';
-import { objectEntries } from './object/object';
-import { assertObject, isArray, isArrayBuffer, isDataView, isDate, isMap, isPrimitive, isRegExp, isSet, isTypedArray } from './type-guards';
+import { supportsStructuredClone } from '#/supports.js';
+import { objectEntries } from './object/object.js';
+import { assertObject, isArray, isArrayBuffer, isDataView, isDate, isMap, isPrimitive, isRegExp, isSet, isTypedArray } from './type-guards.js';
 
 export function clone<T>(object: T, deep: boolean): T {
   if (supportsStructuredClone && deep) {

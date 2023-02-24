@@ -1,6 +1,6 @@
-import { simpleTemplate } from '#/templates';
-import type { JsxTemplateRenderer } from '#/templates/renderers/jsx.template-renderer';
-import { jsxTemplateField } from '#/templates/resolvers/jsx.template-resolver';
+import type { JsxTemplateRenderer } from '#/templates/renderers/jsx.template-renderer.js';
+import { jsxTemplateField } from '#/templates/resolvers/jsx.template-resolver.js';
+import { simpleTemplate } from '#/templates/template.model.js';
 import type { VNode } from 'preact';
 
 function HelloJsx({ name }: { name: string }): VNode {

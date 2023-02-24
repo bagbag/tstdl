@@ -1,7 +1,7 @@
-import { ObservableSet } from '../../../collections/observable';
-import { MultiError } from '../../../error/multi.error';
-import type { AnyIterable } from '../../any-iterable-iterator';
-import type { ParallelizableIteratorFunction } from '../types';
+import { ObservableSet } from '../../../collections/observable/observable-set.js';
+import { MultiError } from '../../../error/multi.error.js';
+import type { AnyIterable } from '../../any-iterable-iterator.js';
+import type { ParallelizableIteratorFunction } from '../types.js';
 
 export async function parallelForEach<T>(iterable: AnyIterable<T>, concurrency: number, func: ParallelizableIteratorFunction<T, any>): Promise<void> {
   const running = new ObservableSet<Promise<any>>();

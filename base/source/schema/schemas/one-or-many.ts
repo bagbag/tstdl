@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection';
-import type { OneOrMany as OneOrManyType } from '#/types';
-import { toArray } from '#/utils/array/array';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils';
-import type { SchemaTestable } from '../schema';
-import type { ValueSchema, ValueSchemaOptions } from '../types';
-import type { ArrayOptions } from './array';
-import { array } from './array';
-import { union } from './union';
+import type { Decorator } from '#/reflection/index.js';
+import type { OneOrMany as OneOrManyType } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
+import type { SchemaTestable } from '../schema.js';
+import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
+import type { ArrayOptions } from './array.js';
+import { array } from './array.js';
+import { union } from './union.js';
 
 export type OneOrMany<T> = OneOrManyType<T>;
 export type OneOrManyOptions = ValueSchemaOptions & Pick<ArrayOptions, 'minimumLength' | 'maximumLength'>;

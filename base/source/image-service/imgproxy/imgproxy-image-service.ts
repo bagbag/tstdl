@@ -1,12 +1,12 @@
-import type { Injectable } from '#/container';
-import { container, injectArg, injectionToken, resolveArgumentType, singleton } from '#/container';
-import { encodeBase64Url } from '#/utils/base64';
-import { concatArrayBufferViews } from '#/utils/binary';
-import { importHmacKey, sign } from '#/utils/cryptography';
-import { decodeHex, encodeUtf8 } from '#/utils/encoding';
-import { isDefined } from '#/utils/type-guards';
-import type { ImageOptions, ImageOrigin } from '../image-service';
-import { ImageService } from '../image-service';
+import type { Injectable } from '#/container/index.js';
+import { container, injectArg, injectionToken, resolveArgumentType, singleton } from '#/container/index.js';
+import { encodeBase64Url } from '#/utils/base64.js';
+import { concatArrayBufferViews } from '#/utils/binary.js';
+import { importHmacKey, sign } from '#/utils/cryptography.js';
+import { decodeHex, encodeUtf8 } from '#/utils/encoding.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { ImageOptions, ImageOrigin } from '../image-service.js';
+import { ImageService } from '../image-service.js';
 
 export type ImgproxyImageServiceConfig = {
   endpoint: string,

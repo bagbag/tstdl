@@ -1,4 +1,4 @@
-export type { Context } from '../iterable-helpers/types';
+export type { Context } from '../iterable-helpers/types.js';
 
 export type AsyncIteratorFunction<TIn, TOut> = (item: TIn, index: number) => TOut | Promise<TOut>;
 export type AsyncPredicate<T> = (item: T, index: number) => boolean | Promise<boolean>;

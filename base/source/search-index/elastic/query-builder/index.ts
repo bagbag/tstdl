@@ -1,1 +1,1 @@
-export * from './boolean-query-builder';
+export * from './boolean-query-builder.js';

@@ -1,5 +1,5 @@
-import type { OneOrMany, WritableOneOrMany } from '#/types';
-import { isArray, isNull } from '#/utils/type-guards';
+import type { OneOrMany, WritableOneOrMany } from '#/types.js';
+import { isArray, isNull } from '#/utils/type-guards.js';
 
 export type HttpValue = string | number | boolean | null;
 

@@ -1,7 +1,7 @@
-import { lazyObject } from '#/utils/object/lazy-property';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import { CircularBuffer } from './circular-buffer';
-import { Collection } from './collection';
+import { lazyObject } from '#/utils/object/lazy-property.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { CircularBuffer } from './circular-buffer.js';
+import { Collection } from './collection.js';
 
 type Node = {
   nodeKey: any,

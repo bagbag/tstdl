@@ -1,10 +1,10 @@
 /* eslint-disable max-classes-per-file */
-import type { Injectable } from '#/container';
-import { replaceClass, resolveArgumentType } from '#/container';
-import type { Entity } from '#/database';
+import type { Injectable } from '#/container/index.js';
+import { replaceClass, resolveArgumentType } from '#/container/index.js';
+import type { Entity } from '#/database/index.js';
 import { Collection as MongoCollection, Db, MongoClient as MongoMongoClient } from 'mongodb';
-import type { MongoDocument } from './model';
-import type { MongoConnection, MongoRepositoryConfig } from './types';
+import type { MongoDocument } from './model/document.js';
+import type { MongoConnection, MongoRepositoryConfig } from './types.js';
 
 export type MongoClientArgument = MongoConnection;
 

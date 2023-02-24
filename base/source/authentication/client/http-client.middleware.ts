@@ -1,11 +1,12 @@
-import type { ApiClientHttpRequestContext } from '#/api/client';
-import { container } from '#/container';
-import type { HttpClientRequest, HttpClientResponse } from '#/http';
-import type { HttpClientMiddleware, HttpClientMiddlewareNext } from '#/http/client/http-client';
-import { assertFunctionPass, isNotFunction, isUndefined } from '#/utils/type-guards';
+import type { ApiClientHttpRequestContext } from '#/api/client/index.js';
+import { container } from '#/container/index.js';
+import type { HttpClientRequest } from '#/http/client/http-client-request.js';
+import type { HttpClientResponse } from '#/http/client/http-client-response.js';
+import type { HttpClientMiddleware, HttpClientMiddlewareNext } from '#/http/client/http-client.js';
+import { assertFunctionPass, isNotFunction, isUndefined } from '#/utils/type-guards.js';
 import { firstValueFrom } from 'rxjs';
-import { dontWaitForValidToken } from '../authentication.api';
-import { AuthenticationService } from './authentication.service';
+import { dontWaitForValidToken } from '../authentication.api.js';
+import { AuthenticationService } from './authentication.service.js';
 
 export type AuthenticationServiceProvider = () => (AuthenticationService<any, any> | Promise<AuthenticationService<any, any>>);
 

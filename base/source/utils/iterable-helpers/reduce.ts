@@ -1,4 +1,4 @@
-import type { Reducer } from './types';
+import type { Reducer } from './types.js';
 
 export function reduce<T, U>(iterable: Iterable<T>, reducer: Reducer<T, U>, initialValue?: U): U {
   let accumulator: T | U | undefined = initialValue;

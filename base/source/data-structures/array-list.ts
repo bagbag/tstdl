@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import type { Predicate } from '#/utils/iterable-helpers/types';
-import { List } from './list';
+import type { Predicate } from '#/utils/iterable-helpers/types.js';
+import { List } from './list.js';
 
 export class ArrayList<T> extends List<T, ArrayList<T>> {
   private backingArray: T[];

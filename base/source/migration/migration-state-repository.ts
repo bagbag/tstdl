@@ -1,4 +1,4 @@
-import { EntityRepository } from '#/database';
-import type { MigrationState } from './migration-state';
+import { EntityRepository } from '#/database/index.js';
+import type { MigrationState } from './migration-state.js';
 
 export abstract class MigrationStateRepository extends EntityRepository<MigrationState> { }

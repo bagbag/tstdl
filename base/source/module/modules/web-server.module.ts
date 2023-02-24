@@ -1,13 +1,13 @@
-import { ApiGateway, API_MODULE_OPTIONS } from '#/api/server';
-import type { AfterResolve, Injectable } from '#/container';
-import { afterResolve, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container';
-import { disposeAsync } from '#/disposable/disposable';
-import { HttpServer } from '#/http/server';
-import type { Type } from '#/types';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token';
-import type { Module } from '../module';
-import { ModuleMetricType } from '../module';
-import { ModuleBase } from '../module-base';
+import { ApiGateway, API_MODULE_OPTIONS } from '#/api/server/index.js';
+import type { AfterResolve, Injectable } from '#/container/index.js';
+import { afterResolve, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container/index.js';
+import { disposeAsync } from '#/disposable/disposable.js';
+import { HttpServer } from '#/http/server/http-server.js';
+import type { Type } from '#/types.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { ModuleBase } from '../module-base.js';
+import type { Module } from '../module.js';
+import { ModuleMetricType } from '../module.js';
 
 export type WebServerModuleConfiguration = {
   port: number

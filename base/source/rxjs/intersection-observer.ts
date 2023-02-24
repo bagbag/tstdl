@@ -1,5 +1,5 @@
-import { toArray } from '#/utils/array';
-import { isDefined } from '#/utils/type-guards';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined } from '#/utils/type-guards.js';
 import type { Subscription } from 'rxjs';
 import { Observable } from 'rxjs';
 

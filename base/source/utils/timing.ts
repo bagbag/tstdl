@@ -1,5 +1,5 @@
 import { firstValueFrom, map, race, timer } from 'rxjs';
-import type { ReadonlyCancellationToken } from './cancellation-token';
+import type { ReadonlyCancellationToken } from './cancellation-token.js';
 
 /** timeout for specified duration */
 export async function timeout(milliseconds: number = 0): Promise<void> {

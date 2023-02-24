@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { noop } from '#/utils/noop';
+import { noop } from '#/utils/noop.js';
 import 'reflect-metadata';
-import type { Decorator, DecoratorHandler } from './types';
-import type { CreateDecoratorOptions, SpecificCreateDecoratorOptions } from './utils';
-import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator } from './utils';
+import type { Decorator, DecoratorHandler } from './types.js';
+import type { CreateDecoratorOptions, SpecificCreateDecoratorOptions } from './utils.js';
+import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator } from './utils.js';
 
 export function Decorate({ handler, ...options }: CreateDecoratorOptions & { handler?: DecoratorHandler } = {}): Decorator {
   return createDecorator(

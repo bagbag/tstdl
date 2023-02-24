@@ -1,10 +1,10 @@
-import type { StringMap } from '#/types';
-import { CookieParser } from '../cookie-parser';
-import type { HttpBodySource } from '../http-body';
-import { HttpBody } from '../http-body';
-import type { HttpHeaders } from '../http-headers';
-import type { HttpQuery } from '../http-query';
-import type { HttpMethod } from '../types';
+import type { StringMap } from '#/types.js';
+import { CookieParser } from '../cookie-parser.js';
+import type { HttpBodySource } from '../http-body.js';
+import { HttpBody } from '../http-body.js';
+import type { HttpHeaders } from '../http-headers.js';
+import type { HttpQuery } from '../http-query.js';
+import type { HttpMethod } from '../types.js';
 
 export type HttpServerRequestObject = Pick<HttpServerRequest, 'url' | 'method' | 'headers' | 'query' | 'ip'> & {
   body: HttpBody | HttpBodySource,

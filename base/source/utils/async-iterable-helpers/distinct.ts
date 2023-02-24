@@ -1,6 +1,6 @@
-import type { AnyIterable } from '../any-iterable-iterator';
-import { isAsyncIterable } from './is-async-iterable';
-import type { AsyncIteratorFunction } from './types';
+import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from './is-async-iterable.js';
+import type { AsyncIteratorFunction } from './types.js';
 
 export function distinctAsync<TIn>(iterable: AnyIterable<TIn>, selector: AsyncIteratorFunction<TIn, any> = (item) => item): AsyncIterableIterator<TIn> {
   return isAsyncIterable(iterable)

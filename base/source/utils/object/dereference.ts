@@ -1,7 +1,7 @@
-import type { JsonPathInput } from '#/json-path';
-import { JsonPath } from '#/json-path';
-import type { Record } from '#/types';
-import { memoizeSingle } from '../function/memoize';
+import type { JsonPathInput } from '#/json-path/index.js';
+import { JsonPath } from '#/json-path/index.js';
+import type { Record } from '#/types.js';
+import { memoizeSingle } from '../function/memoize.js';
 
 export type CompiledDereferencer = (object: object) => unknown;
 

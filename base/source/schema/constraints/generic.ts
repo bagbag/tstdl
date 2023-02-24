@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { JsonPath } from '#/json-path/json-path';
-import type { OneOrMany } from '#/types';
-import { isBoolean } from '#/utils/type-guards';
-import { SchemaError } from '../schema.error';
-import { SchemaValueConstraint } from '../types/schema-value-constraint';
-import type { ConstraintContext, ConstraintResult } from '../types/types';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { OneOrMany } from '#/types.js';
+import { isBoolean } from '#/utils/type-guards.js';
+import { SchemaError } from '../schema.error.js';
+import { SchemaValueConstraint } from '../types/schema-value-constraint.js';
+import type { ConstraintContext, ConstraintResult } from '../types/types.js';
 
 export type GenericConstraintResult =
   | { success: true, error?: undefined }

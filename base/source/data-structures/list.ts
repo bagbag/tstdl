@@ -1,7 +1,7 @@
-import type { Predicate } from '#/utils/iterable-helpers/types';
-import { isDefined } from '#/utils/type-guards';
-import { Collection } from './collection';
-import { IndexOutOfBoundsError } from './index-out-of-bounds.error';
+import type { Predicate } from '#/utils/iterable-helpers/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { Collection } from './collection.js';
+import { IndexOutOfBoundsError } from './index-out-of-bounds.error.js';
 
 export abstract class List<T, TThis extends Collection<T, TThis>> extends Collection<T, TThis> {
   /** get item at index */

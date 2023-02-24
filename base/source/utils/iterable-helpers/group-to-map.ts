@@ -1,5 +1,5 @@
-import { FactoryMap } from '../factory-map';
-import type { IteratorFunction } from './types';
+import { FactoryMap } from '../factory-map.js';
+import type { IteratorFunction } from './types.js';
 
 export function groupToMap<TIn, TGroup>(iterable: Iterable<TIn>, selector: IteratorFunction<TIn, TGroup>): Map<TGroup, TIn[]> {
   const map = new FactoryMap<TGroup, TIn[]>(() => []);

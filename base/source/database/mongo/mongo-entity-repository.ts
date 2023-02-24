@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/semi */
-import type { AfterResolve } from '#/container';
-import { afterResolve } from '#/container';
-import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database';
-import { EntityRepository } from '#/database';
-import type { Logger } from '#/logger';
-import type { Record } from '#/types';
-import { equals } from '#/utils/equals';
-import { objectEntries, objectKeys } from '#/utils/object';
-import { _throw } from '#/utils/throw';
-import { isDefined, isUndefined } from '#/utils/type-guards';
-import type { Collection } from './classes';
-import type { LoadOptions } from './mongo-base.repository';
-import { MongoBaseRepository } from './mongo-base.repository';
-import { convertQuery, convertSort } from './query-converter';
-import type { Filter, TypedIndexDescription, UpdateFilter } from './types';
+import type { AfterResolve } from '#/container/index.js';
+import { afterResolve } from '#/container/index.js';
+import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database/index.js';
+import { EntityRepository } from '#/database/index.js';
+import type { Logger } from '#/logger/index.js';
+import type { Record } from '#/types.js';
+import { equals } from '#/utils/equals.js';
+import { objectEntries, objectKeys } from '#/utils/object/object.js';
+import { _throw } from '#/utils/throw.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import type { Collection } from './classes.js';
+import type { LoadOptions } from './mongo-base.repository.js';
+import { MongoBaseRepository } from './mongo-base.repository.js';
+import { convertQuery, convertSort } from './query-converter.js';
+import type { Filter, TypedIndexDescription, UpdateFilter } from './types.js';
 
 export type MongoEntityRepositoryOptions<T extends Entity<any>> = {
   logger: Logger,

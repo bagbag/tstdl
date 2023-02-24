@@ -1,13 +1,13 @@
-import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/database';
-import { compareByValueSelectionOrdered } from '#/utils/comparison';
-import { FactoryMap } from '#/utils/factory-map';
-import { normalizeText } from '#/utils/helpers';
-import { objectEntries } from '#/utils/object/object';
-import { intersectSets, unionSets } from '#/utils/set';
-import { Timer } from '#/utils/timer';
-import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards';
-import { SearchIndex } from '../search-index';
-import type { SearchResult, SearchResultItem } from '../search-result';
+import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/database/index.js';
+import { compareByValueSelectionOrdered } from '#/utils/comparison.js';
+import { FactoryMap } from '#/utils/factory-map.js';
+import { normalizeText } from '#/utils/helpers.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { intersectSets, unionSets } from '#/utils/set.js';
+import { Timer } from '#/utils/timer.js';
+import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
+import { SearchIndex } from '../search-index.js';
+import type { SearchResult, SearchResultItem } from '../search-result.js';
 
 export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
   private readonly indexedFields: (keyof T)[];

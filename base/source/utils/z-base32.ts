@@ -1,8 +1,8 @@
 /* eslint-disable no-bitwise, @typescript-eslint/no-magic-numbers */
 
-import type { BinaryData } from '#/types';
-import { Alphabet } from './alphabet';
-import { toUint8Array } from './binary';
+import type { BinaryData } from '#/types.js';
+import { Alphabet } from './alphabet.js';
+import { toUint8Array } from './binary.js';
 
 const alphabet = Alphabet.ZBase32;
 
