@@ -11,6 +11,7 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { SchemaTestable } from '#/schema/index.js';
 import { Schema } from '#/schema/index.js';
+import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import type { Type, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware.js';
@@ -273,8 +274,9 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
       body: isUint8Array(result) ? { buffer: result }
         : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
           : isReadableStream<Uint8Array>(result) ? { stream: result }
-            : (context.endpoint.definition.result == String) ? { text: result }
-              : { json: result }
+            : (result instanceof ServerSentEventsSource) ? { events: result }
+              : (context.endpoint.definition.result == String) ? { text: result }
+                : { json: result }
     });
 
     return response;

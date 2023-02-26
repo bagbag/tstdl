@@ -11,7 +11,7 @@ import { configureHttpClient } from '#/http/client/module.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import { configureNodeHttpServer } from '#/http/server/node/index.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
-import { SeverSentEvents } from '#/sse/server-sent-events.js';
+import { ServerSentEvents, ServerSentEventsSource } from '#/sse';
 import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding.js';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream/index.js';
 import { cancelableTimeout, timeout } from '#/utils/timing.js';
@@ -34,7 +34,7 @@ const streamingApiDefinition = defineApi({
     events: {
       method: 'GET',
       resource: 'events',
-      result: ReadableStream,
+      result: ServerSentEvents,
       cors: {
         accessControlAllowOrigin: '*',
         accessControlAllowMethods: 'GET'
@@ -58,11 +58,7 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
   }
 
   events(_data: ApiRequestContext<StreamingApiDefinition, 'events'>): ApiServerResult<StreamingApiDefinition, 'events'> {
-    return HttpServerResponse.fromObject({
-      body: {
-        events: eventsSource()
-      }
-    });
+    return eventsSource();
   }
 }
 
@@ -105,8 +101,8 @@ main();
 void clientTest().catch((error) => logger.error(error as Error));
 
 
-function eventsSource(): SeverSentEvents {
-  const events = new SeverSentEvents();
+function eventsSource(): ServerSentEventsSource {
+  const events = new ServerSentEventsSource();
 
   void (async () => {
     for (let i = 1; i <= 10; i++) {

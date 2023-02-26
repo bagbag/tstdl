@@ -1,6 +1,6 @@
 import type { SetCookieOptions } from '#/cookie/cookie.js';
 import { formatSetCookie } from '#/cookie/cookie.js';
-import type { SeverSentEvents } from '#/sse/server-sent-events.js';
+import type { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import type { Record } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
@@ -21,7 +21,7 @@ export type HttpServerResponseOptions = {
     buffer?: Uint8Array,
     text?: string,
     json?: unknown,
-    events?: SeverSentEvents
+    events?: ServerSentEventsSource
   }
 };
 
@@ -34,7 +34,7 @@ export class HttpServerResponse {
     buffer?: Uint8Array,
     text?: string,
     json?: unknown,
-    events?: SeverSentEvents
+    events?: ServerSentEventsSource
   };
 
   constructor(response: HttpServerResponseOptions = {}) {

@@ -1,107 +1,65 @@
-import { isDefined } from '#/utils/type-guards.js';
+import { NotSupportedError } from '#/error/not-supported.error';
+import type { Observable } from 'rxjs';
+import { distinctUntilChanged, filter, fromEvent, map, merge, ReplaySubject, share, shareReplay, startWith, takeUntil } from 'rxjs';
 
-export type SeverSentEventsEventBase<Data> = {
-  /**
-   * Name of the event.
-   */
-  name?: string,
-
-  /**
-   * Data of the event.
-   */
-  data?: Data,
-
-  /**
-   * Id of the event.
-   */
-  id?: string,
-
-  /**
-   * Retry recommendation for consumers in milliseconds.
-   */
-  retry?: number
-};
-
-export type SeverSentEventsTextEvent = SeverSentEventsEventBase<string>;
-
-export type SeverSentEventsJsonEvent = SeverSentEventsEventBase<any>;
-
-export class SeverSentEvents {
-  private readonly writable: WritableStream<string>;
-  private readonly writer: WritableStreamDefaultWriter<string>;
-
-  private _closed: boolean;
-  private _error: Error | undefined;
-
-  readonly readable: ReadableStream<string>;
-
-  get closed(): boolean {
-    return this._closed;
-  }
-
-  get error(): Error | undefined {
-    return this._error;
-  }
-
-  constructor() {
-    const { writable, readable } = new TransformStream<string, string>();
-
-    this.writable = writable;
-    this.readable = readable;
-
-    this._closed = false;
-    this._error = undefined;
-    this.writer = this.writable.getWriter();
-
-    this.writer.closed
-      .then(() => (this._closed = true))
-      .catch((error) => (this._error = error as Error));
-  }
-
-  async close(): Promise<void> {
-    await this.writer.close();
-  }
-
-  async sendComment(comment: string): Promise<void> {
-    const text = comment.split('\n').map((line) => `: ${line}`).join('\n');
-    await this.writer.write(text);
-  }
-
-  async sendText({ name, data, id, retry }: SeverSentEventsTextEvent): Promise<void> {
-    let message = '';
-
-    if (isDefined(name)) {
-      message += formatText(name, 'event');
-    }
-
-    if (isDefined(data)) {
-      message += formatText(data, 'data');
-    }
-
-    if (isDefined(id)) {
-      message += formatText(id, 'id');
-    }
-
-    if (isDefined(retry)) {
-      message += formatText(retry.toString(), 'retry');
-    }
-
-    message += '\n';
-
-    await this.writer.write(message);
-  }
-
-  async sendJson({ name, data, id, retry }: SeverSentEventsJsonEvent): Promise<void> {
-    return this.sendText({
-      name,
-      data: JSON.stringify(data),
-      id,
-      retry
-    });
-  }
+export enum ServerSentEventsState {
+  Connecting = 0,
+  Open = 1,
+  Closed = 2
 }
 
-function formatText(text: string, type: string): string {
-  const formatted = text.split('\n').map((line) => `${type}: ${line}`).join('\n');
-  return `${formatted}\n`;
+export class ServerSentEvents {
+  private readonly eventSource: EventSource;
+  private readonly closeSubject: ReplaySubject<void>;
+
+  readonly open$: Observable<void>;
+  readonly close$: Observable<void>;
+  readonly error$: Observable<Event>;
+
+  readonly state$: Observable<ServerSentEventsState>;
+  readonly isConnecting$: Observable<boolean>;
+  readonly isOpen$: Observable<boolean>;
+  readonly isClosed$: Observable<boolean>;
+
+  get state(): ServerSentEventsState {
+    switch (this.eventSource.readyState) {
+      case EventSource.CONNECTING:
+        return ServerSentEventsState.Connecting;
+
+      case EventSource.OPEN:
+        return ServerSentEventsState.Open;
+
+      case EventSource.CLOSED:
+        return ServerSentEventsState.Closed;
+
+      default:
+        throw new NotSupportedError(`Unknown EventSource readyState ${this.eventSource.readyState}`);
+    }
+  }
+
+  constructor(url: string, options?: EventSourceInit) {
+    this.eventSource = new EventSource(url, options);
+    this.closeSubject = new ReplaySubject(1);
+
+    const open$ = fromEvent(this.eventSource, 'open');
+    this.close$ = this.closeSubject.asObservable();
+    this.error$ = fromEvent(this.eventSource, 'error').pipe(takeUntil(this.close$), share());
+
+    this.state$ = merge(open$, this.error$, this.close$).pipe(startWith(undefined), map(() => this.state), distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }));
+    this.isConnecting$ = this.state$.pipe(map((state) => state == ServerSentEventsState.Connecting), shareReplay({ bufferSize: 1, refCount: true }));
+    this.isOpen$ = this.state$.pipe(map((state) => state == ServerSentEventsState.Open), shareReplay({ bufferSize: 1, refCount: true }));
+    this.isClosed$ = this.state$.pipe(map((state) => state == ServerSentEventsState.Closed), shareReplay({ bufferSize: 1, refCount: true }));
+
+    this.open$ = this.isOpen$.pipe(filter((open) => open), map(() => undefined), takeUntil(this.close$), share());
+  }
+
+  message$(event?: string): Observable<MessageEvent<string>> {
+    return fromEvent<MessageEvent<string>>(this.eventSource, event ?? 'message').pipe(takeUntil(this.close$));
+  }
+
+  close(): void {
+    this.eventSource.close();
+    this.closeSubject.next();
+    this.closeSubject.complete();
+  }
 }

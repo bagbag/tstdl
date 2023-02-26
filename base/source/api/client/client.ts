@@ -2,10 +2,15 @@ import type { Injectable } from '#/container/index.js';
 import { container, resolveArgumentType } from '#/container/index.js';
 import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client/index.js';
 import { HttpClient, HttpClientRequest } from '#/http/client/index.js';
+import { normalizeSingleHttpValue } from '#/http/types.js';
 import { Schema } from '#/schema/index.js';
+import { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { UndefinableJsonObject } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
+import { objectEntries } from '#/utils/object/object.js';
 import { toTitleCase } from '#/utils/string/title-case.js';
-import { isArray, isBlob, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
+import { isArray, isBlob, isDefined, isObject, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
+import { buildUrl } from '#/utils/url-builder.js';
 import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types.js';
 import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
@@ -68,6 +73,14 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject, requestBody?: any): Promise<unknown> {
         const context: ApiClientHttpRequestContext = { endpoint };
         const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
+
+        if (endpoint.result == ServerSentEvents) {
+          if (isDefined(requestBody)) {
+            throw new Error('Body not supported for Server Sent Events.');
+          }
+
+          return getServerSentEvents(this[httpClientSymbol].options.baseUrl, resource, endpoint, parameters);
+        }
 
         const request = new HttpClientRequest({
           method,
@@ -135,4 +148,22 @@ async function getResponseBody(response: HttpClientResponse, schema: ApiEndpoint
     : undefined;
 
   return Schema.parse(schema, body, { mask: true }) as Promise<unknown>;
+}
+
+function getServerSentEvents(baseUrl: string | undefined, resource: string, endpoint: ApiEndpointDefinition, parameters: UndefinableJsonObject | undefined): ServerSentEvents {
+  const { parsedUrl, parametersRest } = buildUrl(resource, parameters, { arraySeparator: ',' });
+
+  const url = new URL(parsedUrl, baseUrl);
+
+  for (const [parameter, value] of objectEntries(parametersRest)) {
+    for (const val of toArray(value)) {
+      if (isUndefined(val) || isObject(val)) {
+        continue;
+      }
+
+      url.searchParams.append(parameter as string, normalizeSingleHttpValue(val));
+    }
+  }
+
+  return new ServerSentEvents(url.toString(), { withCredentials: endpoint.credentials });
 }

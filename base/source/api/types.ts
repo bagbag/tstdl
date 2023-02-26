@@ -1,6 +1,8 @@
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
 import type { HttpMethod } from '#/http/types.js';
 import type { SchemaOutput, SchemaTestable } from '#/schema/index.js';
+import type { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
+import type { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
@@ -113,6 +115,7 @@ export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStr
 
 export type ApiInputType<T extends SchemaTestable> =
   | T extends ApiBinaryType ? (Uint8Array | Blob | ReadableStream<Uint8Array>)
+  : T extends typeof ServerSentEvents ? ServerSentEventsSource
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 
 export type ApiOutputType<T extends SchemaTestable> =

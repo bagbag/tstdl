@@ -30,15 +30,15 @@ export type HttpClientArgument = HttpClientOptions;
 @singleton()
 export class HttpClient implements Injectable<HttpClientArgument> {
   private readonly adapter: HttpClientAdapter;
-  private readonly options: HttpClientOptions;
   private readonly headers: HttpHeaders;
   private readonly middleware: HttpClientMiddleware[];
   private readonly internalMiddleware: HttpClientMiddleware[];
 
   private callHandler: HttpClientHandler;
 
-  readonly [resolveArgumentType]: HttpClientOptions;
+  readonly options: HttpClientOptions;
 
+  readonly [resolveArgumentType]: HttpClientOptions;
   constructor(adapter: HttpClientAdapter, @optional() @injectArg() options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;
