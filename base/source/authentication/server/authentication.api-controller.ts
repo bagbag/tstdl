@@ -40,9 +40,25 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
   }
 
   async endSession({ request }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'>> {
-    const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
-    const token = await this.authenticationService.validateToken(tokenString);
-    await this.authenticationService.endSession(token.payload.sessionId);
+    let sessionId: string | undefined;
+
+    try {
+      const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
+      const token = await this.authenticationService.validateToken(tokenString);
+      sessionId = token.payload.sessionId;
+    }
+    catch (error) {
+      try {
+        const refreshTokenString = tryGetAuthorizationTokenStringFromRequest(request, 'refreshToken', true) ?? '';
+        const refreshToken = await this.authenticationService.validateRefreshToken(refreshTokenString);
+        sessionId = refreshToken.payload.sessionId;
+      }
+      catch {
+        throw error;
+      }
+    }
+
+    await this.authenticationService.endSession(sessionId);
 
     const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'endSession'> = 'ok';
 

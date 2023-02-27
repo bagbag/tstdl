@@ -77,7 +77,10 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
       resource: 'end-session',
       method: 'POST',
       result: literal('ok' as const),
-      credentials: true
+      credentials: true,
+      data: {
+        [dontWaitForValidToken]: true
+      }
     },
     timestamp: {
       resource: 'timestamp',

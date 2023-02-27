@@ -13,7 +13,7 @@ import { MessageBus } from '#/message-bus/index.js';
 import type { Record } from '#/types.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
-import { cancelableTimeout } from '#/utils/timing.js';
+import { cancelableTimeout, timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject } from 'rxjs';
@@ -155,7 +155,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   async logout(): Promise<void> {
     try {
-      await this.client.endSession();
+      await Promise.race([
+        this.client.endSession(),
+        timeout(150)
+      ]).catch((error) => console.error(error));
     }
     finally {
       this.setNewToken(undefined);
