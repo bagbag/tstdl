@@ -50,7 +50,7 @@ export class CardComponent implements AfterViewInit {
   @Input() headerSeparator: boolean;
   @Input() footerSeparator: boolean;
   @Input() loading: boolean;
-  @Input() noFooterBackground: boolean;
+  @Input() footerBackground: boolean;
 
   get hasHeader(): boolean {
     return (this.cardHeaders.length + this.cardSubHeaders.length) > 0;
@@ -74,8 +74,8 @@ export class CardComponent implements AfterViewInit {
     this.progress = undefined;
     this.headerSeparator = true;
     this.footerSeparator = true;
+    this.footerBackground = true;
     this.loading = false;
-    this.noFooterBackground = false;
   }
 
   ngAfterViewInit(): void {

@@ -22,6 +22,9 @@
 }
 
 .tsl-card-footer {
-  background-color: var(--tsl-card-footer-background-color, var(--tsl-tertiary-background-color));
   color: var(--tsl-card-footer-color, var(--tsl-tertiary-text-color));
+}
+
+.tsl-card-footer-background {
+  background-color: var(--tsl-card-footer-background-color, var(--tsl-tertiary-background-color));
 }
