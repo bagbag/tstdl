@@ -1,5 +1,7 @@
+import { NotSupportedError } from '#/error/not-supported.error.js';
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
+import { isDate, isNumber } from './type-guards.js';
 import { millisecondsPerDay, millisecondsPerHour, millisecondsPerMinute, millisecondsPerSecond } from './units.js';
 
 export type DateObject = {
@@ -58,6 +60,26 @@ export function currentDate(): number {
 export function currentTime(): number {
   const timestamp = currentTimestamp();
   return timestampToTime(timestamp);
+}
+
+/**
+ * @param input {@link DateTime}, Date or timestamp in milliseconds
+ * @returns DateTime
+ */
+export function toDateTime(input: DateTime | Date | number): DateTime {
+  if (isNumber(input)) {
+    return DateTime.fromMillis(input);
+  }
+
+  if (isDate(input)) {
+    return DateTime.fromJSDate(input);
+  }
+
+  if (input instanceof DateTime) {
+    return input;
+  }
+
+  throw new NotSupportedError('Unsupported input type.');
 }
 
 export function timestampToNumericDate(timestamp: number): number {
