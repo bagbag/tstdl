@@ -1,7 +1,7 @@
 import { Array, Enumeration, Property } from '#/schema';
 import { propertyName } from '#/utils/object';
 import { timeout } from '#/utils/timing';
-import { isDefined, isString, isUndefined } from '#/utils/type-guards';
+import { isDefined, isUndefined } from '#/utils/type-guards';
 import type { zxcvbnAsync } from '@zxcvbn-ts/core';
 import type { OptionsType } from '@zxcvbn-ts/core/dist/types';
 import { haveIBeenPwned } from './have-i-been-pwned';
@@ -47,7 +47,7 @@ export async function checkPassword(password: string, { checkForPwned = true }: 
   ]);
 
   const pawned = (isDefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
-  const warnings = isString(zxcvbnResult.feedback.warning)
+  const warnings = zxcvbnResult.feedback.warning
     ? [...pawned, passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings[zxcvbnResult.feedback.warning as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['warnings'])][propertyName]]
     : pawned;
 
