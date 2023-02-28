@@ -1,19 +1,37 @@
 import { SchemaError } from '#/schema/index.js';
+import type { OneOrMany } from '#/types';
+import { isArray, isDefined } from '#/utils/type-guards';
 
 export type SerializedSchemaError = {
-  message: string,
+  path: string,
   details?: any,
-  path: string
+  inner?: OneOrMany<SerializedInnerSchemaError>
+};
+
+export type SerializedInnerSchemaError = SerializedSchemaError & {
+  message: string
 };
 
 export function serializeSchemaError(error: SchemaError): SerializedSchemaError {
   return {
-    message: error.message,
+    path: error.path,
     details: error.details,
-    path: error.path
+    inner: isDefined(error.inner) ? isArray(error.inner) ? error.inner.map(serializeInnerSchemaError) : serializeInnerSchemaError(error.inner) : undefined
   };
 }
 
-export function deserializeSchemaError(serializedError: SerializedSchemaError): SchemaError {
-  return new SchemaError(serializedError.message, { details: serializedError.details, path: serializedError.path });
+export function serializeInnerSchemaError(error: SchemaError): SerializedInnerSchemaError {
+  return {
+    message: error.message,
+    ...serializeSchemaError(error)
+  };
+}
+
+export function deserializeSchemaError(message: string, data: SerializedSchemaError): SchemaError {
+  const inner = isDefined(data.inner) ? isArray(data.inner) ? data.inner.map(deserializeInnerSchemaError) : deserializeInnerSchemaError(data.inner) : undefined;
+  return new SchemaError(message, { path: data.path, details: data.details, inner });
+}
+
+export function deserializeInnerSchemaError(data: SerializedInnerSchemaError): SchemaError {
+  return deserializeSchemaError(data.message, data);
 }

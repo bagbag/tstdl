@@ -10,13 +10,16 @@ export type Token<AdditionalTokenPayload = Record<never>> = JwtToken<AdditionalT
 
 export type TokenPayload<T> = T & TokenPayloadBase;
 
-export type RefreshTokenPayload = {
+export type RefreshToken = JwtToken<{
   /** expiration timestamp in seconds */
   exp: number,
 
   subject: string,
   sessionId: string,
   secret: string
-};
+}>;
 
-export type RefreshToken = JwtToken<RefreshTokenPayload>;
+export type SecretResetToken = JwtToken<{
+  exp: number,
+  subject: string
+}>;

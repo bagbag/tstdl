@@ -18,7 +18,7 @@ import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined 
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
-import type { TokenPayload } from '../models/index.js';
+import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
 const tokenStorageKey = 'AuthenticationService:token';
@@ -179,6 +179,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       await this.handleError(error as Error);
       throw error;
     }
+  }
+
+  async checkSecret(secret: string): Promise<SecretCheckResult> {
+    return this.client.checkSecret({ secret });
   }
 
   private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {

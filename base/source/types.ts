@@ -40,7 +40,7 @@ export type UndefinableJson = JsonPrimitive | UndefinableJsonObject | Undefinabl
 export type UndefinableJsonInnerNode = UndefinableJsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
 export type UndefinableJsonPrimitive = JsonPrimitive | undefined;
 export type UndefinableJsonObject = { [key: string]: UndefinableJsonInnerNode };
-export type UndefinableJsonArray = UndefinableJsonInnerNode[];
+export type UndefinableJsonArray = UndefinableJsonInnerNode[] | readonly UndefinableJsonInnerNode[];
 
 export type ArrayItem<T extends readonly any[]> = T extends readonly (infer U)[] ? U : never;
 

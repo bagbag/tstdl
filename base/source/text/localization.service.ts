@@ -35,7 +35,8 @@ export type Localization<T extends LocalizationTemplate = LocalizationTemplate, 
 
 declare const parametersSymbol: unique symbol;
 
-export type LocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]: Parameters };
+export type ProxyLocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]?: Parameters };
+export type LocalizationKey<Parameters = void> = string | ProxyLocalizationKey<Parameters>;
 
 export type LocalizationData<Parameters = any> =
   | LocalizationKey
@@ -47,12 +48,12 @@ export type LocalizationDataObject<Parameters> = {
   parameters: Parameters
 };
 
-export type LocalizationKeys<T extends LocalizationTemplate> = {
+export type ProxyLocalizationKeys<T extends LocalizationTemplate> = {
   [P in keyof T]: T[P] extends LocalizationTemplate
-  ? LocalizationKeys<T[P]>
+  ? ProxyLocalizationKeys<T[P]>
   : T[P] extends LocalizeItem<infer R>
-  ? LocalizationKey<R>
-  : LocalizationKey;
+  ? ProxyLocalizationKey<R>
+  : ProxyLocalizationKey;
 };
 
 type MappedLocalization = {
@@ -61,7 +62,7 @@ type MappedLocalization = {
   enums: Map<Enumeration, EnumerationLocalization>
 };
 
-export function isLocalizationKey(value: any): value is LocalizationKey {
+export function isProxyLocalizationKey(value: any): value is ProxyLocalizationKey {
   return isPropertyName(value);
 }
 
@@ -79,8 +80,8 @@ export function localizationData<T>(data: LocalizationData<T>): LocalizationData
  * @param localization
  * @returns
  */
-export function getLocalizationKeys<T extends Localization<any, any>>(_localization?: T): LocalizationKeys<T['keys']> {
-  return getPropertyNameProxy() as unknown as LocalizationKeys<T['keys']>;
+export function getLocalizationKeys<T extends Localization<any, any> | LocalizationTemplate>(_localization?: T): ProxyLocalizationKeys<T extends Localization ? T['keys'] : T> {
+  return getPropertyNameProxy() as unknown as ProxyLocalizationKeys<T extends Localization ? T['keys'] : T>;
 }
 
 export const autoEnumerationLocalization = memoizeSingle(_autoEnumerationLocalization, { weak: true });
@@ -127,12 +128,16 @@ export class LocalizationService {
 
   registerLocalization(...localizations: Localization<any, any>[]): void {
     for (const localization of localizations) {
-      if (this.localizations.has(localization.language.code)) {
-        throw new Error(`Localization ${localization.language.name} (${localization.language.code}) already registered.`);
-      }
-
       const mappedLocalization = buildMappedLocalization(localization);
-      this.localizations.set(localization.language.code, mappedLocalization);
+
+      if (this.localizations.has(localization.language.code)) {
+        const existing = this.localizations.get(localization.language.code)!;
+        const merged = mergeMappedLocalization(existing, mappedLocalization);
+        this.localizations.set(localization.language.code, merged);
+      }
+      else {
+        this.localizations.set(localization.language.code, mappedLocalization);
+      }
 
       if (isUndefined(this.activeLanguage)) {
         this.setLocalization(localization);
@@ -170,8 +175,7 @@ export class LocalizationService {
       return undefined;
     }
 
-    const keyIsLocalizationKey = isLocalizationKey(key);
-    const actualKey = keyIsLocalizationKey ? key[propertyName] : (key as LocalizationDataObject<unknown>).key[propertyName];
+    const actualKey = getStringKey(key);
     return this.localizations.get(this.activeLanguage.code)?.keys.get(actualKey);
   }
 
@@ -181,10 +185,9 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize<Parameters>(data: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
-    const dataIsLocalizationKey = isLocalizationKey(data);
-    const key = dataIsLocalizationKey ? data[propertyName] : (data as LocalizationDataObject<unknown>).key[propertyName];
-    const parameters = dataIsLocalizationKey ? {} : (data as LocalizationDataObject<unknown>).parameters;
+  localize<Parameters>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
+    const key = getStringKey(keyOrData);
+    const parameters = (isString(keyOrData) || isProxyLocalizationKey(keyOrData)) ? {} : (keyOrData as LocalizationDataObject<unknown>).parameters;
 
     const templateOrFunction = isDefined(this.activeLanguage) ? this.localizations.get(this.activeLanguage.code)?.keys.get(key) : undefined;
 
@@ -267,4 +270,22 @@ function buildMappedLocalization({ language, keys, enums }: Localization): Mappe
   };
 
   return mappedLocalization;
+}
+
+function getStringKey(key: string | LocalizationKey<any> | LocalizationData): string {
+  return isProxyLocalizationKey(key) ? key[propertyName]
+    : isString(key) ? key
+      : getStringKey((key as LocalizationDataObject<unknown>).key);
+}
+
+function mergeMappedLocalization(a: MappedLocalization, b: MappedLocalization, force: boolean = false): MappedLocalization {
+  if (!force && (a.language.code != b.language.code)) {
+    throw new Error('Language code mismatch. Set force to true to force.');
+  }
+
+  return {
+    language: b.language,
+    keys: new Map([...a.keys, ...b.keys]),
+    enums: new Map([...a.enums, ...b.enums])
+  };
 }

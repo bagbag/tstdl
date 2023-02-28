@@ -5,7 +5,7 @@ import type { OneOrMany, Record } from '#/types.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { parseAndValidateJwtTokenString } from '#/utils/jwt.js';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
-import type { RefreshToken, Token } from '../models/index.js';
+import type { SecretResetToken, RefreshToken, Token } from '../models/index.js';
 
 /**
  *
@@ -84,4 +84,18 @@ export async function getRefreshTokenFromString(tokenString: string, secret: str
   }
 
   return validatedRefreshToken;
+}
+
+export async function getSecretResetTokenFromString(tokenString: string, secret: string | BinaryData): Promise<SecretResetToken> {
+  if (isUndefined(tokenString)) {
+    throw new InvalidTokenError('Missing secret reset token');
+  }
+
+  const validatedSecretResetToken = await parseAndValidateJwtTokenString<SecretResetToken>(tokenString, 'HS256', secret);
+
+  if (validatedSecretResetToken.payload.exp <= currentTimestampSeconds()) {
+    throw new InvalidTokenError('Secret reset token expired.');
+  }
+
+  return validatedSecretResetToken;
 }

@@ -1,3 +1,4 @@
+import { SecretRequirementsError } from '#/authentication/errors/secret-requirements.error.js';
 import { SchemaError } from '#/schema/schema.error.js';
 import type { CustomError, CustomErrorStatic } from '../error/index.js';
 import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error/index.js';
@@ -163,4 +164,5 @@ registerErrorHandler(NotSupportedError, 400, () => undefined, (_, error) => new 
 registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
 registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
 registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
-registerErrorHandler(SchemaError, 400, serializeSchemaError, deserializeSchemaError);
+registerErrorHandler(SchemaError, 400, serializeSchemaError, (data, error) => deserializeSchemaError(error.message, data));
+registerErrorHandler(SecretRequirementsError, 403, () => undefined, (_, error) => new SecretRequirementsError(error.message));

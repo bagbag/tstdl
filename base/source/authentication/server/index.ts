@@ -1,5 +1,7 @@
 export * from './authentication-api-request-token.provider.js';
 export * from './authentication-credentials.repository.js';
+export * from './authentication-secret-requirements.validator';
+export * from './authentication-secret-reset.handler';
 export * from './authentication-session.repository.js';
 export * from './authentication-subject.resolver.js';
 export * from './authentication-token-payload.provider.js';

@@ -10,8 +10,8 @@ import { getValueTypeName } from './utils/index.js';
 
 export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,
-  inner?: OneOrMany<SchemaError>,
   details?: UndefinableJson,
+  inner?: OneOrMany<SchemaError>,
   cause?: any
 };
 
@@ -19,8 +19,8 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   static readonly errorName = 'SchemaError';
 
   readonly path: string;
-  readonly inner?: OneOrMany<SchemaError>;
   readonly details?: UndefinableJson;
+  readonly inner?: OneOrMany<SchemaError>;
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
     super({ message, cause: cause ?? options.cause, fast: options.fast });

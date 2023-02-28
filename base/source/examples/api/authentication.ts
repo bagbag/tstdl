@@ -32,7 +32,7 @@ configureLocalMessageBus();
 
 async function serverTest(): Promise<void> {
   const authenticationService = await container.resolveAsync(AuthenticationServerService);
-  await authenticationService.setCredentials('foobar', 'supersecret');
+  await authenticationService.setCredentials('foobar', 'mysuperdupersecret-fvhc54w');
 }
 
 async function clientTest(): Promise<void> {
@@ -41,7 +41,10 @@ async function clientTest(): Promise<void> {
   const authenticationService = container.resolve(AuthenticationClientService);
   authenticationService.initialize();
 
-  await authenticationService.login('foobar', 'supersecret');
+  const passwordCheckResult = await authenticationService.checkSecret('123456');
+  console.log({ 'password check for "123456"': passwordCheckResult });
+
+  await authenticationService.login('foobar', 'mysuperdupersecret-fvhc54w');
   authenticationService.token$.subscribe((token) => console.log({ token }));
 }
 

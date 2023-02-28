@@ -4,11 +4,12 @@ import type { SchemaTestable } from '#/schema/schema.js';
 import { assign } from '#/schema/schemas/assign.js';
 import { literal } from '#/schema/schemas/literal.js';
 import { number } from '#/schema/schemas/number.js';
-import { emptyObjectSchema, explicitObject } from '#/schema/schemas/object.js';
+import { emptyObjectSchema, explicitObject, object } from '#/schema/schemas/object.js';
 import { string } from '#/schema/schemas/string.js';
 import { unknown } from '#/schema/schemas/unknown.js';
 import type { ObjectSchemaOrType } from '#/schema/types/types.js';
 import type { Record } from '#/types.js';
+import { SecretCheckResult } from './models/secret-check-result.model.js';
 import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
 type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
@@ -81,6 +82,31 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, 
       data: {
         [dontWaitForValidToken]: true
       }
+    },
+    initResetSecret: {
+      resource: 'secret/init-reset',
+      method: 'POST',
+      parameters: object({
+        subject: string()
+      }),
+      result: literal('ok' as const)
+    },
+    resetSecret: {
+      resource: 'secret/reset',
+      method: 'POST',
+      parameters: object({
+        token: string(),
+        newSecret: string()
+      }),
+      result: literal('ok' as const)
+    },
+    checkSecret: {
+      resource: 'secret/check',
+      method: 'POST',
+      parameters: object({
+        secret: string()
+      }),
+      result: SecretCheckResult
     },
     timestamp: {
       resource: 'timestamp',

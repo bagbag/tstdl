@@ -1,7 +1,8 @@
 import { apiController } from '#/api/server/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
 import { UnauthorizedError } from '#/error/unauthorized.error.js';
-import { HttpServerResponse, SetCookieObject } from '#/http/server/index.js';
+import type { SetCookieObject } from '#/http/server/index.js';
+import { HttpServerResponse } from '#/http/server/index.js';
 import type { Record, TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
@@ -71,6 +72,20 @@ export class AuthenticationApiController<AdditionalTokenPayload = Record<never>,
         json: result
       }
     });
+  }
+
+  async initResetSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'initResetSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'initResetSecret'>> {
+    await this.authenticationService.initResetSecret(parameters.subject);
+    return 'ok';
+  }
+
+  async resetSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'resetSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'resetSecret'>> {
+    await this.authenticationService.resetSecret(parameters.token, parameters.newSecret);
+    return 'ok';
+  }
+
+  async checkSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'checkSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'checkSecret'>> {
+    return this.authenticationService.checkSecret(parameters.secret);
   }
 
   timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>, 'timestamp'> {

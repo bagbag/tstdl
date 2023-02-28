@@ -1,7 +1,7 @@
 import type { AfterResolve } from '#/container/index.js';
 import { afterResolve, inject, optional, singleton } from '#/container/index.js';
 import { InvalidTokenError } from '#/error/invalid-token.error.js';
-import { NumberProperty, Property } from '#/schema/index.js';
+import { NotImplementedError } from '#/error/not-implemented.error.js';
 import type { Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { importPbkdf2Key } from '#/utils/cryptography.js';
@@ -11,29 +11,37 @@ import { createJwtTokenString } from '#/utils/jwt.js';
 import { getRandomBytes, getRandomString } from '#/utils/random.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
-import type { NewAuthenticationCredentials, RefreshToken, Token } from '../models/index.js';
+import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
+import { AuthenticationSecretRequirementsValidator } from './authentication-secret-requirements.validator.js';
+import { AuthenticationSecretResetHandler } from './authentication-secret-reset.handler.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
 import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
 import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider.js';
-import { getRefreshTokenFromString, getTokenFromString } from './helper.js';
+import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
+
+export type SecretValidatorFunction = (secret: string) => void | Promise<void>;
+
+export type SecretValidator = string | RegExp | SecretValidatorFunction;
 
 export class AuthenticationServiceOptions {
   /** Secret used for signing tokens and refreshTokens */
-  @Property()
   secret: string;
 
   /** Token version, forces refresh on mismatch (useful if payload changes) */
-  @NumberProperty({ optional: true })
   version?: number;
 
   /** How long a token is valid */
-  @NumberProperty({ optional: true })
   tokenTimeToLive?: number;
 
-  /** How long a session is valid after a refreshed. Cannot be refreshed (new token issued) after it timed out. */
-  @NumberProperty({ optional: true })
-  sessionTimeToLive?: number;
+  /** How long a refresh token is valid. Implies session time to live. */
+  refreshTokenTimeToLive?: number;
+
+  /** How long a secret reset token is valid. */
+  secretResetTokenTimeToLive?: number;
+
+  /** Validator for secret requirements. */
+  secretValidator?: SecretValidator;
 }
 
 export type AuthenticationResult =
@@ -58,39 +66,55 @@ type CreateRefreshTokenResult = {
   hash: Uint8Array
 };
 
+type CreateSecretResetTokenResult = {
+  token: string,
+  jsonToken: SecretResetToken
+};
+
 const SIGNING_SECRETS_LENGTH = 512;
+
 
 @singleton()
 export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
+  private readonly authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator;
   private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
   private readonly subjectResolver: AuthenticationSubjectResolver | undefined;
+  private readonly authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined;
 
   private readonly secret: string;
   private readonly tokenVersion: number;
   private readonly tokenTimeToLive: number;
-  private readonly sessionTimeToLive: number;
+  private readonly refreshTokenTimeToLive: number;
+  private readonly secretResetTokenTimeToLive: number;
+  private readonly secretValidator: SecretValidatorFunction;
 
   private derivedTokenSigningSecret: Uint8Array;
   private derivedRefreshTokenSigningSecret: Uint8Array;
+  private derivedSecretResetTokenSigningSecret: Uint8Array;
 
   constructor(
     credentialsRepository: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
+    authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator,
     @inject(AuthenticationSubjectResolver) @optional() subjectResolver: AuthenticationSubjectResolver | undefined,
     @inject(AuthenticationTokenPayloadProvider) @optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
+    @inject(AuthenticationSecretResetHandler) @optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined,
     options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsRepository;
     this.sessionRepository = sessionRepository;
+    this.authenticationSecretRequirementsValidator = authenticationSecretRequirementsValidator;
     this.subjectResolver = subjectResolver;
     this.tokenPayloadProvider = tokenPayloadProvider;
+    this.authenticationResetSecretHandler = authenticationResetSecretHandler;
 
     this.secret = options.secret;
     this.tokenVersion = options.version ?? 1;
     this.tokenTimeToLive = options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
-    this.sessionTimeToLive = options.sessionTimeToLive ?? (5 * millisecondsPerDay);
+    this.refreshTokenTimeToLive = options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
+    this.secretResetTokenTimeToLive = options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
   }
 
   async [afterResolve](): Promise<void> {
@@ -103,6 +127,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   async setCredentials(subject: string, secret: string): Promise<void> {
     const actualSubject = await this.getActualSubject(subject);
+
+    await this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
 
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
@@ -138,7 +164,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   async getToken(subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
     const actualSubject = await this.getActualSubject(subject);
     const now = currentTimestamp();
-    const end = now + this.sessionTimeToLive;
+    const end = now + this.refreshTokenTimeToLive;
 
     const session = await this.sessionRepository.insert({
       subject: actualSubject,
@@ -184,7 +210,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     }
 
     const now = currentTimestamp();
-    const newEnd = now + this.sessionTimeToLive;
+    const newEnd = now + this.refreshTokenTimeToLive;
     const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData);
     const { token, jsonToken } = await this.createToken(tokenPayload!, session.subject, sessionId, newEnd, now);
     const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
@@ -199,12 +225,43 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     return { token, jsonToken, refreshToken: newRefreshToken.token };
   }
 
+  async initResetSecret(subject: string): Promise<void> {
+    if (isUndefined(this.authenticationResetSecretHandler)) {
+      throw new NotImplementedError();
+    }
+
+    const secretResetToken = await this.createSecretResetToken(subject, currentTimestamp() + this.secretResetTokenTimeToLive);
+
+    const initSecretResetData: InitSecretResetData = {
+      subject,
+      token: secretResetToken.token
+    };
+
+    await this.authenticationResetSecretHandler.handleInitSecretReset(initSecretResetData);
+  }
+
+  async resetSecret(tokenString: string, newSecret: string): Promise<void> {
+    const token = await this.validateSecretResetToken(tokenString);
+
+    await this.secretValidator(newSecret);
+
+    await this.setCredentials(token.payload.subject, newSecret);
+  }
+
+  async checkSecret(secret: string): Promise<SecretCheckResult> {
+    return this.authenticationSecretRequirementsValidator.checkSecretRequirements(secret);
+  }
+
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {
     return getTokenFromString(token, this.tokenVersion, this.derivedTokenSigningSecret);
   }
 
   async validateRefreshToken(token: string): Promise<RefreshToken> {
     return getRefreshTokenFromString(token, this.derivedRefreshTokenSigningSecret);
+  }
+
+  async validateSecretResetToken(token: string): Promise<SecretResetToken> {
+    return getSecretResetTokenFromString(token, this.derivedSecretResetTokenSigningSecret);
   }
 
   private async getActualSubject(subject: string): Promise<string> {
@@ -261,13 +318,31 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     return { token, jsonToken, salt, hash: new Uint8Array(hash) };
   }
 
+  private async createSecretResetToken(subject: string, expirationTimestamp: number): Promise<CreateSecretResetTokenResult> {
+    const jsonToken: SecretResetToken = {
+      header: {
+        alg: 'HS256',
+        typ: 'JWT'
+      },
+      payload: {
+        exp: timestampToTimestampSeconds(expirationTimestamp),
+        subject
+      }
+    };
+
+    const token = await createJwtTokenString<SecretResetToken>(jsonToken, this.derivedRefreshTokenSigningSecret);
+
+    return { token, jsonToken };
+  }
+
   private async deriveSigningSecrets(): Promise<void> {
     const key = await importPbkdf2Key(this.secret);
-    const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key, SIGNING_SECRETS_LENGTH * 2);
+    const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key, SIGNING_SECRETS_LENGTH * 3);
     const bufferSize = SIGNING_SECRETS_LENGTH / 8;
 
     this.derivedTokenSigningSecret = new Uint8Array(hash.slice(0, bufferSize));
-    this.derivedRefreshTokenSigningSecret = new Uint8Array(hash.slice(bufferSize));
+    this.derivedRefreshTokenSigningSecret = new Uint8Array(hash.slice(bufferSize, bufferSize * 2));
+    this.derivedSecretResetTokenSigningSecret = new Uint8Array(hash.slice(bufferSize * 2));
   }
 
   private async getHash(secret: string | BinaryData, salt: BinaryData): Promise<Uint8Array> {

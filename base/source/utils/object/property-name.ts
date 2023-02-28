@@ -14,6 +14,10 @@ export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
 }
 
+function propertyNameProxy(): void {
+  throw new Error();
+}
+
 /**
  * get the path to a property
  *
@@ -31,7 +35,7 @@ export function isPropertyName(value: any): value is PropertyName {
 export function getPropertyNameProxy<T extends Record = Record>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
   const { deep = true, flat = false, prefix } = options;
 
-  const proxy = new Proxy<PropertyNameProxy<T>>({} as PropertyNameProxy<T>, {
+  const proxy = new Proxy<PropertyNameProxy<T>>(propertyNameProxy as unknown as PropertyNameProxy<T>, {
     get: (_target, property): any => {
       if (property == propertyName) {
         return prefix;
