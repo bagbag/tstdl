@@ -126,7 +126,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async setCredentials(subject: string, secret: string): Promise<void> {
-    const actualSubject = await this.getActualSubject(subject);
+    const actualSubject = await this.resolveSubject(subject);
 
     await this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
 
@@ -144,7 +144,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
-    const actualSubject = await this.getActualSubject(subject);
+    const actualSubject = await this.resolveSubject(subject);
     const credentials = await this.credentialsRepository.tryLoadBySubject(actualSubject);
 
     if (isUndefined(credentials)) {
@@ -162,7 +162,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async getToken(subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
-    const actualSubject = await this.getActualSubject(subject);
+    const actualSubject = await this.resolveSubject(subject);
     const now = currentTimestamp();
     const end = now + this.refreshTokenTimeToLive;
 
@@ -230,10 +230,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       throw new NotImplementedError();
     }
 
-    const secretResetToken = await this.createSecretResetToken(subject, currentTimestamp() + this.secretResetTokenTimeToLive);
+    const actualSubject = await this.resolveSubject(subject);
+    const secretResetToken = await this.createSecretResetToken(actualSubject, currentTimestamp() + this.secretResetTokenTimeToLive);
 
     const initSecretResetData: InitSecretResetData = {
-      subject,
+      subject: actualSubject,
       token: secretResetToken.token
     };
 
@@ -264,7 +265,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     return getSecretResetTokenFromString(token, this.derivedSecretResetTokenSigningSecret);
   }
 
-  private async getActualSubject(subject: string): Promise<string> {
+  async resolveSubject(subject: string): Promise<string> {
     return this.subjectResolver?.resolveSubject(subject) ?? subject;
   }
 
