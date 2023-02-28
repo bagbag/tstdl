@@ -7,7 +7,7 @@ export class ResolveError extends CustomError {
     const causeMessage = isDefined(cause) ? `\n  cause: ${cause.message}` : '';
 
     super({
-      message: `${message}${causeMessage}\n  chain: ${chain.format()}`,
+      message: `${message}${causeMessage}\n  chain: ${chain.format(15)}`,
       cause
     });
   }

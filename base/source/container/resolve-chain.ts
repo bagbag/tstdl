@@ -1,6 +1,6 @@
 import { reflectionRegistry } from '#/reflection/index.js';
 import type { AbstractConstructor } from '#/types.js';
-import { assertDefinedPass } from '#/utils/type-guards.js';
+import { assertDefinedPass, isDefined } from '#/utils/type-guards.js';
 import type { InjectionToken } from './token.js';
 import { getTokenName } from './token.js';
 
@@ -44,10 +44,16 @@ export class ResolveChain {
     return new ResolveChain([...this.nodes, node]);
   }
 
-  format(): string {
+  format(truncate?: number): string {
     let chainString = '';
 
-    for (const node of this.nodes) {
+    const chain = isDefined(truncate) ? this.truncate(truncate) : this;
+
+    if (chain.length < this.length) {
+      chainString += '\n       [...]';
+    }
+
+    for (const node of chain.nodes) {
       const tokenName = getTokenName(node.token);
 
       switch (node.type) {

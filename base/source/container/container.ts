@@ -206,8 +206,8 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private _resolve<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: InternalResolveContext, chain: ResolveChain, isFirst: boolean): T {
-    if ((chain.length > 5000) || (++context.resolves > 5000)) {
-      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead.', chain.truncate(15));
+    if ((chain.length > 256) || (++context.resolves > 256)) {
+      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles and self reference. Use scoped or singleton lifecycle instead or @forwardRef().', chain);
     }
 
     if (isUndefined(token)) {
@@ -251,7 +251,7 @@ export class Container {
     }
 
     if (context.resolving.has([token, argumentIdentity])) {
-      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain.truncate(15));
+      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain);
     }
 
     context.resolving.set([token, argumentIdentity], true);
@@ -363,8 +363,8 @@ export class Container {
 
   // eslint-disable-next-line max-statements, max-lines-per-function, complexity
   private async _resolveAsync<T, A>(token: InjectionToken<T, A>, optional: boolean | undefined, _argument: InjectableArgument<T, A> | undefined, context: InternalResolveContext, chain: ResolveChain, isFirst: boolean): Promise<T> {
-    if ((chain.length > 5000) || (++context.resolves > 5000)) {
-      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles. Use scoped or singleton lifecycle instead.', chain.truncate(15));
+    if ((chain.length > 256) || (++context.resolves > 256)) {
+      throw new ResolveError('Resolve stack overflow. This can happen on circular dependencies with transient lifecycles and self reference. Use scoped or singleton lifecycle instead or @forwardRef().', chain);
     }
 
     if (isUndefined(token)) {
@@ -400,7 +400,7 @@ export class Container {
     }
 
     if (context.resolving.has([token, argumentIdentity])) {
-      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain.truncate(15));
+      throw new ResolveError('Circular dependency to itself detected. Please check your registrations and providers. @forwardRef might be a solution.', chain);
     }
 
     context.resolving.set([token, argumentIdentity], true);
