@@ -14,7 +14,7 @@ import type { Record } from '#/types.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
-import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, isDefined, isNull, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject, timer } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
@@ -22,6 +22,7 @@ import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
 const tokenStorageKey = 'AuthenticationService:token';
+const authenticationDataStorageKey = 'AuthenticationService:authentication-data';
 const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
@@ -38,7 +39,25 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
 
-  private authenticationData: AuthenticationData | undefined;
+  private set authenticationData(data: AuthenticationData | undefined) {
+    if (isUndefined(data)) {
+      localStorage.removeItem(authenticationDataStorageKey);
+    }
+    else {
+      const json = JSON.stringify(data);
+      localStorage.setItem(authenticationDataStorageKey, json);
+    }
+  }
+
+  private get authenticationData(): AuthenticationData | undefined {
+    try {
+      const data = localStorage.getItem(authenticationDataStorageKey);
+      return isNull(data) ? undefined : JSON.parse(data) as AuthenticationData;
+    }
+    catch {
+      return undefined;
+    }
+  }
 
   readonly error$: Observable<Error>;
 
@@ -99,8 +118,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.tokenUpdateBus = tokenUpdateBus;
     this.loggedOutBus = loggedOutBus;
     this.refreshLock = refreshLock;
-    this.authenticationData = initialAuthenticationData;
     this.logger = logger;
+
+    if (isUndefined(this.authenticationData)) {
+      this.authenticationData = initialAuthenticationData;
+    }
 
     this.disposeToken = new CancellationToken();
     this.errorSubject = new Subject();
