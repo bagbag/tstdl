@@ -181,6 +181,14 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     }
   }
 
+  async initResetSecret(subject: string): Promise<void> {
+    await this.client.initResetSecret({ subject });
+  }
+
+  async resetSecret(token: string, newSecret: string): Promise<void> {
+    await this.client.resetSecret({ token, newSecret });
+  }
+
   async checkSecret(secret: string): Promise<SecretCheckResult> {
     return this.client.checkSecret({ secret });
   }
