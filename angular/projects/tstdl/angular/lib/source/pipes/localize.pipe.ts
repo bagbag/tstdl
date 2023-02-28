@@ -1,7 +1,7 @@
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
-import { isLocalizationKey, LocalizationService } from '@tstdl/base/text';
+import { isProxyLocalizationKey, LocalizationService } from '@tstdl/base/text';
 import { isNull } from '@tstdl/base/utils';
 import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
 
@@ -48,7 +48,7 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
       return null;
     }
 
-    if (isLocalizationKey(localizationDataOrKey)) {
+    if (isProxyLocalizationKey(localizationDataOrKey)) {
       this.transformSubject.next({ key: localizationDataOrKey, parameters: parametersOrNothing });
     }
     else {
