@@ -80,8 +80,8 @@ export function localizationData<T>(data: LocalizationData<T>): LocalizationData
  * @param localization
  * @returns
  */
-export function getLocalizationKeys<T extends Localization<any, any> | LocalizationTemplate>(_localization?: T): ProxyLocalizationKeys<T extends Localization ? T['keys'] : T> {
-  return getPropertyNameProxy() as unknown as ProxyLocalizationKeys<T extends Localization ? T['keys'] : T>;
+export function getLocalizationKeys<T extends Localization>(_localization?: T): ProxyLocalizationKeys<T['keys']> {
+  return getPropertyNameProxy() as unknown as ProxyLocalizationKeys<T['keys']>;
 }
 
 export const autoEnumerationLocalization = memoizeSingle(_autoEnumerationLocalization, { weak: true });

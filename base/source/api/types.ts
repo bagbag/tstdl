@@ -143,7 +143,7 @@ export type ApiRequestContext<T extends ApiDefinition = ApiDefinition, K extends
 };
 
 export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
-  (requestData: ApiRequestContext<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
+  (context: ApiRequestContext<T, K>) => ApiServerResult<T, K> | Promise<ApiServerResult<T, K>>;
 
 export type ApiEndpointClientImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
   ApiClientBody<T, K> extends never
