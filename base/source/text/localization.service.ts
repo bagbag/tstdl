@@ -80,7 +80,7 @@ export function localizationData<T>(data: LocalizationData<T>): LocalizationData
  * @param localization
  * @returns
  */
-export function getLocalizationKeys<T extends Localization>(_localization?: T): ProxyLocalizationKeys<T['keys']> {
+export function getLocalizationKeys<T extends Localization<any, any>>(_localization?: T): ProxyLocalizationKeys<T['keys']> {
   return getPropertyNameProxy() as unknown as ProxyLocalizationKeys<T['keys']>;
 }
 
