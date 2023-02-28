@@ -13,10 +13,10 @@ import { MessageBus } from '#/message-bus/index.js';
 import type { Record } from '#/types.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
-import { cancelableTimeout, timeout } from '#/utils/timing.js';
+import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject, timer } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
@@ -33,6 +33,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly loggedOutBus: MessageBus<void>;
+  private readonly forceRefreshToken: CancellationToken;
   private readonly refreshLock: Lock | undefined;
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
@@ -104,6 +105,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.disposeToken = new CancellationToken();
     this.errorSubject = new Subject();
     this.tokenSubject = new BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
+    this.forceRefreshToken = new CancellationToken();
 
     this.error$ = this.errorSubject.asObservable();
     this.token$ = this.tokenSubject.asObservable();
@@ -164,6 +166,14 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       this.setNewToken(undefined);
       this.loggedOutBus.publishAndForget();
     }
+  }
+
+  requestRefresh(data?: AuthenticationData): void {
+    if (isDefined(data)) {
+      this.setAdditionalData(data);
+    }
+
+    this.forceRefreshToken.set();
   }
 
   async refresh(data?: AuthenticationData): Promise<void> {
@@ -237,10 +247,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
           await this.refreshLoopIteration();
         }
 
-        await cancelableTimeout(2500, this.disposeToken);
+        await firstValueFrom(race([timer(2500), this.disposeToken, this.forceRefreshToken]));
       }
       catch {
-        await cancelableTimeout(5000, this.disposeToken);
+        await firstValueFrom(race([timer(5000), this.disposeToken, this.forceRefreshToken]));
       }
     }
   }
@@ -252,7 +262,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       return;
     }
 
-    if (currentTimestampSeconds() >= (token.exp - 60)) {
+    if (this.forceRefreshToken.isSet || (currentTimestampSeconds() >= (token.exp - 60))) {
+      this.forceRefreshToken.unset();
       await this.refresh();
     }
   }
