@@ -286,7 +286,7 @@ function getStringKey(key: string | LocalizationKey<any> | LocalizationData, sou
     throw new DetailsError('Invalid localization key', { sourceKey });
   }
 
-  return getStringKey((key as LocalizationDataObject<unknown>).key);
+  return getStringKey((key as LocalizationDataObject<unknown>).key, sourceKey);
 }
 
 function mergeMappedLocalization(a: MappedLocalization, b: MappedLocalization, force: boolean = false): MappedLocalization {
