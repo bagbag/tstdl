@@ -20,10 +20,6 @@ import { AuthenticationSubjectResolver } from './authentication-subject.resolver
 import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from './authentication-token-payload.provider.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
-export type SecretValidatorFunction = (secret: string) => void | Promise<void>;
-
-export type SecretValidator = string | RegExp | SecretValidatorFunction;
-
 export class AuthenticationServiceOptions {
   /** Secret used for signing tokens and refreshTokens */
   secret: string;
@@ -39,9 +35,6 @@ export class AuthenticationServiceOptions {
 
   /** How long a secret reset token is valid. */
   secretResetTokenTimeToLive?: number;
-
-  /** Validator for secret requirements. */
-  secretValidator?: SecretValidator;
 }
 
 export type AuthenticationResult =
@@ -88,7 +81,6 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly tokenTimeToLive: number;
   private readonly refreshTokenTimeToLive: number;
   private readonly secretResetTokenTimeToLive: number;
-  private readonly secretValidator: SecretValidatorFunction;
 
   private derivedTokenSigningSecret: Uint8Array;
   private derivedRefreshTokenSigningSecret: Uint8Array;
@@ -243,9 +235,6 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   async resetSecret(tokenString: string, newSecret: string): Promise<void> {
     const token = await this.validateSecretResetToken(tokenString);
-
-    await this.secretValidator(newSecret);
-
     await this.setCredentials(token.payload.subject, newSecret);
   }
 
