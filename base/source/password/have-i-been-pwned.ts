@@ -16,6 +16,11 @@ export async function haveIBeenPwned(password: string): Promise<number> {
   const result = await response.text();
 
   const lineStart = result.indexOf(suffix);
+
+  if (lineStart == -1) {
+    return 0;
+  }
+
   const lineEnd = result.indexOf('\r\n', lineStart);
   const line = result.slice(lineStart, lineEnd);
   const pwnedCount = parseInt(line.split(':')[1]!, 10);

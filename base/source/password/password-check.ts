@@ -1,7 +1,7 @@
 import { Array, Enumeration, Property } from '#/schema';
 import { propertyName } from '#/utils/object';
 import { timeout } from '#/utils/timing';
-import { isDefined, isUndefined } from '#/utils/type-guards';
+import { isNotNullOrUndefined, isUndefined } from '#/utils/type-guards';
 import type { zxcvbnAsync } from '@zxcvbn-ts/core';
 import type { OptionsType } from '@zxcvbn-ts/core/dist/types';
 import { haveIBeenPwned } from './have-i-been-pwned';
@@ -28,7 +28,7 @@ export class PasswordCheckResult {
    * Count of how many times it appears in the data set from https://haveibeenpwned.com/
    * Undefined if disabled in options or error occured (either timeout or api error)
    */
-  @Property(Number, { optional: true })
+  @Property({ optional: true })
   pwned?: number;
 
   @Array(String)
@@ -46,7 +46,7 @@ export async function checkPassword(password: string, { checkForPwned = true }: 
     checkForPwned ? Promise.race([haveIBeenPwned(password).catch(() => undefined), timeout(1000).then(() => undefined)]) : undefined
   ]);
 
-  const pawned = (isDefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
+  const pawned = (isNotNullOrUndefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
   const warnings = zxcvbnResult.feedback.warning
     ? [...pawned, passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings[zxcvbnResult.feedback.warning as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['warnings'])][propertyName]]
     : pawned;
