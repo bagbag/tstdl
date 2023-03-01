@@ -23,7 +23,7 @@ export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerReq
     const authorizationSchemeEnd = authorizationString.indexOf(' ');
     const authorizationScheme = authorizationString.slice(0, authorizationSchemeEnd).trim().toLowerCase();
 
-    if (authorizationScheme == 'bearer') {
+    if (authorizationScheme != 'bearer') {
       throw new BadRequestError(`Unsupported authorization scheme "${authorizationScheme}".`);
     }
 
