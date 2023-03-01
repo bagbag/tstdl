@@ -5,6 +5,7 @@ import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { InvalidTokenError } from '#/error/invalid-token.error.js';
+import { NotFoundError } from '#/error/not-found.error.js';
 import { Lock } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
@@ -208,7 +209,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       this.setNewToken(token);
     }
     catch (error) {
-      await this.handleError(error as Error);
+      await this.handleRefreshError(error as Error);
       throw error;
     }
   }
@@ -290,11 +291,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     }
   }
 
-  private async handleError(error: Error): Promise<void> {
+  private async handleRefreshError(error: Error): Promise<void> {
     this.logger.error(error);
     this.errorSubject.next(error);
 
-    if (error instanceof InvalidTokenError) {
+    if ((error instanceof InvalidTokenError) || (error instanceof NotFoundError)) {
       await this.logout();
     }
   }
