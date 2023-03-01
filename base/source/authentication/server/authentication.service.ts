@@ -17,7 +17,7 @@ import { AuthenticationSecretRequirementsValidator } from './authentication-secr
 import { AuthenticationSecretResetHandler } from './authentication-secret-reset.handler.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
 import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
-import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider.js';
+import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from './authentication-token-payload.provider.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
 export type SecretValidatorFunction = (secret: string) => void | Promise<void>;
@@ -175,7 +175,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       refreshTokenHash: new Uint8Array()
     });
 
-    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(actualSubject, authenticationData);
+    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
     const { token, jsonToken } = await this.createToken(tokenPayload!, actualSubject, session.id, end, now);
     const refreshToken = await this.createRefreshToken(actualSubject, session.id, end);
 
@@ -211,7 +211,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
     const now = currentTimestamp();
     const newEnd = now + this.refreshTokenTimeToLive;
-    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData);
+    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
     const { token, jsonToken } = await this.createToken(tokenPayload!, session.subject, sessionId, newEnd, now);
     const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
 
