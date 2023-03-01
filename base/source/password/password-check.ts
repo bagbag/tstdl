@@ -46,16 +46,16 @@ export async function checkPassword(password: string, { checkForPwned = true }: 
     checkForPwned ? Promise.race([haveIBeenPwned(password).catch(() => undefined), timeout(1000).then(() => undefined)]) : undefined
   ]);
 
-  const pawned = (isNotNullOrUndefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
+  const pwnedWarnings = (isNotNullOrUndefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
   const warnings = zxcvbnResult.feedback.warning
-    ? [...pawned, passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings[zxcvbnResult.feedback.warning as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['warnings'])][propertyName]]
-    : pawned;
+    ? [...pwnedWarnings, passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings[zxcvbnResult.feedback.warning as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['warnings'])][propertyName]]
+    : pwnedWarnings;
 
   const suggestions = (zxcvbnResult.feedback.suggestions as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['suggestions'])[])
     .map((suggestion): string => passwordCheckLocalizationKeys.tstdl.passwordCheck.suggestions[suggestion][propertyName]);
 
   return {
-    strength: zxcvbnResult.score,
+    strength: ((pwnedResult ?? 0) > 0) ? 0 : zxcvbnResult.score,
     pwned: pwnedResult,
     warnings,
     suggestions
