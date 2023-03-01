@@ -1,14 +1,18 @@
 import type { DeepFlatten, DeepNonNullable, Record } from '#/types.js';
 import { assertString, assertStringPass, isDefined, isUndefined } from '../type-guards.js';
 
-export const propertyName = Symbol('PropertyName');
-export const cast = Symbol('cast');
+export const propertyName: unique symbol = Symbol('PropertyName');
+export const cast: unique symbol = Symbol('cast');
 
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
 export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]: <U extends T>() => PropertyNameProxyChild<U> };
 export type PropertyNameOfExpressionObject<T> = { [P in keyof DeepNonNullable<T>]: PropertyNameOfExpressionObject<DeepNonNullable<T>[P]> & { [cast]: <U extends DeepNonNullable<T>[P]>() => PropertyNameOfExpressionObject<U> } };
 export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]: <U extends DeepFlatten<DeepNonNullable<T>>[P]>() => FlatPropertyNameOfExpressionObject<U> } };
+
+export function getPropertyName(name: string): PropertyName {
+  return { [propertyName]: name };
+}
 
 export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);

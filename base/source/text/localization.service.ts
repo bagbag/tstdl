@@ -1,4 +1,5 @@
 import { resolveArg, singleton } from '#/container/index.js';
+import { DetailsError } from '#/error/details.error';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
@@ -6,8 +7,8 @@ import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { deepObjectEntries } from '#/utils/object/object.js';
 import type { PropertyName } from '#/utils/object/property-name.js';
-import { getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
-import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isObject, isString, isUndefined } from '#/utils/type-guards.js';
+import { getPropertyName, getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
+import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isNullOrUndefined, isObject, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, map } from 'rxjs';
 
@@ -62,12 +63,12 @@ type MappedLocalization = {
   enums: Map<Enumeration, EnumerationLocalization>
 };
 
-export function isProxyLocalizationKey(value: any): value is ProxyLocalizationKey {
-  return isPropertyName(value);
+export function getProxyLocalizationKey<Parameters = void>(key: string): ProxyLocalizationKey<Parameters> {
+  return getPropertyName(key);
 }
 
-export function getLocalizationKey<Parameters = void>(key: string): LocalizationKey<Parameters> {
-  return { [propertyName]: key } as LocalizationKey<Parameters>;
+export function isProxyLocalizationKey(value: any): value is ProxyLocalizationKey {
+  return isPropertyName(value);
 }
 
 /** helper function to ensure type safety */
@@ -272,10 +273,20 @@ function buildMappedLocalization({ language, keys, enums }: Localization): Mappe
   return mappedLocalization;
 }
 
-function getStringKey(key: string | LocalizationKey<any> | LocalizationData): string {
-  return isProxyLocalizationKey(key) ? key[propertyName]
-    : isString(key) ? key
-      : getStringKey((key as LocalizationDataObject<unknown>).key);
+function getStringKey(key: string | LocalizationKey<any> | LocalizationData, sourceKey: any = key): string {
+  if (isProxyLocalizationKey(key)) {
+    return key[propertyName];
+  }
+
+  if (isString(key)) {
+    return key;
+  }
+
+  if (isNullOrUndefined(key)) {
+    throw new DetailsError('Invalid localization key', { sourceKey });
+  }
+
+  return getStringKey((key as LocalizationDataObject<unknown>).key);
 }
 
 function mergeMappedLocalization(a: MappedLocalization, b: MappedLocalization, force: boolean = false): MappedLocalization {
