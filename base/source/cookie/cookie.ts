@@ -1,4 +1,5 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
+import { trim } from '#/utils/string/trim';
 import { isDefined, isNumber, isUndefined } from '#/utils/type-guards.js';
 
 export type SetCookieOptions = {
@@ -72,7 +73,7 @@ export function parseCookieString(cookieString: string): Map<string, string> {
     .split(';')
     .map((cookiePartString) => {
       const splitIndex = cookiePartString.indexOf('=');
-      const name = cookiePartString.slice(0, splitIndex).trim();
+      const name = trim(cookiePartString.slice(0, splitIndex).trim(), '"');
       const value = decodeURIComponent(cookiePartString.slice(splitIndex + 1).trim());
 
       return [name, value] as const;
