@@ -73,8 +73,9 @@ export function parseCookieString(cookieString: string): Map<string, string> {
     .split(';')
     .map((cookiePartString) => {
       const splitIndex = cookiePartString.indexOf('=');
-      const name = trim(cookiePartString.slice(0, splitIndex).trim(), '"');
-      const value = decodeURIComponent(cookiePartString.slice(splitIndex + 1).trim());
+      const name = cookiePartString.slice(0, splitIndex).trim();
+      const rawValue = trim(cookiePartString.slice(splitIndex + 1).trim(), '"');
+      const value = decodeURIComponent(rawValue);
 
       return [name, value] as const;
     });
