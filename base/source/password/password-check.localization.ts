@@ -59,7 +59,7 @@ export const germanPasswordCheckLocalization: PasswordCheckLocalization = {
 };
 
 export const englishPasswordCheckLocalization: PasswordCheckLocalization = {
-  language: { code: 'de', name: 'Deutsch' },
+  language: { code: 'en', name: 'English' },
   keys: {
     tstdl: {
       passwordCheck: {
