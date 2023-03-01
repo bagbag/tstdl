@@ -331,7 +331,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
       }
     };
 
-    const token = await createJwtTokenString<SecretResetToken>(jsonToken, this.derivedRefreshTokenSigningSecret);
+    const token = await createJwtTokenString<SecretResetToken>(jsonToken, this.derivedSecretResetTokenSigningSecret);
 
     return { token, jsonToken };
   }
