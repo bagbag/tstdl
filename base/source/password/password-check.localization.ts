@@ -34,7 +34,7 @@ export const germanPasswordCheckLocalization: PasswordCheckLocalization = {
           namesByThemselves: 'Einzelne Namen oder Nachnamen sind leicht zu erraten.',
           commonNames: 'Vornamen und Nachnamen sind leicht zu erraten.',
           userInputs: 'Es sollten keine persönlichen oder Seiten relevanten Daten vorkommen.',
-          pwned: 'Ihr Kennwort wurde durch eine Datenpanne im Internet offengelegt.'
+          pwned: 'Ihr Kennwort wurde durch eine Datenpanne im Internet offengelegt (https://haveibeenpwned.com/passwords).'
         },
         suggestions: {
           l33t: 'Vorhersehbare Buchstabenersetzungen wie \'@\' für \'a\' vermeiden.',
@@ -79,7 +79,7 @@ export const englishPasswordCheckLocalization: PasswordCheckLocalization = {
           namesByThemselves: 'Single names or surnames are easy to guess.',
           commonNames: 'Common names and surnames are easy to guess.',
           userInputs: 'There should not be any personal or page related data.',
-          pwned: 'Your password was exposed by a data breach on the Internet.'
+          pwned: 'Your password was exposed by a data breach on the Internet (https://haveibeenpwned.com/passwords).'
         },
         suggestions: {
           l33t: 'Avoid predictable letter substitutions like \'@\' for \'a\'.',
