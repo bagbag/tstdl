@@ -2,6 +2,7 @@ import { NotSupportedError } from '#/error/not-supported.error.js';
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
 import { isDate, isNumber } from './type-guards.js';
+import { typeOf } from './type-of.js';
 import { millisecondsPerDay, millisecondsPerHour, millisecondsPerMinute, millisecondsPerSecond } from './units.js';
 
 export type DateObject = {
@@ -75,11 +76,11 @@ export function toDateTime(input: DateTime | Date | number): DateTime {
     return DateTime.fromJSDate(input);
   }
 
-  if (input instanceof DateTime) {
+  if (DateTime.isDateTime(input)) {
     return input;
   }
 
-  throw new NotSupportedError('Unsupported input type.');
+  throw new NotSupportedError(`Unsupported input type "${typeOf(input)}".`);
 }
 
 export function timestampToNumericDate(timestamp: number): number {
