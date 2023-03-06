@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.82.11",
+  "version": "0.82.12",
   "dependencies": {
     "tslib": "^2.5"
   },
@@ -8,7 +8,7 @@
     "@angular/common": ">=15.0",
     "@angular/core": ">=15.0",
     "@tstdl/base": "^0.82.47",
-    "luxon": "^3.2"
+    "luxon": "^3.3"
   },
   "sideEffects": false
 }

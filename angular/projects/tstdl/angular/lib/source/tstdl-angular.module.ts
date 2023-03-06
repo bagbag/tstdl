@@ -4,6 +4,7 @@ import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, Skeleto
 import { CardActionDirective, CardBodyDirective, CardComponent, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective } from './components/card';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DecyclePipe, DurationPipe, DynamicTextPipe, LocalizeEnumPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeHtmlPipe, SafeResourceUrlPipe, SafeUrlPipe, SerializePipe } from './pipes';
+import { SignalPipe } from './pipes/signal.pipe';
 import { TstdlBridgeService } from './services/tstdl-bridge.service';
 
 const pipes = [
@@ -23,7 +24,8 @@ const pipes = [
   SafeHtmlPipe,
   SafeResourceUrlPipe,
   SafeUrlPipe,
-  SerializePipe
+  SerializePipe,
+  SignalPipe
 ];
 
 const directives = [

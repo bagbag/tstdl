@@ -15,3 +15,4 @@ export * from './safe-html.pipe';
 export * from './safe-resource-url.pipe';
 export * from './safe-url.pipe';
 export * from './serialize.pipe';
+export * from './signal.pipe';
