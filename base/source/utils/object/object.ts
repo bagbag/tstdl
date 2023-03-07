@@ -1,4 +1,4 @@
-import type { ObjectLiteral, PickBy, Record } from '#/types.js';
+import type { FromEntries, ObjectLiteral, PickBy, Record } from '#/types.js';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';
@@ -25,6 +25,12 @@ export function objectKeys<T extends ObjectLiteral>(object: T): (keyof T)[] {
 
 export function objectValues<T extends ObjectLiteral>(object: T): (T[keyof T])[] {
   return objectKeys(object).map((key) => object[key]);
+}
+
+export function fromEntries<A>(entries: A): FromEntries<A>;
+export function fromEntries<K extends PropertyKey, T>(entries: Iterable<readonly [K, T]>): Record<K, T>;
+export function fromEntries<K extends PropertyKey, T>(entries: Iterable<readonly [K, T]>): Record<K, T> {
+  return Object.fromEntries(entries) as Record<K, T>;
 }
 
 export function mapObject<T extends ObjectLiteral, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => [key: K, value: V]): Record<K, V> {

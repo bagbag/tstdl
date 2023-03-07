@@ -1,4 +1,3 @@
-import { Array, Enumeration, Property } from '#/schema';
 import { propertyName } from '#/utils/object';
 import { timeout } from '#/utils/timing';
 import { isNotNullOrUndefined, isUndefined } from '#/utils/type-guards';
@@ -7,36 +6,11 @@ import type { OptionsType } from '@zxcvbn-ts/core/dist/types';
 import { haveIBeenPwned } from './have-i-been-pwned';
 import type { PasswordCheckLocalization } from './password-check.localization';
 import { passwordCheckLocalizationKeys } from './password-check.localization';
+import type { PasswordCheckResult } from './password-check-result.model';
 
 export type CheckPasswordOptions = {
   checkForPwned?: boolean
 };
-
-export enum PasswordStrength {
-  VeryWeak = 0,
-  Weak = 1,
-  Medium = 2,
-  Strong = 3,
-  VeryStrong = 4
-}
-
-export class PasswordCheckResult {
-  @Enumeration(PasswordStrength)
-  strength: PasswordStrength;
-
-  /**
-   * Count of how many times it appears in the data set from https://haveibeenpwned.com/
-   * Undefined if disabled in options or error occured (either timeout or api error)
-   */
-  @Property({ optional: true })
-  pwned?: number;
-
-  @Array(String)
-  warnings: string[];
-
-  @Array(String)
-  suggestions: string[];
-}
 
 export async function checkPassword(password: string, { checkForPwned = true }: CheckPasswordOptions = {}): Promise<PasswordCheckResult> {
   const zxcvbn = await getZxcvbn();

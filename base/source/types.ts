@@ -60,6 +60,7 @@ export type AbstractType<T = any, Arguments extends any[] = any> = AbstractConst
 export type AbstractConstructor<T = any, Arguments extends any[] = any> = abstract new (...args: Arguments) => T;
 export type ReturnTypeOrT<T> = T extends (...args: any) => infer R ? R : T;
 
+export type Cast<X, Y> = X extends Y ? X : Y;
 export type Record<K extends PropertyKey = PropertyKey, V = any> = { [P in K]: V };
 export type DeepRecord<K extends PropertyKey = PropertyKey, V = any> = { [P in K]: V | DeepRecord<K, V> };
 export type StringMap<T = any> = Record<string, T>;
@@ -69,7 +70,12 @@ export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 export type OneOrMany<T> = T | readonly T[];
 export type WritableOneOrMany<T> = T | T[];
 
+export type FromEntries<T> = T extends readonly (readonly [infer Key, any])[]
+  ? { [K in Cast<Key, PropertyKey>]: Extract<DeepWritable<T>[number], [K, any]>[1] }
+  : never;
+
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
+export type DeepWritable<T> = { -readonly [P in keyof T]: DeepWritable<T[P]> };
 
 export type RequiredKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? never : K }[keyof T];
 export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T];

@@ -1,5 +1,6 @@
 import { singleton } from '#/container';
-import { checkPassword, PasswordStrength } from '#/password/password-check';
+import { checkPassword } from '#/password/password-check';
+import { PasswordStrength } from '#/password/password-check-result.model';
 import { isNumber } from '#/utils/type-guards';
 import { SecretRequirementsError } from '../errors/secret-requirements.error';
 import type { SecretCheckResult } from '../models/secret-check-result.model';

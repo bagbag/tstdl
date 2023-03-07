@@ -1,4 +1,4 @@
-import { PasswordCheckResult } from '#/password/password-check';
+import { PasswordCheckResult } from '#/password/password-check-result.model';
 import { Class } from '#/schema';
 
 @Class()
