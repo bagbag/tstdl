@@ -22,19 +22,19 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
     fadeInOutAnimation(100)
   ],
   host: {
-    '[class.tsl-relative]': 'true',
-    '[class.tsl-flex]': 'true',
-    '[class.tsl-flex-col]': 'true',
-    '[class.tsl-gap-4]': 'true',
-    '[class.tsl-py-5]': 'true',
-    '[class.tsl-px-6]': 'true',
-    '[class.tsl-rounded-xl]': 'true',
-    '[class.tsl-shadow-lg]': 'true',
-    '[class.dark:tsl-ring-1]': 'true',
-    '[class.dark:tsl-ring-white/10]': 'true',
-    '[class.dark:tsl-ring-inset]': 'true',
-    '[class.tsl-bg-bg-secondary]': 'true',
-    '[class.tsl-overflow-hidden]': 'true'
+    '[class.relative]': 'true',
+    '[class.flex]': 'true',
+    '[class.flex-col]': 'true',
+    '[class.gap-4]': 'true',
+    '[class.py-5]': 'true',
+    '[class.px-6]': 'true',
+    '[class.rounded-xl]': 'true',
+    '[class.shadow-lg]': 'true',
+    '[class.dark:ring-1]': 'true',
+    '[class.dark:ring-white/10]': 'true',
+    '[class.dark:ring-inset]': 'true',
+    '[class.bg-bg-secondary]': 'true',
+    '[class.overflow-hidden]': 'true'
   }
 })
 export class CardComponent implements AfterViewInit {

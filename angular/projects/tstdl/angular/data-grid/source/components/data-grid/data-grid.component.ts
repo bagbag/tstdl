@@ -9,48 +9,48 @@ import { GridColumnDirective } from '../../directives/grid-column.directive';
 import { GridHeaderItemDirective } from '../../directives/grid-header-item.directive';
 import { GridItemDirective } from '../../directives/grid-item.directive';
 import { GridRowDirective } from '../../directives/grid-row.directive';
-import { DataGridDefaultOptions } from '../../models';
+import type { DataGridDefaultOptions } from '../../models';
 import { DATA_GRID_OPTIONS } from '../../tokens';
 
 export type DataGridDisplayType = 'columns' | 'table' | 'items';
 
 const columnClasses: Record<number, string> = {
-  1: 'tsl-grid-cols-1',
-  2: 'tsl-grid-cols-2',
-  3: 'tsl-grid-cols-3',
-  4: 'tsl-grid-cols-4',
-  5: 'tsl-grid-cols-5',
-  6: 'tsl-grid-cols-6',
-  7: 'tsl-grid-cols-7',
-  8: 'tsl-grid-cols-8',
-  9: 'tsl-grid-cols-9',
-  10: 'tsl-grid-cols-10'
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+  6: 'grid-cols-6',
+  7: 'grid-cols-7',
+  8: 'grid-cols-8',
+  9: 'grid-cols-9',
+  10: 'grid-cols-10'
 };
 
 const colSpanClasses: Record<number, string> = {
-  1: 'tsl-col-span-1',
-  2: 'tsl-col-span-2',
-  3: 'tsl-col-span-3',
-  4: 'tsl-col-span-4',
-  5: 'tsl-col-span-5',
-  6: 'tsl-col-span-6',
-  7: 'tsl-col-span-7',
-  8: 'tsl-col-span-8',
-  9: 'tsl-col-span-9',
-  10: 'tsl-col-span-10'
+  1: 'col-span-1',
+  2: 'col-span-2',
+  3: 'col-span-3',
+  4: 'col-span-4',
+  5: 'col-span-5',
+  6: 'col-span-6',
+  7: 'col-span-7',
+  8: 'col-span-8',
+  9: 'col-span-9',
+  10: 'col-span-10'
 };
 
 const rowSpanClasses: Record<number, string> = {
-  1: 'tsl-row-span-1',
-  2: 'tsl-row-span-2',
-  3: 'tsl-row-span-3',
-  4: 'tsl-row-span-4',
-  5: 'tsl-row-span-5',
-  6: 'tsl-row-span-6',
-  7: 'tsl-row-span-7',
-  8: 'tsl-row-span-8',
-  9: 'tsl-row-span-9',
-  10: 'tsl-row-span-10'
+  1: 'row-span-1',
+  2: 'row-span-2',
+  3: 'row-span-3',
+  4: 'row-span-4',
+  5: 'row-span-5',
+  6: 'row-span-6',
+  7: 'row-span-7',
+  8: 'row-span-8',
+  9: 'row-span-9',
+  10: 'row-span-10'
 };
 
 @Component({
@@ -59,16 +59,16 @@ const rowSpanClasses: Record<number, string> = {
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.tsl-block]': 'true',
-    '[class.tsl-break-words]': 'true',
-    '[class.tsl-text-sm]': 'true',
-    '[class.tsl-leading-4]': 'true',
-    '[class.tsl-break-inside-avoid]': 'true',
-    '[class.tsl-border-[1.5px]]': 'true',
-    '[class.tsl-border-neutral-300]': 'true',
-    '[class.tsl-rounded-lg]': 'true',
-    '[class.tsl-overflow-hidden]': 'true',
-    '[class.tsl-isolate]': 'true'
+    '[class.block]': 'true',
+    '[class.break-words]': 'true',
+    '[class.text-sm]': 'true',
+    '[class.leading-4]': 'true',
+    '[class.break-inside-avoid]': 'true',
+    '[class.border-[1.5px]]': 'true',
+    '[class.border-neutral-300]': 'true',
+    '[class.rounded-lg]': 'true',
+    '[class.overflow-hidden]': 'true',
+    '[class.isolate]': 'true'
   }
 })
 export class DataGridComponent implements AfterContentInit, OnChanges {

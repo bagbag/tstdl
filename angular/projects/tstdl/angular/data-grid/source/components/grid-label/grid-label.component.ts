@@ -8,9 +8,9 @@ import type { DynamicText } from '@tstdl/base/text';
   styleUrls: ['./grid-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.Default,
   host: {
-    '[class.tsl-text-sm]': 'true',
-    '[class.tsl-leading-4]': 'true',
-    '[class.tsl-font-semibold]': 'true'
+    '[class.text-sm]': 'true',
+    '[class.leading-4]': 'true',
+    '[class.font-semibold]': 'true'
   }
 })
 export class GridLabelComponent {

@@ -1,8 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  prefix: 'tsl-',
-  mode: 'jit',
-  content: ['./projects/tstdl/angular/**/*.{html,ts}'],
+  content: ['./projects/tstdl/angular/**/*.{html,ts,tsx}'],
+  important: '.tsl-tw',
   corePlugins: {
     preflight: false
   },

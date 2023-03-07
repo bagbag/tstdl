@@ -9,11 +9,11 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
   styleUrls: ['./indeterminate-progress-bar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.tsl-block]': 'true',
-    '[class.tsl-relative]': 'true',
-    '[class.tsl-h-2]': 'true',
-    '[class.tsl-overflow-hidden]': 'true',
-    '[class.tsl-rounded-full]': 'true'
+    '[class.block]': 'true',
+    '[class.relative]': 'true',
+    '[class.h-2]': 'true',
+    '[class.overflow-hidden]': 'true',
+    '[class.rounded-full]': 'true'
   }
 })
 export class IndeterminateProgressBarComponent {

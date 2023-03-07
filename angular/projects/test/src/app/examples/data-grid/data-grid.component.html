@@ -1,4 +1,4 @@
-<div class="tsl-flex tsl-flex-col tsl-gap-20">
+<div class="flex flex-col gap-20">
   <tsl-data-grid heading="Item-based Data Grid">
     <ng-container gridItem="Item 1" value="Value 1"></ng-container>
     <ng-container gridItem="Item 2" value="Value 2"></ng-container>
@@ -55,11 +55,11 @@
 
   <tsl-data-grid heading="label and value template">
     <!-- This is an example of a structural value template -->
-    <span *gridItem="'Foo'" class="tsl-rounded-full tsl-ring tsl-px-2 tsl-py-0.5">simple structural custom value template</span>
+    <span *gridItem="'Foo'" class="rounded-full ring px-2 py-0.5">simple structural custom value template</span>
 
     <!-- This is an example of a value template -->
     <ng-template gridItem="Bar">
-      <span class="tsl-rounded-full tsl-ring tsl-px-2 tsl-py-0.5">simple custom value template</span>
+      <span class="rounded-full ring px-2 py-0.5">simple custom value template</span>
     </ng-template>
 
     <!--
@@ -68,12 +68,12 @@
     <span *gridValue> and <div *gridLabel> could also be <ng-template gridLabel> and <ng-template gridValue> instead.
     -->
     <ng-container gridItem>
-      <span *gridLabel class="tsl-bg-green-300 tsl-px-2 tsl-py-0.5">Custom label template</span>
+      <span *gridLabel class="bg-green-300 px-2 py-0.5">Custom label template</span>
 
-      <div *gridValue class="tsl-flex tsl-items-center tsl-gap-2">
-        <div class="tsl-w-2 tsl-h-2 tsl-bg-red-500"></div>
+      <div *gridValue class="flex items-center gap-2">
+        <div class="w-2 h-2 bg-red-500"></div>
         <div>Custom value template</div>
-        <div class="tsl-w-2 tsl-h-2 tsl-bg-red-500"></div>
+        <div class="w-2 h-2 bg-red-500"></div>
       </div>
     </ng-container>
   </tsl-data-grid>

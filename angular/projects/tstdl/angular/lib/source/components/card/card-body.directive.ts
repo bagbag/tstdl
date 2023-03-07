@@ -5,10 +5,10 @@ import { Directive, HostBinding, Input } from '@angular/core';
   standalone: true
 })
 export class CardBodyDirective {
-  @HostBinding('class.-tsl-mx-6')
+  @HostBinding('class.-mx-6')
   @Input() noHorizontalPadding: boolean;
 
-  @HostBinding('class.-tsl-mb-5')
+  @HostBinding('class.-mb-5')
   @Input() noBottomPadding: boolean;
 
   constructor() {

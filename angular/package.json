@@ -7,7 +7,7 @@
     "build": "ng build @tstdl/angular && npm run build:tailwind",
     "build:stats": "ng build --configuration stats test && npm run analyze:source-maps",
     "build:watch": "ng build @tstdl/angular --watch --configuration development",
-    "build:tailwind": "tailwind --config projects/tstdl/angular/tailwind.config.js --output dist/tstdl/angular/tailwind.css && cat dist/tstdl/angular/tailwind.css >> dist/tstdl/angular/styles.css && rm dist/tstdl/angular/tailwind.css",
+    "build:tailwind": "tailwind --config projects/tstdl/angular/tailwind.config.js --output dist/tstdl/angular/tailwind.css && sed -i -E 's/\\.tsl-tw (.*?) \\{/.tsl-tw \\1, .tsl-tw\\1 {/' dist/tstdl/angular/tailwind.css && cat dist/tstdl/angular/tailwind.css >> dist/tstdl/angular/styles.css && rm dist/tstdl/angular/tailwind.css",
     "analyze": "npm run build:stats && npm run analyze:source-maps && npm run analyze:webpack-stats",
     "analyze:webpack-stats": "webpack-bundle-analyzer dist/test/stats.json --mode static --report dist/test/webpack-stats.html",
     "analyze:source-maps": "source-map-explorer dist/test/**/*.js --html dist/test/source-map-stats.html && xdg-open dist/test/source-map-stats.html",
