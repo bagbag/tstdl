@@ -25,27 +25,26 @@ export function generateTailwindColorsFromTheme(theme: Theme): Record<string, Ta
 
 export function generateTailwindColorsFromThemeColors(colors: readonly string[]): Record<string, TailwindPalette> {
   const entries = colors
+    .map(hyphenate)
     .map((color) => [color, generateTailwindPalette(color)] as const);
 
   return fromEntries(entries);
 }
 
 export function generateTailwindPalette(color: string): TailwindPalette {
-  const colorVariable = hyphenate(color);
-
   return {
     /* eslint-disable @typescript-eslint/naming-convention */
-    DEFAULT: `var(--theme-${colorVariable})`,
-    50: `var(--theme-${colorVariable}-50)`,
-    100: `var(--theme-${colorVariable}-100)`,
-    200: `var(--theme-${colorVariable}-200)`,
-    300: `var(--theme-${colorVariable}-300)`,
-    400: `var(--theme-${colorVariable}-400)`,
-    500: `var(--theme-${colorVariable}-500)`,
-    600: `var(--theme-${colorVariable}-600)`,
-    700: `var(--theme-${colorVariable}-700)`,
-    800: `var(--theme-${colorVariable}-800)`,
-    900: `var(--theme-${colorVariable}-900)`
+    DEFAULT: `var(--theme-${color})`,
+    50: `var(--theme-${color}-50)`,
+    100: `var(--theme-${color}-100)`,
+    200: `var(--theme-${color}-200)`,
+    300: `var(--theme-${color}-300)`,
+    400: `var(--theme-${color}-400)`,
+    500: `var(--theme-${color}-500)`,
+    600: `var(--theme-${color}-600)`,
+    700: `var(--theme-${color}-700)`,
+    800: `var(--theme-${color}-800)`,
+    900: `var(--theme-${color}-900)`
     /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
