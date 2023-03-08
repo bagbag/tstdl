@@ -1,14 +1,18 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.82.12",
+  "version": "0.82.13",
   "dependencies": {
     "tslib": "^2.5"
   },
   "peerDependencies": {
     "@angular/common": ">=15.0",
     "@angular/core": ">=15.0",
+    "@preact/signals": "^1.1",
     "@tstdl/base": "^0.82.47",
-    "luxon": "^3.3"
+    "luxon": "^3.3",
+    "preact": "^10.13",
+    "react-dom": "npm:@preact/compat@^17.1",
+    "react": "npm:@preact/compat@^17.1"
   },
   "sideEffects": false
 }

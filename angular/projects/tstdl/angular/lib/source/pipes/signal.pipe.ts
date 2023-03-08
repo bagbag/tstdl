@@ -29,13 +29,10 @@ export class SignalPipe<T> implements PipeTransform, OnDestroy {
 
       let first = true;
 
-      console.log('create effect');
       this.currentEffect = effect(() => {
-        console.log('inside effect')
         signal();
 
         if (!first) {
-          console.log('mark')
           this.changeDetector.markForCheck();
         }
         else {
@@ -44,7 +41,6 @@ export class SignalPipe<T> implements PipeTransform, OnDestroy {
       });
     }
 
-    console.log('return');
     return signal();
   }
 }
