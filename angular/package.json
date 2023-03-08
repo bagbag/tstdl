@@ -28,7 +28,7 @@
     "@heroicons/react": "^2.0",
     "@preact/signals": "^1.1",
     "@tstdl/base": "^0.82.47",
-    "chroma-js": "^2.4.2",
+    "chroma-js": "^2.4",
     "luxon": "^3.3",
     "preact": "^10.13",
     "react": "npm:@preact/compat@^17.1",
