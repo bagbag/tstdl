@@ -1,31 +1,26 @@
-import type { OnInit } from '@angular/core';
-import { Directive, ElementRef, Input, Renderer2 } from '@angular/core';
-import { Alphabet, getRandomString } from '@tstdl/base/utils';
+import { Directive, ElementRef, Renderer2 } from '@angular/core';
+import { Alphabet, getRandomString, isNullOrUndefined } from '@tstdl/base/utils';
 
 @Directive({
   selector: 'input, [tslAutoId]',
   exportAs: 'autoId',
   standalone: true
 })
-export class AutoIdDirective implements OnInit {
-  private readonly elementRef: ElementRef;
+export class AutoIdDirective {
+  private readonly elementRef: ElementRef<HTMLElement>;
   private readonly renderer: Renderer2;
 
-  id: string | undefined;
+  get id(): string {
+    if (isNullOrUndefined(this.elementRef.nativeElement.id) || (this.elementRef.nativeElement.id.length == 0)) {
+      this.elementRef.nativeElement.id = getRandomString(10, Alphabet.LowerCaseNumbers);
+      this.renderer.setAttribute(this.elementRef.nativeElement, 'id', this.id);
+    }
 
-  @Input() autoId: boolean | 'true' | 'false';
+    return this.elementRef.nativeElement.id;
+  }
 
   constructor(elementRef: ElementRef, renderer: Renderer2) {
     this.elementRef = elementRef;
     this.renderer = renderer;
-
-    this.autoId = false;
-  }
-
-  ngOnInit(): void {
-    if ((this.autoId == true) || (this.autoId == 'true')) {
-      this.id = getRandomString(10, Alphabet.LowerCaseNumbers);
-      this.renderer.setAttribute(this.elementRef.nativeElement, 'id', this.id);
-    }
   }
 }

@@ -1,30 +1,29 @@
-import type { AfterViewInit } from '@angular/core';
+import type { OnChanges } from '@angular/core';
 import { Directive, ElementRef, Input, Renderer2 } from '@angular/core';
-import { isDefined, isUndefined } from '@tstdl/base/utils';
+import { isNullOrUndefined } from '@tstdl/base/utils';
 import type { AutoIdDirective } from './auto-id.directive';
 
 @Directive({
   selector: 'label, [tslAutoFor]',
   standalone: true
 })
-export class AutoForDirective implements AfterViewInit {
+export class AutoForDirective implements OnChanges {
   private readonly elementRef: ElementRef;
   private readonly renderer: Renderer2;
 
-  @Input() autoFor: AutoIdDirective | undefined;
+  @Input() autoFor: AutoIdDirective | null | undefined;
 
   constructor(elementRef: ElementRef, renderer: Renderer2) {
     this.elementRef = elementRef;
     this.renderer = renderer;
   }
 
-  ngAfterViewInit(): void {
-    if (isUndefined(this.autoFor)) {
+  ngOnChanges(): void {
+    if (isNullOrUndefined(this.autoFor)) {
+      this.renderer.removeAttribute(this.elementRef.nativeElement, 'for');
       return;
     }
 
-    if (isDefined(this.autoFor.id)) {
-      this.renderer.setAttribute(this.elementRef.nativeElement, 'for', this.autoFor.id);
-    }
+    this.renderer.setAttribute(this.elementRef.nativeElement, 'for', this.autoFor.id);
   }
 }
