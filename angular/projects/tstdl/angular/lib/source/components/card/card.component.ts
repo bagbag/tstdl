@@ -22,6 +22,7 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
     fadeInOutAnimation(100)
   ],
   host: {
+    '[class.tsl-tw]': 'true',
     '[class.relative]': 'true',
     '[class.flex]': 'true',
     '[class.flex-col]': 'true',

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
 import * as chroma from 'chroma-js';
 import { widthAnimation } from '../../animations/width.animation';
@@ -12,12 +11,14 @@ const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a
   selector: 'tsl-colored-progressbar',
   templateUrl: './colored-progressbar.component.html',
   standalone: true,
-  imports: [CommonModule],
   styleUrls: ['./colored-progressbar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     widthAnimation({ timing: '1000ms ease' })
-  ]
+  ],
+  host: {
+    '[class.tsl-tw]': 'true'
+  }
 })
 export class ColoredProgressbarComponent extends LifecycleUtils<ColoredProgressbarComponent> {
   @Input() progress: number | undefined;

@@ -9,6 +9,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
   styleUrls: ['./indeterminate-progress-bar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[class.tsl-tw]': 'true',
     '[class.block]': 'true',
     '[class.relative]': 'true',
     '[class.h-2]': 'true',

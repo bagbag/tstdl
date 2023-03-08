@@ -59,6 +59,7 @@ const rowSpanClasses: Record<number, string> = {
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[class.tsl-tw]': 'true',
     '[class.block]': 'true',
     '[class.break-words]': 'true',
     '[class.text-sm]': 'true',
