@@ -1,6 +1,5 @@
 import { objectEntries } from '#/utils/object/object.js';
 import { hyphenate } from '#/utils/string/hypenate.js';
-import { isDefined } from '#/utils/type-guards.js';
 import type { CalculatedPalette, ThemeService } from '../theme-service.js';
 import { themeColorTones } from '../theme-service.js';
 
@@ -9,69 +8,30 @@ export interface CssThemeAdapter {
 }
 
 export function cssThemeAdapter(themeService: ThemeService<any>): CssThemeAdapter {
-  const variablesStyleElement = document.createElement('style');
-  const classesStyleElement = document.createElement('style');
+  const styleSheet = new CSSStyleSheet();
+  const rootRule = createCssRule<CSSStyleRule>(styleSheet, ':root  {}');
 
-  const classes = generateClasses(themeService.colors);
-  classesStyleElement.innerHTML = classes.join('\n');
-
-  themeService.calculatedTheme$.subscribe((theme) => {
-    const variables = generateVariables(theme.palette);
-
-    variablesStyleElement.innerHTML = `:root {
-  ${variables.join('\n')}
-}`;
-  });
-
-  document.head.appendChild(variablesStyleElement);
-  document.head.appendChild(classesStyleElement);
+  const subscription = themeService.calculatedTheme$.subscribe((theme) => setVariables(rootRule, theme.palette));
 
   return {
     destroy() {
-      variablesStyleElement.remove();
-      classesStyleElement.remove();
+      subscription.unsubscribe();
     }
   };
 }
 
-function generateVariables(palette: CalculatedPalette): string[] {
-  const entries = objectEntries(palette);
-
-  return entries.flatMap(([color, { main, text, border }]) => [
-    `--color-${hyphenate(color)}: ${main.base};`,
-    ...themeColorTones.map((tone) => `--color-${hyphenate(color)}-${tone}: ${main[tone]};`),
-
-    `--color-${hyphenate(color)}-text: ${text.base};`,
-    ...themeColorTones.map((tone) => `--color-${hyphenate(color)}-text-${tone}: ${text[tone]};`),
-
-    isDefined(border) ? `--color-${hyphenate(color)}-border: ${border.base};` : undefined,
-    ...(isDefined(border) ? themeColorTones.map((tone) => `--color-${hyphenate(color)}-border-${tone}: ${border[tone]};`) : [])
-  ])
-    .filter(isDefined);
-}
-
-function generateClasses(colors: string[]): string[] {
-  const classes: string[] = [];
-
-  for (const color of colors) {
-    classes.push(
-      `.theme-color-${color} {
-  background-color: var(--color-${hyphenate(color)});
-  color: var(--color-${hyphenate(color)}-text);
-  border-color: var(--color-${hyphenate(color)}-border);
-}`
-    );
+function setVariables(cssRule: CSSStyleRule, palette: CalculatedPalette): void {
+  for (const [color, tones] of objectEntries(palette)) {
+    const colorVariable = hyphenate(color);
 
     for (const tone of themeColorTones) {
-      classes.push(
-        `.theme-color-${color}-${tone} {
-  background-color: var(--color-${hyphenate(color)}-${tone});
-  color: var(--color-${hyphenate(color)}-text-${tone});
-  border-color: var(--color-${hyphenate(color)}-border-${tone});
-}`
-      );
+      cssRule.style.setProperty(`--theme-${colorVariable}`, tones.base);
+      cssRule.style.setProperty(`--theme-${colorVariable}-${tone}`, tones[tone]);
     }
   }
+}
 
-  return classes;
+function createCssRule<T extends CSSRule = CSSRule>(styleSheet: CSSStyleSheet, rule: string): T {
+  const index = styleSheet.insertRule(rule);
+  return styleSheet.cssRules[index] as T;
 }
