@@ -9,6 +9,8 @@ export interface CssThemeAdapter {
 
 export function cssThemeAdapter(themeService: ThemeService<any>): CssThemeAdapter {
   const styleSheet = new CSSStyleSheet();
+  document.adoptedStyleSheets.push(styleSheet);
+
   const rootRule = createCssRule<CSSStyleRule>(styleSheet, ':root  {}');
 
   const subscription = themeService.calculatedTheme$.subscribe((theme) => setVariables(rootRule, theme.palette));
