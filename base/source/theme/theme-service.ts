@@ -75,20 +75,19 @@ export class ThemeService<Colors extends string = string> {
     this.setTheme(undefined);
   }
 
-  setTheme(theme: Theme<Colors> | undefined): void {
-    const newTheme = theme ?? this.defaultTheme;
-    const calculatedTheme = calculateTheme(newTheme);
+  setTheme(theme: Theme<Colors> | undefined = this.defaultTheme): void {
+    const calculatedTheme = calculateTheme(theme);
 
-    this.themeSubject.next(newTheme);
+    this.themeSubject.next(theme);
     this.calculatedThemeSubject.next(calculatedTheme);
   }
 }
 
 function _calculateTheme<Colors extends string = string>(theme: Theme<Colors>): CalculatedTheme<Colors> {
   const paletteEntries = objectEntries(theme.palette)
-    .map(([color, palette]) => [color, isString(palette) ? generateColorTones(palette) : palette]);
+    .map(([color, palette]) => [color, isString(palette) ? generateColorTones(palette) : palette] as const);
 
-  return fromEntries(paletteEntries);
+  return { palette: fromEntries(paletteEntries) as CalculatedPalette };
 }
 
 function _generateColorTones(base: string): ColorTones {
