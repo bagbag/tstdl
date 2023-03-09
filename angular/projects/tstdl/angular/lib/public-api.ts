@@ -1,3 +1,4 @@
+export * from './source/animations';
 export * from './source/components';
 export * from './source/directives';
 export * from './source/http';

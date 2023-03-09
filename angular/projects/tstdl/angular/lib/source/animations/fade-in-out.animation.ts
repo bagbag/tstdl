@@ -1,10 +1,14 @@
 import type { AnimationTriggerMetadata } from '@angular/animations';
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import type { AnimationOptions } from './animation-options';
+import { getAnimateTimings } from './utils';
 
-export function fadeInOutAnimation(duration: number, targetOpacity: number = 1): AnimationTriggerMetadata {
-  return trigger('fadeInOut', [
-    state('*', style({ opacity: targetOpacity })),
+export function fadeInOutAnimation(options?: AnimationOptions & { targetOpacity?: number }): AnimationTriggerMetadata {
+  const animateTimings = getAnimateTimings(options);
+
+  return trigger(options?.trigger ?? 'fadeInOut', [
+    state('*', style({ opacity: options?.targetOpacity ?? 1 })),
     state('void', style({ opacity: 0 })),
-    transition('* <=> *', animate(duration))
+    transition('* <=> *', animate(animateTimings))
   ]);
 }

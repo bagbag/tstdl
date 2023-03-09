@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList } from '@angular/core';
 import { merge } from 'rxjs';
-import { fadeInOutAnimation } from '../../animations/fade-in-out.animation';
+import { fadeInOutAnimation } from '../../animations';
 import { ColoredProgressbarComponent } from '../colored-progressbar/colored-progressbar.component';
 import { IndeterminateProgressBarComponent } from '../indeterminate-progress-bar/indeterminate-progress-bar.component';
 import { CardActionDirective } from './card-action.directive';
@@ -19,7 +19,7 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   animations: [
-    fadeInOutAnimation(100)
+    fadeInOutAnimation({ duration: 100 })
   ],
   host: {
     '[class.tsl-tw]': 'true',
