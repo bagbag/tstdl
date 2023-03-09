@@ -3,7 +3,8 @@ module.exports = {
   content: ['./projects/tstdl/angular/**/*.{html,ts,tsx}'],
   important: '.tsl-tw',
   corePlugins: {
-    preflight: false
+    preflight: false,
+    container: false
   },
   darkMode: 'class',
   theme: {
