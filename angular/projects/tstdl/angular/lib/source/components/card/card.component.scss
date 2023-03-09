@@ -3,7 +3,9 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 5rem auto 5rem;
 
-  background-color: var(--tsl-card-background-color, var(--tsl-secondary-background-color));
+  background-color: var(--tsl-card-background-color, var(--tsl-primary-background-color));
+
+  --tsl-indeterminate-progress-bar-background-color: var(--tsl-card-background-color, var(--tsl-primary-background-color));
 }
 
 .tsl-card-header {
@@ -18,7 +20,7 @@
 
 .tsl-card-body {
   background-color: var(--tsl-card-body-background-color, inherit);
-  color: var(--tsl-card-body-color, var(--tsl-secondary-text-color));
+  color: var(--tsl-card-body-color, var(--tsl-primary-text-color));
 }
 
 .tsl-card-footer {
