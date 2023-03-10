@@ -146,7 +146,7 @@ export type IsUnknown<T> = IfUnknown<T, true, false>;
 
 export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
 
-export type Fallback<T, F> = T extends never ? F : T;
+export type Fallback<T, F> = [T] extends [never] ? F : T;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
