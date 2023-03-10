@@ -27,7 +27,7 @@
     "@headlessui/react": "^1.7",
     "@heroicons/react": "^2.0",
     "@preact/signals": "^1.1",
-    "@tstdl/base": "^0.82.47",
+    "@tstdl/base": "^0.82.79",
     "chroma-js": "^2.4",
     "luxon": "^3.3",
     "preact": "^10.13",

@@ -7,7 +7,7 @@
   "peerDependencies": {
     "@angular/common": ">=15.0",
     "@angular/core": ">=15.0",
-    "@tstdl/base": "^0.82.47",
+    "@tstdl/base": "^0.82.79",
     "luxon": "^3.3"
   },
   "sideEffects": false

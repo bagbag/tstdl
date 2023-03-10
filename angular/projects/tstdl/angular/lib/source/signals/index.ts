@@ -4,6 +4,7 @@ export * from './effect';
 export * from './from-observable';
 export * from './from-signal';
 export * from './graph';
+export * from './pipe';
 export * from './signal';
 export * from './untracked';
 export * from './watch';
