@@ -70,8 +70,10 @@ export type StringNumberMap<T = any> = { [key: string]: T, [key: number]: T };
 export type OneOrMany<T> = T | readonly T[];
 export type WritableOneOrMany<T> = T | T[];
 
+type FromEntriesEntryValue<T extends readonly (readonly [any, any])[], K> = Extract<T[number], readonly [K, any]>[1];
+
 export type FromEntries<T> = T extends readonly (readonly [infer Key, any])[]
-  ? { [K in Cast<Key, PropertyKey>]: Extract<DeepWritable<T>[number], [K, any]>[1] }
+  ? { [K in Cast<Key, PropertyKey>]: Fallback<FromEntriesEntryValue<T, K>, T[number][1]> }
   : never;
 
 export type Writable<T> = { -readonly [P in keyof T]: T[P] };
@@ -143,6 +145,8 @@ export type IsAny<T> = IfAny<T, true, false>;
 export type IsUnknown<T> = IfUnknown<T, true, false>;
 
 export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
+
+export type Fallback<T, F> = T extends never ? F : T;
 
 export type PartialProperty<T, P extends keyof T> = Omit<T, P> & Partial<Pick<T, P>>;
 export type TypeOf<T extends object, P extends keyof T> = T[P];
