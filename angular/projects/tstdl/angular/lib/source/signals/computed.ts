@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import { isUndefined } from '@tstdl/base/utils';
 import type { Signal, ValueEqualityFn } from './api';
 import { createSignalFromFunction, defaultEquals } from './api';
 import type { Consumer, ConsumerId, Edge, Producer, ProducerId } from './graph';
@@ -17,8 +18,16 @@ import { consumerPollValueStatus, nextReactiveId, producerAccessed, producerNoti
  * @developerPreview
  */
 export function computed<T>(
-  computation: () => T, equal: ValueEqualityFn<T> = defaultEquals): Signal<T> {
-  const node = new ComputedImpl(computation, equal);
+  computation: () => T, additionalDependencies?: Signal<any>[], equal: ValueEqualityFn<T> = defaultEquals): Signal<T> {
+  const actualComputation = (isUndefined(additionalDependencies) || (additionalDependencies.length == 0)) ? computation : () => {
+    for (const dependency of additionalDependencies) {
+      dependency();
+    }
+
+    return computation();
+  };
+
+  const node = new ComputedImpl(actualComputation, equal);
   return createSignalFromFunction(node.signal.bind(node));
 }
 
