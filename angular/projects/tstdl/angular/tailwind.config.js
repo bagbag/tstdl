@@ -6,7 +6,7 @@ module.exports = {
     preflight: false,
     container: false
   },
-  darkMode: 'class',
+  darkMode: ['class', '.tsl-dark'],
   theme: {
     extend: {
       colors: {
