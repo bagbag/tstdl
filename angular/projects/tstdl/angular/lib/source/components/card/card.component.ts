@@ -31,9 +31,9 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
     '[class.px-6]': 'true',
     '[class.rounded-xl]': 'true',
     '[class.shadow-lg]': 'true',
-    '[class.dark:ring-1]': 'true',
-    '[class.dark:ring-white/10]': 'true',
-    '[class.dark:ring-inset]': 'true',
+    '[class.dark:outline]': 'true',
+    '[class.dark:outline-1]': 'true',
+    '[class.dark:outline-white/10]': 'true',
     '[class.bg-bg-secondary]': 'true',
     '[class.overflow-hidden]': 'true'
   }
