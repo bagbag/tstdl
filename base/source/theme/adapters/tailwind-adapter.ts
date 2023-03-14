@@ -1,6 +1,7 @@
 import type { Theme } from '#/theme/theme-service.js';
 import { fromEntries, objectKeys } from '#/utils/object/object.js';
 import { hyphenate } from '#/utils/string/hypenate.js';
+import { isDefined } from '#/utils/type-guards';
 
 export type TailwindPalette = {
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -18,15 +19,17 @@ export type TailwindPalette = {
   /* eslint-enable @typescript-eslint/naming-convention */
 };
 
-export function generateTailwindColorsFromTheme(theme: Theme): Record<string, TailwindPalette> {
+export function generateTailwindColorsFromTheme(theme: Theme, tailwindNamePrefix?: string): Record<string, TailwindPalette> {
   const colors = objectKeys(theme.palette);
-  return generateTailwindColorsFromThemeColors(colors);
+  return generateTailwindColorsFromThemeColors(colors, tailwindNamePrefix);
 }
 
-export function generateTailwindColorsFromThemeColors(colors: readonly string[]): Record<string, TailwindPalette> {
+export function generateTailwindColorsFromThemeColors(colors: readonly string[], tailwindNamePrefix?: string): Record<string, TailwindPalette> {
+  const prefix = isDefined(tailwindNamePrefix) ? `${tailwindNamePrefix}-` : '';
+
   const entries = colors
     .map(hyphenate)
-    .map((color) => [color, generateTailwindPalette(color)] as const);
+    .map((color) => [`${prefix}${color}`, generateTailwindPalette(color)] as const);
 
   return fromEntries(entries);
 }
