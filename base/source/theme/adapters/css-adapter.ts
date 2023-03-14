@@ -28,7 +28,9 @@ function setVariables(cssRule: CSSStyleRule, palette: CalculatedPalette): void {
 
     for (const tone of themeColorTones) {
       cssRule.style.setProperty(`--theme-${colorVariable}`, tones.base);
+      cssRule.style.setProperty(`--theme-${colorVariable}-rgb`, tones.baseRgb);
       cssRule.style.setProperty(`--theme-${colorVariable}-${tone}`, tones[tone]);
+      cssRule.style.setProperty(`--theme-${colorVariable}-${tone}-rgb`, tones[`${tone}Rgb`]);
     }
   }
 }

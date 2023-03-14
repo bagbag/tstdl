@@ -8,7 +8,7 @@ import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 
 export type CalculatedPalette<Colors extends string = string> = {
-  [Color in Colors]: ColorTones
+  [Color in Colors]: ColorTonesWithRgb
 };
 
 export type CalculatedTheme<Colors extends string = string> = {
@@ -36,6 +36,9 @@ export type ColorTones = {
   900: string
   /* eslint-enable @typescript-eslint/naming-convention */
 };
+
+export type ColorTonesWithRgb = ColorTones &
+  { [Tone in keyof ColorTones as `${Tone}Rgb`]: string };
 
 export const themeColorTones = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
@@ -85,9 +88,10 @@ export class ThemeService<Colors extends string = string> {
 
 function _calculateTheme<Colors extends string = string>(theme: Theme<Colors>): CalculatedTheme<Colors> {
   const paletteEntries = objectEntries(theme.palette)
-    .map(([color, palette]) => [color, isString(palette) ? generateColorTones(palette) : palette] as const);
+    .map(([color, palette]) => [color, toColorTonesWithRgb(isString(palette) ? generateColorTones(palette) : palette)] as const);
 
-  return { palette: fromEntries(paletteEntries) as CalculatedPalette };
+  const palette = fromEntries(paletteEntries) as CalculatedPalette<Colors>;
+  return { palette };
 }
 
 function _generateColorTones(base: string): ColorTones {
@@ -106,6 +110,39 @@ function _generateColorTones(base: string): ColorTones {
     800: colors[8]!,
     900: colors[9]!
   };
+}
+
+function toColorTonesWithRgb(tones: ColorTones): ColorTonesWithRgb {
+  return {
+    /* eslint-disable @typescript-eslint/naming-convention, quote-props */
+    base: tones.base,
+    baseRgb: getRgbString(tones.base),
+    '50': tones['50'],
+    '50Rgb': getRgbString(tones['50']),
+    '100': tones['100'],
+    '100Rgb': getRgbString(tones['100']),
+    '200': tones['200'],
+    '200Rgb': getRgbString(tones['200']),
+    '300': tones['300'],
+    '300Rgb': getRgbString(tones['300']),
+    '400': tones['400'],
+    '400Rgb': getRgbString(tones['400']),
+    '500': tones['500'],
+    '500Rgb': getRgbString(tones['500']),
+    '600': tones['600'],
+    '600Rgb': getRgbString(tones['600']),
+    '700': tones['700'],
+    '700Rgb': getRgbString(tones['700']),
+    '800': tones['800'],
+    '800Rgb': getRgbString(tones['800']),
+    '900': tones['900'],
+    '900Rgb': getRgbString(tones['900'])
+    /* eslint-enable @typescript-eslint/naming-convention, quote-props */
+  };
+}
+
+function getRgbString(color: string): string {
+  return chroma(color).rgb(true).join(' ');
 }
 
 function generateColors(baseColor: string, colorCount: number, { bezier = true, correctLightness = true }: { bezier?: boolean, correctLightness?: boolean } = {}): string[] {

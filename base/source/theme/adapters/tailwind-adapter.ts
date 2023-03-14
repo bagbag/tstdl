@@ -37,17 +37,17 @@ export function generateTailwindColorsFromThemeColors(colors: readonly string[],
 export function generateTailwindPalette(color: string): TailwindPalette {
   return {
     /* eslint-disable @typescript-eslint/naming-convention */
-    DEFAULT: `var(--theme-${color})`,
-    50: `var(--theme-${color}-50)`,
-    100: `var(--theme-${color}-100)`,
-    200: `var(--theme-${color}-200)`,
-    300: `var(--theme-${color}-300)`,
-    400: `var(--theme-${color}-400)`,
-    500: `var(--theme-${color}-500)`,
-    600: `var(--theme-${color}-600)`,
-    700: `var(--theme-${color}-700)`,
-    800: `var(--theme-${color}-800)`,
-    900: `var(--theme-${color}-900)`
+    DEFAULT: `rgb(var(--theme-${color}-rgb) / <alpha-value>)`,
+    50: `rgb(var(--theme-${color}-50-rgb) / <alpha-value>)`,
+    100: `rgb(var(--theme-${color}-100-rgb) / <alpha-value>)`,
+    200: `rgb(var(--theme-${color}-200-rgb) / <alpha-value>)`,
+    300: `rgb(var(--theme-${color}-300-rgb) / <alpha-value>)`,
+    400: `rgb(var(--theme-${color}-400-rgb) / <alpha-value>)`,
+    500: `rgb(var(--theme-${color}-500-rgb) / <alpha-value>)`,
+    600: `rgb(var(--theme-${color}-600-rgb) / <alpha-value>)`,
+    700: `rgb(var(--theme-${color}-700-rgb) / <alpha-value>)`,
+    800: `rgb(var(--theme-${color}-800-rgb) / <alpha-value>)`,
+    900: `rgb(var(--theme-${color}-900-rgb) / <alpha-value>)`
     /* eslint-enable @typescript-eslint/naming-convention */
   };
 }
