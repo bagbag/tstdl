@@ -16,7 +16,7 @@ import { S3Object } from './s3.object.js';
 
 @singleton({
   provider: {
-    useFactory: (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
+    useFactory: async (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
   }
 })
 export class S3ObjectStorage extends ObjectStorage {
@@ -32,14 +32,14 @@ export class S3ObjectStorage extends ObjectStorage {
     this.prefix = keyPrefix;
   }
 
-  async ensureBucketExists(region: string): Promise<void> {
+  async ensureBucketExists(region?: string, options?: { objectLocking?: boolean }): Promise<void> {
     const exists = await this.client.bucketExists(this.bucket);
 
     if (exists) {
       return;
     }
 
-    await this.client.makeBucket(this.bucket, region);
+    await this.client.makeBucket(this.bucket, region, { ObjectLocking: options?.objectLocking ?? false });
   }
 
   async exists(key: string): Promise<boolean> {

@@ -9,9 +9,7 @@ export type UploadObjectOptions = {
 export type ObjectStorageArgument = string;
 
 export abstract class ObjectStorage implements Injectable<ObjectStorageArgument> {
-  /**
-   * object storage module
-   */
+  /** object storage module */
   readonly module: string;
 
   [resolveArgumentType]: ObjectStorageArgument;

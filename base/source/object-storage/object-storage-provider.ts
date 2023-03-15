@@ -5,5 +5,5 @@ export abstract class ObjectStorageProvider<T extends ObjectStorage = ObjectStor
    * get an object storage instance
    * @param module name for object container (module) to store objects in. Can be used to isolate objects like profile pictures and log files
    */
-  abstract get(module: string): T;
+  abstract get(module: string): T | Promise<T>;
 }

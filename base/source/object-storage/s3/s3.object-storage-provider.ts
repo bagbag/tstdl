@@ -1,41 +1,44 @@
-import { container, inject, injectionToken, singleton } from '#/container/index.js';
+import { container, singleton } from '#/container/index.js';
 import { ObjectStorage, ObjectStorageProvider } from '#/object-storage/index.js';
 import { assertDefinedPass, assertStringPass, isDefined } from '#/utils/type-guards.js';
 import { Client } from 'minio';
 import { S3ObjectStorage } from './s3.object-storage.js';
 
-export const S3_OBJECT_STORAGE_PROVIDER_CONFIG = injectionToken<S3ObjectStorageProviderConfig>('S3_OBJECT_STORAGE_PROVIDER_CONFIG');
-
-export type S3ObjectStorageProviderConfig = {
+export class S3ObjectStorageProviderConfig {
   /**
    * s3 endpoint
    */
-  endpoint: string,
+  endpoint: string;
 
   /**
    * s3 bucket, use a single bucket for all modules (which will become transparent key prefixes)
    *
    * mutually exclusive with bucketPerModule
    */
-  bucket?: string,
+  bucket?: string;
 
   /**
    * use an own bucket for every module
    *
    * mutually exclusive with bucket
    */
-  bucketPerModule?: boolean,
+  bucketPerModule?: boolean;
+
+  /**
+   * create bucket for requested storage module if it does not exist
+   */
+  autoCreateBucket?: boolean;
 
   /**
    * s3 access key
    */
-  accessKey: string,
+  accessKey: string;
 
   /**
    * s3 secret key
    */
-  secretKey: string
-};
+  secretKey: string;
+}
 
 export const bucketPerModule: unique symbol = Symbol('bucket per module');
 
@@ -43,8 +46,9 @@ export const bucketPerModule: unique symbol = Symbol('bucket per module');
 export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStorage> {
   private readonly client: Client;
   private readonly bucket: string | true;
+  private readonly createBucket: boolean;
 
-  constructor(@inject(S3_OBJECT_STORAGE_PROVIDER_CONFIG) config: S3ObjectStorageProviderConfig) {
+  constructor(config: S3ObjectStorageProviderConfig) {
     super();
 
     const { hostname, port, protocol } = new URL(config.endpoint);
@@ -52,6 +56,8 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
     if (isDefined(config.bucket) && (config.bucketPerModule == true)) {
       throw new Error('bucket and bucketPerModule is mutually exclusive');
     }
+
+    this.createBucket = config.autoCreateBucket ?? false;
 
     this.client = new Client({
       endPoint: hostname,
@@ -64,11 +70,17 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
     this.bucket = assertDefinedPass((config.bucketPerModule == true) ? true : config.bucket, 'either bucket or bucketPerModule must be specified');
   }
 
-  get(module: string): S3ObjectStorage {
+  async get(module: string): Promise<S3ObjectStorage> {
     const bucket = (this.bucket == true) ? module : assertStringPass(this.bucket);
     const prefix = (this.bucket == true) ? '' : ((module == '') ? '' : `${module}/`);
 
-    return new S3ObjectStorage(this.client, bucket, module, prefix);
+    const objectStorage = new S3ObjectStorage(this.client, bucket, module, prefix);
+
+    if (this.createBucket) {
+      await objectStorage.ensureBucketExists();
+    }
+
+    return objectStorage;
   }
 }
 
@@ -78,7 +90,7 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
  * @param register whether to register for {@link ObjectStorage} and {@link ObjectStorageProvider}
  */
 export function configureS3ObjectStorage(config: S3ObjectStorageProviderConfig, register: boolean = true): void {
-  container.register(S3_OBJECT_STORAGE_PROVIDER_CONFIG, { useValue: config });
+  container.register(S3ObjectStorageProviderConfig, { useValue: config });
 
   if (register) {
     container.registerSingleton(ObjectStorageProvider, { useToken: S3ObjectStorageProvider });
