@@ -316,18 +316,15 @@ export class Container {
       }
     }
 
-    if (!isTokenProvider(registration.provider)) {
-      if (registration.options.lifecycle == 'resolution') {
-        context.instances.set([token, argumentIdentity], instance);
-      }
-
-      if (registration.options.lifecycle == 'singleton') {
-        registration.instances.set(argumentIdentity, instance);
-      }
-
-      context.resolutions.push({ instance, registration });
+    if (registration.options.lifecycle == 'resolution') {
+      context.instances.set([token, argumentIdentity], instance);
     }
 
+    if (registration.options.lifecycle == 'singleton') {
+      registration.instances.set(argumentIdentity, instance);
+    }
+
+    context.resolutions.push({ instance, registration });
     context.resolving.delete([token, argumentIdentity]);
 
     if (isFirst) {
