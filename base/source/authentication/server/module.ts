@@ -1,6 +1,5 @@
-import type { Provider } from '#/container/index.js';
-import { container, isProvider } from '#/container/index.js';
-import type { Type } from '#/types.js';
+import type { InjectionToken, Provider } from '#/container/index.js';
+import { container } from '#/container/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
@@ -9,18 +8,28 @@ import { AuthenticationTokenPayloadProvider } from './authentication-token-paylo
 import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service.js';
 
 export type AuthenticationModuleConfig = {
-  serviceOptions: AuthenticationServiceOptions | Provider<AuthenticationServiceOptions>,
-  credentialsRepository: Type<AuthenticationCredentialsRepository>,
-  sessionRepository: Type<AuthenticationSessionRepository>,
+  serviceOptions?: AuthenticationServiceOptions | Provider<AuthenticationServiceOptions>,
+  serviceOptionsProvider?: Provider<AuthenticationServiceOptions>,
+  credentialsRepository: InjectionToken<AuthenticationCredentialsRepository>,
+  sessionRepository: InjectionToken<AuthenticationSessionRepository>,
 
   /** override default AuthenticationService */
-  authenticationService?: Type<AuthenticationService<any, any>>,
-  tokenPayloadProvider?: Type<AuthenticationTokenPayloadProvider<any, any>>,
-  subjectResolver?: Type<AuthenticationSubjectResolver>
+  authenticationService?: InjectionToken<AuthenticationService<any, any>>,
+  tokenPayloadProvider?: InjectionToken<AuthenticationTokenPayloadProvider<any, any>>,
+  subjectResolver?: InjectionToken<AuthenticationSubjectResolver>
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
-  container.register(AuthenticationServiceOptions, isProvider(config.serviceOptions) ? config.serviceOptions : { useValue: config.serviceOptions });
+  if (isDefined(config.serviceOptions)) {
+    container.register(AuthenticationServiceOptions, { useValue: config.serviceOptions });
+  }
+  else if (isDefined(config.serviceOptionsProvider)) {
+    container.register(AuthenticationServiceOptions, config.serviceOptionsProvider);
+  }
+  else {
+    throw new Error('Either serviceOptions or serviceOptionsToken must be provided.');
+  }
+
   container.registerSingleton(AuthenticationCredentialsRepository, { useToken: config.credentialsRepository });
   container.registerSingleton(AuthenticationSessionRepository, { useToken: config.sessionRepository });
 
