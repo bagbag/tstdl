@@ -1,4 +1,6 @@
 import type { BinaryData, TypedExtract } from '#/types.js';
+import type { ReadonlyTuple } from 'type-fest';
+import { createArray } from './array/array.js';
 import { encodeBase64, encodeBase64Url } from './base64.js';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding.js';
 import { getRandomBytes } from './random.js';
@@ -213,6 +215,22 @@ export async function generateEcdsaKey(curve: EcdsaCurve, extractable: boolean =
 export async function generatePbkdf2Key(extractable: boolean = false): Promise<CryptoKey> {
   const key = getRandomBytes(16);
   return importPbkdf2Key(key, extractable);
+}
+
+type AlgorithmParameter = Parameters<typeof globalThis.crypto.subtle.deriveBits>['0'];
+
+/**
+ * derive multiply byte arrays
+ * @param count how many Uint8Arrays to dervice
+ * @param length length of each Uint8Array in bytes
+ * @param algorithm algorithm to derive with
+ * @param baseKey key to derive from
+ */
+export async function deriveBytesMultiple<C extends number>(count: C, length: number, algorithm: AlgorithmParameter, baseKey: CryptoKey): Promise<ReadonlyTuple<Uint8Array, C>> {
+  const totalBits = count * length * 8;
+  const bytes = await globalThis.crypto.subtle.deriveBits(algorithm, baseKey, totalBits);
+
+  return createArray(count, (index) => new Uint8Array(bytes.slice(index * length, (index * length) + length))) as ReadonlyTuple<Uint8Array, C>;
 }
 
 function isBinaryKey(key: Key): key is BinaryData {

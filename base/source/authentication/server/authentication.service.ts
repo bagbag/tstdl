@@ -4,7 +4,7 @@ import { InvalidTokenError } from '#/error/invalid-token.error.js';
 import { NotImplementedError } from '#/error/not-implemented.error.js';
 import type { Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
-import { importPbkdf2Key } from '#/utils/cryptography.js';
+import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
 import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time.js';
 import { binaryEquals } from '#/utils/equals.js';
 import { createJwtTokenString } from '#/utils/jwt.js';
@@ -21,6 +21,7 @@ import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
 export class AuthenticationServiceOptions {
+
   /** Secret used for signing tokens and refreshTokens */
   secret: string;
 
@@ -327,12 +328,11 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   private async deriveSigningSecrets(): Promise<void> {
     const key = await importPbkdf2Key(this.secret);
-    const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key, SIGNING_SECRETS_LENGTH * 3);
-    const bufferSize = SIGNING_SECRETS_LENGTH / 8;
+    const [derivedTokenSigningSecret, derivedRefreshTokenSigningSecret, derivedSecretResetTokenSigningSecret] = await deriveBytesMultiple(3, SIGNING_SECRETS_LENGTH / 8, { name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key);
 
-    this.derivedTokenSigningSecret = new Uint8Array(hash.slice(0, bufferSize));
-    this.derivedRefreshTokenSigningSecret = new Uint8Array(hash.slice(bufferSize, bufferSize * 2));
-    this.derivedSecretResetTokenSigningSecret = new Uint8Array(hash.slice(bufferSize * 2));
+    this.derivedTokenSigningSecret = derivedTokenSigningSecret;
+    this.derivedRefreshTokenSigningSecret = derivedRefreshTokenSigningSecret;
+    this.derivedSecretResetTokenSigningSecret = derivedSecretResetTokenSigningSecret;
   }
 
   private async getHash(secret: string | BinaryData, salt: BinaryData): Promise<Uint8Array> {

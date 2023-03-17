@@ -76,8 +76,8 @@ export type FromEntries<T> = T extends readonly (readonly [infer Key, any])[]
   ? { [K in Cast<Key, PropertyKey>]: Fallback<FromEntriesEntryValue<T, K>, T[number][1]> }
   : never;
 
-export type Writable<T> = { -readonly [P in keyof T]: T[P] };
-export type DeepWritable<T> = { -readonly [P in keyof T]: DeepWritable<T[P]> };
+export type Writable<T> = T extends readonly (infer U)[] ? U[] : { -readonly [P in keyof T]: T[P] };
+export type DeepWritable<T> = T extends readonly (infer U)[] ? DeepWritable<U>[] : { -readonly [P in keyof T]: DeepWritable<T[P]> };
 
 export type RequiredKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? never : K }[keyof T];
 export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T];
