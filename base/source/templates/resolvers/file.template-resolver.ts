@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { injectArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { injectArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
 import { Property } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
@@ -28,7 +28,7 @@ export class FileTemplateField<Renderer extends string = string, Options = any> 
 export class FileTemplateResolver extends TemplateResolver<FileTemplateField> implements Injectable<FileTemplateProviderArgument> {
   private readonly basePath: string;
 
-  readonly [resolveArgumentType]: FileTemplateProviderArgument;
+  declare readonly [resolveArgumentType]: FileTemplateProviderArgument;
   constructor(@injectArg() basePath: string) {
     super();
 

@@ -1,9 +1,9 @@
-import { singleton } from '#/container';
-import { checkPassword } from '#/password/password-check';
-import { PasswordStrength } from '#/password/password-check-result.model';
-import { isNumber } from '#/utils/type-guards';
-import { SecretRequirementsError } from '../errors/secret-requirements.error';
-import type { SecretCheckResult } from '../models/secret-check-result.model';
+import { singleton } from '#/container/decorators.js';
+import { PasswordStrength } from '#/password/password-check-result.model.js';
+import { checkPassword } from '#/password/password-check.js';
+import { isNumber } from '#/utils/type-guards.js';
+import { SecretRequirementsError } from '../errors/secret-requirements.error.js';
+import type { SecretCheckResult } from '../models/secret-check-result.model.js';
 
 export abstract class AuthenticationSecretRequirementsValidator {
   abstract checkSecretRequirements(secret: string): SecretCheckResult | Promise<SecretCheckResult>;

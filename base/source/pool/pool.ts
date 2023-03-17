@@ -2,11 +2,12 @@ import { ArrayList } from '#/data-structures/array-list.js';
 import { Set } from '#/data-structures/set.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import { hardwareConcurrency } from '#/environment.js';
 import type { Logger } from '#/logger/index.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { cpus } from 'os';
 
 export type PoolOptions = {
+
   /**
    * maximum number of instances
    * @default number of cpu cores
@@ -15,6 +16,7 @@ export type PoolOptions = {
 };
 
 export type PoolUseOptions = {
+
   /**
    * Dipose used instance on error instead of reusing it.
    * @default false
@@ -42,7 +44,7 @@ export class Pool<T extends object> implements AsyncDisposable {
   }
 
   constructor(factory: PoolInstanceFactory<T>, disposer: PoolInstanceDisposer<T>, logger: Logger, options?: PoolOptions) {
-    this.size = options?.size ?? cpus().length;
+    this.size = options?.size ?? (isDefined(hardwareConcurrency) ? (hardwareConcurrency / 2) : 4);
     this.factory = factory;
     this.disposer = disposer;
     this.logger = logger;
@@ -99,7 +101,6 @@ export class Pool<T extends object> implements AsyncDisposable {
     this.usedInstances.delete(instance);
     this.freeInstances.add(instance);
   }
-
 
   /**
    * Get an instance from the pool and use it

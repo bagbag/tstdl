@@ -1,4 +1,4 @@
-import { digest } from '#/utils/cryptography';
+import { digest } from '#/utils/cryptography.js';
 
 const urlBase = 'https://api.pwnedpasswords.com';
 

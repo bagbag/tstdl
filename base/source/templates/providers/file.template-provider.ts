@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { injectArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { injectArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
 import { Schema } from '#/schema/index.js';
 import * as path from 'node:path';
@@ -22,7 +22,7 @@ const keyPattern = /^[\w\-/]+$/u;
 export class FileTemplateProvider extends TemplateProvider implements Injectable<FileTemplateProviderArgument> {
   private readonly basePath: string;
 
-  readonly [resolveArgumentType]: FileTemplateProviderArgument;
+  declare readonly [resolveArgumentType]: FileTemplateProviderArgument;
   constructor(@injectArg() basePath: string) {
     super();
 

@@ -1,27 +1,32 @@
 module.exports = {
   env: {
     browser: true,
-    es6: true,
-    node: true
+    es2022: true,
+    worker: true
   },
   extends: [
     'eslint:all',
-    'plugin:@typescript-eslint/all'
+    'plugin:@typescript-eslint/all',
+    'plugin:import/recommended',
+    'plugin:import/typescript'
   ],
-  globals: {
-    Atomics: 'readonly',
-    SharedArrayBuffer: 'readonly',
-    globalThis: false
+  settings: {
+    'import/resolver': {
+      typescript: true
+    }
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2022,
+    ecmaVersion: 'latest',
     sourceType: 'module',
     project: 'tsconfig.json'
   },
   plugins: ['@typescript-eslint'],
   rules: {
+    /** angular */
     '@angular-eslint/template/eqeqeq': 'off',
+
+    /** typescript */
     '@typescript-eslint/brace-style': ['error', 'stroustrup', { allowSingleLine: true }],
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
@@ -56,12 +61,30 @@ module.exports = {
     '@typescript-eslint/sort-type-union-intersection-members': 'off',
     '@typescript-eslint/space-before-function-paren': ['warn', { anonymous: 'never', named: 'never', asyncArrow: 'always' }],
     '@typescript-eslint/typedef': 'off',
+
+    /** import */
+    'import/no-duplicates': ['warn', { 'prefer-inline': true }],
+    'import/no-cycle': ['error', { ignoreExternal: true }],
+    'import/no-self-import': ['error'],
+    'import/no-extraneous-dependencies': ['error', { devDependencies: false, includeTypes: true }],
+    'import/no-empty-named-blocks': ['error'],
+    'import/no-mutable-exports': ['error'],
+    'import/no-nodejs-modules': ['error'],
+    'import/no-absolute-path': ['error'],
+    'import/no-useless-path-segments': ['warn'],
+    'import/consistent-type-specifier-style': ['off', 'prefer-inline'],
+    'import/newline-after-import': ['warn', { considerComments: true }],
+    'import/no-anonymous-default-export': ['error'],
+    'import/no-named-default': ['error'],
+    'import/no-unassigned-import': ['error'],
+
+    /** misc */
     'array-bracket-newline': ['error', 'consistent'],
     'array-element-newline': ['error', 'consistent'],
     'camelcase': 'off',
     'capitalized-comments': 'off',
     'class-methods-use-this': 'off',
-    'complexity': ['warn', 25],
+    'complexity': 'off',
     'dot-location': ['error', 'property'],
     'eqeqeq': 'off',
     'func-style': ['error', 'declaration', { allowArrowFunctions: true }],
@@ -69,7 +92,7 @@ module.exports = {
     'function-paren-newline': ['warn', 'consistent'],
     'generator-star-spacing': ['off', { before: false, after: true }],
     'id-length': 'off',
-    'indent': 'off',
+    'indent': ['error', 2, { SwitchCase: 1 }],
     'init-declarations': 'off',
     'line-comment-position': 'off',
     'linebreak-style': ['error', 'unix'],
@@ -80,7 +103,7 @@ module.exports = {
     'max-lines-per-function': ['warn', { 'max': 100, 'skipBlankLines': true, 'skipComments': true }],
     'max-lines': 'off',
     'max-params': 'off',
-    'max-statements': ['warn', 50],
+    'max-statements': 'off',
     'multiline-ternary': 'off',
     'new-cap': 'off',
     'newline-per-chained-call': 'off',
@@ -108,8 +131,11 @@ module.exports = {
     'prefer-destructuring': 'off',
     'prefer-named-capture-group': 'off',
     'quote-props': ['error', 'as-needed'],
+    'quotes': ['error', 'single'],
+    'semi': ['error', 'always'],
     'sort-imports': ['off', { ignoreCase: true }],
     'sort-keys': 'off',
+
     '@typescript-eslint/naming-convention': [
       'warn',
       {
@@ -146,12 +172,21 @@ module.exports = {
     }],
     '@typescript-eslint/member-ordering': ['warn', {
       default: [
+        // Index signature
         'signature',
+        'call-signature',
 
+        // Fields
+        '#private-static-field',
         'private-static-field',
         'protected-static-field',
         'public-static-field',
 
+        'private-decorated-field',
+        'protected-decorated-field',
+        'public-decorated-field',
+
+        '#private-instance-field',
         'private-instance-field',
         'protected-instance-field',
         'public-instance-field',
@@ -159,6 +194,7 @@ module.exports = {
         'protected-abstract-field',
         'public-abstract-field',
 
+        '#private-field',
         'private-field',
         'protected-field',
         'public-field',
@@ -167,17 +203,96 @@ module.exports = {
         'instance-field',
         'abstract-field',
 
+        'decorated-field',
+
         'field',
+
+        // Getters
+        '#private-static-get',
+        'private-static-get',
+        'protected-static-get',
+        'public-static-get',
+
+        'private-decorated-get',
+        'protected-decorated-get',
+        'public-decorated-get',
+
+        '#private-instance-get',
+        'private-instance-get',
+        'protected-instance-get',
+        'public-instance-get',
+
+        'protected-abstract-get',
+        'public-abstract-get',
+
+        '#private-get',
+        'private-get',
+        'protected-get',
+        'public-get',
+
+        'static-get',
+        'instance-get',
+        'abstract-get',
+
+        'decorated-get',
+
+        'get',
+
+        // Setters
+        '#private-static-set',
+        'private-static-set',
+        'protected-static-set',
+        'public-static-set',
+
+        'private-decorated-set',
+        'protected-decorated-set',
+        'public-decorated-set',
+
+        '#private-instance-set',
+        'private-instance-set',
+        'protected-instance-set',
+        'public-instance-set',
+
+        'protected-abstract-set',
+        'public-abstract-set',
+
+        '#private-set',
+        'private-set',
+        'protected-set',
+        'public-set',
+
+        'static-set',
+        'instance-set',
+        'abstract-set',
+
+        'decorated-set',
+
+        'set',
+
+        // Static initialization
+        'static-initialization',
+
+        // Constructors
+        'public-constructor',
+        'protected-constructor',
+        'private-constructor',
 
         'constructor',
 
+        // Methods
         'public-static-method',
         'protected-static-method',
         'private-static-method',
+        '#private-static-method',
+
+        'public-decorated-method',
+        'protected-decorated-method',
+        'private-decorated-method',
 
         'public-instance-method',
         'protected-instance-method',
         'private-instance-method',
+        '#private-instance-method',
 
         'public-abstract-method',
         'protected-abstract-method',
@@ -185,13 +300,16 @@ module.exports = {
         'public-method',
         'protected-method',
         'private-method',
+        '#private-method',
 
         'static-method',
         'instance-method',
         'abstract-method',
 
+        'decorated-method',
+
         'method'
       ]
     }]
   }
-};
+}

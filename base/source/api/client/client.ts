@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { container, resolveArgumentType } from '#/container/index.js';
+import { container, type resolveArgumentType } from '#/container/index.js';
 import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client/index.js';
 import { HttpClient, HttpClientRequest } from '#/http/client/index.js';
 import { normalizeSingleHttpValue } from '#/http/types.js';
@@ -45,7 +45,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
-      readonly [resolveArgumentType]: HttpClientOptions;
+      declare readonly [resolveArgumentType]: HttpClientOptions;
       constructor(httpClientOrOptions: HttpClient | HttpClientArgument) {
         this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : container.resolve(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;

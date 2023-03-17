@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { forwardArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import { getNewId } from '#/database/index.js';
 import type { CollectionArgument, Filter, TypedIndexDescription } from '#/database/mongo/index.js';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
@@ -15,8 +15,7 @@ const indexes: TypedIndexDescription<MongoLockEntity>[] = [
 
 @singleton()
 export class MongoLockRepository extends MongoEntityRepository<MongoLockEntity> implements Injectable<CollectionArgument<MongoLockEntity>> {
-  [resolveArgumentType]: CollectionArgument<MongoLockEntity>;
-
+  declare readonly [resolveArgumentType]: CollectionArgument<MongoLockEntity>;
   constructor(@forwardArg() collection: Collection<MongoLockEntity>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }

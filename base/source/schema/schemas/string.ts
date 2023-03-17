@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { Decorator } from '#/reflection/types.js';
+import type { Decorator } from '#/reflection/types.js';
 import { toArrayCopy } from '#/utils/array/array.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints/index.js';

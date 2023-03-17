@@ -1,7 +1,7 @@
 import type { Theme } from '#/theme/theme-service.js';
 import { fromEntries, objectKeys } from '#/utils/object/object.js';
 import { hyphenate } from '#/utils/string/hypenate.js';
-import { isDefined } from '#/utils/type-guards';
+import { isDefined } from '#/utils/type-guards.js';
 
 export type TailwindPalette = {
   /* eslint-disable @typescript-eslint/naming-convention */

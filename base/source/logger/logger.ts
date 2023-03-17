@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { resolveArgumentType } from '#/container/index.js';
+import type { resolveArgumentType } from '#/container/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { LogLevel } from './level.js';
@@ -26,8 +26,7 @@ export abstract class Logger implements Injectable<LoggerArgument> {
   readonly module?: string[];
   readonly logPrefix: string;
 
-  [resolveArgumentType]: LoggerArgument;
-
+  declare readonly [resolveArgumentType]: LoggerArgument;
   constructor(level: LogLevel, module?: string | string[], prefix: string = '') {
     this.level = level;
     this.module = isDefined(module) ? toArray(module) : undefined;

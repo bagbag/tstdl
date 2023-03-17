@@ -1,4 +1,6 @@
-import { Array, Enumeration, Property } from '#/schema';
+import { Property } from '#/schema/decorators/property.js';
+import { Array } from '#/schema/schemas/array.js';
+import { Enumeration } from '#/schema/schemas/enumeration.js';
 
 export enum PasswordStrength {
   VeryWeak = 0,

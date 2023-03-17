@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { container, injectArg, injectionToken, resolveArgumentType, singleton } from '#/container/index.js';
+import { container, injectArg, injectionToken, singleton, type resolveArgumentType } from '#/container/index.js';
 import { encodeBase64Url } from '#/utils/base64.js';
 import { concatArrayBufferViews } from '#/utils/binary.js';
 import { importHmacKey, sign } from '#/utils/cryptography.js';
@@ -26,8 +26,7 @@ export class ImgproxyImageService extends ImageService implements Injectable<Img
   private readonly saltBytes: Uint8Array;
   private readonly signatureSize: number;
 
-  readonly [resolveArgumentType]: ImgproxyImageServiceConfig;
-
+  declare readonly [resolveArgumentType]: ImgproxyImageServiceConfig;
   constructor(
     @injectArg<ImgproxyImageServiceConfig>('endpoint') endpoint: string,
     @injectArg<ImgproxyImageServiceConfig>('key') key: string,

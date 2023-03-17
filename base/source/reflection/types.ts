@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Constructor, Record } from '#/types.js';
+import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, Record } from '#/types.js';
 import type { UnionToIntersection } from 'type-fest';
 import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry.js';
 
@@ -50,9 +50,9 @@ export type DecoratorMap = DecoratorTypeMap<{
   property: PropertyDecorator,
   accessor: MethodDecorator,
   method: MethodDecorator,
-  parameter: ParameterDecorator,
+  parameter: ParameterDecorator & ConstructorParameterDecorator,
   methodParameter: ParameterDecorator,
-  constructorParameter: ParameterDecorator
+  constructorParameter: ConstructorParameterDecorator
 }>;
 
 export type DecoratorDataBase<Type extends string> = {

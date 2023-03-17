@@ -1,7 +1,7 @@
 import type { Injectable } from '#/container/index.js';
-import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { container, forwardArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { CollectionArgument, EntityTransformer, MongoRepositoryConfig, TypedIndexDescription } from '#/database/mongo/index.js';
-import { Collection, mapTo, MongoEntityRepository } from '#/database/mongo/index.js';
+import { Collection, MongoEntityRepository, mapTo } from '#/database/mongo/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { TypedOmit } from '#/types.js';
@@ -27,8 +27,7 @@ const transformer: EntityTransformer<OidcState, MongoOidcState> = {
 
 @singleton({ defaultArgumentProvider: () => repositoryConfig })
 export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository, Injectable<CollectionArgument<MongoOidcState>> {
-  readonly [resolveArgumentType]: CollectionArgument<MongoOidcState>;
-
+  declare readonly [resolveArgumentType]: CollectionArgument<MongoOidcState>;
   constructor(@forwardArg() collection: Collection<MongoOidcState>, @resolveArg<LoggerArgument>(MongoOidcStateRepository.name) logger: Logger) {
     super(collection, transformer, { logger, indexes });
   }

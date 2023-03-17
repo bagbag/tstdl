@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
+import 'reflect-metadata'; // eslint-disable-line import/no-unassigned-import
+
+import type { ConstructorParameterDecorator } from '#/types.js';
 import { noop } from '#/utils/noop.js';
-import 'reflect-metadata';
 import type { Decorator, DecoratorHandler } from './types.js';
 import type { CreateDecoratorOptions, SpecificCreateDecoratorOptions } from './utils.js';
 import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator } from './utils.js';
@@ -46,10 +48,10 @@ export function MethodParameter(options?: SpecificCreateDecoratorOptions<'method
   return createMethodParameterDecorator(options);
 }
 
-export function ConstructorParameter(options?: SpecificCreateDecoratorOptions<'constructorParameter'>): ParameterDecorator {
+export function ConstructorParameter(options?: SpecificCreateDecoratorOptions<'constructorParameter'>): ConstructorParameterDecorator {
   return createConstructorParameterDecorator(options);
 }
 
-export function Parameter(options?: SpecificCreateDecoratorOptions<'parameter'>): ParameterDecorator {
+export function Parameter(options?: SpecificCreateDecoratorOptions<'parameter'>): ParameterDecorator & ConstructorParameterDecorator {
   return createParameterDecorator(options);
 }

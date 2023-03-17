@@ -1,18 +1,21 @@
 {
   "name": "@tstdl/base",
-  "version": "0.82.85",
+  "version": "0.83.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
   },
+  "type": "module",
   "scripts": {
-    "build": "ttsc --project tsconfig.json",
-    "build:watch": "ttsc --watch",
-    "build:prod": "rm -rf dist && npm run build && cp package.json .eslintrc.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json",
+    "build": "tsc && tsc-alias",
+    "build:watch": "tsc && (concurrently --raw 'tsc --watch' 'tsc-alias --watch')",
+    "build:production": "rm -rf dist && npm run build && npm run build:production:cjs && npm run build:production:copy-files",
+    "build:production:cjs": "esbuild `find dist \\( -name '*.js' -o -name '*.jsx' \\)` --outdir=dist --allow-overwrite --format=cjs",
+    "build:production:copy-files": "cp package.json .eslintrc.cjs tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && sed -i 's/\"type\": \"module\",/\"type\": \"commonjs\",/g' dist/package.json",
     "build:docs": "typedoc",
     "build:docs-watch": "typedoc --watch",
-    "lint": "eslint -c .eslintrc.js --ext .ts .",
-    "pub": "npm run build:prod && rm -vf dist/test* && npm publish dist/"
+    "lint": "eslint -c .eslintrc.cjs --ext .ts .",
+    "pub": "npm run build:production && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
     "luxon": "^3.3",
@@ -28,13 +31,15 @@
     "@types/mjml": "4.7",
     "@types/node": "18",
     "@types/nodemailer": "6.4",
-    "@typescript-eslint/eslint-plugin": "5",
-    "@typescript-eslint/parser": "5",
-    "eslint": "8",
-    "ttypescript": "1.5",
+    "@typescript-eslint/eslint-plugin": "5.55",
+    "@typescript-eslint/parser": "5.55",
+    "concurrently": "7.6",
+    "eslint": "8.36",
+    "eslint-import-resolver-typescript": "3.5",
+    "eslint-plugin-import": "2.27",
+    "tsc-alias": "1.8",
     "typedoc": "0.23",
-    "typescript": "4.9",
-    "typescript-transform-paths": "3.4"
+    "typescript": "5.0"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.6",

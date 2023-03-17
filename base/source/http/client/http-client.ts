@@ -1,6 +1,6 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response.js';
 import type { Injectable } from '#/container/index.js';
-import { injectArg, optional, resolveArgumentType, singleton } from '#/container/index.js';
+import { injectArg, optional, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { OneOrMany, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { encodeBase64 } from '#/utils/base64.js';
@@ -38,7 +38,7 @@ export class HttpClient implements Injectable<HttpClientArgument> {
 
   readonly options: HttpClientOptions;
 
-  readonly [resolveArgumentType]: HttpClientOptions;
+  declare readonly [resolveArgumentType]: HttpClientOptions;
   constructor(adapter: HttpClientAdapter, @optional() @injectArg() options: HttpClientOptions = {}) {
     this.adapter = adapter;
     this.options = options;

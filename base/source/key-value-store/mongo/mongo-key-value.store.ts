@@ -15,9 +15,7 @@ export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> 
 
   constructor(
     keyValueRepository: MongoKeyValueRepository,
-
-    @injectArg((argument) => assertStringPass(argument, 'key-value store argument missing (module)'))
-    module: string
+    @injectArg((argument) => assertStringPass(argument, 'key-value store argument missing (module)')) module: string
   ) {
     super(module);
 

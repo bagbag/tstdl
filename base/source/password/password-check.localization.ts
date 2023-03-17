@@ -1,12 +1,12 @@
-import type { Localization, LocalizeItem } from '#/text/localization.service';
-import { getLocalizationKeys } from '#/text/localization.service';
-import type zxcvbnTranslationKeys from '@zxcvbn-ts/core/dist/data/translationKeys';
+import type { Localization, LocalizeItem } from '#/text/localization.service.js';
+import { getLocalizationKeys } from '#/text/localization.service.js';
+import type zxcvbnTranslationKeys from '@zxcvbn-ts/core/dist/data/translationKeys.js';
 
 export type PasswordCheckLocalization = Localization<{
   tstdl: {
     passwordCheck: {
-      warnings: Record<keyof typeof zxcvbnTranslationKeys.warnings, LocalizeItem>,
-      suggestions: Record<keyof typeof zxcvbnTranslationKeys.suggestions, LocalizeItem>
+      warnings: Record<keyof typeof zxcvbnTranslationKeys['default']['warnings'], LocalizeItem>,
+      suggestions: Record<keyof typeof zxcvbnTranslationKeys['default']['suggestions'], LocalizeItem>
     }
   }
 }>;

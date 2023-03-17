@@ -1,21 +1,17 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
-import { dynamicRequire } from '#/require.js';
+import { dynamicImport } from '#/import.js';
 import { supportsReadableStream } from '#/supports.js';
 import type { ObjectLiteral } from '#/types.js';
 import type * as NodeStream from 'node:stream';
-import type * as NodeZlib from 'node:zlib';
 import type { Stream, Transform } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+import type * as NodeZlib from 'node:zlib';
 import { isAsyncIterable } from './async-iterable-helpers/is-async-iterable.js';
 import { encodeBase64, encodeBase64Url } from './base64.js';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding.js';
-import { ForwardRef } from './object/forward-ref.js';
 import { getReadableStreamFromIterable } from './stream/readable-stream-adapter.js';
 import { isFunction } from './type-guards.js';
 import { zBase32Encode } from './z-base32.js';
-
-const zlib = ForwardRef.create({ initializer: () => dynamicRequire<typeof NodeZlib>('zlib') });
-const nodeStream = ForwardRef.create({ initializer: () => dynamicRequire<typeof NodeStream>('stream') });
 
 export interface CompressionResult {
   toBuffer(): Promise<Uint8Array>;
@@ -55,6 +51,8 @@ export function compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgor
 }
 
 async function _compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
+  const zlib = await dynamicImport('zlib');
+
   return new Promise<Uint8Array>((resolve, reject) => {
     const compressor: ((buffer: NodeZlib.InputType, callback: NodeZlib.CompressCallback) => void) | ((buffer: NodeZlib.InputType, options: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions, callback: NodeZlib.CompressCallback) => void) | undefined
       = algorithm == 'gzip' ? zlib.gzip
@@ -118,6 +116,8 @@ export function decompressStream(stream: Stream | ReadableStream, algorithm: Com
 }
 
 async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
+  const zlib = await dynamicImport('zlib');
+
   return new Promise<Uint8Array>((resolve, reject) => {
     const decompressor: ((buffer: NodeZlib.InputType, callback: NodeZlib.CompressCallback) => void) | ((buffer: NodeZlib.InputType, options: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions, callback: NodeZlib.CompressCallback) => void) | undefined
       = algorithm == 'gzip' ? zlib.gunzip
@@ -149,6 +149,9 @@ async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlg
 }
 
 async function* _decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): AsyncIterable<Uint8Array> {
+  const zlib = await dynamicImport<typeof NodeZlib>('zlib');
+  const nodeStream = await dynamicImport<typeof NodeStream>('stream');
+
   const decompressor: Transform | undefined
     = algorithm == 'gzip' ? zlib.createGunzip(options)
       : algorithm == 'brotli' ? zlib.createBrotliDecompress(options)

@@ -1,5 +1,5 @@
 import { isDefined } from '#/utils/type-guards.js';
-import type { ServerSentJsonEvent, ServerSentTextEvent } from './model';
+import type { ServerSentJsonEvent, ServerSentTextEvent } from './model.js';
 
 export class ServerSentEventsSource {
   private readonly writable: WritableStream<string>;

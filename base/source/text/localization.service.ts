@@ -1,5 +1,5 @@
 import { resolveArg, singleton } from '#/container/index.js';
-import { DetailsError } from '#/error/details.error';
+import { DetailsError } from '#/error/details.error.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';

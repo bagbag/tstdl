@@ -1,12 +1,12 @@
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { isNode } from '#/environment.js';
+import { dynamicImport } from '#/import.js';
 import type { Logger } from '#/logger/index.js';
 import { Pool } from '#/pool/index.js';
-import { dynamicRequire } from '#/require.js';
 import type { RpcRemote } from '#/rpc/index.js';
 import { Rpc } from '#/rpc/index.js';
-import type * as NodeWorkerThreads from 'worker_threads';
+import type * as NodeWorkerThreads from 'node:worker_threads'; // eslint-disable-line import/no-nodejs-modules
 import type { ThreadWorker } from './thread-worker.js';
 
 type ThreadPoolWorker = Worker | NodeWorkerThreads.Worker;
@@ -20,11 +20,15 @@ export type ThreadOptions = (WorkerOptions | NodeWorkerThreads.WorkerOptions) & 
   threadCount?: number
 };
 
-let spawnWorker: (url: string | URL, options: any) => ThreadPoolWorker;
+let spawnWorker: (url: string | URL, options: any) => ThreadPoolWorker | Promise<ThreadPoolWorker>;
 
 if (isNode) {
-  const { Worker: NodeWorker } = dynamicRequire<typeof NodeWorkerThreads>('worker_threads');
-  spawnWorker = (url, options) => new NodeWorker(url, options as NodeWorkerThreads.WorkerOptions);
+  spawnWorker = async (url, options) => {
+    const workerThreads = await dynamicImport<typeof NodeWorkerThreads>('node:worker_threads');
+
+    spawnWorker = () => new workerThreads.Worker(url, options as NodeWorkerThreads.WorkerOptions);
+    return spawnWorker(url, options);
+  };
 }
 else {
   spawnWorker = (url, options) => new Worker(url, options as WorkerOptions);
@@ -40,7 +44,7 @@ export class ThreadPool implements AsyncDisposable {
     this.url = url;
     this.options = options;
 
-    this.pool = new Pool(() => this.spawn(), ({ worker }) => worker.terminate(), logger, { size: options?.threadCount });
+    this.pool = new Pool(async () => this.spawn(), async ({ worker }) => worker.terminate(), logger, { size: options?.threadCount });
   }
 
   async dispose(): Promise<void> {
@@ -70,8 +74,8 @@ export class ThreadPool implements AsyncDisposable {
     });
   }
 
-  private spawn(): PoolEntry {
-    const worker = spawnWorker(this.url, this.options);
+  private async spawn(): Promise<PoolEntry> {
+    const worker = await spawnWorker(this.url, this.options);
     const remotes = new Map();
 
     return { worker, remotes };

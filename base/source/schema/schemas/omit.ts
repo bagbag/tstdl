@@ -1,12 +1,11 @@
-import type { ObjectLiteral, OneOrMany } from '#/types.js';
+import type { ObjectLiteral, OneOrMany, SimplifyObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { objectEntries } from '#/utils/object/object.js';
-import type { Simplify } from 'type-fest';
 import type { ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties } from '../types/index.js';
 import { objectSchema } from '../types/index.js';
 import { getObjectSchema } from '../utils/schema.js';
 
-export function omit<T extends ObjectLiteral, K extends keyof T>(schemaOrType: ObjectSchemaOrType<T>, keys: OneOrMany<K>): ObjectSchema<Simplify<Omit<T, K>>> {
+export function omit<T extends ObjectLiteral, K extends keyof T>(schemaOrType: ObjectSchemaOrType<T>, keys: OneOrMany<K>): ObjectSchema<SimplifyObject<Omit<T, K>>> {
   const schema = getObjectSchema(schemaOrType);
   const keyArray = toArray(keys);
 

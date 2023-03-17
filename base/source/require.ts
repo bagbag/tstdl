@@ -1,5 +1,7 @@
-const _require = require as typeof dynamicRequire;
+function getRequire(): typeof dynamicRequire {
+  return require;
+}
 
 export function dynamicRequire<T = any>(id: string): T {
-  return _require(id);
+  return getRequire()(id);
 }

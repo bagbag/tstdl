@@ -205,3 +205,5 @@ export type TypeFromPath<T extends Record, Path extends Paths<T> | string> = {
   : never
   : never;
 }[Path];
+
+export type ConstructorParameterDecorator = (target: Object, propertyKey: undefined, parameterIndex: number) => void;

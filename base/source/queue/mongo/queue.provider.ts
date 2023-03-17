@@ -18,8 +18,7 @@ export class MongoQueueProvider extends QueueProvider implements Injectable<Coll
   private readonly lockProvider: LockProvider;
   private readonly messageBusProvider: MessageBusProvider;
 
-  readonly [resolveArgumentType]: CollectionArgument<MongoJob>;
-
+  declare readonly [resolveArgumentType]: CollectionArgument<MongoJob>;
   constructor(@forwardArg() repository: MongoJobRepository<any>, @resolveArg<LockProviderArgument>('queue:') lockProvider: LockProvider, messageBusProvider: MessageBusProvider) {
     super();
 

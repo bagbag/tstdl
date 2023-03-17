@@ -1,1 +1,1 @@
-export * from './secret-requirements.error';
+export * from './secret-requirements.error.js';

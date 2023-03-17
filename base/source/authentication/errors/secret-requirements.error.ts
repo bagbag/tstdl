@@ -1,4 +1,4 @@
-import { CustomError } from '#/error/custom.error';
+import { CustomError } from '#/error/custom.error.js';
 
 export class SecretRequirementsError extends CustomError {
   static readonly errorName = 'SecretRequirementsError';

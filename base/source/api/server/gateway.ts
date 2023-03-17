@@ -1,3 +1,5 @@
+import 'urlpattern-polyfill'; // eslint-disable-line import/no-unassigned-import
+
 import type { Injectable } from '#/container/index.js';
 import { container, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
@@ -19,7 +21,6 @@ import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { deferThrow } from '#/utils/throw.js';
 import { isArray, isBlob, isDefined, isNull, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { mebibyte } from '#/utils/units.js';
-import 'urlpattern-polyfill';
 import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestContext } from '../types.js';
 import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
@@ -105,7 +106,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
 
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
-  readonly [resolveArgumentType]: ApiGatewayOptions;
+  declare readonly [resolveArgumentType]: ApiGatewayOptions;
   constructor(requestTokenProvider: ApiRequestTokenProvider, @resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
     this.requestTokenProvider = requestTokenProvider;
     this.logger = logger;

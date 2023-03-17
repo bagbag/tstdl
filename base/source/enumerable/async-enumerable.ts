@@ -11,11 +11,7 @@ import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTa
 import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers/index.js';
 import { range } from '../utils/iterable-helpers/index.js';
 import type { EnumerableMethods } from './enumerable-methods.js';
-import { Enumerable, setAsyncEnumerable } from './enumerable.js';
-
-let enumerable: undefined | (<T>(source: Iterable<T>) => Enumerable<T>);
-
-export const setEnumerable: undefined | ((fn: typeof enumerable) => any) = (fn: typeof enumerable): any => (enumerable = fn);
+import { Enumerable } from './enumerable.js';
 
 export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
   private readonly source: AnyIterable<T>;
@@ -273,7 +269,7 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
 
   async toSync(): Promise<Enumerable<T>> {
     const syncIterable = await toSync(this.source);
-    return (enumerable ?? Enumerable.from)(syncIterable);
+    return Enumerable.from(syncIterable);
   }
 
   while(predicate: AsyncPredicate<T>): AsyncEnumerable<T> {
@@ -316,6 +312,3 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     throw new Error('source is neither iterable nor async-iterable');
   }
 }
-
-// eslint-disable-next-line @typescript-eslint/unbound-method
-setAsyncEnumerable?.(AsyncEnumerable.from);

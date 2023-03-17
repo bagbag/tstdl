@@ -1,4 +1,4 @@
-import { Property } from '#/schema';
+import { Property } from '#/schema/decorators/property.js';
 
 export class InitSecretResetData {
   /** Subject is not checked for existence may not existence. */

@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Constructor, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { noop } from '#/utils/noop.js';
 import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards.js';
@@ -89,11 +89,11 @@ export function createMethodParameterDecorator(options: SpecificCreateDecoratorO
   return createDecorator({ ...options, methodParameter: true }, options.handler);
 }
 
-export function createConstructorParameterDecorator(options: SpecificCreateDecoratorOptions<'constructorParameter'> = {}): ParameterDecorator {
+export function createConstructorParameterDecorator(options: SpecificCreateDecoratorOptions<'constructorParameter'> = {}): ConstructorParameterDecorator {
   return createDecorator({ ...options, constructorParameter: true }, options.handler);
 }
 
-export function createParameterDecorator(options: SpecificCreateDecoratorOptions<'parameter'> = {}): ParameterDecorator {
+export function createParameterDecorator(options: SpecificCreateDecoratorOptions<'parameter'> = {}): ParameterDecorator & ConstructorParameterDecorator {
   return createDecorator({ ...options, parameter: true }, options.handler);
 }
 

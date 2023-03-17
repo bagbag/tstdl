@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { forwardArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { MigrationState, MigrationStateRepository } from '#/migration/index.js';
@@ -15,8 +15,7 @@ const indexes: TypedIndexDescription<MigrationState>[] = [
 
 @singleton({ defaultArgumentProvider: () => mongoMigrationStateRepositoryModuleConfig.defaultMigrationStateRepositoryConfig })
 export class MongoMigrationStateRepository extends MongoEntityRepository<MigrationState> implements MigrationStateRepository, Injectable<CollectionArgument<MigrationState>> {
-  readonly [resolveArgumentType]: CollectionArgument<MigrationState>;
-
+  declare readonly [resolveArgumentType]: CollectionArgument<MigrationState>;
   constructor(@forwardArg() collection: Collection<MigrationState>, @resolveArg<LoggerArgument>(MongoMigrationStateRepository.name) logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }

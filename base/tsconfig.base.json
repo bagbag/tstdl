@@ -1,11 +1,11 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "nodenext",
     "lib": ["esnext", "dom"],
     "target": "es2022",
-    "baseUrl": "./",
+    "baseUrl": "source/",
     "rootDir": "source/",
     "outDir": "dist/",
     "declaration": true,
@@ -14,7 +14,7 @@
     "pretty": true,
     "removeComments": false,
     "resolveJsonModule": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "downlevelIteration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -40,6 +40,7 @@
     "strictPropertyInitialization": false,
     "useDefineForClassFields": true,
     "useUnknownInCatchVariables": true,
+    "isolatedModules": true,
 
     /* jsx */
     "jsx": "react-jsx",

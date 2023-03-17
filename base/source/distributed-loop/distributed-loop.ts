@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { injectable, injectArg, resolveArgumentType } from '#/container/index.js';
+import { injectable, injectArg, type resolveArgumentType } from '#/container/index.js';
 import { LockProvider } from '#/lock/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
@@ -19,7 +19,7 @@ export class DistributedLoop implements Injectable<DistributedLoopArgument> {
   private readonly key: string;
   private readonly lockProvider: LockProvider;
 
-  [resolveArgumentType]: string;
+  declare readonly [resolveArgumentType]: string;
 
   /**
    * a loop which runs distributed in the scope of the provided {@link LockProvider}.

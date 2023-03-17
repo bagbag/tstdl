@@ -8,8 +8,7 @@ export type KeyValueStoreArgument = string;
 export abstract class KeyValueStore<KV extends StringMap> implements Injectable<KeyValueStoreArgument> {
   readonly module: string;
 
-  readonly [resolveArgumentType]: KeyValueStoreArgument;
-
+  declare readonly [resolveArgumentType]: KeyValueStoreArgument;
   constructor(module: string) {
     this.module = module;
   }

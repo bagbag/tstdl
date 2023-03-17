@@ -1,5 +1,6 @@
+import 'reflect-metadata'; // eslint-disable-line import/no-unassigned-import
+
 import type { Type } from '#/types.js';
-import 'reflect-metadata';
 
 export function getDesignType(target: object, propertyKey?: string | symbol): Type {
   return Reflect.getMetadata('design:type', target, propertyKey as string) as Type;

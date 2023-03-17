@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { forwardArg, type resolveArgumentType, singleton } from '#/container/index.js';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
 import { Logger } from '#/logger/index.js';
@@ -20,7 +20,7 @@ const indexes: TypedIndexDescription<AuthenticationSession>[] = [];
   defaultArgumentProvider: () => defaultArgument
 })
 export class InternalMongoAuthenticationSessionRepository extends MongoEntityRepository<AuthenticationSession> implements Injectable<MongoAuthenticationSessionRepositoryArgument> {
-  readonly [resolveArgumentType]: MongoAuthenticationSessionRepositoryArgument;
+  declare readonly [resolveArgumentType]: MongoAuthenticationSessionRepositoryArgument;
 
   constructor(@forwardArg() collection: Collection<AuthenticationSession>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });

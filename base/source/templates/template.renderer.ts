@@ -15,12 +15,12 @@ export type TemplateRenderObject<Renderer extends string = string, Options = any
 export type TemplateRendererString = typeof templateRendererString;
 export type TemplateRendererOptions = typeof templateRendererOptions;
 
-export declare const templateRendererString: unique symbol;
-export declare const templateRendererOptions: unique symbol;
+export const templateRendererString: unique symbol = Symbol('templateRendererString');
+export const templateRendererOptions: unique symbol = Symbol('templateRendererOptions');
 
 export abstract class TemplateRenderer<Renderer extends string = string, Options = any> {
-  readonly [templateRendererString]: Renderer;
-  readonly [templateRendererOptions]: Options;
+  declare readonly [templateRendererString]: Renderer;
+  declare readonly [templateRendererOptions]: Options;
 
   async render(template: TemplateRenderObject<Renderer, Options>, context?: object): Promise<TemplateRenderResult> {
     const parsedContext = isDefined(template.contextSchema)

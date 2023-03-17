@@ -1,5 +1,5 @@
 import type { Injectable } from '#/container/index.js';
-import { forwardArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { forwardArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { MaybeNewEntity } from '#/database/index.js';
 import { getNewId } from '#/database/index.js';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
@@ -24,7 +24,7 @@ const indexes: TypedIndexDescription<AuthenticationCredentials>[] = [
   defaultArgumentProvider: () => defaultArgument
 })
 export class InternalMongoAuthenticationCredentialsRepository extends MongoEntityRepository<AuthenticationCredentials> implements Injectable<MongoAuthenticationCredentialsRepositoryArgument> {
-  readonly [resolveArgumentType]: MongoAuthenticationCredentialsRepositoryArgument;
+  declare readonly [resolveArgumentType]: MongoAuthenticationCredentialsRepositoryArgument;
 
   constructor(@forwardArg() collection: Collection<AuthenticationCredentials>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });

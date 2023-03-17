@@ -1,9 +1,9 @@
 import { inject, injectionToken, singleton } from '#/container/index.js';
 import { createArray } from '#/utils/array/array.js';
-import { memoize } from '#/utils/function/memoize';
+import { memoize } from '#/utils/function/memoize.js';
 import { fromEntries, objectEntries, objectKeys } from '#/utils/object/object.js';
 import { isString } from '#/utils/type-guards.js';
-import * as chroma from 'chroma-js';
+import chroma from 'chroma-js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject } from 'rxjs';
 

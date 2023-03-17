@@ -8,8 +8,7 @@ import { formatError } from '#/utils/format-error.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { MailLogRepository } from './mail-log.repository.js';
 import { MailClient } from './mail.client.js';
-import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
-import { DefaultMailData } from './models/index.js';
+import type { DefaultMailData, MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';
 
 @singleton()
@@ -25,12 +24,12 @@ export class MailService {
     templateService: TemplateService,
     @inject(MailLogRepository) @optional() mailLogRepository: MailLogRepository | undefined,
     @resolveArg<LoggerArgument>(MailService.name) logger: Logger,
-    @inject(MAIL_DEFAULT_DATA) @optional() defaultData: DefaultMailData = {}
+    @inject(MAIL_DEFAULT_DATA) @optional() defaultData: DefaultMailData | undefined
   ) {
     this.mailClient = mailClient;
     this.templateService = templateService;
     this.mailLogRepository = mailLogRepository;
-    this.defaultData = defaultData;
+    this.defaultData = defaultData ?? {};
     this.logger = logger;
   }
 

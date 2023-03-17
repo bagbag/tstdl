@@ -11,7 +11,7 @@ import { configureHttpClient } from '#/http/client/module.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import { configureNodeHttpServer } from '#/http/server/node/index.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
-import { ServerSentEvents, ServerSentEventsSource } from '#/sse';
+import { ServerSentEvents, ServerSentEventsSource } from '#/sse/index.js';
 import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding.js';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream/index.js';
 import { cancelableTimeout, timeout } from '#/utils/timing.js';

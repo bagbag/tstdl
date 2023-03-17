@@ -1,5 +1,5 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
-import { trim } from '#/utils/string/trim';
+import { trim } from '#/utils/string/trim.js';
 import { isDefined, isNumber, isUndefined } from '#/utils/type-guards.js';
 
 export type SetCookieOptions = {

@@ -1,5 +1,5 @@
 import type { AfterResolve, Injectable } from '#/container/index.js';
-import { afterResolve, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { afterResolve, injectArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
@@ -116,7 +116,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
   private readonly options: PdfServiceOptions;
 
 
-  declare [resolveArgumentType]: PdfServiceArgument;
+  declare readonly [resolveArgumentType]: PdfServiceArgument;
 
   constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
     this.templateService = templateService;

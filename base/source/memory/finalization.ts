@@ -1,4 +1,4 @@
-import { isDefined, isUndefined } from '#/utils/type-guards';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
 
 export type FinalizationHandler<D = any> = (data: D) => any;
 

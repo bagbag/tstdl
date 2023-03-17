@@ -1,6 +1,5 @@
 import { forwardRef, singleton } from '#/container/index.js';
-// @ts-expect-error import is actually working
-import * as mjml2html from 'mjml';
+import mjml2html from 'mjml';
 import type { MJMLParsingOptions } from 'mjml-core';
 import { TemplateRendererProvider } from '../template-renderer.provider.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';

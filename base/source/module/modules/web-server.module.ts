@@ -1,6 +1,6 @@
-import { ApiGateway, API_MODULE_OPTIONS } from '#/api/server/index.js';
+import { API_MODULE_OPTIONS, ApiGateway } from '#/api/server/index.js';
 import type { AfterResolve, Injectable } from '#/container/index.js';
-import { afterResolve, inject, injectArg, optional, resolveArgumentType, singleton } from '#/container/index.js';
+import { afterResolve, inject, injectArg, optional, singleton, type resolveArgumentType } from '#/container/index.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import { HttpServer } from '#/http/server/http-server.js';
 import type { Type } from '#/types.js';
@@ -33,8 +33,7 @@ export class WebServerModule extends ModuleBase implements Module, Injectable<We
     }
   };
 
-  [resolveArgumentType]: WebServerModuleConfiguration;
-
+  declare readonly [resolveArgumentType]: WebServerModuleConfiguration;
   constructor(
     @injectArg() config: WebServerModuleConfiguration,
     httpServer: HttpServer,

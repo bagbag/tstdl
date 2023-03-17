@@ -1,6 +1,6 @@
 import { SchemaError } from '#/schema/index.js';
-import type { OneOrMany } from '#/types';
-import { isArray, isDefined } from '#/utils/type-guards';
+import type { OneOrMany } from '#/types.js';
+import { isArray, isDefined } from '#/utils/type-guards.js';
 
 export type SerializedSchemaError = {
   path: string,

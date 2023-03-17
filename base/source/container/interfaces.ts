@@ -1,9 +1,10 @@
-export declare const resolveArgumentType: unique symbol;
+export const resolveArgumentType: unique symbol = Symbol('resolveArgumentType');
 export const afterResolve: unique symbol = Symbol('after resolve');
 
 export type InjectableArgument<T, Fallback> = T extends Injectable<infer A> ? A : Fallback;
 
 export interface Injectable<T = unknown> {
+
   /**
    * type of resolve argument
    * @deprecated only used for type inference
@@ -12,6 +13,7 @@ export interface Injectable<T = unknown> {
 }
 
 export interface AfterResolve {
+
   /**
    * called after resolve through container
    */

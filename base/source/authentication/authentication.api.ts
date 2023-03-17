@@ -12,6 +12,8 @@ import type { Record } from '#/types.js';
 import { SecretCheckResult } from './models/secret-check-result.model.js';
 import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
+export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
+
 type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
   typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;
 
@@ -37,8 +39,6 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload, Authentic
     }
   });
 }
-
-export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>(

@@ -1,12 +1,12 @@
-import { propertyName } from '#/utils/object';
-import { timeout } from '#/utils/timing';
-import { isNotNullOrUndefined, isUndefined } from '#/utils/type-guards';
+import { propertyName } from '#/utils/object/property-name.js';
+import { timeout } from '#/utils/timing.js';
+import { isNotNullOrUndefined, isUndefined } from '#/utils/type-guards.js';
 import type { zxcvbnAsync } from '@zxcvbn-ts/core';
-import type { OptionsType } from '@zxcvbn-ts/core/dist/types';
-import { haveIBeenPwned } from './have-i-been-pwned';
-import type { PasswordCheckLocalization } from './password-check.localization';
-import { passwordCheckLocalizationKeys } from './password-check.localization';
-import type { PasswordCheckResult } from './password-check-result.model';
+import type { OptionsType } from '@zxcvbn-ts/core/dist/types.js';
+import { haveIBeenPwned } from './have-i-been-pwned.js';
+import type { PasswordCheckResult } from './password-check-result.model.js';
+import type { PasswordCheckLocalization } from './password-check.localization.js';
+import { passwordCheckLocalizationKeys } from './password-check.localization.js';
 
 export type CheckPasswordOptions = {
   checkForPwned?: boolean
@@ -50,9 +50,9 @@ async function importZxcvbn(): Promise<typeof zxcvbnAsync> {
   const [{ zxcvbnAsync, zxcvbnOptions }, common, english, german] = await Promise.all([
     import('@zxcvbn-ts/core'),
     /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-    import('@zxcvbn-ts/language-common').then((module) => module.default ?? module as unknown as typeof module.default),
-    import('@zxcvbn-ts/language-en').then((module) => module.default ?? module as unknown as typeof module.default),
-    import('@zxcvbn-ts/language-de').then((module) => module.default ?? module as unknown as typeof module.default)
+    import('@zxcvbn-ts/language-common').then((module) => module.default),
+    import('@zxcvbn-ts/language-en').then((module) => module.default),
+    import('@zxcvbn-ts/language-de').then((module) => module.default)
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   ]);
 

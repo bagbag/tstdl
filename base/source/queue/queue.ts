@@ -49,7 +49,7 @@ export const defaultQueueConfig: Required<QueueConfig> = {
 };
 
 export abstract class Queue<T> implements Injectable<QueueArgument> {
-  readonly [resolveArgumentType]: QueueArgument;
+  declare readonly [resolveArgumentType]: QueueArgument;
 
   batch(): QueueEnqueueBatch<T> {
     return new QueueEnqueueBatch(this);

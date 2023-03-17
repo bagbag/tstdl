@@ -7,15 +7,6 @@ import type { JsxTemplate } from '../resolvers/jsx.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
 import { TemplateRenderer } from '../template.renderer.js';
 
-
-declare module 'preact' {
-  namespace JSX {
-    interface IntrinsicElements {
-      [key: string]: any;
-    }
-  }
-}
-
 export type JsxTemplateRenderObject = TemplateRenderObject<'jsx', undefined, JsxTemplate>;
 
 @singleton()

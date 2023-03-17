@@ -5,14 +5,7 @@ import { KeyValueStore } from '../key-value.store.js';
 import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider.js';
 import type { MongoKeyValue } from './mongo-key-value.model.js';
 import { MongoKeyValueStore } from './mongo-key-value.store.js';
-
-export type MongoKeyValueStoreModuleConfig = {
-  defaultKeyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue> | undefined
-};
-
-export const mongoKeyValueStoreModuleConfig: MongoKeyValueStoreModuleConfig = {
-  defaultKeyValueRepositoryConfig: undefined
-};
+import { DEFAULT_KEY_VALUE_REPOSITORY_CONFIG } from './tokens.js';
 
 /**
  * configure mongo queue module
@@ -20,10 +13,10 @@ export const mongoKeyValueStoreModuleConfig: MongoKeyValueStoreModuleConfig = {
  * @param register whether to register for {@link Queue} and {@link QueueProvider}
  */
 export function configureMongoKeyValueStore(keyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue>, register: boolean = true): void {
-  mongoKeyValueStoreModuleConfig.defaultKeyValueRepositoryConfig = keyValueRepositoryConfig;
+  container.register(DEFAULT_KEY_VALUE_REPOSITORY_CONFIG, { useValue: keyValueRepositoryConfig });
 
   if (register) {
     container.registerSingleton(KeyValueStoreProvider, { useToken: MongoKeyValueStoreProvider });
-    container.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore });
+    container.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore, argument: '' });
   }
 }
