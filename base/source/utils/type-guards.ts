@@ -154,6 +154,13 @@ export function assertNotBlob<T>(value: T, message: AssertionMessage = 'Expected
 export function assertBlobPass(value: any, message?: AssertionMessage): InferIsType<typeof isBlob> { assertBlob(value, message); return value; }
 export function assertNotBlobPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBlob> { assertNotBlob(value, message); return value; }
 
+export function isBinaryData(value: any): value is BinaryData { return isArrayBuffer(value) || isArrayBufferView(value); }
+export function isNotBinaryData<T>(value: T): value is InferIsNotType<T, typeof isBinaryData> { return !isBinaryData(value); }
+export function assertBinaryData(value: any, message: AssertionMessage = 'Expected value to be BinaryData.'): asserts value is InferIsType<typeof isBinaryData> { assert(isBinaryData(value), message); }
+export function assertNotBinaryData<T>(value: T, message: AssertionMessage = 'Expected value to not be BinaryData.'): asserts value is InferIsNotType<T, typeof isBinaryData> { assert(isNotBinaryData(value), message); }
+export function assertBinaryDataPass(value: any, message?: AssertionMessage): InferIsType<typeof isBinaryData> { assertBinaryData(value, message); return value; }
+export function assertNotBinaryDataPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBinaryData> { assertNotBinaryData(value, message); return value; }
+
 export function isArrayBuffer(value: any): value is ArrayBuffer { return (value instanceof ArrayBuffer); }
 export function isNotArrayBuffer<T>(value: T): value is InferIsNotType<T, typeof isArrayBuffer> { return !isArrayBuffer(value); }
 export function assertArrayBuffer(value: any, message: AssertionMessage = 'Expected value to be ArrayBuffer.'): asserts value is InferIsType<typeof isArrayBuffer> { assert(isArrayBuffer(value), message); }

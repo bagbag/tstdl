@@ -9,7 +9,7 @@ import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time
 import { binaryEquals } from '#/utils/equals.js';
 import { createJwtTokenString } from '#/utils/jwt.js';
 import { getRandomBytes, getRandomString } from '#/utils/random.js';
-import { isUndefined } from '#/utils/type-guards.js';
+import { isBinaryData, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
 import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
@@ -21,9 +21,15 @@ import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
 export class AuthenticationServiceOptions {
-
-  /** Secret used for signing tokens and refreshTokens */
-  secret: string;
+  /**
+   * Secrets used for signing tokens and refreshTokens
+   * If single secret is provided, multiple secrets are derived internally
+   */
+  secret: string | BinaryData | {
+    tokenSigningSecret: Uint8Array,
+    refreshTokenSigningSecret: Uint8Array,
+    secretResetTokenSigningSecret: Uint8Array
+  };
 
   /** Token version, forces refresh on mismatch (useful if payload changes) */
   version?: number;
@@ -65,7 +71,7 @@ type CreateSecretResetTokenResult = {
   jsonToken: SecretResetToken
 };
 
-const SIGNING_SECRETS_LENGTH = 512;
+const SIGNING_SECRETS_LENGTH = 64;
 
 
 @singleton()
@@ -76,6 +82,7 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
   private readonly subjectResolver: AuthenticationSubjectResolver | undefined;
   private readonly authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined;
+  private readonly options: AuthenticationServiceOptions;
 
   private readonly secret: string;
   private readonly tokenVersion: number;
@@ -102,8 +109,8 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     this.subjectResolver = subjectResolver;
     this.tokenPayloadProvider = tokenPayloadProvider;
     this.authenticationResetSecretHandler = authenticationResetSecretHandler;
+    this.options = options;
 
-    this.secret = options.secret;
     this.tokenVersion = options.version ?? 1;
     this.tokenTimeToLive = options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
     this.refreshTokenTimeToLive = options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
@@ -115,7 +122,14 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   }
 
   async initialize(): Promise<void> {
-    await this.deriveSigningSecrets();
+    if (isString(this.options.secret) || isBinaryData(this.options.secret)) {
+      await this.deriveSigningSecrets(this.options.secret);
+    }
+    else {
+      this.derivedTokenSigningSecret = this.options.secret.tokenSigningSecret;
+      this.derivedRefreshTokenSigningSecret = this.options.secret.refreshTokenSigningSecret;
+      this.derivedSecretResetTokenSigningSecret = this.options.secret.secretResetTokenSigningSecret;
+    }
   }
 
   async setCredentials(subject: string, secret: string): Promise<void> {
@@ -326,9 +340,10 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
     return { token, jsonToken };
   }
 
-  private async deriveSigningSecrets(): Promise<void> {
-    const key = await importPbkdf2Key(this.secret);
-    const [derivedTokenSigningSecret, derivedRefreshTokenSigningSecret, derivedSecretResetTokenSigningSecret] = await deriveBytesMultiple(3, SIGNING_SECRETS_LENGTH / 8, { name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() }, key);
+  private async deriveSigningSecrets(secret: string | BinaryData): Promise<void> {
+    const key = await importPbkdf2Key(secret);
+    const algorithm = { name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() };
+    const [derivedTokenSigningSecret, derivedRefreshTokenSigningSecret, derivedSecretResetTokenSigningSecret] = await deriveBytesMultiple(algorithm, key, 3, SIGNING_SECRETS_LENGTH);
 
     this.derivedTokenSigningSecret = derivedTokenSigningSecret;
     this.derivedRefreshTokenSigningSecret = derivedRefreshTokenSigningSecret;
