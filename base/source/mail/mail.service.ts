@@ -23,7 +23,7 @@ export class MailService {
     mailClient: MailClient,
     templateService: TemplateService,
     @inject(MailLogRepository) @optional() mailLogRepository: MailLogRepository | undefined,
-    @resolveArg<LoggerArgument>(MailService.name) logger: Logger,
+    @resolveArg<LoggerArgument>('MailService') logger: Logger,
     @inject(MAIL_DEFAULT_DATA) @optional() defaultData: DefaultMailData | undefined
   ) {
     this.mailClient = mailClient;

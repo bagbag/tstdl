@@ -107,7 +107,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
   declare readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(requestTokenProvider: ApiRequestTokenProvider, @resolveArg<LoggerArgument>(ApiGateway.name) logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
+  constructor(requestTokenProvider: ApiRequestTokenProvider, @resolveArg<LoggerArgument>('ApiGateway') logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
     this.requestTokenProvider = requestTokenProvider;
     this.logger = logger;
     this.options = options;

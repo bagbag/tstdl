@@ -14,7 +14,7 @@ const indexes: TypedIndexDescription<MongoKeyValue>[] = [
 @singleton({ defaultArgumentProvider: (context) => context.resolve(DEFAULT_KEY_VALUE_REPOSITORY_CONFIG) })
 export class MongoKeyValueRepository extends MongoEntityRepository<MongoKeyValue> implements Injectable<CollectionArgument<MongoKeyValue>> {
   declare readonly [resolveArgumentType]: CollectionArgument<MongoKeyValue, MongoKeyValue>;
-  constructor(@forwardArg() collection: Collection<MongoKeyValue>, @resolveArg<LoggerArgument>(MongoKeyValueRepository.name) logger: Logger) {
+  constructor(@forwardArg() collection: Collection<MongoKeyValue>, @resolveArg<LoggerArgument>('MongoKeyValueRepository') logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 }

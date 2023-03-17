@@ -41,7 +41,7 @@ export class Migrator {
   private readonly lockProvider: LockProvider;
   private readonly logger: Logger;
 
-  constructor(migrationStateRepository: MigrationStateRepository, @resolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @resolveArg<LoggerArgument>(Migrator.name) logger: Logger) {
+  constructor(migrationStateRepository: MigrationStateRepository, @resolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @resolveArg<LoggerArgument>('Migrator') logger: Logger) {
     this.migrationStateRepository = migrationStateRepository;
     this.lockProvider = lockProvider;
     this.logger = logger;

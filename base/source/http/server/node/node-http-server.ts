@@ -41,7 +41,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
     return this.sockets.size;
   }
 
-  constructor(@resolveArg<LoggerArgument>(NodeHttpServer.name) logger: Logger) {
+  constructor(@resolveArg<LoggerArgument>('NodeHttpServer') logger: Logger) {
     super();
 
     this.logger = logger;
