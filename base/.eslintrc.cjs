@@ -35,6 +35,7 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/indent': 'off',
     '@typescript-eslint/init-declarations': 'off',
+    '@typescript-eslint/lines-around-comment': 'off',
     '@typescript-eslint/lines-between-class-members': ['warn', 'always', { exceptAfterSingleLine: true }],
     '@typescript-eslint/method-signature-style': 'off',
     '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true, ignoreVoidOperator: true }],
@@ -93,7 +94,7 @@ module.exports = {
     'function-paren-newline': ['warn', 'consistent'],
     'generator-star-spacing': ['off', { before: false, after: true }],
     'id-length': 'off',
-    'indent': ['error', 2, { SwitchCase: 1 }],
+    'indent': 'off',
     'init-declarations': 'off',
     'line-comment-position': 'off',
     'linebreak-style': ['error', 'unix'],
@@ -183,9 +184,11 @@ module.exports = {
         'protected-static-field',
         'public-static-field',
 
+        /*
         'private-decorated-field',
         'protected-decorated-field',
         'public-decorated-field',
+        */
 
         '#private-instance-field',
         'private-instance-field',
@@ -204,7 +207,7 @@ module.exports = {
         'instance-field',
         'abstract-field',
 
-        'decorated-field',
+        // 'decorated-field',
 
         'field',
 
@@ -214,9 +217,11 @@ module.exports = {
         'protected-static-get',
         'public-static-get',
 
+        /*
         'private-decorated-get',
         'protected-decorated-get',
         'public-decorated-get',
+        */
 
         '#private-instance-get',
         'private-instance-get',
@@ -235,7 +240,7 @@ module.exports = {
         'instance-get',
         'abstract-get',
 
-        'decorated-get',
+        // 'decorated-get',
 
         'get',
 
@@ -245,9 +250,11 @@ module.exports = {
         'protected-static-set',
         'public-static-set',
 
+        /*
         'private-decorated-set',
         'protected-decorated-set',
         'public-decorated-set',
+        */
 
         '#private-instance-set',
         'private-instance-set',
@@ -266,7 +273,7 @@ module.exports = {
         'instance-set',
         'abstract-set',
 
-        'decorated-set',
+        // 'decorated-set',
 
         'set',
 
@@ -286,9 +293,11 @@ module.exports = {
         'private-static-method',
         '#private-static-method',
 
+        /*
         'public-decorated-method',
         'protected-decorated-method',
         'private-decorated-method',
+        */
 
         'public-instance-method',
         'protected-instance-method',
@@ -307,7 +316,7 @@ module.exports = {
         'instance-method',
         'abstract-method',
 
-        'decorated-method',
+        // 'decorated-method',
 
         'method'
       ]

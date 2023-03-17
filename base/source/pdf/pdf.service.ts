@@ -97,7 +97,7 @@ export class PdfRenderOptions {
 
 export type PdfTemplateOptions = PdfRenderOptions;
 
-export class PdfTemplate extends Template<{ header: false, body: true, footer: false }, PdfRenderOptions> {
+export class PdfTemplate<Context extends object = any> extends Template<{ header: false, body: true, footer: false }, PdfRenderOptions, Context> {
   @Optional()
   declare options?: PdfTemplateOptions;
 }
@@ -201,9 +201,9 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options additional options, overwrites options specified in template
    * @returns pdf bytes
    */
-  renderTemplateStream(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+  renderTemplateStream<Context extends object>(keyOrTemplate: string | PdfTemplate<Context>, templateContext?: Context, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => {
-      const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render<PdfTemplate>(keyOrTemplate, templateContext);
+      const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render(keyOrTemplate, templateContext);
       await page.setContent(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load', ...options });
 
       return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options };

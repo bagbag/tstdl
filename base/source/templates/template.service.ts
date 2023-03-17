@@ -5,7 +5,7 @@ import { _throw } from '#/utils/throw.js';
 import { isString } from '#/utils/type-guards.js';
 import { TemplateRendererProvider } from './template-renderer.provider.js';
 import { TemplateResolverProvider } from './template-resolver.provider.js';
-import type { Template } from './template.model.js';
+import type { Template, TemplateContext } from './template.model.js';
 import { TemplateProvider } from './template.provider.js';
 
 export type TemplateServiceRenderResult<T extends Template = Template> = {
@@ -35,7 +35,7 @@ export class TemplateService {
     return template as T;
   }
 
-  async render<T extends Template = Template>(keyOrTemplate: string | T, templateContext?: object): Promise<TemplateServiceRenderResult<T>> {
+  async render<T extends Template = Template>(keyOrTemplate: string | T, templateContext?: TemplateContext<T>): Promise<TemplateServiceRenderResult<T>> {
     const template = isString(keyOrTemplate) ? await this.get(keyOrTemplate) : keyOrTemplate;
 
     const result: TemplateServiceRenderResult<T> = {

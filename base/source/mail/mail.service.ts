@@ -76,8 +76,8 @@ export class MailService {
     }
   }
 
-  async sendTemplate(keyOrTemplate: string | MailTemplate, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: object): Promise<MailSendResult> {
-    const { name, fields: { subject, html, text } } = await this.templateService.render<MailTemplate>(keyOrTemplate, templateContext);
+  async sendTemplate<Context extends object>(keyOrTemplate: string | MailTemplate<Context>, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: Context): Promise<MailSendResult> {
+    const { name, fields: { subject, html, text } } = await this.templateService.render(keyOrTemplate, templateContext);
 
     const fullMailData = { ...mailData, subject, content: { html, text } };
 
