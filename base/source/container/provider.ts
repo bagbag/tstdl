@@ -1,5 +1,6 @@
 import type { Constructor } from '#/types.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
+import { isObject } from '#/utils/type-guards.js';
 import type { InjectableArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
 import type { ResolveContext } from './types.js';
@@ -54,18 +55,22 @@ export function factoryProvider<T, A>(factory: Factory<T, A>): FactoryProvider<T
   return { useFactory: factory };
 }
 
-export function isClassProvider<T>(provider: Provider<T>): provider is ClassProvider<T> {
-  return hasOwnProperty((provider as ClassProvider<T>), 'useClass');
+export function isClassProvider<T>(value: unknown): value is ClassProvider<T> {
+  return isObject(value) && hasOwnProperty((value as ClassProvider), 'useClass');
 }
 
-export function isValueProvider<T>(provider: Provider<T>): provider is ValueProvider<T> {
-  return hasOwnProperty((provider as ValueProvider<T>), 'useValue');
+export function isValueProvider<T>(value: unknown): value is ValueProvider<T> {
+  return isObject(value) && hasOwnProperty((value as ValueProvider), 'useValue');
 }
 
-export function isTokenProvider<T>(provider: Provider<T>): provider is TokenProvider<T> {
-  return hasOwnProperty((provider as TokenProvider<T>), 'useToken') || hasOwnProperty((provider as TokenProvider<T>), 'useTokenProvider');
+export function isTokenProvider<T>(value: unknown): value is TokenProvider<T> {
+  return isObject(value) && (hasOwnProperty((value as TokenProvider), 'useToken') || hasOwnProperty((value as TokenProvider<T>), 'useTokenProvider'));
 }
 
-export function isFactoryProvider<T, A>(provider: Provider<T, A>): provider is FactoryProvider<T, A> {
-  return hasOwnProperty((provider as FactoryProvider<T, A>), 'useFactory');
+export function isFactoryProvider<T, A>(value: unknown): value is FactoryProvider<T, A> {
+  return isObject(value) && hasOwnProperty((value as FactoryProvider<T, A>), 'useFactory');
+}
+
+export function isProvider<T, A>(value: unknown): value is Provider<T, A> {
+  return isObject(value) && (isClassProvider(value) || isValueProvider(value) || isTokenProvider(value) || isFactoryProvider(value));
 }

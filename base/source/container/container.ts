@@ -301,7 +301,7 @@ export class Container {
       instance = this._resolve<T, A>(innerToken, false, arg, context, chain.addToken(innerToken), false);
     }
 
-    if (isFactoryProvider(registration.provider)) {
+    if (isFactoryProvider<T, A>(registration.provider)) {
       try {
         const result = registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
 
@@ -440,7 +440,7 @@ export class Container {
       instance = await this._resolveAsync<T, A>(innerToken, false, arg, context, chain.addToken(innerToken), false);
     }
 
-    if (isFactoryProvider(registration.provider)) {
+    if (isFactoryProvider<T, A>(registration.provider)) {
       try {
         instance = await registration.provider.useFactory(resolveArgument, this.getResolveContext(context, chain));
       }

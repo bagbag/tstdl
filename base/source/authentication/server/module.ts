@@ -1,4 +1,5 @@
-import { container } from '#/container/index.js';
+import type { Provider } from '#/container/index.js';
+import { container, isProvider } from '#/container/index.js';
 import type { Type } from '#/types.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
@@ -8,7 +9,7 @@ import { AuthenticationTokenPayloadProvider } from './authentication-token-paylo
 import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service.js';
 
 export type AuthenticationModuleConfig = {
-  serviceOptions: AuthenticationServiceOptions,
+  serviceOptions: AuthenticationServiceOptions | Provider<AuthenticationServiceOptions>,
   credentialsRepository: Type<AuthenticationCredentialsRepository>,
   sessionRepository: Type<AuthenticationSessionRepository>,
 
@@ -19,7 +20,7 @@ export type AuthenticationModuleConfig = {
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
-  container.register(AuthenticationServiceOptions, { useValue: config.serviceOptions });
+  container.register(AuthenticationServiceOptions, isProvider(config.serviceOptions) ? config.serviceOptions : { useValue: config.serviceOptions });
   container.registerSingleton(AuthenticationCredentialsRepository, { useToken: config.credentialsRepository });
   container.registerSingleton(AuthenticationSessionRepository, { useToken: config.sessionRepository });
 
