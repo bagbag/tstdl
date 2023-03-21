@@ -1,4 +1,3 @@
-import { lazyObject } from '#/utils/object/lazy-property.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { CircularBuffer } from './circular-buffer.js';
 import { Dictionary } from './dictionary.js';
@@ -6,8 +5,7 @@ import { Dictionary } from './dictionary.js';
 type Node = {
   nodeKey: any,
   parentNode: Node | undefined,
-  hasInnerMap: boolean,
-  children: Map<any, Node>,
+  children: Map<any, Node> | undefined,
   hasValue: boolean,
   value: any
 };
@@ -24,7 +22,7 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
     super();
 
     this.newMapProvider = newMapProvider;
-    this.rootNode = createNode(undefined, undefined, this.newMapProvider);
+    this.rootNode = createNode(undefined, undefined);
   }
 
   includes([key, value]: [K, V]): boolean {
@@ -53,12 +51,10 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
   set(key: K, value: V): void {
     const node = this.getNode(key, true);
 
-    const hasValue = node.hasValue;
-
-    node.hasValue = true;
     node.value = value;
 
-    if (!hasValue) {
+    if (!node.hasValue) {
+      node.hasValue = true;
       this.incrementSize();
     }
   }
@@ -68,7 +64,7 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
   }
 
   has(key: K): boolean {
-    const node = this.getNode(key, false);
+    const node = this.getNode(key);
     return isDefined(node) && node.hasValue;
   }
 
@@ -77,7 +73,7 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
   }
 
   get(key: K): V | undefined {
-    const node = this.getNode(key, false);
+    const node = this.getNode(key);
 
     if (isUndefined(node)) {
       return undefined;
@@ -91,7 +87,7 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
   }
 
   delete(key: K): boolean {
-    const node = this.getNode(key, false);
+    const node = this.getNode(key);
 
     if (isUndefined(node)) {
       return false;
@@ -140,7 +136,7 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
         yield [key as K, node.value];
       }
 
-      if (node.hasInnerMap) {
+      if (isDefined(node.children)) {
         for (const innerNode of node.children.values()) {
           queue.add([[...key, innerNode.nodeKey], innerNode]);
         }
@@ -149,60 +145,57 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
   }
 
   protected _clear(): void {
-    this.rootNode = createNode(undefined, undefined, this.newMapProvider);
+    this.rootNode = createNode(undefined, undefined);
+    this.setSize(0);
   }
 
-  private getNode<Create extends boolean>(key: K, create: Create): Create extends true ? Node : (Node | undefined) {
-    let node = getOrCreateChildNode(this.rootNode, key[0], this.newMapProvider);
+  private getNode(key: K, create?: false): Node | undefined;
+  private getNode(key: K, create: true): Node;
+  private getNode(key: K, create: boolean = false): Node | undefined {
+    let node = this.rootNode;
 
-    for (let i = 1; i < key.length; i++) {
-      if (!node.hasInnerMap && !create) {
-        return undefined as (Create extends true ? Node : (Node | undefined));
+    for (const nodeKey of key) {
+      if (isUndefined(node.children)) {
+        if (!create) {
+          return undefined;
+        }
+
+        node.children = this.newMapProvider();
       }
 
-      node = getOrCreateChildNode(this.rootNode, key[i], this.newMapProvider);
+      let childNode = node.children.get(nodeKey);
+
+      if (isUndefined(childNode)) {
+        if (!create) {
+          return undefined;
+        }
+
+        childNode = createNode(nodeKey, node);
+        node.children.set(nodeKey, childNode);
+      }
+
+      node = childNode;
     }
 
     return node;
   }
 
   private deleteNodeIfEmpty(node: Node): void {
-    if (node.hasValue || (node.hasInnerMap && node.children.size > 0) || isUndefined(node.parentNode)) {
+    if (node.hasValue || (isDefined(node.children) && (node.children.size > 0)) || isUndefined(node.parentNode)) {
       return;
     }
 
-    node.parentNode.children.delete(node.nodeKey);
+    node.parentNode.children!.delete(node.nodeKey);
     this.deleteNodeIfEmpty(node.parentNode);
   }
 }
 
-function getOrCreateChildNode(node: Node, key: any, newMapProvider: NewMapProvider): Node {
-  const childNode = node.children.get(key);
-
-  if (isDefined(childNode)) {
-    return childNode;
-  }
-
-  const newNode = createNode(key, node, newMapProvider);
-  node.children.set(key, newNode);
-
-  return newNode;
-}
-
-function createNode(nodeKey: any, parentNode: Node | undefined, newMapProvider: NewMapProvider): Node {
-  return lazyObject<Node>({
-    nodeKey: { value: nodeKey },
-    parentNode: { value: parentNode },
-    hasInnerMap: false,
-    children() {
-      return getChildren(this, newMapProvider);
-    },
+function createNode(nodeKey: any, parentNode: Node | undefined): Node {
+  return {
+    nodeKey,
+    parentNode,
+    children: undefined,
     hasValue: false,
-    value: { value: undefined }
-  });
-}
-
-function getChildren(node: Node, newMapProvider: NewMapProvider): Map<any, Node> {
-  node.hasInnerMap = true;
-  return newMapProvider();
+    value: undefined
+  };
 }
