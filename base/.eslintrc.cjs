@@ -66,7 +66,7 @@ module.exports = {
 
     /** import */
     'import/no-duplicates': ['warn', { 'prefer-inline': true }],
-    'import/no-cycle': ['error', { ignoreExternal: true }],
+    'import/no-cycle': ['off', { ignoreExternal: true }],
     'import/no-self-import': ['error'],
     'import/no-extraneous-dependencies': ['error', { devDependencies: false, includeTypes: true }],
     'import/no-empty-named-blocks': ['error'],

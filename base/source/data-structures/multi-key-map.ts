@@ -1,7 +1,7 @@
 import { lazyObject } from '#/utils/object/lazy-property.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { CircularBuffer } from './circular-buffer.js';
-import { Collection } from './collection.js';
+import { Dictionary } from './dictionary.js';
 
 type Node = {
   nodeKey: any,
@@ -14,7 +14,7 @@ type Node = {
 
 type NewMapProvider = () => Map<any, Node>;
 
-export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKeyMap<K, T>> implements Map<K, T> {
+export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMap<K, V>> {
   private readonly newMapProvider: NewMapProvider;
   private rootNode: Node;
 
@@ -27,7 +27,7 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     this.rootNode = createNode(undefined, undefined, this.newMapProvider);
   }
 
-  includes([key, value]: [K, T]): boolean {
+  includes([key, value]: [K, V]): boolean {
     if (!this.has(key)) {
       return false;
     }
@@ -35,17 +35,22 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     return this.get(key) == value;
   }
 
-  add(value: [K, T]): void {
+  add(value: [K, V]): void {
     this.set(value[0], value[1]);
   }
 
-  addMany(values: Iterable<[K, T]>): void {
+  addMany(values: Iterable<[K, V]>): void {
     for (const value of values) {
       this.set(value[0], value[1]);
     }
   }
 
-  set(key: K, value: T): this {
+  setFlat(...keyAndValue: [...key: K, value: V]): void {
+    const key = keyAndValue.slice(0, -1) as K;
+    this.set(key, keyAndValue[keyAndValue.length - 1]);
+  }
+
+  set(key: K, value: V): void {
     const node = this.getNode(key, true);
 
     const hasValue = node.hasValue;
@@ -56,8 +61,10 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     if (!hasValue) {
       this.incrementSize();
     }
+  }
 
-    return this;
+  hasFlat(...key: K): boolean {
+    return this.has(key);
   }
 
   has(key: K): boolean {
@@ -65,14 +72,22 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     return isDefined(node) && node.hasValue;
   }
 
-  get(key: K): T | undefined {
+  getFlat(...key: K): V | undefined {
+    return this.get(key);
+  }
+
+  get(key: K): V | undefined {
     const node = this.getNode(key, false);
 
     if (isUndefined(node)) {
       return undefined;
     }
 
-    return node.value as T | undefined;
+    return node.value as V | undefined;
+  }
+
+  deleteFlat(...key: K): boolean {
+    return this.delete(key);
   }
 
   delete(key: K): boolean {
@@ -95,38 +110,26 @@ export class MultiKeyMap<K extends any[], T> extends Collection<[K, T], MultiKey
     return deleted;
   }
 
-  clone(): MultiKeyMap<K, T> {
-    const clone = new MultiKeyMap<K, T>();
+  clone(): MultiKeyMap<K, V> {
+    const clone = new MultiKeyMap<K, V>();
     clone.addMany(this);
 
     return clone;
   }
 
-  forEach(callback: (value: T, key: K, map: MultiKeyMap<K, T>) => void, thisArg?: any): void {
-    const boundCallback = callback.bind(thisArg);
-
-    for (const item of this) {
-      boundCallback(item[1], item[0], this);
-    }
-  }
-
-  entries(): IterableIterator<[K, T]> {
-    return this.items();
-  }
-
-  * keys(): IterableIterator<K> {
+  *keys(): IterableIterator<K> {
     for (const item of this) {
       yield item[0];
     }
   }
 
-  * values(): IterableIterator<T> {
+  *values(): IterableIterator<V> {
     for (const item of this) {
       yield item[1];
     }
   }
 
-  * items(): IterableIterator<[K, T]> {
+  *items(): IterableIterator<[K, V]> {
     const queue = new CircularBuffer<[any[], Node]>();
     queue.add([[], this.rootNode]);
 
