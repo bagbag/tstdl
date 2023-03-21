@@ -37,13 +37,10 @@ export function extractValueOfArrayIfSingleElement<T>(value: T | T[] | readonly 
  * @returns created array
  */
 export function createArray<T>(length: number, valueProvider: (index: number) => T): T[] {
-  const array = [];
+  const arr: T[] = [];
+  arr.length = length;
 
-  for (let i = 0; i < length; i++) {
-    array.push(valueProvider(i));
-  }
-
-  return array;
+  return arr.fill(undefined as T).map((_, index) => valueProvider(index));
 }
 
 /**

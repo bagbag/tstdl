@@ -10,7 +10,7 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
   /** emits collection on subscribe and change */
   readonly observe$: Observable<TThis>;
 
-  /** emits size of list */
+  /** emits size of collection */
   readonly size$: Observable<number>;
 
   /** emits collection on change */
@@ -19,39 +19,39 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
   /* emits collection on clear */
   readonly clear$: Observable<TThis>;
 
-  /** emits when the list is empty */
+  /** emits when the collection is empty */
   readonly onEmpty$: Observable<void>;
 
-  /** emits when the list has items */
+  /** emits when the collection has items */
   readonly onItems$: Observable<void>;
 
-  /** emits whether the list is empty */
+  /** emits whether the collection is empty */
   readonly isEmpty$: Observable<boolean>;
 
-  /** emits whether the list has items */
+  /** emits whether the collection has items */
   readonly hasItems$: Observable<boolean>;
 
-  /** resolves when the list is empty */
+  /** resolves when the collection is empty */
   get $onEmpty(): Promise<void> {
     return firstValueFrom(this.onEmpty$);
   }
 
-  /** resolves when the list has items */
+  /** resolves when the collection has items */
   get $onItems(): Promise<void> {
     return firstValueFrom(this.onItems$);
   }
 
-  /** size of list */
+  /** size of collection */
   get size(): number {
     return this.sizeSubject.value;
   }
 
-  /** whether the list is empty */
+  /** whether the collection is empty */
   get isEmpty(): boolean {
     return this.size == 0;
   }
 
-  /** whether the list has items */
+  /** whether the collection has items */
   get hasItems(): boolean {
     return this.size > 0;
   }

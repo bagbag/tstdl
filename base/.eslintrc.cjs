@@ -102,7 +102,7 @@ module.exports = {
     'lines-between-class-members': 'off',
     'max-classes-per-file': 'off',
     'max-len': ['off', { code: 150 }],
-    'max-lines-per-function': ['warn', { 'max': 100, 'skipBlankLines': true, 'skipComments': true }],
+    'max-lines-per-function': ['off', { 'max': 100, 'skipBlankLines': true, 'skipComments': true }],
     'max-lines': 'off',
     'max-params': 'off',
     'max-statements': 'off',
