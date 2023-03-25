@@ -68,7 +68,7 @@ module.exports = {
     'import/no-duplicates': ['warn', { 'prefer-inline': true }],
     'import/no-cycle': ['off', { ignoreExternal: true }],
     'import/no-self-import': ['error'],
-    'import/no-extraneous-dependencies': ['error', { devDependencies: false, includeTypes: true }],
+    'import/no-extraneous-dependencies': ['off', { devDependencies: false, includeTypes: true }],
     'import/no-empty-named-blocks': ['error'],
     'import/no-mutable-exports': ['error'],
     'import/no-nodejs-modules': ['error'],
@@ -211,70 +211,59 @@ module.exports = {
 
         'field',
 
-        // Getters
+        // Getters / Setters
         '#private-static-get',
-        'private-static-get',
-        'protected-static-get',
-        'public-static-get',
-
-        /*
-        'private-decorated-get',
-        'protected-decorated-get',
-        'public-decorated-get',
-        */
-
-        '#private-instance-get',
-        'private-instance-get',
-        'protected-instance-get',
-        'public-instance-get',
-
-        'protected-abstract-get',
-        'public-abstract-get',
-
-        '#private-get',
-        'private-get',
-        'protected-get',
-        'public-get',
-
-        'static-get',
-        'instance-get',
-        'abstract-get',
-
-        // 'decorated-get',
-
-        'get',
-
-        // Setters
         '#private-static-set',
+        'private-static-get',
         'private-static-set',
+        'protected-static-get',
         'protected-static-set',
+        'public-static-get',
         'public-static-set',
 
         /*
+        'private-decorated-get',
         'private-decorated-set',
+        'protected-decorated-get',
         'protected-decorated-set',
+        'public-decorated-get',
         'public-decorated-set',
         */
 
+        '#private-instance-get',
         '#private-instance-set',
+        'private-instance-get',
         'private-instance-set',
+        'protected-instance-get',
         'protected-instance-set',
+        'public-instance-get',
         'public-instance-set',
 
+        'protected-abstract-get',
         'protected-abstract-set',
+        'public-abstract-get',
         'public-abstract-set',
 
+        '#private-get',
         '#private-set',
+        'private-get',
         'private-set',
+        'protected-get',
         'protected-set',
+        'public-get',
         'public-set',
 
+        'static-get',
         'static-set',
+        'instance-get',
         'instance-set',
+        'abstract-get',
         'abstract-set',
 
-        // 'decorated-set',
+        'decorated-get',
+        'decorated-set',
 
+        'get',
         'set',
 
         // Static initialization

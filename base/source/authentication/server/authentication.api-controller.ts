@@ -14,7 +14,7 @@ import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' };
 
 @apiController(authenticationApiDefinition)
-export class AuthenticationApiController<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
+export class AuthenticationApiController<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
   readonly authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>;
 
   constructor(authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData>) {

@@ -17,7 +17,7 @@ import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNull, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, race, Subject, timer } from 'rxjs';
+import { BehaviorSubject, Subject, distinctUntilChanged, filter, firstValueFrom, map, race, timer } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
@@ -29,7 +29,7 @@ const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
+export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
   private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
@@ -39,26 +39,6 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
   private readonly refreshLock: Lock | undefined;
   private readonly logger: Logger;
   private readonly disposeToken: CancellationToken;
-
-  private set authenticationData(data: AuthenticationData | undefined) {
-    if (isUndefined(data)) {
-      localStorage.removeItem(authenticationDataStorageKey);
-    }
-    else {
-      const json = JSON.stringify(data);
-      localStorage.setItem(authenticationDataStorageKey, json);
-    }
-  }
-
-  private get authenticationData(): AuthenticationData | undefined {
-    try {
-      const data = localStorage.getItem(authenticationDataStorageKey);
-      return isNull(data) ? undefined : JSON.parse(data) as AuthenticationData;
-    }
-    catch {
-      return undefined;
-    }
-  }
 
   readonly error$: Observable<Error>;
 
@@ -74,6 +54,26 @@ export class AuthenticationService<AdditionalTokenPayload = Record<never>, Authe
 
   readonly isLoggedIn$: Observable<boolean>;
   readonly loggedOut$: Observable<void>;
+
+  private get authenticationData(): AuthenticationData | undefined {
+    try {
+      const data = localStorage.getItem(authenticationDataStorageKey);
+      return isNull(data) ? undefined : JSON.parse(data) as AuthenticationData;
+    }
+    catch {
+      return undefined;
+    }
+  }
+
+  private set authenticationData(data: AuthenticationData | undefined) {
+    if (isUndefined(data)) {
+      localStorage.removeItem(authenticationDataStorageKey);
+    }
+    else {
+      const json = JSON.stringify(data);
+      localStorage.setItem(authenticationDataStorageKey, json);
+    }
+  }
 
   get isLoggedIn(): boolean {
     return isDefined(this.tokenSubject.value);

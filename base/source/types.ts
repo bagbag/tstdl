@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
-import type { UnionToIntersection } from 'type-fest';
+import type { Except, UnionToIntersection } from 'type-fest';
 
 export type ObjectLiteral = {};
 
@@ -106,19 +106,20 @@ export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickB
 
 export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
 
-/**
- * remove nested type information
- */
-export type Simplify<T> = T extends (Primitive | Function | Date | RegExp) ? T
-  : T extends (infer AT)[] ? Simplify<AT>[]
-  : T extends readonly (infer AT)[] ? readonly Simplify<AT>[]
+export type Merge<T1, T2> = SimplifyObject<Except<T1, Extract<keyof T1, keyof T2>> & T2>;
+
+export type Simplify<T> = T extends BuiltIn ? T
+  : T extends readonly any[] ? SimplifyArray<T>
   : T extends Record ? SimplifyObject<T>
   : T;
 
-/**
- * remove type information on object
- */
 export type SimplifyObject<T extends Record> = { [K in keyof T]: T[K] } & {};
+export type SimplifyArray<T extends readonly any[]> = { [I in keyof T]: Simplify<T[I]> };
+
+export type SimplifyDeep<T> = T extends BuiltIn ? T
+  : T extends readonly any[] ? { [K in keyof T]: SimplifyDeep<T[K]> }
+  : T extends Record ? { [K in keyof T]: SimplifyDeep<T[K]> } & {}
+  : T;
 
 export type UnionToTuple<T, Tuple extends any[] = []> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? UnionToTuple<Exclude<T, R>, [R, ...Tuple]> : Tuple;
 

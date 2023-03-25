@@ -7,25 +7,26 @@ import { number } from '#/schema/schemas/number.js';
 import { emptyObjectSchema, explicitObject, object } from '#/schema/schemas/object.js';
 import { string } from '#/schema/schemas/string.js';
 import { unknown } from '#/schema/schemas/unknown.js';
-import type { ObjectSchemaOrType } from '#/schema/types/types.js';
+import type { ObjectSchema, ObjectSchemaOrType } from '#/schema/types/types.js';
 import type { Record } from '#/types.js';
+import type { TokenPayload } from './index.js';
 import { SecretCheckResult } from './models/secret-check-result.model.js';
 import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
 export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
 
-type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
+type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> =
   typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;
 
-type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
 
-export type AuthenticationApiDefinition<AdditionalTokenPayload = Record<never>, AuthenticationData = void> =
+export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
 
 export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown());
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalEndpoints>(
+export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalEndpoints>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
   resource?: string,
@@ -41,11 +42,11 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload, Authentic
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>(
+export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>
 ) {
-  const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema);
+  const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema) as unknown as ObjectSchema<TokenPayload<AdditionalTokenPayload>>;
 
   return {
     token: {

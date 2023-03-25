@@ -67,7 +67,7 @@ export function singleton<T = any, A = any>(options: InjectableOptionsWithoutLif
  * registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function scoped<T = any, A = any>(lifecycle: Simplify<TypedExtract<Lifecycle, 'resolution'>>, options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
+export function scoped<T = any, A = any>(lifecycle: 'resolution', options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
   return injectable({ ...options, lifecycle });
 }
 

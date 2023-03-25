@@ -48,13 +48,13 @@ export type AuthenticationResult =
   | { success: true, subject: string }
   | { success: false, subject?: undefined };
 
-export type TokenResult<AdditionalTokenPayload = Record<never>> = {
+export type TokenResult<AdditionalTokenPayload extends Record = Record<never>> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>,
   refreshToken: string
 };
 
-type CreateTokenResult<AdditionalTokenPayload> = {
+type CreateTokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>
 };
@@ -75,7 +75,7 @@ const SIGNING_SECRETS_LENGTH = 64;
 
 
 @singleton()
-export class AuthenticationService<AdditionalTokenPayload = Record<never>, AuthenticationData = void> implements AfterResolve {
+export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
   private readonly authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator;
