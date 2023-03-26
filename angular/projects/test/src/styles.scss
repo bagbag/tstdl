@@ -2,6 +2,15 @@
 @tailwind utilities;
 @tailwind components;
 
+html,
+body {
+  @apply h-full;
+}
+
+body {
+  @apply bg-slate-50;
+}
+
 :root,
 .tsl-light {
   --tsl-primary-background-color: white;

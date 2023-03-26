@@ -69,6 +69,14 @@ export class CardComponent implements AfterViewInit {
     return this.cardActions.length > 0;
   }
 
+  get showHeaderSeparator(): boolean {
+    return this.headerSeparator && this.hasHeader && this.hasBody;
+  }
+
+  get showFooterSeparator(): boolean {
+    return (this.progress == undefined) && this.footerSeparator && (this.hasHeader || this.hasBody);
+  }
+
   constructor(changeDetector: ChangeDetectorRef) {
     this.changeDetector = changeDetector;
 

@@ -8,12 +8,14 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DataGridComponent } from './examples/data-grid/data-grid.component';
 import { ReactComponent as ReactExampleComponent } from './examples/react/react.component';
+import { CardComponent } from './examples/card/card.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     DataGridComponent,
-    ReactExampleComponent
+    ReactExampleComponent,
+    CardComponent
   ],
   imports: [
     BrowserModule,
