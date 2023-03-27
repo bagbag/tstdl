@@ -8,10 +8,10 @@ import { effect } from '../signals';
   standalone: true,
   pure: false
 })
-export class SignalPipe<T> implements PipeTransform, OnDestroy {
+export class SignalPipe implements PipeTransform, OnDestroy {
   private readonly changeDetector: ChangeDetectorRef;
 
-  private currentSignal: Signal<T> | undefined;
+  private currentSignal: Signal<any> | undefined;
   private currentEffect: Effect | undefined;
 
   constructor(changeDetector: ChangeDetectorRef) {
@@ -22,7 +22,7 @@ export class SignalPipe<T> implements PipeTransform, OnDestroy {
     this.currentEffect?.destroy();
   }
 
-  transform(signal: Signal<T>): T {
+  transform<T>(signal: Signal<T>): T {
     if (signal != this.currentSignal) {
       this.currentSignal = signal;
       this.currentEffect?.destroy();

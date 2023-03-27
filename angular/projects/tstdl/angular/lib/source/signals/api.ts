@@ -30,7 +30,7 @@ export type Signal<T> = (() => T) & {
 /**
  * Checks if the given `value` function is a reactive `Signal`.
  */
-export function isSignal(value: Function): value is Signal<unknown> {
+export function isSignal(value: any): value is Signal<unknown> {
   return (value as Signal<unknown>)[SIGNAL] ?? false;
 }
 

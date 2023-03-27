@@ -3,7 +3,8 @@ import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewCon
 import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
 import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable, ReadableStreamLike, Subscription } from 'rxjs';
-import { catchError, distinctUntilChanged, EMPTY, from, isObservable, of, ReplaySubject, switchMap, tap } from 'rxjs';
+import { EMPTY, ReplaySubject, catchError, distinctUntilChanged, from, isObservable, of, switchMap, tap } from 'rxjs';
+import { Signal, fromSignal, isSignal } from '../signals';
 
 export type LetContext<T> = {
   $implicit: LetOutput<T>,
@@ -17,7 +18,8 @@ type LetAsyncInput<T> =
   | Observable<T>
   | AsyncIterable<T>
   | PromiseLike<T>
-  | ReadableStreamLike<T>;
+  | ReadableStreamLike<T>
+  | Signal<T>;
 
 type LetInput<T> = LetAsyncInput<T> | T;
 
@@ -65,7 +67,13 @@ export class LetDirective<T> implements OnDestroy {
         this.viewContext.hasError = false;
         this.viewContext.error = undefined;
 
-        return ((isAsyncInput(input) ? from(input) : of(input)) as Observable<LetOutput<T>>).pipe(
+        const observable = isAsyncInput(input) ?
+          isSignal(input)
+            ? fromSignal(input)
+            : from(input)
+          : of(input);
+
+        return (observable as Observable<LetOutput<T>>).pipe(
           tap({
             next: (value) => this.next(value),
             error: (error) => this.error(error),
@@ -123,5 +131,6 @@ function isAsyncInput<T>(value: any): value is LetAsyncInput<T> {
   return isObservable(value)
     || isAsyncIterable(value)
     || isFunction((value as PromiseLike<any> | undefined)?.then) // eslint-disable-line @typescript-eslint/unbound-method
-    || isFunction((value as ReadableStreamLike<any> | undefined)?.getReader); // eslint-disable-line @typescript-eslint/unbound-method
+    || isFunction((value as ReadableStreamLike<any> | undefined)?.getReader) // eslint-disable-line @typescript-eslint/unbound-method
+    || isSignal(value);
 }
