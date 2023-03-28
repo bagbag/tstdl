@@ -1,15 +1,10 @@
 import { CommonModule } from '@angular/common';
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList } from '@angular/core';
+import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, fadeInOutAnimation } from '@tstdl/angular';
 import { merge } from 'rxjs';
-import { fadeInOutAnimation } from '../../animations';
-import { ColoredProgressbarComponent } from '../colored-progressbar/colored-progressbar.component';
-import { IndeterminateProgressBarComponent } from '../indeterminate-progress-bar/indeterminate-progress-bar.component';
-import { CardActionDirective } from './card-action.directive';
-import { CardBodyDirective } from './card-body.directive';
-import { CardFooterDirective } from './card-footer.directive';
-import { CardHeaderDirective } from './card-header.directive';
-import { CardSubHeaderDirective } from './card-sub-header.directive';
+import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardPostHeaderDirective, CardPreHeaderDirective, CardSubHeaderDirective } from '../../directives';
+import { Record } from '@tstdl/base/types';
 
 @Component({
   selector: 'tsl-card',
@@ -41,8 +36,10 @@ import { CardSubHeaderDirective } from './card-sub-header.directive';
 export class CardComponent implements AfterViewInit {
   private readonly changeDetector: ChangeDetectorRef;
 
+  @ContentChildren(CardPreHeaderDirective, { read: CardPreHeaderDirective }) cardPreHeaders: QueryList<CardPreHeaderDirective>;
   @ContentChildren(CardHeaderDirective, { read: CardHeaderDirective }) cardHeaders: QueryList<CardHeaderDirective>;
   @ContentChildren(CardSubHeaderDirective, { read: CardSubHeaderDirective }) cardSubHeaders: QueryList<CardSubHeaderDirective>;
+  @ContentChildren(CardPostHeaderDirective, { read: CardPostHeaderDirective }) cardPostHeaders: QueryList<CardPostHeaderDirective>;
   @ContentChildren(CardBodyDirective, { read: CardBodyDirective }) cardBodies: QueryList<CardBodyDirective>;
   @ContentChildren(CardFooterDirective, { read: CardFooterDirective }) cardFooters: QueryList<CardFooterDirective>;
   @ContentChildren(CardActionDirective, { read: CardActionDirective }) cardActions: QueryList<CardActionDirective>;
@@ -52,6 +49,8 @@ export class CardComponent implements AfterViewInit {
   @Input() footerSeparator: boolean;
   @Input() loading: boolean;
   @Input() footerBackground: boolean;
+  @Input() headerContainerClass: string | string[] | Set<string> | Record<string> | null | undefined;
+  @Input() headerTextContainerClass: string | string[] | Set<string> | Record<string> | null | undefined;
 
   get hasHeader(): boolean {
     return (this.cardHeaders.length + this.cardSubHeaders.length) > 0;
