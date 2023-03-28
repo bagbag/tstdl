@@ -28,7 +28,7 @@ export type EnumerationLocalization<T extends Enumeration = Enumeration> = { [P 
 
 export type EnumerationLocalizationEntry<T extends Enumeration = Enumeration> = [T, EnumerationLocalization<T>];
 
-export type Localization<T extends LocalizationTemplate = LocalizationTemplate, Enums extends Enumeration[] = []> = {
+export type Localization<T extends LocalizationTemplate = LocalizationTemplate, Enums extends Enumeration[] = Enumeration[]> = {
   language: Language,
   keys: T,
   enums: { [P in keyof Enums]: EnumerationLocalizationEntry<Enums[P]> }
@@ -127,7 +127,7 @@ export class LocalizationService {
     this.availableLanguages$ = this.availableLanguagesSubject.asObservable();
   }
 
-  registerLocalization(...localizations: Localization<any, any>[]): void {
+  registerLocalization(...localizations: Localization[]): void {
     for (const localization of localizations) {
       const mappedLocalization = buildMappedLocalization(localization);
 
@@ -167,7 +167,7 @@ export class LocalizationService {
     this.activeLanguageSubject.next(language);
   }
 
-  setLocalization(localization: Localization<any, any>): void {
+  setLocalization(localization: Localization): void {
     this.setLanguage(localization.language);
   }
 
