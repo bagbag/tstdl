@@ -2,12 +2,12 @@ import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
 import { LocalizationService } from '@tstdl/base/text';
 import type { Enumeration, EnumerationValue } from '@tstdl/base/types';
-import { isNull } from '@tstdl/base/utils';
-import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
+import { isNullOrUndefined, isObject } from '@tstdl/base/utils';
+import { Subject, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 
 type EnumLocalizationData = {
   enumeration: Enumeration,
-  value: EnumerationValue,
+  value?: EnumerationValue,
   parameters: unknown
 };
 
@@ -20,13 +20,13 @@ export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
   private readonly transformSubject: Subject<EnumLocalizationData>;
   private readonly destroySubject: Subject<void>;
 
-  private value: string | null;
+  private text: string | null;
 
   constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
     this.destroySubject = new Subject();
     this.transformSubject = new Subject();
 
-    this.value = null;
+    this.text = null;
 
     this.transformSubject
       .pipe(
@@ -34,8 +34,8 @@ export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
         distinctUntilChanged(),
         takeUntil(this.destroySubject)
       )
-      .subscribe((value) => {
-        this.value = value;
+      .subscribe((text) => {
+        this.text = text;
         changeDetectorRef.markForCheck();
       });
   }
@@ -46,15 +46,24 @@ export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
     this.transformSubject.complete();
   }
 
-  transform<T extends Enumeration>(value: EnumerationValue<T>, enumeration: T, parameters?: unknown): string | null;
+  transform<T extends Enumeration>(enumeration: T, parameters?: unknown): string | null;
   transform<T extends Enumeration>(value: EnumerationValue<T> | null, enumeration: T, parameters?: unknown): string | null;
-  transform<T extends Enumeration>(value: EnumerationValue<T> | null, enumeration: T, parameters?: unknown): string | null {
-    if (isNull(enumeration) || isNull(value)) {
+  transform<T extends Enumeration>(enumerationOrValue: T | EnumerationValue<T> | null, enumerationOrParameters: T | unknown, parametersOrNothing?: unknown): string | null {
+    if (isNullOrUndefined(enumerationOrValue)) {
       return null;
     }
 
-    this.transformSubject.next({ enumeration, value, parameters });
+    if (isObject(enumerationOrValue)) {
+      this.transformSubject.next({ enumeration: enumerationOrValue, parameters: enumerationOrParameters });
+    }
+    else {
+      if (isNullOrUndefined(enumerationOrParameters)) {
+        return null;
+      }
 
-    return this.value;
+      this.transformSubject.next({ enumeration: enumerationOrParameters as T, value: enumerationOrValue, parameters: parametersOrNothing });
+    }
+
+    return this.text;
   }
 }
