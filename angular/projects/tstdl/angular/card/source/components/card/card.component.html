@@ -20,7 +20,7 @@
 
 <div *ngIf="showHeaderSeparator" class="w-12 h-[2px] ml-3 bg-slate-500/20"></div>
 
-<div *ngIf="hasBody" class="tsl-card-body grow grid gap-4">
+<div *ngIf="hasBody" class="tsl-card-body grow grid gap-4 min-h-0">
   <ng-content select="[tslCardBody]"></ng-content>
 </div>
 
