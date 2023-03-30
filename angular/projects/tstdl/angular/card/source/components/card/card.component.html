@@ -2,15 +2,15 @@
   <tsl-indeterminate-progress-bar></tsl-indeterminate-progress-bar>
 </div>
 
-<div *ngIf="(cardHeaders.length + cardSubHeaders.length) > 0" class="flex flex-wrap gap-2" [ngClass]="headerContainerClass">
+<div *ngIf="hasHeader" class="flex flex-wrap gap-2" [ngClass]="headerOuterContainerClass">
   <ng-content select="[tslCardPreHeader]"></ng-content>
 
-  <div *ngIf="(cardHeaders.length + cardSubHeaders.length) > 0" class="flex-grow" [ngClass]="headerTextContainerClass">
-    <div *ngIf="cardHeaders.length > 0" class="tsl-card-header contents text-xl font-medium">
+  <div *ngIf="(headers.length + subHeaders.length) > 0" class="flex-grow" [ngClass]="headerContainerClass">
+    <div *ngIf="headers.length > 0" class="tsl-card-header contents text-xl font-medium">
       <ng-content select="[tslCardHeader]"></ng-content>
     </div>
 
-    <div *ngIf="cardSubHeaders.length > 0" class="tsl-card-sub-header contents text-sm">
+    <div *ngIf="subHeaders.length > 0" class="tsl-card-sub-header contents text-sm">
       <ng-content select="[tslCardSubHeader]"></ng-content>
     </div>
   </div>

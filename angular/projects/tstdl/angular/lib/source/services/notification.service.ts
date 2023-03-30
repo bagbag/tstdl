@@ -3,12 +3,11 @@ import type { Record, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
-export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
-  actionValue: T,
-  inputs: MessageBoxInputsOutput<I>
-};
+export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> =
+  | { dismissed: false, actionValue: T, inputs: MessageBoxInputsOutput<I> }
+  | { dismissed: true, actionValue: D, inputs: MessageBoxInputsOutput<I> };
 
-export type MessageBoxInputsOutput<T extends MessageBoxInputs> = { [P in keyof T]: T[P]['required'] extends true ? MessageBoxInputOutput<T[P]> : (MessageBoxInputOutput<T[P]> | undefined | null) };
+export type MessageBoxInputsOutput<T extends MessageBoxInputs> = { [P in keyof T]: T[P]['required'] extends true ? MessageBoxInputOutput<T[P]> : (MessageBoxInputOutput<T[P]> | null) };
 
 export type MessageBoxInputOutput<T extends MessageBoxInput> =
   | T extends MessageBoxTextInput ? string
@@ -57,14 +56,14 @@ export type MessageBoxSelectInput<T> = MessageBoxInputBase<MessageBoxSelectInput
 
 export type MessageBoxInput<T = any> = MessageBoxTextInput | MessageBoxSelectInput<T>;
 
-export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
+export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> = {
   type?: NotificationType,
   header?: DynamicText,
   subHeader?: DynamicText,
   message?: DynamicText,
-  actions?: MessageBoxAction<T>[],
+  actions?: MessageBoxAction<T, I>[],
   inputs?: I,
-  backdropDismiss?: boolean
+  dismiss?: D
 };
 
 export type NotifyData = {
@@ -75,7 +74,7 @@ export type NotifyData = {
 };
 
 export abstract class NotificationService {
-  abstract openMessageBox<T, I extends MessageBoxInputs>(data: MessageBoxData<T, I>): Promise<MessageBoxResult<T, I>>;
+  abstract openMessageBox<T = never, I extends MessageBoxInputs = Record<never>, D = never>(data: MessageBoxData<T, I, D>): Promise<MessageBoxResult<T, I, D>>;
   abstract notify(data: NotifyData): void;
 }
 
