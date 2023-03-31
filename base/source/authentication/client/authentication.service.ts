@@ -4,8 +4,12 @@ import { afterResolve, inject, optional, resolveArg, singleton } from '#/contain
 import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
+import { BadRequestError } from '#/error/bad-request.error.js';
+import { ForbiddenError } from '#/error/forbidden.error.js';
 import { InvalidTokenError } from '#/error/invalid-token.error.js';
 import { NotFoundError } from '#/error/not-found.error.js';
+import { NotSupportedError } from '#/error/not-supported.error.js';
+import { UnauthorizedError } from '#/error/unauthorized.error.js';
 import { Lock } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
@@ -295,7 +299,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     this.logger.error(error);
     this.errorSubject.next(error);
 
-    if ((error instanceof InvalidTokenError) || (error instanceof NotFoundError)) {
+    if ((error instanceof InvalidTokenError) || (error instanceof NotFoundError) || (error instanceof BadRequestError) || (error instanceof ForbiddenError) || (error instanceof NotSupportedError) || (error instanceof UnauthorizedError)) {
       await this.logout();
     }
   }
