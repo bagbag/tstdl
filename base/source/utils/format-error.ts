@@ -5,6 +5,11 @@ import { isDefined, isFunction, isUndefined } from './type-guards.js';
 
 export type FormatErrorOptions = {
   /**
+   * include error name in message
+   */
+  includeName?: boolean,
+
+  /**
    * include all error properties beside name and message
    */
   includeRest?: boolean | 'if-no-extra-info',
@@ -60,10 +65,11 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
     }
   }
 
+  const nameString = (options.includeName ?? true) ? `${name ?? 'Error'}: ` : '';
   const decycledRest = isDefined(rest) ? decycle(rest) : undefined;
   const restString = (((includeRest == true) || ((includeRest == 'if-no-extra-info') && isUndefined(extraInfo))) && isDefined(decycledRest) && (objectKeys(rest ?? {}).length > 0)) ? `\n${JSON.stringify(decycledRest, null, 2)}` : '';
   const extraInfoString = isDefined(extraInfo) ? `\n${JSON.stringify(extraInfo, null, 2)}` : '';
   const stackString = (includeStack && isDefined(stack)) ? `\n${stack}` : '';
 
-  return `${name ?? 'Error'}: ${message}${restString}${extraInfoString}${stackString}`;
+  return `${nameString}${message}${restString}${extraInfoString}${stackString}`;
 }

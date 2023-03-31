@@ -1,21 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ErrorHandler } from '@angular/core';
-import { Inject, Injectable, InjectionToken, Optional } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
+import { container } from '@tstdl/base/container';
 import { Logger } from '@tstdl/base/logger';
 import type { FormatErrorOptions } from '@tstdl/base/utils';
 import { formatError } from '@tstdl/base/utils';
 import type { Observable, OperatorFunction } from 'rxjs';
-import { catchError, Subject, throwError } from 'rxjs';
+import { Subject, catchError, throwError } from 'rxjs';
 import { NotificationService } from './notification.service';
 
-export type ErrorHandlerServiceOptions = {
-  format?: FormatErrorOptions
+export class ErrorHandlerServiceOptions {
+  format?: FormatErrorOptions;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const ERROR_HANDLER_SERVICE_OPTIONS = new InjectionToken<ErrorHandlerServiceOptions>('ErrorHandlerServiceOptions');
-
-const defaultFormatErrorOptions: FormatErrorOptions = { includeRest: false, includeStack: false };
+const defaultFormatErrorOptions: FormatErrorOptions = { includeName: false, includeRest: false, includeStack: false };
 
 @Injectable({
   providedIn: 'root'
@@ -28,10 +26,10 @@ export class ErrorHandlerService implements ErrorHandler {
 
   readonly error$: Observable<any>;
 
-  constructor(notificationService: NotificationService, logger: Logger, @Optional() @Inject(ERROR_HANDLER_SERVICE_OPTIONS) options: ErrorHandlerServiceOptions | null) {
+  constructor(notificationService: NotificationService, @Optional() options: ErrorHandlerServiceOptions | null) {
     this.notificationService = notificationService;
-    this.logger = logger;
-    this.format = options?.format ?? defaultFormatErrorOptions;
+    this.logger = container.resolve(Logger);
+    this.format = { ...defaultFormatErrorOptions, ...options?.format };
 
     this.errorSubject = new Subject();
     this.error$ = this.errorSubject.asObservable();
@@ -50,6 +48,6 @@ export class ErrorHandlerService implements ErrorHandler {
     this.errorSubject.next(error);
 
     const message = formatError(error, this.format);
-    this.notificationService.notify({ message, type: 'error' });
+    this.notificationService.notify({ header: (error instanceof Error) ? error.name : undefined, message, type: 'error' });
   }
 }
