@@ -16,7 +16,7 @@ import { nextReactiveId, producerAccessed, producerNotifyConsumers } from './gra
  *
  * @developerPreview
  */
-export interface SettableSignal<T> extends Signal<T> {
+export interface WritableSignal<T> extends Signal<T> {
   /**
    * Directly set the signal to a new value, and notify any dependents.
    */
@@ -98,13 +98,13 @@ class SettableSignalImpl<T> implements Producer {
  * @developerPreview
  */
 export function signal<T>(
-  initialValue: T, equal: ValueEqualityFn<T> = defaultEquals): SettableSignal<T> {
+  initialValue: T, equal: ValueEqualityFn<T> = defaultEquals): WritableSignal<T> {
   const signalNode = new SettableSignalImpl(initialValue, equal);
   // Casting here is required for g3.
   const signalFn = createSignalFromFunction(signalNode.signal.bind(signalNode), {
     set: signalNode.set.bind(signalNode),
     update: signalNode.update.bind(signalNode),
     mutate: signalNode.mutate.bind(signalNode),
-  }) as unknown as SettableSignal<T>;
+  }) as unknown as WritableSignal<T>;
   return signalFn;
 }

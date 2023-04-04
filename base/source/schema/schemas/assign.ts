@@ -1,6 +1,6 @@
+import type { Merge } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { assert } from '#/utils/type-guards.js';
-import type { Merge } from 'type-fest';
 import type { ObjectSchema, ObjectSchemaOrType } from '../types/index.js';
 import { getObjectSchema } from '../utils/index.js';
 

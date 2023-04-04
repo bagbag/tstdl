@@ -2,13 +2,13 @@ import type { OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core'
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input } from '@angular/core';
 import type { ReadonlySignal as PreactReadonlySignal } from '@preact/signals';
 import { signal as preactSignal } from '@preact/signals';
-import type { Effect, Signal } from '@tstdl/angular';
+import type { EffectRef, Signal } from '@tstdl/angular';
 import { effect, isSignal } from '@tstdl/angular';
 import type { Record, Type } from '@tstdl/base/types';
 import { isFunction, isUndefined } from '@tstdl/base/utils';
 import { memoize, memoizeSingle } from '@tstdl/base/utils/function/memoize';
 import { fromEntries, hasOwnProperty, objectEntries } from '@tstdl/base/utils/object';
-import type { Attributes, Component as PreactComponent, FunctionComponent } from 'preact';
+import type { Attributes, FunctionComponent, Component as PreactComponent } from 'preact';
 import { createElement, render } from 'preact';
 
 const wrapFunction = memoize(_wrapFunction, { weak: true });
@@ -25,7 +25,7 @@ export class ReactComponent<Properties extends Record = any, State = any> implem
   private readonly elementRef: ElementRef<HTMLElement>;
   private readonly changeDetector: ChangeDetectorRef;
 
-  private effect: Effect | undefined;
+  private effectRef: EffectRef | undefined;
 
   @Input() component: FunctionComponent<Properties> | Type<PreactComponent<Properties, State>>;
   @Input() properties: Properties | Signal<Properties>;
@@ -56,10 +56,10 @@ export class ReactComponent<Properties extends Record = any, State = any> implem
     this.render();
 
     if (hasOwnProperty(changes, 'properties')) {
-      this.effect?.destroy();
+      this.effectRef?.destroy();
 
       if (isSignal(this.properties as any)) {
-        this.effect = effect(() => {
+        this.effectRef = effect(() => {
           (this.properties as Signal<Properties>)();
           this.render();
         });
@@ -68,7 +68,7 @@ export class ReactComponent<Properties extends Record = any, State = any> implem
   }
 
   ngOnDestroy(): void {
-    this.effect?.destroy();
+    this.effectRef?.destroy();
     render(null, this.elementRef.nativeElement);
   }
 

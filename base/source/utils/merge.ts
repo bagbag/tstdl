@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
-import type { Record } from '#/types.js';
-import type { Merge } from 'type-fest';
+import type { Merge, Record } from '#/types.js';
 import { assertArray, assertMap, assertObject, assertSet, isArray, isMap, isObject, isSet, isUndefined } from './type-guards.js';
 
 type BaseType = Record | any[] | Map<any, any> | Set<any>;

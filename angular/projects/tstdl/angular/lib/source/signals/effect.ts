@@ -14,7 +14,7 @@ import { Watch } from './watch';
  *
  * @developerPreview
  */
-export interface Effect {
+export interface EffectRef {
   /**
    * Schedule the effect for manual execution, if it's not already.
    */
@@ -36,7 +36,7 @@ export interface Effect {
  *
  * @developerPreview
  */
-export function effect(effectFn: () => void): Effect {
+export function effect(effectFn: () => void): EffectRef {
   const watch = new Watch(effectFn, queueWatch);
   globalWatches.add(watch);
 

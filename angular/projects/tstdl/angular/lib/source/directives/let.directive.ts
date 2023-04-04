@@ -68,7 +68,7 @@ export class LetDirective<T> implements OnDestroy {
         this.viewContext.error = undefined;
 
         const observable = isAsyncInput(input) ?
-          isSignal(input)
+          (isFunction(input) && isSignal(input))
             ? fromSignal(input)
             : from(input)
           : of(input);
