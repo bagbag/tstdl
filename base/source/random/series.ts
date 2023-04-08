@@ -1,4 +1,4 @@
-import { clamp, linearInterpolate, randomInt } from '#/utils/math.js';
+import { clamp, linearInterpolate, randomFloat } from '#/utils/math.js';
 import { isDefined, isNumber } from '#/utils/type-guards.js';
 import type { RandomNumberGeneratorFn } from './number-generator/random-number-generator-function.js';
 import { defaultRandomNumberGeneratorFn } from './number-generator/random-number-generator-function.js';
@@ -60,7 +60,7 @@ export type RandomSeriesOptions = {
  * });
  */
 export function* randomSeries({ bounds, initial = bounds ?? 1, volatility = 0.025, relativeTo = 'initial', generator = defaultRandomNumberGeneratorFn, regressionExponent = 10 }: RandomSeriesOptions = {}): Generator<number> {
-  const initialValue = isNumber(initial) ? initial : randomInt(initial[0], initial[1]);
+  const initialValue = isNumber(initial) ? initial : randomFloat(initial[0], initial[1]);
   const isRelativeToCurrent = (relativeTo == 'current');
   const hasBounds = isDefined(bounds);
   const min = hasBounds ? bounds[0] : undefined;
@@ -73,7 +73,6 @@ export function* randomSeries({ bounds, initial = bounds ?? 1, volatility = 0.02
 
   while (true) {
     const currentVolatility = volatilityProvider(value);
-
     let changePercent = currentVolatility * ((0.5 - generator()) * 2);
 
     if (hasBounds) {
