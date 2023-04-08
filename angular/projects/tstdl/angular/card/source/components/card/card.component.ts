@@ -29,7 +29,6 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
     '[class.dark:outline]': 'true',
     '[class.dark:outline-1]': 'true',
     '[class.dark:outline-white/10]': 'true',
-    '[class.bg-bg-secondary]': 'true',
     '[class.overflow-hidden]': 'true'
   }
 })

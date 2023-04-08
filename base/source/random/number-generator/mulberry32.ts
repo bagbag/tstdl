@@ -1,5 +1,6 @@
 /* eslint-disable no-bitwise */
-import { SeededRandomNumberGenerator } from './seeded.js';
+import { SeededRandomNumberGenerator } from './seeded-random-number-generator.js';
+import { random32BitSeed } from './utils.js';
 
 const maxValue = (2 ** 32) - 1;
 const nextDivisor = 2 ** 32;
@@ -39,9 +40,9 @@ export class Mulberry32 extends SeededRandomNumberGenerator {
 /**
  * mulberry32
  *
- * very fast 32 bit random number generator with 32 bit state
+ * Very fast 32 bit random number generator with 32 bit state
  * @param seed 32 bit integer seed
  */
-export function mulberry32(seed: number): SeededRandomNumberGenerator {
+export function mulberry32(seed: number = random32BitSeed()): SeededRandomNumberGenerator {
   return new Mulberry32(seed);
 }

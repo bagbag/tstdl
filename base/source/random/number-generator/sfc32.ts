@@ -1,5 +1,6 @@
 /* eslint-disable no-bitwise */
-import { SeededRandomNumberGenerator } from './seeded.js';
+import { SeededRandomNumberGenerator } from './seeded-random-number-generator.js';
+import { random32BitSeed } from './utils.js';
 
 const maxValue = (2 ** 32) - 1;
 const nextDivisor = 2 ** 32;
@@ -52,9 +53,14 @@ export class Sfc32 extends SeededRandomNumberGenerator {
 /**
  * sfc32 - Small Fast Counter
  *
- * fast 32 bit random number generator with 128 bit state
- * @param seed 32 bit integer seed
+ * Fast 32 bit random number generator with 128 bit state
+ * @param seed1 32 bit integer seed 1
+ * @param seed2 32 bit integer seed 2
+ * @param seed3 32 bit integer seed 3
+ * @param seed4 32 bit integer seed 4
  */
-export function sfc32(seed1: number, seed2: number, seed3: number, seed4: number): SeededRandomNumberGenerator {
+export function sfc32(): SeededRandomNumberGenerator;
+export function sfc32(seed1: number, seed2: number, seed3: number, seed4: number): SeededRandomNumberGenerator;
+export function sfc32(seed1: number = random32BitSeed(), seed2: number = random32BitSeed(), seed3: number = random32BitSeed(), seed4: number = random32BitSeed()): SeededRandomNumberGenerator {
   return new Sfc32(seed1, seed2, seed3, seed4);
 }

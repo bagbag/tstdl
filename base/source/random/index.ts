@@ -1,1 +1,2 @@
-export * from './number/index.js';
+export * from './number-generator/index.js';
+export * from './series.js';

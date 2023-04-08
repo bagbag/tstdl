@@ -1,11 +1,6 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
-
-/**
- * Generates a random value in interval [0, 1).
- */
-export type RandomNumberGenerator = () => number;
-
-const defaultRandomNumberGenerator: RandomNumberGenerator = () => Math.random();
+import type { RandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
+import { defaultRandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
 
 /**
  * Generate a random float in interval [min, max).
@@ -14,7 +9,7 @@ const defaultRandomNumberGenerator: RandomNumberGenerator = () => Math.random();
  * @param generator Random number generator to use, defaults to `Math.random`. Must return a number in interval [0, 1).
  * @returns random number (float)
  */
-export function randomFloat(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
+export function randomFloat(min: number, max: number, generator: RandomNumberGeneratorFn = defaultRandomNumberGeneratorFn): number {
   return linearInterpolateFloat(generator(), min, max);
 }
 
@@ -25,7 +20,7 @@ export function randomFloat(min: number, max: number, generator: RandomNumberGen
  * @param generator random number generator to use, defaults to `Math.random`. Must return a number in interval [0, 1)
  * @returns random number (integer)
  */
-export function randomInt(min: number, max: number, generator: RandomNumberGenerator = defaultRandomNumberGenerator): number {
+export function randomInt(min: number, max: number, generator: RandomNumberGeneratorFn = defaultRandomNumberGeneratorFn): number {
   return Math.floor(linearInterpolateFloat(generator(), min, max + 1));
 }
 
