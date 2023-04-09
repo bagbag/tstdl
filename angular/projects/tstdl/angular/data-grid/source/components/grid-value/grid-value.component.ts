@@ -1,11 +1,12 @@
+import { NgIf, NgSwitch, NgSwitchCase, NgTemplateOutlet } from '@angular/common';
 import type { OnChanges } from '@angular/core';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { DateTimeLocalePipe, DynamicTextPipe, LocalizeEnumPipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe } from '@tstdl/angular';
 import type { DynamicText } from '@tstdl/base/text';
 import { isBoolean, isDate, isNotNullOrUndefined, isNullOrUndefined, isNumber, isString } from '@tstdl/base/utils';
 import { DateTime, Duration } from 'luxon';
 import type { GridItemDirective } from '../../directives/grid-item.directive';
-import type { GridValueType } from '../../models';
-import type { GridValue } from '../../models/grid-value';
+import type { GridValue, GridValueType } from '../../models';
 
 const dateShort: Intl.DateTimeFormatOptions = {
   year: 'numeric',
@@ -20,6 +21,8 @@ const timeShort: Intl.DateTimeFormatOptions = {
 
 @Component({
   selector: 'tsl-grid-value',
+  standalone: true,
+  imports: [NgIf, NgTemplateOutlet, NgSwitch, NgSwitchCase, DynamicTextPipe, NumberLocalePipe, DateTimeLocalePipe, NumericDateToDateTimePipe, LocalizeEnumPipe, NumericTimeToDateTimePipe],
   templateUrl: './grid-value.component.html',
   styleUrls: ['./grid-value.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -5,6 +5,7 @@ import { GridItemDirective } from './grid-item.directive';
 @Directive({
   selector: '[gridRow]',
   exportAs: 'gridRow',
+  standalone: true,
   providers: [
     { provide: GRID_CONTENT, useExisting: GridRowDirective }
   ]

@@ -1,9 +1,13 @@
+import { NgIf, NgTemplateOutlet } from '@angular/common';
 import type { TemplateRef } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
+import { DynamicTextPipe } from '@tstdl/angular';
 import type { DynamicText } from '@tstdl/base/text';
 
 @Component({
   selector: 'tsl-grid-label',
+  standalone: true,
+  imports: [NgIf, NgTemplateOutlet, DynamicTextPipe],
   templateUrl: './grid-label.component.html',
   styleUrls: ['./grid-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.Default,

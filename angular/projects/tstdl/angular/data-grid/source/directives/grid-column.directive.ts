@@ -5,6 +5,7 @@ import { GridItemDirective } from './grid-item.directive';
 @Directive({
   selector: '[gridColumn]',
   exportAs: 'gridColumn',
+  standalone: true,
   providers: [
     { provide: GRID_CONTENT, useExisting: GridColumnDirective }
   ]

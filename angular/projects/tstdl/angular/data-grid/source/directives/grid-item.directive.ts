@@ -10,6 +10,7 @@ import { GridValueDirective } from './grid-value.directive';
 @Directive({
   selector: '[gridItem]',
   exportAs: 'gridItem',
+  standalone: true,
   providers: [
     { provide: GRID_CONTENT, useExisting: GridItemDirective }
   ]

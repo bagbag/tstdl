@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { TstdlDataGridModule } from '@tstdl/angular/data-grid';
 import { now } from '@tstdl/base/utils';
 
 enum MyEnum {
@@ -8,6 +9,8 @@ enum MyEnum {
 
 @Component({
   selector: 'app-data-grid',
+  standalone: true,
+  imports: [TstdlDataGridModule],
   templateUrl: './data-grid.component.html',
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

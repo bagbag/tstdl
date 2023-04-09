@@ -3,7 +3,8 @@ import type { DynamicText } from '@tstdl/base/text';
 
 @Directive({
   selector: '[gridHeaderItem]',
-  exportAs: 'gridHeaderItem'
+  exportAs: 'gridHeaderItem',
+  standalone: true
 })
 export class GridHeaderItemDirective {
   readonly templateRef: TemplateRef<void> | null;

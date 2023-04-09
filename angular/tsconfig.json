@@ -26,6 +26,12 @@
       "@tstdl/angular/data-grid": [
         "projects/tstdl/angular/data-grid",
       ],
+      "@tstdl/angular/card/*": [
+        "projects/tstdl/angular/card/*",
+      ],
+      "@tstdl/angular/card": [
+        "projects/tstdl/angular/card",
+      ],
       "@tstdl/angular/react/*": [
         "projects/tstdl/angular/react/*",
       ],

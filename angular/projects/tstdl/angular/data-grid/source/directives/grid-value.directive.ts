@@ -2,7 +2,8 @@ import { Directive, Inject, Optional, TemplateRef } from '@angular/core';
 
 @Directive({
   selector: '[gridValue]',
-  exportAs: 'gridValue'
+  exportAs: 'gridValue',
+  standalone: true
 })
 export class GridValueDirective {
   readonly templateRef: TemplateRef<void> | null;

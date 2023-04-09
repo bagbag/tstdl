@@ -1,5 +1,7 @@
+import { NgClass, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
 import type { AfterContentInit, OnChanges } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Inject, Input, Optional, QueryList } from '@angular/core';
+import { DynamicTextPipe } from '@tstdl/angular';
 import type { DynamicText } from '@tstdl/base/text';
 import type { Record } from '@tstdl/base/types';
 import { isDefined } from '@tstdl/base/utils';
@@ -11,6 +13,8 @@ import { GridItemDirective } from '../../directives/grid-item.directive';
 import { GridRowDirective } from '../../directives/grid-row.directive';
 import type { DataGridDefaultOptions } from '../../models';
 import { DATA_GRID_OPTIONS } from '../../tokens';
+import { GridLabelComponent } from '../grid-label/grid-label.component';
+import { GridValueComponent } from '../grid-value/grid-value.component';
 
 export type DataGridDisplayType = 'columns' | 'table' | 'items';
 
@@ -55,6 +59,8 @@ const rowSpanClasses: Record<number, string> = {
 
 @Component({
   selector: 'tsl-data-grid',
+  standalone: true,
+  imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, GridLabelComponent, GridValueComponent, DynamicTextPipe],
   templateUrl: './data-grid.component.html',
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

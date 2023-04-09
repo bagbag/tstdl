@@ -1,15 +1,11 @@
-import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { DateTimeLocalePipe, DynamicTextPipe, LocalizeEnumPipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe } from '@tstdl/angular';
 
-import { DataGridComponent, GridLabelComponent, GridValueComponent } from './components';
+import { DataGridComponent } from './components';
 import { GridColumnDirective, GridHeaderItemDirective, GridItemDirective, GridLabelDirective, GridRowDirective, GridValueDirective } from './directives';
 
 @NgModule({
-  declarations: [
+  imports: [
     DataGridComponent,
-    GridLabelComponent,
-    GridValueComponent,
 
     GridColumnDirective,
     GridHeaderItemDirective,
@@ -17,15 +13,6 @@ import { GridColumnDirective, GridHeaderItemDirective, GridItemDirective, GridLa
     GridLabelDirective,
     GridRowDirective,
     GridValueDirective
-  ],
-  imports: [
-    CommonModule,
-    DynamicTextPipe,
-    NumberLocalePipe,
-    DateTimeLocalePipe,
-    NumericDateToDateTimePipe,
-    LocalizeEnumPipe,
-    NumericTimeToDateTimePipe
   ],
   exports: [
     DataGridComponent,
