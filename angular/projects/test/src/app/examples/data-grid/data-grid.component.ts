@@ -22,3 +22,5 @@ export class DataGridComponent {
     return now();
   }
 }
+
+export default DataGridComponent;

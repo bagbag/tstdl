@@ -42,7 +42,7 @@ export type ColorTonesWithRgb = ColorTones &
 
 export const themeColorTones = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900] as const;
 
-export const DEFAULT_THEME = injectionToken<Theme>('DEFAULT_THEME');
+export const DEFAULT_THEME = injectionToken<Theme>('default theme');
 
 const calculateTheme = memoize(_calculateTheme, { weak: true });
 const generateColorTones = memoize(_generateColorTones);

@@ -29,3 +29,5 @@ export class ReactComponent {
     this.properties.update((props) => ({ ...props, numCounter: props.numCounter + 2 }));
   }
 }
+
+export default ReactComponent;

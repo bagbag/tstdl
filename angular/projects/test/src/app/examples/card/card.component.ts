@@ -10,3 +10,5 @@ import { TstdlCardModule } from '@tstdl/angular/card';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CardComponent { }
+
+export default CardComponent;

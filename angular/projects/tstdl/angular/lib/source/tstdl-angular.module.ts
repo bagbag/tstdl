@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { EnvironmentProviders, NgModule, importProvidersFrom } from '@angular/core';
 import { configureTstdl } from '@tstdl/base';
 import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, SkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
@@ -59,4 +59,8 @@ export class TstdlAngularModule {
     configureTstdl();
     bridge.initialize();
   }
+}
+
+export function provideTstdlAngular(): EnvironmentProviders {
+  return importProvidersFrom(TstdlAngularModule);
 }

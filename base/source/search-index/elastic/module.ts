@@ -18,7 +18,7 @@ export const elasticsearchModuleConfig: ElasticsearchModuleConfig = {
   logPrefix: 'ELASTIC'
 };
 
-export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig, ElasticSearchIndexConfigArgument>('ELASTIC_SEARCH_INDEX_CONFIG');
+export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig, ElasticSearchIndexConfigArgument>('ElasticSearchIndexConfig');
 
 export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig> = {}): void {
   elasticsearchModuleConfig.defaultOptions = config.defaultOptions ?? elasticsearchModuleConfig.defaultOptions;

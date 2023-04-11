@@ -7,7 +7,7 @@ import { Logger, LogLevel } from './logger/index.js';
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
-export const CORE_LOGGER = injectionToken<Logger>('CORE_LOGGER');
+export const CORE_LOGGER = injectionToken<Logger>('core logger');
 
 export const disposer: AsyncDisposer = new AsyncDisposer();
 

@@ -15,7 +15,7 @@ export type ImgproxyImageServiceConfig = {
   signatureSize: number
 };
 
-export const IMGPROXY_IMAGE_SERVICE_CONFIG = injectionToken<ImgproxyImageServiceConfig>('IMGPROXY_IMAGE_SERVICE_CONFIG');
+export const IMGPROXY_IMAGE_SERVICE_CONFIG = injectionToken<ImgproxyImageServiceConfig>('ImgproxyImageServiceConfig');
 
 @singleton<ImgproxyImageService, ImgproxyImageServiceConfig>({
   defaultArgumentProvider: (context) => context.resolve(IMGPROXY_IMAGE_SERVICE_CONFIG)
