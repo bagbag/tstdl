@@ -9,7 +9,7 @@ import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../
 import type { NormalizedSchema, Schema } from '../schema.js';
 import { assign } from '../schemas/assign.js';
 import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types/index.js';
-import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, schemaTestablesToSchemas } from '../types/index.js';
+import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, schemaTestablesToSchemas, valueSchema } from '../types/index.js';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
 export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
@@ -41,8 +41,8 @@ function _normalizeSchema<T>(schema: Schema<T>): NormalizedSchema<T> {
 }
 
 function _normalizeObjectSchema<T>(schema: ObjectSchema<T>): NormalizedObjectSchema<T> {
-  const unknownPropertiesSchema = isDefined(schema.unknownProperties) ? schemaTestablesToSchemas(schema.unknownProperties) : undefined;
-  const unknownPropertiesKeySchema = isDefined(schema.unknownPropertiesKey) ? schemaTestablesToSchemas(schema.unknownPropertiesKey) : undefined;
+  const unknownPropertiesSchema = (isDefined(schema.unknownProperties) && (!isArray(schema.unknownProperties) || (schema.unknownProperties.length > 0))) ? schemaTestablesToSchemas(schema.unknownProperties) : undefined;
+  const unknownPropertiesKeySchema = (isDefined(schema.unknownPropertiesKey) && (!isArray(schema.unknownPropertiesKey) || (schema.unknownPropertiesKey.length > 0))) ? schemaTestablesToSchemas(schema.unknownPropertiesKey) : undefined;
   const allowUnknownProperties = ((isArray(unknownPropertiesSchema) && (unknownPropertiesSchema.length > 0)) || isDefined(unknownPropertiesSchema));
 
   const normalizedSchema: NormalizedObjectSchema<T> = {
