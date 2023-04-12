@@ -2,7 +2,7 @@ import type { Merge } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { assert } from '#/utils/type-guards.js';
 import type { ObjectSchema, ObjectSchemaOrType } from '../types/index.js';
-import { optimizeObjectSchema } from '../types/index.js';
+import { objectSchema } from '../types/index.js';
 import { getObjectSchema } from '../utils/index.js';
 
 export function assign<T1, T2>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>): ObjectSchema<Merge<T1, T2>>;
@@ -32,5 +32,5 @@ export function assign(...inputs: ObjectSchemaOrType[]): ObjectSchema {
   result.sourceType = undefined;
   result.factory = undefined;
 
-  return optimizeObjectSchema(result);
+  return objectSchema(result);
 }

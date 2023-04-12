@@ -3,7 +3,7 @@ import { SchemaError } from '#/schema/schema.error.js';
 import type { CustomError, CustomErrorStatic } from '../error/index.js';
 import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error/index.js';
 import type { UndefinableJson } from '../types.js';
-import { isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
+import { assertString, isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
 import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers.js';
 
 export type ErrorHandlerData = undefined | UndefinableJson;
@@ -36,6 +36,8 @@ export type ResponseError = {
 const errorHandlers = new Map<string, ErrorHandler<any, any>>();
 
 export function registerErrorHandler<T extends CustomError, TData extends ErrorHandlerData>(constructor: CustomErrorStatic<T>, statusCode: number, serializer: ErrorSerializer<T, TData>, deserializer: ErrorDeserializer<T, TData>): void {
+  assertString(constructor.errorName, 'static property \'errorName\' missing.');
+
   if (errorHandlers.has(constructor.errorName)) {
     throw new Error(`A handler for ${constructor.errorName} already registered.`);
   }

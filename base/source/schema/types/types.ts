@@ -3,7 +3,7 @@
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types.js';
 import { distinct } from '#/utils/array/array.js';
 import { filterObject, hasOwnProperty, mapObjectValues, objectEntries, objectKeys } from '#/utils/object/object.js';
-import { assert, isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards.js';
+import { assert, isArray, isDefined, isFunction, isObject, isString, isUndefined } from '#/utils/type-guards.js';
 import type { SchemaError } from '../schema.error.js';
 import type { NormalizedSchema, Schema, SchemaTestable } from '../schema.js';
 import type { SchemaArrayConstraint } from './schema-array-constraint.js';
@@ -291,8 +291,8 @@ export function optimizeObjectSchema<T>(schema: ObjectSchema<T>): ObjectSchema<T
     [optimized]: true,
     ...schema,
     properties: optimizeObjectSchemaProperties(schema.properties),
-    unknownProperties: isDefined(schema.unknownProperties) ? optimizeSchema(schema.unknownProperties) : undefined,
-    unknownPropertiesKey: isDefined(schema.unknownPropertiesKey) ? optimizeSchema(schema.unknownPropertiesKey) : undefined
+    unknownProperties: (isUndefined(schema.unknownProperties) || (isArray(schema.unknownProperties) && (schema.unknownProperties.length == 0))) ? undefined : optimizeSchema(schema.unknownProperties),
+    unknownPropertiesKey: (isUndefined(schema.unknownPropertiesKey) || (isArray(schema.unknownPropertiesKey) && (schema.unknownPropertiesKey.length == 0))) ? undefined : optimizeSchema(schema.unknownPropertiesKey)
   }, isDefined) as ObjectSchema<T>;
 }
 
