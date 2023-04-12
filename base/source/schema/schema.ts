@@ -8,7 +8,7 @@ import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '
 import { booleanCoercer, dateCoercer, numberCoercer, regExpCoercer, stringCoercer, uint8ArrayCoercer } from './coercers/index.js';
 import { SchemaError } from './schema.error.js';
 import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types/index.js';
-import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol, valueSchema } from './types/index.js';
+import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol } from './types/index.js';
 import { getArrayItemSchema, getSchemaTypeNames, getSchemaValueTypes, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils/index.js';
 
 export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T> | TypeSchema<T>;
@@ -173,7 +173,7 @@ function testObject<T>(objectSchema: ObjectSchema<T>, value: unknown, options: S
 
   const unknownValuePropertyKeys = differenceSets(new Set(valuePropertyKeys), new Set(schemaPropertyKeys));
 
-  if ((unknownValuePropertyKeys.length > 0) && !(mask || (schema.allowUnknownProperties.size > 0))) {
+  if ((unknownValuePropertyKeys.length > 0) && !mask && !schema.allowUnknownProperties) {
     return { valid: false, error: new SchemaError('Unknown property', { path: path.add(unknownValuePropertyKeys[0]!), fast: options.fastErrors }) };
   }
 
@@ -187,9 +187,19 @@ function testObject<T>(objectSchema: ObjectSchema<T>, value: unknown, options: S
     resultValue[key as keyof T] = propertyResult.value;
   }
 
-  if (schema.allowUnknownProperties.size > 0) {
+  if (schema.allowUnknownProperties) {
     for (const key of unknownValuePropertyKeys) {
-      const propertyResult = testWithFastError(valueSchema([...schema.allowUnknownProperties]), (value as Record)[key], options, path.add(key));
+      const propertyPath = path.add(key);
+
+      if (isDefined(schema.unknownPropertiesKey)) {
+        const keyResult = testWithFastError(schema.unknownPropertiesKey, key, options);
+
+        if (!keyResult.valid && !mask) {
+          return { valid: false, error: new SchemaError('Invalid property key.', { path: propertyPath, inner: keyResult.error, fast: options.fastErrors }) };
+        }
+      }
+
+      const propertyResult = testWithFastError(schema.unknownProperties!, (value as Record)[key], options, path.add(key));
 
       if (!propertyResult.valid && !mask) {
         return propertyResult;

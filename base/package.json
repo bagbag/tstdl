@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.83.20",
+  "version": "0.83.21",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -62,7 +62,7 @@
     "preact-render-to-string": "^5.2",
     "puppeteer": "^19.8",
     "undici": "^5.21",
-    "urlpattern-polyfill": "^6.0"
+    "urlpattern-polyfill": "^7.0"
   },
   "peerDependenciesMeta": {
     "@tstdl/angular": {

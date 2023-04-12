@@ -5,12 +5,13 @@ import type { SchemaTestable } from '../schema.js';
 import type { ObjectSchema } from '../types/index.js';
 import { objectSchema } from '../types/index.js';
 
-export type RecordOptions<T extends Record = Record> = TypedOmit<ObjectSchema<T>, 'properties' | 'allowUnknownProperties' | 'mask'>;
+export type RecordOptions<T extends Record = Record> = TypedOmit<ObjectSchema<T>, 'properties' | 'unknownProperties' | 'unknownPropertiesKey' | 'mask'>;
 
-export function record<T>(valueType: OneOrMany<SchemaTestable<T>>, options?: RecordOptions): ObjectSchema<Record<any, T>> {
+export function record<K extends PropertyKey, T>(keySchema: OneOrMany<SchemaTestable<K>>, valueSchema: OneOrMany<SchemaTestable<T>>, options?: RecordOptions): ObjectSchema<Record<K, T>> {
   return objectSchema({
     properties: {},
-    allowUnknownProperties: valueType,
+    unknownProperties: valueSchema,
+    unknownPropertiesKey: keySchema,
     ...options
-  }) as ObjectSchema;
+  });
 }

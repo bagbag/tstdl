@@ -9,7 +9,7 @@ import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../
 import type { NormalizedSchema, Schema } from '../schema.js';
 import { assign } from '../schemas/assign.js';
 import type { NormalizedObjectSchema, NormalizedObjectSchemaProperties, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ObjectSchemaOrType, ObjectSchemaProperties, TypeSchema, ValueSchema } from '../types/index.js';
-import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, valueTypesOrSchemasToSchemas } from '../types/index.js';
+import { isObjectSchema, isTypeSchema, isValueSchema, objectSchema, resolveValueType, schemaTestableToSchema, valueSchema, schemaTestablesToSchemas } from '../types/index.js';
 
 export const normalizeSchema = memoizeSingle(_normalizeSchema, { weak: true });
 export const normalizeObjectSchema = memoizeSingle(_normalizeObjectSchema, { weak: true });
@@ -41,11 +41,17 @@ function _normalizeSchema<T>(schema: Schema<T>): NormalizedSchema<T> {
 }
 
 function _normalizeObjectSchema<T>(schema: ObjectSchema<T>): NormalizedObjectSchema<T> {
+  const unknownPropertiesSchema = isDefined(schema.unknownProperties) ? schemaTestablesToSchemas(schema.unknownProperties) : undefined;
+  const unknownPropertiesKeySchema = isDefined(schema.unknownPropertiesKey) ? schemaTestablesToSchemas(schema.unknownPropertiesKey) : undefined;
+  const allowUnknownProperties = ((isArray(unknownPropertiesSchema) && (unknownPropertiesSchema.length > 0)) || isDefined(unknownPropertiesSchema));
+
   const normalizedSchema: NormalizedObjectSchema<T> = {
     factory: schema.factory,
-    properties: mapObjectValues(schema.properties, (propertyValueType) => valueTypesOrSchemasToSchemas(propertyValueType)) as NormalizedObjectSchemaProperties<T>,
+    properties: mapObjectValues(schema.properties, (propertyValueType) => schemaTestablesToSchemas(propertyValueType)) as NormalizedObjectSchemaProperties<T>,
     mask: schema.mask,
-    allowUnknownProperties: new Set(toArray(schema.allowUnknownProperties ?? []).map(schemaTestableToSchema))
+    allowUnknownProperties,
+    unknownProperties: isArray(unknownPropertiesSchema) ? valueSchema(unknownPropertiesSchema) : unknownPropertiesSchema,
+    unknownPropertiesKey: isArray(unknownPropertiesKeySchema) ? valueSchema(unknownPropertiesKeySchema) : unknownPropertiesKeySchema
   };
 
   return normalizedSchema;
@@ -53,7 +59,7 @@ function _normalizeObjectSchema<T>(schema: ObjectSchema<T>): NormalizedObjectSch
 
 function _normalizeValueSchema<T>(schema: ValueSchema<T>): NormalizedValueSchema<T> {
   const normalizedValueSchema: NormalizedValueSchema<T> = {
-    schema: new Set(toArray(schema.schema).map(schemaTestableToSchema)),
+    schema: [...new Set(toArray(schema.schema))].map(schemaTestableToSchema),
     array: schema.array ?? false,
     optional: schema.optional ?? false,
     nullable: schema.nullable ?? false,
@@ -127,7 +133,8 @@ function _tryGetObjectSchemaFromReflection<T>(type: AbstractConstructor<T>): Obj
     factory: isDefined(typeData.factory) ? { builder: typeData.factory } : { type: type as Type },
     properties: dataSchema?.properties ?? getObjectSchemaPropertiesFromReflection<T>(metadata, type),
     mask: typeData.mask ?? dataSchema?.mask,
-    allowUnknownProperties: ((isUndefined(typeData.allowUnknownProperties) || (isArray(typeData.allowUnknownProperties) && (typeData.allowUnknownProperties.length == 0))) ? undefined : typeData.allowUnknownProperties) ?? dataSchema?.allowUnknownProperties
+    unknownProperties: ((isUndefined(typeData.unknownProperties) || (isArray(typeData.unknownProperties) && (typeData.unknownProperties.length == 0))) ? undefined : typeData.unknownProperties) ?? dataSchema?.unknownProperties,
+    unknownPropertiesKey: ((isUndefined(typeData.unknownPropertiesKey) || (isArray(typeData.unknownPropertiesKey) && (typeData.unknownPropertiesKey.length == 0))) ? undefined : typeData.unknownPropertiesKey) ?? dataSchema?.unknownPropertiesKey
   });
 
   if (isUndefined(dataSchema)) {
@@ -154,7 +161,7 @@ function getObjectSchemaPropertiesFromReflection<T>(metadata: TypeMetadata, type
       throw new Error(`Item type missing on type ${type.name} at property "${String(key)}"`);
     }
 
-    properties[key as keyof T] = valueSchema(valueTypesOrSchemasToSchemas(itemType ?? propertyMetadata.type), {
+    properties[key as keyof T] = valueSchema(schemaTestablesToSchemas(itemType ?? propertyMetadata.type), {
       array,
       optional: reflectionData?.optional,
       nullable: reflectionData?.nullable,

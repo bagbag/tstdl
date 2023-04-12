@@ -2,7 +2,7 @@ import type { OneOrMany } from '#/types.js';
 import type { SchemaTestable } from '../schema.js';
 import type { ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, TypeSchema, ValueSchema, ValueType } from '../types/index.js';
 
-export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'allowUnknownProperties'>> & {
+export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'unknownProperties' | 'unknownPropertiesKey'>> & {
   schema?: ObjectSchema | TypeSchema | ValueType,
   factory?: SchemaFactoryFunction<any>
 };

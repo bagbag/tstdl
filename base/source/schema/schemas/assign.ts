@@ -2,6 +2,7 @@ import type { Merge } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { assert } from '#/utils/type-guards.js';
 import type { ObjectSchema, ObjectSchemaOrType } from '../types/index.js';
+import { optimizeObjectSchema } from '../types/index.js';
 import { getObjectSchema } from '../utils/index.js';
 
 export function assign<T1, T2>(schema1: ObjectSchemaOrType<T1>, schema2: ObjectSchemaOrType<T2>): ObjectSchema<Merge<T1, T2>>;
@@ -23,17 +24,13 @@ export function assign(...inputs: ObjectSchemaOrType[]): ObjectSchema {
         ...result.properties,
         ...schemas[i]!.properties
       },
-      allowUnknownProperties: [...toArray(result.allowUnknownProperties ?? []), ...toArray(schemas[i]!.allowUnknownProperties ?? [])]
+      unknownProperties: [...toArray(result.unknownProperties ?? []), ...toArray(schemas[i]!.unknownProperties ?? [])],
+      unknownPropertiesKey: [...toArray(result.unknownPropertiesKey ?? []), ...toArray(schemas[i]!.unknownPropertiesKey ?? [])]
     };
-  }
-
-  if ((result.allowUnknownProperties as any[]).length == 0) {
-    const { allowUnknownProperties: _, ...rest } = result;
-    result = rest;
   }
 
   result.sourceType = undefined;
   result.factory = undefined;
 
-  return result;
+  return optimizeObjectSchema(result);
 }

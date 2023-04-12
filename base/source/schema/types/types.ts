@@ -1,16 +1,19 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import type { AbstractConstructor, OneOrMany, Record, Type, TypedOmit } from '#/types.js';
-import { filterObject, hasOwnProperty, objectEntries, objectKeys } from '#/utils/object/object.js';
-import { isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards.js';
-import type { NormalizedSchema, Schema, SchemaTestable } from '../schema.js';
+import { distinct } from '#/utils/array/array.js';
+import { filterObject, hasOwnProperty, mapObjectValues, objectEntries, objectKeys } from '#/utils/object/object.js';
+import { assert, isArray, isDefined, isFunction, isObject, isString } from '#/utils/type-guards.js';
 import type { SchemaError } from '../schema.error.js';
+import type { NormalizedSchema, Schema, SchemaTestable } from '../schema.js';
 import type { SchemaArrayConstraint } from './schema-array-constraint.js';
 import type { SchemaValueCoercer } from './schema-value-coercer.js';
 import type { SchemaValueConstraint } from './schema-value-constraint.js';
 import type { SchemaValueTransformer } from './schema-value-transformer.js';
 
 declare const schemaOutputTypeSymbol: unique symbol;
+
+const optimized = Symbol('schema optimized');
 
 export type SchemaFactoryFunction<T> = (data: T) => T;
 export type SchemaFactory<T> =
@@ -32,12 +35,19 @@ export type TupleSchemaOutput<T extends readonly SchemaTestable[]> = { [P in key
 export type ObjectSchemaOrType<T = any> = ObjectSchema<T> | AbstractConstructor<T>;
 
 export type ObjectSchema<T = any> = {
+  [optimized]?: boolean,
   [schemaOutputTypeSymbol]?: T,
   sourceType?: ValueType,
   factory?: SchemaFactory<T>,
   properties: ObjectSchemaProperties<T>,
   mask?: boolean,
-  allowUnknownProperties?: OneOrMany<SchemaTestable>
+  unknownProperties?: OneOrMany<SchemaTestable>,
+  unknownPropertiesKey?: OneOrMany<SchemaTestable>
+};
+
+export type TypedObjectSchemaUnknownProperties<K extends PropertyKey, V> = {
+  unknownProperties?: OneOrMany<SchemaTestable<V>>,
+  unknownPropertiesKey?: OneOrMany<SchemaTestable<K>>
 };
 
 export type TypeSchema<T = any> = { type: ValueType<T> };
@@ -45,6 +55,7 @@ export type TypeSchema<T = any> = { type: ValueType<T> };
 export type NormalizedTypeSchema<T = any> = { foo: ResolvedValueType<T> };
 
 export type ValueSchema<T = unknown> = {
+  [optimized]?: boolean,
   [schemaOutputTypeSymbol]?: T,
   schema: OneOrMany<SchemaTestable<T>>,
   array?: boolean,
@@ -68,12 +79,14 @@ export type NormalizedObjectSchema<T = any> = {
   factory?: SchemaFactory<T>,
   properties: NormalizedObjectSchemaProperties<T>,
   mask?: boolean,
-  allowUnknownProperties: Set<Schema>
+  allowUnknownProperties: boolean,
+  unknownProperties?: Schema,
+  unknownPropertiesKey?: Schema
 };
 
 export type NormalizedValueSchema<T = any> = {
   [schemaOutputTypeSymbol]?: T,
-  schema: Set<Schema<T>>,
+  schema: Schema<T>[],
   array: boolean,
   optional: boolean,
   nullable: boolean,
@@ -182,6 +195,7 @@ export function objectSchema<T extends Record>(schema: ObjectSchema<T>): ObjectS
 }
 
 export function valueSchema<T>(schema: OneOrMany<SchemaTestable<T>>, options?: TypedOmit<ValueSchema<T>, 'schema'>): ValueSchema<T> {
+  assert(!isArray(schema) || (schema.length > 0), 'No schema provided.');
   return optimizeValueSchema({ schema, ...options });
 }
 
@@ -244,12 +258,20 @@ export function resolveValueType<T>(valueType: ValueType<T>): ResolvedValueType<
     : valueType as ResolvedValueType<T>;
 }
 
-export function valueTypesOrSchemasToSchemas<T>(valueTypesOrSchemas: OneOrMany<SchemaTestable<T>>): OneOrMany<Schema<T>> {
-  if (isArray(valueTypesOrSchemas)) {
-    return valueTypesOrSchemas.map(schemaTestableToSchema);
+export function schemaTestablesToSchemas<T>(schemaTestables: OneOrMany<SchemaTestable<T>>): OneOrMany<Schema<T>> {
+  if (isArray(schemaTestables)) {
+    if (schemaTestables.length == 1) {
+      return schemaTestableToSchema(schemaTestables[0]!);
+    }
+
+    if (schemaTestables.length == 0) {
+      throw new Error('No schema provided.');
+    }
+
+    return schemaTestables.map(schemaTestableToSchema);
   }
 
-  return schemaTestableToSchema(valueTypesOrSchemas);
+  return schemaTestableToSchema(schemaTestables);
 }
 
 export function schemaTestableToSchema<T>(valueTypeOrSchema: SchemaTestable<T>): Schema<T> {
@@ -261,31 +283,49 @@ export function schemaTestableToSchema<T>(valueTypeOrSchema: SchemaTestable<T>):
 }
 
 export function optimizeObjectSchema<T>(schema: ObjectSchema<T>): ObjectSchema<T> {
-  return {
-    ...filterObject(schema, isDefined),
-    properties: optimizeObjectSchemaProperties(schema.properties)
-  };
+  if (schema[optimized] == true) {
+    return schema;
+  }
+
+  return filterObject({
+    [optimized]: true,
+    ...schema,
+    properties: optimizeObjectSchemaProperties(schema.properties),
+    unknownProperties: isDefined(schema.unknownProperties) ? optimizeSchema(schema.unknownProperties) : undefined,
+    unknownPropertiesKey: isDefined(schema.unknownPropertiesKey) ? optimizeSchema(schema.unknownPropertiesKey) : undefined
+  }, isDefined) as ObjectSchema<T>;
 }
 
 export function optimizeObjectSchemaProperties<T>(properties: ObjectSchemaProperties<T>): ObjectSchemaProperties<T> {
-  const entries = objectEntries(properties)
-    .map(([property, innerSchema]) => [property, optimizeSchema(innerSchema)] as const);
-
-  return Object.fromEntries(entries) as ObjectSchemaProperties<T>;
+  return mapObjectValues(properties, optimizeSchema) as ObjectSchemaProperties<T>;
 }
 
 export function optimizeValueSchema<T>(schema: ValueSchema<T>): ValueSchema<T> {
-  const optimized = optimizeSchema(schema);
-  return isValueSchema<T>(optimized) ? optimized : { schema: optimized };
+  const optimizedSchema = optimizeSchema(schema);
+  return isValueSchema<T>(optimizedSchema) ? optimizedSchema : { [optimized]: true, schema: optimizedSchema };
 }
 
 export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMany<SchemaTestable<T>> { // eslint-disable-line complexity
+  interface OptimizableSchemaArray {
+    [optimized]?: boolean;
+  }
+
   if (isArray(schema)) {
+    if ((schema as OptimizableSchemaArray)[optimized] == true) {
+      return schema;
+    }
+
     if (schema.length == 1) {
       return optimizeSchema(schema[0]!);
     }
 
-    return schema.flatMap(optimizeSchema);
+    if (schema.length == 0) {
+      throw new Error('No schema provided.');
+    }
+
+    const optimizedSchemas = distinct(distinct(schema).flatMap(optimizeSchema));
+    (optimizedSchemas as OptimizableSchemaArray)[optimized] = true;
+    return optimizedSchemas;
   }
 
   if (isFunction(schema) || isString(schema) || isDeferredValueType(schema)) {
@@ -297,17 +337,14 @@ export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMa
   }
 
   if (isValueSchema(schema)) {
+    if (schema[optimized] == true) {
+      return schema;
+    }
+
     const entries = objectEntries(schema).filter(([, value]) => isDefined(value));
 
     if (entries.length == 1) {
-      if (!isArray(schema.schema)) {
-        return optimizeSchema(schema.schema);
-      }
-      else if (schema.schema.length == 1) {
-        return optimizeSchema(schema.schema[0]!);
-      }
-
-      return schema.schema.map(optimizeSchema) as SchemaTestable<T>[];
+      return optimizeSchema(schema.schema);
     }
 
     if (isValueSchema(schema.schema)) {
@@ -323,6 +360,7 @@ export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMa
         && !combinedProperties.has('valueConstraints')
       ) {
         return {
+          [optimized]: true,
           schema: optimizeSchema(schema.schema.schema as SchemaTestable<T>),
           ...filterObject({
             optional: ((schema.optional ?? false) || (schema.schema.optional ?? false)) ? true : undefined,
@@ -335,6 +373,7 @@ export function optimizeSchema<T>(schema: OneOrMany<SchemaTestable<T>>): OneOrMa
     const { schema: innerSchema, optional, nullable, coercers, transformers, arrayConstraints, valueConstraints, ...rest } = schema;
 
     return filterObject({
+      [optimized]: true,
       schema: optimizeSchema(innerSchema),
       optional: (optional ?? false) ? true : undefined,
       nullable: (nullable ?? false) ? true : undefined,

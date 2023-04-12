@@ -5,7 +5,7 @@ export type TemplateContext<T extends Template> = T[typeof templateContext];
 
 export const templateContext: unique symbol = Symbol('templateData');
 
-@Class({ allowUnknownProperties: any() })
+@Class({ unknownProperties: any() })
 export class TemplateField<Resolver extends string = string, Renderer extends string = string, Options = any> {
   @Property()
   resolver: Resolver;
@@ -30,7 +30,7 @@ export abstract class Template<Fields extends Record<string, boolean> = Record<s
   @Property()
   name: string;
 
-  @Property({ schema: object({}, { allowUnknownProperties: TemplateField }) })
+  @Property({ schema: object({}, { unknownProperties: TemplateField }) })
   fields: TemplateFields<Fields>;
 
   @Any()

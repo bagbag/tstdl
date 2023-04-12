@@ -1,3 +1,5 @@
+import { distinct as iterableDistinct } from '../iterable-helpers/distinct.js';
+import type { IteratorFunction } from '../iterable-helpers/types.js';
 import { randomInt } from '../math.js';
 import { isArray, isDefined } from '../type-guards.js';
 
@@ -28,6 +30,10 @@ export function extractValueOfArrayIfSingleElement<T>(value: T | T[] | readonly 
   }
 
   return value;
+}
+
+export function distinct<T>(values: Iterable<T>, selector?: IteratorFunction<T, any>): T[] {
+  return [...(isDefined(selector) ? iterableDistinct(values, selector) : new Set(values))];
 }
 
 /**
