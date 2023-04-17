@@ -13,7 +13,7 @@
         "plugin:@typescript-eslint/recommended",
         "plugin:@angular-eslint/recommended",
         "plugin:@angular-eslint/template/process-inline-templates",
-        "./node_modules/@tstdl/base/.eslintrc.js"
+        "./node_modules/@tstdl/base/.eslintrc.json"
       ],
       "rules": {
         "@angular-eslint/directive-selector": [

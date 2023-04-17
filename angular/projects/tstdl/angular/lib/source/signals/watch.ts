@@ -6,8 +6,20 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import type { Consumer, Edge, ProducerId } from './graph';
-import { consumerPollValueStatus, nextReactiveId, setActiveConsumer } from './graph';
+import { ReactiveNode, setActiveConsumer } from './graph';
+
+/**
+ * A cleanup function that can be optionally registered from the watch logic. If registered, the
+ * cleanup logic runs before the next watch execution.
+ */
+export type WatchCleanupFn = () => void;
+
+/**
+ * A callback passed to the watch function that makes it possible to register cleanup logic.
+ */
+export type WatchCleanupRegisterFn = (cleanupFn: WatchCleanupFn) => void;
+
+const NOOP_CLEANUP_FN: WatchCleanupFn = () => { };
 
 /**
  * Watches a reactive expression and allows it to be scheduled to re-run
@@ -16,21 +28,35 @@ import { consumerPollValueStatus, nextReactiveId, setActiveConsumer } from './gr
  * `Watch` doesn't run reactive expressions itself, but relies on a consumer-
  * provided scheduling operation to coordinate calling `Watch.run()`.
  */
-export class Watch implements Consumer {
+export class Watch extends ReactiveNode {
+  protected override readonly consumerAllowSignalWrites: boolean;
   private dirty = false;
+  private cleanupFn = NOOP_CLEANUP_FN;
+  private registerOnCleanup =
+    (cleanupFn: WatchCleanupFn) => {
+      this.cleanupFn = cleanupFn;
+    }
 
-  readonly id = nextReactiveId();
-  readonly ref = new WeakRef(this);
-  readonly producers = new Map<ProducerId, Edge>();
-  trackingVersion = 0;
-
-  constructor(private readonly watch: () => void, private readonly schedule: (watch: Watch) => void) { }
+  constructor(
+    private watch: (onCleanup: WatchCleanupRegisterFn) => void,
+    private schedule: (watch: Watch) => void, allowSignalWrites: boolean) {
+    super();
+    this.consumerAllowSignalWrites = allowSignalWrites;
+  }
 
   notify(): void {
     if (!this.dirty) {
       this.schedule(this);
     }
     this.dirty = true;
+  }
+
+  protected override onConsumerDependencyMayHaveChanged(): void {
+    this.notify();
+  }
+
+  protected override onProducerUpdateValueVersion(): void {
+    // Watches are not producers.
   }
 
   /**
@@ -41,18 +67,22 @@ export class Watch implements Consumer {
    */
   run(): void {
     this.dirty = false;
-    if (this.trackingVersion !== 0 && !consumerPollValueStatus(this)) {
+    if (this.trackingVersion !== 0 && !this.consumerPollProducersForChange()) {
       return;
     }
 
     const prevConsumer = setActiveConsumer(this);
     this.trackingVersion++;
-
     try {
-      this.watch();
-    }
-    finally {
+      this.cleanupFn();
+      this.cleanupFn = NOOP_CLEANUP_FN;
+      this.watch(this.registerOnCleanup);
+    } finally {
       setActiveConsumer(prevConsumer);
     }
+  }
+
+  cleanup() {
+    this.cleanupFn();
   }
 }

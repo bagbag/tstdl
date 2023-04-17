@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.83.23",
+  "version": "0.83.25",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,10 +11,10 @@
     "build:watch": "tsc && (concurrently --raw 'tsc --watch' 'tsc-alias --watch')",
     "build:production": "rm -rf dist && npm run build && npm run build:production:cjs && npm run build:production:copy-files",
     "build:production:cjs": "esbuild `find dist \\( -name '*.js' -o -name '*.jsx' \\)` --outdir=dist --allow-overwrite --format=cjs",
-    "build:production:copy-files": "cp package.json .eslintrc.cjs tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && sed -i 's/\"type\": \"module\",/\"type\": \"commonjs\",/g' dist/package.json",
+    "build:production:copy-files": "cp package.json .eslintrc.json tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && sed -i 's/\"type\": \"module\",/\"type\": \"commonjs\",/g' dist/package.json",
     "build:docs": "typedoc",
     "build:docs-watch": "typedoc --watch",
-    "lint": "eslint -c .eslintrc.cjs --ext .ts .",
+    "lint": "eslint -c .eslintrc.json --ext .ts .",
     "pub": "npm run build:production && rm -vf dist/test* && npm publish dist/"
   },
   "dependencies": {
@@ -43,7 +43,7 @@
     "typescript": "5.0"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.6",
+    "@elastic/elasticsearch": "^8.7",
     "@koa/router": "^12.0",
     "@tstdl/angular": "^0.83",
     "@zxcvbn-ts/core": "2.2",
@@ -60,7 +60,7 @@
     "nodemailer": "^6.9",
     "preact": "^10.13",
     "preact-render-to-string": "^5.2",
-    "puppeteer": "^19.8",
+    "puppeteer": "^19.9",
     "undici": "^5.21",
     "urlpattern-polyfill": "^7.0"
   },

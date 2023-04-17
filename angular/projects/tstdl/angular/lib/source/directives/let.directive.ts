@@ -4,7 +4,7 @@ import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-asy
 import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable, ReadableStreamLike, Subscription } from 'rxjs';
 import { EMPTY, ReplaySubject, catchError, distinctUntilChanged, from, isObservable, of, switchMap, tap } from 'rxjs';
-import { Signal, fromSignal, isSignal } from '../signals';
+import { Signal, isSignal, toObservable } from '../signals';
 
 export type LetContext<T> = {
   $implicit: LetOutput<T>,
@@ -69,7 +69,7 @@ export class LetDirective<T> implements OnDestroy {
 
         const observable = isAsyncInput(input) ?
           (isFunction(input) && isSignal(input))
-            ? fromSignal(input)
+            ? toObservable(input)
             : from(input)
           : of(input);
 
