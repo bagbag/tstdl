@@ -1,5 +1,5 @@
 import type { DynamicText } from '@tstdl/base/text';
-import type { Record, TypedOmit } from '@tstdl/base/types';
+import type { Record, SimplifyObject, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
@@ -23,15 +23,9 @@ export type MessageBoxAction<T = any, I extends MessageBoxInputs = MessageBoxInp
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
-export type MessageBoxTextInputType = 'text';
+type MessageBoxInputBase<Type extends string> = { type: Type };
 
-export type MessageBoxSelectInputType = 'select';
-
-export type MessageBoxInputType = MessageBoxTextInputType | MessageBoxSelectInputType;
-
-type MessageBoxInputBase<Type extends MessageBoxInputType> = { type: Type };
-
-export type MessageBoxTextInput = MessageBoxInputBase<MessageBoxTextInputType> & {
+export type MessageBoxTextInput = MessageBoxInputBase<'text'> & {
   inputType?: InputType,
   mode?: InputMode,
   label?: DynamicText,
@@ -47,7 +41,7 @@ export type MessageBoxSelectInputItem<T> = {
   value: T
 };
 
-export type MessageBoxSelectInput<T> = MessageBoxInputBase<MessageBoxSelectInputType> & {
+export type MessageBoxSelectInput<T> = MessageBoxInputBase<'select'> & {
   label?: DynamicText,
   items: MessageBoxSelectInputItem<T>[],
   initialValue?: T,
@@ -78,10 +72,18 @@ export abstract class NotificationService {
   abstract notify(data: NotifyData): void;
 }
 
-export function isMessageBoxTextInput(messageBoxInput: MessageBoxInput): messageBoxInput is MessageBoxTextInput {
-  return messageBoxInput.type == 'text';
+export function messageBoxTextInput<T extends TypedOmit<MessageBoxTextInput, 'type'>>(input: T): SimplifyObject<{ type: 'text' } & T> {
+  return { type: 'text', ...input };
 }
 
-export function isMessageBoxSelectInput<T>(messageBoxInput: MessageBoxInput<T>): messageBoxInput is MessageBoxSelectInput<T> {
-  return messageBoxInput.type == 'select';
+export function messageBoxSelectInput<T, U extends TypedOmit<MessageBoxSelectInput<T>, 'type'>>(input: U): SimplifyObject<{ type: 'select' } & U> {
+  return { type: 'select', ...input };
+}
+
+export function isMessageBoxTextInput(input: MessageBoxInput): input is MessageBoxTextInput {
+  return input.type == 'text';
+}
+
+export function isMessageBoxSelectInput<T>(input: MessageBoxInput<T>): input is MessageBoxSelectInput<T> {
+  return input.type == 'select';
 }

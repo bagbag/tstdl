@@ -1,4 +1,4 @@
-const pattern = /\.tsl-tw\s+(\.tsl-dark(?:\s+))?(.*?)\s*\{/u;
+const pattern = /\.tsl-tw\s+:is\((\.tsl-dark(?:\s+))?(.*?)\)(.*?)\s*\{/u;
 
 const source = await Deno.readTextFile(Deno.args[0]);
 
@@ -13,11 +13,11 @@ for (const line of lines) {
     continue;
   }
 
-  const [, dark, utility] = match;
+  const [, dark, utility, affix] = match;
 
   const patchedLine = (dark == undefined)
-    ? `.tsl-tw ${utility}, .tsl-tw${utility} {`
-    : `.tsl-dark .tsl-tw ${utility}, .tsl-dark .tsl-tw${utility}, .tsl-dark.tsl-tw${utility}, .tsl-tw .tsl-dark${utility} {`;
+    ? `.tsl-tw :is(${utility})${affix}, .tsl-tw:is(${utility})${affix} {`
+    : `:is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark) :is(${utility})${affix}, :is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark):is(${utility})${affix} {`;
 
   outputLines.push(patchedLine);
 }
