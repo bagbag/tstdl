@@ -6,7 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { createSignalFromFunction, defaultEquals, Signal, ValueEqualityFn } from './api';
+import { isUndefined } from '@tstdl/base/utils';
+import type { Signal, ValueEqualityFn } from './api';
+import { createSignalFromFunction, defaultEquals } from './api';
 import { ReactiveNode, setActiveConsumer } from './graph';
 
 /**
@@ -19,6 +21,8 @@ export interface CreateComputedOptions<T> {
    * A comparison function which defines equality for computed values.
    */
   equal?: ValueEqualityFn<T>;
+
+  additionalDependencies?: Signal<any>[];
 }
 
 
@@ -27,8 +31,16 @@ export interface CreateComputedOptions<T> {
  *
  * @developerPreview
  */
-export function computed<T>(computation: () => T, options?: CreateComputedOptions<T>): Signal<T> {
-  const node = new ComputedImpl(computation, options?.equal ?? defaultEquals);
+export function computed<T>(computation: () => T, options: CreateComputedOptions<T> = {}): Signal<T> {
+  const actualComputation = (isUndefined(options.additionalDependencies) || (options.additionalDependencies.length == 0)) ? computation : () => {
+    for (const dependency of options.additionalDependencies!) {
+      dependency();
+    }
+
+    return computation();
+  };
+
+  const node = new ComputedImpl(actualComputation, options.equal ?? defaultEquals);
 
   // Casting here is required for g3, as TS inference behavior is slightly different between our
   // version/options and g3's.

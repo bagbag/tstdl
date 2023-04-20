@@ -1,5 +1,6 @@
 import type { OnDestroy, PipeTransform } from '@angular/core';
-import { ChangeDetectorRef, Pipe } from '@angular/core';
+import { ChangeDetectorRef, Pipe, inject } from '@angular/core';
+import { ApplicationTickService } from '../services/application-tick.service';
 import type { EffectRef, Signal } from '../signals';
 import { effect } from '../signals';
 
@@ -9,14 +10,11 @@ import { effect } from '../signals';
   pure: false
 })
 export class SignalPipe implements PipeTransform, OnDestroy {
-  private readonly changeDetector: ChangeDetectorRef;
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly applicationTickService = inject(ApplicationTickService);
 
   private currentSignal: Signal<any> | undefined;
   private effectRef: EffectRef | undefined;
-
-  constructor(changeDetector: ChangeDetectorRef) {
-    this.changeDetector = changeDetector;
-  }
 
   ngOnDestroy(): void {
     this.effectRef?.destroy();
@@ -34,6 +32,7 @@ export class SignalPipe implements PipeTransform, OnDestroy {
 
         if (!first) {
           this.changeDetector.markForCheck();
+          this.applicationTickService.schedule();
         }
         else {
           first = false;
