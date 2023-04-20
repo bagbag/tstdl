@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
 
 @Component({
   selector: 'tsl-skeleton',
+  standalone: true,
   templateUrl: './skeleton.component.html',
   styleUrls: ['./skeleton.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SkeletonComponent {
+export class TstdlSkeletonComponent {
   @Input()
   @HostBinding('class.dark')
   dark: boolean | undefined;

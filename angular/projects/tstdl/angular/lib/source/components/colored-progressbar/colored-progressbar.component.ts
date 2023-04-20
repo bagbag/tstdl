@@ -20,7 +20,7 @@ const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a
     '[class.tsl-tw]': 'true'
   }
 })
-export class ColoredProgressbarComponent extends LifecycleUtils<ColoredProgressbarComponent> {
+export class TstdlColoredProgressbarComponent extends LifecycleUtils<TstdlColoredProgressbarComponent> {
   @Input() progress: number | undefined;
 
   @HostBinding('class.tsl-rounded-full')

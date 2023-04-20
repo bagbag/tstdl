@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import type { AfterViewInit } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList } from '@angular/core';
-import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, fadeInOutAnimation } from '@tstdl/angular';
-import { Record } from '@tstdl/base/types';
+import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, fadeInOutAnimation } from '@tstdl/angular';
+import type { Record } from '@tstdl/base/types';
 import { merge } from 'rxjs';
 import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardPostHeaderDirective, CardPreHeaderDirective, CardSubHeaderDirective } from '../../directives';
 
@@ -10,7 +10,7 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
   selector: 'tsl-card',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  imports: [CommonModule, ColoredProgressbarComponent, IndeterminateProgressBarComponent, CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective],
+  imports: [CommonModule, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   animations: [

@@ -17,7 +17,7 @@ import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular
     '[class.rounded-full]': 'true'
   }
 })
-export class IndeterminateProgressBarComponent {
+export class TstdlIndeterminateProgressBarComponent {
   @HostBinding('style.--tsl-indeterminate-progress-bar-background-color')
   @Input() backgroundColor: string | null | undefined;
 

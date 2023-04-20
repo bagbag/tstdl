@@ -1,6 +1,7 @@
-import { EnvironmentProviders, NgModule, importProvidersFrom } from '@angular/core';
+import type { EnvironmentProviders } from '@angular/core';
+import { NgModule, importProvidersFrom } from '@angular/core';
 import { configureTstdl } from '@tstdl/base';
-import { ColoredProgressbarComponent, IndeterminateProgressBarComponent, SkeletonComponent } from './components';
+import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, TstdlSkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DecyclePipe, DurationPipe, DynamicTextPipe, LocalizeEnumPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeHtmlPipe, SafeResourceUrlPipe, SafeUrlPipe, SerializePipe } from './pipes';
 import { SignalPipe } from './pipes/signal.pipe';
@@ -39,9 +40,9 @@ const directives = [
 ];
 
 const components = [
-  SkeletonComponent,
-  IndeterminateProgressBarComponent,
-  ColoredProgressbarComponent
+  TstdlSkeletonComponent,
+  TstdlIndeterminateProgressBarComponent,
+  TstdlColoredProgressbarComponent
 ];
 
 const declarations = [
