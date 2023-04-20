@@ -32,7 +32,8 @@ export type MessageBoxTextInput = MessageBoxInputBase<'text'> & {
   placeholder?: DynamicText,
   initialValue?: any,
   required?: boolean,
-  attributes?: TypedOmit<InputAttributes, 'type' | 'mode' | 'placeholder' | 'required' | 'value'>,
+  pattern?: string | RegExp,
+  attributes?: TypedOmit<InputAttributes, 'type' | 'mode' | 'placeholder' | 'required' | 'value' | 'pattern'>,
   validator?: (value: any) => boolean
 };
 
