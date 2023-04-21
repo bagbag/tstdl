@@ -10,10 +10,10 @@ import { marked } from 'marked';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TstdlMarkdownComponent {
-  @Input() markdown: string;
+  @Input() markdown: string | null | undefined;
 
   @HostBinding('innerHTML')
   get markdownHtml(): string {
-    return marked(this.markdown);
+    return marked(this.markdown ?? '');
   }
 }
