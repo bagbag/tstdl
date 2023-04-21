@@ -8,6 +8,16 @@ import { JsxTemplateRenderer } from '#/templates/renderers/jsx.template-renderer
 import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
 import { JsxTemplateResolver } from '#/templates/resolvers/jsx.template-resolver.js';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+let dirname: string;
+
+try {
+  dirname = fileURLToPath(new URL('.', import.meta.url));
+}
+catch {
+  dirname = __dirname;
+}
 
 configureTstdl();
 
@@ -17,8 +27,8 @@ configureTemplates({
   templateRenderers: [HandlebarsTemplateRenderer, JsxTemplateRenderer]
 });
 
-configureFileTemplateProvider({ basePath: resolve(__dirname, 'templates') });
-configureFileTemplateResolver({ basePath: resolve(__dirname.replace('dist', 'source'), 'templates') });
+configureFileTemplateProvider({ basePath: resolve(dirname, 'templates') });
+configureFileTemplateResolver({ basePath: resolve(dirname.replace('dist', 'source'), 'templates') });
 
 async function test(): Promise<void> {
   const templateService = await container.resolveAsync(TemplateService);

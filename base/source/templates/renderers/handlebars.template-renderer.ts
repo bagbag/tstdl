@@ -2,8 +2,8 @@ import { singleton } from '#/container/index.js';
 import type { ObjectLiteral, Record } from '#/types.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object.js';
-import { isDefined, isFunction, isString } from '#/utils/type-guards.js';
-import * as handlebars from 'handlebars';
+import { assertDefined, isDefined, isFunction, isString } from '#/utils/type-guards.js';
+import type * as Handlebars from 'handlebars';
 import { TemplateResolverProvider } from '../template-resolver.provider.js';
 import type { TemplateField } from '../template.model.js';
 import type { TemplateRenderObject } from '../template.renderer.js';
@@ -22,14 +22,14 @@ export type HandlebarsTemplateHelperOptions = {
   data?: Record<string>,
   hash: Record<string>,
   lookupProperty: (object: ObjectLiteral, propertyName: string) => unknown,
-  fn?: handlebars.TemplateDelegate,
-  inverse?: handlebars.TemplateDelegate
+  fn?: Handlebars.TemplateDelegate,
+  inverse?: Handlebars.TemplateDelegate
 };
 
 export type HandlebarsTemplateHelper = (context: unknown, args: unknown[], options: HandlebarsTemplateHelperOptions) => any;
 export type HandlebarsTemplateHelpersObject = Record<string, HandlebarsTemplateHelper>;
 
-export type HandlebarsTemplatePartial = string | TemplateField<string, 'handlebars', HandlebarsRendererOptions> | handlebars.TemplateDelegate;
+export type HandlebarsTemplatePartial = string | TemplateField<string, 'handlebars', HandlebarsRendererOptions> | Handlebars.TemplateDelegate;
 export type HandlebarsTemplatePartialsObject = Record<string, HandlebarsTemplatePartial>;
 
 export type HandlebarsRendererOptions = {
@@ -64,12 +64,13 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
     return renderer(context);
   }
 
-  private async _compileHandlebarsTemplate(renderObject: HandlebarsTemplateRenderObject): Promise<handlebars.TemplateDelegate> {
+  private async _compileHandlebarsTemplate(renderObject: HandlebarsTemplateRenderObject): Promise<Handlebars.TemplateDelegate> {
     const { template, options = {} } = renderObject;
 
     const allHelpers = getAllPartialHelpersDeep(renderObject);
+    const compile = await importHandlebarsCompile();
 
-    const renderer = handlebars.compile(template, {
+    const renderer = compile(template, {
       strict: options.strict ?? true,
       preventIndent: options.preventIndent,
       knownHelpers: isDefined(allHelpers) ? mapObjectValues(allHelpers, () => true) : undefined,
@@ -79,20 +80,20 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
     const wrappedHelpers = isDefined(allHelpers) ? mapObjectValues(allHelpers, wrapHandlebarsTemplateHelper) : undefined;
     const normalizedPartials = isDefined(options.partials) ? await mapObjectValuesAsync(options.partials, async (partial) => this.normalizePartial(partial)) : undefined;
 
-    return (context?: any, runtimeOptions?: handlebars.RuntimeOptions) => renderer(context, { helpers: wrappedHelpers, partials: normalizedPartials, ...runtimeOptions });
+    return (context?: any, runtimeOptions?: Handlebars.RuntimeOptions) => renderer(context, { helpers: wrappedHelpers, partials: normalizedPartials, ...runtimeOptions });
   }
 
-  private async normalizePartial(partial: HandlebarsTemplatePartial): Promise<handlebars.TemplateDelegate> {
+  private async normalizePartial(partial: HandlebarsTemplatePartial): Promise<Handlebars.TemplateDelegate> {
     if (isString(partial) || isFunction(partial)) {
-      return partial as handlebars.TemplateDelegate;
+      return partial as Handlebars.TemplateDelegate;
     }
 
     const resolver = this.templateResolverProvider.get(partial.resolver);
-    return resolver.resolve(partial) as Promise<handlebars.TemplateDelegate>;
+    return resolver.resolve(partial) as Promise<Handlebars.TemplateDelegate>;
   }
 }
 
-function _wrapHandlebarsTemplateHelper(helper: HandlebarsTemplateHelper): handlebars.HelperDelegate {
+function _wrapHandlebarsTemplateHelper(helper: HandlebarsTemplateHelper): Handlebars.HelperDelegate {
   const wrapperName = `wrapped${helper.name.slice(0, 1).toUpperCase()}${helper.name.slice(1)}`;
 
   const wrapper = {
@@ -135,4 +136,19 @@ function getPartialHelpersDeep(partial: HandlebarsTemplateRenderObject | Handleb
   const childEntries = objectValues(partial.options?.partials ?? {}).flatMap(getPartialHelpersDeep);
 
   return [...entries, ...childEntries];
+}
+
+
+let handlebarsCompile: (typeof Handlebars)['compile'];
+
+async function importHandlebarsCompile(): Promise<(typeof Handlebars)['compile']> {
+  if (isDefined(handlebarsCompile)) {
+    return handlebarsCompile;
+  }
+
+  const handlebars = await import('handlebars') as any as Partial<typeof Handlebars> & { default?: Partial<typeof Handlebars> };
+  const compile = handlebars.compile ?? handlebars.default?.compile;
+  assertDefined(compile, 'Could not import handlebars.');
+
+  return (handlebarsCompile = compile); // eslint-disable-line require-atomic-updates
 }

@@ -12,13 +12,19 @@ export type PoolOptions = {
    * maximum number of instances
    * @default number of cpu cores
    */
-  size?: number
+  size?: number,
+
+  /**
+   * Dipose used instance on error instead of reusing it.
+   * @default false
+   */
+  disposeOnError?: boolean
 };
 
 export type PoolUseOptions = {
 
   /**
-   * Dipose used instance on error instead of reusing it.
+   * Dipose used instance on error instead of reusing it. Overwrites pool instance option
    * @default false
    */
   disposeOnError?: boolean
@@ -48,6 +54,7 @@ export class Pool<T extends object> implements AsyncDisposable {
     this.factory = factory;
     this.disposer = disposer;
     this.logger = logger;
+    this.disposeOnError = options?.disposeOnError ?? false;
 
     this.freeInstances = new ArrayList();
     this.usedInstances = new Set();
@@ -117,7 +124,7 @@ export class Pool<T extends object> implements AsyncDisposable {
       return result;
     }
     catch (error) {
-      if (options.disposeOnError == true) {
+      if (options.disposeOnError ?? this.disposeOnError) {
         try {
           await this.disposeInstance(instance);
         }
@@ -169,7 +176,5 @@ export class Pool<T extends object> implements AsyncDisposable {
       await this.disposer(instance);
       this.usedInstances.delete(instance);
     }
-
-    await this[disposeAsync]();
   }
 }
