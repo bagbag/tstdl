@@ -1,13 +1,19 @@
-<tsl-card headerContainerClass="items-center mr-6">
-  <div tslCardPreHeader class="w-auto flex justify-center items-center rounded-full aspect-square p-2 bg-sky-300 text-3xl leading-[0]">✓</div>
-  <div tslCardHeader>Header</div>
+<tsl-card headerContainerClass="mr-6" [headerSeparator]="headerSeparator" [footerSeparator]="footerSeparator" [footerBackground]="footerBackground" [loading]="loading">
+  <div tslCardPreHeader *ngIf="prePostHeader" class="w-auto flex justify-center items-center self-center rounded-full aspect-square p-2 bg-sky-300 text-2xl leading-[0]">✓</div>
+  <div tslCardHeader>Card</div>
   <div tslCardSubHeader>Subheader</div>
-  <div tslCardPostHeader class="px-3 py-1 bg-green-500 rounded-full">12 Monate</div>
+  <div tslCardPostHeader *ngIf="prePostHeader" class="px-3 py-1 bg-green-500 rounded-full self-start" [class.mr-10]="closeButton">12 Monate</div>
 
   <div tslCardBody>Body</div>
 
   <div tslCardFooter>Footer</div>
-  <button tslCardAction>Action</button>
 
-  <div class="flex justify-center items-center absolute top-0 right-0 w-10 h-10 rounded-bl-lg bg-green-300">✗</div>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="headerSeparator = !headerSeparator">Toggle header separator</button>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="footerSeparator = !footerSeparator">Toggle footer separator</button>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="footerBackground = !footerBackground">Toggle footer background</button>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="loading = !loading">Toggle Loading</button>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="closeButton = !closeButton">Toggle close button</button>
+  <button tslCardAction class="bg-neutral-400 px-4 py-2 rounded text-sm" (click)="prePostHeader = !prePostHeader">Toggle pre/post header</button>
+
+  <div *ngIf="closeButton" class="flex justify-center items-center absolute top-0 right-0 w-10 h-10 rounded-bl-lg bg-green-300">✗</div>
 </tsl-card>

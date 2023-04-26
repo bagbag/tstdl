@@ -65,17 +65,7 @@ const rowSpanClasses: Record<number, string> = {
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.tsl-tw]': 'true',
-    '[class.block]': 'true',
-    '[class.break-words]': 'true',
-    '[class.text-sm]': 'true',
-    '[class.leading-4]': 'true',
-    '[class.break-inside-avoid]': 'true',
-    '[class.border-[1.5px]]': 'true',
-    '[class.border-neutral-300]': 'true',
-    '[class.rounded-lg]': 'true',
-    '[class.overflow-hidden]': 'true',
-    '[class.isolate]': 'true'
+    class: 'tsl-tw block bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border-[1.5px] border-neutral-300 dark:border-neutral-800 rounded-lg overflow-hidden break-words text-sm leading-4 break-inside-avoid isolate'
   }
 })
 export class DataGridComponent implements AfterContentInit, OnChanges {

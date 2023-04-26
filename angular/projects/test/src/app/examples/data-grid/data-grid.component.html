@@ -24,7 +24,29 @@
     </ng-container>
   </tsl-data-grid>
 
-  <tsl-data-grid heading="Row-based Data Grid">
+  <tsl-data-grid>
+    <ng-container gridHeaderItem label="Col 1"></ng-container>
+    <ng-container gridHeaderItem label="Col 2"></ng-container>
+    <ng-container gridHeaderItem label="Col 3"></ng-container>
+
+    <ng-container gridRow>
+      <ng-container gridItem="Row 1 Col 1" value="value"></ng-container>
+      <ng-container gridItem="Row 1 Col 2" value="value"></ng-container>
+      <ng-container gridItem="Row 1 Col 3" value="value"></ng-container>
+    </ng-container>
+
+    <ng-container gridRow>
+      <ng-container gridItem="Row 2 Col 1" value="value"></ng-container>
+      <ng-container gridItem="Row 2 Col 2" value="value"></ng-container>
+      <ng-container gridItem="Row 2 Col 3" value="value"></ng-container>
+    </ng-container>
+  </tsl-data-grid>
+
+  <tsl-data-grid heading="Row-based Data Grid with heading">
+    <ng-container gridHeaderItem label="Col 1"></ng-container>
+    <ng-container gridHeaderItem label="Col 2"></ng-container>
+    <ng-container gridHeaderItem label="Col 3"></ng-container>
+
     <ng-container gridRow>
       <ng-container gridItem="Row 1 Col 1" value="value"></ng-container>
       <ng-container gridItem="Row 1 Col 2" value="value"></ng-container>
@@ -55,11 +77,11 @@
 
   <tsl-data-grid heading="label and value template">
     <!-- This is an example of a structural value template -->
-    <span *gridItem="'Foo'" class="rounded-full ring px-2 py-0.5">simple structural custom value template</span>
+    <div *gridItem="'Foo'" class="rounded-full ring px-2 py-0.5">simple structural custom value template</div>
 
     <!-- This is an example of a value template -->
     <ng-template gridItem="Bar">
-      <span class="rounded-full ring px-2 py-0.5">simple custom value template</span>
+      <div class="rounded-full ring px-2 py-0.5">simple custom value template</div>
     </ng-template>
 
     <!--
@@ -68,7 +90,7 @@
     <span *gridValue> and <div *gridLabel> could also be <ng-template gridLabel> and <ng-template gridValue> instead.
     -->
     <ng-container gridItem>
-      <span *gridLabel class="bg-green-300 px-2 py-0.5">Custom label template</span>
+      <span *gridLabel class="bg-green-500/50 px-2 py-0.5">Custom label template</span>
 
       <div *gridValue class="flex items-center gap-2">
         <div class="w-2 h-2 bg-red-500"></div>

@@ -1,5 +1,6 @@
 import { importProvidersFrom } from '@angular/core';
 import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { provideTstdlAngular } from '@tstdl/angular';
 import { AppComponent } from './app/app.component';
@@ -9,6 +10,7 @@ bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(APP_ROUTES),
     provideTstdlAngular(),
-    importProvidersFrom(BrowserModule)
+    importProvidersFrom(BrowserModule),
+    provideAnimations()
   ]
 }).catch((error) => console.error(error));

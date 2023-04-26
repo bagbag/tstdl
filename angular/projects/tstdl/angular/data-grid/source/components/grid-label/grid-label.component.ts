@@ -12,9 +12,7 @@ import type { DynamicText } from '@tstdl/base/text';
   styleUrls: ['./grid-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.Default,
   host: {
-    '[class.text-sm]': 'true',
-    '[class.leading-4]': 'true',
-    '[class.font-semibold]': 'true'
+    class: 'leading-4 font-semibold'
   }
 })
 export class GridLabelComponent {

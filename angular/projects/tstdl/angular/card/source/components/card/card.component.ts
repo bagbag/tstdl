@@ -17,19 +17,9 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
     fadeInOutAnimation({ duration: 100 })
   ],
   host: {
-    '[class.tsl-tw]': 'true',
-    '[class.relative]': 'true',
-    '[class.flex]': 'true',
-    '[class.flex-col]': 'true',
-    '[class.gap-4]': 'true',
+    class: 'tsl-tw relative flex flex-col gap-4 rounded-xl shadow-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 outline outline-1 outline-neutral-600/10 dark:outline-neutral-100/10 overflow-hidden',
     '[class.py-5]': 'padding',
-    '[class.px-6]': 'padding',
-    '[class.rounded-xl]': 'true',
-    '[class.shadow-lg]': 'true',
-    '[class.dark:outline]': 'true',
-    '[class.dark:outline-1]': 'true',
-    '[class.dark:outline-white/10]': 'true',
-    '[class.overflow-hidden]': 'true'
+    '[class.px-6]': 'padding'
   }
 })
 export class CardComponent implements AfterViewInit {

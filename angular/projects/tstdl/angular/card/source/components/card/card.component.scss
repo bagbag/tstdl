@@ -1,32 +1,7 @@
 :host {
   contain: content;
   content-visibility: auto;
-  contain-intrinsic-size: auto 5rem auto 5rem;
+  contain-intrinsic-size: auto 25rem;
 
-  background-color: var(--tsl-card-background-color, var(--tsl-primary-background-color));
-
-  --tsl-indeterminate-progress-bar-background-color: var(--tsl-card-background-color, var(--tsl-primary-background-color));
-}
-
-.tsl-card-header {
-  background-color: var(--tsl-card-header-background-color, inherit);
-  color: var(--tsl-card-header-color, var(--tsl-primary-text-color));
-}
-
-.tsl-card-sub-header {
-  background-color: var(--tsl-card-sub-header-background-color, inherit);
-  color: var(--tsl-card-sub-header-color, var(--tsl-tertiary-text-color));
-}
-
-.tsl-card-body {
-  background-color: var(--tsl-card-body-background-color, inherit);
-  color: var(--tsl-card-body-color, var(--tsl-primary-text-color));
-}
-
-.tsl-card-footer {
-  color: var(--tsl-card-footer-color, var(--tsl-tertiary-text-color));
-}
-
-.tsl-card-footer-background {
-  background-color: var(--tsl-card-footer-background-color, var(--tsl-tertiary-background-color));
+  --tsl-indeterminate-progress-bar-background-color: inherit;
 }

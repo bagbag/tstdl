@@ -6,11 +6,11 @@
   <ng-content select="[tslCardPreHeader]"></ng-content>
 
   <div *ngIf="(headers.length + subHeaders.length) > 0" class="flex-grow" [ngClass]="headerContainerClass">
-    <div *ngIf="headers.length > 0" class="tsl-card-header contents text-xl font-medium">
+    <div *ngIf="headers.length > 0" class="contents text-xl font-medium">
       <ng-content select="[tslCardHeader]"></ng-content>
     </div>
 
-    <div *ngIf="subHeaders.length > 0" class="tsl-card-sub-header contents text-sm">
+    <div *ngIf="subHeaders.length > 0" class="contents text-sm text-neutral-800 dark:text-neutral-200">
       <ng-content select="[tslCardSubHeader]"></ng-content>
     </div>
   </div>
@@ -18,9 +18,9 @@
   <ng-content select="[tslCardPostHeader]"></ng-content>
 </div>
 
-<div *ngIf="showHeaderSeparator" class="w-12 h-[2px] ml-3 bg-slate-500/20"></div>
+<div *ngIf="showHeaderSeparator" class="w-12 h-[2px] ml-3 border-t-2"></div>
 
-<div *ngIf="hasBody" class="tsl-card-body grow grid gap-4 min-h-0">
+<div *ngIf="hasBody" class="grow grid gap-4 min-h-0">
   <ng-content select="[tslCardBody]"></ng-content>
 </div>
 
@@ -28,13 +28,14 @@
                          class="w-auto -mx-6 -mb-4 mt-4 !h-[2px]"
                          [progress]="progress"></tsl-colored-progressbar>
 
-<div *ngIf="hasFooter" class="tsl-card-footer relative -mx-6 -mb-5 px-6 py-3 border-solid border-slate-500/20 "
-     [class.tsl-card-footer-background]="footerBackground"
+<div *ngIf="hasFooter" class="relative -mx-6 -mb-5 px-6 py-3 border-solid"
+     [class.bg-neutral-100]="footerBackground"
+     [class.dark:bg-neutral-700]="footerBackground"
      [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)"
      [class.border-t-2]="showFooterSeparator">
   <ng-content select="[tslCardFooter]"></ng-content>
 
-  <div *ngIf="hasAction" class="flex justify-end gap-2">
+  <div *ngIf="hasAction" class="flex flex-wrap justify-end gap-2">
     <ng-content select="[tslCardAction]"></ng-content>
   </div>
 </div>

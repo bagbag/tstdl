@@ -2,36 +2,13 @@
 @tailwind utilities;
 @tailwind components;
 
+@import "../../tstdl/angular/lib/styles.css";
+
 html,
 body {
   @apply h-full;
 }
 
 body {
-  @apply bg-slate-50;
-}
-
-:root,
-.tsl-light {
-  --tsl-primary-background-color: white;
-  --tsl-secondary-background-color: #f8fafc; /* slate-50; */
-  --tsl-tertiary-background-color: #f1f5f9; /* slate-100; */
-
-  --tsl-primary-text-color: #0f172a; /* slate-900; */
-  --tsl-secondary-text-color: #334155; /* slate-700; */
-  --tsl-tertiary-text-color: #0f172a; /* slate-900; */
-
-  --tsl-primary-color: #0ea5e9; /* sky-500 */
-}
-
-.tsl-dark {
-  --tsl-primary-background-color: #0f172a; /* slate-900 */
-  --tsl-secondary-background-color: #1e293b; /* slate-800; */
-  --tsl-tertiary-background-color: #334155; /* slate-700 */
-
-  --tsl-primary-text-color: #e2e8f0; /* slate-200; */
-  --tsl-secondary-text-color: #cbd5e1; /* slate-300; */
-  --tsl-tertiary-text-color: #94a3b8; /* slate-400; */
-
-  --tsl-primary-color: #22d3ee; /* sky-400 */
+  @apply bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100;
 }

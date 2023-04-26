@@ -1,8 +1,8 @@
 import type { DeepFlatten, DeepNonNullable, Record } from '#/types.js';
 import { assertString, assertStringPass, isDefined, isUndefined } from '../type-guards.js';
 
-export const propertyName: unique symbol = Symbol('PropertyName');
-export const cast: unique symbol = Symbol('cast');
+export const propertyName = Symbol('PropertyName');
+export const cast = Symbol('cast');
 
 export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
@@ -18,7 +18,7 @@ export function isPropertyName(value: any): value is PropertyName {
   return isDefined((value as PropertyName | undefined)?.[propertyName]);
 }
 
-const propertyNameProxy: unique symbol = Symbol('PropertyNameProxy');
+const propertyNameProxy = Symbol('PropertyNameProxy');
 
 /**
  * get the path to a property
@@ -47,7 +47,11 @@ export function getPropertyNameProxy<T extends Record = Record>(options: { deep?
         return () => proxy;
       }
 
-      assertString(property, `property must be a string, but was ${property.toString()}`);
+      if (property == 'toString') {
+        return () => prefix;
+      }
+
+      assertString(property, `Invalid property access on PropertyNameProxy. Property must be a string, but was "${property.toString()}".`);
 
       const ignore = (flat && (/\d+/u).test(property));
 

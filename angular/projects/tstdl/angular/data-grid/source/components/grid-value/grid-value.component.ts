@@ -27,9 +27,7 @@ const timeShort: Intl.DateTimeFormatOptions = {
   styleUrls: ['./grid-value.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.text-sm]': 'true',
-    '[class.leading-4]': 'true',
-    '[class.font-light]': 'true'
+    class: 'leading-4'
   }
 })
 export class GridValueComponent implements OnChanges {

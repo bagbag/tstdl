@@ -113,7 +113,6 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
   private readonly templateService: TemplateService;
   private readonly logger: Logger;
   private readonly pool: Pool<puppeteer.Browser>;
-  private readonly options: PdfServiceOptions;
 
 
   declare readonly [resolveArgumentType]: PdfServiceArgument;
@@ -121,7 +120,6 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
   constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
     this.templateService = templateService;
     this.logger = logger;
-    this.options = options;
 
     const args = ['--font-render-hinting=none', '--disable-web-security', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'];
     const env: Record<string, string> = {};

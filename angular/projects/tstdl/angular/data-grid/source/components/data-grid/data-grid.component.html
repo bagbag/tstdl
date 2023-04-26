@@ -1,4 +1,4 @@
-<div *ngIf="heading" class="bg-secondary-background-color px-2 py-0.5 text-base font-bold">{{ heading | dynamicText }}</div>
+<div *ngIf="heading" class="bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-2 py-0.5 text-base font-bold">{{ heading | dynamicText }}</div>
 
 <div *ngIf="actualDisplayType == 'items'" class="grid" [ngClass]="columnClasses[columns]">
   <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
@@ -9,10 +9,13 @@
       <div class="flex flex-col gap-1.5 p-2"
            [ngClass]="colSpanClasses[item?.colSpan ?? 0] + ' ' + rowSpanClasses[item?.rowSpan ?? 0]"
            [class.border-t]="!firstRow"
-           [class.bg-neutral-100]="oddRow">
+           [class.bg-white]="!oddRow"
+           [class.dark:bg-neutral-700]="!oddRow"
+           [class.bg-neutral-100]="oddRow"
+           [class.dark:bg-neutral-800]="oddRow">
         <ng-container *ngIf="item">
-          <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]=" item?.label"></tsl-grid-label>
-          <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item"></tsl-grid-value>
+          <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]=" item?.label" ></tsl-grid-label>
+          <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item" ></tsl-grid-value>
         </ng-container>
       </div>
     </ng-container>
@@ -31,7 +34,10 @@
                       [noValueText]="noValueText"
                       class="px-2 py-1.5"
                       [class.border-t]="!firstRow"
-                      [class.bg-neutral-100]="oddRow"></tsl-grid-value>
+                      [class.bg-white]="!oddRow"
+                      [class.dark:bg-neutral-700]="!oddRow"
+                      [class.bg-neutral-100]="oddRow"
+                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-value>
     </ng-container>
   </ng-container>
 </div>
@@ -46,7 +52,10 @@
                       [label]=" item?.label"
                       class="p-2"
                       [class.border-t]="!firstRow"
-                      [class.bg-neutral-100]="oddRow"></tsl-grid-label>
+                      [class.bg-white]="!oddRow"
+                      [class.dark:bg-neutral-700]="!oddRow"
+                      [class.bg-neutral-100]="oddRow"
+                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-label>
 
       <tsl-grid-value [item]="item"
                       [booleanTrueText]="booleanTrueText"
@@ -54,7 +63,10 @@
                       [noValueText]="noValueText"
                       class="p-2"
                       [class.border-t]="!firstRow"
-                      [class.bg-neutral-100]="oddRow"></tsl-grid-value>
+                      [class.bg-white]="!oddRow"
+                      [class.dark:bg-neutral-700]="!oddRow"
+                      [class.bg-neutral-100]="oddRow"
+                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-value>
     </ng-container>
   </ng-container>
 </div>
@@ -63,6 +75,6 @@
   <tsl-grid-label *ngFor="let headerItem of headerItemRefs; let first = first; let last = last; trackBy: trackBy"
                   [templateRef]="headerItem?.templateRef"
                   [label]=" headerItem?.label"
-                  class="px-2 pb-1.5 bg-neutral-300"
+                  class="px-2 pb-1.5 bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   [class.pt-1.5]="heading == undefined"></tsl-grid-label>
 </ng-template>

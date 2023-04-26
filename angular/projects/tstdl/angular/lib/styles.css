@@ -1,24 +1,37 @@
 :root,
 .tsl-light {
-  --tsl-primary-background-color: white;
-  --tsl-secondary-background-color: #f8fafc; /* slate-50; */
-  --tsl-tertiary-background-color: #f1f5f9; /* slate-100; */
+  /* tailwind gray */
+  --tsl-color-neutral-50: 249 250 251;
+  --tsl-color-neutral-100: 243 244 246;
+  --tsl-color-neutral-200: 229 231 235;
+  --tsl-color-neutral-300: 209 213 219;
+  --tsl-color-neutral-400: 156 163 175;
+  --tsl-color-neutral-500: 107 114 128;
+  --tsl-color-neutral-600: 75 85 99;
+  --tsl-color-neutral-700: 55 65 81;
+  --tsl-color-neutral-800: 31 41 55;
+  --tsl-color-neutral-900: 17 24 39;
+  --tsl-color-neutral-950: 3 7 18;
 
-  --tsl-primary-text-color: #0f172a; /* slate-900; */
-  --tsl-secondary-text-color: #334155; /* slate-700; */
-  --tsl-tertiary-text-color: #0f172a; /* slate-900; */
-
-  --tsl-primary-color: #0ea5e9; /* sky-500 */
+  /* tailwind sky */
+  --tsl-color-accent-50: 240 249 255;
+  --tsl-color-accent-100: 224 242 254;
+  --tsl-color-accent-200: 186 230 253;
+  --tsl-color-accent-300: 125 211 252;
+  --tsl-color-accent-400: 56 189 248;
+  --tsl-color-accent-500: 14 165 233;
+  --tsl-color-accent-600: 2 132 199;
+  --tsl-color-accent-700: 3 105 161;
+  --tsl-color-accent-800: 7 89 133;
+  --tsl-color-accent-900: 12 74 110;
+  --tsl-color-accent-950: 8 47 73;
 }
 
-.tsl-dark {
-  --tsl-primary-background-color: #0f172a; /* slate-900 */
-  --tsl-secondary-background-color: #1e293b; /* slate-800; */
-  --tsl-tertiary-background-color: #334155; /* slate-700 */
-
-  --tsl-primary-text-color: #e2e8f0; /* slate-200; */
-  --tsl-secondary-text-color: #cbd5e1; /* slate-300; */
-  --tsl-tertiary-text-color: #94a3b8; /* slate-400; */
-
-  --tsl-primary-color: #22d3ee; /* sky-400 */
+.tsl-tw,
+.tsl-tw *,
+.tsl-tw ::before,
+.tsl-tw ::after,
+.tsl-tw::before,
+.tsl-tw::after {
+  border-color: rgb(var(--tsl-color-neutral-500) / 0.2);
 }
