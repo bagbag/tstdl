@@ -1,17 +1,17 @@
 :root,
 .tsl-light {
-  /* tailwind gray */
-  --tsl-color-neutral-50: 249 250 251;
-  --tsl-color-neutral-100: 243 244 246;
-  --tsl-color-neutral-200: 229 231 235;
-  --tsl-color-neutral-300: 209 213 219;
-  --tsl-color-neutral-400: 156 163 175;
-  --tsl-color-neutral-500: 107 114 128;
-  --tsl-color-neutral-600: 75 85 99;
-  --tsl-color-neutral-700: 55 65 81;
-  --tsl-color-neutral-800: 31 41 55;
-  --tsl-color-neutral-900: 17 24 39;
-  --tsl-color-neutral-950: 3 7 18;
+  /* tailwind zinc */
+  --tsl-color-neutral-50: 250 250 250;
+  --tsl-color-neutral-100: 244 244 245;
+  --tsl-color-neutral-200: 228 228 231;
+  --tsl-color-neutral-300: 212 212 216;
+  --tsl-color-neutral-400: 161 161 170;
+  --tsl-color-neutral-500: 113 113 122;
+  --tsl-color-neutral-600: 82 82 91;
+  --tsl-color-neutral-700: 63 63 70;
+  --tsl-color-neutral-800: 39 39 42;
+  --tsl-color-neutral-900: 24 24 27;
+  --tsl-color-neutral-950: 9 9 11;
 
   /* tailwind sky */
   --tsl-color-accent-50: 240 249 255;

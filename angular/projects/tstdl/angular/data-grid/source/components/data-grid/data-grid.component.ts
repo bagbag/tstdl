@@ -11,8 +11,7 @@ import { GridColumnDirective } from '../../directives/grid-column.directive';
 import { GridHeaderItemDirective } from '../../directives/grid-header-item.directive';
 import { GridItemDirective } from '../../directives/grid-item.directive';
 import { GridRowDirective } from '../../directives/grid-row.directive';
-import type { DataGridDefaultOptions } from '../../models';
-import { DATA_GRID_OPTIONS } from '../../tokens';
+import { DataGridOptions } from '../../models';
 import { GridLabelComponent } from '../grid-label/grid-label.component';
 import { GridValueComponent } from '../grid-value/grid-value.component';
 
@@ -97,7 +96,7 @@ export class DataGridComponent implements AfterContentInit, OnChanges {
     return this.matrix.length == 0;
   }
 
-  constructor(changeDetector: ChangeDetectorRef, @Inject(DATA_GRID_OPTIONS) @Optional() options: DataGridDefaultOptions | null) {
+  constructor(changeDetector: ChangeDetectorRef, @Inject(DataGridOptions) @Optional() options?: DataGridOptions | null) {
     this.changeDetector = changeDetector;
 
     this.itemColumns = options?.itemColumns ?? 4;
