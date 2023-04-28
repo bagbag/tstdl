@@ -101,6 +101,10 @@ export class Pool<T extends object> implements AsyncDisposable {
   }
 
   async release(instance: T): Promise<void> {
+    if (this.freeInstances.includes(instance)) {
+      throw new Error('Instance is free already.');
+    }
+
     if (!this.usedInstances.has(instance)) {
       throw new Error('Instance is not from this pool.');
     }

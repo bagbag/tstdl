@@ -1,9 +1,20 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { pdfTemplate } from '#/pdf/pdf.service.js';
 import type { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
 import type { StringTemplateRenderer } from '#/templates/renderers/string.template-renderer.js';
 import { fileTemplateField } from '#/templates/resolvers/file.template-resolver.js';
 import { stringTemplateField } from '#/templates/resolvers/string.template-resolver.js';
-import { resolve } from 'node:path';
+
+let dirname: string;
+
+try {
+  dirname = fileURLToPath(new URL('.', import.meta.url));
+}
+catch {
+  dirname = __dirname;
+}
 
 function reverse(value: unknown): string {
   return (value as string).split('').reverse().join('');
@@ -12,7 +23,7 @@ function reverse(value: unknown): string {
 const template = pdfTemplate('hello-name', {
   body: fileTemplateField<HandlebarsTemplateRenderer>({
     renderer: 'handlebars',
-    templateFile: resolve(__dirname.replace('dist', 'source'), 'hello-name.hbs'),
+    templateFile: resolve(dirname.replace('dist', 'source'), 'hello-name.hbs'),
     options: {
       partials: {
         sometext: stringTemplateField<HandlebarsTemplateRenderer>({

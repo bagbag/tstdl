@@ -1,3 +1,7 @@
+import type { BrowserController } from '#/browser/browser-controller.js';
+import { BrowserService } from '#/browser/browser.service.js';
+import type { PageController } from '#/browser/page-controller.js';
+import { PdfRenderOptions } from '#/browser/pdf-options.js';
 import type { AfterResolve, Injectable } from '#/container/index.js';
 import { afterResolve, injectArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import { disposer } from '#/core.js';
@@ -6,86 +10,21 @@ import { disposeAsync } from '#/disposable/disposable.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { Pool } from '#/pool/pool.js';
-import { Enumeration, Optional } from '#/schema/index.js';
+import { Optional } from '#/schema/index.js';
 import type { TemplateField } from '#/templates/index.js';
 import { Template, TemplateService } from '#/templates/index.js';
-import type { Record } from '#/types.js';
 import { finalizeStream } from '#/utils/stream/finalize-stream.js';
-import { getReadableStreamFromIterable } from '#/utils/stream/readable-stream-adapter.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
-import { isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
+import { isDefined } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
-import * as puppeteer from 'puppeteer';
 
-export enum PdfFormat {
-  Letter = 'letter',
-  Legal = 'legal',
-  Tabloid = 'tabloid',
-  Ledger = 'ledger',
-  A0 = 'a0',
-  A1 = 'a1',
-  A2 = 'a2',
-  A3 = 'a3',
-  A4 = 'a4',
-  A5 = 'a5',
-  A6 = 'a6'
-}
-
-export class PdfMarginObject {
-  @Optional([Number, String])
-  top?: number | string;
-
-  @Optional([Number, String])
-  bottom?: number | string;
-
-  @Optional([Number, String])
-  right?: number | string;
-
-  @Optional([Number, String])
-  left?: number | string;
-}
-
-export class PdfRenderOptions {
+export class PdfServiceRenderOptions extends PdfRenderOptions {
   @Optional()
   language?: string;
 
   @Optional()
-  omitDefaultBackground?: boolean;
-
-  @Optional()
-  renderBackground?: boolean;
-
-  @Optional()
-  landscape?: boolean;
-
-  @Optional()
-  @Enumeration(PdfFormat)
-  format?: PdfFormat;
-
-  @Optional([String, Number])
-  width?: string | number;
-
-  @Optional([String, Number])
-  height?: string | number;
-
-  @Optional()
-  scale?: number;
-
-  @Optional([String, Number, PdfMarginObject])
-  margin?: string | number | PdfMarginObject;
-
-  @Optional()
-  displayHeaderFooter?: boolean;
-
-  @Optional()
   waitForNetworkIdle?: boolean;
-
-  @Optional()
-  headerTemplate?: string;
-
-  @Optional()
-  footerTemplate?: string;
 
   /**
    * Timeout for closing render context in case something went wrong.
@@ -108,30 +47,22 @@ export type PdfServiceOptions = {
 
 export type PdfServiceArgument = PdfServiceOptions;
 
+const browserArguments = ['--font-render-hinting=none', '--disable-web-security', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'];
+
 @singleton()
 export class PdfService implements AsyncDisposable, AfterResolve, Injectable<PdfServiceArgument> {
   private readonly templateService: TemplateService;
   private readonly logger: Logger;
-  private readonly pool: Pool<puppeteer.Browser>;
-
+  private readonly pool: Pool<BrowserController>;
 
   declare readonly [resolveArgumentType]: PdfServiceArgument;
-
-  constructor(templateService: TemplateService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
+  constructor(templateService: TemplateService, browserService: BrowserService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
     this.templateService = templateService;
     this.logger = logger;
 
-    const args = ['--font-render-hinting=none', '--disable-web-security', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'];
-    const env: Record<string, string> = {};
-
-    if (isDefined(options.language)) {
-      args.push(`--lang=${options.language}`);
-      env['LANGUAGE'] = options.language;
-    }
-
     this.pool = new Pool(
-      async () => puppeteer.launch({ headless: true, args, env }),
-      async (browser) => browser.close(),
+      async () => browserService.newBrowser({ headless: true, language: options.language, browserArguments }),
+      async (controller) => controller.close(),
       logger
     );
   }
@@ -154,7 +85,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options render options
    * @returns pdf stream
    */
-  renderHtmlStream(html: string, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+  renderHtmlStream(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
   }
 
@@ -164,7 +95,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options render options
    * @returns pdf bytes
    */
-  async renderHtml(html: string, options?: PdfRenderOptions): Promise<Uint8Array> {
+  async renderHtml(html: string, options?: PdfServiceRenderOptions): Promise<Uint8Array> {
     const stream = this.renderHtmlStream(html, options);
     return readBinaryStream(stream);
   }
@@ -175,9 +106,9 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options render options
    * @returns pdf stream
    */
-  renderUrlStream(url: string, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
-    return this.renderStream(async (page) => {
-      await page.goto(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
+  renderUrlStream(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
+    return this.renderStream(async (controller) => {
+      await controller.navigate(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
     }, options);
   }
 
@@ -187,7 +118,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options render options
    * @returns pdf bytes
    */
-  async renderUrl(url: string, options?: PdfRenderOptions): Promise<Uint8Array> {
+  async renderUrl(url: string, options?: PdfServiceRenderOptions): Promise<Uint8Array> {
     const stream = this.renderUrlStream(url, options);
     return readBinaryStream(stream);
   }
@@ -199,12 +130,12 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options additional options, overwrites options specified in template
    * @returns pdf bytes
    */
-  renderTemplateStream<Context extends object>(keyOrTemplate: string | PdfTemplate<Context>, templateContext?: Context, options?: PdfRenderOptions): ReadableStream<Uint8Array> {
+  renderTemplateStream<Context extends object>(keyOrTemplate: string | PdfTemplate<Context>, templateContext?: Context, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => {
       const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render(keyOrTemplate, templateContext);
-      await page.setContent(body, { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load', ...options });
+      await page.setContent(body, { timeout: options?.timeout, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
 
-      return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer, ...options };
+      return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer };
     }, options);
   }
 
@@ -215,87 +146,56 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @param options additional options, overwrites options specified in template
    * @returns pdf bytes
    */
-  async renderTemplate(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfRenderOptions): Promise<Uint8Array> {
+  async renderTemplate(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfServiceRenderOptions): Promise<Uint8Array> {
     const stream = this.renderTemplateStream(keyOrTemplate, templateContext, options);
     return readBinaryStream(stream);
   }
 
-  private renderStream(handler: (page: puppeteer.Page) => Promise<PdfRenderOptions | undefined | void>, options: PdfRenderOptions = {}): ReadableStream<Uint8Array> {
+  private renderStream(handler: (page: PageController) => Promise<PdfServiceRenderOptions | undefined | void>, options: PdfServiceRenderOptions = {}): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
-      const browser = await this.pool.get();
+      const browserController = await this.pool.get();
+
+      let page: PageController;
 
       try {
-        let page: puppeteer.Page;
-
-        try {
-          page = await browser.newPage();
-        }
-        catch (error) {
-          await this.pool.disposeInstance(browser);
-          throw error;
-        }
-
-        if (isDefined(options.language)) {
-          await page.setExtraHTTPHeaders({ 'Accept-Language': options.language });
-        }
-
-        const timeoutRef = setTimeout(() => void page.close().catch((error) => this.logger.error(error as Error)), (options.timeout ?? millisecondsPerMinute));
-
-        const optionsFromHandler = await handler(page) ?? {};
-
-        const mergedOptions: PdfRenderOptions = { ...optionsFromHandler, ...options };
-        const createPdfOptions: puppeteer.PDFOptions = this.convertOptions(mergedOptions);
-        const pdfStream = await page.createPDFStream(createPdfOptions);
-
-        return finalizeStream(getReadableStreamFromIterable<Uint8Array>(pdfStream), async () => {
-          clearTimeout(timeoutRef);
-
-          try {
-            await page.close();
-          }
-          catch (error) {
-            this.logger.error(error as Error);
-            throw error;
-          }
-          finally {
-            await this.pool.release(browser);
-          }
-        });
+        page = await browserController.newPage();
       }
       catch (error) {
-        await this.pool.release(browser);
+        await this.pool.disposeInstance(browserController);
         throw error;
       }
+
+      if (isDefined(options.language)) {
+        await page.setExtraHttpHeaders({ 'Accept-Language': options.language });
+      }
+
+      const optionsFromHandler = await handler(page);
+      const pdfStream = page.renderPdfStream({ ...optionsFromHandler, ...options });
+      const timeoutRef = setTimeout(() => void pdfStream.cancel(new Error('Pdf render timed out.')), (options.timeout ?? millisecondsPerMinute));
+
+      const close = async (): Promise<void> => {
+        try {
+          clearTimeout(timeoutRef);
+          await page.close();
+        }
+        catch (error) {
+          await this.pool.disposeInstance(browserController);
+          this.logger.error(error as Error);
+        }
+      };
+
+      return finalizeStream(pdfStream, {
+        beforeDone: close,
+        beforeCancel: close,
+        error: async () => {
+          clearTimeout(timeoutRef);
+          await this.pool.disposeInstance(browserController);
+        }
+      });
     });
   }
-
-  private convertOptions(options: PdfRenderOptions): puppeteer.PDFOptions {
-    const margin = isUndefined(options.margin)
-      ? undefined
-      : isObject(options.margin)
-        ? options.margin
-        : {
-          top: options.margin,
-          bottom: options.margin,
-          right: options.margin,
-          left: options.margin
-        };
-
-    return {
-      format: options.format ?? 'a4',
-      scale: options.scale,
-      landscape: options.landscape,
-      width: options.width,
-      height: options.height,
-      omitBackground: options.omitDefaultBackground,
-      printBackground: options.renderBackground,
-      margin,
-      displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
-      headerTemplate: options.headerTemplate,
-      footerTemplate: options.footerTemplate
-    };
-  }
 }
+
 
 export function pdfTemplate(name: string, fields: { body: TemplateField, header?: TemplateField, footer?: TemplateField }, options?: PdfTemplateOptions): PdfTemplate {
   return {

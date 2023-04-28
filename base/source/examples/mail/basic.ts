@@ -1,3 +1,6 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { container } from '#/container/index.js';
 import { NodemailerMailClient } from '#/mail/clients/nodemailer.mail-client.js';
 import { configureMail, MailService } from '#/mail/index.js';
@@ -7,8 +10,16 @@ import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.tem
 import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer.js';
 import { configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
 import { integer, string } from '#/utils/config-parser.js';
-import { resolve } from 'node:path';
 import { configureTstdl } from '../../core.js';
+
+let dirname: string;
+
+try {
+  dirname = fileURLToPath(new URL('.', import.meta.url));
+}
+catch {
+  dirname = __dirname;
+}
 
 configureTstdl();
 
@@ -29,8 +40,8 @@ configureTemplates({
   templateRenderers: [MjmlTemplateRenderer, HandlebarsTemplateRenderer]
 });
 
-configureFileTemplateProvider({ basePath: resolve(__dirname, 'templates') });
-configureFileTemplateResolver({ basePath: resolve(__dirname.replace('/dist', '/source'), 'templates') });
+configureFileTemplateProvider({ basePath: resolve(dirname, 'templates') });
+configureFileTemplateResolver({ basePath: resolve(dirname.replace('/dist', '/source'), 'templates') });
 
 async function test(): Promise<void> {
   const service = await container.resolveAsync(MailService);

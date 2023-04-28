@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
-import type { Except, UnionToIntersection } from 'type-fest';
+import type { Except, OptionalKeysOf, UnionToIntersection } from 'type-fest';
 
 export type ObjectLiteral = {};
 
@@ -103,6 +103,8 @@ export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> 
  * normalize properties of a type that allow `undefined` to make them optional.
  */
 export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
+
+export type Unoptionalize<T extends object> = Simplify<OmitBy<T, undefined> & { [P in OptionalKeysOf<T>]: T[P] | undefined }>;
 
 export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
 

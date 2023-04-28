@@ -293,3 +293,10 @@ export function assertReadableStream<T = any>(value: any, message: AssertionMess
 export function assertNotReadableStream<T>(value: T, message: AssertionMessage = 'Expected value to not be ReadableStream.'): asserts value is InferIsNotType<T, typeof isReadableStream> { assert(isNotReadableStream(value), message); }
 export function assertReadableStreamPass<T = any>(value: any, message?: AssertionMessage): InferIsType<typeof isReadableStream> { assertReadableStream<T>(value, message); return value; }
 export function assertNotReadableStreamPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isReadableStream> { assertNotReadableStream(value, message); return value; }
+
+export function isError(value: any): value is Error { return (value instanceof Error); }
+export function isNotError<T>(value: T): value is InferIsNotType<T, typeof isError> { return !isError(value); }
+export function assertError(value: any, message: AssertionMessage = 'Expected value to be Error.'): asserts value is InferIsType<typeof isError> { assert(isError(value), message); }
+export function assertNotError<T>(value: T, message: AssertionMessage = 'Expected value to not be Error.'): asserts value is InferIsNotType<T, typeof isError> { assert(isNotError(value), message); }
+export function assertErrorPass(value: any, message?: AssertionMessage): InferIsType<typeof isError> { assertError(value, message); return value; }
+export function assertNotErrorPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isError> { assertNotError(value, message); return value; }

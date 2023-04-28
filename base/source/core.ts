@@ -3,7 +3,7 @@ import { container, injectionToken } from './container/index.js';
 import { AsyncDisposer } from './disposable/async-disposer.js';
 import { ConsoleLogger } from './logger/console/logger.js';
 import type { LoggerArgument } from './logger/index.js';
-import { Logger, LogLevel } from './logger/index.js';
+import { LogLevel, Logger } from './logger/index.js';
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
@@ -44,7 +44,7 @@ export async function disposeInstances(): Promise<void> {
 export type CoreConfiguration = {
   logger?: InjectionToken<Logger, LoggerArgument>,
   logLevel?: LogLevel,
-  coreLogPrefix?: string;
+  coreLogPrefix?: string
 };
 
 let coreLogPrefix: string | undefined;

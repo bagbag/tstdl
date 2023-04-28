@@ -44,4 +44,5 @@ export * from './type-guards.js';
 export * from './type-of.js';
 export * from './units.js';
 export * from './url-builder.js';
+export * from './value-or-provider.js';
 export * from './z-base32.js';
