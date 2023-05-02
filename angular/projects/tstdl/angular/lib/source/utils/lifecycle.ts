@@ -5,7 +5,7 @@ import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
 import { CancellationToken, isUndefined } from '@tstdl/base/utils';
 import { hasOwnProperty } from '@tstdl/base/utils/object';
 import type { Observable } from 'rxjs';
-import { defer, filter, map, ReplaySubject, startWith, Subject, switchMap } from 'rxjs';
+import { ReplaySubject, Subject, defer, filter, map, startWith, switchMap } from 'rxjs';
 
 export type TypedSimpleChange<T> = TypedOmit<SimpleChange, 'previousValue' | 'currentValue'> & {
   previousValue: T,
@@ -97,10 +97,10 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
    */
   get destroyToken(): ReadonlyCancellationToken {
     if (isUndefined(this._destroyToken)) {
-      this._destroyToken = CancellationToken.fromObservable(this.destroySubject);
+      this._destroyToken = CancellationToken.from(this.destroySubject);
     }
 
-    return this._destroyToken.asReadonly;
+    return this._destroyToken.asReadonly();
   }
 
   // eslint-disable-next-line max-statements

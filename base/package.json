@@ -45,7 +45,7 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.7",
     "@koa/router": "^12.0",
-    "@tstdl/angular": "^0.83",
+    "@tstdl/angular": "^0.84",
     "@zxcvbn-ts/core": "^2.2",
     "@zxcvbn-ts/language-common": "^2.0",
     "@zxcvbn-ts/language-de": "^2.1",
