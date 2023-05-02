@@ -1,14 +1,15 @@
+import type { Browser, BrowserContext } from 'playwright';
+
 import { injectArg, singleton } from '#/container/decorators.js';
 import type { Injectable } from '#/container/interfaces.js';
 import { afterResolve, resolveArgumentType } from '#/container/interfaces.js';
 import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import { isDefined } from '#/utils/type-guards.js';
-import * as puppeteer from 'puppeteer';
-import type { BrowserControllerOptions } from './browser-controller.js';
+import { BrowserContextController } from './browser-context-controller.js';
+import type { BrowserControllerOptions, NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
-import type { Browser } from './types.js';
+import { getBrowserType, getLaunchOptions, mergeNewBrowserContextOptions } from './utils.js';
 
 export class BrowserServiceOptions {
   defaultNewBrowserOptions?: NewBrowserOptions;
@@ -17,24 +18,24 @@ export class BrowserServiceOptions {
 export type BrowserServiceArgument = BrowserServiceOptions;
 
 export type NewBrowserOptions = {
+  browser?: 'chromium' | 'firefox' | 'webkit',
   headless?: boolean,
-  width?: number,
-  height?: number,
-  language?: string,
-  proxy?: string,
+
+  windowSize?: {
+    width: number,
+    height: number
+  },
 
   /** @deprecated should be avoided */
   browserArguments?: string[],
-
-  /** @deprecated should be avoided */
-  browserEnvironment?: Record<string, string | undefined>,
 
   controllerOptions?: BrowserControllerOptions
 };
 
 @singleton()
 export class BrowserService implements AsyncDisposable, Injectable<BrowserServiceArgument> {
-  private readonly browsers: WeakRef<Browser>[];
+  private readonly browsers: Set<Browser>;
+  private readonly persistentBrowserContexts: Set<BrowserContext>;
 
   readonly options: BrowserServiceOptions | undefined;
 
@@ -42,7 +43,8 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
   constructor(@injectArg() options?: BrowserServiceOptions) {
     this.options = options;
 
-    this.browsers = [];
+    this.browsers = new Set();
+    this.persistentBrowserContexts = new Set();
   }
 
   [afterResolve](): void {
@@ -53,40 +55,46 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     return this.dispose();
   }
 
-  async newBrowser(options?: NewBrowserOptions): Promise<BrowserController> {
-    const { width = 1000, height = 1000, browserArguments, browserEnvironment, proxy, language, headless, controllerOptions }: NewBrowserOptions = { ...this.options?.defaultNewBrowserOptions, ...options };
+  async newBrowser(options: NewBrowserOptions = {}): Promise<BrowserController> {
+    const mergedOptions = { ...this.options?.defaultNewBrowserOptions, ...options };
+    const launchOptions = getLaunchOptions(mergedOptions);
 
-    const args: string[] = [`--window-size=${width},${height}`, ...(browserArguments ?? [])];
-    const env: Record<string, string | undefined> = { ...process.env, ...browserEnvironment };
+    const browser = await getBrowserType(mergedOptions.browser).launch(launchOptions);
 
-    if (isDefined(proxy)) {
-      args.push(`--proxy-server=${proxy}`);
-    }
+    this.browsers.add(browser);
+    browser.once('disconnected', () => this.browsers.delete(browser));
 
-    if (isDefined(language)) {
-      args.push(`--lang=${language}`);
-      env['LANGUAGE'] = language;
-    }
+    return new BrowserController(browser, mergedOptions.controllerOptions);
+  }
 
-    const browser = await puppeteer.launch({
-      headless: (headless == true) ? 'new' : false,
-      args,
-      env,
-      defaultViewport: { width, height }
+  async newPersistentContext(dataDirectory: string, browserOptions: NewBrowserOptions = {}, contextOptions: NewBrowserContextOptions = {}): Promise<BrowserContextController> {
+    const mergedBrowserOptions: NewBrowserOptions = { ...this.options?.defaultNewBrowserOptions, ...browserOptions };
+    const mergedContextOptions: NewBrowserContextOptions = mergeNewBrowserContextOptions(this.options?.defaultNewBrowserOptions?.controllerOptions?.defaultNewContextOptions, browserOptions.controllerOptions?.defaultNewContextOptions, contextOptions);
+    const launchOptions = getLaunchOptions(mergedBrowserOptions);
+
+    const context = await getBrowserType(mergedBrowserOptions.browser).launchPersistentContext(dataDirectory, {
+      ...launchOptions,
+      locale: mergedContextOptions.locale,
+      viewport: mergedContextOptions.viewport,
+      proxy: mergedContextOptions.proxy,
+      extraHTTPHeaders: mergedContextOptions.extraHttpHeaders
     });
 
-    this.browsers.push(new WeakRef(browser));
+    this.persistentBrowserContexts.add(context);
+    context.once('close', () => this.persistentBrowserContexts.delete(context));
 
-    return new BrowserController(browser, controllerOptions);
+    return new BrowserContextController(context, mergedBrowserOptions.controllerOptions?.defaultNewContextOptions?.controllerOptions);
   }
 
   async dispose(): Promise<void> {
-    for (const browserRef of this.browsers) {
-      const browser = browserRef.deref();
-
-      if (isDefined(browser) && browser.isConnected()) {
+    for (const browser of this.browsers) {
+      if (browser.isConnected()) {
         await browser.close();
       }
+    }
+
+    for (const context of this.persistentBrowserContexts) {
+      await context.close();
     }
   }
 }

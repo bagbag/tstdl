@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.83.28",
+  "version": "0.84.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -54,13 +54,13 @@
     "handlebars": "^4.7",
     "knex": "^2.4",
     "koa": "^2.14",
-    "minio": "^7.0",
+    "minio": "^7.1",
     "mjml": "^4.14",
     "mongodb": "^5.3",
     "nodemailer": "^6.9",
+    "playwright": "^1.33",
     "preact": "^10.13",
     "preact-render-to-string": "^6.0",
-    "puppeteer": "^19.11",
     "undici": "^5.22",
     "urlpattern-polyfill": "^8.0"
   },

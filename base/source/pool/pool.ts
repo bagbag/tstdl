@@ -62,6 +62,10 @@ export class Pool<T extends object> implements AsyncDisposable {
     this.disposed = false;
   }
 
+  owns(instance: T): boolean {
+    return this.usedInstances.includes(instance) || this.freeInstances.includes(instance);
+  }
+
   async get(): Promise<T> {
     if (this.disposed) {
       throw new Error('Pool was disposed.');

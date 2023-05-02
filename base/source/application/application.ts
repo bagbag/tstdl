@@ -34,8 +34,6 @@ export class Application {
 
       // @ts-expect-error readonly
       this._instance._shutdownToken = shutdownToken;
-      // @ts-expect-error readonly
-      this._instance.shutdownToken = shutdownToken.asReadonly;
     }
 
     return this._instance;
@@ -47,7 +45,9 @@ export class Application {
   private readonly shutdownPromise: DeferredPromise;
   private readonly _shutdownToken: CancellationToken;
 
-  readonly shutdownToken: ReadonlyCancellationToken;
+  get shutdownToken(): ReadonlyCancellationToken {
+    return this._shutdownToken.asReadonly();
+  }
 
   static get shutdownToken(): ReadonlyCancellationToken {
     return Application.instance.shutdownToken;
@@ -60,7 +60,6 @@ export class Application {
     this.moduleInstances = new Set();
     this.shutdownPromise = new DeferredPromise();
     this._shutdownToken = shutdownToken.createChild();
-    this.shutdownToken = this._shutdownToken.asReadonly;
   }
 
   static registerModule(moduleType: Type<Module>): void {

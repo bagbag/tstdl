@@ -36,25 +36,30 @@ configureFileTemplateResolver({ basePath: resolve(dirname.replace('dist', 'sourc
 async function main(): Promise<void> {
   const browserService = await container.resolveAsync(BrowserService);
   const pdfService = await container.resolveAsync(PdfService);
-  const result1 = await pdfService.renderTemplate('hello-name', { name: 'Max Mustermann' });
-  const result2 = await pdfService.renderUrl('https://google.de');
+
+  const [result1, result2] = await Promise.all([
+    pdfService.renderTemplate('hello-name', { name: 'Max Mustermann' }),
+    pdfService.renderUrl('https://google.de')
+  ]);
 
   console.log(`Resulting PDFs have ${result1.length} and ${result2.length} bytes.`);
 
   writeFileSync('/tmp/template.pdf', result1);
   writeFileSync('/tmp/page.pdf', result2);
 
-  const browser = await browserService.newBrowser();
+  const browser = await browserService.newBrowser({ headless: false });
+  const context = await browser.newContext();
 
-  const page1 = await browser.newPage();
-  const page2 = await browser.newPage();
+  const page1 = await context.newPage();
+  const page2 = await context.newPage();
 
   await Promise.all([
     page1.navigate('file:///tmp/template.pdf'),
     page2.navigate('file:///tmp/page.pdf')
   ]);
 
-  await browser.waitForClose();
+  await page1.waitForClose();
+  await page2.waitForClose();
 }
 
 Application.run(main);

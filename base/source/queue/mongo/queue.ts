@@ -5,7 +5,7 @@ import { Lock } from '#/lock/index.js';
 import type { MessageBus } from '#/message-bus/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
 import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument, QueueConfig } from '#/queue/index.js';
-import { defaultJobPriority, defaultQueueConfig, Queue, UniqueTagStrategy } from '#/queue/index.js';
+import { Queue, UniqueTagStrategy, defaultJobPriority, defaultQueueConfig } from '#/queue/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import type { BackoffOptions } from '#/utils/backoff.js';
 import { backoffGenerator } from '#/utils/backoff.js';
@@ -248,7 +248,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async *getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>> {
-    const continueToken = CancellationToken.fromObservable(this.messageBus.allMessages$);
+    const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const job = await this.dequeue();
@@ -265,7 +265,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async *getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]> {
-    const continueToken = CancellationToken.fromObservable(this.messageBus.allMessages$);
+    const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
     for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
       const jobs = await this.dequeueMany(size);

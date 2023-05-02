@@ -31,9 +31,6 @@ export class PdfMarginObject {
 
 export class PdfRenderOptions {
   @Optional()
-  omitDefaultBackground?: boolean;
-
-  @Optional()
   renderBackground?: boolean;
 
   @Optional()
@@ -62,4 +59,11 @@ export class PdfRenderOptions {
 
   @Optional()
   footerTemplate?: string;
+
+  /**
+   * Timeout for closing render context in case something went wrong.
+   * @default 60000 (1 minute)
+   */
+  @Optional()
+  timeout?: number;
 }

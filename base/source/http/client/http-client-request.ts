@@ -133,7 +133,7 @@ export class HttpClientRequest implements Disposable {
    * can be used to cancel the request. Throws HttpError
    */
   get abortToken(): ReadonlyCancellationToken {
-    return this._abortToken.asReadonly;
+    return this._abortToken.asReadonly();
   }
 
   constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions);

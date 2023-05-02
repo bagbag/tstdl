@@ -13,6 +13,8 @@ const deferrerToken: unique symbol = Symbol('DeferrerToken');
 
 export type TaskFunction = () => any;
 
+export type AsyncDisposeHandler = TaskFunction | Disposable | AsyncDisposable;
+
 export type Task = {
   priority: number,
   taskFunction: TaskFunction
@@ -84,7 +86,7 @@ export class AsyncDisposer implements AsyncDisposable {
    * @param fnOrDisposable
    * @param priority when it will be disposed in relation to other tasks (lower gets disposed first). When other tasks have the same priority, they will be disposed in parallel
    */
-  add(fnOrDisposable: TaskFunction | Disposable | AsyncDisposable, priority: number = 1000): void {
+  add(fnOrDisposable: AsyncDisposeHandler, priority: number = 1000): void {
     const fn = isDisposable(fnOrDisposable)
       ? () => fnOrDisposable[dispose]()
       : isAsyncDisposable(fnOrDisposable)

@@ -35,12 +35,12 @@ export class WebLock extends Lock {
       }
     };
 
-    const timeoutToken = (isDefined(timeout) && (timeout > 0)) ? CancellationToken.fromObservable(timer(timeout).pipe(map(() => true))) : undefined;
+    const timeoutToken = (isDefined(timeout) && (timeout > 0)) ? CancellationToken.from(timer(timeout).pipe(map(() => true))) : undefined;
 
     void navigator.locks.request(
       this.resource,
       {
-        signal: isDefined(timeoutToken) ? timeoutToken.asAbortSignal : undefined,
+        signal: isDefined(timeoutToken) ? timeoutToken.asAbortSignal() : undefined,
         ifAvailable: isDefined(timeout) && (timeout <= 0)
       },
       async (lock) => {

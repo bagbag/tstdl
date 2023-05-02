@@ -1,15 +1,10 @@
-import type { BrowserController } from '#/browser/browser-controller.js';
-import { BrowserService } from '#/browser/browser.service.js';
+import { BrowserContextController } from '#/browser/browser-context-controller.js';
+import type { BrowserControllerArgument } from '#/browser/browser-controller.js';
+import { BrowserController } from '#/browser/browser-controller.js';
 import type { PageController } from '#/browser/page-controller.js';
 import { PdfRenderOptions } from '#/browser/pdf-options.js';
-import type { AfterResolve, Injectable } from '#/container/index.js';
-import { afterResolve, injectArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
-import { disposer } from '#/core.js';
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
-import type { LoggerArgument } from '#/logger/index.js';
-import { Logger } from '#/logger/index.js';
-import { Pool } from '#/pool/pool.js';
+import type { Injectable } from '#/container/index.js';
+import { forwardArg, injectArg, resolveArgumentType, singleton } from '#/container/index.js';
 import { Optional } from '#/schema/index.js';
 import type { TemplateField } from '#/templates/index.js';
 import { Template, TemplateService } from '#/templates/index.js';
@@ -17,21 +12,16 @@ import { finalizeStream } from '#/utils/stream/finalize-stream.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { millisecondsPerMinute } from '#/utils/units.js';
 
 export class PdfServiceRenderOptions extends PdfRenderOptions {
   @Optional()
-  language?: string;
+  browserContext?: BrowserContextController;
+
+  @Optional()
+  locale?: string;
 
   @Optional()
   waitForNetworkIdle?: boolean;
-
-  /**
-   * Timeout for closing render context in case something went wrong.
-   * @default 60000 (1 minute)
-   */
-  @Optional()
-  timeout?: number;
 }
 
 export type PdfTemplateOptions = PdfRenderOptions;
@@ -42,41 +32,28 @@ export class PdfTemplate<Context extends object = any> extends Template<{ header
 }
 
 export type PdfServiceOptions = {
-  language?: string
+  locale?: string
 };
 
-export type PdfServiceArgument = PdfServiceOptions;
+export type PdfServiceArgument = PdfServiceOptions & {
+  browserControllerArgument: BrowserControllerArgument
+};
 
 const browserArguments = ['--font-render-hinting=none', '--disable-web-security', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'];
 
 @singleton()
-export class PdfService implements AsyncDisposable, AfterResolve, Injectable<PdfServiceArgument> {
+export class PdfService implements Injectable<PdfServiceArgument> {
   private readonly templateService: TemplateService;
-  private readonly logger: Logger;
-  private readonly pool: Pool<BrowserController>;
+  private readonly browserController: BrowserController;
+
+  private readonly defaultLocale: string | undefined;
 
   declare readonly [resolveArgumentType]: PdfServiceArgument;
-  constructor(templateService: TemplateService, browserService: BrowserService, @resolveArg<LoggerArgument>('PdfService') logger: Logger, @injectArg() options: PdfServiceOptions = {}) {
+  constructor(templateService: TemplateService, @forwardArg<PdfServiceArgument | undefined, BrowserControllerArgument>((argument) => argument?.browserControllerArgument ?? { browserArguments }) browserController: BrowserController, @injectArg() options: PdfServiceOptions = {}) {
     this.templateService = templateService;
-    this.logger = logger;
+    this.browserController = browserController;
 
-    this.pool = new Pool(
-      async () => browserService.newBrowser({ headless: true, language: options.language, browserArguments }),
-      async (controller) => controller.close(),
-      logger
-    );
-  }
-
-  [afterResolve](): void {
-    disposer.add(this);
-  }
-
-  async [disposeAsync](): Promise<void> {
-    return this.dispose();
-  }
-
-  async dispose(): Promise<void> {
-    return this.pool.dispose();
+    this.defaultLocale = options.locale;
   }
 
   /**
@@ -86,7 +63,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    * @returns pdf stream
    */
   renderHtmlStream(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
-    return this.renderStream(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' }), options);
+    return this.renderStream(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' }), options);
   }
 
   /**
@@ -108,7 +85,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
    */
   renderUrlStream(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (controller) => {
-      await controller.navigate(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
+      await controller.navigate(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' });
     }, options);
   }
 
@@ -133,7 +110,7 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
   renderTemplateStream<Context extends object>(keyOrTemplate: string | PdfTemplate<Context>, templateContext?: Context, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => {
       const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render(keyOrTemplate, templateContext);
-      await page.setContent(body, { timeout: options?.timeout, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle2' : 'load' });
+      await page.setContent(body, { timeout: options?.timeout, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' });
 
       return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer };
     }, options);
@@ -153,44 +130,19 @@ export class PdfService implements AsyncDisposable, AfterResolve, Injectable<Pdf
 
   private renderStream(handler: (page: PageController) => Promise<PdfServiceRenderOptions | undefined | void>, options: PdfServiceRenderOptions = {}): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
-      const browserController = await this.pool.get();
-
-      let page: PageController;
-
-      try {
-        page = await browserController.newPage();
-      }
-      catch (error) {
-        await this.pool.disposeInstance(browserController);
-        throw error;
-      }
-
-      if (isDefined(options.language)) {
-        await page.setExtraHttpHeaders({ 'Accept-Language': options.language });
-      }
+      const page = isDefined(options.browserContext)
+        ? await options.browserContext.newPage()
+        : await this.browserController.newPage({ locale: options.locale ?? this.defaultLocale });
 
       const optionsFromHandler = await handler(page);
       const pdfStream = page.renderPdfStream({ ...optionsFromHandler, ...options });
-      const timeoutRef = setTimeout(() => void pdfStream.cancel(new Error('Pdf render timed out.')), (options.timeout ?? millisecondsPerMinute));
 
-      const close = async (): Promise<void> => {
-        try {
-          clearTimeout(timeoutRef);
-          await page.close();
-        }
-        catch (error) {
-          await this.pool.disposeInstance(browserController);
-          this.logger.error(error as Error);
-        }
-      };
+      const close = async (): Promise<void> => page.close();
 
       return finalizeStream(pdfStream, {
         beforeDone: close,
         beforeCancel: close,
-        error: async () => {
-          clearTimeout(timeoutRef);
-          await this.pool.disposeInstance(browserController);
-        }
+        error: close
       });
     });
   }

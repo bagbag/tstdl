@@ -7,11 +7,11 @@ import { timeout } from '#/utils/timing.js';
 
 async function main(): Promise<void> {
   const browserService = await container.resolveAsync(BrowserService);
-  const browser = await browserService.newBrowser();
+  const browser = await browserService.newBrowser({ headless: false });
   const page = await browser.newPage();
 
   await page.navigate('https://google.com');
-  await page.click('//div[text() = \'Alle ablehnen\']', { xpath: true });
+  await page.click('//div[text() = \'Alle ablehnen\']');
 
   await timeout(1000);
   const pdf = await page.renderPdf();

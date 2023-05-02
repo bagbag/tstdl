@@ -1,5 +1,6 @@
 export * from './array-dictionary.js';
 export * from './array-list.js';
+export * from './cache.js';
 export * from './circular-buffer.js';
 export * from './collection.js';
 export * from './dictionary.js';

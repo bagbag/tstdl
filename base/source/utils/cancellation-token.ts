@@ -1,8 +1,8 @@
 import { noopOperator } from '#/rxjs/noop.js';
 import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, map, skip, take } from 'rxjs';
+import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, isObservable, map, skip, take } from 'rxjs';
 import { noop } from './noop.js';
-import { isBoolean, isUndefined } from './type-guards.js';
+import { isBoolean } from './type-guards.js';
 
 export type ConnectConfig = {
   /**
@@ -86,7 +86,7 @@ export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribab
   /**
    * Returns an AbortSignal.
    */
-  asAbortSignal: AbortSignal;
+  asAbortSignal(): AbortSignal;
 
   /**
    * Create a new token and connect it to this instance.
@@ -103,8 +103,6 @@ export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribab
 
 export class CancellationToken implements ReadonlyCancellationToken {
   private readonly stateSubject: BehaviorSubject<boolean>;
-
-  private abortController: AbortController | undefined;
 
   readonly state$: Observable<boolean>;
   readonly set$: Observable<void>;
@@ -130,24 +128,6 @@ export class CancellationToken implements ReadonlyCancellationToken {
     return firstValueFrom(this.state$.pipe(skip(1)));
   }
 
-  get asReadonly(): ReadonlyCancellationToken {
-    return this;
-  }
-
-  get asAbortSignal(): AbortSignal {
-    if (isUndefined(this.abortController)) {
-      const abortController = new AbortController();
-      this.abortController = abortController;
-
-      this.set$.pipe(first()).subscribe(() => {
-        abortController.abort();
-        this.unset$.pipe(first()).subscribe(() => (this.abortController = undefined));
-      });
-    }
-
-    return this.abortController.signal;
-  }
-
   /**
    * @param initialState which state to initialze this token to
    * - `false`: unset
@@ -162,32 +142,23 @@ export class CancellationToken implements ReadonlyCancellationToken {
   }
 
   /**
-   * Creates a token and sets it whenever the abort signal is aborted.
-   * @param signal abort signal to listen to
-   * @param complete complete token after resolve
+   * Creates a token and sets it whenever the source signals
+   * @param source source to listen to
+   * @param complete complete token after signal
    */
-  static fromAbortSignal(signal: AbortSignal, complete: boolean = true): CancellationToken {
-    const signal$ = fromEvent(signal, 'abort', () => true);
-    return CancellationToken.fromObservable(signal$, { complete });
-  }
-
+  static from(source: AbortSignal | PromiseLike<any> | Observable<void>, options?: { complete?: boolean }): CancellationToken;
   /**
-   * Creates a token and sets it whenever the promise is resolved.
-   * @param promise promise to await
-   * @param complete complete token after resolve
-   */
-  static fromPromise(promise: PromiseLike<any>, complete: boolean = true): CancellationToken {
-    const signal$ = from(promise).pipe(map(() => true));
-    return CancellationToken.fromObservable(signal$, { complete });
-  }
-
-  /**
-   * Creates a token and connets its next, error and complete.
+   * Creates a token and connects the source to its next, error and complete.
    * @param observable observable to subscribe. Takes emitted value as state if type is boolean otherwise sets state to true.
    */
-  static fromObservable(observable: Observable<void | boolean>, config?: ConnectConfig): CancellationToken {
+  static from(source: Observable<boolean>, config?: ConnectConfig): CancellationToken;
+  static from(source: AbortSignal | PromiseLike<any> | Observable<void | boolean>, config?: ConnectConfig): CancellationToken {
+    const source$ =
+      (source instanceof AbortSignal) ? fromEvent(source, 'abort', () => true)
+        : isObservable(source) ? source.pipe(map((state) => (isBoolean(state) ? state : true)))
+          : from(source).pipe(map(() => true));
+
     const token = new CancellationToken();
-    const source$ = observable.pipe(map((state) => (isBoolean(state) ? state : true)));
     CancellationToken.connect(source$, token, config);
 
     return token;
@@ -213,6 +184,17 @@ export class CancellationToken implements ReadonlyCancellationToken {
       error: () => subscription.unsubscribe(),
       complete: () => subscription.unsubscribe()
     });
+  }
+
+  asAbortSignal(): AbortSignal {
+    const abortController = new AbortController();
+    this.set$.pipe(first()).subscribe(() => abortController.abort());
+
+    return abortController.signal;
+  }
+
+  asReadonly(): ReadonlyCancellationToken {
+    return this;
   }
 
   createChild(config?: ConnectConfig): CancellationToken {

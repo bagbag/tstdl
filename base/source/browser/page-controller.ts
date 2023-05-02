@@ -1,12 +1,12 @@
-import { Readable } from 'node:stream';
-import * as puppeteer from 'puppeteer';
+import type { Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import type { WritableOneOrMany } from '#/types.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
-import { timeout } from '#/utils/timing.js';
-import { isDefined, isNull, isNumber, isObject, isString, isUndefined } from '#/utils/type-guards.js';
+import { timeout, withTimeout } from '#/utils/timing.js';
+import { assertNotNull, isDefined, isNumber, isObject, isUndefined } from '#/utils/type-guards.js';
+import { millisecondsPerSecond } from '#/utils/units.js';
+import type { BrowserContextController } from './browser-context-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
 
 export type Delay = number | DelayProvider;
@@ -17,176 +17,166 @@ export type PageControllerOptions = {
   typeDelay?: Delay
 };
 
-export type SelectorOptions = {
-  xpath?: boolean
-};
-
-export type WaitForElementOptions = {
+export type WaitOptions = {
   timeout?: number
 };
 
-export type PageLifecycleEvent = puppeteer.PuppeteerLifeCycleEvent;
+export type LoadState = 'load' | 'domcontentloaded' | 'networkidle';
 
-export type WaitForOptions = {
-  timeout?: number,
-  waitUntil?: WritableOneOrMany<PageLifecycleEvent>
+export type WaitForStateOptions = {
+  waitUntil: LoadState
+};
+
+export type DelayOptions = {
+  delay?: Delay
+};
+
+export type Abortable = {
+  abort?: AbortSignal
+};
+
+/** @deprecated for internal use only */
+export type PageControllerInternal = {
+  ownedContext?: BrowserContextController
 };
 
 export class PageController implements AsyncDisposable {
+  private readonly ownedContext?: BrowserContextController;
+
   /** @deprecated should be avoided */
-  readonly page: puppeteer.Page;
+  readonly page: Page;
   readonly options: PageControllerOptions;
 
-  constructor(pageOrFrame: puppeteer.Page | puppeteer.Frame, options: PageControllerOptions = {}) {
-    this.page = (pageOrFrame instanceof puppeteer.Page) ? pageOrFrame : pageOrFrame.page();
+  constructor(page: Page, options: PageControllerOptions = {}) {
+    this.page = page;
     this.options = options;
   }
 
   async [disposeAsync](): Promise<void> {
-    return this.close();
+    await this.close();
   }
 
   async close(): Promise<void> {
-    return this.page.close();
+    if (isDefined(this.ownedContext)) {
+      await this.ownedContext.close();
+    }
+    else {
+      await this.page.close();
+    }
   }
 
-  async setContent(html: string, options?: WaitForOptions): Promise<void> {
-    await this.page.setContent(html, options);
+  async setContent(html: string, options?: WaitOptions & WaitForStateOptions): Promise<void> {
+    await this.page.setContent(html, { timeout: options?.timeout, waitUntil: options?.waitUntil });
   }
 
   async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
     await this.page.setExtraHTTPHeaders(headers);
   }
 
-  async authenticate(username: string, password: string): Promise<void> {
-    await this.page.authenticate({ username, password });
-  }
-
-  async navigate(url: string, options?: WaitForOptions): Promise<void> {
-    await this.page.goto(url, options);
+  async navigate(url: string, options?: WaitOptions & WaitForStateOptions): Promise<void> {
+    await this.page.goto(url, { timeout: options?.timeout, waitUntil: options?.waitUntil });
   }
 
   async waitForClose(): Promise<void> {
-    return new Promise((resolve) => this.page.once('close', resolve));
-  }
-
-  async waitForIdle(options?: { idleTime?: number, timeout?: number }): Promise<void> {
-    await this.page.waitForNetworkIdle(options);
-  }
-
-  async waitForUrl(urlOrPredicate: string | ((url: string) => boolean | Promise<boolean>), options?: { timeout?: number }): Promise<void> {
-    const pageFrame = this.page.mainFrame();
-
-    await this.page.waitForFrame(async (frame) => {
-      if (frame != pageFrame) {
-        return false;
+    return new Promise((resolve) => {
+      if (this.page.isClosed()) {
+        resolve();
+        return;
       }
 
-      if (isString(urlOrPredicate)) {
-        return frame.url().includes(urlOrPredicate);
-      }
-
-      return urlOrPredicate(frame.url());
-    }, { timeout: options?.timeout });
-  }
-
-  async waitForFrame(selector: string, options?: SelectorOptions): Promise<PageController> {
-    const frame = await this.waitForElementHandle<HTMLIFrameElement>(selector, options);
-    return new PageController(frame.frame.page());
-  }
-
-  async waitForFrameByUrl(urlOrPredicate: string | ((frame: puppeteer.Frame) => boolean | Promise<boolean>), options?: { timeout?: number }): Promise<PageController> {
-    const frame = await this.page.waitForFrame(urlOrPredicate, options);
-    return new PageController(frame.page());
-  }
-
-  getDeepestFrame(): PageController {
-    let frame = this.page.mainFrame();
-
-    while (true) {
-      const children = frame.childFrames();
-
-      if (children.length > 1) {
-        throw new Error('Multiple frames found. Only works with single frame.');
-      }
-
-      if (children.length == 0) {
-        break;
-      }
-
-      frame = children[0]!;
-    }
-
-    return new PageController(frame);
-  }
-
-  async type(handleOrSelector: puppeteer.ElementHandle | string, text: string, options?: SelectorOptions): Promise<void> {
-    await this.prepareAction();
-    const handle = isString(handleOrSelector) ? await this.waitForElementHandle(handleOrSelector, options) : handleOrSelector;
-    await handle.evaluate((element) => (element as HTMLInputElement).select());
-
-    if (isUndefined(this.options.typeDelay)) {
-      await handle.type(text);
-    }
-    else {
-      for (const char of text) {
-        await handle.type(char);
-        await delay(this.options.typeDelay);
-      }
-    }
-  }
-
-  async select(handleOrSelector: puppeteer.ElementHandle | string, value: string, options?: SelectorOptions): Promise<void> {
-    await this.prepareAction();
-
-    const handle = isString(handleOrSelector) ? await this.waitForElementHandle(handleOrSelector, options) : handleOrSelector;
-    await handle.select(value);
-  }
-
-  async click(handleOrSelector: puppeteer.ElementHandle | string, options?: SelectorOptions): Promise<void> {
-    await this.prepareAction();
-
-    const handle = isString(handleOrSelector) ? await this.waitForElementHandle(handleOrSelector, options) : handleOrSelector;
-    await handle.click();
-  }
-
-  async getValue(handleOrSelector: puppeteer.ElementHandle | string, options?: SelectorOptions): Promise<string> {
-    const handle = isString(handleOrSelector) ? await this.waitForElementHandle(handleOrSelector, options) : handleOrSelector;
-    return handle.evaluate((element) => (element as HTMLInputElement).value);
-  }
-
-  async waitForElement(selector: string, options?: WaitForElementOptions & SelectorOptions): Promise<void> {
-    await this.waitForElementHandle(selector, options);
-  }
-
-  async renderPdf(options: PdfRenderOptions = {}): Promise<Uint8Array> {
-    const createPdfOptions: puppeteer.PDFOptions = convertPdfOptions(options);
-    return this.page.pdf(createPdfOptions);
-  }
-
-  renderPdfStream(options: PdfRenderOptions = {}): ReadableStream<Uint8Array> {
-    return readableStreamFromPromise(async () => {
-      const createPdfOptions: puppeteer.PDFOptions = convertPdfOptions(options);
-      const pdfStream = await this.page.createPDFStream(createPdfOptions);
-      return Readable.toWeb(pdfStream) as ReadableStream<Uint8Array>;
+      this.page.once('close', () => resolve());
     });
   }
 
-  private async waitForElementHandle<T extends Node = Element>(selector: string, { timeout: waitTimeout = 5000, xpath = false }: WaitForElementOptions & SelectorOptions = {}): Promise<puppeteer.ElementHandle<T>> {
-    const handle: puppeteer.ElementHandle<any> | null = xpath
-      ? await this.page.waitForXPath(selector, { timeout: waitTimeout })
-      : await this.page.waitForSelector(selector, { timeout: waitTimeout });
+  async waitForState(state: LoadState, options?: WaitOptions): Promise<void> {
+    await this.page.waitForLoadState(state, { timeout: options?.timeout });
+  }
 
-    if (isNull(handle)) {
-      throw new Error('Element not found');
+  async waitForNetworkIdle(options?: WaitOptions): Promise<void> {
+    await this.page.waitForLoadState('networkidle', { timeout: options?.timeout });
+  }
+
+  async waitForUrl(urlOrPredicate: string | RegExp | ((url: URL) => boolean), options?: WaitOptions): Promise<void> {
+    await this.page.waitForURL(urlOrPredicate, { timeout: options?.timeout });
+  }
+
+  async waitForFrame(selector: string, options?: WaitOptions): Promise<PageController> {
+    const handle = await this.page.waitForSelector(selector, { timeout: options?.timeout });
+    const frame = await handle.contentFrame();
+    assertNotNull(frame, 'Could not get frame for specified selector.');
+
+    return new PageController(frame.page());
+  }
+
+  async fill(selector: string, text: string, options?: DelayOptions & WaitOptions): Promise<void> {
+    await this.prepareAction();
+
+    const locator = this.page.locator(selector);
+    await locator.fill(text, { timeout: options?.timeout });
+  }
+
+  async type(selector: string, text: string, options?: DelayOptions & WaitOptions): Promise<void> {
+    await this.prepareAction();
+
+    const locator = this.page.locator(selector);
+    await locator.focus({ timeout: options?.timeout });
+
+    if (isUndefined(this.options.typeDelay)) {
+      await locator.type(text, { timeout: options?.timeout });
     }
+    else {
+      for (const char of text) {
+        await locator.type(char, { timeout: options?.timeout });
+        await delay(options?.delay ?? this.options.typeDelay);
+      }
+    }
+  }
 
-    return handle;
+  async selectOption(selector: string, value: string | string[], options?: WaitOptions): Promise<void> {
+    await this.prepareAction();
+
+    const locator = this.page.locator(selector);
+    await locator.selectOption(value, { timeout: options?.timeout });
+  }
+
+  async click(selector: string, options?: WaitOptions): Promise<void> {
+    await this.prepareAction();
+
+    const locator = this.page.locator(selector);
+    await locator.click({ delay: 50, timeout: options?.timeout });
+  }
+
+  async getValue(selector: string, options?: WaitOptions): Promise<string> {
+    const locator = this.page.locator(selector);
+    return locator.inputValue({ timeout: options?.timeout });
+  }
+
+  async waitForElement(selector: string, options?: WaitOptions): Promise<void> {
+    const locator = this.page.locator(selector);
+    return locator.waitFor({ timeout: options?.timeout });
+  }
+
+  async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {
+    const createPdfOptions = convertPdfOptions(options);
+    return withTimeout(options.timeout ?? 30 * millisecondsPerSecond, this.page.pdf(createPdfOptions), { errorMessage: 'Rendering pdf timed out.' });
+  }
+
+  renderPdfStream(options: PdfRenderOptions & Abortable = {}): ReadableStream<Uint8Array> {
+    return readableStreamFromPromise(async () => {
+      const buffer = await this.renderPdf(options);
+
+      return new ReadableStream({
+        pull(controller) {
+          controller.enqueue(buffer);
+          controller.close();
+        }
+      });
+    });
   }
 
   private async prepareAction(): Promise<void> {
     await delay(this.options.actionDelay);
-    await this.waitForIdle();
+    await this.waitForNetworkIdle();
   }
 }
 
@@ -203,7 +193,7 @@ async function delay(milliseconds: Delay | undefined): Promise<void> {
   }
 }
 
-function convertPdfOptions(options: PdfRenderOptions): puppeteer.PDFOptions {
+function convertPdfOptions(options: PdfRenderOptions): Parameters<Page['pdf']>[0] {
   const margin = isUndefined(options.margin)
     ? undefined
     : isObject(options.margin)
@@ -221,7 +211,6 @@ function convertPdfOptions(options: PdfRenderOptions): puppeteer.PDFOptions {
     landscape: options.landscape,
     width: options.width,
     height: options.height,
-    omitBackground: options.omitDefaultBackground,
     printBackground: options.renderBackground,
     margin,
     displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),

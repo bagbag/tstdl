@@ -116,7 +116,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
 
       if (connections > 0) {
         this.logger.info(`Waiting for ${connections} connections to end`);
-        await cancelableTimeout(250, CancellationToken.fromObservable(close$));
+        await cancelableTimeout(250, CancellationToken.from(close$));
       }
     }
 
