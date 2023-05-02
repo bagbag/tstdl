@@ -42,7 +42,7 @@ export type CreateEffectOptions = {
   allowSignalWrites?: boolean,
 
   /**
-   * Immediately run effect after creation without scheduling for advanced use cases.
+   * Immediately run effect after creation without scheduling - for advanced use cases.
    */
   runImmediately?: boolean
 };

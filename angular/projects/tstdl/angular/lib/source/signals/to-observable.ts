@@ -1,14 +1,14 @@
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-
 import { Observable } from 'rxjs';
 import type { Signal } from './api';
 import { effect } from './effect';
+import { untracked } from './untracked';
+
+export type ToObservableOptions = {
+  /**
+   * Immediately run inner effect after creation without scheduling - for advanced use cases.
+   */
+  emitImmediately: boolean
+};
 
 /**
  * Exposes the value of an Angular `Signal` as an RxJS `Observable`.
@@ -16,19 +16,18 @@ import { effect } from './effect';
  * The signal's value will be propagated into the `Observable`'s subscribers using an `effect`.
  *
  * `toObservable` must be called in an injection context.
- *
- * @developerPreview
  */
-export function toObservable<T>(source: Signal<T>): Observable<T> {
+export function toObservable<T>(source: Signal<T>, options?: ToObservableOptions): Observable<T> {
   return new Observable((subscriber) => {
     const effectRef = effect(() => {
       try {
-        subscriber.next(source());
+        const value = source();
+        untracked(() => subscriber.next(value));
       }
       catch (error) {
-        subscriber.error(error);
+        untracked(() => subscriber.error(error));
       }
-    }, { allowSignalWrites: true, runImmediately: true });
+    }, { allowSignalWrites: true, runImmediately: options?.emitImmediately });
 
     return () => effectRef.destroy();
   });

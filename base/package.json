@@ -8,14 +8,16 @@
   "type": "module",
   "scripts": {
     "build": "tsc && tsc-alias",
-    "build:watch": "tsc && (concurrently --raw 'tsc --watch' 'tsc-alias --watch')",
+    "build:watch": "tsc && concurrently npm:tsc:watch npm:tsc-alias:watch",
     "build:production": "rm -rf dist && npm run build && npm run build:production:cjs && npm run build:production:copy-files",
     "build:production:cjs": "esbuild `find dist \\( -name '*.js' -o -name '*.jsx' \\)` --outdir=dist --allow-overwrite --format=cjs",
     "build:production:copy-files": "cp package.json .eslintrc.json tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && sed -i 's/\"type\": \"module\",/\"type\": \"commonjs\",/g' dist/package.json",
     "build:docs": "typedoc",
     "build:docs-watch": "typedoc --watch",
     "lint": "eslint -c .eslintrc.json --ext .ts .",
-    "pub": "npm run build:production && rm -vf dist/test* && npm publish dist/"
+    "pub": "npm run build:production && rm -vf dist/test* && npm publish dist/",
+    "tsc:watch": "tsc --watch",
+    "tsc-alias:watch": "tsc-alias --watch"
   },
   "dependencies": {
     "luxon": "^3.3",
