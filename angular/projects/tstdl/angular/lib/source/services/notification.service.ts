@@ -1,7 +1,6 @@
 import type { DynamicText } from '@tstdl/base/text';
 import type { Record, SimplifyObject, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
-import type { ReactiveValue } from '../types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
 export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> =
@@ -18,7 +17,7 @@ export type MessageBoxInputOutput<T extends MessageBoxInput> =
 export type MessageBoxAction<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
   text: DynamicText,
   value?: T,
-  disableOnInvalidInputs?: ReactiveValue<boolean>,
+  disableOnInvalidInputs?: boolean,
   handler?: (value: T, inputs: MessageBoxInputsOutput<I>) => any | Promise<any>
 };
 
@@ -26,17 +25,17 @@ export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
 type MessageBoxInputBase<Type extends string> = {
   type: Type,
-  enabled?: ReactiveValue<boolean>,
-  required?: ReactiveValue<boolean>
+  enabled?: boolean,
+  required?: boolean
 };
 
 export type MessageBoxTextInput = MessageBoxInputBase<'text'> & {
-  inputType?: ReactiveValue<InputType>,
-  mode?: ReactiveValue<InputMode>,
+  inputType?: InputType,
+  mode?: InputMode,
   label?: DynamicText,
   placeholder?: DynamicText,
   initialValue?: any,
-  pattern?: ReactiveValue<string | RegExp>,
+  pattern?: string | RegExp,
   attributes?: TypedOmit<InputAttributes, 'type' | 'mode' | 'placeholder' | 'required' | 'value' | 'pattern'>,
   validator?: (value: any) => boolean
 };
@@ -47,7 +46,7 @@ export type MessageBoxSelectInputItem<T> = {
 };
 
 export type MessageBoxSelectInput<T> = MessageBoxInputBase<'select'> & {
-  items: ReactiveValue<MessageBoxSelectInputItem<T>[]>,
+  items: MessageBoxSelectInputItem<T>[],
   label?: DynamicText,
   initialValue?: T
 };
