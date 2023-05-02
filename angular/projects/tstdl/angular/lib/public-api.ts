@@ -6,5 +6,6 @@ export * from './source/pipes';
 export * from './source/services';
 export * from './source/signals';
 export * from './source/tstdl-angular.module';
+export * from './source/types';
 export * from './source/utils';
 export * from './source/utils/rxjs';

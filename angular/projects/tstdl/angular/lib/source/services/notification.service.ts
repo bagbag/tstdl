@@ -1,6 +1,7 @@
 import type { DynamicText } from '@tstdl/base/text';
 import type { Record, SimplifyObject, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
+import type { ReactiveValue } from '../types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
 export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> =
@@ -17,22 +18,25 @@ export type MessageBoxInputOutput<T extends MessageBoxInput> =
 export type MessageBoxAction<T = any, I extends MessageBoxInputs = MessageBoxInputs> = {
   text: DynamicText,
   value?: T,
-  disableOnInvalidInputs?: boolean,
+  disableOnInvalidInputs?: ReactiveValue<boolean>,
   handler?: (value: T, inputs: MessageBoxInputsOutput<I>) => any | Promise<any>
 };
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
-type MessageBoxInputBase<Type extends string> = { type: Type };
+type MessageBoxInputBase<Type extends string> = {
+  type: Type,
+  enabled?: ReactiveValue<boolean>,
+  required?: ReactiveValue<boolean>
+};
 
 export type MessageBoxTextInput = MessageBoxInputBase<'text'> & {
-  inputType?: InputType,
-  mode?: InputMode,
+  inputType?: ReactiveValue<InputType>,
+  mode?: ReactiveValue<InputMode>,
   label?: DynamicText,
   placeholder?: DynamicText,
   initialValue?: any,
-  required?: boolean,
-  pattern?: string | RegExp,
+  pattern?: ReactiveValue<string | RegExp>,
   attributes?: TypedOmit<InputAttributes, 'type' | 'mode' | 'placeholder' | 'required' | 'value' | 'pattern'>,
   validator?: (value: any) => boolean
 };
@@ -43,10 +47,9 @@ export type MessageBoxSelectInputItem<T> = {
 };
 
 export type MessageBoxSelectInput<T> = MessageBoxInputBase<'select'> & {
+  items: ReactiveValue<MessageBoxSelectInputItem<T>[]>,
   label?: DynamicText,
-  items: MessageBoxSelectInputItem<T>[],
-  initialValue?: T,
-  required?: boolean
+  initialValue?: T
 };
 
 export type MessageBoxInput<T = any> = MessageBoxTextInput | MessageBoxSelectInput<T>;
