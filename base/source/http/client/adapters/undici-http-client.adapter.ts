@@ -6,7 +6,7 @@ import { isDefined } from '#/utils/type-guards.js';
 import { Readable } from 'node:stream';
 import type { ReadableStream } from 'node:stream/web';
 import type { Dispatcher } from 'undici';
-import { errors as undiciErrors, request } from 'undici';
+import { request, errors as undiciErrors } from 'undici';
 import type { HttpClientRequest } from '../http-client-request.js';
 import { HttpClientResponse } from '../http-client-response.js';
 import { HttpClientAdapter } from '../http-client.adapter.js';
@@ -61,7 +61,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
     try {
       const response = await request(httpClientRequest.url, {
         method: httpClientRequest.method,
-        signal: httpClientRequest.abortToken.asAbortSignal,
+        signal: httpClientRequest.abortToken.asAbortSignal(),
         headers: httpClientRequest.headers.asNormalizedObject(),
         body,
         headersTimeout: httpClientRequest.timeout,
