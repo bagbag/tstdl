@@ -1,6 +1,7 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
 import { objectKeys } from '#/utils/object/object.js';
-import type { BrowserType, LaunchOptions } from 'playwright';
+import { isFunction } from '#/utils/type-guards.js';
+import type { BrowserType, ElementHandle, LaunchOptions, Locator } from 'playwright';
 import { chromium, firefox, webkit } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
@@ -45,4 +46,15 @@ export function getBrowserType(type: string | undefined): BrowserType {
   }
 
   return browserType;
+}
+
+
+const exclusiveLocatorKey: Exclude<keyof Locator, keyof ElementHandle> = 'locator';
+export function isLocator(value: Locator | ElementHandle): value is Locator {
+  return isFunction((value as Locator)[exclusiveLocatorKey]);
+}
+
+const exclusiveElementHandleKey: Exclude<keyof ElementHandle, keyof Locator> = '$';
+export function isElementHandle(value: Locator | ElementHandle): value is ElementHandle {
+  return isFunction((value as ElementHandle)[exclusiveElementHandleKey]);
 }

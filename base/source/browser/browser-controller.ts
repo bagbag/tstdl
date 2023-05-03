@@ -5,11 +5,10 @@ import type { Injectable } from '#/container/interfaces.js';
 import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import type { BrowserContextControllerOptions, BrowserContextState, NewPageOptions } from './browser-context-controller.js';
+import type { BrowserContextState, NewPageOptions } from './browser-context-controller.js';
 import { BrowserContextController } from './browser-context-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
 import { BrowserService } from './browser.service.js';
-import type { PageController, PageControllerInternal } from './page-controller.js';
 import { mergeNewBrowserContextOptions } from './utils.js';
 
 export type BrowserControllerOptions = {
@@ -20,7 +19,7 @@ export type NewBrowserContextOptions = {
   state?: BrowserContextState,
   locale?: string,
   extraHttpHeaders?: Record<string, string>,
-  controllerOptions?: BrowserContextControllerOptions,
+  defaultNewPageOptions?: NewPageOptions,
   viewport?: { width: number, height: number } | null,
   proxy?: { server: string, bypass?: string, username?: string, password?: string }
 };
@@ -61,26 +60,7 @@ export class BrowserController implements AsyncDisposable, Injectable<BrowserCon
       extraHTTPHeaders: mergedOptions.extraHttpHeaders
     });
 
-    return new BrowserContextController(context, mergedOptions.controllerOptions);
-  }
-
-  /**
-   * Creates a new context and a new page. Context is automatically closed on page close.
-   * Only use for isolated or "use once" scenarios, otherwise all the contexts are more expensive than using a single context.
-   */
-  async newPage(options?: NewBrowserContextOptions & NewPageOptions): Promise<PageController> {
-    const context = await this.newContext(options);
-
-    try {
-      const page = await context.newPage(options);
-      (page as unknown as PageControllerInternal).ownedContext = context;
-
-      return page;
-    }
-    catch (error) {
-      await context.close();
-      throw error;
-    }
+    return new BrowserContextController(context, mergedOptions);
   }
 
   async close(): Promise<void> {

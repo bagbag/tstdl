@@ -8,10 +8,11 @@ import { timeout } from '#/utils/timing.js';
 async function main(): Promise<void> {
   const browserService = await container.resolveAsync(BrowserService);
   const browser = await browserService.newBrowser({ headless: false });
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  const page = await context.newPage();
 
   await page.navigate('https://google.com');
-  await page.click('//div[text() = \'Alle ablehnen\']');
+  await page.getBySelector('//div[text() = \'Alle ablehnen\']').click();
 
   await timeout(1000);
   const pdf = await page.renderPdf();
@@ -19,7 +20,7 @@ async function main(): Promise<void> {
   writeFileSync('/tmp/pdf.pdf', pdf);
 
   await page.navigate('file:///tmp/pdf.pdf');
-  await browser.waitForClose();
+  await page.waitForClose();
 }
 
 Application.run(main);

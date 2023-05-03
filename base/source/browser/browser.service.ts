@@ -7,7 +7,7 @@ import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import { BrowserContextController } from './browser-context-controller.js';
-import type { BrowserControllerOptions, NewBrowserContextOptions } from './browser-controller.js';
+import type { NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
 import { getBrowserType, getLaunchOptions, mergeNewBrowserContextOptions } from './utils.js';
 
@@ -29,7 +29,7 @@ export type NewBrowserOptions = {
   /** @deprecated should be avoided */
   browserArguments?: string[],
 
-  controllerOptions?: BrowserControllerOptions
+  defaultNewContextOptions?: NewBrowserContextOptions
 };
 
 @singleton()
@@ -64,12 +64,12 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     this.browsers.add(browser);
     browser.once('disconnected', () => this.browsers.delete(browser));
 
-    return new BrowserController(browser, mergedOptions.controllerOptions);
+    return new BrowserController(browser, { defaultNewContextOptions: mergedOptions.defaultNewContextOptions });
   }
 
   async newPersistentContext(dataDirectory: string, browserOptions: NewBrowserOptions = {}, contextOptions: NewBrowserContextOptions = {}): Promise<BrowserContextController> {
     const mergedBrowserOptions: NewBrowserOptions = { ...this.options?.defaultNewBrowserOptions, ...browserOptions };
-    const mergedContextOptions: NewBrowserContextOptions = mergeNewBrowserContextOptions(this.options?.defaultNewBrowserOptions?.controllerOptions?.defaultNewContextOptions, browserOptions.controllerOptions?.defaultNewContextOptions, contextOptions);
+    const mergedContextOptions: NewBrowserContextOptions = mergeNewBrowserContextOptions(this.options?.defaultNewBrowserOptions?.defaultNewContextOptions, browserOptions.defaultNewContextOptions, contextOptions);
     const launchOptions = getLaunchOptions(mergedBrowserOptions);
 
     const context = await getBrowserType(mergedBrowserOptions.browser).launchPersistentContext(dataDirectory, {
@@ -83,7 +83,7 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     this.persistentBrowserContexts.add(context);
     context.once('close', () => this.persistentBrowserContexts.delete(context));
 
-    return new BrowserContextController(context, mergedBrowserOptions.controllerOptions?.defaultNewContextOptions?.controllerOptions);
+    return new BrowserContextController(context, mergedBrowserOptions.defaultNewContextOptions);
   }
 
   async dispose(): Promise<void> {

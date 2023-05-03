@@ -2,46 +2,23 @@ import type { Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import type { NonUndefinable, SimplifyObject } from '#/types.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
-import { timeout, withTimeout } from '#/utils/timing.js';
-import { assertNotNull, isDefined, isNumber, isObject, isUndefined } from '#/utils/type-guards.js';
+import { withTimeout } from '#/utils/timing.js';
+import { isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
-import type { BrowserContextController } from './browser-context-controller.js';
+import type { Delay, ElementControllerOptions } from './element-controller.js';
+import { ElementController } from './element-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
-
-export type Delay = number | DelayProvider;
-export type DelayProvider = () => number;
+import type { Abortable } from './types.js';
 
 export type PageControllerOptions = {
-  actionDelay?: Delay,
-  typeDelay?: Delay
-};
-
-export type WaitOptions = {
-  timeout?: number
-};
-
-export type LoadState = 'load' | 'domcontentloaded' | 'networkidle';
-
-export type WaitForStateOptions = {
-  waitUntil: LoadState
-};
-
-export type DelayOptions = {
-  delay?: Delay
-};
-
-export type Abortable = {
-  abort?: AbortSignal
-};
-
-/** @deprecated for internal use only */
-export type PageControllerInternal = {
-  ownedContext?: BrowserContextController
+  defaultActionDelay?: Delay,
+  defaultTypeDelay?: Delay
 };
 
 export class PageController implements AsyncDisposable {
-  private readonly ownedContext?: BrowserContextController;
+  private readonly elementControllerOptions: ElementControllerOptions;
 
   /** @deprecated should be avoided */
   readonly page: Page;
@@ -50,6 +27,8 @@ export class PageController implements AsyncDisposable {
   constructor(page: Page, options: PageControllerOptions = {}) {
     this.page = page;
     this.options = options;
+
+    this.elementControllerOptions = { actionDelay: this.options.defaultActionDelay, typeDelay: this.options.defaultTypeDelay };
   }
 
   async [disposeAsync](): Promise<void> {
@@ -57,24 +36,19 @@ export class PageController implements AsyncDisposable {
   }
 
   async close(): Promise<void> {
-    if (isDefined(this.ownedContext)) {
-      await this.ownedContext.close();
-    }
-    else {
-      await this.page.close();
-    }
+    await this.page.close();
   }
 
-  async setContent(html: string, options?: WaitOptions & WaitForStateOptions): Promise<void> {
-    await this.page.setContent(html, { timeout: options?.timeout, waitUntil: options?.waitUntil });
+  async setContent(...args: Parameters<Page['setContent']>): Promise<void> {
+    await this.page.setContent(...args);
   }
 
   async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
     await this.page.setExtraHTTPHeaders(headers);
   }
 
-  async navigate(url: string, options?: WaitOptions & WaitForStateOptions): Promise<void> {
-    await this.page.goto(url, { timeout: options?.timeout, waitUntil: options?.waitUntil });
+  async navigate(...args: Parameters<Page['goto']>): Promise<void> {
+    await this.page.goto(...args);
   }
 
   async waitForClose(): Promise<void> {
@@ -88,72 +62,47 @@ export class PageController implements AsyncDisposable {
     });
   }
 
-  async waitForState(state: LoadState, options?: WaitOptions): Promise<void> {
-    await this.page.waitForLoadState(state, { timeout: options?.timeout });
+  async waitForLoadState(...args: Parameters<Page['waitForLoadState']>): Promise<void> {
+    await this.page.waitForLoadState(...args);
   }
 
-  async waitForNetworkIdle(options?: WaitOptions): Promise<void> {
-    await this.page.waitForLoadState('networkidle', { timeout: options?.timeout });
+  async waitForUrl(...args: Parameters<Page['waitForURL']>): Promise<void> {
+    await this.page.waitForURL(...args);
   }
 
-  async waitForUrl(urlOrPredicate: string | RegExp | ((url: URL) => boolean), options?: WaitOptions): Promise<void> {
-    await this.page.waitForURL(urlOrPredicate, { timeout: options?.timeout });
+  getBySelector(selector: string, options?: SimplifyObject<Pick<NonUndefinable<Parameters<Page['locator']>[1]>, 'hasText' | 'hasNotText'>>): ElementController {
+    const locator = this.page.locator(selector, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async waitForFrame(selector: string, options?: WaitOptions): Promise<PageController> {
-    const handle = await this.page.waitForSelector(selector, { timeout: options?.timeout });
-    const frame = await handle.contentFrame();
-    assertNotNull(frame, 'Could not get frame for specified selector.');
-
-    return new PageController(frame.page());
+  getByRole(role: Parameters<Page['getByRole']>[0], options?: Parameters<Page['getByRole']>[1]): ElementController {
+    const locator = this.page.getByRole(role, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async fill(selector: string, text: string, options?: DelayOptions & WaitOptions): Promise<void> {
-    await this.prepareAction();
-
-    const locator = this.page.locator(selector);
-    await locator.fill(text, { timeout: options?.timeout });
+  getByLabel(text: Parameters<Page['getByLabel']>[0], options?: Parameters<Page['getByLabel']>[1]): ElementController {
+    const locator = this.page.getByLabel(text, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async type(selector: string, text: string, options?: DelayOptions & WaitOptions): Promise<void> {
-    await this.prepareAction();
-
-    const locator = this.page.locator(selector);
-    await locator.focus({ timeout: options?.timeout });
-
-    if (isUndefined(this.options.typeDelay)) {
-      await locator.type(text, { timeout: options?.timeout });
-    }
-    else {
-      for (const char of text) {
-        await locator.type(char, { timeout: options?.timeout });
-        await delay(options?.delay ?? this.options.typeDelay);
-      }
-    }
+  getByAltText(text: Parameters<Page['getByAltText']>[0], options?: Parameters<Page['getByAltText']>[1]): ElementController {
+    const locator = this.page.getByAltText(text, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async selectOption(selector: string, value: string | string[], options?: WaitOptions): Promise<void> {
-    await this.prepareAction();
-
-    const locator = this.page.locator(selector);
-    await locator.selectOption(value, { timeout: options?.timeout });
+  getByPlaceholder(text: Parameters<Page['getByPlaceholder']>[0], options?: Parameters<Page['getByPlaceholder']>[1]): ElementController {
+    const locator = this.page.getByPlaceholder(text, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async click(selector: string, options?: WaitOptions): Promise<void> {
-    await this.prepareAction();
-
-    const locator = this.page.locator(selector);
-    await locator.click({ delay: 50, timeout: options?.timeout });
+  getByText(text: Parameters<Page['getByText']>[0], options?: Parameters<Page['getByText']>[1]): ElementController {
+    const locator = this.page.getByText(text, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
-  async getValue(selector: string, options?: WaitOptions): Promise<string> {
-    const locator = this.page.locator(selector);
-    return locator.inputValue({ timeout: options?.timeout });
-  }
-
-  async waitForElement(selector: string, options?: WaitOptions): Promise<void> {
-    const locator = this.page.locator(selector);
-    return locator.waitFor({ timeout: options?.timeout });
+  getByTitle(text: Parameters<Page['getByTitle']>[0], options?: Parameters<Page['getByTitle']>[1]): ElementController {
+    const locator = this.page.getByTitle(text, options);
+    return new ElementController(locator, this, this.elementControllerOptions);
   }
 
   async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {
@@ -172,24 +121,6 @@ export class PageController implements AsyncDisposable {
         }
       });
     });
-  }
-
-  private async prepareAction(): Promise<void> {
-    await delay(this.options.actionDelay);
-    await this.waitForNetworkIdle();
-  }
-}
-
-async function delay(milliseconds: Delay | undefined): Promise<void> {
-  if (isUndefined(milliseconds)) {
-    return;
-  }
-
-  if (isNumber(milliseconds)) {
-    await timeout(milliseconds);
-  }
-  else {
-    await timeout(milliseconds());
   }
 }
 

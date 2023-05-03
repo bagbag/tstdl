@@ -130,14 +130,20 @@ export class PdfService implements Injectable<PdfServiceArgument> {
 
   private renderStream(handler: (page: PageController) => Promise<PdfServiceRenderOptions | undefined | void>, options: PdfServiceRenderOptions = {}): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
-      const page = isDefined(options.browserContext)
-        ? await options.browserContext.newPage()
-        : await this.browserController.newPage({ locale: options.locale ?? this.defaultLocale });
+      const context = options.browserContext ?? await this.browserController.newContext({ locale: options.locale ?? this.defaultLocale });
+      const page = await context.newPage();
 
       const optionsFromHandler = await handler(page);
       const pdfStream = page.renderPdfStream({ ...optionsFromHandler, ...options });
 
-      const close = async (): Promise<void> => page.close();
+      const close = async (): Promise<void> => {
+        if (isDefined(options.browserContext)) {
+          await page.close();
+        }
+        else {
+          await context.close();
+        }
+      };
 
       return finalizeStream(pdfStream, {
         beforeDone: close,
