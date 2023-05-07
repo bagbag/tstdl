@@ -242,6 +242,10 @@ export class HttpClient implements Injectable<HttpClientArgument> {
 
 function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
   async function buildUrlParametersMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
+    if (!request.mapParameters) {
+      return next(request);
+    }
+
     const modifiedRequest = mapParameters(request, baseUrl);
     return next(modifiedRequest);
   }
@@ -291,7 +295,7 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
   try {
     const response = await next(request);
 
-    if (request.throwOnNon200 && ((response.statusCode < 200) || (response.statusCode >= 300))) {
+    if (request.throwOnNon200 && ((response.statusCode < 200) || (response.statusCode >= 400))) {
       const httpError = await HttpError.create(HttpErrorReason.Non200StatusCode, request, response, `Status code ${response.statusCode}.`);
       throw httpError;
     }

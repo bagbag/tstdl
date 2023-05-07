@@ -68,11 +68,15 @@ export class HttpClientRequest implements Disposable {
    * automatically maps parameters to `urlParameters`, `query` and `body`
    * depending on whether the `url` has parameters specified, the request `method`
    * and if there is already a `body` or not
+   * @see mapParameters
    * @see mapParametersToUrl
    * @see mapParametersToQuery
    * @see mapParametersToBody
    */
   parameters: UndefinableJsonObject | undefined;
+
+  /** if false, disable parameters mapping completely */
+  mapParameters: boolean;
   mapParametersToUrl: boolean;
   mapParametersToQuery: boolean;
   mapParametersToBody: boolean;
@@ -152,6 +156,7 @@ export class HttpClientRequest implements Disposable {
 
     this.headers = new HttpHeaders(requestOptions.headers);
     this.parameters = requestOptions.parameters;
+    this.mapParameters = requestOptions.mapParameters ?? true;
     this.mapParametersToUrl = requestOptions.mapParametersToUrl ?? true;
     this.mapParametersToQuery = requestOptions.mapParametersToQuery ?? true;
     this.mapParametersToBody = requestOptions.mapParametersToBody ?? true;
