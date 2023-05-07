@@ -11,6 +11,16 @@ export const CORE_LOGGER = injectionToken<Logger>('core logger');
 
 export const disposer: AsyncDisposer = new AsyncDisposer();
 
+let _isDevMode = true;
+
+export function isDevMode(): boolean {
+  return _isDevMode;
+}
+
+export function enableProductionMode(): void {
+  _isDevMode = false;
+}
+
 export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 5): Promise<void> {
   let triesLeft = maxTries;
   let success = false;
@@ -42,6 +52,7 @@ export async function disposeInstances(): Promise<void> {
 }
 
 export type CoreConfiguration = {
+  production?: boolean,
   logger?: InjectionToken<Logger, LoggerArgument>,
   logLevel?: LogLevel,
   coreLogPrefix?: string
@@ -50,6 +61,10 @@ export type CoreConfiguration = {
 let coreLogPrefix: string | undefined;
 
 export function configureTstdl(config: CoreConfiguration = {}): void {
+  if (config.production == true) {
+    enableProductionMode();
+  }
+
   container.register(Logger, { useToken: config.logger ?? ConsoleLogger });
 
   container.registerSingleton<LogLevel, LogLevel>(

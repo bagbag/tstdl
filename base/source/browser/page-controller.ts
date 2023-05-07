@@ -1,11 +1,11 @@
-import type { Page } from 'playwright';
+import type { ElementHandle, Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import type { NonUndefinable, SimplifyObject } from '#/types.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { withTimeout } from '#/utils/timing.js';
-import { isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import type { Delay, ElementControllerOptions } from './element-controller.js';
 import { ElementController } from './element-controller.js';
@@ -68,6 +68,37 @@ export class PageController implements AsyncDisposable {
 
   async waitForUrl(...args: Parameters<Page['waitForURL']>): Promise<void> {
     await this.page.waitForURL(...args);
+  }
+
+  async waitForElement(selector: string, options: Parameters<Page['waitForSelector']>[1]): Promise<ElementHandle> {
+    const element = await this.page.waitForSelector(selector, options);
+
+    if (isNull(element)) {
+      throw new Error('Element not found.');
+    }
+
+    return element;
+  }
+
+  async waitForFrame(selector: string, options: Parameters<Page['waitForSelector']>[1]): Promise<PageController> {
+    const element = await this.waitForElement(selector, options);
+    const frame = await element.contentFrame();
+
+    if (isNull(frame)) {
+      throw new Error('Element is not a frame.');
+    }
+
+    return new PageController(frame.page(), this.options);
+  }
+
+  getFrame(selector: Parameters<Page['frame']>[0]): PageController {
+    const frame = this.page.frame(selector);
+
+    if (isNull(frame)) {
+      throw new Error('Frame not found.');
+    }
+
+    return new PageController(frame.page(), this.options);
   }
 
   getBySelector(selector: string, options?: SimplifyObject<Pick<NonUndefinable<Parameters<Page['locator']>[1]>, 'hasText' | 'hasNotText'>>): ElementController {

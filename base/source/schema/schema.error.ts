@@ -5,6 +5,7 @@ import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import type { ErrorExtraInfo } from '#/utils/format-error.js';
 import { isArray, isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards.js';
+import { getExpectString } from './schema.js';
 import type { ValueType } from './types/index.js';
 import { getValueTypeName } from './utils/index.js';
 
@@ -42,12 +43,12 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
-    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
+    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getExpectString(exp)));
     const gotName = isString(got) ? got : getValueTypeName(got);
 
     const expectedString = expectedNames.length == 1
       ? expectedNames[0]!
-      : `[${expectedNames.join(', ')}]`;
+      : `(${expectedNames.join(' | ')})`;
 
     const customMessage = isDefined(options.customMessage) ? `: ${options.customMessage}` : '.';
     const message = `Expected ${expectedString} but got ${gotName}${customMessage}`;

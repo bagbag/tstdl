@@ -172,7 +172,6 @@ export type CoerceResult =
   | { success: true, value: any, error?: undefined }
   | { success: false, value?: undefined, error: SchemaError };
 
-
 export const transformErrorResultSymbol = Symbol('Transform error');
 export type TransformErrorResult = { [transformErrorResultSymbol]: SchemaError };
 

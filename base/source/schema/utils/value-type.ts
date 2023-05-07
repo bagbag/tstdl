@@ -3,7 +3,9 @@ import { toArray } from '#/utils/array/array.js';
 import { isArray, isFunction, isNull, isString, isUndefined } from '#/utils/type-guards.js';
 import type { SchemaTestable } from '../schema.js';
 import type { ResolvedValueType, ValueType } from '../types/types.js';
-import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes } from '../types/types.js';
+import { isDeferredValueType, isObjectSchema, isTypeSchema, isValueSchema, primitiveConstructorSet, resolveValueType, resolveValueTypes } from '../types/types.js';
+
+const lowercaseTypesSet = new Set([...primitiveConstructorSet, Object, Array]);
 
 export function getValueType(value: unknown): ResolvedValueType {
   if (isUndefined(value)) {
@@ -33,12 +35,13 @@ export function getValueTypeName(valueType: ValueType): string {
 
   return isString(resolvedValueType)
     ? resolvedValueType
-    : resolvedValueType.name;
+    : lowercaseTypesSet.has(resolvedValueType)
+      ? resolvedValueType.name.toLowerCase()
+      : resolvedValueType.name;
 }
 
 export function getSchemaTypeNames(schema: SchemaTestable): string[] {
-  return getSchemaValueTypes(schema)
-    .map((valueType) => (isString(valueType) ? valueType : valueType.name));
+  return getSchemaValueTypes(schema).map(getValueTypeName);
 }
 
 export function getSchemaValueTypes(schema: OneOrMany<SchemaTestable>): ResolvedValueType[] {
