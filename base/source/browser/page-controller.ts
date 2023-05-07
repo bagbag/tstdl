@@ -56,7 +56,7 @@ export class PageController extends DocumentController implements AsyncDisposabl
    * @param frameSelector frame name, url or url predicate
    * @returns
    */
-  getFrame(frameSelector: Parameters<Page['frame']>[0]): FrameController {
+  frame(frameSelector: Parameters<Page['frame']>[0]): FrameController {
     const frame = this.page.frame(frameSelector);
 
     if (isNull(frame)) {

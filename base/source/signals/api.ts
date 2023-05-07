@@ -1,4 +1,3 @@
-import * as AngularCore from '@angular/core';
 import type * as Types from './implementation/index.js';
 
 export type { CreateComputedOptions, CreateEffectOptions, CreateSignalOptions, EffectRef, Signal, WritableSignal } from './implementation/index.js';
@@ -19,18 +18,10 @@ export let untracked!: typeof Types.untracked;
 export let isSignal!: typeof Types.isSignal;
 /* eslint-enable import/no-mutable-exports */
 
-function configureSignals(configuration: SignalsConfiguration): void {
+export function configureSignals(configuration: SignalsConfiguration): void {
   signal = configuration.signal;
   computed = configuration.computed;
   effect = configuration.effect;
   untracked = configuration.untracked;
   isSignal = configuration.isSignal;
 }
-
-configureSignals({
-  signal: AngularCore.signal,
-  computed: AngularCore.computed,
-  effect: AngularCore.effect,
-  untracked: AngularCore.untracked,
-  isSignal: AngularCore.isSignal
-});

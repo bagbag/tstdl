@@ -55,7 +55,7 @@ export class DocumentController extends LocatorController {
     return element;
   }
 
-  getInFrame(frameSelector: string): LocatorController {
+  locateInFrame(frameSelector: string): LocatorController {
     const locator = this.document.frameLocator(frameSelector);
     return new LocatorController(locator, this.elementControllerOptions);
   }
