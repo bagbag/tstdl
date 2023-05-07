@@ -24,10 +24,6 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    /** angular */
-    "@angular-eslint/template/eqeqeq": "off",
-    "@angular-eslint/no-host-metadata-property": ["error", { "allowStatic": true }],
-
     /** typescript */
     "@typescript-eslint/brace-style": ["error", "stroustrup", { "allowSingleLine": true }],
     "@typescript-eslint/consistent-type-definitions": "off",

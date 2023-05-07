@@ -16,6 +16,10 @@
         "./node_modules/@tstdl/base/.eslintrc.json"
       ],
       "rules": {
+        /** angular */
+        "@angular-eslint/template/eqeqeq": "off",
+        "@angular-eslint/no-host-metadata-property": ["error", { "allowStatic": true }],
+
         "@angular-eslint/directive-selector": [
           "error",
           {

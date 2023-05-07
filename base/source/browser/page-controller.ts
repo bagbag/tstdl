@@ -1,34 +1,32 @@
-import type { ElementHandle, Page } from 'playwright';
+import type { Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import type { NonUndefinable, SimplifyObject } from '#/types.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { withTimeout } from '#/utils/timing.js';
 import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
-import type { Delay, ElementControllerOptions } from './element-controller.js';
-import { ElementController } from './element-controller.js';
+import type { DocumentControllerOptions } from './document-controller.js';
+import { DocumentController } from './document-controller.js';
+import type { FrameControllerOptions } from './frame-controller.js';
+import { FrameController } from './frame-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
 import type { Abortable } from './types.js';
 
-export type PageControllerOptions = {
-  defaultActionDelay?: Delay,
-  defaultTypeDelay?: Delay
+export type PageControllerOptions = DocumentControllerOptions & {
+  defaultFrameControllerOptions?: FrameControllerOptions
 };
 
-export class PageController implements AsyncDisposable {
-  private readonly elementControllerOptions: ElementControllerOptions;
-
+export class PageController extends DocumentController implements AsyncDisposable {
   /** @deprecated should be avoided */
   readonly page: Page;
   readonly options: PageControllerOptions;
 
   constructor(page: Page, options: PageControllerOptions = {}) {
+    super(page, options, { pageControllerOptions: options, frameControllerOptions: options.defaultFrameControllerOptions ?? options });
+
     this.page = page;
     this.options = options;
-
-    this.elementControllerOptions = { actionDelay: this.options.defaultActionDelay, typeDelay: this.options.defaultTypeDelay };
   }
 
   async [disposeAsync](): Promise<void> {
@@ -39,16 +37,8 @@ export class PageController implements AsyncDisposable {
     await this.page.close();
   }
 
-  async setContent(...args: Parameters<Page['setContent']>): Promise<void> {
-    await this.page.setContent(...args);
-  }
-
   async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
     await this.page.setExtraHTTPHeaders(headers);
-  }
-
-  async navigate(...args: Parameters<Page['goto']>): Promise<void> {
-    await this.page.goto(...args);
   }
 
   async waitForClose(): Promise<void> {
@@ -62,78 +52,18 @@ export class PageController implements AsyncDisposable {
     });
   }
 
-  async waitForLoadState(...args: Parameters<Page['waitForLoadState']>): Promise<void> {
-    await this.page.waitForLoadState(...args);
-  }
-
-  async waitForUrl(...args: Parameters<Page['waitForURL']>): Promise<void> {
-    await this.page.waitForURL(...args);
-  }
-
-  async waitForElement(selector: string, options: Parameters<Page['waitForSelector']>[1]): Promise<ElementHandle> {
-    const element = await this.page.waitForSelector(selector, options);
-
-    if (isNull(element)) {
-      throw new Error('Element not found.');
-    }
-
-    return element;
-  }
-
-  async waitForFrame(selector: string, options: Parameters<Page['waitForSelector']>[1]): Promise<PageController> {
-    const element = await this.waitForElement(selector, options);
-    const frame = await element.contentFrame();
-
-    if (isNull(frame)) {
-      throw new Error('Element is not a frame.');
-    }
-
-    return new PageController(frame.page(), this.options);
-  }
-
-  getFrame(selector: Parameters<Page['frame']>[0]): PageController {
-    const frame = this.page.frame(selector);
+  /**
+   * @param frameSelector frame name, url or url predicate
+   * @returns
+   */
+  getFrame(frameSelector: Parameters<Page['frame']>[0]): FrameController {
+    const frame = this.page.frame(frameSelector);
 
     if (isNull(frame)) {
       throw new Error('Frame not found.');
     }
 
-    return new PageController(frame.page(), this.options);
-  }
-
-  getBySelector(selector: string, options?: SimplifyObject<Pick<NonUndefinable<Parameters<Page['locator']>[1]>, 'hasText' | 'hasNotText'>>): ElementController {
-    const locator = this.page.locator(selector, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByRole(role: Parameters<Page['getByRole']>[0], options?: Parameters<Page['getByRole']>[1]): ElementController {
-    const locator = this.page.getByRole(role, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByLabel(text: Parameters<Page['getByLabel']>[0], options?: Parameters<Page['getByLabel']>[1]): ElementController {
-    const locator = this.page.getByLabel(text, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByAltText(text: Parameters<Page['getByAltText']>[0], options?: Parameters<Page['getByAltText']>[1]): ElementController {
-    const locator = this.page.getByAltText(text, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByPlaceholder(text: Parameters<Page['getByPlaceholder']>[0], options?: Parameters<Page['getByPlaceholder']>[1]): ElementController {
-    const locator = this.page.getByPlaceholder(text, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByText(text: Parameters<Page['getByText']>[0], options?: Parameters<Page['getByText']>[1]): ElementController {
-    const locator = this.page.getByText(text, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
-  }
-
-  getByTitle(text: Parameters<Page['getByTitle']>[0], options?: Parameters<Page['getByTitle']>[1]): ElementController {
-    const locator = this.page.getByTitle(text, options);
-    return new ElementController(locator, this, this.elementControllerOptions);
+    return new FrameController(frame, this.options, this.forwardOptions);
   }
 
   async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {

@@ -1,11 +1,10 @@
+import type { ElementHandle, Locator } from 'playwright';
+
 import type { Merge, NonUndefinable, TypedOmit } from '#/types.js';
 import { timeout } from '#/utils/timing.js';
-import { assertNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import type { ValueOrProvider } from '#/utils/value-or-provider.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
-import type { ElementHandle, Locator } from 'playwright';
-import { PageController } from './page-controller.js';
-import { isLocator } from './utils.js';
 
 export type Delay = ValueOrProvider<number>;
 
@@ -30,12 +29,10 @@ type LocatorOptions<K extends keyof Locator, I extends keyof Parameters<Locator[
 
 export class ElementController {
   readonly locatorOrHandle: Locator | ElementHandle;
-  readonly pageController: PageController;
   readonly options: ElementControllerOptions;
 
-  constructor(locatorOrHandle: Locator | ElementHandle, pageController: PageController, options: ElementControllerOptions = {}) {
+  constructor(locatorOrHandle: Locator | ElementHandle, options: ElementControllerOptions = {}) {
     this.locatorOrHandle = locatorOrHandle;
-    this.pageController = pageController;
     this.options = options;
   }
 
@@ -78,24 +75,6 @@ export class ElementController {
 
   async getValue(options?: LocatorOptions<'inputValue', 0>): Promise<string> {
     return this.locatorOrHandle.inputValue(options);
-  }
-
-  /**
-   * Get PageController for element. Element must be a frame.
-   */
-  async getPage(options?: LocatorOptions<'elementHandle', 0>): Promise<PageController> {
-    const handle = isLocator(this.locatorOrHandle)
-      ? await this.locatorOrHandle.elementHandle(options)
-      : this.locatorOrHandle;
-
-    if (isNull(handle)) {
-      throw new Error('Could not get element handle.');
-    }
-
-    const frame = await (this.locatorOrHandle as ElementHandle).contentFrame();
-    assertNotNull(frame, 'Could not get content frame for element handle.');
-
-    return new PageController(frame.page(), this.pageController.options);
   }
 
   private async prepareAction(options?: ActionDelayOptions): Promise<void> {
