@@ -9,7 +9,8 @@ import { disposeAsync } from '#/disposable/disposable.js';
 import { BrowserContextController } from './browser-context-controller.js';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
-import { getBrowserType, getLaunchOptions, mergeNewBrowserContextOptions } from './utils.js';
+import { getBrowserType } from './module.js';
+import { getLaunchOptions, mergeNewBrowserContextOptions } from './utils.js';
 
 export class BrowserServiceOptions {
   defaultNewBrowserOptions?: NewBrowserOptions;
