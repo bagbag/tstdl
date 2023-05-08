@@ -1,8 +1,9 @@
 import type { FromEntries, ObjectLiteral, PickBy, Record } from '#/types.js';
+import type { IsEqual } from 'type-fest';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';
-import { isArray, isObject, isSymbol, isUndefined } from '../type-guards.js';
+import { isArray, isDefined, isObject, isSymbol, isUndefined } from '../type-guards.js';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
   return Object.hasOwn(obj, key);
@@ -63,6 +64,10 @@ export async function filterObjectAsync<T extends ObjectLiteral>(object: T, pred
   const entries = objectEntries(object);
   const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => predicate(value, key)));
   return Object.fromEntries(mappedEntries) as Partial<T>;
+}
+
+export function filterUndefinedObjectProperties<T extends ObjectLiteral>(object: T): { [P in keyof T]?: IsEqual<T[P], undefined> extends true ? never : Exclude<T[P], undefined> } {
+  return filterObject(object, isDefined) as T;
 }
 
 export function copyObjectProperties<T extends ObjectLiteral, U extends T>(source: T, target: U): void {

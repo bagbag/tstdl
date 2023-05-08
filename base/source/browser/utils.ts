@@ -1,10 +1,22 @@
 import { NotSupportedError } from '#/error/not-supported.error.js';
-import { objectKeys } from '#/utils/object/object.js';
-import { isFunction } from '#/utils/type-guards.js';
+import type { SimplifyObject, Unoptionalize } from '#/types.js';
+import { copyObjectProperties, filterUndefinedObjectProperties, objectKeys } from '#/utils/object/object.js';
+import { isFunction, isUndefined } from '#/utils/type-guards.js';
 import type { BrowserType, ElementHandle, LaunchOptions, Locator } from 'playwright';
 import { chromium, firefox, webkit } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
+
+const browserTypes = {
+  chromium,
+  firefox,
+  webkit
+};
+
+export function replaceBrowsers(browsers: SimplifyObject<Unoptionalize<Partial<typeof browserTypes>>>): void {
+  const filtered = filterUndefinedObjectProperties(browsers);
+  copyObjectProperties(filtered, browserTypes);
+}
 
 export function getLaunchOptions(options: NewBrowserOptions): LaunchOptions {
   const { windowSize, browserArguments, headless }: NewBrowserOptions = options;
@@ -24,25 +36,11 @@ export function mergeNewBrowserContextOptions(a: NewBrowserContextOptions | unde
   };
 }
 
-export function getBrowserType(type: string | undefined): BrowserType {
-  let browserType: BrowserType;
+export function getBrowserType(type: keyof typeof browserTypes | undefined): BrowserType {
+  const browserType = browserTypes[type ?? 'chromium'];
 
-  switch (type) {
-    case 'chromium':
-    case undefined:
-      browserType = chromium;
-      break;
-
-    case 'firefox':
-      browserType = firefox;
-      break;
-
-    case 'webkit':
-      browserType = webkit;
-      break;
-
-    default:
-      throw new NotSupportedError(`Browser type ${type} is not supported.`);
+  if (isUndefined(browserType)) {
+    throw new NotSupportedError(`Browser type ${type} is not supported.`);
   }
 
   return browserType;

@@ -104,9 +104,9 @@ export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> 
  */
 export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
 
-export type Unoptionalize<T extends object> = Simplify<OmitBy<T, undefined> & { [P in PropertiesOfType<T, undefined>]: T[P] | undefined }>;
+export type SimplifiedOptionalize<T extends object> = SimplifyObject<Optionalize<T>>;
 
-export type SimplifiedOptionalize<T extends object> = Simplify<Optionalize<T>>;
+export type Unoptionalize<T extends object> = SimplifyObject<OmitBy<T, undefined> & { [P in PropertiesOfType<T, undefined>]: T[P] | undefined }>;
 
 export type Merge<T1, T2> = SimplifyObject<Except<T1, Extract<keyof T1, keyof T2>> & T2>;
 
