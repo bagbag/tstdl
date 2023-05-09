@@ -6,6 +6,7 @@ import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import type { Json } from '#/types.js';
+import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { Opaque } from 'type-fest';
 import type { NewBrowserContextOptions } from './browser-controller.js';
@@ -59,8 +60,9 @@ export class BrowserContextController implements AsyncDisposable, Injectable<Bro
     return state as any as BrowserContextState;
   }
 
-  async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
-    await this.context.setExtraHTTPHeaders(headers);
+  async setExtraHttpHeaders(headers: Record<string, string | undefined>): Promise<void> {
+    const filtered = filterUndefinedFromRecord(headers);
+    await this.context.setExtraHTTPHeaders(filtered);
   }
 
   async newPage(options?: NewPageOptions): Promise<PageController> {

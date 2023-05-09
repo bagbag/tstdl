@@ -6,6 +6,8 @@ import { afterResolve, resolveArgumentType } from '#/container/interfaces.js';
 import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import { filterUndefinedFromRecord } from '#/utils/object/object.js';
+import { isDefined } from '#/utils/type-guards.js';
 import { BrowserContextController } from './browser-context-controller.js';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
@@ -78,7 +80,9 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
       locale: mergedContextOptions.locale,
       viewport: mergedContextOptions.viewport,
       proxy: mergedContextOptions.proxy,
-      extraHTTPHeaders: mergedContextOptions.extraHttpHeaders
+      userAgent: mergedContextOptions.userAgent,
+      colorScheme: mergedContextOptions.colorScheme,
+      extraHTTPHeaders: isDefined(mergedContextOptions.extraHttpHeaders) ? filterUndefinedFromRecord(mergedContextOptions.extraHttpHeaders) : undefined
     });
 
     this.persistentBrowserContexts.add(context);

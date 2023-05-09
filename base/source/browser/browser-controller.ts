@@ -5,6 +5,9 @@ import type { Injectable } from '#/container/interfaces.js';
 import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import type { Record } from '#/types.js';
+import { filterUndefinedFromRecord } from '#/utils/object/object.js';
+import { isDefined } from '#/utils/type-guards.js';
 import type { BrowserContextState, NewPageOptions } from './browser-context-controller.js';
 import { BrowserContextController } from './browser-context-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
@@ -17,8 +20,10 @@ export type BrowserControllerOptions = {
 
 export type NewBrowserContextOptions = {
   state?: BrowserContextState,
+  userAgent?: string,
+  colorScheme?: 'light' | 'dark' | 'no-preference',
   locale?: string,
-  extraHttpHeaders?: Record<string, string>,
+  extraHttpHeaders?: Record<string, string | undefined>,
   defaultNewPageOptions?: NewPageOptions,
   viewport?: { width: number, height: number } | null,
   proxy?: { server: string, bypass?: string, username?: string, password?: string }
@@ -54,10 +59,12 @@ export class BrowserController implements AsyncDisposable, Injectable<BrowserCon
 
     const context = await this.browser.newContext({
       storageState: mergedOptions.state as BrowserContextOptions['storageState'],
+      userAgent: mergedOptions.userAgent,
+      colorScheme: mergedOptions.colorScheme,
       locale: mergedOptions.locale,
       viewport: mergedOptions.viewport,
       proxy: mergedOptions.proxy,
-      extraHTTPHeaders: mergedOptions.extraHttpHeaders
+      extraHTTPHeaders: isDefined(mergedOptions.extraHttpHeaders) ? filterUndefinedFromRecord(mergedOptions.extraHttpHeaders) : undefined
     });
 
     return new BrowserContextController(context, mergedOptions);

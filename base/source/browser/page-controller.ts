@@ -2,6 +2,7 @@ import type { Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { withTimeout } from '#/utils/timing.js';
 import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
@@ -38,7 +39,8 @@ export class PageController extends DocumentController implements AsyncDisposabl
   }
 
   async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
-    await this.page.setExtraHTTPHeaders(headers);
+    const filtered = filterUndefinedFromRecord(headers);
+    await this.page.setExtraHTTPHeaders(filtered);
   }
 
   async waitForClose(): Promise<void> {

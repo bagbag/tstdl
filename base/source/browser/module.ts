@@ -8,7 +8,7 @@ import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { BrowserServiceOptions } from './browser.service.js';
 
 export type BrowserModuleOptions = {
-  browsers: {
+  browsers?: {
     chromium?: BrowserType,
     firefox?: BrowserType,
     webkit?: BrowserType
@@ -23,8 +23,10 @@ const browserTypes = {
 };
 
 export function configureBrowser(options: BrowserModuleOptions): void {
-  const filtered = filterUndefinedObjectProperties(options.browsers);
-  copyObjectProperties(filtered, browserTypes);
+  if (isDefined(options.browsers)) {
+    const filtered = filterUndefinedObjectProperties(options.browsers);
+    copyObjectProperties(filtered, browserTypes);
+  }
 
   if (isDefined(options.options)) {
     container.register(BrowserServiceOptions, { useValue: options.options });

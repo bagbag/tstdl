@@ -66,6 +66,10 @@ export async function filterObjectAsync<T extends ObjectLiteral>(object: T, pred
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 
+export function filterUndefinedFromRecord<T extends Record>(record: T): T extends Record<infer K, infer V> ? Record<K, Exclude<V, undefined>> : never {
+  return filterObject(record, isDefined) as T extends Record<infer K, infer V> ? Record<K, Exclude<V, undefined>> : never;
+}
+
 export function filterUndefinedObjectProperties<T extends ObjectLiteral>(object: T): { [P in keyof T]?: IsEqual<T[P], undefined> extends true ? never : Exclude<T[P], undefined> } {
   return filterObject(object, isDefined) as T;
 }
