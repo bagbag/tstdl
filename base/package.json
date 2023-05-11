@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.84.9",
+  "version": "0.84.10",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -20,7 +20,6 @@
     "tsc-alias:watch": "tsc-alias --watch"
   },
   "dependencies": {
-    "@angular/core": "^16.0.0",
     "luxon": "^3.3",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.8",

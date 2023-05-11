@@ -22,7 +22,7 @@ export type BrowserServiceArgument = BrowserServiceOptions;
 
 export type NewBrowserOptions = {
   browser?: 'chromium' | 'firefox' | 'webkit',
-  headless?: boolean,
+  headless?: boolean | 'new',
 
   windowSize?: {
     width: number,
