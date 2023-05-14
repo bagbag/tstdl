@@ -5,7 +5,7 @@ import type { Injectable } from '#/container/interfaces.js';
 import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import type { Json } from '#/types.js';
+import type { Record } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { Opaque } from 'type-fest';
@@ -23,7 +23,7 @@ export type NewPageOptions = {
   controllerOptions?: PageControllerOptions
 };
 
-export type BrowserContextState = Opaque<Json, 'BrowserContextState'>;
+export type BrowserContextState = Opaque<string | Record<string | number, unknown>, 'BrowserContextState'>;
 
 export type BrowserContextControllerArgument = NewBrowserContextOptions;
 

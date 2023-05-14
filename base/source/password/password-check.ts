@@ -21,7 +21,7 @@ export async function checkPassword(password: string, { checkForPwned = true }: 
   ]);
 
   const pwnedWarnings = (isNotNullOrUndefined(pwnedResult) && (pwnedResult > 0)) ? [passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings.pwned[propertyName]] : [];
-  const warnings = zxcvbnResult.feedback.warning
+  const warnings = isNotNullOrUndefined(zxcvbnResult.feedback.warning)
     ? [...pwnedWarnings, passwordCheckLocalizationKeys.tstdl.passwordCheck.warnings[zxcvbnResult.feedback.warning as (keyof PasswordCheckLocalization['keys']['tstdl']['passwordCheck']['warnings'])][propertyName]]
     : pwnedWarnings;
 
@@ -50,9 +50,9 @@ async function importZxcvbn(): Promise<typeof zxcvbnAsync> {
   const [{ zxcvbnAsync, zxcvbnOptions }, common, english, german] = await Promise.all([
     import('@zxcvbn-ts/core'),
     /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-    import('@zxcvbn-ts/language-common').then((module) => module.default),
-    import('@zxcvbn-ts/language-en').then((module) => module.default),
-    import('@zxcvbn-ts/language-de').then((module) => module.default)
+    import('@zxcvbn-ts/language-common'),
+    import('@zxcvbn-ts/language-en'),
+    import('@zxcvbn-ts/language-de')
     /* eslint-enable @typescript-eslint/no-unnecessary-condition */
   ]);
 
