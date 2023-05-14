@@ -23,7 +23,7 @@ export type NewPageOptions = {
   controllerOptions?: PageControllerOptions
 };
 
-export type BrowserContextState = Opaque<string | Record<string | number, unknown>, 'BrowserContextState'>;
+export type BrowserContextState = Opaque<Record<string | number, unknown>, 'BrowserContextState'>;
 
 export type BrowserContextControllerArgument = NewBrowserContextOptions;
 
