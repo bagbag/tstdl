@@ -1,4 +1,4 @@
-import { Signal } from '@tstdl/angular';
+import { Signal } from '@angular/core';
 import { Component, ComponentChild } from 'preact';
 
 export type ReactTestComponentProperties = {

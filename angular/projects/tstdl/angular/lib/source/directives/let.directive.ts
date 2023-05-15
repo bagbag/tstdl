@@ -1,11 +1,10 @@
-import type { EmbeddedViewRef, OnDestroy } from '@angular/core';
-import { ChangeDetectorRef, Directive, ErrorHandler, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import type { EmbeddedViewRef, OnDestroy, Signal } from '@angular/core';
+import { ChangeDetectorRef, Directive, ErrorHandler, Injector, Input, TemplateRef, ViewContainerRef, inject, isSignal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
 import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
-import type { Observable, ReadableStreamLike, Subscription } from 'rxjs';
+import type { Observable, ReadableStreamLike } from 'rxjs';
 import { EMPTY, ReplaySubject, catchError, distinctUntilChanged, from, isObservable, of, switchMap, tap } from 'rxjs';
-import type { Signal } from '../signals';
-import { isSignal, toObservable } from '../signals';
 
 export type LetContext<T> = {
   $implicit: LetOutput<T>,
@@ -33,64 +32,57 @@ type LetOutput<T> = T extends LetAsyncInput<infer U> ? U : T;
 export class LetDirective<T> implements OnDestroy {
   static ngTemplateGuard_tslLet: 'binding'; // eslint-disable-line @typescript-eslint/naming-convention
 
-  private readonly template: TemplateRef<LetContext<T>>;
-  private readonly viewContainer: ViewContainerRef;
-  private readonly changeDetector: ChangeDetectorRef;
-  private readonly inputSubject: ReplaySubject<LetInput<T>>;
-  private readonly subscription: Subscription;
-  private readonly viewContext: LetContext<T>;
+  private readonly template = inject<TemplateRef<LetContext<T>>>(TemplateRef);
+  private readonly viewContainer = inject(ViewContainerRef);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
+  private readonly errorHandler = inject(ErrorHandler);
+
+  private readonly inputSubject = new ReplaySubject<LetInput<T>>(1);
+
+  private readonly viewContext: LetContext<T> = {
+    $implicit: undefined as any,
+    tslLet: undefined as any,
+    isComplete: false,
+    hasError: false,
+    error: undefined
+  };
+
+  private readonly subscription = this.inputSubject.pipe(
+    switchMap((input) => {
+      this.viewContext.isComplete = false;
+      this.viewContext.hasError = false;
+      this.viewContext.error = undefined;
+
+      const observable = isAsyncInput(input)
+        ? (isFunction(input) && isSignal(input))
+          ? toObservable(input, { injector: this.injector })
+          : from(input)
+        : of(input);
+
+      return (observable as Observable<LetOutput<T>>).pipe(
+        tap({
+          next: (value) => this.next(value),
+          error: (error) => this.error(error),
+          complete: () => this.complete()
+        }),
+        catchError((error) => {
+          this.errorHandler.handleError(error);
+          return EMPTY;
+        })
+      );
+    }),
+    distinctUntilChanged()
+  ).subscribe((value) => {
+    this.viewContext.$implicit = value;
+    this.viewContext.tslLet = value;
+  });
 
   private embeddedView: EmbeddedViewRef<LetContext<T>> | undefined;
 
   @Input() // eslint-disable-line accessor-pairs
   set tslLet(observableInput: LetInput<T>) {
     this.inputSubject.next(observableInput);
-  }
-
-  constructor(template: TemplateRef<LetContext<T>>, viewContainer: ViewContainerRef, changeDetector: ChangeDetectorRef, errorHandler: ErrorHandler) {
-    this.template = template;
-    this.viewContainer = viewContainer;
-    this.changeDetector = changeDetector;
-
-    this.inputSubject = new ReplaySubject<LetInput<T>>(1);
-
-    this.viewContext = {
-      $implicit: undefined as any,
-      tslLet: undefined as any,
-      isComplete: false,
-      hasError: false,
-      error: undefined
-    };
-
-    this.subscription = this.inputSubject.pipe(
-      switchMap((input) => {
-        this.viewContext.isComplete = false;
-        this.viewContext.hasError = false;
-        this.viewContext.error = undefined;
-
-        const observable = isAsyncInput(input) ?
-          (isFunction(input) && isSignal(input))
-            ? toObservable(input)
-            : from(input)
-          : of(input);
-
-        return (observable as Observable<LetOutput<T>>).pipe(
-          tap({
-            next: (value) => this.next(value),
-            error: (error) => this.error(error),
-            complete: () => this.complete()
-          }),
-          catchError((error) => {
-            errorHandler.handleError(error);
-            return EMPTY;
-          })
-        );
-      }),
-      distinctUntilChanged()
-    ).subscribe((value) => {
-      this.viewContext.$implicit = value;
-      this.viewContext.tslLet = value;
-    });
   }
 
   static ngTemplateContextGuard<T>(_directive: LetDirective<T>, _context: LetContext<T>): _context is LetContext<T> {

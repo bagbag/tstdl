@@ -1,15 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, inject } from '@angular/core';
+import type { EffectRef, OnChanges, OnDestroy, OnInit, Signal, SimpleChanges } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Injector, Input, effect, inject, isSignal } from '@angular/core';
 import type { ReadonlySignal as PreactReadonlySignal } from '@preact/signals';
 import { signal as preactSignal } from '@preact/signals';
-import type { EffectRef, Signal } from '@tstdl/angular';
-import { effect, isSignal } from '@tstdl/angular';
 import type { Record, Type } from '@tstdl/base/types';
 import { isFunction, isUndefined } from '@tstdl/base/utils';
 import { memoizeSingle } from '@tstdl/base/utils/function/memoize';
 import { fromEntries, hasOwnProperty, objectEntries } from '@tstdl/base/utils/object';
 import type { Attributes, FunctionComponent, Component as PreactComponent } from 'preact';
 import { createElement, render } from 'preact';
-const adaptSignal = memoizeSingle(_adaptSignal, { weak: true });
 
 @Component({
   selector: 'tsl-react',
@@ -21,29 +19,24 @@ const adaptSignal = memoizeSingle(_adaptSignal, { weak: true });
 export class ReactComponent<Properties extends Record = any, State = any> implements OnInit, OnChanges, OnDestroy {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly injector = inject(Injector);
 
-  private readonly wrapFunction: <T extends (...args: any[]) => any>(fn: T) => T;
+  private readonly adaptSignal = memoizeSingle(<T>(source: Signal<T>) => _adaptSignal(source, this.injector), { weak: true });
+  private readonly wrapFunction = memoizeSingle(<T extends (...args: any[]) => any>(fn: T) => _wrapFunction(fn, this.changeDetector), { weak: true });
 
-  private effectRef: EffectRef | undefined;
+  private propertiesEffectRef: EffectRef | undefined;
 
   @Input() component: FunctionComponent<Properties> | Type<PreactComponent<Properties, State>>;
   @Input() properties: Properties | Signal<Properties>;
 
   /** adapt angular signals to preact signals (readonly) */
-  @Input() adaptSignals: boolean;
+  @Input() adaptSignals = true;
 
   /** wrap functions in properties (1st level only) to run change detection afterwards */
-  @Input() wrapFunctions: boolean;
+  @Input() wrapFunctions = true;
 
   get propertiesValue(): Properties {
     return isSignal(this.properties as any) ? (this.properties as Signal<Properties>)() : this.properties as Properties;
-  }
-
-  constructor() {
-    this.wrapFunction = memoizeSingle(<T extends (...args: any[]) => any>(fn: T) => _wrapFunction(fn, this.changeDetector), { weak: true });
-
-    this.adaptSignals = true;
-    this.wrapFunctions = true;
   }
 
   ngOnInit(): void {
@@ -54,19 +47,19 @@ export class ReactComponent<Properties extends Record = any, State = any> implem
     this.render();
 
     if (hasOwnProperty(changes, 'properties')) {
-      this.effectRef?.destroy();
+      this.propertiesEffectRef?.destroy();
 
       if (isSignal(this.properties as any)) {
-        this.effectRef = effect(() => {
+        this.propertiesEffectRef = effect(() => {
           (this.properties as Signal<Properties>)();
           this.render();
-        });
+        }, { injector: this.injector });
       }
     }
   }
 
   ngOnDestroy(): void {
-    this.effectRef?.destroy();
+    this.propertiesEffectRef?.destroy();
     render(null, this.elementRef.nativeElement);
   }
 
@@ -84,7 +77,7 @@ export class ReactComponent<Properties extends Record = any, State = any> implem
     const entries = objectEntries(properties)
       .map(([key, value]) => {
         if (isSignal(value)) {
-          return [key, adaptSignal(value as unknown as Signal<T>)];
+          return [key, this.adaptSignal(value as unknown as Signal<T>)];
         }
         else if (isFunction(value)) {
           return [key, this.wrapFunction(value)];
@@ -108,7 +101,7 @@ function _wrapFunction<T extends (...args: any[]) => any>(fn: T, changeDetector:
   }) as T;
 }
 
-function _adaptSignal<T>(source: Signal<T>): PreactReadonlySignal<T> {
+function _adaptSignal<T>(source: Signal<T>, injector: Injector): PreactReadonlySignal<T> {
   const adaptedSignal = preactSignal(source());
   const adaptedSignalWeakRef = new WeakRef(adaptedSignal);
 
@@ -121,7 +114,7 @@ function _adaptSignal<T>(source: Signal<T>): PreactReadonlySignal<T> {
     }
 
     adaptedSignalRef.value = source();
-  });
+  }, { injector });
 
   return adaptedSignal;
 }

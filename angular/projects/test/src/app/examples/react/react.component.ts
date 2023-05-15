@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import type { WritableSignal } from '@tstdl/angular';
-import { signal } from '@tstdl/angular';
+import type { WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TstdlReactModule } from '@tstdl/angular/react';
 import type { ReactTestComponentProperties } from './react-test.component';
 import { ReactTestComponent } from './react-test.component';

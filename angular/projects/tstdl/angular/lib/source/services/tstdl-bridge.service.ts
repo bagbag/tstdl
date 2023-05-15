@@ -1,12 +1,18 @@
 import { DOCUMENT as ANGULAR_DOCUMENT } from '@angular/common';
-import { Injectable, Injector, Provider, ProviderToken, isDevMode } from '@angular/core';
+import type { CreateEffectOptions, Provider, ProviderToken } from '@angular/core';
+import { Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, signal, untracked } from '@angular/core';
+import { configureTstdl } from '@tstdl/base';
 import type { Registration } from '@tstdl/base/container';
 import { container, getTokenName } from '@tstdl/base/container';
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { Logger } from '@tstdl/base/logger';
+import { configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
 import { concat, filter, from } from 'rxjs';
+
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
+
+let instances = 0;
 
 type R3Injector = Injector & {
   records: Map<ProviderToken<any>, unknown>,
@@ -19,25 +25,25 @@ type R3Injector = Injector & {
 export class TstdlBridgeService {
   static initialized: boolean = false;
 
-  private readonly injector: R3Injector;
+  private readonly injector = inject(Injector) as R3Injector;
 
   private logger: Logger;
 
-  constructor(injector: Injector) {
-    this.injector = injector as R3Injector;
+  constructor() {
+    if (isDevMode() && (++instances > 1)) {
+      console.warn('TstdlBridgeService instantiated more than once. This should not happen.');
+    }
   }
 
   initialize(): void {
     if (TstdlBridgeService.initialized) {
-      if (isDevMode()) {
-        console.warn('TstdlBridgeService.initialize was called more than once. This should not happen.');
-      }
-
       return;
     }
 
     TstdlBridgeService.initialized = true;
 
+    configureTstdl({ production: !isDevMode() });
+    this.configureSignals();
     this.logger = container.resolve(Logger);
 
     if (!container.hasRegistration(HttpClientAdapter)) {
@@ -52,6 +58,24 @@ export class TstdlBridgeService {
       container.registration$
     )
       .subscribe((registration) => this.injectRegistration(registration));
+  }
+
+  private configureSignals(): void {
+    configureSignals({
+      signal,
+      computed,
+      effect: (effectFn: Parameters<typeof effect>[0], options?: CreateEffectOptions) => {
+        try {
+          assertInInjectionContext(TstdlBridgeService);
+          return effect(effectFn, options);
+        }
+        catch {
+          return effect(effectFn, { injector: this.injector, ...options });
+        }
+      },
+      untracked,
+      isSignal
+    });
   }
 
   private injectRegistration(registration: Registration): void {

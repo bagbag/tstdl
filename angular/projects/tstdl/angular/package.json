@@ -1,16 +1,16 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.84.4",
+  "version": "0.84.5",
   "dependencies": {
     "tslib": "^2.5"
   },
   "peerDependencies": {
     "@angular/common": ">=15.0",
     "@angular/core": ">=15.0",
-    "@tstdl/base": "^0.84.5",
+    "@tstdl/base": "^0.84.12",
     "chroma-js": "^2.4",
     "luxon": "^3.3",
-    "marked": "4.3"
+    "marked": "^5.0"
   },
   "sideEffects": false
 }
