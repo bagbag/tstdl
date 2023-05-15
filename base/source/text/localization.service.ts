@@ -4,7 +4,7 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
-import { memoizeSingle } from '#/utils/function/memoize.js';
+import { memoize } from '#/utils/function/memoize.js';
 import { deepObjectEntries } from '#/utils/object/object.js';
 import type { PropertyName } from '#/utils/object/property-name.js';
 import { getPropertyName, getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
@@ -90,7 +90,7 @@ export function getLocalizationKeys<T extends Localization>(_localization?: T): 
   return getPropertyNameProxy() as unknown as ProxyLocalizationKeys<T['keys']>;
 }
 
-export const autoEnumerationLocalization = memoizeSingle(_autoEnumerationLocalization, { weak: true });
+export const autoEnumerationLocalization = memoize(_autoEnumerationLocalization);
 
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
 const warnedMissingKeys = new Set<string>();
