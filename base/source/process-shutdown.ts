@@ -58,7 +58,7 @@ export function initializeSignals(): void {
 
   process.on('beforeExit', () => {
     if (isDefined(quitReason)) {
-      console.info('quit reason:', ...quitReason);
+      console.info('\nquit reason:', ...quitReason);
     }
   });
 

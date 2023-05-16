@@ -13,7 +13,7 @@ import type { OneOrMany, Type } from '#/types.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { isUndefined } from '#/utils/type-guards.js';
+import { isFunction, isUndefined } from '#/utils/type-guards.js';
 
 /**
  * TODO
@@ -40,8 +40,7 @@ export class Application {
   }
 
   private readonly logger: Logger;
-  private readonly moduleTypes: Set<Type<Module>>;
-  private readonly moduleInstances: Set<Module>;
+  private readonly moduleTypesAndInstances: Set<Module | Type<Module>>;
   private readonly shutdownPromise: DeferredPromise;
   private readonly _shutdownToken: CancellationToken;
 
@@ -56,8 +55,7 @@ export class Application {
   constructor(@resolveArg<LoggerArgument>('App') logger: Logger) {
     this.logger = logger;
 
-    this.moduleTypes = new Set();
-    this.moduleInstances = new Set();
+    this.moduleTypesAndInstances = new Set();
     this.shutdownPromise = new DeferredPromise();
     this._shutdownToken = shutdownToken.createChild();
   }
@@ -68,10 +66,6 @@ export class Application {
 
   static registerModuleFunction(fn: FunctionModuleFunction): void {
     Application.instance.registerModuleFunction(fn);
-  }
-
-  static registerModuleInstance(module: Module): void {
-    Application.instance.registerModuleInstance(module);
   }
 
   static run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
@@ -90,17 +84,13 @@ export class Application {
     Application.instance.requestShutdown();
   }
 
-  registerModule(moduleType: Type<Module>): void {
-    this.moduleTypes.add(moduleType);
+  registerModule(moduleType: Module | Type<Module>): void {
+    this.moduleTypesAndInstances.add(moduleType);
   }
 
   registerModuleFunction(fn: FunctionModuleFunction): void {
     const module = new FunctionModule(fn);
-    this.registerModuleInstance(module);
-  }
-
-  registerModuleInstance(module: Module): void {
-    this.moduleInstances.add(module);
+    this.registerModule(module);
   }
 
   run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
@@ -134,8 +124,7 @@ export class Application {
       }
     }
 
-    const resolvedModules = await toArrayAsync(mapAsync(this.moduleTypes, async (type) => container.resolveAsync(type)));
-    const modules = [...this.moduleInstances, ...resolvedModules];
+    const modules = await toArrayAsync(mapAsync(this.moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? container.resolveAsync(instanceOrType) : instanceOrType)));
 
     try {
       await Promise.race([

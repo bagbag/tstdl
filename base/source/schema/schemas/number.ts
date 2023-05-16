@@ -6,7 +6,7 @@ import { isDefined } from '#/utils/type-guards.js';
 import { integerConstraint } from '../constraints/integer.js';
 import { MaximumConstraint } from '../constraints/maximum.js';
 import { MinimumConstraint } from '../constraints/minimum.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
+import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
 import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
 import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
 import { valueSchema } from '../types/types.js';
