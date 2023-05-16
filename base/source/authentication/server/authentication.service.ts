@@ -273,7 +273,8 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return this.subjectResolver?.resolveSubject(subject) ?? subject;
   }
 
-  private async createToken(additionalTokenPayload: AdditionalTokenPayload, subject: string, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  /** Creates a token without session or refresh token and is not saved in database */
+  async createToken(additionalTokenPayload: AdditionalTokenPayload, subject: string, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: this.tokenVersion,
       alg: 'HS256',
@@ -300,7 +301,8 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { token, jsonToken };
   }
 
-  private async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number): Promise<CreateRefreshTokenResult> {
+  /** Creates a refresh token without session or something else. */
+  async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number): Promise<CreateRefreshTokenResult> {
     const secret = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
