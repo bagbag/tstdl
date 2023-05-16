@@ -22,9 +22,9 @@ import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromS
 
 export type CreateTokenData<AdditionalTokenPayload extends Record> = {
   tokenVersion?: number,
-  jti?: string,
-  iat?: number,
-  exp?: number,
+  jwtId?: string,
+  issuedAt?: number,
+  expiration?: number,
   additionalTokenPayload: AdditionalTokenPayload,
   subject: string,
   sessionId: string,
@@ -286,7 +286,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /** Creates a token without session or refresh token and is not saved in database */
-  async createToken({ tokenVersion, jti, iat, exp, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: tokenVersion ?? this.tokenVersion,
       alg: 'HS256',
@@ -294,9 +294,9 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     };
 
     const payload: Token<AdditionalTokenPayload>['payload'] = {
-      jti: jti ?? getRandomString(24, Alphabet.LowerUpperCaseNumbers),
-      iat: iat ?? timestampToTimestampSeconds(timestamp),
-      exp: exp ?? timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
+      jti: jwtId ?? getRandomString(24, Alphabet.LowerUpperCaseNumbers),
+      iat: issuedAt ?? timestampToTimestampSeconds(timestamp),
+      exp: expiration ?? timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
       refreshTokenExp: timestampToTimestampSeconds(refreshTokenExpiration),
       sessionId,
       subject,
