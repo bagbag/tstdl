@@ -20,6 +20,18 @@ import { AuthenticationSubjectResolver } from './authentication-subject.resolver
 import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from './authentication-token-payload.provider.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
+export type CreateTokenData<AdditionalTokenPayload extends Record> = {
+  tokenVersion?: number,
+  jti?: string,
+  iat?: number,
+  exp?: number,
+  additionalTokenPayload: AdditionalTokenPayload,
+  subject: string,
+  sessionId: string,
+  refreshTokenExpiration: number,
+  timestamp: number
+};
+
 export class AuthenticationServiceOptions {
   /**
    * Secrets used for signing tokens and refreshTokens
@@ -183,7 +195,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     });
 
     const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
-    const { token, jsonToken } = await this.createToken(tokenPayload!, actualSubject, session.id, end, now);
+    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
     const refreshToken = await this.createRefreshToken(actualSubject, session.id, end);
 
     await this.sessionRepository.extend(session.id, {
@@ -219,7 +231,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const now = currentTimestamp();
     const newEnd = now + this.refreshTokenTimeToLive;
     const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
-    const { token, jsonToken } = await this.createToken(tokenPayload!, session.subject, sessionId, newEnd, now);
+    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: session.subject, sessionId, refreshTokenExpiration: newEnd, timestamp: now });
     const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
 
     await this.sessionRepository.extend(sessionId, {
@@ -274,17 +286,17 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /** Creates a token without session or refresh token and is not saved in database */
-  async createToken(additionalTokenPayload: AdditionalTokenPayload, subject: string, sessionId: string, refreshTokenExpiration: number, timestamp: number): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  async createToken({ tokenVersion, jti, iat, exp, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
-      v: this.tokenVersion,
+      v: tokenVersion ?? this.tokenVersion,
       alg: 'HS256',
       typ: 'JWT'
     };
 
     const payload: Token<AdditionalTokenPayload>['payload'] = {
-      jti: getRandomString(24, Alphabet.LowerUpperCaseNumbers),
-      iat: timestampToTimestampSeconds(timestamp),
-      exp: timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
+      jti: jti ?? getRandomString(24, Alphabet.LowerUpperCaseNumbers),
+      iat: iat ?? timestampToTimestampSeconds(timestamp),
+      exp: exp ?? timestampToTimestampSeconds(timestamp + this.tokenTimeToLive),
       refreshTokenExp: timestampToTimestampSeconds(refreshTokenExpiration),
       sessionId,
       subject,
