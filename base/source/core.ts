@@ -18,7 +18,7 @@ export function isDevMode(): boolean {
 }
 
 export function isProdMode(): boolean {
-  return _isDevMode;
+  return !_isDevMode;
 }
 
 export function enableProdMode(): void {
