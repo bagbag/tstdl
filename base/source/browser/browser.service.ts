@@ -58,7 +58,7 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     return this.dispose();
   }
 
-  async newBrowser(options: NewBrowserOptions = {}): Promise<BrowserController> {
+  async newBrowser(options?: NewBrowserOptions): Promise<BrowserController> {
     const mergedOptions = { ...this.options?.defaultNewBrowserOptions, ...options };
     const launchOptions = getLaunchOptions(mergedOptions);
 

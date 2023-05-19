@@ -29,7 +29,7 @@ export type CreateTokenData<AdditionalTokenPayload extends Record> = {
   subject: string,
   sessionId: string,
   refreshTokenExpiration: number,
-  timestamp: number
+  timestamp?: number
 };
 
 export class AuthenticationServiceOptions {
@@ -286,7 +286,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /** Creates a token without session or refresh token and is not saved in database */
-  async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp = currentTimestamp() }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: tokenVersion ?? this.tokenVersion,
       alg: 'HS256',

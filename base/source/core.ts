@@ -17,7 +17,11 @@ export function isDevMode(): boolean {
   return _isDevMode;
 }
 
-export function enableProductionMode(): void {
+export function isProdMode(): boolean {
+  return _isDevMode;
+}
+
+export function enableProdMode(): void {
   _isDevMode = false;
 }
 
@@ -62,7 +66,7 @@ let coreLogPrefix: string | undefined;
 
 export function configureTstdl(config: CoreConfiguration = {}): void {
   if (config.production == true) {
-    enableProductionMode();
+    enableProdMode();
   }
 
   container.register(Logger, { useToken: config.logger ?? ConsoleLogger });
