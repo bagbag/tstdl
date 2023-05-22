@@ -1,5 +1,5 @@
 import type { InjectionToken, Provider } from '#/container/index.js';
-import { container } from '#/container/index.js';
+import { container, isProvider } from '#/container/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
@@ -9,7 +9,6 @@ import { AuthenticationService, AuthenticationServiceOptions } from './authentic
 
 export type AuthenticationModuleConfig = {
   serviceOptions?: AuthenticationServiceOptions | Provider<AuthenticationServiceOptions>,
-  serviceOptionsProvider?: Provider<AuthenticationServiceOptions>,
   credentialsRepository: InjectionToken<AuthenticationCredentialsRepository>,
   sessionRepository: InjectionToken<AuthenticationSessionRepository>,
 
@@ -21,10 +20,7 @@ export type AuthenticationModuleConfig = {
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
   if (isDefined(config.serviceOptions)) {
-    container.register(AuthenticationServiceOptions, { useValue: config.serviceOptions });
-  }
-  else if (isDefined(config.serviceOptionsProvider)) {
-    container.register(AuthenticationServiceOptions, config.serviceOptionsProvider);
+    container.register(AuthenticationServiceOptions, isProvider(config.serviceOptions) ? config.serviceOptions : { useValue: config.serviceOptions });
   }
   else {
     throw new Error('Either serviceOptions or serviceOptionsToken must be provided.');

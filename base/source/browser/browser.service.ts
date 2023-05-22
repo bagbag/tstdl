@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext } from 'playwright';
+import type { Browser, BrowserContext, LaunchOptions } from 'playwright';
 
 import { injectArg, singleton } from '#/container/decorators.js';
 import type { Injectable } from '#/container/interfaces.js';
@@ -23,6 +23,7 @@ export type BrowserServiceArgument = BrowserServiceOptions;
 export type NewBrowserOptions = {
   browser?: 'chromium' | 'firefox' | 'webkit',
   headless?: boolean | 'new',
+  proxy?: LaunchOptions['proxy'],
 
   windowSize?: {
     width: number,
@@ -79,7 +80,7 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
       ...launchOptions,
       locale: mergedContextOptions.locale,
       viewport: mergedContextOptions.viewport,
-      proxy: mergedContextOptions.proxy,
+      proxy: mergedContextOptions.proxy ?? mergedBrowserOptions.proxy,
       userAgent: mergedContextOptions.userAgent,
       colorScheme: mergedContextOptions.colorScheme,
       extraHTTPHeaders: isDefined(mergedContextOptions.extraHttpHeaders) ? filterUndefinedFromRecord(mergedContextOptions.extraHttpHeaders) : undefined

@@ -14,7 +14,8 @@ export function getLaunchOptions(options: NewBrowserOptions): LaunchOptions {
   return {
     ignoreDefaultArgs: (options.headless == 'new') ? ['--headless'] : undefined,
     headless: headless != false,
-    args
+    args,
+    proxy: options.proxy
   };
 }
 
