@@ -1,7 +1,8 @@
-import type { ElementHandle, Frame, Page } from 'playwright';
+import type { ElementHandle, Frame, FrameLocator, Page } from 'playwright';
 
 import { isNull, isUndefined } from '#/utils/type-guards.js';
 import type { Delay } from './element-controller.js';
+import { ElementController } from './element-controller.js';
 import type { FrameController, FrameControllerOptions } from './frame-controller.js';
 import { LocatorController } from './locator-controller.js';
 import type { PageControllerOptions } from './page-controller.js';
@@ -16,13 +17,13 @@ export type DocumentControllerForwardOptions = {
   frameControllerOptions: FrameControllerOptions
 };
 
-export class DocumentController extends LocatorController {
+export class DocumentController<T extends Page | Frame = Page | Frame> extends LocatorController<T> {
   protected readonly forwardOptions: DocumentControllerForwardOptions;
 
   /** @deprecated should be avoided */
-  readonly document: Page | Frame;
+  readonly document: T;
 
-  constructor(document: Page | Frame, options: DocumentControllerOptions, forwardOptions: DocumentControllerForwardOptions) {
+  constructor(document: T, options: DocumentControllerOptions, forwardOptions: DocumentControllerForwardOptions) {
     super(document, { actionDelay: options.defaultActionDelay, typeDelay: options.defaultTypeDelay });
 
     this.document = document;
@@ -45,24 +46,24 @@ export class DocumentController extends LocatorController {
     await this.document.waitForURL(...args);
   }
 
-  async waitForElement(selector: string, options?: Parameters<Page['waitForSelector']>[1]): Promise<ElementHandle> {
+  async waitForElement(selector: string, options?: Parameters<Page['waitForSelector']>[1]): Promise<ElementController<ElementHandle<SVGElement | HTMLElement>>> {
     const element = await this.document.waitForSelector(selector, options!);
 
     if (isNull(element)) {
       throw new Error('Element not found.');
     }
 
-    return element;
+    return new ElementController(element, this.elementControllerOptions);
   }
 
-  locateInFrame(frameSelector: string): LocatorController {
+  locateInFrame(frameSelector: string): LocatorController<FrameLocator> {
     const locator = this.document.frameLocator(frameSelector);
     return new LocatorController(locator, this.elementControllerOptions);
   }
 
   async waitForFrame(selector: string, options?: Parameters<Page['waitForSelector']>[1]): Promise<FrameController> {
     const element = await this.waitForElement(selector, options);
-    const frame = await element.contentFrame();
+    const frame = await element.locatorOrHandle.contentFrame();
 
     if (isNull(frame)) {
       throw new Error('Element is not a frame.');

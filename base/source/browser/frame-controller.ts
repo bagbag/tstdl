@@ -12,7 +12,7 @@ export type FrameControllerForwardOptions = {
   pageControllerOptions: PageControllerOptions
 };
 
-export class FrameController extends DocumentController {
+export class FrameController extends DocumentController<Frame> {
   private readonly frameControllerForwardOptions: FrameControllerForwardOptions;
 
   /** @deprecated should be avoided */

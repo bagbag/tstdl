@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Decorator } from '#/reflection/index.js';
 import { createClassDecorator, createDecorator } from '#/reflection/index.js';
-import type { Constructor, OneOrMany, Simplify, TypedExtract, TypedOmit } from '#/types.js';
+import type { Constructor, OneOrMany, Simplify, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
-import type { Lifecycle, RegistrationOptions } from './container.js';
+import type { RegistrationOptions } from './container.js';
 import { container, injectMetadataSymbol } from './container.js';
 import type { Provider } from './provider.js';
 import type { InjectionToken } from './token.js';

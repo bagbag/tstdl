@@ -18,7 +18,7 @@ export type PageControllerOptions = DocumentControllerOptions & {
   defaultFrameControllerOptions?: FrameControllerOptions
 };
 
-export class PageController extends DocumentController implements AsyncDisposable {
+export class PageController extends DocumentController<Page> implements AsyncDisposable {
   /** @deprecated should be avoided */
   readonly page: Page;
   readonly options: PageControllerOptions;

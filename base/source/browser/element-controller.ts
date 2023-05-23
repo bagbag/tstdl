@@ -27,11 +27,11 @@ export type ElementControllerOptions = {
 
 type LocatorOptions<K extends keyof Locator, I extends keyof Parameters<Locator[K]>> = NonUndefinable<Parameters<Locator[K]>[I]>;
 
-export class ElementController {
-  readonly locatorOrHandle: Locator | ElementHandle;
+export class ElementController<T extends Locator | ElementHandle = Locator | ElementHandle> {
+  readonly locatorOrHandle: T;
   readonly options: ElementControllerOptions;
 
-  constructor(locatorOrHandle: Locator | ElementHandle, options: ElementControllerOptions = {}) {
+  constructor(locatorOrHandle: T, options: ElementControllerOptions = {}) {
     this.locatorOrHandle = locatorOrHandle;
     this.options = options;
   }
