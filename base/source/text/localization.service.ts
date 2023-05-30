@@ -5,7 +5,7 @@ import { Logger } from '#/logger/index.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoize } from '#/utils/function/memoize.js';
-import { deepObjectEntries } from '#/utils/object/object.js';
+import { deepObjectEntries, hasOwnProperty } from '#/utils/object/object.js';
 import type { PropertyName } from '#/utils/object/property-name.js';
 import { getPropertyName, getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
 import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isNullOrUndefined, isObject, isString, isUndefined } from '#/utils/type-guards.js';
@@ -38,9 +38,13 @@ declare const parametersSymbol: unique symbol;
 
 export type ProxyLocalizationKey<Parameters = void> = PropertyName & { [parametersSymbol]?: Parameters };
 export type LocalizationKey<Parameters = void> = string | ProxyLocalizationKey<Parameters>;
+export type EnumLocalizationKey<T extends Enumeration = Enumeration, Parameters = void> = Parameters extends void
+  ? { enum: T, value?: EnumerationValue<T>, parameters?: void }
+  : { enum: T, value?: EnumerationValue<T>, parameters: Parameters };
 
-export type LocalizationData<Parameters = any> =
+export type LocalizationData<Parameters = any, E extends Enumeration = any> =
   | LocalizationKey
+  | EnumLocalizationKey<E, Parameters>
   | LocalizationDataObject<Parameters>
   | { key: LocalizationKey, parameters?: void };
 
@@ -74,6 +78,14 @@ export function getProxyLocalizationKey<Parameters = void>(key: string): ProxyLo
 
 export function isProxyLocalizationKey(value: any): value is ProxyLocalizationKey {
   return isPropertyName(value);
+}
+
+export function isEnumLocalizationKey(key: any): key is EnumLocalizationKey {
+  return isObject(key) && hasOwnProperty((key as EnumLocalizationKey), 'enum');
+}
+
+export function isLocalizationDataObject(value: LocalizationData): value is LocalizationDataObject<any> {
+  return isObject(value) && hasOwnProperty((value as LocalizationDataObject<any>), 'key');
 }
 
 /** helper function to ensure type safety */
@@ -176,12 +188,17 @@ export class LocalizationService {
     this.setLanguage(localization.language);
   }
 
-  tryGetItem<Parameters>(key: LocalizationKey<Parameters> | LocalizationData<Parameters>): LocalizeItem | undefined {
+  tryGetItem<Parameters>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): LocalizeItem | undefined {
     if (isUndefined(this.activeLanguage)) {
       return undefined;
     }
 
-    const actualKey = getStringKey(key);
+    if (isEnumLocalizationKey(keyOrData)) {
+      const enumEntry = this.localizations.get(this.activeLanguage.code)?.enums.get(keyOrData.enum);
+      return isDefined(keyOrData.value) ? enumEntry?.values[keyOrData.value] : enumEntry?.name;
+    }
+
+    const actualKey = getStringKey(keyOrData);
     return this.localizations.get(this.activeLanguage.code)?.keys.get(actualKey);
   }
 
@@ -191,7 +208,11 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize<Parameters>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
+  localize<Parameters = void>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
+    if (isEnumLocalizationKey(keyOrData)) {
+      return this.localizeEnum(keyOrData.enum, keyOrData.value, keyOrData.parameters);
+    }
+
     const key = getStringKey(keyOrData);
     const parameters = (isString(keyOrData) || isProxyLocalizationKey(keyOrData)) ? {} : (keyOrData as LocalizationDataObject<unknown>).parameters;
 
