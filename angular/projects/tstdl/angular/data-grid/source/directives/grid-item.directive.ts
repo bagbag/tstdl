@@ -6,6 +6,7 @@ import type { GridValueType } from '../models/grid-value-type';
 import { GRID_CONTENT } from './grid-content';
 import { GridLabelDirective } from './grid-label.directive';
 import { GridValueDirective } from './grid-value.directive';
+import { isString } from '@tstdl/base/utils';
 
 @Directive({
   selector: '[gridItem]',
@@ -35,7 +36,7 @@ export class GridItemDirective {
 
   @Input()
   set gridItem(label: DynamicText | null | undefined) {
-    this.label = label;
+    this.label = (isString(label) && (label.length == 0)) ? null : label;
   }
 
   get labelTemplateRef(): TemplateRef<void> | null | undefined {

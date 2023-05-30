@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TstdlDataGridModule } from '@tstdl/angular/data-grid';
+import { LocalizationService, enumerationLocalization } from '@tstdl/base/text';
 import { now } from '@tstdl/base/utils';
 
 enum MyEnum {
@@ -20,6 +21,22 @@ export class DataGridComponent {
 
   get now(): Date {
     return now();
+  }
+
+  constructor(localizationService: LocalizationService) {
+    localizationService.registerLocalization({
+      language: {
+        code: 'en',
+        name: 'English'
+      },
+      keys: {},
+      enums: [
+        enumerationLocalization(MyEnum, 'MyEnum (localized)', {
+          [MyEnum.MyBar]: 'Bar',
+          [MyEnum.MyFoo]: 'Foo'
+        })
+      ]
+    });
   }
 }
 

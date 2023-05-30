@@ -72,7 +72,8 @@
     <ng-container gridItem="Numeric time" [value]="63455"></ng-container>
     <ng-container gridItem="Text" value="string, localization key, or observable of those"></ng-container>
     <ng-container gridItem="Boolean" [value]="true"></ng-container>
-    <ng-container gridItem="Enum" [value]="MyEnum.MyFoo" [enum]="MyEnum"></ng-container>
+    <ng-container gridItem="Enum with custom label" [enum]="MyEnum" [value]="MyEnum.MyFoo"></ng-container>
+    <ng-container gridItem [enum]="MyEnum" [value]="MyEnum.MyFoo"></ng-container>
   </tsl-data-grid>
 
   <tsl-data-grid heading="label and value template">
