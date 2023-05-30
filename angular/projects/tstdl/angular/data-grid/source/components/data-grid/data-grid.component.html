@@ -14,8 +14,8 @@
            [class.bg-neutral-100]="oddRow"
            [class.dark:bg-neutral-800]="oddRow">
         <ng-container *ngIf="item">
-          <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]=" item?.label" ></tsl-grid-label>
-          <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item" ></tsl-grid-value>
+          <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]="item?.label" [enum]="item?.enum"></tsl-grid-label>
+          <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item"></tsl-grid-value>
         </ng-container>
       </div>
     </ng-container>
@@ -49,7 +49,8 @@
   <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
     <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
       <tsl-grid-label [templateRef]="item?.labelRef?.templateRef"
-                      [label]=" item?.label"
+                      [label]="item?.label"
+                      [enum]="item?.enum"
                       class="p-2"
                       [class.border-t]="!firstRow"
                       [class.bg-white]="!oddRow"
@@ -74,7 +75,8 @@
 <ng-template #headerRow>
   <tsl-grid-label *ngFor="let headerItem of headerItemRefs; let first = first; let last = last; trackBy: trackBy"
                   [templateRef]="headerItem?.templateRef"
-                  [label]=" headerItem?.label"
+                  [label]="headerItem?.label"
+                  [enum]="headerItem?.enum"
                   class="px-2 pb-1.5 bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   [class.pt-1.5]="heading == undefined"></tsl-grid-label>
 </ng-template>
