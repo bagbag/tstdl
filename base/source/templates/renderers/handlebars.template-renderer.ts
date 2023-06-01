@@ -59,7 +59,7 @@ export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', H
     return type == 'handlebars';
   }
 
-  async _render(renderObject: HandlebarsTemplateRenderObject, context?: object): Promise<string> {
+  async _render(renderObject: HandlebarsTemplateRenderObject, context: Record): Promise<string> {
     const renderer = await this.compileHandlebarsTemplate(renderObject);
     return renderer(context);
   }

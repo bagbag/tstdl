@@ -1,8 +1,11 @@
 import { singleton } from '#/container/index.js';
+import type { Record } from '#/types.js';
+import { isString } from '#/utils/type-guards.js';
+import type { StringTemplate } from '../resolvers/string.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
 import { TemplateRenderer } from '../template.renderer.js';
 
-export type StringTemplateRenderObject = TemplateRenderObject<'string', undefined, string>;
+export type StringTemplateRenderObject = TemplateRenderObject<'string', undefined, StringTemplate>;
 
 @singleton()
 export class StringTemplateRenderer extends TemplateRenderer<'string', undefined> {
@@ -14,7 +17,11 @@ export class StringTemplateRenderer extends TemplateRenderer<'string', undefined
     return (type == 'string');
   }
 
-  _render({ template }: StringTemplateRenderObject, _context?: object): TemplateRenderResult {
-    return template;
+  async _render({ template }: StringTemplateRenderObject, context: Record): Promise<TemplateRenderResult> {
+    if (isString(template)) {
+      return template;
+    }
+
+    return template(context);
   }
 }

@@ -23,7 +23,7 @@ export type TemplateFields<Fields extends Record<string, boolean>, Resolver exte
   & { [P in keyof PickBy<Fields, false>]?: TemplateField<Resolver, Renderer, Options>; }
 >;
 
-export abstract class Template<Fields extends Record<string, boolean> = Record<string, boolean>, TemplateOptions = any, Context extends object = any> {
+export abstract class Template<Fields extends Record<string, boolean> = Record<string, boolean>, TemplateOptions = any, Context extends Record = Record> {
   declare readonly [templateContext]?: Context;
 
   /** name of template */

@@ -1,13 +1,15 @@
 import { singleton } from '#/container/index.js';
-import { Property } from '#/schema/index.js';
-import type { TypedOmit } from '#/types.js';
+import { Union } from '#/schema/index.js';
+import type { Record, TypedOmit } from '#/types.js';
 import { TemplateField } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';
 
+export type StringTemplate = string | ((context: Record) => string | Promise<string>);
+
 export class StringTemplateField<Renderer extends string = string, Options = any> extends TemplateField<'string', Renderer, Options> {
-  @Property()
-  template: string;
+  @Union(String, Function)
+  template: StringTemplate;
 }
 
 @singleton()
@@ -20,7 +22,7 @@ export class StringTemplateResolver extends TemplateResolver<StringTemplateField
     return (resolver == 'string');
   }
 
-  resolve(field: StringTemplateField): string {
+  resolve(field: StringTemplateField): StringTemplate {
     return field.template;
   }
 }

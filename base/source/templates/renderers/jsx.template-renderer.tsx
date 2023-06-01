@@ -1,4 +1,5 @@
 import { singleton } from '#/container/index.js';
+import type { Record } from '#/types.js';
 import { assertNotNull } from '#/utils/type-guards.js';
 import type { ComponentClass } from 'preact';
 import { Component } from 'preact';
@@ -19,7 +20,7 @@ export class JsxTemplateRenderer extends TemplateRenderer<'jsx', undefined> {
     return (type == 'jsx');
   }
 
-  _render({ template: TemplateComponent }: JsxTemplateRenderObject, context?: object): TemplateRenderResult {
+  _render({ template: TemplateComponent }: JsxTemplateRenderObject, context: Record): TemplateRenderResult {
     const node = isComponentClass(TemplateComponent) ? <TemplateComponent {...context}></TemplateComponent> : TemplateComponent(context, context);
     assertNotNull(node, 'Template returned null');
 

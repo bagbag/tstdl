@@ -1,4 +1,5 @@
 import { forwardRef, singleton } from '#/container/index.js';
+import type { Record } from '#/types.js';
 import mjml2html from 'mjml';
 import type { MJMLParsingOptions } from 'mjml-core';
 import { TemplateRendererProvider } from '../template-renderer.provider.js';
@@ -36,7 +37,7 @@ export class MjmlTemplateRenderer extends TemplateRenderer<MjmlRendererString, M
     return this.rendererProvider.has(parent);
   }
 
-  async _render({ renderer, template, options }: MjmlTemplateRenderObject, context?: object): Promise<TemplateRenderResult> {
+  async _render({ renderer, template, options }: MjmlTemplateRenderObject, context: Record): Promise<TemplateRenderResult> {
     if (renderer.length > 4) {
       const parent = renderer.slice(5);
       const parentRenderer = this.rendererProvider.get(parent);
@@ -48,7 +49,7 @@ export class MjmlTemplateRenderer extends TemplateRenderer<MjmlRendererString, M
         template: result
       };
 
-      return this._render(preprocessedTemplate);
+      return this._render(preprocessedTemplate, context);
     }
 
     return mjml2html(template).html;
