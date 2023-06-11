@@ -54,6 +54,10 @@ export class PageController extends DocumentController<Page> implements AsyncDis
     });
   }
 
+  url(): string {
+    return this.page.url();
+  }
+
   /**
    * @param frameSelector frame name, url or url predicate
    * @returns

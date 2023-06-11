@@ -80,6 +80,18 @@ export class BrowserController implements AsyncDisposable, Injectable<BrowserCon
     }
   }
 
+  async waitForNoContexts(): Promise<void> {
+    while (true) {
+      const contexts = this.browser.contexts();
+
+      if (contexts.length == 0) {
+        break;
+      }
+
+      await new Promise<void>((resolve) => contexts[0]!.once('close', () => resolve()));
+    }
+  }
+
   async waitForClose(): Promise<void> {
     return new Promise((resolve) => {
       if (!this.browser.isConnected()) {

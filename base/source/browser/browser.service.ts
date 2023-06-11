@@ -92,6 +92,20 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     return new BrowserContextController(context, mergedBrowserOptions.defaultNewContextOptions);
   }
 
+  async waitForNoBrowsers(): Promise<void> {
+    while (true) {
+      if (this.browsers.size == 0) {
+        break;
+      }
+
+      for (const browser of this.browsers) {
+        if (browser.isConnected()) {
+          await new Promise<void>((resolve) => browser.once('disconnected', () => resolve()));
+        }
+      }
+    }
+  }
+
   async dispose(): Promise<void> {
     for (const browser of this.browsers) {
       if (browser.isConnected()) {
