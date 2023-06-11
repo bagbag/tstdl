@@ -1,3 +1,7 @@
+import type { ServerResponse } from 'node:http';
+import * as Http from 'node:http';
+import type { Socket } from 'node:net';
+
 import type { AfterResolve } from '#/container/index.js';
 import { afterResolve, resolveArg, singleton } from '#/container/index.js';
 import { disposer } from '#/core.js';
@@ -15,9 +19,6 @@ import { getReadableStreamIterable } from '#/utils/stream/readable-stream-adapte
 import { Timer } from '#/utils/timer.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
-import type { ServerResponse } from 'node:http';
-import * as Http from 'node:http';
-import type { Socket } from 'node:net';
 import { bindNodeCallback, share } from 'rxjs';
 import { HttpServerRequest } from '../http-server-request.js';
 import type { HttpServerResponse } from '../http-server-response.js';
@@ -166,7 +167,6 @@ function getResponder(httpResponse: Http.ServerResponse): (response: HttpServerR
   // eslint-disable-next-line max-statements
   async function respond(response: HttpServerResponse): Promise<void> {
     writeHeaders(response, httpResponse);
-
     return writeResponseBody(response, httpResponse);
   }
 
