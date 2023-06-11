@@ -78,6 +78,22 @@ export class BrowserContextController implements AsyncDisposable, Injectable<Bro
     return controller;
   }
 
+  async waitForNoPages(): Promise<void> {
+    while (true) {
+      const pages = this.context.pages();
+
+      if (pages.length == 0) {
+        break;
+      }
+
+      for (const page of pages) {
+        if (!page.isClosed()) {
+          await new Promise<void>((resolve) => page.once('close', () => resolve()));
+        }
+      }
+    }
+  }
+
   async waitForClose(): Promise<void> {
     return new Promise((resolve) => this.context.once('close', () => resolve()));
   }

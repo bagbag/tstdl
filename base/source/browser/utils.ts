@@ -1,5 +1,5 @@
-import { objectKeys } from '#/utils/object/object.js';
-import type { LaunchOptions } from 'playwright';
+import { hasOwnProperty, objectKeys } from '#/utils/object/object.js';
+import type { ElementHandle, LaunchOptions, Locator } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
 
@@ -28,4 +28,12 @@ export function mergeNewBrowserContextOptions(a: NewBrowserContextOptions | unde
     ...c,
     extraHttpHeaders: (objectKeys(mergedExtraHttpHeaders).length > 0) ? mergedExtraHttpHeaders : undefined
   };
+}
+
+export function isLocator(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is Locator {
+  return hasOwnProperty(locatorOrHandle as Locator, 'count');
+}
+
+export function isElementHandle(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is Locator {
+  return hasOwnProperty(locatorOrHandle as ElementHandle, 'asElement');
 }

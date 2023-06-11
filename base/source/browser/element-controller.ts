@@ -5,6 +5,7 @@ import { timeout } from '#/utils/timing.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import type { ValueOrProvider } from '#/utils/value-or-provider.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
+import { isLocator } from './utils.js';
 
 export type Delay = ValueOrProvider<number>;
 
@@ -36,8 +37,56 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     this.options = options;
   }
 
-  async waitFor(options?: Parameters<Locator['waitFor']>[0]): Promise<void> {
-    return (this.locatorOrHandle as Locator).waitFor(options);
+  /**
+   * Wait for element state
+   * @param state some states may only be usable for either locator or handle
+   * @param options options
+   */
+  async waitFor(state: Parameters<ElementHandle['waitForElementState']>[0] | NonNullable<LocatorOptions<'waitFor', '0'>['state']> = 'visible', options?: Parameters<ElementHandle['waitForElementState']>[1]): Promise<void> {
+    if (isLocator(this.locatorOrHandle)) {
+      return this.locatorOrHandle.waitFor({ state: state as LocatorOptions<'waitFor', '0'>['state'], ...options });
+    }
+
+    return this.locatorOrHandle.waitForElementState(state as Parameters<ElementHandle['waitForElementState']>[0], options);
+  }
+
+  /**
+   * Check if element exists
+   * @param options.state which state is required in order to be deemed existing
+   * @param options.timeout how long to wait for the element before being deemed not existing (default: 250ms)
+   */
+  async exists(options?: { state?: 'visible' | 'attached', timeout?: number }): Promise<boolean> {
+    try {
+      await this.waitFor(options?.state ?? 'visible', { timeout: options?.timeout ?? 250 });
+      return true;
+    }
+    catch {
+      return false;
+    }
+  }
+
+  async isVisible(): Promise<boolean> {
+    return this.locatorOrHandle.isVisible();
+  }
+
+  async isHidden(): Promise<boolean> {
+    return this.locatorOrHandle.isHidden();
+  }
+
+  async isEnabled(): Promise<boolean> {
+    return this.locatorOrHandle.isEnabled();
+  }
+
+  async isDisabled(): Promise<boolean> {
+    return this.locatorOrHandle.isDisabled();
+  }
+
+  async isChecked(): Promise<boolean> {
+    return this.locatorOrHandle.isChecked();
+  }
+
+  async isEditable(): Promise<boolean> {
+    return this.locatorOrHandle.isEditable();
   }
 
   async fill(text: string, options?: Merge<LocatorOptions<'fill', 1>, ActionDelayOptions>): Promise<void> {
