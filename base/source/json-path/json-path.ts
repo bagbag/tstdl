@@ -15,7 +15,7 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
   /** json path as encoded string */
   get path(): string {
     if (isUndefined(this._path)) {
-      this._path = encodeJsonPath(this._nodes!);
+      this._path = encodeJsonPath(this._nodes!, this._options);
     }
 
     return this._path;
@@ -44,6 +44,10 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     }
     else if (isArray<JsonPathNode>(pathOrNodesOrOptions)) {
       this._nodes = pathOrNodesOrOptions;
+    }
+    else if (pathOrNodesOrOptions instanceof JsonPath) {
+      this._nodes = pathOrNodesOrOptions._nodes;
+      this._path = pathOrNodesOrOptions._path;
     }
     else if (isIterable(pathOrNodesOrOptions)) {
       this._nodes = [...pathOrNodesOrOptions as Iterable<JsonPathNode>];
@@ -87,8 +91,11 @@ export type JsonPathOptions = {
   /** encode as ['foo'] instead of .foo */
   forceBrackets?: boolean,
 
-  /** dont prepend $ */
-  noDollar?: boolean
+  /**
+   * Prepend $
+   * @default true
+   */
+  dollar?: boolean
 };
 
 export type JsonPathContext = {
@@ -110,7 +117,7 @@ export function isJsonPath(path: string): boolean {
  * path == '$.foo.bar[5]'; // true
  */
 export function encodeJsonPath(nodes: readonly JsonPathNode[], options: JsonPathOptions = {}): string {
-  const { treatArrayAsObject = false, forceBrackets = false, noDollar = false } = options;
+  const { treatArrayAsObject = false, forceBrackets = false, dollar = true } = options;
 
   let path = '';
 
@@ -134,15 +141,15 @@ export function encodeJsonPath(nodes: readonly JsonPathNode[], options: JsonPath
     }
   }
 
-  if (noDollar) {
-    if (path.startsWith('[')) {
-      return path;
-    }
-
-    return path.slice(1);
+  if (dollar) {
+    return `$${path}`;
   }
 
-  return `$${path}`;
+  if (path.startsWith('[')) {
+    return path;
+  }
+
+  return path.slice(1);
 }
 
 /**
