@@ -19,6 +19,10 @@ export class ReifyingInjectionToken<T = any, A = any> {
   constructor(description: string) {
     this.description = description;
   }
+
+  toString(): string {
+    return `InjectionToken["${this.description}"]`;
+  }
 }
 
 export function injectionToken<T, A = any>(description: string): InjectionToken<T, A> {
