@@ -2,9 +2,10 @@ import type { ElementHandle, Locator } from 'playwright';
 
 import type { Merge, NonUndefinable, TypedOmit } from '#/types.js';
 import { timeout } from '#/utils/timing.js';
-import { isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { ValueOrProvider } from '#/utils/value-or-provider.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
+import type { TimeoutOptions } from './types.js';
 import { isLocator } from './utils.js';
 
 export type Delay = ValueOrProvider<number>;
@@ -28,7 +29,29 @@ export type ElementControllerOptions = {
 
 type LocatorOptions<K extends keyof Locator, I extends keyof Parameters<Locator[K]>> = NonUndefinable<Parameters<Locator[K]>[I]>;
 
-export class ElementController<T extends Locator | ElementHandle = Locator | ElementHandle> {
+type Methods =
+  | 'isVisible'
+  | 'isHidden'
+  | 'isEnabled'
+  | 'isDisabled'
+  | 'isChecked'
+  | 'isEditable'
+  | 'fill'
+  | 'type'
+  | 'press'
+  | 'check'
+  | 'uncheck'
+  | 'setChecked'
+  | 'selectOption'
+  | 'setInputFiles'
+  | 'click'
+  | 'hover'
+  | 'focus'
+  | 'tap'
+  | 'selectText'
+  | 'inputValue';
+
+export class ElementController<T extends Locator | ElementHandle = Locator | ElementHandle> implements Pick<Locator, Methods> {
   readonly locatorOrHandle: T;
   readonly options: ElementControllerOptions;
 
@@ -108,9 +131,35 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     }
   }
 
-  async selectOption(value: string | string[], options?: Merge<LocatorOptions<'selectOption', 1>, ActionDelayOptions>): Promise<void> {
+  async press(key: string, options?: Merge<LocatorOptions<'press', 1>, ActionDelayOptions>): Promise<void> {
     await this.prepareAction(options);
-    await this.locatorOrHandle.selectOption(value, options);
+    await this.locatorOrHandle.press(key, options);
+  }
+
+  async check(options?: Merge<LocatorOptions<'check', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.check(options);
+  }
+
+  async uncheck(options?: Merge<LocatorOptions<'uncheck', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.uncheck(options);
+  }
+
+  async setChecked(checked: boolean, options?: Merge<LocatorOptions<'setChecked', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.setChecked(checked, options);
+  }
+
+  async selectOption(option: string | string[], options?: Merge<LocatorOptions<'selectOption', 1>, ActionDelayOptions>): Promise<string[]> {
+    await this.prepareAction(options);
+    const selectedOptions = await this.locatorOrHandle.selectOption(option, options);
+    return selectedOptions;
+  }
+
+  async setInputFiles(files: LocatorOptions<'setInputFiles', 0>, options?: Merge<LocatorOptions<'setInputFiles', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.setInputFiles(files, options);
   }
 
   async click(options?: Merge<TypedOmit<LocatorOptions<'click', 0>, 'delay'>, ActionDelayOptions & ClickDelayOptions>): Promise<void> {
@@ -122,12 +171,46 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     });
   }
 
-  async getValue(options?: LocatorOptions<'inputValue', 0>): Promise<string> {
+  async dblclick(options?: Merge<TypedOmit<LocatorOptions<'click', 0>, 'delay'>, ActionDelayOptions & ClickDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+
+    await this.locatorOrHandle.dblclick({
+      ...options,
+      delay: resolveValueOrProvider(options?.clickDelay)
+    });
+  }
+
+  async hover(options?: Merge<LocatorOptions<'hover', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.hover(options);
+  }
+
+  async focus(options?: Merge<LocatorOptions<'focus', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.focus(options);
+  }
+
+  async tap(options?: Merge<LocatorOptions<'tap', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.tap(options);
+  }
+
+  async selectText(options?: Merge<LocatorOptions<'selectText', 1>, ActionDelayOptions>): Promise<void> {
+    await this.prepareAction(options);
+    await this.locatorOrHandle.selectText(options);
+  }
+
+  async inputValue(options?: LocatorOptions<'inputValue', 0>): Promise<string> {
     return this.locatorOrHandle.inputValue(options);
   }
 
-  private async prepareAction(options?: ActionDelayOptions): Promise<void> {
-    await delay(options?.actionDelay ?? this.options.actionDelay);
+  private async prepareAction(options?: ActionDelayOptions & TimeoutOptions): Promise<void> {
+    const actionDelay = options?.actionDelay ?? this.options.actionDelay;
+
+    if (isDefined(actionDelay)) {
+      await this.waitFor('visible', { timeout: resolveValueOrProvider(options?.timeout) });
+      await delay(actionDelay);
+    }
   }
 }
 

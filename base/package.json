@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.84.27",
+  "version": "0.84.30",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,7 +10,7 @@
     "build": "tsc && tsc-alias",
     "build:watch": "concurrently --raw --kill-others npm:tsc:watch npm:tsc-alias:watch",
     "build:production": "rm -rf dist && npm run build && npm run build:production:cjs && npm run build:production:copy-files",
-    "build:production:cjs": "esbuild `find dist \\( -name '*.js' -o -name '*.jsx' \\)` --outdir=dist --allow-overwrite --format=cjs",
+    "build:production:cjs": "esbuild `find dist \\( -name '*.js' -o -name '*.jsx' \\)` --outdir=dist --allow-overwrite --target=es2022 --format=cjs",
     "build:production:copy-files": "cp package.json .eslintrc.json tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && sed -i 's/\"type\": \"module\",/\"type\": \"commonjs\",/g' dist/package.json",
     "build:docs": "typedoc",
     "build:docs-watch": "typedoc --watch",
@@ -23,7 +23,7 @@
     "luxon": "^3.3",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.8",
-    "type-fest": "^3.11"
+    "type-fest": "^3.12"
   },
   "devDependencies": {
     "@types/chroma-js": "2.4",
