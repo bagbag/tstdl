@@ -15,7 +15,8 @@ export type TailwindPalette = {
   600: string,
   700: string,
   800: string,
-  900: string
+  900: string,
+  950: string
   /* eslint-enable @typescript-eslint/naming-convention */
 };
 
@@ -47,7 +48,8 @@ export function generateTailwindPalette(color: string): TailwindPalette {
     600: `rgb(var(--theme-${color}-600-rgb) / <alpha-value>)`,
     700: `rgb(var(--theme-${color}-700-rgb) / <alpha-value>)`,
     800: `rgb(var(--theme-${color}-800-rgb) / <alpha-value>)`,
-    900: `rgb(var(--theme-${color}-900-rgb) / <alpha-value>)`
+    900: `rgb(var(--theme-${color}-900-rgb) / <alpha-value>)`,
+    950: `rgb(var(--theme-${color}-950-rgb) / <alpha-value>)`
     /* eslint-enable @typescript-eslint/naming-convention */
   };
 }

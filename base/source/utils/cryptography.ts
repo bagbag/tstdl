@@ -196,7 +196,7 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
  */
 export async function importPbkdf2Key(key: BinaryData | string, extractable: boolean = false): Promise<CryptoKey> {
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
-  return subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
+  return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
 }
 
 /**
