@@ -6,7 +6,7 @@ import { EntityRepository } from '#/database/index.js';
 import type { Logger } from '#/logger/index.js';
 import type { Record } from '#/types.js';
 import { equals } from '#/utils/equals.js';
-import { objectEntries, objectKeys } from '#/utils/object/object.js';
+import { filterUndefinedFromRecord, objectEntries, objectKeys } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { Collection } from './classes.js';
@@ -89,7 +89,7 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
   }
 
   async initialize(): Promise<void> {
-    const indexes = this.indexes;
+    const indexes = this.indexes?.map((index) => ({ index, normalizedIndex: normalizeIndex(index) }) as const);
 
     if (isUndefined(indexes)) {
       return;
@@ -98,8 +98,8 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
     const existingRawIndexes = await this.collection.indexes() as TypedIndexDescription<any>[];
     const existingIndexes = existingRawIndexes.map(normalizeIndex).filter((index) => index.name != '_id_');
 
-    const unwantedIndexes = existingIndexes.filter((existingIndex) => !indexes.some((index) => equals(existingIndex, index, { deep: true, sortArray: false })));
-    const requiredIndexes = indexes.filter((wantedIndex) => !existingIndexes.some((index) => equals(wantedIndex, index, { deep: true, sortArray: false })));
+    const unwantedIndexes = existingIndexes.filter((existingIndex) => !indexes.some(({ normalizedIndex }) => equals(existingIndex, normalizedIndex, { deep: true, sortArray: false })));
+    const requiredIndexes = indexes.filter(({ normalizedIndex: wantedNormalizedIndex }) => !existingIndexes.some((index) => equals(wantedNormalizedIndex, index, { deep: true, sortArray: false })));
 
     for (const unwantedIndex of unwantedIndexes) {
       this.logger.warn(`dropping index ${unwantedIndex.name!}`);
@@ -107,9 +107,10 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
     }
 
     if (requiredIndexes.length > 0) {
-      const indexNames = requiredIndexes.map((index) => index.name ?? _throw(new Error('index name missing')));
+      const indexexToCreate = requiredIndexes.map(({ index }) => index);
+      const indexNames = indexexToCreate.map((index) => index.name ?? _throw(new Error('index name missing')));
       this.logger.warn(`creating indexes ${indexNames.join(', ')}`);
-      await this.baseRepository.createIndexes(requiredIndexes);
+      await this.baseRepository.createIndexes(indexexToCreate);
     }
   }
 
@@ -373,10 +374,10 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
 }
 
 function normalizeIndex<T extends Entity<any>>(index: TypedIndexDescription<T>): TypedIndexDescription<T> {
-  const { name: providedName, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const { name: providedName, unique, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
   const name = providedName ?? objectKeys(index.key).join('_');
 
-  return { name, ...indexRest };
+  return filterUndefinedFromRecord({ name, unique: (unique == true) ? true : undefined, ...indexRest });
 }
 
 function convertOptions<T extends Entity<any>, TDb extends Entity<any>>(options: QueryOptions<T> | undefined, mappingMap: TransformerMappingMap<T, TDb>): LoadOptions<TDb> | undefined {
