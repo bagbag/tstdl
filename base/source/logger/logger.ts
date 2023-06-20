@@ -1,5 +1,4 @@
-import type { Injectable } from '#/container/index.js';
-import type { resolveArgumentType } from '#/container/index.js';
+import type { Injectable, resolveArgumentType } from '#/container/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { LogLevel } from './level.js';
@@ -19,6 +18,12 @@ export type LoggerArgument = string | undefined | {
   level?: LogLevel,
   module?: string | string[],
   prefix?: string
+};
+
+export type LoggerForkOptions = {
+  subModule?: string,
+  prefix?: string,
+  level?: LogLevel
 };
 
 export abstract class Logger implements Injectable<LoggerArgument> {
@@ -68,7 +73,9 @@ export abstract class Logger implements Injectable<LoggerArgument> {
     this.log(level, entry, errorOptions);
   }
 
-  abstract fork(subModule: string): Logger;
+  abstract fork(options: LoggerForkOptions): Logger;
+
+  abstract subModule(subModule: string): Logger;
 
   abstract prefix(prefix: string): Logger;
 

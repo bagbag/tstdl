@@ -4,7 +4,10 @@ import { BrowserController } from '#/browser/browser-controller.js';
 import type { PageController } from '#/browser/page-controller.js';
 import { PdfRenderOptions } from '#/browser/pdf-options.js';
 import type { Injectable } from '#/container/index.js';
-import { forwardArg, injectArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { forwardArg, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
+import { LogLevel } from '#/logger/level.js';
+import type { LoggerArgument } from '#/logger/logger.js';
+import { Logger } from '#/logger/logger.js';
 import { Optional } from '#/schema/index.js';
 import type { TemplateField } from '#/templates/index.js';
 import { Template, TemplateService } from '#/templates/index.js';
@@ -22,6 +25,9 @@ export class PdfServiceRenderOptions extends PdfRenderOptions {
 
   @Optional()
   waitForNetworkIdle?: boolean;
+
+  @Optional()
+  log?: boolean | LogLevel;
 }
 
 export type PdfTemplateOptions = PdfRenderOptions;
@@ -45,13 +51,20 @@ const browserArguments = ['--font-render-hinting=none', '--disable-web-security'
 export class PdfService implements Injectable<PdfServiceArgument> {
   private readonly templateService: TemplateService;
   private readonly browserController: BrowserController;
+  private readonly logger: Logger;
 
   private readonly defaultLocale: string | undefined;
 
   declare readonly [resolveArgumentType]: PdfServiceArgument;
-  constructor(templateService: TemplateService, @forwardArg<PdfServiceArgument | undefined, BrowserControllerArgument>((argument) => argument?.browserControllerArgument ?? { browserArguments }) browserController: BrowserController, @injectArg() options: PdfServiceOptions = {}) {
+  constructor(
+    templateService: TemplateService,
+    @forwardArg<PdfServiceArgument | undefined, BrowserControllerArgument>((argument) => argument?.browserControllerArgument ?? { browserArguments }) browserController: BrowserController,
+    @resolveArg<LoggerArgument>('PdfService') logger: Logger,
+    @injectArg() options: PdfServiceOptions = {}
+  ) {
     this.templateService = templateService;
     this.browserController = browserController;
+    this.logger = logger;
 
     this.defaultLocale = options.locale;
   }
@@ -132,6 +145,13 @@ export class PdfService implements Injectable<PdfServiceArgument> {
     return readableStreamFromPromise(async () => {
       const context = options.browserContext ?? await this.browserController.newContext({ locale: options.locale ?? this.defaultLocale });
       const page = await context.newPage();
+
+      if (isDefined(options.log) && (options.log != false)) {
+        const level = (options.log == true) ? LogLevel.Info : options.log;
+        const logger = this.logger.fork({ level, subModule: 'PAGE' });
+
+        page.attachLogger(logger);
+      }
 
       const optionsFromHandler = await handler(page);
       const pdfStream = page.renderPdfStream({ ...optionsFromHandler, ...options });

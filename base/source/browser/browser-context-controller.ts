@@ -5,6 +5,7 @@ import type { Injectable } from '#/container/interfaces.js';
 import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import type { Logger } from '#/logger/logger.js';
 import type { Record } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
@@ -13,6 +14,7 @@ import type { NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
 import type { PageControllerOptions } from './page-controller.js';
 import { PageController } from './page-controller.js';
+import { attachLogger } from './utils.js';
 
 export type BrowserContextControllerOptions = {
   defaultNewPageOptions?: NewPageOptions
@@ -96,5 +98,9 @@ export class BrowserContextController implements AsyncDisposable, Injectable<Bro
 
   async waitForClose(): Promise<void> {
     return new Promise((resolve) => this.context.once('close', () => resolve()));
+  }
+
+  attachLogger(logger: Logger): void {
+    attachLogger(this.context, logger);
   }
 }

@@ -6,7 +6,7 @@ import { now } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined, isObject, isString } from '#/utils/type-guards.js';
 import { LogLevel } from '../level.js';
-import type { LogErrorOptions, LoggerArgument } from '../logger.js';
+import type { LogErrorOptions, LoggerArgument, LoggerForkOptions } from '../logger.js';
 import { Logger } from '../logger.js';
 
 const levelFuncMap: Record<LogLevel, (message: string) => void> = {
@@ -37,11 +37,18 @@ export class ConsoleLogger extends Logger {
     this.entryPrefix = `${modulePrefix}${modulePrefix.length > 0 ? ' ' : ''}${this.logPrefix}`;
   }
 
-  fork(subModule: string): ConsoleLogger {
+  override fork(options: LoggerForkOptions): ConsoleLogger {
+    const level = options.level ?? this.level;
+    const module = isDefined(options.subModule) ? [...(this.module ?? []), options.subModule] : this.module;
+
+    return new ConsoleLogger(level, module, options.prefix);
+  }
+
+  override subModule(subModule: string): ConsoleLogger {
     return new ConsoleLogger(this.level, [...(this.module ?? []), subModule]);
   }
 
-  prefix(prefix: string): ConsoleLogger {
+  override prefix(prefix: string): ConsoleLogger {
     return new ConsoleLogger(this.level, this.module, `${prefix}${this.logPrefix}`);
   }
 

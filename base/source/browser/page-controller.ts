@@ -2,6 +2,7 @@ import type { Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import type { Logger } from '#/logger/logger.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { withTimeout } from '#/utils/timing.js';
@@ -13,6 +14,7 @@ import type { FrameControllerOptions } from './frame-controller.js';
 import { FrameController } from './frame-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
 import type { Abortable } from './types.js';
+import { attachLogger } from './utils.js';
 
 export type PageControllerOptions = DocumentControllerOptions & {
   defaultFrameControllerOptions?: FrameControllerOptions
@@ -88,6 +90,10 @@ export class PageController extends DocumentController<Page> implements AsyncDis
         }
       });
     });
+  }
+
+  attachLogger(logger: Logger): void {
+    attachLogger(this.page, logger);
   }
 }
 

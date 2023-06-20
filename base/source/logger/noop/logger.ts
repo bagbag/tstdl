@@ -12,6 +12,10 @@ export class NoopLogger extends Logger {
     return this;
   }
 
+  subModule(): Logger {
+    return this;
+  }
+
   prefix(): Logger {
     return this;
   }
