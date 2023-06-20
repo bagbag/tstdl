@@ -14,6 +14,7 @@ import { Template, TemplateService } from '#/templates/index.js';
 import { finalizeStream } from '#/utils/stream/finalize-stream.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
+import { timeout } from '#/utils/timing.js';
 import { isDefined } from '#/utils/type-guards.js';
 
 export class PdfServiceRenderOptions extends PdfRenderOptions {
@@ -23,9 +24,22 @@ export class PdfServiceRenderOptions extends PdfRenderOptions {
   @Optional()
   locale?: string;
 
+  /**
+   * @default true
+   */
   @Optional()
   waitForNetworkIdle?: boolean;
 
+  /**
+   * Delay pdf creation to ensure content has finished rendering
+   * @default 50
+   */
+  @Optional()
+  delay?: number;
+
+  /**
+   * @default false
+   */
   @Optional()
   log?: boolean | LogLevel;
 }
@@ -76,7 +90,7 @@ export class PdfService implements Injectable<PdfServiceArgument> {
    * @returns pdf stream
    */
   renderHtmlStream(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
-    return this.renderStream(async (page) => page.setContent(html, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' }), options);
+    return this.renderStream(async (page) => page.setContent(html), options);
   }
 
   /**
@@ -98,7 +112,7 @@ export class PdfService implements Injectable<PdfServiceArgument> {
    */
   renderUrlStream(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (controller) => {
-      await controller.navigate(url, { waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' });
+      await controller.navigate(url);
     }, options);
   }
 
@@ -123,7 +137,7 @@ export class PdfService implements Injectable<PdfServiceArgument> {
   renderTemplateStream<Context extends object>(keyOrTemplate: string | PdfTemplate<Context>, templateContext?: Context, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array> {
     return this.renderStream(async (page) => {
       const { fields: { header, body, footer }, options: optionsFromTemplate } = await this.templateService.render(keyOrTemplate, templateContext);
-      await page.setContent(body, { timeout: options?.timeout, waitUntil: (options?.waitForNetworkIdle == true) ? 'networkidle' : 'load' });
+      await page.setContent(body);
 
       return { ...optionsFromTemplate, headerTemplate: header, footerTemplate: footer };
     }, options);
@@ -154,6 +168,13 @@ export class PdfService implements Injectable<PdfServiceArgument> {
       }
 
       const optionsFromHandler = await handler(page);
+
+      if (options.waitForNetworkIdle != false) {
+        await page.waitForLoadState('networkidle');
+      }
+
+      await timeout(options.delay ?? 50);
+
       const pdfStream = page.renderPdfStream({ ...optionsFromHandler, ...options });
 
       const close = async (): Promise<void> => {
