@@ -1,4 +1,5 @@
-import { hasOwnProperty, objectKeys } from '#/utils/object/object.js';
+import { objectKeys } from '#/utils/object/object.js';
+import { isFunction } from '#/utils/type-guards.js';
 import type { ElementHandle, LaunchOptions, Locator } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
@@ -31,9 +32,9 @@ export function mergeNewBrowserContextOptions(a: NewBrowserContextOptions | unde
 }
 
 export function isLocator(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is Locator {
-  return hasOwnProperty(locatorOrHandle as Locator, 'count');
+  return isFunction((locatorOrHandle as Locator).count); // eslint-disable-line @typescript-eslint/unbound-method
 }
 
 export function isElementHandle(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is Locator {
-  return hasOwnProperty(locatorOrHandle as ElementHandle, 'asElement');
+  return isFunction((locatorOrHandle as ElementHandle).asElement); // eslint-disable-line @typescript-eslint/unbound-method
 }
