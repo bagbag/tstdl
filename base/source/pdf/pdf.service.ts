@@ -161,7 +161,7 @@ export class PdfService implements Injectable<PdfServiceArgument> {
       const page = await context.newPage();
 
       if (isDefined(options.log) && (options.log != false)) {
-        const level = (options.log == true) ? LogLevel.Info : options.log;
+        const level = (options.log == true) ? LogLevel.Trace : options.log;
         const logger = this.logger.fork({ level, subModule: 'PAGE' });
 
         page.attachLogger(logger);

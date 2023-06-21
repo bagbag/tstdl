@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 import { singleton } from '#/container/index.js';
-import type { Record } from '#/types.js';
+import type { PickBy, Record } from '#/types.js';
 import { now } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined, isObject, isString } from '#/utils/type-guards.js';
@@ -9,22 +9,24 @@ import { LogLevel } from '../level.js';
 import type { LogErrorOptions, LoggerArgument, LoggerForkOptions } from '../logger.js';
 import { Logger } from '../logger.js';
 
-const levelFuncMap: Record<LogLevel, (message: string) => void> = {
-  [LogLevel.Error]: console.error,
-  [LogLevel.Warn]: console.warn,
-  [LogLevel.Info]: console.info,
-  [LogLevel.Verbose]: console.info,
-  [LogLevel.Debug]: console.debug,
-  [LogLevel.Trace]: console.debug
+const consoleLevelFuncMap: Record<LogLevel, keyof PickBy<typeof console, (message: string) => void>> = {
+  [LogLevel.Error]: 'error',
+  [LogLevel.Warn]: 'warn',
+  [LogLevel.Info]: 'info',
+  [LogLevel.Verbose]: 'info',
+  [LogLevel.Debug]: 'debug',
+  [LogLevel.Trace]: 'debug'
 };
 
 @singleton<ConsoleLogger, LoggerArgument>({
   provider: {
-    useFactory: (argument, context) => new ConsoleLogger(
-      (isObject(argument) ? argument.level : undefined) ?? context.resolve(LogLevel),
-      isObject(argument) ? argument.module : argument,
-      isObject(argument) ? argument.prefix : undefined
-    )
+    useFactory: (argument, context) => {
+      if (isObject(argument)) {
+        return new ConsoleLogger(argument.level ?? context.resolve(LogLevel), argument.module, argument.prefix);
+      }
+
+      return new ConsoleLogger(context.resolve(LogLevel), argument, undefined);
+    }
   }
 })
 export class ConsoleLogger extends Logger {
@@ -41,7 +43,7 @@ export class ConsoleLogger extends Logger {
     const level = options.level ?? this.level;
     const module = isDefined(options.subModule) ? [...(this.module ?? []), options.subModule] : this.module;
 
-    return new ConsoleLogger(level, module, options.prefix);
+    return new ConsoleLogger(level, module, isDefined(options.subModule) ? options.prefix : (options.prefix ?? this.logPrefix));
   }
 
   override subModule(subModule: string): ConsoleLogger {
@@ -56,6 +58,6 @@ export class ConsoleLogger extends Logger {
     const entry = isString(entryOrError) ? entryOrError : formatError(entryOrError, errorOptions);
 
     const dateString = now().toISOString();
-    levelFuncMap[level](`${dateString} - ${this.entryPrefix}${entry}`);
+    console[consoleLevelFuncMap[level]](`${dateString} - ${this.entryPrefix}${entry}`);
   }
 }
