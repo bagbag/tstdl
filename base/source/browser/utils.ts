@@ -52,6 +52,9 @@ export function attachLogger(loggable: Page | BrowserContext, logger: Logger): v
     loggable.on('pageerror', (error) => logger.error(error));
   }
 
+  loggable.on('request', (request) => getPageLogger(request.frame().page(), logger).verbose(`Request to ${request.url()}`));
+  loggable.on('requestfailed', (request) => getPageLogger(request.frame().page(), logger).verbose(`Request to ${request.url()} failed: ${request.failure()?.errorText}`));
+
   loggable.on('console', (consoleMessage) => {
     const page = consoleMessage.page();
     const pageLogger = isNull(page) ? logger : getPageLogger(page, logger);
