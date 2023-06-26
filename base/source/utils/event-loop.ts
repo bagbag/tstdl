@@ -1,6 +1,6 @@
 import type { Logger } from '../logger/index.js';
 import type { ReadonlyCancellationToken } from './cancellation-token.js';
-import { formatDuration } from './helpers.js';
+import { formatDuration } from './format.js';
 import { AggregationMode, PeriodicSampler } from './periodic-sampler.js';
 import { Timer } from './timer.js';
 
