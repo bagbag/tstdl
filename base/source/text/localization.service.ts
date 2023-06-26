@@ -89,8 +89,14 @@ export function isLocalizationDataObject(value: LocalizationData): value is Loca
 }
 
 /** helper function to ensure type safety */
-export function localizationData<T>(data: LocalizationData<T>): LocalizationData<T> {
-  return data;
+export function localizationData<T>(key: LocalizationKey<T>, parameters: T): LocalizationDataObject<T>;
+export function localizationData<T>(data: LocalizationData<T>): LocalizationDataObject<T>;
+export function localizationData<T>(keyOrData: LocalizationKey<T> | LocalizationData<T>, parameters?: T): LocalizationData<T> {
+  if (isString(keyOrData) || isProxyLocalizationKey(keyOrData)) {
+    return { key: keyOrData, parameters } as LocalizationDataObject<T>;
+  }
+
+  return keyOrData as LocalizationData<T>;
 }
 
 /**
