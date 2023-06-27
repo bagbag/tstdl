@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { isNull, toDateTime } from '@tstdl/base/utils';
+import { isNullOrUndefined, toDateTime } from '@tstdl/base/utils';
 import type { DateTimeFormatOptions, LocaleOptions } from 'luxon';
 import { DateTime } from 'luxon';
 
@@ -9,8 +9,8 @@ import { DateTime } from 'luxon';
   standalone: true
 })
 export class DateTimeLocalePipe implements PipeTransform {
-  transform(input: Date | DateTime | number | null, format?: keyof typeof DateTime | DateTimeFormatOptions, options?: LocaleOptions): string | null {
-    if (isNull(input)) {
+  transform(input: Date | DateTime | number | null | undefined, format?: keyof typeof DateTime | DateTimeFormatOptions, options?: LocaleOptions): string | null {
+    if (isNullOrUndefined(input)) {
       return null;
     }
 

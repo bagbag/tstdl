@@ -2,7 +2,7 @@ import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
 import type { SafeHtml } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
-import { isNull } from '@tstdl/base/utils';
+import { isNullOrUndefined } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'safeHtml',
@@ -15,8 +15,8 @@ export class SafeHtmlPipe implements PipeTransform {
     this.domSanitizer = domSanitizer;
   }
 
-  transform(html: string | null): SafeHtml | null {
-    if (isNull(html)) {
+  transform(html: string | null | undefined): SafeHtml | null {
+    if (isNullOrUndefined(html)) {
       return null;
     }
 

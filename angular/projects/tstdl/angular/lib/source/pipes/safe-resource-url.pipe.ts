@@ -2,7 +2,7 @@ import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
 import type { SafeResourceUrl } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
-import { isNull } from '@tstdl/base/utils';
+import { isNullOrUndefined } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'safeResourceUrl',
@@ -15,8 +15,8 @@ export class SafeResourceUrlPipe implements PipeTransform {
     this.domSanitizer = domSanitizer;
   }
 
-  transform(url: string | null): SafeResourceUrl | null {
-    if (isNull(url)) {
+  transform(url: string | null | undefined): SafeResourceUrl | null {
+    if (isNullOrUndefined(url)) {
       return null;
     }
 

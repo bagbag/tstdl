@@ -27,7 +27,7 @@
     "@headlessui/react": "1.7",
     "@heroicons/react": "2.0",
     "@preact/signals": "1.1",
-    "@tstdl/base": "0.84.35",
+    "@tstdl/base": "0.84.38",
     "chroma-js": "2.4",
     "luxon": "3.3",
     "marked": "5.1",
@@ -35,7 +35,7 @@
     "react": "npm:@preact/compat@17.1",
     "react-dom": "npm:@preact/compat@17.1",
     "rxjs": "7.8",
-    "tslib": "2.5",
+    "tslib": "2.6",
     "zone.js": "0.13"
   },
   "devDependencies": {

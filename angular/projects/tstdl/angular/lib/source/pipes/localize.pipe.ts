@@ -1,9 +1,9 @@
 import type { OnDestroy, PipeTransform } from '@angular/core';
 import { ChangeDetectorRef, Pipe } from '@angular/core';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
-import { isProxyLocalizationKey, LocalizationService } from '@tstdl/base/text';
-import { isNull, isString } from '@tstdl/base/utils';
-import { distinctUntilChanged, Subject, switchMap, takeUntil } from 'rxjs';
+import { LocalizationService, isProxyLocalizationKey } from '@tstdl/base/text';
+import { isNullOrUndefined, isString } from '@tstdl/base/utils';
+import { Subject, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
 
 @Pipe({
   name: 'localize',
@@ -40,11 +40,11 @@ export class LocalizePipe implements PipeTransform, OnDestroy {
     this.transformSubject.complete();
   }
 
-  transform(localizationKey: LocalizationKey | null): string | null;
-  transform<Parameters>(localizationData: LocalizationData<Parameters> | null): string | null;
-  transform<Parameters>(localizationKey: LocalizationKey<Parameters> | null, parameters: Parameters): string | null;
-  transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters> | null, parametersOrNothing?: Parameters): string | null {
-    if (isNull(localizationDataOrKey)) {
+  transform(localizationKey: LocalizationKey | null | undefined): string | null;
+  transform<Parameters>(localizationData: LocalizationData<Parameters> | null | undefined): string | null;
+  transform<Parameters>(localizationKey: LocalizationKey<Parameters> | null | undefined, parameters: Parameters): string | null;
+  transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters> | null | undefined, parametersOrNothing?: Parameters): string | null {
+    if (isNullOrUndefined(localizationDataOrKey)) {
       return null;
     }
 

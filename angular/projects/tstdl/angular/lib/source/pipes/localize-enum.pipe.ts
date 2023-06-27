@@ -47,8 +47,8 @@ export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
   }
 
   transform<T extends Enumeration>(enumeration: T, parameters?: unknown): string | null;
-  transform<T extends Enumeration>(value: EnumerationValue<T> | null, enumeration: T, parameters?: unknown): string | null;
-  transform<T extends Enumeration>(enumerationOrValue: T | EnumerationValue<T> | null, enumerationOrParameters: T | unknown, parametersOrNothing?: unknown): string | null {
+  transform<T extends Enumeration>(value: EnumerationValue<T> | null | undefined, enumeration: T, parameters?: unknown): string | null;
+  transform<T extends Enumeration>(enumerationOrValue: T | EnumerationValue<T> | null | undefined, enumerationOrParameters: T | unknown, parametersOrNothing?: unknown): string | null {
     if (isNullOrUndefined(enumerationOrValue)) {
       return null;
     }
