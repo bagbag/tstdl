@@ -1,4 +1,4 @@
-import type { FromEntries, ObjectLiteral, PickBy, Record } from '#/types.js';
+import type { FromEntries, ObjectLiteral, PickBy, Record, SimplifyObject } from '#/types.js';
 import type { IsEqual } from 'type-fest';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
@@ -136,4 +136,12 @@ export function deepObjectEntries(object: ObjectLiteral, keepInnerObjects: boole
   }
 
   return entries;
+}
+
+export function omit<T extends Record, K extends keyof T>(object: T, ...keys: K[]): SimplifyObject<Omit<T, K>> {
+  return filterObject(object, (_, key) => !keys.includes(key as K)) as Omit<T, K>;
+}
+
+export function pick<T extends Record, K extends keyof T>(object: T, ...keys: K[]): SimplifyObject<Pick<T, K>> {
+  return filterObject(object, (_, key) => keys.includes(key as K)) as Pick<T, K>;
 }
