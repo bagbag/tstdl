@@ -6,13 +6,15 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import type { Observable } from 'rxjs';
+import type { Observable, Subscribable } from 'rxjs';
 
 import { isDevMode } from '#/core.js';
-import { NotSupportedError } from '#/error/not-supported.error.js';
 import { registerFinalization } from '#/memory/finalization.js';
 import type { Signal } from './api.js';
-import { computed, signal, untracked } from './api.js';
+import { computed } from './computed.js';
+import type { WritableSignal } from './signal.js';
+import { signal } from './signal.js';
+import { untracked } from './untracked.js';
 
 const enum StateKind {
   NoValue = 0,
@@ -20,29 +22,32 @@ const enum StateKind {
   Error = 2
 }
 
-type NoValueState = {
-  kind: StateKind.NoValue
-};
+interface NoValueState {
+  kind: StateKind.NoValue;
+}
 
-type ValueState<T> = {
-  kind: StateKind.Value,
-  value: T
-};
+interface ValueState<T> {
+  kind: StateKind.Value;
+  value: T;
+}
 
-type ErrorState = {
-  kind: StateKind.Error,
-  error: unknown
-};
+interface ErrorState {
+  kind: StateKind.Error;
+  error: unknown;
+}
 
-type State<T = unknown> = NoValueState | ValueState<T> | ErrorState;
+type State<T> = NoValueState | ValueState<T> | ErrorState;
 
-export type ToSignalOptions<T> = {
+/**
+ * Options for `toSignal`.
+ */
+export interface ToSignalOptions<T> {
   /**
    * Initial value for the signal produced by `toSignal`.
    *
    * This will be the value of the signal until the observable emits its first value.
    */
-  initialValue?: T,
+  initialValue?: T;
 
   /**
    * Whether to require that the observable emits synchronously when `toSignal` subscribes.
@@ -52,8 +57,8 @@ export type ToSignalOptions<T> = {
    * signal type or provide an `initialValue`, at the cost of a runtime error if this requirement is
    * not met.
    */
-  requireSync?: boolean
-};
+  requireSync?: boolean;
+}
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -66,7 +71,7 @@ export type ToSignalOptions<T> = {
  * Before the `Observable` emits its first value, the `Signal` will return `undefined`. To avoid
  * this, either an `initialValue` can be passed or the `requireSync` option enabled.
  */
-export function toSignal<T>(source: Observable<T>): Signal<T | undefined>;
+export function toSignal<T>(source: Observable<T> | Subscribable<T>): Signal<T | undefined>;
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -80,7 +85,7 @@ export function toSignal<T>(source: Observable<T>): Signal<T | undefined>;
  * `initialValue`, or `undefined` if no `initialValue` is provided. If the `Observable` is
  * guaranteed to emit synchronously, then the `requireSync` option can be passed instead.
  */
-export function toSignal<T>(source: Observable<T>, options?: ToSignalOptions<undefined> & { requireSync?: false }): Signal<T | undefined>;
+export function toSignal<T>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions<undefined> & { requireSync?: false }): Signal<T | undefined>;
 
 
 /**
@@ -95,7 +100,7 @@ export function toSignal<T>(source: Observable<T>, options?: ToSignalOptions<und
  * `initialValue`. If the `Observable` is guaranteed to emit synchronously, then the `requireSync`
  * option can be passed instead.
  */
-export function toSignal<T, U extends T | null | undefined>(source: Observable<T>, options: ToSignalOptions<U> & { initialValue: U, requireSync?: false }): Signal<T | U>;
+export function toSignal<T, U extends T | null | undefined>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions<U> & { initialValue: U, requireSync?: false }): Signal<T | U>;
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -109,42 +114,45 @@ export function toSignal<T, U extends T | null | undefined>(source: Observable<T
  * immediately upon subscription. No `initialValue` is needed in this case, and the returned signal
  * does not include an `undefined` type.
  */
-export function toSignal<T>(source: Observable<T>, options: ToSignalOptions<undefined> & { requireSync: true }): Signal<T>;
+export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions<undefined> & { requireSync: true }): Signal<T>;
+export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions<U>): Signal<T | U> {
+  // Note: T is the Observable value type, and U is the initial value type. They don't have to be
+  // the same - the returned signal gives values of type `T`.
+  let state: WritableSignal<State<T | U>>;
+  if (options?.requireSync) {
+    // Initially the signal is in a `NoValue` state.
+    state = signal({ kind: StateKind.NoValue });
+  } else {
+    // If an initial value was passed, use it. Otherwise, use `undefined` as the initial value.
+    state = signal<State<T | U>>({ kind: StateKind.Value, value: options?.initialValue as U });
+  }
 
-export function toSignal<T, U = undefined>(source: Observable<T>, options: ToSignalOptions<U> = {}): Signal<T | U> {
-  const { initialValue, requireSync = false } = options;
-
-  const initialState: State<T | U> = requireSync ? { kind: StateKind.NoValue } : { kind: StateKind.Value, value: initialValue as U };
-  const state = signal<State<T | U>>(initialState);
-
-  const subscription = source.subscribe({
-    next: (value) => state.set({ kind: StateKind.Value, value }),
-    error: (error) => state.set({ kind: StateKind.Error, error })
+  const sub = source.subscribe({
+    next: value => state.set({ kind: StateKind.Value, value }),
+    error: error => state.set({ kind: StateKind.Error, error }),
+    // Completion of the Observable is meaningless to the signal. Signals don't have a concept of
+    // "complete".
   });
 
-  if (isDevMode() && requireSync && untracked(state).kind === StateKind.NoValue) {
+  if (isDevMode() && options?.requireSync && untracked(state).kind === StateKind.NoValue) {
     throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
   }
 
+  // The actual returned signal is a `computed` of the `State` signal, which maps the various states
+  // to either values or errors.
   const result = computed(() => {
     const current = state();
-
     switch (current.kind) {
       case StateKind.Value:
         return current.value;
-
       case StateKind.Error:
         throw current.error;
-
       case StateKind.NoValue:
         throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
-
-      default:
-        throw new NotSupportedError(`StateKind ${(current as State).kind} not supported.`);
     }
   });
 
-  registerFinalization(result, () => subscription.unsubscribe());
+  registerFinalization(result, () => sub.unsubscribe());
 
   return result;
 }

@@ -58,7 +58,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   [afterResolve](): void {
-    disposer.add(() => this[disposeAsync], 1000);
+    disposer.add(() => this[disposeAsync]);
   }
 
   async [disposeAsync](): Promise<void> {

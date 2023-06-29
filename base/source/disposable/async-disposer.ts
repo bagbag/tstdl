@@ -1,9 +1,5 @@
-import { compareByValueSelection } from '#/utils/comparison.js';
-import { group } from '#/utils/iterable-helpers/group.js';
-import { sort } from '#/utils/iterable-helpers/sort.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { MultiError } from '../error/multi.error.js';
-import { parallelForEach } from '../utils/async-iterable-helpers/parallel/for-each.js';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
 import { CancellationToken } from '../utils/cancellation-token.js';
 import type { AsyncDisposable, Disposable } from './disposable.js';
@@ -16,7 +12,6 @@ export type TaskFunction = () => any;
 export type AsyncDisposeHandler = TaskFunction | Disposable | AsyncDisposable;
 
 export type Task = {
-  priority: number,
   taskFunction: TaskFunction
 };
 
@@ -84,16 +79,15 @@ export class AsyncDisposer implements AsyncDisposable {
   /**
    *
    * @param fnOrDisposable
-   * @param priority when it will be disposed in relation to other tasks (lower gets disposed first). When other tasks have the same priority, they will be disposed in parallel
    */
-  add(fnOrDisposable: AsyncDisposeHandler, priority: number = 1000): void {
-    const fn = isDisposable(fnOrDisposable)
-      ? () => fnOrDisposable[dispose]()
-      : isAsyncDisposable(fnOrDisposable)
-        ? async () => fnOrDisposable[disposeAsync]()
+  add(fnOrDisposable: AsyncDisposeHandler): void {
+    const fn = isAsyncDisposable(fnOrDisposable)
+      ? async () => fnOrDisposable[disposeAsync]()
+      : isDisposable(fnOrDisposable)
+        ? () => fnOrDisposable[dispose]()
         : fnOrDisposable;
 
-    this.tasks.push({ priority, taskFunction: fn });
+    this.tasks.push({ taskFunction: fn });
   }
 
   async dispose(): Promise<void> {
@@ -114,17 +108,14 @@ export class AsyncDisposer implements AsyncDisposable {
       }
     }
 
-    const taskGroups = sort(group(this.tasks, (task) => task.priority), compareByValueSelection((task) => task[0]));
-
-    for (const [, tasks] of taskGroups) {
-      await parallelForEach(tasks, 10, async (task) => {
-        try {
-          await task.taskFunction();
-        }
-        catch (error: unknown) {
-          errors.push(error as Error);
-        }
-      });
+    for (let i = this.tasks.length - 1; i >= 0; i--) {
+      try {
+        const task = this.tasks[i]!;
+        await task.taskFunction();
+      }
+      catch (error) {
+        errors.push(error as Error);
+      }
     }
 
     const error = (errors.length == 1)

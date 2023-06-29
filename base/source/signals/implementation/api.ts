@@ -32,7 +32,7 @@ export interface Signal<T> {
  * Checks if the given `value` is a reactive `Signal`.
  */
 export function isSignal(value: unknown): value is Signal<unknown> {
-  return (typeof value == 'function') && (value as Signal<unknown>)[SIGNAL] !== undefined;
+  return typeof value === 'function' && (value as Signal<unknown>)[SIGNAL] !== undefined;
 }
 
 /**
@@ -66,8 +66,6 @@ export function createSignalFromFunction<T, U extends Record<string, unknown> = 
 
 /**
  * A comparison function which can determine if two values are equal.
- *
- * @developerPreview
  */
 export type ValueEqualityFn<T> = (a: T, b: T) => boolean;
 
@@ -77,8 +75,6 @@ export type ValueEqualityFn<T> = (a: T, b: T) => boolean;
  *
  * This allows signals to hold non-primitive values (arrays, objects, other collections) and still
  * propagate change notification upon explicit mutation without identity change.
- *
- * @developerPreview
  */
 export function defaultEquals<T>(a: T, b: T) {
   // `Object.is` compares two values using identity semantics which is desired behavior for

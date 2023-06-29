@@ -4,5 +4,7 @@ export * from './configure.js';
 export * from './effect.js';
 export * from './graph.js';
 export * from './signal.js';
+export * from './to-observable.js';
+export * from './to-signal.js';
 export * from './untracked.js';
 export * from './watch.js';

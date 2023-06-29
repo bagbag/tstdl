@@ -1,13 +1,13 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.84.11",
+  "version": "0.85.0",
   "dependencies": {
     "tslib": "^2.6"
   },
   "peerDependencies": {
     "@angular/common": ">=16.0",
     "@angular/core": ">=16.0",
-    "@tstdl/base": "^0.84.38",
+    "@tstdl/base": "^0.85.0",
     "chroma-js": "^2.4",
     "luxon": "^3.3",
     "marked": "^5.1"

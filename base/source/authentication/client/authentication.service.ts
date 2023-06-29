@@ -15,13 +15,14 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { MessageBusArgument } from '#/message-bus/index.js';
 import { MessageBus } from '#/message-bus/index.js';
+import { computed, signal, toObservable } from '#/signals/api.js';
 import type { Record } from '#/types.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNull, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, Subject, distinctUntilChanged, filter, firstValueFrom, map, race, timer } from 'rxjs';
+import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
@@ -36,7 +37,6 @@ const refreshLockResource = 'AuthenticationService:refresh';
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
-  private readonly tokenSubject: BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
   private readonly loggedOutBus: MessageBus<void>;
   private readonly forceRefreshToken: CancellationToken;
@@ -46,17 +46,22 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   readonly error$: Observable<Error>;
 
-  readonly token$: Observable<TokenPayload<AdditionalTokenPayload> | undefined>;
-  readonly definedToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
-  readonly validToken$: Observable<TokenPayload<AdditionalTokenPayload>>;
+  readonly token = signal<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
+  readonly isLoggedIn = computed(() => isDefined(this.token()));
+  readonly subject = computed(() => this.token()?.subject);
+  readonly sessionId = computed(() => this.token()?.sessionId);
 
-  readonly subject$: Observable<string | undefined>;
-  readonly definedSubject$: Observable<string>;
+  readonly token$ = toObservable(this.token);
+  readonly definedToken$ = this.token$.pipe(filter(isDefined));
+  readonly validToken$ = this.definedToken$.pipe(filter((token) => token.exp > currentTimestampSeconds()));
 
-  readonly sessionId$: Observable<string | undefined>;
-  readonly definedSessionId$: Observable<string>;
+  readonly subject$ = toObservable(this.subject);
+  readonly definedSubject$ = this.subject$.pipe(filter(isDefined));
 
-  readonly isLoggedIn$: Observable<boolean>;
+  readonly sessionId$ = toObservable(this.sessionId);
+  readonly definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
+
+  readonly isLoggedIn$ = toObservable(this.isLoggedIn);
   readonly loggedOut$: Observable<void>;
 
   private get authenticationData(): AuthenticationData | undefined {
@@ -79,28 +84,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     }
   }
 
-  get isLoggedIn(): boolean {
-    return isDefined(this.tokenSubject.value);
-  }
-
-  get token(): TokenPayload<AdditionalTokenPayload> | undefined {
-    return this.tokenSubject.value;
-  }
-
   get definedToken(): TokenPayload<AdditionalTokenPayload> {
-    return assertDefinedPass(this.tokenSubject.value, 'No token available.');
-  }
-
-  get subject(): string | undefined {
-    return this.token?.subject;
+    return assertDefinedPass(this.token(), 'No token available.');
   }
 
   get definedSubject(): string {
     return this.definedToken.subject;
-  }
-
-  get sessionId(): string | undefined {
-    return this.token?.sessionId;
   }
 
   get definedSessionId(): string {
@@ -108,7 +97,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   get hasValidToken(): boolean {
-    return (this.token?.exp ?? 0) > currentTimestampSeconds();
+    return (this.token()?.exp ?? 0) > currentTimestampSeconds();
   }
 
   constructor(
@@ -131,18 +120,9 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
     this.disposeToken = new CancellationToken();
     this.errorSubject = new Subject();
-    this.tokenSubject = new BehaviorSubject<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
     this.forceRefreshToken = new CancellationToken();
 
     this.error$ = this.errorSubject.asObservable();
-    this.token$ = this.tokenSubject.asObservable();
-    this.definedToken$ = this.token$.pipe(filter(isDefined));
-    this.validToken$ = this.definedToken$.pipe(filter((token) => token.exp > currentTimestampSeconds()));
-    this.subject$ = this.token$.pipe(map((token) => token?.subject), distinctUntilChanged());
-    this.definedSubject$ = this.subject$.pipe(filter(isDefined));
-    this.sessionId$ = this.token$.pipe(map((token) => token?.sessionId), distinctUntilChanged());
-    this.definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
-    this.isLoggedIn$ = this.token$.pipe(map(isDefined), distinctUntilChanged());
     this.loggedOut$ = loggedOutBus.allMessages$;
   }
 
@@ -153,7 +133,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   initialize(): void {
     this.loadToken();
-    this.tokenUpdateBus.messages$.subscribe((token) => this.tokenSubject.next(token));
+    this.tokenUpdateBus.messages$.subscribe((token) => this.token.set(token));
 
     void this.refreshLoop();
   }
@@ -164,7 +144,6 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   async dispose(): Promise<void> {
     this.disposeToken.set();
-    this.tokenSubject.complete();
     this.errorSubject.complete();
     await this.tokenUpdateBus.dispose();
   }
@@ -255,12 +234,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       ? JSON.parse(existingSerializedToken) as TokenPayload<AdditionalTokenPayload>
       : undefined;
 
-    this.tokenSubject.next(token);
+    this.token.set(token);
   }
 
   private setNewToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
     this.saveToken(token);
-    this.tokenSubject.next(token);
+    this.token.set(token);
     this.tokenUpdateBus.publishAndForget(token);
   }
 

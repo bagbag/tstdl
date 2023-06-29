@@ -1,6 +1,7 @@
 import { DOCUMENT as ANGULAR_DOCUMENT } from '@angular/common';
-import type { CreateEffectOptions, Provider, ProviderToken } from '@angular/core';
+import type { CreateEffectOptions, Provider, ProviderToken, Signal } from '@angular/core';
 import { Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, signal, untracked } from '@angular/core';
+import { ToObservableOptions, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import type { Registration } from '@tstdl/base/container';
 import { container, getTokenName } from '@tstdl/base/container';
@@ -74,7 +75,17 @@ export class TstdlBridgeService {
         }
       },
       untracked,
-      isSignal
+      isSignal,
+      toSignal,
+      toObservable: <T>(source: Signal<T>, options?: ToObservableOptions) => {
+        try {
+          assertInInjectionContext(TstdlBridgeService);
+          return toObservable(source, options);
+        }
+        catch {
+          return toObservable(source, { injector: this.injector, ...options });
+        }
+      }
     });
   }
 

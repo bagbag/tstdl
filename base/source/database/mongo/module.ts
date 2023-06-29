@@ -41,7 +41,7 @@ container.registerSingleton(MongoClient, {
       .on('timeout', () => logger.warn('connection timed out'))
       .on('close', () => logger.verbose('connection closed'));
 
-    disposer.add(async () => client.close(), 10000);
+    disposer.add(async () => client.close());
 
     await connect(`mongo at ${url}`, async () => client.connect(), logger);
 

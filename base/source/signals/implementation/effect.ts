@@ -9,16 +9,6 @@
 import { Watch } from './watch.js';
 
 /**
- * A global reactive effect, which can be manually destroyed.
- */
-export interface EffectRef {
-  /**
-   * Shut down the effect, removing it from any upcoming scheduled executions.
-   */
-  destroy(): void;
-}
-
-/**
  * An effect can, optionally, register a cleanup function. If registered, the cleanup is executed
  * before the next effect run. The cleanup function makes it possible to "cancel" any work that the
  * previous effect run might have started.
@@ -30,22 +20,6 @@ export type EffectCleanupFn = () => void;
  */
 export type EffectCleanupRegisterFn = (cleanupFn: EffectCleanupFn) => void;
 
-export type CreateEffectOptions = {
-
-  /**
-   * Whether the `effect` should allow writing to signals.
-   *
-   * Using effects to synchronize data by writing to signals can lead to confusing and potentially
-   * incorrect behavior, and should be enabled only when necessary.
-   */
-  allowSignalWrites?: boolean,
-
-  /**
-   * Immediately run effect after creation without scheduling - for advanced use cases.
-   */
-  runImmediately?: boolean
-};
-
 /**
  * Tracks all effects registered within a given application and runs them via `flush`.
  */
@@ -55,7 +29,7 @@ export class EffectManager {
 
   private pendingFlush: boolean;
 
-  create(effectFn: (onCleanup: (cleanupFn: EffectCleanupFn) => void) => void, { allowSignalWrites = false, runImmediately = false }: CreateEffectOptions = {}): EffectRef {
+  create(effectFn: (onCleanup: (cleanupFn: EffectCleanupFn) => void) => void, { allowSignalWrites = false }: CreateEffectOptions = {}): EffectRef {
     const watch = new Watch(effectFn, (watch) => {
       if (!this.all.has(watch)) {
         return;
@@ -75,12 +49,7 @@ export class EffectManager {
 
     this.all.add(watch);
 
-    if (runImmediately) {
-      watch.run();
-    }
-    else {
-      watch.notify();
-    }
+    watch.notify();
 
     const destroy = (): void => {
       watch.cleanup();
@@ -107,6 +76,29 @@ export class EffectManager {
   get isQueueEmpty(): boolean {
     return this.queue.size === 0;
   }
+}
+
+/**
+ * A global reactive effect, which can be manually destroyed.
+ */
+export interface EffectRef {
+  /**
+   * Shut down the effect, removing it from any upcoming scheduled executions.
+   */
+  destroy(): void;
+}
+
+/**
+ * Options passed to the `effect` function.
+ */
+export interface CreateEffectOptions {
+  /**
+   * Whether the `effect` should allow writing to signals.
+   *
+   * Using effects to synchronize data by writing to signals can lead to confusing and potentially
+   * incorrect behavior, and should be enabled only when necessary.
+   */
+  allowSignalWrites?: boolean;
 }
 
 const effectManager = new EffectManager();

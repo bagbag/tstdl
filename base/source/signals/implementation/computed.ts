@@ -12,8 +12,6 @@ import { ReactiveNode, setActiveConsumer } from './graph.js';
 
 /**
  * Options passed to the `computed` creation function.
- *
- * @developerPreview
  */
 export interface CreateComputedOptions<T> {
   /**
@@ -25,11 +23,9 @@ export interface CreateComputedOptions<T> {
 
 /**
  * Create a computed `Signal` which derives a reactive value from an expression.
- *
- * @developerPreview
  */
-export function computed<T>(computation: () => T, options: CreateComputedOptions<T> = {}): Signal<T> {
-  const node = new ComputedImpl(computation, options.equal ?? defaultEquals);
+export function computed<T>(computation: () => T, options?: CreateComputedOptions<T>): Signal<T> {
+  const node = new ComputedImpl(computation, options?.equal ?? defaultEquals);
 
   // Casting here is required for g3, as TS inference behavior is slightly different between our
   // version/options and g3's.

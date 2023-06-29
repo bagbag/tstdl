@@ -32,7 +32,7 @@ container.registerSingleton<Client, ClientOptions>(Client, {
     const logger = await container.resolveAsync(Logger, elasticsearchModuleConfig.logPrefix);
     const client: Client = new Client(options);
 
-    disposer.add(async () => client.close().then(() => logger.info('closed connection')), 10000);
+    disposer.add(async () => client.close().then(() => logger.info('closed connection')));
 
     const url = getUrl(options.node ?? options.nodes);
     await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger);
