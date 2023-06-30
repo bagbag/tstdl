@@ -3,6 +3,7 @@ import type { ErrorHandler } from '@angular/core';
 import { Injectable, inject } from '@angular/core';
 import { container } from '@tstdl/base/container';
 import { Logger } from '@tstdl/base/logger';
+import { isNull } from '@tstdl/base/utils';
 import type { OperatorFunction } from 'rxjs';
 import { Subject, catchError, throwError } from 'rxjs';
 
@@ -17,6 +18,7 @@ export class ErrorHandlerService implements ErrorHandler {
   private readonly errorHandlerMessageService = inject(ErrorHandlerMessageService);
   private readonly logger = container.resolve(Logger);
   private readonly errorSubject = new Subject<any>();
+  private readonly notifiedErrors = new WeakSet();
 
   readonly error$ = this.errorSubject.asObservable();
 
@@ -31,6 +33,16 @@ export class ErrorHandlerService implements ErrorHandler {
   handleError(error: unknown): void {
     this.logger.error(error as Error, { includeRest: true, includeStack: true });
     this.errorSubject.next(error);
+
+    const errorType = typeof error;
+
+    if ((errorType == 'function') || (errorType == 'object' && !isNull(error))) {
+      if (this.notifiedErrors.has(error as object)) {
+        return;
+      }
+
+      this.notifiedErrors.add(error as object);
+    }
 
     const notificationData = this.errorHandlerMessageService.getErrorMessage(error);
     this.notificationService.notify({ type: 'error', ...notificationData });
