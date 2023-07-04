@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.85.3",
+  "version": "0.85.4",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -33,11 +33,11 @@
     "@types/mjml": "4.7",
     "@types/node": "20",
     "@types/nodemailer": "6.4",
-    "@typescript-eslint/eslint-plugin": "5.60",
-    "@typescript-eslint/parser": "5.60",
+    "@typescript-eslint/eslint-plugin": "5.61",
+    "@typescript-eslint/parser": "5.61",
     "concurrently": "8.2",
     "esbuild": "0.18",
-    "eslint": "8.43",
+    "eslint": "8.44",
     "eslint-import-resolver-typescript": "3.5",
     "eslint-plugin-import": "2.27",
     "tsc-alias": "1.8",

@@ -1,6 +1,6 @@
 import type * as Types from './implementation/index.js';
 
-export type { CreateComputedOptions, CreateEffectOptions, CreateSignalOptions, EffectRef, Signal, WritableSignal } from './implementation/index.js';
+export type { CreateComputedOptions, CreateEffectOptions, CreateSignalOptions, EffectCleanupRegisterFn, EffectRef, Signal, WritableSignal } from './implementation/index.js';
 
 export type SignalsConfiguration = {
   signal: typeof Types.signal,
