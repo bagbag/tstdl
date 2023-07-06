@@ -134,8 +134,10 @@ export class LocalizationService {
   });
 
   readonly activeLanguage = this.#activeLanguage.asReadonly();
-
   readonly availableLanguages = this.#availableLanguages.asReadonly();
+
+  readonly activeLanguage$ = toObservable(this.activeLanguage);
+  readonly availableLanguages$ = toObservable(this.availableLanguages);
 
   constructor(@resolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
     this.#logger = logger;
