@@ -1,16 +1,19 @@
+import type { Observable } from 'rxjs';
+
 import { resolveArg, singleton } from '#/container/index.js';
 import { DetailsError } from '#/error/details.error.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
+import type { Signal } from '#/signals/api.js';
+import { computed, signal, toObservable } from '#/signals/api.js';
+import { computedWithDependencies } from '#/signals/computed-with-dependencies.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoize } from '#/utils/function/memoize.js';
 import { deepObjectEntries, hasOwnProperty } from '#/utils/object/object.js';
 import type { PropertyName } from '#/utils/object/property-name.js';
 import { getPropertyName, getPropertyNameProxy, isPropertyName, propertyName } from '#/utils/object/property-name.js';
-import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isNullOrUndefined, isObject, isString, isUndefined } from '#/utils/type-guards.js';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, map } from 'rxjs';
+import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isNull, isNullOrUndefined, isObject, isString, isUndefined } from '#/utils/type-guards.js';
 
 export type Language = {
   code: string,
@@ -115,79 +118,67 @@ const warnedMissingKeys = new Set<string>();
 
 @singleton()
 export class LocalizationService {
-  private readonly logger: Logger;
-  private readonly localizations: Map<string, MappedLocalization>;
-  private readonly activeLanguageSubject: BehaviorSubject<Language | undefined>;
-  private readonly availableLanguagesSubject: BehaviorSubject<Language[]>;
+  readonly #logger: Logger;
+  readonly #localizations = new Map<string, MappedLocalization>();
+  readonly #activeLanguage = signal<Language | null>(null);
+  readonly #availableLanguages = signal<Language[]>([]);
 
-  private get activeLocalization(): MappedLocalization | undefined {
-    if (isUndefined(this.activeLanguage)) {
-      return undefined;
+  readonly #activeLocalization = computed(() => {
+    const language = this.activeLanguage();
+
+    if (isNull(language)) {
+      return null;
     }
 
-    return this.localizations.get(this.activeLanguage.code);
-  }
+    return this.#localizations.get(language.code);
+  });
 
-  get availableLanguages(): readonly Language[] {
-    return this.availableLanguagesSubject.value;
-  }
+  readonly activeLanguage = this.#activeLanguage.asReadonly();
 
-  get activeLanguage(): Language | undefined {
-    return this.activeLanguageSubject.value;
-  }
-
-  readonly activeLanguage$: Observable<Language | undefined>;
-  readonly availableLanguages$: Observable<readonly Language[]>;
+  readonly availableLanguages = this.#availableLanguages.asReadonly();
 
   constructor(@resolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
-    this.logger = logger;
-
-    this.localizations = new Map();
-    this.activeLanguageSubject = new BehaviorSubject<Language | undefined>(undefined);
-    this.availableLanguagesSubject = new BehaviorSubject<Language[]>([]);
-
-    this.activeLanguage$ = this.activeLanguageSubject.asObservable();
-    this.availableLanguages$ = this.availableLanguagesSubject.asObservable();
+    this.#logger = logger;
   }
 
   registerLocalization(...localizations: Localization[]): void {
     for (const localization of localizations) {
       const mappedLocalization = buildMappedLocalization(localization);
 
-      if (this.localizations.has(localization.language.code)) {
-        const existing = this.localizations.get(localization.language.code)!;
+      if (this.#localizations.has(localization.language.code)) {
+        const existing = this.#localizations.get(localization.language.code)!;
         const merged = mergeMappedLocalization(existing, mappedLocalization);
-        this.localizations.set(localization.language.code, merged);
+        this.#localizations.set(localization.language.code, merged);
       }
       else {
-        this.localizations.set(localization.language.code, mappedLocalization);
+        this.#localizations.set(localization.language.code, mappedLocalization);
       }
 
       if (isUndefined(this.activeLanguage)) {
         this.setLocalization(localization);
       }
 
-      const availableLanguages = [...this.localizations].map(([, loc]) => loc.language);
-      this.availableLanguagesSubject.next(availableLanguages);
+      const availableLanguages = [...this.#localizations].map(([, loc]) => loc.language);
+      this.#availableLanguages.set(availableLanguages);
     }
   }
 
   hasLanguage(languageCode: string): boolean {
-    return this.localizations.has(languageCode);
+    return this.#localizations.has(languageCode);
   }
 
   getLanguage(languageCode: string): Language {
-    return assertDefinedPass(this.localizations.get(languageCode), 'language not available').language;
+    return assertDefinedPass(this.#localizations.get(languageCode), 'language not available').language;
   }
 
   setLanguage(languageOrCode: Language | string): void {
-    const language = isString(languageOrCode) ? this.localizations.get(languageOrCode)?.language : languageOrCode;
+    const language = isString(languageOrCode) ? this.#localizations.get(languageOrCode)?.language : languageOrCode;
 
-    if (isUndefined(language) || !this.localizations.has(language.code)) {
+    if (isUndefined(language) || !this.#localizations.has(language.code)) {
       throw new Error('Language not registered.');
     }
 
-    this.activeLanguageSubject.next(language);
+    this.#activeLanguage.set(language);
   }
 
   setLocalization(localization: Localization): void {
@@ -195,17 +186,19 @@ export class LocalizationService {
   }
 
   tryGetItem<Parameters>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): LocalizeItem | undefined {
-    if (isUndefined(this.activeLanguage)) {
+    const activeLanguageCode = this.#activeLanguage()?.code;
+
+    if (isUndefined(activeLanguageCode)) {
       return undefined;
     }
 
     if (isEnumLocalizationKey(keyOrData)) {
-      const enumEntry = this.localizations.get(this.activeLanguage.code)?.enums.get(keyOrData.enum);
+      const enumEntry = this.#localizations.get(activeLanguageCode)?.enums.get(keyOrData.enum);
       return isDefined(keyOrData.value) ? enumEntry?.values[keyOrData.value] : enumEntry?.name;
     }
 
     const actualKey = getStringKey(keyOrData);
-    return this.localizations.get(this.activeLanguage.code)?.keys.get(actualKey);
+    return this.#localizations.get(activeLanguageCode)?.keys.get(actualKey);
   }
 
   hasKey<Parameters>(key: LocalizationKey<Parameters> | LocalizationData<Parameters>): boolean {
@@ -214,19 +207,20 @@ export class LocalizationService {
   }
 
   // eslint-disable-next-line max-statements
-  localize<Parameters = void>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
+  localizeOnce<Parameters = void>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): string {
     if (isEnumLocalizationKey(keyOrData)) {
-      return this.localizeEnum(keyOrData.enum, keyOrData.value, keyOrData.parameters);
+      return this.localizeEnumOnce(keyOrData.enum, keyOrData.value, keyOrData.parameters);
     }
 
     const key = getStringKey(keyOrData);
     const parameters = (isString(keyOrData) || isProxyLocalizationKey(keyOrData)) ? {} : (keyOrData as LocalizationDataObject<unknown>).parameters;
 
-    const templateOrFunction = isDefined(this.activeLanguage) ? this.localizations.get(this.activeLanguage.code)?.keys.get(key) : undefined;
+    const activeLanguageCode = this.#activeLanguage()?.code;
+    const templateOrFunction = isDefined(activeLanguageCode) ? this.#localizations.get(activeLanguageCode)?.keys.get(key) : undefined;
 
     if (isUndefined(templateOrFunction)) {
       if (!warnedMissingKeys.has(key)) {
-        this.logger.warn(`Localization for ${key} not available.`);
+        this.#logger.warn(`Localization for ${key} not available.`);
         warnedMissingKeys.add(key);
       }
     }
@@ -234,14 +228,14 @@ export class LocalizationService {
     return this.localizeItem(key, templateOrFunction, parameters);
   }
 
-  localizeEnum<T extends Enumeration>(enumeration: T, value?: EnumerationValue<T>, parameters?: unknown): string {
+  localizeEnumOnce<T extends Enumeration>(enumeration: T, value?: EnumerationValue<T>, parameters?: unknown): string {
     if (isUndefined(value)) {
-      const name = this.activeLocalization?.enums.get(enumeration)?.name;
+      const name = this.#activeLocalization()?.enums.get(enumeration)?.name;
       return this.localizeItem('ENUM', name, parameters);
     }
 
     const key = isArray(enumeration) ? value : enumValueName(enumeration, value);
-    const item = this.activeLocalization?.enums.get(enumeration)?.values[value];
+    const item = this.#activeLocalization()?.enums.get(enumeration)?.values[value];
 
     if (isUndefined(item)) {
       return autoEnumerationLocalization(enumeration)[2][value] as string;
@@ -250,12 +244,20 @@ export class LocalizationService {
     return this.localizeItem(key, item, parameters);
   }
 
+  localize<Parameters>(data: LocalizationData<Parameters>): Signal<string> {
+    return computedWithDependencies(() => this.localizeOnce(data), [this.#activeLanguage]);
+  }
+
+  localizeEnum<T extends Enumeration>(enumeration: T, value?: EnumerationValue<T>, parameters?: unknown): Signal<string> {
+    return computedWithDependencies(() => this.localizeEnumOnce(enumeration, value, parameters), [this.#activeLanguage]);
+  }
+
   localize$<Parameters>(data: LocalizationData<Parameters>): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localize(data)));
+    return toObservable(this.localize(data));
   }
 
   localizeEnum$<T extends Enumeration>(enumeration: T, value?: EnumerationValue<T>, parameters?: unknown): Observable<string> {
-    return this.activeLanguage$.pipe(map(() => this.localizeEnum(enumeration, value, parameters)));
+    return toObservable(this.localizeEnum(enumeration, value, parameters));
   }
 
   private localizeItem(key: string | number, templateOrFunction: string | LocalizeFunction<any> | undefined, parameters: unknown): string {

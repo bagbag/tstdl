@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import type { OnDestroy, PipeTransform } from '@angular/core';
-import { ChangeDetectorRef, Pipe } from '@angular/core';
+import { ChangeDetectorRef, Pipe, isSignal } from '@angular/core';
 import type { DynamicText } from '@tstdl/base/text';
 import { LocalizationService } from '@tstdl/base/text';
 import { isNullOrUndefined } from '@tstdl/base/utils/type-guards';
@@ -31,8 +31,14 @@ export class DynamicTextPipe implements PipeTransform, OnDestroy {
       return null;
     }
 
-    return isObservable(value)
-      ? this.optionalLocalizePipe.transform(this.asyncPipe.transform(value))
-      : this.optionalLocalizePipe.transform(value);
+    if (isObservable(value)) {
+      return this.optionalLocalizePipe.transform(this.asyncPipe.transform(value));
+    }
+
+    if (isSignal(value)) {
+      return this.optionalLocalizePipe.transform(value());
+    }
+
+    return this.optionalLocalizePipe.transform(value);
   }
 }

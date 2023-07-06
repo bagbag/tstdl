@@ -1,7 +1,4 @@
 import type { Signal } from '@angular/core';
-import type { Observable } from 'rxjs';
-
-export type ReactiveValue<T> = T | Signal<T> | Observable<T>;
 
 declare const SIGNAL: keyof Signal<any>;
 

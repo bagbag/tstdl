@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
+import type { Observable } from 'rxjs';
 import type { Except, UnionToIntersection } from 'type-fest';
+import type { Signal } from './signals/api.js';
 
 export type ObjectLiteral = {};
 
@@ -210,3 +212,5 @@ export type TypeFromPath<T extends Record, Path extends Paths<T> | string> = {
 }[Path];
 
 export type ConstructorParameterDecorator = (target: Object, propertyKey: undefined, parameterIndex: number) => void;
+
+export type ReactiveValue<T> = T | Signal<T> | Observable<T>;
