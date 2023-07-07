@@ -1,69 +1,62 @@
-import type { OnDestroy, PipeTransform } from '@angular/core';
-import { ChangeDetectorRef, Pipe } from '@angular/core';
+import type { PipeTransform } from '@angular/core';
+import { Pipe, computed, inject, signal } from '@angular/core';
+import { switchMap } from '@tstdl/base/signals';
 import { LocalizationService } from '@tstdl/base/text';
 import type { Enumeration, EnumerationValue } from '@tstdl/base/types';
-import { isNullOrUndefined, isObject } from '@tstdl/base/utils';
-import { Subject, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
-
-type EnumLocalizationData = {
-  enumeration: Enumeration,
-  value?: EnumerationValue,
-  parameters: unknown
-};
+import { isNotNull, isNullOrUndefined, isObject } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'localizeEnum',
   pure: false,
   standalone: true
 })
-export class LocalizeEnumPipe implements PipeTransform, OnDestroy {
-  private readonly transformSubject: Subject<EnumLocalizationData>;
-  private readonly destroySubject: Subject<void>;
+export class LocalizeEnumPipe implements PipeTransform {
+  readonly #localizationService = inject(LocalizationService);
 
-  private text: string | null;
+  readonly #enumeration = signal<Enumeration | null>(null);
+  readonly #value = signal<EnumerationValue | undefined>(undefined);
+  readonly #parameters = signal<any>(undefined);
 
-  constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
-    this.destroySubject = new Subject();
-    this.transformSubject = new Subject();
+  readonly #result = switchMap(() => {
+    const enumeration = this.#enumeration();
 
-    this.text = null;
+    if (isNotNull(enumeration)) {
+      return this.#localizationService.localizeEnum(enumeration, this.#value(), this.#parameters());
+    }
 
-    this.transformSubject
-      .pipe(
-        switchMap((data) => localizationService.localizeEnum$(data.enumeration, data.value, data.parameters)),
-        distinctUntilChanged(),
-        takeUntil(this.destroySubject)
-      )
-      .subscribe((text) => {
-        this.text = text;
-        changeDetectorRef.markForCheck();
-      });
-  }
-
-  ngOnDestroy(): void {
-    this.destroySubject.next();
-    this.destroySubject.complete();
-    this.transformSubject.complete();
-  }
+    return computed(() => '[MISSING LOCALIZATION KEY]');
+  });
 
   transform<T extends Enumeration>(enumeration: T, parameters?: unknown): string | null;
   transform<T extends Enumeration>(value: EnumerationValue<T> | null | undefined, enumeration: T, parameters?: unknown): string | null;
   transform<T extends Enumeration>(enumerationOrValue: T | EnumerationValue<T> | null | undefined, enumerationOrParameters: T | unknown, parametersOrNothing?: unknown): string | null {
     if (isNullOrUndefined(enumerationOrValue)) {
+      this.setNoInput();
       return null;
     }
 
     if (isObject(enumerationOrValue)) {
-      this.transformSubject.next({ enumeration: enumerationOrValue, parameters: enumerationOrParameters });
+      this.#enumeration.set(enumerationOrValue);
+      this.#value.set(undefined);
+      this.#parameters.set(enumerationOrParameters);
     }
     else {
       if (isNullOrUndefined(enumerationOrParameters)) {
+        this.setNoInput();
         return null;
       }
 
-      this.transformSubject.next({ enumeration: enumerationOrParameters as T, value: enumerationOrValue, parameters: parametersOrNothing });
+      this.#enumeration.set(enumerationOrParameters as T);
+      this.#value.set(enumerationOrValue);
+      this.#parameters.set(parametersOrNothing);
     }
 
-    return this.text;
+    return this.#result();
+  }
+
+  private setNoInput(): void {
+    this.#enumeration.set(null);
+    this.#value.set(undefined);
+    this.#parameters.set(undefined);
   }
 }

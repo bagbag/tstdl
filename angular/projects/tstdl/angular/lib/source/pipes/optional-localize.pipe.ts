@@ -1,6 +1,8 @@
+import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
 import { isString } from '@tstdl/base/utils';
+
 import { LocalizePipe } from './localize.pipe';
 
 @Pipe({
@@ -8,12 +10,13 @@ import { LocalizePipe } from './localize.pipe';
   pure: false,
   standalone: true
 })
-export class OptionalLocalizePipe extends LocalizePipe {
+export class OptionalLocalizePipe extends LocalizePipe implements PipeTransform {
   override transform(localizationKeyOrString: LocalizationKey | string | null | undefined): string | null;
   override transform<Parameters>(localizationDataOrString: LocalizationData<Parameters> | string | null | undefined): string | null;
   override transform<Parameters>(localizationKeyOrString: LocalizationKey<Parameters> | string | null | undefined, parameters: Parameters): string | null;
   override transform<Parameters>(localizationDataOrKeyOrString: LocalizationData<Parameters> | string | null | undefined, parametersOrNothing?: Parameters): string | null {
     if (isString(localizationDataOrKeyOrString)) {
+      super.transform(null);
       return localizationDataOrKeyOrString;
     }
 

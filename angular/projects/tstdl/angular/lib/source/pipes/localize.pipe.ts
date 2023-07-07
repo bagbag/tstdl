@@ -1,60 +1,61 @@
-import type { OnDestroy, PipeTransform } from '@angular/core';
-import { ChangeDetectorRef, Pipe } from '@angular/core';
+import type { PipeTransform } from '@angular/core';
+import { Pipe, computed, inject, signal } from '@angular/core';
+import { switchMap } from '@tstdl/base/signals';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
 import { LocalizationService, isProxyLocalizationKey } from '@tstdl/base/text';
-import { isNullOrUndefined, isString } from '@tstdl/base/utils';
-import { Subject, distinctUntilChanged, switchMap, takeUntil } from 'rxjs';
+import { isNotNull, isNull, isNullOrUndefined, isString } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'localize',
   pure: false,
   standalone: true
 })
-export class LocalizePipe implements PipeTransform, OnDestroy {
-  private readonly transformSubject: Subject<LocalizationData>;
-  private readonly destroySubject: Subject<void>;
+export class LocalizePipe implements PipeTransform {
+  readonly #localizationService = inject(LocalizationService);
 
-  private value: string | null;
+  readonly #transformData = signal<LocalizationData | null>(null);
+  readonly #transformKey = signal<LocalizationKey<any> | null>(null);
+  readonly #transformParameters = signal<any>(undefined);
 
-  constructor(changeDetectorRef: ChangeDetectorRef, localizationService: LocalizationService) {
-    this.destroySubject = new Subject();
-    this.transformSubject = new Subject();
+  readonly #result = switchMap(() => {
+    const data = this.#transformData();
 
-    this.value = null;
+    if (isNotNull(data)) {
+      return this.#localizationService.localize(data);
+    }
 
-    this.transformSubject
-      .pipe(
-        switchMap((data) => localizationService.localize$(data)),
-        distinctUntilChanged(),
-        takeUntil(this.destroySubject)
-      )
-      .subscribe((value) => {
-        this.value = value;
-        changeDetectorRef.markForCheck();
-      });
-  }
+    const key = this.#transformKey();
 
-  ngOnDestroy(): void {
-    this.destroySubject.next();
-    this.destroySubject.complete();
-    this.transformSubject.complete();
-  }
+    if (isNull(key)) {
+      return computed(() => '[MISSING LOCALIZATION KEY]');
+    }
+
+    return this.#localizationService.localize({ key, parameters: this.#transformParameters() });
+  });
 
   transform(localizationKey: LocalizationKey | null | undefined): string | null;
   transform<Parameters>(localizationData: LocalizationData<Parameters> | null | undefined): string | null;
   transform<Parameters>(localizationKey: LocalizationKey<Parameters> | null | undefined, parameters: Parameters): string | null;
   transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters> | null | undefined, parametersOrNothing?: Parameters): string | null {
     if (isNullOrUndefined(localizationDataOrKey)) {
+      this.#transformKey.set(null);
+      this.#transformParameters.set(undefined);
+      this.#transformData.set(null);
+
       return null;
     }
 
     if (isString(localizationDataOrKey) || isProxyLocalizationKey(localizationDataOrKey)) {
-      this.transformSubject.next({ key: localizationDataOrKey, parameters: parametersOrNothing });
+      this.#transformKey.set(localizationDataOrKey);
+      this.#transformParameters.set(parametersOrNothing);
+      this.#transformData.set(null);
     }
     else {
-      this.transformSubject.next(localizationDataOrKey);
+      this.#transformKey.set(null);
+      this.#transformParameters.set(undefined);
+      this.#transformData.set(localizationDataOrKey);
     }
 
-    return this.value;
+    return this.#result();
   }
 }

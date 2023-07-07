@@ -1,72 +1,56 @@
 import type { Observable } from 'rxjs';
+import { isObservable } from 'rxjs';
 
 import { container } from '#/container/index.js';
 import type { Signal } from '#/signals/api.js';
-import { isSignal } from '#/signals/api.js';
-import { toObservable } from '#/signals/implementation/to-observable.js';
-import { toSignal } from '#/signals/implementation/to-signal.js';
+import { computed, isSignal, toObservable, toSignal } from '#/signals/api.js';
+import { switchMap } from '#/signals/switch-map.js';
 import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
-import { isString } from '#/utils/type-guards.js';
-import { combineLatest, isObservable, map, of, switchMap } from 'rxjs';
 import type { LocalizableText } from './localizable-text.model.js';
 import { LocalizationService } from './localization.service.js';
 
 export type DynamicText = ReactiveValue<LocalizableText>;
 
-const missingLocalizationKeyText = '[MISSING LOCALIZATION KEY]';
+export const missingLocalizationKeyText = '[MISSING LOCALIZATION KEY]';
 
 export function resolveDynamicText(text: DynamicText, localizationService?: LocalizationService): Signal<string> {
-  return toSignal(resolveDynamicText$(text, localizationService), { initialValue: missingLocalizationKeyText });
+  const resolvedLocalizationService = localizationService ?? container.resolve(LocalizationService);
+
+  const localizableText: Signal<LocalizableText> =
+    isSignal(text) ? text
+      : isObservable(text) ? toSignal(text, { initialValue: missingLocalizationKeyText })
+        : computed(() => text);
+
+  return switchMap(() => resolvedLocalizationService.localize(localizableText()));
 }
 
 export function resolveDynamicText$(text: DynamicText, localizationService?: LocalizationService): Observable<string> {
-  const resolvedLocalizationService = localizationService ?? container.resolve(LocalizationService);
-
-  if (isObservable(text)) {
-    return text.pipe(switchMap((inner) => resolveDynamicText$(inner, localizationService)));
-  }
-
-  if (isSignal(text)) {
-    const text$ = toObservable(text);
-    return resolveDynamicText$(text$, resolvedLocalizationService);
-  }
-
-  if (isString(text)) {
-    return of(text);
-  }
-
-  return resolvedLocalizationService.localize$(text);
+  return toObservable(resolveDynamicText(text, localizationService));
 }
 
 export function resolveDynamicTexts(texts: DynamicText[], localizationService?: LocalizationService): Signal<string[]> {
-  const initialValue = texts.map(() => missingLocalizationKeyText);
-  return toSignal(resolveDynamicTexts$(texts, localizationService), { initialValue });
+  const signals = texts.map((text) => resolveDynamicText(text, localizationService));
+  return computed(() => signals.map((s) => s()));
 }
 
 export function resolveDynamicTexts$(texts: DynamicText[], localizationService?: LocalizationService): Observable<string[]> {
-  const resolvedLocalizationService = localizationService ?? container.resolve(LocalizationService);
-  const resolvedTextObservables = texts.map((text) => resolveDynamicText$(text, resolvedLocalizationService));
-
-  return combineLatest(resolvedTextObservables);
+  return toObservable(resolveDynamicTexts(texts, localizationService));
 }
 
 export function resolveNestedDynamicText<T, K extends keyof PickBy<T, DynamicText>>(item: T, key: K, localizationService?: LocalizationService): Signal<ReplaceKey<T, K, string>> {
-  return toSignal(resolveNestedDynamicText$(item, key, localizationService), { requireSync: true });
+  const result = resolveDynamicText(item[key] as DynamicText, localizationService);
+  return computed(() => ({ ...item, [key]: result() }) as ReplaceKey<T, K, string>);
 }
 
 export function resolveNestedDynamicText$<T, K extends keyof PickBy<T, DynamicText>>(item: T, key: K, localizationService?: LocalizationService): Observable<ReplaceKey<T, K, string>> {
-  return resolveDynamicText$(item[key] as DynamicText, localizationService).pipe(
-    map((resolvedText) => ({ ...item, [key]: resolvedText }) as ReplaceKey<T, K, string>)
-  );
+  return toObservable(resolveNestedDynamicText(item, key, localizationService));
 }
 
 export function resolveNestedDynamicTexts<T, K extends keyof PickBy<T, DynamicText>>(items: T[], key: K, localizationService?: LocalizationService): Signal<ReplaceKey<T, K, string>[]> {
-  return toSignal(resolveNestedDynamicTexts$(items, key, localizationService), { requireSync: true });
+  const itemSignals = items.map((item) => resolveNestedDynamicText(item, key, localizationService));
+  return computed(() => itemSignals.map((s) => s()));
 }
 
 export function resolveNestedDynamicTexts$<T, K extends keyof PickBy<T, DynamicText>>(items: T[], key: K, localizationService?: LocalizationService): Observable<ReplaceKey<T, K, string>[]> {
-  const resolvedLocalizationService = localizationService ?? container.resolve(LocalizationService);
-  const resolvedTextObservables = items.map((item) => resolveNestedDynamicText$(item, key, resolvedLocalizationService));
-
-  return combineLatest(resolvedTextObservables);
+  return toObservable(resolveNestedDynamicTexts(items, key, localizationService));
 }
