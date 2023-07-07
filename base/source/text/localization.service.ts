@@ -6,7 +6,6 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
-import { computedWithDependencies } from '#/signals/computed-with-dependencies.js';
 import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoize } from '#/utils/function/memoize.js';
@@ -124,7 +123,7 @@ export class LocalizationService {
   readonly #availableLanguages = signal<Language[]>([]);
 
   readonly #activeLocalization = computed(() => {
-    const language = this.activeLanguage();
+    const language = this.#activeLanguage();
 
     if (isNull(language)) {
       return null;
@@ -156,12 +155,12 @@ export class LocalizationService {
         this.#localizations.set(localization.language.code, mappedLocalization);
       }
 
-      if (isUndefined(this.activeLanguage)) {
-        this.setLocalization(localization);
-      }
-
       const availableLanguages = [...this.#localizations].map(([, loc]) => loc.language);
       this.#availableLanguages.set(availableLanguages);
+
+      if (isNullOrUndefined(this.#activeLanguage())) {
+        this.setLanguage(localization.language.code);
+      }
     }
   }
 
@@ -184,7 +183,7 @@ export class LocalizationService {
   }
 
   setLocalization(localization: Localization): void {
-    this.setLanguage(localization.language);
+    this.setLanguage(localization.language.code);
   }
 
   tryGetItem<Parameters>(keyOrData: LocalizationKey<Parameters> | LocalizationData<Parameters>): LocalizeItem | undefined {
@@ -247,11 +246,11 @@ export class LocalizationService {
   }
 
   localize<Parameters>(data: LocalizationData<Parameters>): Signal<string> {
-    return computedWithDependencies(() => this.localizeOnce(data), [this.#activeLanguage]);
+    return computed(() => this.localizeOnce(data));
   }
 
   localizeEnum<T extends Enumeration>(enumeration: T, value?: EnumerationValue<T>, parameters?: unknown): Signal<string> {
-    return computedWithDependencies(() => this.localizeEnumOnce(enumeration, value, parameters), [this.#activeLanguage]);
+    return computed(() => this.localizeEnumOnce(enumeration, value, parameters));
   }
 
   localize$<Parameters>(data: LocalizationData<Parameters>): Observable<string> {

@@ -63,7 +63,7 @@ export class EffectManager {
   }
 
   flush(): void {
-    if (this.queue.size === 0) {
+    if (this.queue.size == 0) {
       return;
     }
 

@@ -3,7 +3,7 @@ import type { Record, SimplifyObject, TypedOmit } from '@tstdl/base/types';
 import type { InputAttributes, InputMode, InputType } from '@tstdl/base/web-types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
-export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> =
+export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = undefined> =
   | { dismissed: false, actionValue: T, inputs: MessageBoxInputsOutput<I> }
   | { dismissed: true, actionValue: D, inputs: MessageBoxInputsOutput<I> };
 
@@ -53,7 +53,7 @@ export type MessageBoxSelectInput<T> = MessageBoxInputBase<'select'> & {
 
 export type MessageBoxInput<T = any> = MessageBoxTextInput | MessageBoxSelectInput<T>;
 
-export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = never> = {
+export type MessageBoxData<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = undefined> = {
   type?: NotificationType,
   header?: DynamicText,
   subHeader?: DynamicText,
@@ -71,7 +71,7 @@ export type NotifyData = {
 };
 
 export abstract class NotificationService {
-  abstract openMessageBox<T = never, I extends MessageBoxInputs = Record<never>, D = never>(data: MessageBoxData<T, I, D>): Promise<MessageBoxResult<T, I, D>>;
+  abstract openMessageBox<T = never, I extends MessageBoxInputs = Record<never>, D = undefined>(data: MessageBoxData<T, I, D>): Promise<MessageBoxResult<T, I, D>>;
   abstract notify(data: NotifyData): void;
 }
 
