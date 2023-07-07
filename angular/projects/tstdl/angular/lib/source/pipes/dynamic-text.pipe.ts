@@ -15,7 +15,7 @@ export class DynamicTextPipe implements PipeTransform {
   readonly #result = switchMap(() => resolveDynamicText(this.#text() ?? missingLocalizationKeyText, this.#localizationService));
 
   transform(value: DynamicText | null | undefined): string | null {
-    this.#text.set(value ?? null);
+    queueMicrotask(() => this.#text.set(value ?? null));
     return this.#result();
   }
 }

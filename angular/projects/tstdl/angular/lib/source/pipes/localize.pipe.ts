@@ -13,9 +13,9 @@ import { isNotNull, isNull, isNullOrUndefined, isString } from '@tstdl/base/util
 export class LocalizePipe implements PipeTransform {
   readonly #localizationService = inject(LocalizationService);
 
-  readonly #transformData = signal<LocalizationData | null>(null);
   readonly #transformKey = signal<LocalizationKey<any> | null>(null);
   readonly #transformParameters = signal<any>(undefined);
+  readonly #transformData = signal<LocalizationData | null>(null);
 
   readonly #result = switchMap(() => {
     const data = this.#transformData();
@@ -38,24 +38,26 @@ export class LocalizePipe implements PipeTransform {
   transform<Parameters>(localizationKey: LocalizationKey<Parameters> | null | undefined, parameters: Parameters): string | null;
   transform<Parameters>(localizationDataOrKey: LocalizationData<Parameters> | null | undefined, parametersOrNothing?: Parameters): string | null {
     if (isNullOrUndefined(localizationDataOrKey)) {
-      this.#transformKey.set(null);
-      this.#transformParameters.set(undefined);
-      this.#transformData.set(null);
+      this.updateInputs(null, null);
 
       return null;
     }
 
     if (isString(localizationDataOrKey) || isProxyLocalizationKey(localizationDataOrKey)) {
-      this.#transformKey.set(localizationDataOrKey);
-      this.#transformParameters.set(parametersOrNothing);
-      this.#transformData.set(null);
+      this.updateInputs(null, localizationDataOrKey, parametersOrNothing);
     }
     else {
-      this.#transformKey.set(null);
-      this.#transformParameters.set(undefined);
-      this.#transformData.set(localizationDataOrKey);
+      this.updateInputs(localizationDataOrKey, null);
     }
 
     return this.#result();
+  }
+
+  private updateInputs(data: LocalizationData | null, key: LocalizationKey<any> | null, parameters: any = undefined): void {
+    queueMicrotask(() => {
+      this.#transformData.set(data);
+      this.#transformKey.set(key);
+      this.#transformParameters.set(parameters);
+    });
   }
 }
