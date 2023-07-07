@@ -6,6 +6,7 @@ import type { Signal } from '#/signals/api.js';
 import { computed, isSignal, toObservable, toSignal } from '#/signals/api.js';
 import { switchMap } from '#/signals/switch-map.js';
 import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
+import { isString } from '#/utils/type-guards.js';
 import type { LocalizableText } from './localizable-text.model.js';
 import { LocalizationService } from './localization.service.js';
 
@@ -16,12 +17,15 @@ export const missingLocalizationKeyText = '[MISSING LOCALIZATION KEY]';
 export function resolveDynamicText(text: DynamicText, localizationService?: LocalizationService): Signal<string> {
   const resolvedLocalizationService = localizationService ?? container.resolve(LocalizationService);
 
-  const localizableText: Signal<LocalizableText> =
+  const localizableTextSignal =
     isSignal(text) ? text
       : isObservable(text) ? toSignal(text, { initialValue: missingLocalizationKeyText })
         : computed(() => text);
 
-  return switchMap(() => resolvedLocalizationService.localize(localizableText()));
+  return switchMap(() => {
+    const localizableText = localizableTextSignal();
+    return isString(localizableText) ? computed(() => localizableText) : resolvedLocalizationService.localize(localizableText);
+  });
 }
 
 export function resolveDynamicText$(text: DynamicText, localizationService?: LocalizationService): Observable<string> {
