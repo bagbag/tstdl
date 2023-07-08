@@ -3,7 +3,7 @@ import { Pipe, computed, inject, signal } from '@angular/core';
 import { switchMap } from '@tstdl/base/signals';
 import { LocalizationService } from '@tstdl/base/text';
 import type { Enumeration, EnumerationValue } from '@tstdl/base/types';
-import { isNotNull, isNullOrUndefined, isObject } from '@tstdl/base/utils';
+import { isNotNull, isNullOrUndefined, isObject, strictEquals } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'localizeEnum',
@@ -13,9 +13,9 @@ import { isNotNull, isNullOrUndefined, isObject } from '@tstdl/base/utils';
 export class LocalizeEnumPipe implements PipeTransform {
   readonly #localizationService = inject(LocalizationService);
 
-  readonly #enumeration = signal<Enumeration | null>(null);
-  readonly #value = signal<EnumerationValue | null>(null);
-  readonly #parameters = signal<any>(undefined);
+  readonly #enumeration = signal<Enumeration | null>(null, { equal: strictEquals });
+  readonly #value = signal<EnumerationValue | null>(null, { equal: strictEquals });
+  readonly #parameters = signal<any>(undefined, { equal: strictEquals });
 
   readonly #result = switchMap(() => {
     const enumeration = this.#enumeration();

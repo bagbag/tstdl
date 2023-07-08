@@ -26,6 +26,10 @@ export type ArrayEqualsOptions<A, B> = {
   comparator?: ArrayEqualsComparator<A, B>
 };
 
+export function strictEquals(a: any, b: any): boolean {
+  return a === b;
+}
+
 export function arrayEquals<A, B>(a: readonly A[], b: readonly B[], options?: ArrayEqualsOptions<A, B>): boolean {
   const _sort = options?.sort ?? false;
   const comparator = options?.comparator ?? equals;

@@ -37,6 +37,8 @@ const propertyNameProxy = Symbol('PropertyNameProxy');
 export function getPropertyNameProxy<T extends Record = Record>(options: { deep?: boolean, flat?: boolean, prefix?: string } = {}): PropertyNameProxy<T> {
   const { deep = true, flat = false, prefix } = options;
 
+  const cache = new Map<string, PropertyNameProxy<any>>();
+
   const proxy = new Proxy<PropertyNameProxy<T>>({ [propertyNameProxy]: prefix } as PropertyNameProxy<T>, {
     get: (_target, property): any => {
       if (property == propertyName) {
@@ -59,11 +61,16 @@ export function getPropertyNameProxy<T extends Record = Record>(options: { deep?
         return proxy;
       }
 
-      if (deep) {
-        return getPropertyNameProxy({ deep, flat, prefix: isUndefined(prefix) ? property : `${prefix}.${property}` });
+      const cached = cache.get(property);
+
+      if (isDefined(cached)) {
+        return cached;
       }
 
-      return getPropertyNameProxy({ deep, flat, prefix: property });
+      const newProxy = getPropertyNameProxy({ deep, flat, prefix: deep ? isUndefined(prefix) ? property : `${prefix}.${property}` : property });
+      cache.set(property, newProxy);
+
+      return newProxy;
     }
   });
 
