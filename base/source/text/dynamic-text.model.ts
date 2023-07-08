@@ -1,11 +1,11 @@
 import type { Observable } from 'rxjs';
-import { delayWhen, isObservable } from 'rxjs';
+import { isObservable } from 'rxjs';
 
 import { container } from '#/container/index.js';
-import { microtask$ } from '#/rxjs/timing.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, isSignal, toObservable, toSignal } from '#/signals/api.js';
 import { switchMap } from '#/signals/switch-map.js';
+import { runInUntracked } from '#/signals/untracked-operator.js';
 import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
 import { isString } from '#/utils/type-guards.js';
 import type { LocalizableText } from './localizable-text.model.js';
@@ -20,7 +20,7 @@ export function resolveDynamicText(text: DynamicText, localizationService?: Loca
 
   const localizableTextSignal =
     isSignal(text) ? text
-      : isObservable(text) ? toSignal(text.pipe(delayWhen(() => microtask$)), { initialValue: missingLocalizationKeyText })
+      : isObservable(text) ? toSignal(text.pipe(runInUntracked()), { initialValue: missingLocalizationKeyText })
         : computed(() => text);
 
   return switchMap(() => {

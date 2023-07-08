@@ -1,5 +1,5 @@
 import type { PipeTransform } from '@angular/core';
-import { Pipe, computed, inject, signal } from '@angular/core';
+import { Pipe, computed, inject, signal, untracked } from '@angular/core';
 import { switchMap } from '@tstdl/base/signals';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
 import { LocalizationService, isProxyLocalizationKey } from '@tstdl/base/text';
@@ -54,7 +54,7 @@ export class LocalizePipe implements PipeTransform {
   }
 
   private updateInputs(data: LocalizationData | null, key: LocalizationKey<any> | null, parameters: any = undefined): void {
-    queueMicrotask(() => {
+    untracked(() => {
       this.#transformData.set(data);
       this.#transformKey.set(key);
       this.#transformParameters.set(parameters);

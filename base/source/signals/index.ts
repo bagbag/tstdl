@@ -4,3 +4,4 @@ export * from './effect-with-dependencies.js';
 export * from './pipe.js';
 export * from './switch-map.js';
 export * from './types.js';
+export * from './untracked-operator.js';

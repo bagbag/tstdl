@@ -1,5 +1,5 @@
 import type { PipeTransform } from '@angular/core';
-import { Pipe, computed, inject, signal } from '@angular/core';
+import { Pipe, computed, inject, signal, untracked } from '@angular/core';
 import { switchMap } from '@tstdl/base/signals';
 import { LocalizationService } from '@tstdl/base/text';
 import type { Enumeration, EnumerationValue } from '@tstdl/base/types';
@@ -51,7 +51,7 @@ export class LocalizeEnumPipe implements PipeTransform {
   }
 
   private updateInputs(enumeration: Enumeration | null, value: EnumerationValue | null, parameters: any = undefined): void {
-    queueMicrotask(() => {
+    untracked(() => {
       this.#enumeration.set(enumeration);
       this.#value.set(value);
       this.#parameters.set(parameters);
