@@ -16,7 +16,11 @@ export const nextTick$ = recursiveCallback((callback) => process.nextTick(callba
 
 function singleCallback<T, H>(scheduler: (callback: (value: T) => void) => H, canceller?: (handle: H) => void): Observable<T> {
   return new Observable<T>((subscriber) => {
-    const handle = scheduler((value) => subscriber.next(value));
+    const handle = scheduler((value) => {
+      subscriber.next(value);
+      subscriber.complete();
+    });
+
     return () => canceller?.(handle);
   });
 }
