@@ -2,19 +2,25 @@
 
 import type { Decorator } from '#/reflection/index.js';
 import { createClassDecorator, createDecorator } from '#/reflection/index.js';
-import type { Constructor, Simplify, TypedOmit } from '#/types.js';
+import type { Constructor, OneOrMany, Simplify, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';
 import type { Provider } from './provider.js';
 import { injectMetadataSymbol, injectableMetadataSymbol } from './symbols.js';
 import type { InjectionToken } from './token.js';
-import type { InjectMetadata, InjectableMetadata } from './type-info.js';
-import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types.js';
+import type { InjectMetadata } from './type-info.js';
+import type { ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOptions } from './types.js';
 
-type InjectDecorator = Decorator<'property' | 'accessor' | 'constructorParameter'>;
+type InjectDecorator = Decorator<'accessor' | 'constructorParameter'>;
 
-export type InjectableOptions<T, A> = InjectableMetadata<T, A>;
+export type InjectableOptions<T, A> = RegistrationOptions<T, A> & {
+  /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
+  alias?: OneOrMany<InjectionToken>,
+
+  /** custom provider. Useful for example if initialization is required */
+  provider?: Provider<T, A>
+};
 
 export type InjectableOptionsWithoutLifecycle<T, A> = Simplify<TypedOmit<InjectableOptions<T, A>, 'lifecycle'>>;
 
@@ -28,12 +34,12 @@ export function ReplaceClass<T>(constructor: Constructor<T>): ClassDecorator {
 }
 
 /**
- * registers the class in the global container. Decorated class is not modified in any way
+ * Globally registers the class for injection
  * @param options registration options
  */
 export function Injectable<T = any, A = any>(options: InjectableOptions<T, A> = {}): ClassDecorator {
   return createClassDecorator({
-    data: { [injectableMetadataSymbol]: options satisfies InjectableMetadata<T, A> },
+    data: { [injectableMetadataSymbol]: {} },
     mergeData: true,
     handler: (data) => {
       const { alias: aliases, provider, ...registrationOptions } = options;

@@ -1,15 +1,5 @@
-import type { OneOrMany } from '#/types.js';
-import type { Provider } from './provider.js';
 import type { InjectionToken } from './token.js';
-import type { ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOptions } from './types.js';
-
-export type InjectableMetadata<T, A> = RegistrationOptions<T, A> & {
-  /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
-  alias?: OneOrMany<InjectionToken>,
-
-  /** custom provider. Useful for example if initialization is required */
-  provider?: Provider<T, A>
-};
+import type { ArgumentProvider, ForwardRefInjectionToken, Mapper } from './types.js';
 
 export type InjectMetadata = {
   /** token overwrite by inject decorator */
