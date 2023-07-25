@@ -80,12 +80,12 @@ export class Injector {
   }
 
   /**
-   * Register a provider for a token
+   * Globally register a provider for a token
    * @param token token to register
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  static registerGlobal<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options: RegistrationOptions<T, A> = {}): void {
+  static register<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options: RegistrationOptions<T, A> = {}): void {
     const registration: GlobalRegistration<T> = {
       token,
       provider,
@@ -96,13 +96,13 @@ export class Injector {
   }
 
   /**
-   * Register a provider for a token as a singleton. Alias for {@link register} with `singleton` lifecycle
+   * Globally register a provider for a token as a singleton. Alias for {@link register} with `singleton` lifecycle
    * @param token token to register
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  static registerGlobalSingleton<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options?: TypedOmit<RegistrationOptions<T, A>, 'lifecycle'>): void {
-    Injector.registerGlobal(token, provider, { ...options, lifecycle: 'singleton' });
+  static registerSingleton<T, A = any>(token: InjectionToken<T, A>, provider: Provider<T, A>, options?: TypedOmit<RegistrationOptions<T, A>, 'lifecycle'>): void {
+    Injector.register(token, provider, { ...options, lifecycle: 'singleton' });
   }
 
   fork(name: string): Injector {

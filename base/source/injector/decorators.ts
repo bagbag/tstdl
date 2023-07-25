@@ -40,11 +40,11 @@ export function Injectable<T = any, A = any>(options: InjectableOptions<T, A> = 
       const token = data.constructor as Constructor;
 
       const targetProvider: Provider = provider ?? { useClass: token };
-      Injector.registerGlobal(token, targetProvider, registrationOptions);
+      Injector.register(token, targetProvider, registrationOptions);
 
       if (isDefined(aliases)) {
         for (const alias of toArray(aliases)) {
-          Injector.registerGlobal(alias, { useToken: token }, registrationOptions);
+          Injector.register(alias, { useToken: token }, registrationOptions);
         }
       }
     }
