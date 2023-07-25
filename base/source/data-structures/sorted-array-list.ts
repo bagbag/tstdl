@@ -51,7 +51,6 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
   }
 
   protected _at(index: number): T {
-    this.ensureBounds(index);
     return this.backingArray[index]!;
   }
 
@@ -114,7 +113,6 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
 
   /** same as `removeAt(index); add(item);` as it is sorted */
   protected _set(index: number, item: T): void {
-    this.ensureBounds(index);
     this.backingArray.splice(index, 1);
     this.add(item);
   }
@@ -134,9 +132,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
     return this.removeManyAt(index, 1)[0]!;
   }
 
-  protected _removeManyAt(index: number, count: number = this.size - index): T[] {
-    this.ensureBounds(index, count);
-
+  protected _removeManyAt(index: number, count: number): T[] {
     const removed = this.backingArray.splice(index, count);
     this.updateSize();
 

@@ -6,7 +6,10 @@ import { IndexOutOfBoundsError } from './index-out-of-bounds.error.js';
 export abstract class List<T, TThis extends Collection<T, TThis>> extends Collection<T, TThis> {
   /** get item at index */
   at(index: number): T {
-    return this._at(this.normalizeIndex(index));
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex);
+
+    return this._at(normalizedIndex);
   }
 
   /**
@@ -30,12 +33,18 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
 
   /** set item at index */
   set(index: number, item: T): void {
-    this._set(this.normalizeIndex(index), item);
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex);
+
+    this._set(normalizedIndex, item);
   }
 
   /** remove item at index */
   removeAt(index: number): T {
-    return this._removeAt(this.normalizeIndex(index));
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex);
+
+    return this._removeAt(normalizedIndex);
   }
 
   /** remove first item */
@@ -53,8 +62,11 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
    * @param index index to start removing at
    * @param count how many items to remove. If not defined, all items starting at `index` are removed
    */
-  removeManyAt(index: number, count?: number): T[] {
-    return this._removeManyAt(this.normalizeIndex(index), count);
+  removeManyAt(index: number, count: number = this.size - index): T[] {
+    const normalizedIndex = this.normalizeIndex(index);
+    this.ensureBounds(normalizedIndex, count);
+
+    return this._removeManyAt(normalizedIndex, count);
   }
 
   /**

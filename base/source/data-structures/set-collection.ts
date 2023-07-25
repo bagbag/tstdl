@@ -1,6 +1,6 @@
 import { Collection } from './collection.js';
 
-export class Set<T> extends Collection<T, Set<T>> implements globalThis.Set<T> {
+export class SetCollection<T> extends Collection<T, SetCollection<T>> implements globalThis.Set<T> {
   private readonly backingSet: globalThis.Set<T>;
   readonly [Symbol.toStringTag]: string = 'Set';
 
@@ -30,8 +30,8 @@ export class Set<T> extends Collection<T, Set<T>> implements globalThis.Set<T> {
     this.updateSize();
   }
 
-  clone(): Set<T> {
-    return new Set(this);
+  clone(): SetCollection<T> {
+    return new SetCollection(this);
   }
 
   items(): IterableIterator<T> {

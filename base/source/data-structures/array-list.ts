@@ -25,7 +25,6 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   protected _at(index: number): T {
-    this.ensureBounds(index);
     return this.backingArray[index]!;
   }
 
@@ -88,7 +87,6 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   protected _set(index: number, item: T): void {
-    this.ensureBounds(index);
     this.backingArray[index] = item;
     this.emitChange();
   }
@@ -105,12 +103,14 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   protected _removeAt(index: number): T {
+    if (index == 0) {
+      return this.backingArray.shift()!;
+    }
+
     return this.removeManyAt(index, 1)[0]!;
   }
 
-  protected _removeManyAt(index: number, count: number = this.size - index): T[] {
-    this.ensureBounds(index, count);
-
+  protected _removeManyAt(index: number, count: number): T[] {
     const removed = this.backingArray.splice(index, count);
     this.updateSize();
 

@@ -29,14 +29,14 @@ export function assertTypePass<T>(type: AbstractConstructor<T>, value: any, mess
 export function assertNotTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): InferIsNotType<T, typeof isType> { assertNotType(type, value, message); return value; }
 
 export function isUndefined(value: any): value is undefined | void { return value === undefined; }
-export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return !isUndefined(value); }
+export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return value !== undefined; }
 export function assertUndefined(value: any, message: AssertionMessage = 'Expected value to be undefined.'): asserts value is InferIsType<typeof isUndefined> { assert(isUndefined(value), message); }
 export function assertDefined<T>(value: T, message: AssertionMessage = 'Expected value to not be undefined.'): asserts value is InferIsNotType<T, typeof isUndefined> { assert(isDefined(value), message); }
 export function assertUndefinedPass(value: any, message?: AssertionMessage): InferIsType<typeof isUndefined> { assertUndefined(value, message); return value; }
 export function assertDefinedPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUndefined> { assertDefined(value, message); return value; }
 
 export function isNull(value: any): value is null { return value === null; }
-export function isNotNull<T>(value: T): value is InferIsNotType<T, typeof isNull> { return !isNull(value); }
+export function isNotNull<T>(value: T): value is InferIsNotType<T, typeof isNull> { return value !== null; }
 export function assertNull(value: any, message: AssertionMessage = 'Expected value to be null.'): asserts value is InferIsType<typeof isNull> { assert(isNull(value), message); }
 export function assertNotNull<T>(value: T, message: AssertionMessage = 'Expected value to not be null.'): asserts value is InferIsNotType<T, typeof isNull> { assert(isNotNull(value), message); }
 export function assertNullPass(value: any, message?: AssertionMessage): InferIsType<typeof isNull> { assertNull(value, message); return value; }

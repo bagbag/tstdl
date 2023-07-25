@@ -10,7 +10,7 @@ type Node = {
   value: any
 };
 
-type NewMapProvider = () => Map<any, Node>;
+export type NewMapProvider = () => Map<any, Node>;
 
 export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMap<K, V>> {
   private readonly newMapProvider: NewMapProvider;
@@ -56,6 +56,9 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
     if (!node.hasValue) {
       node.hasValue = true;
       this.incrementSize();
+    }
+    else {
+      this.emitChange();
     }
   }
 

@@ -1,5 +1,5 @@
 import { ArrayList } from '#/data-structures/array-list.js';
-import { Set } from '#/data-structures/set.js';
+import { SetCollection } from '#/data-structures/set-collection.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import { hardwareConcurrency } from '#/environment.js';
@@ -37,7 +37,7 @@ export class Pool<T extends object> implements AsyncDisposable {
   private readonly size: number;
   private readonly disposeOnError: boolean;
   private readonly freeInstances: ArrayList<T>;
-  private readonly usedInstances: Set<T>;
+  private readonly usedInstances: SetCollection<T>;
   private readonly factory: PoolInstanceFactory<T>;
   private readonly disposer: PoolInstanceDisposer<T>;
   private readonly logger: Logger;
@@ -57,7 +57,7 @@ export class Pool<T extends object> implements AsyncDisposable {
     this.disposeOnError = options?.disposeOnError ?? false;
 
     this.freeInstances = new ArrayList();
-    this.usedInstances = new Set();
+    this.usedInstances = new SetCollection();
     this.placeholderInstances = 0;
     this.disposed = false;
   }

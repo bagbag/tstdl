@@ -10,6 +10,7 @@ export * from './linked-list.js';
 export * from './list.js';
 export * from './map-dictionary.js';
 export * from './multi-key-map.js';
-export * from './set.js';
+export * from './multi-key-set.js';
+export * from './set-collection.js';
 export * from './sorted-array-list.js';
 export * from './weak-ref-map.js';

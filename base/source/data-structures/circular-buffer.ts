@@ -2,7 +2,7 @@ import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race } from 'rxjs';
 import { Collection } from './collection.js';
 
 export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
@@ -140,6 +140,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     }
 
     const item = this.backingArray[this.readIndex]!;
+
     this.backingArray[this.readIndex] = undefined;
     this.readIndex = (this.readIndex + 1) % this.bufferSize;
     this.decrementSize();
@@ -210,7 +211,8 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   }
 
   protected _clear(): void {
-    this.backingArray = new Array(2);
+    this.backingArray = [];
+    this.backingArray.length = 2;
     this.writeIndex = 0;
     this.readIndex = 0;
   }
@@ -232,7 +234,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
       throw new Error('buffer has more items than it would have capacity after resize');
     }
 
-    let newBackingArray: (T | undefined)[] = [];
+    let newBackingArray: (T | undefined)[];
 
     if (this.size > 0) {
       if (this.readIndex < this.writeIndex) {
@@ -243,6 +245,9 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
         const end = this.backingArray.slice(0, this.writeIndex);
         newBackingArray = start.concat(end);
       }
+    }
+    else {
+      newBackingArray = [];
     }
 
     newBackingArray.length = size;

@@ -72,8 +72,12 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefM
   set(key: K, value: V): this {
     const has = this.has(key);
 
+    if (this.has(key)) {
+      this.finalizationRegistry.unregister(this.get(key)!);
+    }
+
     this.backingMap.set(key, new WeakRef(value));
-    this.finalizationRegistry.register(value, key);
+    this.finalizationRegistry.register(value, key, value);
 
     if (!has) {
       this.incrementSize();
