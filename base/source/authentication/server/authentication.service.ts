@@ -67,6 +67,11 @@ export type TokenResult<AdditionalTokenPayload extends Record = Record<never>> =
   refreshToken: string
 };
 
+export type SetCredentialsOptions = {
+  /** skip validation for password strength */
+  skipValidation?: boolean
+};
+
 type CreateTokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>
@@ -85,7 +90,6 @@ type CreateSecretResetTokenResult = {
 };
 
 const SIGNING_SECRETS_LENGTH = 64;
-
 
 @singleton()
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve {
@@ -145,10 +149,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     }
   }
 
-  async setCredentials(subject: string, secret: string): Promise<void> {
+  async setCredentials(subject: string, secret: string, options?: SetCredentialsOptions): Promise<void> {
     const actualSubject = await this.resolveSubject(subject);
 
-    await this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
+    if (options?.skipValidation != true) {
+      await this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
+    }
 
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
