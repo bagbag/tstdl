@@ -1,6 +1,6 @@
-import { Collection } from './collection.js';
+import { DistinctCollection } from './distinct-collection.js';
 
-export class SetCollection<T> extends Collection<T, SetCollection<T>> implements globalThis.Set<T> {
+export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> implements globalThis.Set<T> {
   private readonly backingSet: globalThis.Set<T>;
   readonly [Symbol.toStringTag]: string = 'Set';
 
