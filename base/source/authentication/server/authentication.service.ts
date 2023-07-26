@@ -13,6 +13,7 @@ import { isBinaryData, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
 import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
+import type { SecretTestResult } from './authentication-secret-requirements.validator.js';
 import { AuthenticationSecretRequirementsValidator } from './authentication-secret-requirements.validator.js';
 import { AuthenticationSecretResetHandler } from './authentication-secret-reset.handler.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
@@ -267,6 +268,14 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   async checkSecret(secret: string): Promise<SecretCheckResult> {
     return this.authenticationSecretRequirementsValidator.checkSecretRequirements(secret);
+  }
+
+  async testSecret(secret: string): Promise<SecretTestResult> {
+    return this.authenticationSecretRequirementsValidator.testSecretRequirements(secret);
+  }
+
+  async validateSecret(secret: string): Promise<void> {
+    return this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
   }
 
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {

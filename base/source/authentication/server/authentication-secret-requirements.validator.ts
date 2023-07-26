@@ -5,9 +5,14 @@ import { isNumber } from '#/utils/type-guards.js';
 import { SecretRequirementsError } from '../errors/secret-requirements.error.js';
 import type { SecretCheckResult } from '../models/secret-check-result.model.js';
 
+export type SecretTestResult =
+  | { success: true, reason?: undefined }
+  | { success: false, reason: string };
+
 export abstract class AuthenticationSecretRequirementsValidator {
-  abstract checkSecretRequirements(secret: string): SecretCheckResult | Promise<SecretCheckResult>;
-  abstract validateSecretRequirements(secret: string): void | Promise<void>;
+  abstract checkSecretRequirements(secret: string): Promise<SecretCheckResult>;
+  abstract testSecretRequirements(secret: string): Promise<SecretTestResult>;
+  abstract validateSecretRequirements(secret: string): Promise<void>;
 }
 
 @singleton({ alias: AuthenticationSecretRequirementsValidator })
@@ -16,15 +21,25 @@ export class DefaultAuthenticationSecretRequirementsValidator extends Authentica
     return checkPassword(secret, { checkForPwned: true });
   }
 
-  async validateSecretRequirements(secret: string): Promise<void> {
+  async testSecretRequirements(secret: string): Promise<SecretTestResult> {
     const result = await this.checkSecretRequirements(secret);
 
     if (isNumber(result.pwned) && (result.pwned > 0)) {
-      throw new SecretRequirementsError('Password is exposed in data breach (https://haveibeenpwned.com/passwords).');
+      return { success: false, reason: 'Password is exposed in data breach (https://haveibeenpwned.com/passwords).' };
     }
 
     if (result.strength < PasswordStrength.Medium) {
-      throw new SecretRequirementsError('Password is too weak.');
+      return { success: false, reason: 'Password is too weak.' };
+    }
+
+    return { success: true };
+  }
+
+  async validateSecretRequirements(secret: string): Promise<void> {
+    const result = await this.testSecretRequirements(secret);
+
+    if (!result.success) {
+      throw new SecretRequirementsError(result.reason);
     }
   }
 }

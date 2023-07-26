@@ -26,6 +26,7 @@
   "rules": {
     /** typescript */
     "@typescript-eslint/brace-style": ["error", "stroustrup", { "allowSingleLine": true }],
+    "@typescript-eslint/class-methods-use-this": ["error", { "ignoreOverrideMethods": true, "ignoreClassesThatImplementAnInterface": true }],
     "@typescript-eslint/consistent-type-definitions": "off",
     "@typescript-eslint/explicit-function-return-type": ["error", { "allowExpressions": true }],
     "@typescript-eslint/explicit-member-accessibility": ["error", { "accessibility": "no-public" }],
