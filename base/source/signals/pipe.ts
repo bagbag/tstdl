@@ -1,7 +1,9 @@
-import { distinctUntilChanged, startWith, type Observable, type OperatorFunction } from 'rxjs';
+import { distinctUntilChanged, type Observable, type OperatorFunction } from 'rxjs';
 
+import { startWithProvider } from '#/rxjs/start-with-provider.js';
 import type { Signal } from './api.js';
-import { toObservable, toSignal } from './api.js';
+import { toObservable } from './api.js';
+import { toSignal2 } from './to-signal-2.js';
 
 /**
  * As we need an synchronous value for the resulting signal and effect scheduling is async, it uses the source signals value as the initial value for the pipe.
@@ -19,11 +21,11 @@ export function pipe<T, A, B, C, D, E, F, G, H>(source: Signal<T>, op1: Operator
 export function pipe<T, A, B, C, D, E, F, G, H, I>(source: Signal<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): Signal<I>;
 export function pipe(source: Signal<unknown>, ...operators: OperatorFunction<unknown, unknown>[]): Signal<unknown>;
 export function pipe(source: Signal<unknown>, ...operators: OperatorFunction<unknown, unknown>[]): Signal<unknown> {
-  return rawPipe(source, startWith(source()), distinctUntilChanged(), ...operators);
+  return rawPipe(source, startWithProvider(source), distinctUntilChanged(), ...operators);
 }
 
 /**
- * As we need an synchronous value for the resulting signal and effect scheduling is async, you have to provide an immediate value on subscription, for example via the {@link startWith} operator, otherwise an error is thrown.
+ * As we need an synchronous value for the resulting signal and effect scheduling is async, you have to provide an immediate value on subscription, for example via the `startWith` operator, otherwise an error is thrown.
  */
 export function rawPipe<T, A>(source: Signal<T>, op1: OperatorFunction<T, A>): Signal<A>;
 export function rawPipe<T, A, B>(source: Signal<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>): Signal<B>;
@@ -36,6 +38,6 @@ export function rawPipe<T, A, B, C, D, E, F, G, H>(source: Signal<T>, op1: Opera
 export function rawPipe<T, A, B, C, D, E, F, G, H, I>(source: Signal<T>, op1: OperatorFunction<T, A>, op2: OperatorFunction<A, B>, op3: OperatorFunction<B, C>, op4: OperatorFunction<C, D>, op5: OperatorFunction<D, E>, op6: OperatorFunction<E, F>, op7: OperatorFunction<F, G>, op8: OperatorFunction<G, H>, op9: OperatorFunction<H, I>): Signal<I>;
 export function rawPipe(source: Signal<unknown>, ...operators: OperatorFunction<unknown, unknown>[]): Signal<unknown>;
 export function rawPipe(source: Signal<unknown>, ...operators: OperatorFunction<unknown, unknown>[]): Signal<unknown> {
-  const piped = (toObservable(source).pipe as (...operators: OperatorFunction<unknown, unknown>[]) => any)(...operators) as Observable<unknown>;
-  return toSignal(piped, { requireSync: true });
+  const piped = (toObservable(source).pipe as (...operators: OperatorFunction<unknown, unknown>[]) => Observable<unknown>)(...operators);
+  return toSignal2(piped, { requireSync: true });
 }
