@@ -60,6 +60,24 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     this.options = options;
   }
 
+  async getAll(): Promise<ElementController<Locator>[]> {
+    if (!isLocator(this.locatorOrHandle)) {
+      throw new Error('getAll only works with Locator');
+    }
+
+    const locators = await this.locatorOrHandle.all();
+    return locators.map((locator) => new ElementController(locator));
+  }
+
+  async getAllHandles(): Promise<ElementController<ElementHandle>[]> {
+    if (!isLocator(this.locatorOrHandle)) {
+      throw new Error('getAllHandles only works with Locator');
+    }
+
+    const handles = await this.locatorOrHandle.elementHandles();
+    return handles.map((handle) => new ElementController(handle));
+  }
+
   /**
    * Wait for element state
    * @param state some states may only be usable for either locator or handle
@@ -83,7 +101,11 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
       await this.waitFor(options?.state ?? 'visible', { timeout: options?.timeout ?? 250 });
       return true;
     }
-    catch {
+    catch (error) {
+      if ((error instanceof Error) && error.message.includes('violation')) {
+        throw error;
+      }
+
       return false;
     }
   }

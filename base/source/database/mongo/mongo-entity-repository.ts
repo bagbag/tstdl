@@ -58,7 +58,7 @@ export const noopTransformerFunction = <T>(item: T): T => item;
 export const noopTransformer: EntityTransformer<any, any> = {
   transform: noopTransformerFunction,
   untransform: noopTransformerFunction
-}
+};
 
 export function getNoopTransformer<T extends Entity<any> = any>(): EntityTransformer<T, T> {
   return noopTransformer;
@@ -351,11 +351,11 @@ export class MongoEntityRepository<T extends Entity<any>, TDb extends Entity<any
     return this.baseRepository.deleteManyByFilter(transformedFilter);
   }
 
-  private transformFilter<U extends T = T>(filter: Query<U>): Filter<TDb> {
+  transformFilter<U extends T = T>(filter: Query<U>): Filter<TDb> {
     return convertQuery(filter, this.transformerMappingMap as TransformerMappingMap<U, TDb>);
   }
 
-  private transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateFilter<TDb> {
+  transformPatch<U extends T = T>(patch: EntityPatch<U>): UpdateFilter<TDb> {
     const transformedPatch: Record = {};
 
     for (const [property, value] of objectEntries(patch)) {
