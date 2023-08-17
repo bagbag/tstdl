@@ -137,59 +137,58 @@ export class ReflectionRegistry {
     }
 
     if (!this.metadataMap.has(type)) {
-      const metadata = this.initializeType(type);
+      const metadata = initializeType(type);
       this.metadataMap.set(type, metadata);
       return metadata;
     }
 
     return this.metadataMap.get(type)!;
   }
+}
 
-  // eslint-disable-next-line max-lines-per-function
-  private initializeType(type: AbstractConstructor): TypeMetadata {
-    return lazyObject<TypeMetadata>({
-      metadataType: 'type',
-      constructor: lazyObjectValue(type),
-      parent: lazyObjectValue(Reflect.getPrototypeOf(type) as AbstractConstructor | null),
-      parameters: {
-        initializer() {
-          const parametersTypes = getParameterTypes(type);
-          return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ReflectionDataMap() }));
+function initializeType(type: AbstractConstructor): TypeMetadata {
+  return lazyObject<TypeMetadata>({
+    metadataType: 'type',
+    constructor: lazyObjectValue(type),
+    parent: lazyObjectValue(Reflect.getPrototypeOf(type) as AbstractConstructor | null),
+    parameters: {
+      initializer() {
+        const parametersTypes = getParameterTypes(type);
+        return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ReflectionDataMap() }));
+      }
+    },
+    properties: {
+      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ReflectionDataMap() }))
+    },
+    staticProperties: {
+      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ReflectionDataMap() }))
+    },
+    methods: {
+      initializer: () => new FactoryMap((key): MethodMetadata => {
+        const parameters = getParameterTypes(type.prototype as object, key);
+        const returnType = getReturnType(type.prototype as object, key);
+
+        if (isUndefined(parameters)) {
+          throw new Error(`Could not get parameters for method ${key.toString()} of type ${type.name}`);
         }
-      },
-      properties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ReflectionDataMap() }))
-      },
-      staticProperties: {
-        initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ReflectionDataMap() }))
-      },
-      methods: {
-        initializer: () => new FactoryMap((key): MethodMetadata => {
-          const parameters = getParameterTypes(type.prototype as object, key);
-          const returnType = getReturnType(type.prototype as object, key);
 
-          if (isUndefined(parameters)) {
-            throw new Error(`Could not get parameters for method ${key.toString()} of type ${type.name}`);
-          }
+        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
+      })
+    },
+    staticMethods: {
+      initializer: () => new FactoryMap((key): MethodMetadata => {
+        const parameters = getParameterTypes(type as object, key);
+        const returnType = getReturnType(type as object, key);
 
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
-        })
-      },
-      staticMethods: {
-        initializer: () => new FactoryMap((key): MethodMetadata => {
-          const parameters = getParameterTypes(type as object, key);
-          const returnType = getReturnType(type as object, key);
+        if (isUndefined(parameters)) {
+          throw new Error(`Could not get parameters for static method ${key.toString()} of type ${type.name}`);
+        }
 
-          if (isUndefined(parameters)) {
-            throw new Error(`Could not get parameters for static method ${key.toString()} of type ${type.name}`);
-          }
-
-          return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
-        })
-      },
-      data: { initializer: () => new ReflectionDataMap() }
-    });
-  }
+        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
+      })
+    },
+    data: { initializer: () => new ReflectionDataMap() }
+  });
 }
 
 export const reflectionRegistry = new ReflectionRegistry();
