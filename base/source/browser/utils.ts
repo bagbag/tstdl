@@ -1,6 +1,6 @@
 import type { Logger } from '#/logger/logger.js';
 import { objectKeys } from '#/utils/object/object.js';
-import { isDefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
+import { assert, isDefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
 import type { BrowserContext, ElementHandle, Frame, LaunchOptions, Locator, Page } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
@@ -98,6 +98,15 @@ export function attachLogger(loggable: Page | BrowserContext, logger: Logger): v
 
 export function isLocator(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is Locator {
   return locatorOrHandle.constructor.name == 'Locator';
+}
+
+export function assertLocator(locatorOrHandle: Locator | ElementHandle, message: string = 'Locator instead of ElementHandle required'): asserts locatorOrHandle is Locator {
+  assert(isLocator(locatorOrHandle), message);
+}
+
+export function assertLocatorPass(locatorOrHandle: Locator | ElementHandle, message: string = 'Locator instead of ElementHandle required'): Locator {
+  assertLocator(locatorOrHandle, message);
+  return locatorOrHandle;
 }
 
 export function isElementHandle(locatorOrHandle: Locator | ElementHandle): locatorOrHandle is ElementHandle {

@@ -2,11 +2,11 @@ import type { ElementHandle, Locator } from 'playwright';
 
 import type { Merge, NonUndefinable, TypedOmit } from '#/types.js';
 import { timeout } from '#/utils/timing.js';
-import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { ValueOrProvider } from '#/utils/value-or-provider.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
 import type { TimeoutOptions } from './types.js';
-import { isLocator } from './utils.js';
+import { assertLocator, assertLocatorPass, isLocator } from './utils.js';
 
 export type Delay = ValueOrProvider<number>;
 
@@ -51,6 +51,15 @@ type Methods =
   | 'selectText'
   | 'inputValue';
 
+export type Filter = {
+  has?: ElementController,
+  hasNot?: ElementController,
+  hasText?: string | RegExp,
+  hasNotText?: string | RegExp
+};
+
+const filterNonLocatorErrorMessage = 'Requires a locator basesd controller';
+
 export class ElementController<T extends Locator | ElementHandle = Locator | ElementHandle> implements Pick<Locator, Methods> {
   readonly locatorOrHandle: T;
   readonly options: ElementControllerOptions;
@@ -76,6 +85,44 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
 
     const handles = await this.locatorOrHandle.elementHandles();
     return handles.map((handle) => new ElementController(handle));
+  }
+
+  /**
+   * Get an controller with elements contained in this and the provided controller.
+   * Requires locator based controller
+   * @param elementController
+   */
+  and(elementController: ElementController): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
+    assertLocator(elementController.locatorOrHandle, filterNonLocatorErrorMessage);
+
+    const locator = this.locatorOrHandle.and(elementController.locatorOrHandle);
+    return new ElementController(locator, this.options);
+  }
+
+  /**
+   * Filter out elements with by provided filter.
+   * Requires locator based controller.
+   */
+  filter(filter: Filter): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
+
+    const locator = this.locatorOrHandle.filter(convertFilter(filter));
+    return new ElementController(locator, this.options);
+  }
+
+  /**
+   * Locate elements in subtree with provided selector/controller and filter.
+   * Requires locator based controller.
+   */
+  locate(selectorOrController: string | ElementController, filter?: Filter): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
+
+    const selector = isString(selectorOrController) ? selectorOrController : assertLocatorPass(selectorOrController.locatorOrHandle, filterNonLocatorErrorMessage);
+    const convertedFilter = isDefined(filter) ? convertFilter(filter) : undefined;
+
+    const locator = this.locatorOrHandle.locator(selector, convertedFilter);
+    return new ElementController(locator, this.options);
   }
 
   /**
@@ -242,4 +289,13 @@ async function delay(milliseconds: Delay | undefined): Promise<void> {
   }
 
   await timeout(resolveValueOrProvider(milliseconds));
+}
+
+function convertFilter(filter: Filter): NonUndefinable<Parameters<Locator['filter']>[0]> {
+  return {
+    has: isDefined(filter.has) ? assertLocatorPass(filter.has.locatorOrHandle, filterNonLocatorErrorMessage) : undefined,
+    hasNot: isDefined(filter.hasNot) ? assertLocatorPass(filter.hasNot.locatorOrHandle, filterNonLocatorErrorMessage) : undefined,
+    hasText: filter.hasText,
+    hasNotText: filter.hasNotText
+  };
 }
