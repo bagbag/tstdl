@@ -1,16 +1,17 @@
-import type { Injectable } from '#/container/index.js';
-import { injectable, injectArg, type resolveArgumentType } from '#/container/index.js';
 import type { Entity } from '#/database/index.js';
+import { InjectArg, Injectable } from '#/injector/decorators.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
+import type { Resolvable } from '#/injector/interfaces.js';
 import { isString } from '#/utils/type-guards.js';
 
 export type ElasticSearchIndexConfigArgument<T extends Entity = Entity> = string | ElasticSearchIndexConfig<T>;
 
-@injectable()
-export abstract class ElasticSearchIndexConfig<T extends Entity = Entity> implements Injectable<ElasticSearchIndexConfigArgument> {
+@Injectable()
+export abstract class ElasticSearchIndexConfig<T extends Entity = Entity> implements Resolvable<ElasticSearchIndexConfigArgument> {
   readonly indexName: string;
 
   declare readonly [resolveArgumentType]: ElasticSearchIndexConfigArgument<T>;
-  constructor(@injectArg() indexNameOrConfig: string | ElasticSearchIndexConfig<T>) {
+  constructor(@InjectArg() indexNameOrConfig: string | ElasticSearchIndexConfig<T>) {
     this.indexName = isString(indexNameOrConfig) ? indexNameOrConfig : indexNameOrConfig.indexName;
   }
 }

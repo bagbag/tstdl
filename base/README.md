@@ -14,7 +14,7 @@ Module for creating and consuming HTTP Apis.
 
 Module for starting application modules and shutting down the app.
 
-#### [Container](/modules/container.html)
+#### [Injector](/modules/injector.html)
 
 Dependency Injection
 

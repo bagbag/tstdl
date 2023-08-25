@@ -1,9 +1,9 @@
-import type { Injectable } from '#/container/index.js';
-import { forwardArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { MaybeNewEntity } from '#/database/index.js';
 import { getNewId } from '#/database/index.js';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { ForwardArg, Singleton, resolveArgumentType } from '#/injector/index.js';
+import type { Resolvable } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/index.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import type { Binary } from 'mongodb';
@@ -20,13 +20,13 @@ const indexes: TypedIndexDescription<AuthenticationCredentials>[] = [
   { key: { subject: 1 }, unique: true }
 ];
 
-@singleton({
+@Singleton({
   defaultArgumentProvider: () => defaultArgument
 })
-export class InternalMongoAuthenticationCredentialsRepository extends MongoEntityRepository<AuthenticationCredentials> implements Injectable<MongoAuthenticationCredentialsRepositoryArgument> {
+export class InternalMongoAuthenticationCredentialsRepository extends MongoEntityRepository<AuthenticationCredentials> implements Resolvable<MongoAuthenticationCredentialsRepositoryArgument> {
   declare readonly [resolveArgumentType]: MongoAuthenticationCredentialsRepositoryArgument;
 
-  constructor(@forwardArg() collection: Collection<AuthenticationCredentials>, logger: Logger) {
+  constructor(@ForwardArg() collection: Collection<AuthenticationCredentials>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 
@@ -37,7 +37,7 @@ export class InternalMongoAuthenticationCredentialsRepository extends MongoEntit
   }
 }
 
-@singleton()
+@Singleton()
 export class MongoAuthenticationCredentialsRepository extends AuthenticationCredentialsRepository {
   private readonly repository: InternalMongoAuthenticationCredentialsRepository;
 

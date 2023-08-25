@@ -1,5 +1,9 @@
-import { container, resolveArg, singleton } from '#/container/index.js';
-import { disposeInstances } from '#/core.js';
+import { disposeInstances, rootInjector } from '#/core.js';
+import { Singleton } from '#/injector/decorators.js';
+import { inject, injectArgument, runInInjectionContext } from '#/injector/inject.js';
+import { Injector } from '#/injector/injector.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { ModuleBase } from '#/module/module-base.js';
@@ -7,57 +11,50 @@ import type { Module } from '#/module/module.js';
 import { ModuleState } from '#/module/module.js';
 import type { FunctionModuleFunction } from '#/module/modules/function.module.js';
 import { FunctionModule } from '#/module/modules/function.module.js';
-import { initializeSignals, shutdownToken } from '#/process-shutdown.js';
+import { shutdownToken } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { OneOrMany, Type } from '#/types.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
-import type { CancellationToken, ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { isFunction, isUndefined } from '#/utils/type-guards.js';
+import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import { isDefined, isFunction, isObject, isUndefined } from '#/utils/type-guards.js';
 
-/**
- * TODO
- *
- * container scopes
- * dispose per container
- */
+export type BootstrapFn = () => void | Promise<void>;
 
-initializeSignals();
+export type RunOptions = {
+  bootstrap?: BootstrapFn
+};
 
-@singleton()
-export class Application {
-  private static _instance: Application | undefined;
+@Singleton()
+export class Application implements Resolvable<LoggerArgument> {
+  static _instance: Application | undefined;
 
   private static get instance(): Application {
     if (isUndefined(this._instance)) {
-      this._instance = container.resolve(Application);
+      this._instance = rootInjector.resolve(Application, 'App');
 
       // @ts-expect-error readonly
-      this._instance._shutdownToken = shutdownToken;
+      this._instance.#shutdownToken = shutdownToken;
     }
 
     return this._instance;
   }
 
-  private readonly logger: Logger;
-  private readonly moduleTypesAndInstances: Set<Module | Type<Module>>;
-  private readonly shutdownPromise: DeferredPromise;
-  private readonly _shutdownToken: CancellationToken;
+  readonly #name = injectArgument(this);
+  readonly #injector = inject(Injector).fork(`${this.#name}Injector`);
+  readonly #logger = this.#injector.resolve(Logger, this.#name);
+  readonly #moduleTypesAndInstances = new Set<Module | Type<Module>>();
+  readonly #shutdownPromise = new DeferredPromise();
+  readonly #shutdownToken = shutdownToken.createChild();
+
+  declare readonly [resolveArgumentType]: string;
 
   get shutdownToken(): ReadonlyCancellationToken {
-    return this._shutdownToken.asReadonly();
+    return this.#shutdownToken.asReadonly();
   }
 
   static get shutdownToken(): ReadonlyCancellationToken {
     return Application.instance.shutdownToken;
-  }
-
-  constructor(@resolveArg<LoggerArgument>('App') logger: Logger) {
-    this.logger = logger;
-
-    this.moduleTypesAndInstances = new Set();
-    this.shutdownPromise = new DeferredPromise();
-    this._shutdownToken = shutdownToken.createChild();
   }
 
   static registerModule(moduleType: Type<Module>): void {
@@ -68,7 +65,7 @@ export class Application {
     Application.instance.registerModuleFunction(fn);
   }
 
-  static run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
+  static run(...functionsAndModules: [RunOptions | OneOrMany<FunctionModuleFunction | Type<Module>>, ...OneOrMany<FunctionModuleFunction | Type<Module>>[]]): void {
     Application.instance.run(...functionsAndModules);
   }
 
@@ -85,7 +82,7 @@ export class Application {
   }
 
   registerModule(moduleType: Module | Type<Module>): void {
-    this.moduleTypesAndInstances.add(moduleType);
+    this.#moduleTypesAndInstances.add(moduleType);
   }
 
   registerModuleFunction(fn: FunctionModuleFunction): void {
@@ -93,13 +90,16 @@ export class Application {
     this.registerModule(module);
   }
 
-  run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): void {
-    void this._run(...functionsAndModules);
+  run(...optionsFunctionsAndModules: [RunOptions | OneOrMany<FunctionModuleFunction | Type<Module>>, ...OneOrMany<FunctionModuleFunction | Type<Module>>[]]): void {
+    const options = ((optionsFunctionsAndModules.length > 0) && isObject(optionsFunctionsAndModules[0])) ? optionsFunctionsAndModules[0]! as RunOptions : undefined;
+    const functionsAndModules = (isUndefined(options) ? optionsFunctionsAndModules : optionsFunctionsAndModules.slice(1)) as OneOrMany<FunctionModuleFunction | Type<Module>>[];
+
+    void this._run(functionsAndModules, options);
   }
 
   async shutdown(): Promise<void> {
     this.requestShutdown();
-    await this.shutdownPromise;
+    await this.#shutdownPromise;
   }
 
   requestShutdown(): void {
@@ -107,14 +107,14 @@ export class Application {
       return;
     }
 
-    this._shutdownToken.set();
+    this.#shutdownToken.set();
   }
 
   async waitForShutdown(): Promise<void> {
-    return this.shutdownPromise;
+    return this.#shutdownPromise;
   }
 
-  private async _run(...functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[]): Promise<void> {
+  private async _run(functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[], options: RunOptions = {}): Promise<void> {
     for (const fnOrModule of functionsAndModules.flatMap((fns) => fns)) {
       if (fnOrModule.prototype instanceof ModuleBase) {
         this.registerModule(fnOrModule as Type<Module>);
@@ -124,7 +124,11 @@ export class Application {
       }
     }
 
-    const modules = await toArrayAsync(mapAsync(this.moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? container.resolveAsync(instanceOrType) : instanceOrType)));
+    if (isDefined(options.bootstrap)) {
+      await runInInjectionContext(this.#injector, options.bootstrap);
+    }
+
+    const modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
 
     try {
       await Promise.race([
@@ -133,31 +137,32 @@ export class Application {
       ]);
     }
     catch (error) {
-      this.logger.error(error as Error, { includeRest: true, includeStack: true });
+      this.#logger.error(error as Error, { includeRest: true, includeStack: true });
     }
     finally {
       this.requestShutdown();
 
-      this.logger.info('Shutting down');
+      this.#logger.info('Shutting down');
 
       await this.stopModules(modules);
+      await this.#injector.dispose();
       await disposeInstances();
 
-      this.logger.info('Bye');
+      this.#logger.info('Bye');
     }
 
-    this.shutdownPromise.resolve();
+    this.#shutdownPromise.resolve();
   }
 
   private async runModules(modules: Module[]): Promise<void> {
     const promises = modules.map(async (module) => {
       try {
-        this.logger.info(`Starting module ${module.name}`);
-        await module.run();
-        this.logger.info(`Module ${module.name} stopped.`);
+        this.#logger.info(`Starting module ${module.name}`);
+        await runInInjectionContext(this.#injector, async () => module.run());
+        this.#logger.info(`Module ${module.name} stopped.`);
       }
       catch (error) {
-        this.logger.error(error as Error);
+        this.#logger.error(error as Error);
         this.requestShutdown();
       }
     });
@@ -171,13 +176,13 @@ export class Application {
         return;
       }
 
-      this.logger.info(`Stopping module ${module.name}`);
+      this.#logger.info(`Stopping module ${module.name}`);
 
       try {
         await module.stop();
       }
       catch (error) {
-        this.logger.error(error as Error);
+        this.#logger.error(error as Error);
         this.requestShutdown();
       }
     });

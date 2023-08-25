@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import type { PickBy, Record } from '#/types.js';
 import { now } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
@@ -18,7 +18,7 @@ const consoleLevelFuncMap: Record<LogLevel, keyof PickBy<typeof console, (messag
   [LogLevel.Trace]: 'debug'
 };
 
-@singleton<ConsoleLogger, LoggerArgument>({
+@Singleton<ConsoleLogger, LoggerArgument>({
   provider: {
     useFactory: (argument, context) => {
       if (isObject(argument)) {

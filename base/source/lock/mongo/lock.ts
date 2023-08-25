@@ -1,4 +1,4 @@
-import { injectable } from '#/container/index.js';
+import { Injectable } from '#/injector/decorators.js';
 import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '#/lock/index.js';
 import { Lock } from '#/lock/index.js';
 import { Logger } from '#/logger/index.js';
@@ -15,14 +15,14 @@ import { MongoLockProvider } from './provider.js';
 const expirationTime = 10000;
 const renewBuffer = expirationTime / 2;
 
-@injectable({
+@Injectable({
   provider: {
-    useFactory: async (argument, context) => {
+    useFactory: (argument, context) => {
       const arg = argument as LockArgument;
       const prefix = isObject(arg) ? assertStringPass(arg.prefix, 'invalid lock argument') : undefined;
       const resource = assertStringPass(isObject(arg) ? arg.resource : arg, 'invalid lock argument');
 
-      const provider = await context.resolveAsync(MongoLockProvider, prefix);
+      const provider = context.resolve(MongoLockProvider, prefix);
       return provider.get(resource);
     }
   }

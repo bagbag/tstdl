@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.85.26",
+  "version": "0.86.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -47,7 +47,7 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.9",
     "@koa/router": "^12.0",
-    "@tstdl/angular": "^0.85",
+    "@tstdl/angular": "^0.86",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
     "@zxcvbn-ts/language-de": "^3.0",

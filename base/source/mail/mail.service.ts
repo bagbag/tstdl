@@ -1,4 +1,4 @@
-import { inject, optional, resolveArg, singleton } from '#/container/index.js';
+import { Inject, Optional, ResolveArg, Singleton } from '#/injector/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { TemplateService } from '#/templates/template.service.js';
@@ -11,7 +11,7 @@ import { MailClient } from './mail.client.js';
 import type { DefaultMailData, MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';
 
-@singleton()
+@Singleton()
 export class MailService {
   private readonly mailClient: MailClient;
   private readonly templateService: TemplateService;
@@ -22,9 +22,9 @@ export class MailService {
   constructor(
     mailClient: MailClient,
     templateService: TemplateService,
-    @inject(MailLogRepository) @optional() mailLogRepository: MailLogRepository | undefined,
-    @resolveArg<LoggerArgument>('MailService') logger: Logger,
-    @inject(MAIL_DEFAULT_DATA) @optional() defaultData: DefaultMailData | undefined
+    @Inject(MailLogRepository) @Optional() mailLogRepository: MailLogRepository | undefined,
+    @ResolveArg<LoggerArgument>('MailService') logger: Logger,
+    @Inject(MAIL_DEFAULT_DATA) @Optional() defaultData: DefaultMailData | undefined
   ) {
     this.mailClient = mailClient;
     this.templateService = templateService;

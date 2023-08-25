@@ -1,6 +1,6 @@
-import { singleton } from '#/container/index.js';
 import { getNewId } from '#/database/id.js';
 import type { Filter, UpdateFilter } from '#/database/mongo/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { Lock } from '#/lock/index.js';
 import type { MessageBus } from '#/message-bus/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
@@ -32,10 +32,10 @@ const backoffOptions: BackoffOptions = {
   maximumDelay: 5000
 };
 
-@singleton<MongoQueue, QueueArgument>({
+@Singleton<MongoQueue, QueueArgument>({
   provider: {
-    useFactory: async (argument, context) => {
-      const provider = await context.resolveAsync(MongoQueueProvider);
+    useFactory: (argument, context) => {
+      const provider = context.resolve(MongoQueueProvider);
 
       assertDefined(argument, 'queue resolve argument is missing');
 

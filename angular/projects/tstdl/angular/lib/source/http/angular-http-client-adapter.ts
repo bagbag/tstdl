@@ -1,9 +1,9 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
 import { Injector } from '@angular/core';
-import { container, singleton } from '@tstdl/base/container';
 import { HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
+import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
 import type { StringMap } from '@tstdl/base/types';
 import { toArray } from '@tstdl/base/utils/array';
 import { isDefined, isUndefined } from '@tstdl/base/utils/type-guards';
@@ -11,7 +11,7 @@ import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
 
-@singleton()
+@Singleton()
 export class AngularHttpClientAdapter implements HttpClientAdapter {
   private readonly angularHttpClient: AngularHttpClient;
 
@@ -120,7 +120,7 @@ function getAngularBody(body: HttpClientRequest['body']): any {
  */
 export function configureAngularHttpClientAdapter(register: boolean): void {
   if (register) {
-    container.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
-    container.register(AngularHttpClient, { useFactory: (_, context) => context.resolve(Injector).get(AngularHttpClient) }, { metadata: { skipAngularInjection: true } });
+    TstdlInjector.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
+    TstdlInjector.register(AngularHttpClient, { useFactory: (_, context) => context.resolve(Injector).get(AngularHttpClient) });
   }
 }

@@ -7,12 +7,12 @@ import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './dispos
 
 const deferrerToken: unique symbol = Symbol('DeferrerToken');
 
-export type TaskFunction = () => any;
+export type AsyncDisposeTaskFunction = () => any;
 
-export type AsyncDisposeHandler = TaskFunction | Disposable | AsyncDisposable;
+export type AsyncDisposeHandler = AsyncDisposeTaskFunction | Disposable | AsyncDisposable;
 
-export type Task = {
-  taskFunction: TaskFunction
+export type AsyncDisposeTask = {
+  taskFunction: AsyncDisposeTaskFunction
 };
 
 export type Deferrer = {
@@ -22,7 +22,7 @@ export type Deferrer = {
 
 export class AsyncDisposer implements AsyncDisposable {
   private readonly deferrers: Set<Deferrer>;
-  private readonly tasks: Task[];
+  private readonly tasks: AsyncDisposeTask[];
 
   readonly _disposingToken: CancellationToken;
   readonly _disposedToken: CancellationToken;

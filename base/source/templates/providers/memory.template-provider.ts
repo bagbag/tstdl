@@ -1,9 +1,9 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import type { Template } from '../template.model.js';
 import { TemplateProvider } from '../template.provider.js';
 
-@singleton()
+@Singleton()
 export class MemoryTemplateProvider extends TemplateProvider {
   private readonly map: Map<string, Template>;
 

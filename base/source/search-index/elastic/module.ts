@@ -1,7 +1,8 @@
-import { container, injectionToken } from '#/container/index.js';
-import { connect, disposer } from '#/core.js';
-import type { Entity } from '#/database/index.js';
-import { Logger } from '#/logger/index.js';
+import { connect } from '#/core.js';
+import { inject } from '#/injector/inject.js';
+import { Injector } from '#/injector/injector.js';
+import { injectionToken } from '#/injector/token.js';
+import { Logger } from '#/logger/logger.js';
 import { assert, assertDefined, isArray, isObject, isString } from '#/utils/type-guards.js';
 import type { ClientOptions } from '@elastic/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
@@ -25,29 +26,29 @@ export function configureElasticsearch(config: Partial<ElasticsearchModuleConfig
   elasticsearchModuleConfig.logPrefix = config.logPrefix ?? elasticsearchModuleConfig.logPrefix;
 }
 
-container.registerSingleton<Client, ClientOptions>(Client, {
-  useFactory: async (options) => {
-    assertDefined(options, 'missing elasticsearch client options');
+Injector.registerSingleton<Client, ClientOptions, { logger: Logger }>(Client, {
+  useFactory: (argument, context) => {
+    assertDefined(argument, 'missing elasticsearch client options');
 
-    const logger = await container.resolveAsync(Logger, elasticsearchModuleConfig.logPrefix);
-    const client: Client = new Client(options);
+    context.context.logger = inject(Logger, elasticsearchModuleConfig.logPrefix);
+    const client: Client = new Client(argument);
 
-    disposer.add(async () => client.close().then(() => logger.info('closed connection')));
-
-    const url = getUrl(options.node ?? options.nodes);
-    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger);
+    context.addDisposeHandler(async () => client.close().then(() => context.context.logger.info('closed connection')));
 
     return client;
+  },
+  async afterResolve(client, options, context) {
+    const url = getUrl(options.node ?? options.nodes);
+    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), context.logger);
+  },
+  defaultArgumentProvider() {
+    return elasticsearchModuleConfig.defaultOptions;
   }
-}, { defaultArgumentProvider: () => elasticsearchModuleConfig.defaultOptions });
-
-container.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
-  useFactory: (argument, context) => context.resolve(ElasticSearchIndexConfig, argument)
 });
 
-export function getElasticSearchIndexConfig<T extends Entity>(indexName: string): ElasticSearchIndexConfig<T> {
-  return container.resolve(ElasticSearchIndexConfig, indexName);
-}
+Injector.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
+  useFactory: (argument, context) => context.resolve(ElasticSearchIndexConfig, argument)
+});
 
 function getUrl(node: ClientOptions['node']): string {
   if (isString(node)) {

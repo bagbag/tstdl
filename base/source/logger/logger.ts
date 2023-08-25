@@ -1,4 +1,5 @@
-import type { Injectable, resolveArgumentType } from '#/container/index.js';
+import type { Resolvable } from '#/injector/index.js';
+import { resolveArgumentType } from '#/injector/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { LogLevel } from './level.js';
@@ -26,7 +27,7 @@ export type LoggerForkOptions = {
   level?: LogLevel
 };
 
-export abstract class Logger implements Injectable<LoggerArgument> {
+export abstract class Logger implements Resolvable<LoggerArgument> {
   readonly level: LogLevel;
   readonly module?: string[];
   readonly logPrefix: string;

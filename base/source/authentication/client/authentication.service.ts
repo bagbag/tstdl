@@ -1,7 +1,7 @@
+import type { Observable } from 'rxjs';
+import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
+
 import type { ApiClient } from '#/api/client/index.js';
-import type { AfterResolve } from '#/container/index.js';
-import { afterResolve, inject, optional, resolveArg, singleton } from '#/container/index.js';
-import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
@@ -10,6 +10,8 @@ import { InvalidTokenError } from '#/error/invalid-token.error.js';
 import { NotFoundError } from '#/error/not-found.error.js';
 import { NotSupportedError } from '#/error/not-supported.error.js';
 import { UnauthorizedError } from '#/error/unauthorized.error.js';
+import type { AfterResolve } from '#/injector/index.js';
+import { Inject, Optional, ResolveArg, Singleton, afterResolve } from '#/injector/index.js';
 import { Lock } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
@@ -20,9 +22,7 @@ import type { Record } from '#/types.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
-import { assertDefinedPass, isDefined, isNull, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
-import type { Observable } from 'rxjs';
-import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
+import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
@@ -33,8 +33,10 @@ const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
-@singleton()
-export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve, AsyncDisposable {
+const localStorage = globalThis.localStorage as Storage | undefined;
+
+@Singleton()
+export class AuthenticationService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any> implements AfterResolve, AsyncDisposable {
   private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject: Subject<Error>;
   private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
@@ -66,8 +68,8 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   private get authenticationData(): AuthenticationData | undefined {
     try {
-      const data = localStorage.getItem(authenticationDataStorageKey);
-      return isNull(data) ? undefined : JSON.parse(data) as AuthenticationData;
+      const data = localStorage?.getItem(authenticationDataStorageKey);
+      return isNullOrUndefined(data) ? undefined : JSON.parse(data) as AuthenticationData;
     }
     catch {
       return undefined;
@@ -76,11 +78,11 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   private set authenticationData(data: AuthenticationData | undefined) {
     if (isUndefined(data)) {
-      localStorage.removeItem(authenticationDataStorageKey);
+      localStorage?.removeItem(authenticationDataStorageKey);
     }
     else {
       const json = JSON.stringify(data);
-      localStorage.setItem(authenticationDataStorageKey, json);
+      localStorage?.setItem(authenticationDataStorageKey, json);
     }
   }
 
@@ -101,12 +103,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   constructor(
-    @inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
-    @resolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
-    @resolveArg<MessageBusArgument>(loggedOutBusName) loggedOutBus: MessageBus<void>,
-    @inject(Lock, refreshLockResource) @optional() refreshLock: Lock | undefined,
-    @inject(INITIAL_AUTHENTICATION_DATA) @optional() initialAuthenticationData: AuthenticationData | undefined,
-    @resolveArg<LoggerArgument>('AuthenticationService') logger: Logger
+    @Inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
+    @ResolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
+    @ResolveArg<MessageBusArgument>(loggedOutBusName) loggedOutBus: MessageBus<void>,
+    @Inject(Lock, refreshLockResource) @Optional() refreshLock: Lock | undefined,
+    @Inject(INITIAL_AUTHENTICATION_DATA) @Optional() initialAuthenticationData: AuthenticationData | undefined,
+    @ResolveArg<LoggerArgument>('AuthenticationService') logger: Logger
   ) {
     this.client = client;
     this.tokenUpdateBus = tokenUpdateBus;
@@ -128,7 +130,6 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   [afterResolve](): void {
     this.initialize();
-    disposer.add(this);
   }
 
   initialize(): void {
@@ -215,16 +216,16 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     }
 
     if (isNullOrUndefined(token)) {
-      localStorage.removeItem(tokenStorageKey);
+      localStorage?.removeItem(tokenStorageKey);
     }
     else {
       const serialized = JSON.stringify(token);
-      localStorage.setItem(tokenStorageKey, serialized);
+      localStorage?.setItem(tokenStorageKey, serialized);
     }
   }
 
   private loadToken(): void {
-    if (isUndefined(globalThis.localStorage)) {
+    if (isUndefined(localStorage)) {
       return;
     }
 

@@ -1,5 +1,5 @@
-import { optional, singleton } from '#/container/index.js';
 import { HttpClient } from '#/http/client/http-client.js';
+import { Optional, Singleton } from '#/injector/index.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
@@ -11,12 +11,12 @@ type OidcConfigurationCache = {
   configuration: Promise<OidcConfiguration>
 };
 
-@singleton()
+@Singleton()
 export class CachedOidcConfigurationService extends OidcConfigurationService {
   private readonly cacheDuration: number;
   private readonly cache: Map<string, OidcConfigurationCache>;
 
-  constructor(httpClient: HttpClient, @optional() cacheDuration: number = 5 * millisecondsPerMinute) {
+  constructor(httpClient: HttpClient, @Optional() cacheDuration: number = 5 * millisecondsPerMinute) {
     super(httpClient);
 
     this.cacheDuration = cacheDuration;

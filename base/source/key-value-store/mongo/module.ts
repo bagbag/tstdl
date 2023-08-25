@@ -1,5 +1,5 @@
-import { container } from '#/container/index.js';
 import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { Injector } from '#/injector/injector.js';
 import { KeyValueStoreProvider } from '../key-value-store.provider.js';
 import { KeyValueStore } from '../key-value.store.js';
 import { MongoKeyValueStoreProvider } from './mongo-key-value-store.provider.js';
@@ -13,10 +13,10 @@ import { DEFAULT_KEY_VALUE_REPOSITORY_CONFIG } from './tokens.js';
  * @param register whether to register for {@link Queue} and {@link QueueProvider}
  */
 export function configureMongoKeyValueStore(keyValueRepositoryConfig: MongoRepositoryConfig<MongoKeyValue>, register: boolean = true): void {
-  container.register(DEFAULT_KEY_VALUE_REPOSITORY_CONFIG, { useValue: keyValueRepositoryConfig });
+  Injector.register(DEFAULT_KEY_VALUE_REPOSITORY_CONFIG, { useValue: keyValueRepositoryConfig });
 
   if (register) {
-    container.registerSingleton(KeyValueStoreProvider, { useToken: MongoKeyValueStoreProvider });
-    container.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore, argument: '' });
+    Injector.registerSingleton(KeyValueStoreProvider, { useToken: MongoKeyValueStoreProvider });
+    Injector.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore, defaultArgument: '' });
   }
 }

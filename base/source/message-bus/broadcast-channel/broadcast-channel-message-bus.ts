@@ -1,8 +1,9 @@
-import { injectable } from '#/container/index.js';
-import { Logger } from '#/logger/index.js';
-import { assertStringPass, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { defer, fromEvent, map, of, switchMap } from 'rxjs';
+
+import { Injectable } from '#/injector/index.js';
+import { Logger } from '#/logger/index.js';
+import { assertStringPass, isUndefined } from '#/utils/type-guards.js';
 import { MessageBusBase } from '../message-bus-base.js';
 import type { MessageBus } from '../message-bus.js';
 import { BroadcastChannelMessageBusProvider } from './broadcast-channel-message-bus-provider.js';
@@ -13,7 +14,7 @@ interface PromisifiedBroadcastChannel extends BroadcastChannel {
   postMessage(...args: Parameters<BroadcastChannel['postMessage']>): void | Promise<void>;
 }
 
-@injectable({
+@Injectable({
   provider: {
     useFactory: (argument, context) => {
       const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');

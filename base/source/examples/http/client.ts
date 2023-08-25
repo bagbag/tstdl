@@ -1,11 +1,12 @@
-import { container } from '#/container/index.js';
+import { Application } from '#/application/application.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
 import { HttpClient } from '#/http/client/index.js';
+import { inject } from '#/injector/inject.js';
 
 configureUndiciHttpClientAdapter();
 
 async function main(): Promise<void> {
-  const httpClient = container.resolve(HttpClient);
+  const httpClient = inject(HttpClient);
 
   const response = await httpClient.get('https://httpbin.org/anything/:whatever', {
     parameters: {
@@ -14,7 +15,9 @@ async function main(): Promise<void> {
     }
   });
 
-  console.log(response.asObject());
+  const body = await response.body.readAsJson();
+
+  console.log(response.asObject(), body);
 }
 
-void main();
+Application.run(main);

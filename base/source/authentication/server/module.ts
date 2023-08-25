@@ -1,5 +1,7 @@
-import type { InjectionToken, Provider } from '#/container/index.js';
-import { container, isProvider } from '#/container/index.js';
+import { Injector } from '#/injector/injector.js';
+import type { Provider } from '#/injector/provider.js';
+import { isProvider } from '#/injector/provider.js';
+import type { InjectionToken } from '#/injector/token.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
@@ -20,24 +22,24 @@ export type AuthenticationModuleConfig = {
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
   if (isDefined(config.serviceOptions)) {
-    container.register(AuthenticationServiceOptions, isProvider(config.serviceOptions) ? config.serviceOptions : { useValue: config.serviceOptions });
+    Injector.register(AuthenticationServiceOptions, isProvider(config.serviceOptions) ? config.serviceOptions : { useValue: config.serviceOptions });
   }
   else {
     throw new Error('Either serviceOptions or serviceOptionsToken must be provided.');
   }
 
-  container.registerSingleton(AuthenticationCredentialsRepository, { useToken: config.credentialsRepository });
-  container.registerSingleton(AuthenticationSessionRepository, { useToken: config.sessionRepository });
+  Injector.registerSingleton(AuthenticationCredentialsRepository, { useToken: config.credentialsRepository });
+  Injector.registerSingleton(AuthenticationSessionRepository, { useToken: config.sessionRepository });
 
   if (isDefined(config.authenticationService)) {
-    container.registerSingleton(AuthenticationService, { useToken: config.authenticationService });
+    Injector.registerSingleton(AuthenticationService, { useToken: config.authenticationService });
   }
 
   if (isDefined(config.tokenPayloadProvider)) {
-    container.registerSingleton(AuthenticationTokenPayloadProvider, { useToken: config.tokenPayloadProvider });
+    Injector.registerSingleton(AuthenticationTokenPayloadProvider, { useToken: config.tokenPayloadProvider });
   }
 
   if (isDefined(config.subjectResolver)) {
-    container.registerSingleton(AuthenticationSubjectResolver, { useToken: config.subjectResolver });
+    Injector.registerSingleton(AuthenticationSubjectResolver, { useToken: config.subjectResolver });
   }
 }

@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import type { Record } from '#/types.js';
 import { assertNotNull } from '#/utils/type-guards.js';
 import type { ComponentClass } from 'preact';
@@ -10,7 +10,7 @@ import { TemplateRenderer } from '../template.renderer.js';
 
 export type JsxTemplateRenderObject = TemplateRenderObject<'jsx', undefined, JsxTemplate>;
 
-@singleton()
+@Singleton()
 export class JsxTemplateRenderer extends TemplateRenderer<'jsx', undefined> {
   constructor() {
     super();

@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import type { Record } from '#/types.js';
 import { isString } from '#/utils/type-guards.js';
 import type { StringTemplate } from '../resolvers/string.template-resolver.js';
@@ -7,7 +7,7 @@ import { TemplateRenderer } from '../template.renderer.js';
 
 export type StringTemplateRenderObject = TemplateRenderObject<'string', undefined, StringTemplate>;
 
-@singleton()
+@Singleton()
 export class StringTemplateRenderer extends TemplateRenderer<'string', undefined> {
   constructor() {
     super();

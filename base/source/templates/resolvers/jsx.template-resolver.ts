@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { Property } from '#/schema/index.js';
 import type { Record, TypedOmit } from '#/types.js';
 import type { ComponentClass, FunctionComponent } from 'preact';
@@ -13,7 +13,7 @@ export class JsxTemplateField<Renderer extends string = string, Options = any, C
   template: JsxTemplate<Context>;
 }
 
-@singleton()
+@Singleton()
 export class JsxTemplateResolver extends TemplateResolver<JsxTemplateField, JsxTemplate> {
   constructor() {
     super();

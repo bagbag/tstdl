@@ -1,17 +1,17 @@
-import { writeFileSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 
 import { Application } from '#/application/index.js';
 import { BrowserService } from '#/browser/browser.service.js';
-import { container } from '#/container/container.js';
+import { inject, injectAsync } from '#/injector/inject.js';
 import { Logger } from '#/logger/logger.js';
 import { timeout } from '#/utils/timing.js';
 
 async function main(): Promise<void> {
-  const browserService = await container.resolveAsync(BrowserService);
+  const logger = inject(Logger).subModule('BROWSER');
+  const browserService = await injectAsync(BrowserService);
   const browser = await browserService.newBrowser({ headless: false });
   const context = await browser.newContext();
   const page = await context.newPage();
-  const logger = container.resolve(Logger).subModule('BROWSER');
 
   page.attachLogger(logger);
 
@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   await timeout(1000);
   const pdf = await page.renderPdf();
 
-  writeFileSync('/tmp/pdf.pdf', pdf);
+  await writeFile('/tmp/pdf.pdf', pdf);
 
   await page.navigate('file:///tmp/pdf.pdf');
   await page.waitForClose();

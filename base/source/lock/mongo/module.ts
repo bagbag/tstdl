@@ -1,5 +1,5 @@
-import { container } from '#/container/index.js';
 import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { Injector } from '#/injector/injector.js';
 import { Lock } from '../lock.js';
 import { LockProvider } from '../provider.js';
 import { MongoLock } from './lock.js';
@@ -23,7 +23,7 @@ export function configureMongoLock(lockRepositoryConfig: MongoRepositoryConfig<M
   mongoLockModuleConfig.lockEntityRepositoryConfig = lockRepositoryConfig;
 
   if (register) {
-    container.registerSingleton(LockProvider, { useToken: MongoLockProvider });
-    container.register(Lock, { useToken: MongoLock });
+    Injector.registerSingleton(LockProvider, { useToken: MongoLockProvider });
+    Injector.register(Lock, { useToken: MongoLock });
   }
 }

@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { HttpClient } from '#/http/client/index.js';
 import { object, optional, Schema, string } from '#/schema/index.js';
 
@@ -20,7 +20,7 @@ const oidcConfigurationSchema = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
-@singleton()
+@Singleton()
 export class OidcConfigurationService {
   private readonly httpClient: HttpClient;
 

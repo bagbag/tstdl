@@ -1,8 +1,8 @@
 import type { BrowserType } from 'playwright';
 import { chromium, firefox, webkit } from 'playwright';
 
-import { container } from '#/container/container.js';
 import { NotSupportedError } from '#/error/not-supported.error.js';
+import { Injector } from '#/injector/injector.js';
 import { copyObjectProperties, filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { BrowserServiceOptions } from './browser.service.js';
@@ -29,7 +29,7 @@ export function configureBrowser(options: BrowserModuleOptions): void {
   }
 
   if (isDefined(options.options)) {
-    container.register(BrowserServiceOptions, { useValue: options.options });
+    Injector.register(BrowserServiceOptions, { useValue: options.options });
   }
 }
 

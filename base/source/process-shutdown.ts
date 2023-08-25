@@ -3,8 +3,6 @@
 import type { Logger } from '#/logger/index.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { container } from './container/container.js';
-import { CORE_LOGGER } from './core.js';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';
@@ -14,7 +12,7 @@ const quitEvents: QuitEvent[] = ['uncaughtException' /* , 'multipleResolves' */,
 
 export const shutdownToken = new CancellationToken();
 
-let logger: Logger = container.resolve(CORE_LOGGER);
+let logger: Logger;
 
 // eslint-disable-next-line no-shadow
 export function setProcessShutdownLogger(shutdownLogger: Logger): void {
@@ -23,7 +21,7 @@ export function setProcessShutdownLogger(shutdownLogger: Logger): void {
 
 let shutdownRequested = false;
 
-export function requestShutdown(): void {
+export function requestShutdown(exitCode: number = 1): void {
   if (shutdownRequested) {
     return;
   }
@@ -33,21 +31,21 @@ export function requestShutdown(): void {
 
   const timeout = setTimeout(() => {
     logger.warn('forcefully quitting after 20 seconds...');
-    setTimeout(() => process.exit(1), 1);
+    setTimeout(() => process.exit(exitCode), 1);
   }, 20000);
 
   timeout.unref();
 }
 
-export function forceShutdown(): void {
+export function forceShutdown(exitCode: number = 1): void {
   logger.warn('forcefully quitting');
-  setTimeout(() => process.exit(2), 1);
+  setTimeout(() => process.exit(exitCode), 1);
 }
 
 let signalsInitialized = false;
 
 export function initializeSignals(): void {
-  if (signalsInitialized) {
+  if (signalsInitialized || (typeof process == 'undefined')) {
     return;
   }
 

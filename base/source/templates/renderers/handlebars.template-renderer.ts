@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import type { ObjectLiteral, Record } from '#/types.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object.js';
@@ -43,7 +43,7 @@ export type HandlebarsTemplateRenderObject = TemplateRenderObject<'handlebars', 
 
 const wrapHandlebarsTemplateHelper = memoizeSingle(_wrapHandlebarsTemplateHelper, { weak: true });
 
-@singleton()
+@Singleton()
 export class HandlebarsTemplateRenderer extends TemplateRenderer<'handlebars', HandlebarsRendererOptions> {
   private readonly templateResolverProvider: TemplateResolverProvider;
   private readonly compileHandlebarsTemplate: typeof this._compileHandlebarsTemplate;

@@ -1,7 +1,5 @@
 import 'urlpattern-polyfill'; // eslint-disable-line import/no-unassigned-import
 
-import type { Injectable } from '#/container/index.js';
-import { container, injectArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
 import { NotFoundError } from '#/error/not-found.error.js';
 import { NotImplementedError } from '#/error/not-implemented.error.js';
@@ -9,6 +7,8 @@ import type { HttpServerRequestContext } from '#/http/server/http-server.js';
 import type { HttpServerRequest } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { ReadBodyOptions } from '#/http/utils.js';
+import type { Resolvable } from '#/injector/index.js';
+import { InjectArg, ResolveArg, Singleton, resolveArgumentType } from '#/injector/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { SchemaTestable } from '#/schema/index.js';
@@ -24,7 +24,6 @@ import { mebibyte } from '#/utils/units.js';
 import type { ApiBinaryType, ApiController, ApiDefinition, ApiEndpointDefinition, ApiEndpointMethod, ApiEndpointServerImplementation, ApiRequestContext } from '../types.js';
 import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
-import { getApiControllerDefinition } from './api-controller.js';
 import { ApiRequestTokenProvider } from './api-request-token.provider.js';
 import { handleApiError } from './error-handler.js';
 import type { CorsMiddlewareOptions } from './middlewares/cors.middleware.js';
@@ -44,28 +43,28 @@ export type ApiGatewayMiddlewareContext = {
 export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>;
 export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
-export type ApiGatewayOptions = {
+export abstract class ApiGatewayOptions {
   /**
    * Api prefix. Pass `null` to disable prefix.
    * @default api
    */
-  prefix?: string | null,
+  prefix?: string | null;
 
   /** Initial middlewares */
-  middlewares?: ApiGatewayMiddleware[],
+  middlewares?: ApiGatewayMiddleware[];
 
   /** Errors to supress in log output */
-  supressedErrors?: Type<Error>[],
+  supressedErrors?: Type<Error>[];
 
   /** Cors middleware options */
-  cors?: CorsMiddlewareOptions,
+  cors?: CorsMiddlewareOptions;
 
   /**
    * Maximum size of request body. Useful to prevent harmful requests.
    * @default 10 MB
    */
-  defaultMaxBytes?: number
-};
+  defaultMaxBytes?: number;
+}
 
 export type GatewayEndpoint = {
   definition: ApiEndpointDefinition,
@@ -91,10 +90,10 @@ export type ApiMetadata = {
  * router for {@link ApiTransport} requests to {@link ApiImplementation}
  * @todo error handling (standardized format, serialization etc.)
  */
-@singleton({
+@Singleton({
   defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions
 })
-export class ApiGateway implements Injectable<ApiGatewayOptions> {
+export class ApiGateway implements Resolvable<ApiGatewayOptions> {
   private readonly requestTokenProvider: ApiRequestTokenProvider;
   private readonly logger: Logger;
   private readonly prefix: string | null;
@@ -107,7 +106,7 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
   private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
 
   declare readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(requestTokenProvider: ApiRequestTokenProvider, @resolveArg<LoggerArgument>('ApiGateway') logger: Logger, @injectArg() options: ApiGatewayOptions = {}) {
+  constructor(requestTokenProvider: ApiRequestTokenProvider, @ResolveArg<LoggerArgument>('ApiGateway') logger: Logger, @InjectArg() options: ApiGatewayOptions = {}) {
     this.requestTokenProvider = requestTokenProvider;
     this.logger = logger;
     this.options = options;
@@ -130,13 +129,6 @@ export class ApiGateway implements Injectable<ApiGatewayOptions> {
     for (const type of errorTypes) {
       this.supressedErrors.add(type);
     }
-  }
-
-  async registerApiController(controller: Type): Promise<void> {
-    const definition = getApiControllerDefinition(controller);
-    const instance = await container.resolveAsync(controller);
-
-    this.registerApi(definition, instance as unknown as ApiController);
   }
 
   registerApi<T extends ApiDefinition>(definition: ApiDefinition, implementation: ApiController<T>): void {

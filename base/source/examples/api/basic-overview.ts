@@ -4,12 +4,12 @@ import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/in
 import { defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { container } from '#/container/index.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
+import { inject } from '#/injector/inject.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
-import { array, boolean, number, object, Property } from '#/schema/index.js';
+import { Property, array, boolean, number, object } from '#/schema/index.js';
 import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
@@ -79,9 +79,9 @@ class UserApi implements ApiController<UsersApiDefinition> {
 const UserApiClient = compileClient(usersApiDefinition);
 
 async function clientTest(): Promise<void> {
-  await timeout(250); // allow server to start
+  const userApiClient = inject(UserApiClient);
 
-  const userApiClient = container.resolve(UserApiClient);
+  await timeout(250); // allow server to start
 
   const allUsers = await userApiClient.loadAll();
   console.log(allUsers);
@@ -90,6 +90,8 @@ async function clientTest(): Promise<void> {
 
   const allUsersAfterDelete = await userApiClient.loadAll();
   console.log(allUsersAfterDelete);
+
+  Application.requestShutdown();
 }
 
 async function main(): Promise<void> {
@@ -98,9 +100,7 @@ async function main(): Promise<void> {
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   configureHttpClient({ baseUrl: 'http://localhost:8000' });
 
-  Application.registerModule(WebServerModule);
-  await Application.run();
+  Application.run(WebServerModule, clientTest);
 }
 
 void main();
-void clientTest().catch((error) => console.error(error)).then(async () => timeout(1000)).then(async () => Application.shutdown());

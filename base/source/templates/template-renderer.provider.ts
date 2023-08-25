@@ -1,12 +1,12 @@
-import { inject, singleton } from '#/container/index.js';
+import { Inject, Singleton } from '#/injector/decorators.js';
 import type { TemplateRenderer } from './template.renderer.js';
 import { TEMPLATE_RENDERERS } from './tokens.js';
 
-@singleton()
+@Singleton()
 export class TemplateRendererProvider {
   private readonly renderers: Set<TemplateRenderer>;
 
-  constructor(@inject(TEMPLATE_RENDERERS) renderers: TemplateRenderer[]) {
+  constructor(@Inject(TEMPLATE_RENDERERS) renderers: TemplateRenderer[]) {
     this.renderers = new Set(renderers);
   }
 

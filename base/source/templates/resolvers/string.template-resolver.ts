@@ -1,4 +1,4 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { Union } from '#/schema/index.js';
 import type { Record, TypedOmit } from '#/types.js';
 import { TemplateField } from '../template.model.js';
@@ -12,7 +12,7 @@ export class StringTemplateField<Renderer extends string = string, Options = any
   template: StringTemplate<Context>;
 }
 
-@singleton()
+@Singleton()
 export class StringTemplateResolver extends TemplateResolver<StringTemplateField> {
   constructor() {
     super();

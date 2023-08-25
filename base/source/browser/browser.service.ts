@@ -1,15 +1,14 @@
 import type { Browser, BrowserContext, LaunchOptions } from 'playwright';
 
-import { injectArg, singleton } from '#/container/decorators.js';
-import type { Injectable } from '#/container/interfaces.js';
-import { afterResolve, resolveArgumentType } from '#/container/interfaces.js';
-import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import { InjectArg, Singleton } from '#/injector/decorators.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { BrowserContextController } from './browser-context-controller.js';
-import type { NewBrowserContextOptions } from './browser-controller.js';
+import type { BrowserControllerOptions, NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
 import { getBrowserType } from './module.js';
 import { getLaunchOptions, mergeNewBrowserContextOptions } from './utils.js';
@@ -36,30 +35,29 @@ export type NewBrowserOptions = {
   defaultNewContextOptions?: NewBrowserContextOptions
 };
 
-@singleton()
-export class BrowserService implements AsyncDisposable, Injectable<BrowserServiceArgument> {
+@Singleton()
+export class BrowserService implements AsyncDisposable, Resolvable<BrowserServiceArgument> {
   private readonly browsers: Set<Browser>;
   private readonly persistentBrowserContexts: Set<BrowserContext>;
 
   readonly options: BrowserServiceOptions | undefined;
 
   declare readonly [resolveArgumentType]: BrowserServiceArgument;
-  constructor(@injectArg() options?: BrowserServiceOptions) {
+  constructor(@InjectArg() options?: BrowserServiceOptions) {
     this.options = options;
 
     this.browsers = new Set();
     this.persistentBrowserContexts = new Set();
   }
 
-  [afterResolve](): void {
-    disposer.add(this);
-  }
-
   async [disposeAsync](): Promise<void> {
     return this.dispose();
   }
 
-  async newBrowser(options?: NewBrowserOptions): Promise<BrowserController> {
+  /**
+   * @deprecated internal use only
+   */
+  async newRawBrowser(options?: NewBrowserOptions): Promise<{ browser: Browser, controllerOptions: BrowserControllerOptions }> {
     const mergedOptions = { ...this.options?.defaultNewBrowserOptions, ...options };
     const launchOptions = getLaunchOptions(mergedOptions);
 
@@ -68,7 +66,12 @@ export class BrowserService implements AsyncDisposable, Injectable<BrowserServic
     this.browsers.add(browser);
     browser.once('disconnected', () => this.browsers.delete(browser));
 
-    return new BrowserController(browser, { defaultNewContextOptions: mergedOptions.defaultNewContextOptions });
+    return { browser, controllerOptions: { defaultNewContextOptions: mergedOptions.defaultNewContextOptions } };
+  }
+
+  async newBrowser(options?: NewBrowserOptions): Promise<BrowserController> {
+    const { browser, controllerOptions } = await this.newRawBrowser(options);
+    return new BrowserController(browser, controllerOptions);
   }
 
   async newPersistentContext(dataDirectory: string, browserOptions: NewBrowserOptions = {}, contextOptions: NewBrowserContextOptions = {}): Promise<BrowserContextController> {

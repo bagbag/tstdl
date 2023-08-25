@@ -1,7 +1,7 @@
 import type { Observable } from 'rxjs';
 
-import { resolveArg, singleton } from '#/container/index.js';
 import { DetailsError } from '#/error/details.error.js';
+import { ResolveArg, Singleton } from '#/injector/decorators.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Signal } from '#/signals/api.js';
@@ -115,7 +115,7 @@ export const autoEnumerationLocalization = memoize(_autoEnumerationLocalization)
 const parametersPattern = /(?:\{\{\s*(?<parameter>\w+)\s*\}\})/ug;
 const warnedMissingKeys = new Set<string>();
 
-@singleton()
+@Singleton()
 export class LocalizationService {
   readonly #logger: Logger;
   readonly #localizations = new Map<string, MappedLocalization>();
@@ -138,7 +138,7 @@ export class LocalizationService {
   readonly activeLanguage$ = toObservable(this.activeLanguage);
   readonly availableLanguages$ = toObservable(this.availableLanguages);
 
-  constructor(@resolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
+  constructor(@ResolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
     this.#logger = logger;
   }
 

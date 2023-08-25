@@ -1,5 +1,5 @@
-import type { Injectable } from '#/container/index.js';
-import { resolveArgumentType } from '#/container/index.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
 import { QueueEnqueueBatch } from './enqueue-batch.js';
@@ -48,7 +48,7 @@ export const defaultQueueConfig: Required<QueueConfig> = {
   maxTries: 3
 };
 
-export abstract class Queue<T> implements Injectable<QueueArgument> {
+export abstract class Queue<T> implements Resolvable<QueueArgument> {
   declare readonly [resolveArgumentType]: QueueArgument;
 
   batch(): QueueEnqueueBatch<T> {

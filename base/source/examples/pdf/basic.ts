@@ -4,14 +4,17 @@ import { fileURLToPath } from 'node:url';
 
 import { Application } from '#/application/application.js';
 import { BrowserService } from '#/browser/browser.service.js';
-import { container } from '#/container/index.js';
 import { configureTstdl } from '#/core.js';
+import { inject } from '#/injector/inject.js';
+import { Injector } from '#/injector/injector.js';
 import { PdfService } from '#/pdf/pdf.service.js';
 import { configureTemplates } from '#/templates/module.js';
-import { configureFileTemplateProvider, FileTemplateProvider } from '#/templates/providers/file.template-provider.js';
+import { FileTemplateProvider, configureFileTemplateProvider } from '#/templates/providers/file.template-provider.js';
 import { HandlebarsTemplateRenderer } from '#/templates/renderers/handlebars.template-renderer.js';
 import { MjmlTemplateRenderer } from '#/templates/renderers/mjml.template-renderer.js';
-import { configureFileTemplateResolver, FileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
+import { StringTemplateRenderer } from '#/templates/renderers/string.template-renderer.js';
+import { FileTemplateResolver, configureFileTemplateResolver } from '#/templates/resolvers/file.template-resolver.js';
+import { StringTemplateResolver } from '#/templates/resolvers/string.template-resolver.js';
 
 let dirname: string;
 
@@ -26,16 +29,17 @@ configureTstdl();
 
 configureTemplates({
   templateProvider: FileTemplateProvider,
-  templateResolvers: [FileTemplateResolver],
-  templateRenderers: [MjmlTemplateRenderer, HandlebarsTemplateRenderer]
+  templateResolvers: [FileTemplateResolver, StringTemplateResolver],
+  templateRenderers: [MjmlTemplateRenderer, HandlebarsTemplateRenderer, StringTemplateRenderer]
 });
 
 configureFileTemplateProvider({ basePath: resolve(dirname, 'templates') });
 configureFileTemplateResolver({ basePath: resolve(dirname.replace('dist', 'source'), 'templates') });
 
 async function main(): Promise<void> {
-  const browserService = await container.resolveAsync(BrowserService);
-  const pdfService = await container.resolveAsync(PdfService);
+  const injector = inject(Injector);
+  const browserService = await injector.resolveAsync(BrowserService);
+  const pdfService = await injector.resolveAsync(PdfService);
 
   const [result1, result2] = await Promise.all([
     pdfService.renderTemplate('hello-name', { name: 'Max Mustermann' }),

@@ -1,5 +1,6 @@
-import type { Injectable } from '#/container/index.js';
-import { container, injectArg, injectionToken, singleton, type resolveArgumentType } from '#/container/index.js';
+import { InjectArg, Singleton, injectionToken, resolveArgumentType } from '#/injector/index.js';
+import { Injector } from '#/injector/injector.js';
+import type { Resolvable } from '#/injector/interfaces.js';
 import { encodeBase64Url } from '#/utils/base64.js';
 import { concatArrayBufferViews } from '#/utils/binary.js';
 import { importHmacKey, sign } from '#/utils/cryptography.js';
@@ -17,28 +18,29 @@ export type ImgproxyImageServiceConfig = {
 
 export const IMGPROXY_IMAGE_SERVICE_CONFIG = injectionToken<ImgproxyImageServiceConfig>('ImgproxyImageServiceConfig');
 
-@singleton<ImgproxyImageService, ImgproxyImageServiceConfig>({
+@Singleton<ImgproxyImageService, ImgproxyImageServiceConfig>({
   defaultArgumentProvider: (context) => context.resolve(IMGPROXY_IMAGE_SERVICE_CONFIG)
 })
-export class ImgproxyImageService extends ImageService implements Injectable<ImgproxyImageServiceConfig> {
-  private readonly endpoint: string;
-  private readonly keyBytes: Uint8Array;
-  private readonly saltBytes: Uint8Array;
-  private readonly signatureSize: number;
+export class ImgproxyImageService extends ImageService implements Resolvable<ImgproxyImageServiceConfig> {
+  readonly #keyBytes: Uint8Array;
+  readonly #saltBytes: Uint8Array;
+  readonly #signatureSize: number;
+
+  readonly endpoint: string;
 
   declare readonly [resolveArgumentType]: ImgproxyImageServiceConfig;
   constructor(
-    @injectArg<ImgproxyImageServiceConfig>('endpoint') endpoint: string,
-    @injectArg<ImgproxyImageServiceConfig>('key') key: string,
-    @injectArg<ImgproxyImageServiceConfig>('salt') salt: string,
-    @injectArg<ImgproxyImageServiceConfig>('signatureSize') signatureSize: number
+    @InjectArg<ImgproxyImageServiceConfig>('endpoint') endpoint: string,
+    @InjectArg<ImgproxyImageServiceConfig>('key') key: string,
+    @InjectArg<ImgproxyImageServiceConfig>('salt') salt: string,
+    @InjectArg<ImgproxyImageServiceConfig>('signatureSize') signatureSize: number
   ) {
     super();
 
     this.endpoint = endpoint;
-    this.signatureSize = signatureSize;
-    this.keyBytes = decodeHex(key);
-    this.saltBytes = decodeHex(salt);
+    this.#signatureSize = signatureSize;
+    this.#keyBytes = decodeHex(key);
+    this.#saltBytes = decodeHex(salt);
   }
 
   async getUrl(resourceUri: string, options: ImageOptions = {}): Promise<string> {
@@ -70,7 +72,7 @@ export class ImgproxyImageService extends ImageService implements Injectable<Img
     const processingOptionsString = processingOptions.join('/');
     const path = `/${[processingOptionsString, encodedResourceUri].join('/')}`;
 
-    const signature = await signString(this.keyBytes, this.saltBytes, path, this.signatureSize);
+    const signature = await signString(this.#keyBytes, this.#saltBytes, path, this.#signatureSize);
     return `${this.endpoint}/${signature}${path}`;
   }
 }
@@ -106,9 +108,9 @@ function convertOrigin(origin: ImageOrigin): string {
  * @param register whether to register for {@link ImageService}
  */
 export function configureImgproxyImageService(defaultConfig: ImgproxyImageServiceConfig, register: boolean = true): void {
-  container.register(IMGPROXY_IMAGE_SERVICE_CONFIG, { useValue: defaultConfig });
+  Injector.register(IMGPROXY_IMAGE_SERVICE_CONFIG, { useValue: defaultConfig });
 
   if (register) {
-    container.registerSingleton(ImageService, { useToken: ImgproxyImageService });
+    Injector.registerSingleton(ImageService, { useToken: ImgproxyImageService });
   }
 }

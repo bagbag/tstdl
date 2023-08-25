@@ -1,3 +1,4 @@
+import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import type { Record } from '#/types.js';
 import type { Injector } from './injector.js';
 import type { ResolveArgument } from './interfaces.js';
@@ -11,11 +12,14 @@ import type { InjectionToken } from './token.js';
  */
 export type Lifecycle = 'transient' | 'resolution' | 'injector' | 'singleton';
 
-export type ResolveContext = Pick<Injector, 'resolve' | 'resolveAll'>;
+export type ResolveContext<C extends Record> = Pick<Injector, 'resolve' | 'resolveAll'> & {
+  context: ResolutionContext<C>,
+  addDisposeHandler(handler: AsyncDisposeHandler): void
+};
 
 export type Mapper<T = any, U = unknown> = (value: T) => U;
 
-export type ArgumentProvider<T = unknown> = (context: ResolveContext) => T;
+export type ArgumentProvider<T = unknown, C extends Record = Record> = (context: ResolveContext<C>) => T;
 
 export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>); // eslint-disable-line @typescript-eslint/ban-types
 
@@ -25,14 +29,19 @@ export type ResolveOptions = {
   onlySelf?: boolean
 };
 
-export type RegistrationOptions<T, A = unknown> = {
+/**
+ * data to store between different stages like resolve and afterResolve
+ */
+export type ResolutionContext<T extends Record> = T;
+
+export type RegistrationOptions<T, A = unknown, C extends Record = Record> = {
   lifecycle?: Lifecycle,
 
   /** Default resolve argument used when neither token nor explicit resolve argument is provided */
   defaultArgument?: ResolveArgument<T, A>,
 
   /** Default resolve argument used when neither token nor explicit resolve argument is provided */
-  defaultArgumentProvider?: ArgumentProvider<ResolveArgument<T, A>>,
+  defaultArgumentProvider?: ArgumentProvider<ResolveArgument<T, A>, C>,
 
   /**
    * Value to distinguish scoped and singleton instances based on argument
@@ -46,11 +55,11 @@ export type RegistrationOptions<T, A = unknown> = {
   argumentIdentityProvider?: Mapper<ResolveArgument<T, A>>,
 
   /** Function which gets called after a resolve */
-  afterResolve?: (instance: T, argument: ResolveArgument<T, A>) => any,
+  afterResolve?: (instance: T, argument: ResolveArgument<T, A>, context: ResolutionContext<C>) => any,
 
   /** Whether multiple values can be resolved or not (used with {@link Injector.resolveAll}). If false, previous registrations are removed */
   multi?: boolean,
 
-  /** Custom metadata */
+  /** custom metadata */
   metadata?: Record
 };

@@ -1,12 +1,14 @@
-import { container, injectArg, singleton } from '#/container/index.js';
-import { HttpHeaders } from '#/http/http-headers.js';
-import { HttpError, HttpErrorReason } from '#/http/http.error.js';
-import { toArray } from '#/utils/array/array.js';
-import { isDefined } from '#/utils/type-guards.js';
 import { Readable } from 'node:stream';
 import type { ReadableStream } from 'node:stream/web';
 import type { Dispatcher } from 'undici';
 import { request, errors as undiciErrors } from 'undici';
+
+import { HttpHeaders } from '#/http/http-headers.js';
+import { HttpError, HttpErrorReason } from '#/http/http.error.js';
+import { InjectArg, Singleton } from '#/injector/index.js';
+import { Injector } from '#/injector/injector.js';
+import { toArray } from '#/utils/array/array.js';
+import { isDefined } from '#/utils/type-guards.js';
 import type { HttpClientRequest } from '../http-client-request.js';
 import { HttpClientResponse } from '../http-client-response.js';
 import { HttpClientAdapter } from '../http-client.adapter.js';
@@ -17,11 +19,11 @@ export type UndiciHttpClientAdapterOptions = {
 
 let defaultOptions: UndiciHttpClientAdapterOptions = {};
 
-@singleton({ defaultArgumentProvider: () => defaultOptions })
+@Singleton({ defaultArgumentProvider: () => defaultOptions })
 export class UndiciHttpClientAdapter extends HttpClientAdapter {
   private readonly options: UndiciHttpClientAdapterOptions;
 
-  constructor(@injectArg() options: UndiciHttpClientAdapterOptions = {}) {
+  constructor(@InjectArg() options: UndiciHttpClientAdapterOptions = {}) {
     super();
 
     this.options = options;
@@ -102,6 +104,6 @@ export function configureUndiciHttpClientAdapter(options: UndiciHttpClientAdapte
   defaultOptions = options;
 
   if (options.register ?? true) {
-    container.register(HttpClientAdapter, { useToken: UndiciHttpClientAdapter });
+    Injector.register(HttpClientAdapter, { useToken: UndiciHttpClientAdapter });
   }
 }

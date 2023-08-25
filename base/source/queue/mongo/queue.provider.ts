@@ -1,6 +1,8 @@
-import type { Injectable } from '#/container/index.js';
-import { container, forwardArg, resolveArg, resolveArgumentType, singleton } from '#/container/index.js';
 import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { ForwardArg, ResolveArg, Singleton } from '#/injector/decorators.js';
+import { Injector } from '#/injector/injector.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { LockProviderArgument } from '#/lock/index.js';
 import { LockProvider } from '#/lock/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
@@ -12,14 +14,14 @@ import { MongoQueue } from './queue.js';
 
 let defaultJobRepositoryConfig: CollectionArgument<MongoJob>;
 
-@singleton({ defaultArgumentProvider: () => defaultJobRepositoryConfig })
-export class MongoQueueProvider extends QueueProvider implements Injectable<CollectionArgument<MongoJob>> {
+@Singleton({ defaultArgumentProvider: () => defaultJobRepositoryConfig })
+export class MongoQueueProvider extends QueueProvider implements Resolvable<CollectionArgument<MongoJob>> {
   private readonly repository: MongoJobRepository<any>;
   private readonly lockProvider: LockProvider;
   private readonly messageBusProvider: MessageBusProvider;
 
   declare readonly [resolveArgumentType]: CollectionArgument<MongoJob>;
-  constructor(@forwardArg() repository: MongoJobRepository<any>, @resolveArg<LockProviderArgument>('queue:') lockProvider: LockProvider, messageBusProvider: MessageBusProvider) {
+  constructor(@ForwardArg() repository: MongoJobRepository<any>, @ResolveArg<LockProviderArgument>('queue:') lockProvider: LockProvider, messageBusProvider: MessageBusProvider) {
     super();
 
     this.repository = repository;
@@ -42,7 +44,7 @@ export function configureMongoQueue(jobRepositoryConfig: MongoRepositoryConfig<M
   defaultJobRepositoryConfig = jobRepositoryConfig;
 
   if (register) {
-    container.registerSingleton(QueueProvider, { useToken: MongoQueueProvider });
-    container.registerSingleton(Queue, { useToken: MongoQueue });
+    Injector.registerSingleton(QueueProvider, { useToken: MongoQueueProvider });
+    Injector.registerSingleton(Queue, { useToken: MongoQueue });
   }
 }

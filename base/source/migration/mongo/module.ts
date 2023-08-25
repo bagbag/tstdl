@@ -1,5 +1,5 @@
-import { container } from '#/container/index.js';
 import type { MongoRepositoryConfig } from '#/database/mongo/index.js';
+import { Injector } from '#/injector/injector.js';
 import { MigrationStateRepository } from '#/migration/migration-state-repository.js';
 import type { MigrationState } from '#/migration/migration-state.js';
 import { MongoMigrationStateRepository } from './migration-state-repository.js';
@@ -21,6 +21,6 @@ export function configureMongoMigrationStateRepository(migrationStateRepositoryC
   mongoMigrationStateRepositoryModuleConfig.defaultMigrationStateRepositoryConfig = migrationStateRepositoryConfig;
 
   if (register) {
-    container.registerSingleton(MigrationStateRepository, { useToken: MongoMigrationStateRepository });
+    Injector.registerSingleton(MigrationStateRepository, { useToken: MongoMigrationStateRepository });
   }
 }

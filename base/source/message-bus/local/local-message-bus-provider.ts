@@ -1,20 +1,21 @@
-import { resolveArg, singleton } from '#/container/index.js';
+import { Subject } from 'rxjs';
+
 import { WeakRefMap } from '#/data-structures/weak-ref-map.js';
+import { ResolveArg, Singleton } from '#/injector/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { isUndefined } from '#/utils/type-guards.js';
-import { Subject } from 'rxjs';
 import { MessageBusProvider } from '../message-bus-provider.js';
 import { LocalMessageBus } from './local-message-bus.js';
 import type { LocalMessageBusItem } from './types.js';
 
-@singleton()
+@Singleton()
 export class LocalMessageBusProvider extends MessageBusProvider {
   private readonly logger: Logger;
   private readonly channelSubjectsMap: FactoryMap<string, Subject<LocalMessageBusItem<any>>>;
 
-  constructor(@resolveArg<LoggerArgument>('LocalMessageBus') logger: Logger) {
+  constructor(@ResolveArg<LoggerArgument>('LocalMessageBus') logger: Logger) {
     super();
 
     this.logger = logger;

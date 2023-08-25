@@ -1,10 +1,12 @@
-import type { Injectable } from '#/container/index.js';
-import { injectArg, singleton, type resolveArgumentType } from '#/container/index.js';
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+
 import { BadRequestError } from '#/error/bad-request.error.js';
+import { InjectArg, Singleton } from '#/injector/decorators.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import { Property } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
-import * as fs from 'fs/promises';
-import * as path from 'node:path';
 import { TemplateField } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';
@@ -22,14 +24,14 @@ export class FileTemplateField<Renderer extends string = string, Options = any> 
   templateFile: string;
 }
 
-@singleton({
+@Singleton({
   defaultArgumentProvider: () => fileTemplateProviderConfig.basePath
 })
-export class FileTemplateResolver extends TemplateResolver<FileTemplateField> implements Injectable<FileTemplateProviderArgument> {
+export class FileTemplateResolver extends TemplateResolver<FileTemplateField> implements Resolvable<FileTemplateProviderArgument> {
   private readonly basePath: string;
 
   declare readonly [resolveArgumentType]: FileTemplateProviderArgument;
-  constructor(@injectArg() basePath: string) {
+  constructor(@InjectArg() basePath: string) {
     super();
 
     this.basePath = path.resolve(basePath);

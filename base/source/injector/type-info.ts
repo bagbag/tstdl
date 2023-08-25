@@ -11,6 +11,9 @@ export type InjectMetadata = {
   /** whether injection is optional if token is not registered. Set by optional decorator */
   optional?: boolean,
 
+  /** whether injection should resolve all providers */
+  resolveAll?: boolean,
+
   /** mapper to map resolved value */
   mapper?: Mapper,
 

@@ -1,12 +1,13 @@
-import type { Injectable } from '#/container/index.js';
-import type { resolveArgumentType } from '#/container/index.js';
 import type { Observable } from 'rxjs';
+
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { AsyncDisposable } from '../disposable/disposable.js';
 import { disposeAsync } from '../disposable/disposable.js';
 
 export type MessageBusArgument = string;
 
-export abstract class MessageBus<T> implements AsyncDisposable, Injectable<MessageBusArgument> {
+export abstract class MessageBus<T> implements AsyncDisposable, Resolvable<MessageBusArgument> {
   declare readonly [resolveArgumentType]: string;
 
   /** messages from other instances */

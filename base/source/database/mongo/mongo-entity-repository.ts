@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/semi */
-import type { AfterResolve } from '#/container/index.js';
-import { afterResolve } from '#/container/index.js';
 import type { Entity, EntityPatch, MaybeNewEntity, Query, QueryOptions, UpdateOptions } from '#/database/index.js';
 import { EntityRepository } from '#/database/index.js';
+import type { AfterResolve } from '#/injector/index.js';
+import { afterResolve } from '#/injector/index.js';
 import type { Logger } from '#/logger/index.js';
 import type { Record } from '#/types.js';
 import { equals } from '#/utils/equals.js';

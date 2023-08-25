@@ -1,13 +1,17 @@
-import type { InjectionToken } from './container/index.js';
-import { container, injectionToken } from './container/index.js';
 import { AsyncDisposer } from './disposable/async-disposer.js';
+import { Injector } from './injector/injector.js';
+import type { InjectionToken } from './injector/token.js';
+import { injectionToken } from './injector/token.js';
 import { ConsoleLogger } from './logger/console/logger.js';
 import type { LoggerArgument } from './logger/index.js';
 import { LogLevel, Logger } from './logger/index.js';
+import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
 export const CORE_LOGGER = injectionToken<Logger>('core logger');
+
+export const rootInjector = new Injector('RootInjector');
 
 export const disposer: AsyncDisposer = new AsyncDisposer();
 
@@ -69,9 +73,14 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
     enableProdMode();
   }
 
-  container.register(Logger, { useToken: config.logger ?? ConsoleLogger });
+  const logger = rootInjector.resolve(CORE_LOGGER);
 
-  container.registerSingleton<LogLevel, LogLevel>(
+  setProcessShutdownLogger(logger);
+  initializeSignals();
+
+  Injector.register(Logger, { useToken: config.logger ?? ConsoleLogger });
+
+  Injector.registerSingleton<LogLevel, LogLevel>(
     LogLevel,
     { useFactory: (level) => assertDefinedPass(level, 'LogLevel argument not provided') },
     { defaultArgumentProvider: () => config.logLevel ?? LogLevel.Trace }
@@ -82,6 +91,6 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
   }
 }
 
-container.register(Logger, { useToken: ConsoleLogger });
-container.register(LogLevel, { useValue: LogLevel.Trace });
-container.register(CORE_LOGGER, { useToken: Logger, argumentProvider: () => coreLogPrefix });
+Injector.register(Logger, { useToken: ConsoleLogger });
+Injector.register(LogLevel, { useValue: LogLevel.Trace });
+Injector.register(CORE_LOGGER, { useToken: Logger, defaultArgumentProvider: () => coreLogPrefix });

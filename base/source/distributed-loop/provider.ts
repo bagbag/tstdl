@@ -1,8 +1,8 @@
-import { singleton } from '#/container/index.js';
+import { Singleton } from '#/injector/decorators.js';
 import { LockProvider } from '#/lock/index.js';
 import { DistributedLoop } from './distributed-loop.js';
 
-@singleton()
+@Singleton()
 export class DistributedLoopProvider {
   private readonly lockProvider: LockProvider;
 

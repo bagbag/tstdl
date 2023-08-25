@@ -1,24 +1,26 @@
-import type { Type } from '#/types.js';
-import type { InjectionToken } from './token.js';
+import type { Record, Type } from '#/types.js';
+import type { ArgumentedInjectionToken, InjectionTokenArgument, ReifyingInjectionToken } from './token.js';
 
 export const resolveArgumentType: unique symbol = Symbol('resolveArgumentType');
 export const afterResolve: unique symbol = Symbol('after resolve');
 
 export type ResolveArgumentType = typeof resolveArgumentType;
 
-export type ResolveArgument<T, Fallback = undefined> = (
+export type ResolveArgument<T, Fallback = undefined> = undefined | (
   T extends Resolvable<infer U> ? U
   : T extends Type<Resolvable<infer U>> ? U
-  : T extends InjectionToken<infer U, infer A> ? ResolveArgument<U, A>
-  : Fallback) | undefined;
+  : T extends (ArgumentedInjectionToken<any, any> | ReifyingInjectionToken) ? InjectionTokenArgument<T>
+  : Fallback
+);
 
-export interface Resolvable<A = unknown> {
-
+export interface Resolvable<A = unknown, C extends Record = Record> extends Partial<AfterResolve<A, C>> {
   /**
    * type of resolve argument
    * @deprecated only used for type inference
    */
   readonly [resolveArgumentType]: A;
+}
 
-  [afterResolve]?(argument: A): void | Promise<void>;
+export interface AfterResolve<A = unknown, C extends Record = Record> {
+  [afterResolve](argument: A, context: C): void | Promise<void>;
 }

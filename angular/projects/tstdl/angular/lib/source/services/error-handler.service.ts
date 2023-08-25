@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import type { ErrorHandler } from '@angular/core';
 import { Injectable, inject } from '@angular/core';
-import { container } from '@tstdl/base/container';
 import { Logger } from '@tstdl/base/logger';
 import { isNull } from '@tstdl/base/utils';
 import type { OperatorFunction } from 'rxjs';
@@ -16,7 +15,7 @@ import { NotificationService } from './notification.service';
 export class ErrorHandlerService implements ErrorHandler {
   private readonly notificationService = inject(NotificationService);
   private readonly errorHandlerMessageService = inject(ErrorHandlerMessageService);
-  private readonly logger = container.resolve(Logger);
+  private readonly logger = inject(Logger);
   private readonly errorSubject = new Subject<any>();
   private readonly notifiedErrors = new WeakSet();
 

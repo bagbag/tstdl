@@ -1,12 +1,12 @@
-import { inject, singleton } from '#/container/index.js';
+import { Inject, Singleton } from '#/injector/decorators.js';
 import type { TemplateResolver } from './template.resolver.js';
 import { TEMPLATE_RESOLVERS } from './tokens.js';
 
-@singleton()
+@Singleton()
 export class TemplateResolverProvider {
   private readonly resolvers: Set<TemplateResolver>;
 
-  constructor(@inject(TEMPLATE_RESOLVERS) resolvers: TemplateResolver[]) {
+  constructor(@Inject(TEMPLATE_RESOLVERS) resolvers: TemplateResolver[]) {
     this.resolvers = new Set(resolvers);
   }
 

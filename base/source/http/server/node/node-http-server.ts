@@ -2,14 +2,12 @@ import type { ServerResponse } from 'node:http';
 import * as Http from 'node:http';
 import type { Socket } from 'node:net';
 
-import type { AfterResolve } from '#/container/index.js';
-import { afterResolve, resolveArg, singleton } from '#/container/index.js';
-import { disposer } from '#/core.js';
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
 import { HttpQuery } from '#/http/http-query.js';
 import type { HttpMethod } from '#/http/types.js';
+import { ResolveArg, Singleton } from '#/injector/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
@@ -29,8 +27,8 @@ type RequestItem = { request: Http.IncomingMessage, response: Http.ServerRespons
 
 export type NodeHttpServerContext = { nodeRequest: Http.IncomingMessage, nodeResponse: Http.ServerResponse };
 
-@singleton()
-export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements AsyncDisposable, AfterResolve {
+@Singleton()
+export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements AsyncDisposable {
   private readonly httpServer: Http.Server;
   private readonly sockets: Set<Socket>;
   private readonly requestIterable: FeedableAsyncIterable<RequestItem>;
@@ -42,7 +40,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
     return this.sockets.size;
   }
 
-  constructor(@resolveArg<LoggerArgument>('NodeHttpServer') logger: Logger) {
+  constructor(@ResolveArg<LoggerArgument>('NodeHttpServer') logger: Logger) {
     super();
 
     this.logger = logger;
@@ -55,10 +53,6 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       this.logger.verbose(`${request.method} from "${request.socket.remoteAddress}" to "${request.url}"`);
       this.requestIterable.feed({ request, response });
     });
-  }
-
-  [afterResolve](): void {
-    disposer.add(() => this[disposeAsync]);
   }
 
   async [disposeAsync](): Promise<void> {

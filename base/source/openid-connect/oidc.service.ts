@@ -1,10 +1,10 @@
-import { inject, optional as injectOptional, singleton } from '#/container/index.js';
 import { ForbiddenError } from '#/error/forbidden.error.js';
 import { NotImplementedError } from '#/error/not-implemented.error.js';
 import type { HttpRequestAuthorization } from '#/http/client/index.js';
 import { HttpClient } from '#/http/client/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
-import { object, optional, Schema, string } from '#/schema/index.js';
+import { Inject, Optional, Singleton } from '#/injector/index.js';
+import { Schema, object, optional, string } from '#/schema/index.js';
 import type { Json, Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { digest } from '#/utils/cryptography.js';
@@ -25,7 +25,7 @@ const tokenResponseSchema = object({
   /* eslint-enable @typescript-eslint/naming-convention */
 });
 
-@singleton()
+@Singleton()
 export class OidcService<Data = any> {
   private readonly oidcConfigurationService: OidcConfigurationService;
   private readonly maybeOidcStateRepository: OidcStateRepository | undefined;
@@ -35,7 +35,7 @@ export class OidcService<Data = any> {
     return assertDefinedPass(this.maybeOidcStateRepository, 'OidcStateRepository is not provided but required.');
   }
 
-  constructor(oidcConfigurationService: OidcConfigurationService, @inject(OidcStateRepository) @injectOptional() oidcStateRepository: OidcStateRepository | undefined, httpClient: HttpClient) {
+  constructor(oidcConfigurationService: OidcConfigurationService, @Inject(OidcStateRepository) @Optional() oidcStateRepository: OidcStateRepository | undefined, httpClient: HttpClient) {
     this.oidcConfigurationService = oidcConfigurationService;
     this.maybeOidcStateRepository = oidcStateRepository;
     this.httpClient = httpClient;

@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
-import type { InjectableOptionsWithoutLifecycle } from '#/container/index.js';
-import { singleton } from '#/container/index.js';
+import type { InjectableOptionsWithoutLifecycle } from '#/injector/decorators.js';
+import { Singleton } from '#/injector/decorators.js';
 import type { Constructor, Type } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
@@ -12,10 +12,12 @@ export const apiControllerDefinition: unique symbol = Symbol('ApiController defi
 
 const registeredApiControllers = new Map<Type<ApiController>, ApiDefinition | ApiDefinitionProvider>();
 
-export function getApiControllerDefinition(controller: Type): ApiDefinition {
-  ensureApiController(controller);
+export function getApiControllerDefinition(controller: Type | ApiController): ApiDefinition {
+  const controllerType = isFunction(controller) ? controller : controller.constructor as Type;
 
-  const definitionOrProvider = registeredApiControllers.get(controller)!;
+  ensureApiController(controllerType);
+
+  const definitionOrProvider = registeredApiControllers.get(controllerType)!;
 
   if (isFunction(definitionOrProvider)) {
     return definitionOrProvider();
@@ -37,7 +39,7 @@ export function ensureApiController(controller: Type): void {
 export function apiController<T = Type<ApiController>, A = any>(definition: ApiDefinition | ApiDefinitionProvider, injectableOptions: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator { // eslint-disable-line @typescript-eslint/naming-convention
   function apiControllerDecorator<U extends T>(constructor: Constructor<U>): void {
     registeredApiControllers.set(constructor as unknown as Type<ApiController>, definition);
-    singleton(injectableOptions)(constructor);
+    Singleton(injectableOptions)(constructor);
   }
 
   return apiControllerDecorator as ClassDecorator;

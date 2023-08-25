@@ -1,11 +1,9 @@
-import { container } from '#/container/index.js';
-import { connect, disposer } from '#/core.js';
+import { connect } from '#/core.js';
+import { Injector } from '#/injector/injector.js';
 import { Logger } from '#/logger/index.js';
 import { assertDefined, isObject, isString } from '#/utils/type-guards.js';
-import type { Entity } from '../entity.js';
-import type { DatabaseArgument, MongoClientArgument } from './classes.js';
+import type { CollectionArgument, DatabaseArgument, MongoClientArgument } from './classes.js';
 import { Collection, Database, MongoClient } from './classes.js';
-import type { MongoDocument } from './model/document.js';
 import type { MongoConnection } from './types.js';
 
 export type MongoModuleConfig = {
@@ -26,8 +24,8 @@ export function configureMongo(config: Partial<MongoModuleConfig>): void {
   mongoModuleConfig.logPrefix = config.logPrefix ?? mongoModuleConfig.logPrefix;
 }
 
-container.registerSingleton(MongoClient, {
-  useFactory: async (argument, context) => {
+Injector.registerSingleton<MongoClient, MongoClientArgument, { logger: Logger, url: string }>(MongoClient, {
+  useFactory(argument, context) {
     assertDefined(argument, 'mongo connection resolve argument missing');
 
     const { url, ...options } = argument;
@@ -41,44 +39,54 @@ container.registerSingleton(MongoClient, {
       .on('timeout', () => logger.warn('connection timed out'))
       .on('close', () => logger.verbose('connection closed'));
 
-    disposer.add(async () => client.close());
+    context.addDisposeHandler(async () => client.close());
 
-    await connect(`mongo at ${url}`, async () => client.connect(), logger);
+    context.context.logger = logger;
+    context.context.url = url;
 
     return client;
+  },
+  async afterResolve(client, _argument, context) {
+    await connect(`mongo at ${context.url}`, async () => client.connect(), context.logger);
   }
 }, {
   defaultArgumentProvider: (): MongoClientArgument => mongoModuleConfig.defaultConnection,
   argumentIdentityProvider: JSON.stringify
 });
 
-container.registerSingleton(Database, {
-  useFactory: async (argument, context) => {
+Injector.registerSingleton(Database, {
+  useFactory: (argument, context) => {
     const connection = isObject(argument) ? argument.connection : mongoModuleConfig.defaultConnection;
     const name = (isString(argument) ? argument : isObject(argument) ? argument.database : undefined) ?? mongoModuleConfig.defaultDatabase;
 
-    const client = await context.resolveAsync(MongoClient, connection);
+    const client = context.resolve(MongoClient, connection);
     return client.db(name) as Database;
-  }
-}, {
+  },
   defaultArgumentProvider: (): DatabaseArgument => ({ database: mongoModuleConfig.defaultDatabase, connection: mongoModuleConfig.defaultConnection }),
+}, {
   argumentIdentityProvider: JSON.stringify
 });
 
-container.registerSingleton(Collection, {
-  useFactory: async (config, context) => {
+Injector.registerSingleton<Collection, CollectionArgument, { database: Database }>(Collection, {
+  useFactory: (config, context) => {
     assertDefined(config, 'mongo repository config resolve argument missing');
 
-    const database = await context.resolveAsync(Database, config);
-    const existingCollections = await database.collections();
+    const database = context.resolve(Database, config);
+
+    context.context.database = database;
+
+    return database.collection(config.collection) as Collection;
+  },
+  async afterResolve(_, config, context) {
+    const existingCollections = await context.database.collections();
 
     for (const collection of existingCollections) {
       if (collection.collectionName == config.collection) {
-        return collection as unknown as typeof Collection;
+        return;
       }
     }
 
-    return database.createCollection<MongoDocument<Entity>>(config.collection) as Promise<any>;
+    await context.database.createCollection(config.collection);
   }
 }, {
   argumentIdentityProvider: JSON.stringify

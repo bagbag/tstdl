@@ -1,4 +1,4 @@
-import { inject, optional, singleton } from '#/container/index.js';
+import { Inject, Optional, Singleton } from '#/injector/decorators.js';
 import type { Record } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';
@@ -14,14 +14,14 @@ export type TemplateServiceRenderResult<T extends Template = Template> = {
   options: T['options']
 };
 
-@singleton()
+@Singleton()
 export class TemplateService {
   private readonly templateProvider: TemplateProvider;
   private readonly templateRendererProvider: TemplateRendererProvider;
   private readonly templateResolverProvider: TemplateResolverProvider;
 
   constructor(
-    @inject(TemplateProvider) @optional() templateProvider: TemplateProvider | undefined,
+    @Inject(TemplateProvider) @Optional() templateProvider: TemplateProvider | undefined,
     templateRendererProvider: TemplateRendererProvider,
     templateResolverProvider: TemplateResolverProvider
   ) {

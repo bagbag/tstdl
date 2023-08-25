@@ -1,11 +1,10 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response.js';
-import type { Injectable } from '#/container/index.js';
-import { injectArg, optional, singleton, type resolveArgumentType } from '#/container/index.js';
+import { InjectAll, InjectArg, Optional, Singleton, resolveArgumentType } from '#/injector/index.js';
+import type { Resolvable } from '#/injector/interfaces.js';
 import type { OneOrMany, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { encodeBase64 } from '#/utils/base64.js';
 import { encodeUtf8 } from '#/utils/encoding.js';
-import type { AsyncMiddleware, AsyncMiddlewareHandler, AsyncMiddlewareNext } from '#/utils/middleware.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
@@ -20,15 +19,13 @@ import type { HttpClientRequestOptions } from './http-client-request.js';
 import { HttpClientRequest } from './http-client-request.js';
 import type { HttpClientResponse } from './http-client-response.js';
 import { HttpClientAdapter } from './http-client.adapter.js';
-
-export type HttpClientHandler = AsyncMiddlewareHandler<HttpClientRequest, HttpClientResponse>;
-export type HttpClientMiddleware = AsyncMiddleware<HttpClientRequest, HttpClientResponse>;
-export type HttpClientMiddlewareNext = AsyncMiddlewareNext<HttpClientRequest, HttpClientResponse>;
+import type { HttpClientHandler, HttpClientMiddleware, HttpClientMiddlewareNext } from './middleware.js';
+import { HTTP_CLIENT_MIDDLEWARE } from './tokens.js';
 
 export type HttpClientArgument = HttpClientOptions;
 
-@singleton()
-export class HttpClient implements Injectable<HttpClientArgument> {
+@Singleton()
+export class HttpClient implements Resolvable<HttpClientArgument> {
   private readonly adapter: HttpClientAdapter;
   private readonly headers: HttpHeaders;
   private readonly middleware: HttpClientMiddleware[];
@@ -39,11 +36,11 @@ export class HttpClient implements Injectable<HttpClientArgument> {
   readonly options: HttpClientOptions;
 
   declare readonly [resolveArgumentType]: HttpClientOptions;
-  constructor(adapter: HttpClientAdapter, @optional() @injectArg() options: HttpClientOptions = {}) {
+  constructor(adapter: HttpClientAdapter, @Optional() @InjectArg() options: HttpClientOptions = {}, @InjectAll(HTTP_CLIENT_MIDDLEWARE) @Optional() middlewares: HttpClientMiddleware[] = []) {
     this.adapter = adapter;
     this.options = options;
 
-    this.middleware = [...(options.middleware ?? [])];
+    this.middleware = middlewares;
     this.headers = new HttpHeaders();
 
     this.internalMiddleware = [

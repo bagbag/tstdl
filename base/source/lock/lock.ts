@@ -1,4 +1,5 @@
-import type { Injectable, resolveArgumentType } from '#/container/index.js';
+import type { Resolvable } from '#/injector/index.js';
+import { resolveArgumentType } from '#/injector/index.js';
 
 export type LockedFunction<R> = (controller: LockController) => R | Promise<R>;
 
@@ -25,7 +26,7 @@ export interface LockController {
 /** resource */
 export type LockArgument = string | { prefix?: string, resource: string };
 
-export abstract class Lock implements Injectable<LockArgument> {
+export abstract class Lock implements Resolvable<LockArgument> {
   readonly resource: string;
 
   declare readonly [resolveArgumentType]: LockArgument;

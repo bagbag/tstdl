@@ -1,7 +1,7 @@
-import type { Injectable } from '#/container/index.js';
-import { forwardArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { CollectionArgument, TypedIndexDescription } from '#/database/mongo/index.js';
 import { Collection, MongoEntityRepository, noopTransformer } from '#/database/mongo/index.js';
+import { ForwardArg, Singleton, resolveArgumentType } from '#/injector/index.js';
+import type { Resolvable } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/index.js';
 import type { MailLog } from '../models/mail-log.model.js';
 
@@ -15,12 +15,12 @@ export const mongoMailLogRepositoryConfig: MongoMailLogRepositoryConfig = {};
 
 const indexes: TypedIndexDescription<MailLog>[] = [];
 
-@singleton({
+@Singleton({
   defaultArgumentProvider: () => mongoMailLogRepositoryConfig.config
 })
-export class MongoMailLogRepository extends MongoEntityRepository<MailLog> implements Injectable<MongoMailLogRepositoryArgument> {
+export class MongoMailLogRepository extends MongoEntityRepository<MailLog> implements Resolvable<MongoMailLogRepositoryArgument> {
   declare readonly [resolveArgumentType]: MongoMailLogRepositoryArgument;
-  constructor(@forwardArg() collection: Collection<MailLog>, logger: Logger) {
+  constructor(@ForwardArg() collection: Collection<MailLog>, logger: Logger) {
     super(collection, noopTransformer, { logger, indexes });
   }
 }

@@ -1,4 +1,4 @@
-import { injectionToken } from '#/container/index.js';
+import { injectionToken } from '#/injector/token.js';
 import type { TemplateRenderer } from './template.renderer.js';
 import type { TemplateResolver } from './template.resolver.js';
 

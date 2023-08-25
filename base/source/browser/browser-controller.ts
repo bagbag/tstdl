@@ -1,14 +1,15 @@
-import type { Browser, BrowserContextOptions } from 'playwright';
+import type { Browser, BrowserContext, BrowserContextOptions } from 'playwright';
 
-import { injectable } from '#/container/decorators.js';
-import type { Injectable } from '#/container/interfaces.js';
-import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import type { Record } from '#/types.js';
+import { Injectable } from '#/injector/decorators.js';
+import { inject } from '#/injector/inject.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
+import type { Record, Writable } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { BrowserContextState, NewPageOptions } from './browser-context-controller.js';
+import type { BrowserContextControllerOptions, BrowserContextState, NewPageOptions } from './browser-context-controller.js';
 import { BrowserContextController } from './browser-context-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
 import { BrowserService } from './browser.service.js';
@@ -31,15 +32,22 @@ export type NewBrowserContextOptions = {
 
 export type BrowserControllerArgument = NewBrowserOptions;
 
-@injectable({
+type BrowserControllerResolutionContext = { browserService: BrowserService };
+
+@Injectable<BrowserController, BrowserControllerArgument, BrowserControllerResolutionContext>({
   provider: {
-    useFactory: async (argument: BrowserControllerArgument | undefined, context) => {
-      const browserService = await context.resolveAsync(BrowserService);
-      return browserService.newBrowser(argument);
+    useFactory: (_argument: BrowserControllerArgument | undefined, context) => {
+      context.context.browserService = inject(BrowserService);
+      return new BrowserController(null as any); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    },
+    async afterResolve(value, argument, context) {
+      const { browser, controllerOptions } = await context.browserService.newRawBrowser(argument);
+      (value as Writable<BrowserController>).browser = browser;
+      (value as Writable<BrowserController>).options = controllerOptions;
     }
   }
 })
-export class BrowserController implements AsyncDisposable, Injectable<BrowserControllerArgument> {
+export class BrowserController implements AsyncDisposable, Resolvable<BrowserControllerArgument> {
   /** @deprecated should be avoided */
   readonly browser: Browser;
   readonly options: BrowserControllerOptions | undefined;
@@ -54,7 +62,10 @@ export class BrowserController implements AsyncDisposable, Injectable<BrowserCon
     await this.close();
   }
 
-  async newContext(options?: NewBrowserContextOptions): Promise<BrowserContextController> {
+  /**
+   * @deprecated for internal use
+   */
+  async newRawContext(options?: NewBrowserContextOptions): Promise<{ context: BrowserContext, controllerOptions: BrowserContextControllerOptions }> {
     const mergedOptions = mergeNewBrowserContextOptions(this.options?.defaultNewContextOptions, options);
 
     const context = await this.browser.newContext({
@@ -67,7 +78,12 @@ export class BrowserController implements AsyncDisposable, Injectable<BrowserCon
       extraHTTPHeaders: isDefined(mergedOptions.extraHttpHeaders) ? filterUndefinedFromRecord(mergedOptions.extraHttpHeaders) : undefined
     });
 
-    return new BrowserContextController(context, mergedOptions);
+    return { context, controllerOptions: mergedOptions };
+  }
+
+  async newContext(options?: NewBrowserContextOptions): Promise<BrowserContextController> {
+    const { context, controllerOptions } = await this.newRawContext(options);
+    return new BrowserContextController(context, controllerOptions);
   }
 
   async close(): Promise<void> {

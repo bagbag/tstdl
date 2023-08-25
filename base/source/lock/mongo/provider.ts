@@ -1,5 +1,5 @@
-import { injectArg, resolveArg, resolveArgProvider, singleton } from '#/container/index.js';
 import type { CollectionArgument } from '#/database/mongo/index.js';
+import { InjectArg, ResolveArg, ResolveArgProvider, Singleton } from '#/injector/decorators.js';
 import type { Lock } from '#/lock/index.js';
 import { LockProvider } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
@@ -12,13 +12,13 @@ import { MongoLockRepository } from './mongo-lock-repository.js';
 
 const collectionArgumentProvider = (): CollectionArgument<MongoLockEntity> => assertDefinedPass(mongoLockModuleConfig.lockEntityRepositoryConfig, 'mongo lock module not configured');
 
-@singleton()
+@Singleton()
 export class MongoLockProvider extends LockProvider {
   private readonly lockRepository: MongoLockRepository;
   private readonly logger: Logger;
   private readonly _prefix: string;
 
-  constructor(@resolveArgProvider<CollectionArgument<MongoLockEntity>>(collectionArgumentProvider) lockRepository: MongoLockRepository, @resolveArg<LoggerArgument>('MongoLock') logger: Logger, @injectArg() prefix: string = '') {
+  constructor(@ResolveArgProvider<CollectionArgument<MongoLockEntity>>(collectionArgumentProvider) lockRepository: MongoLockRepository, @ResolveArg<LoggerArgument>('MongoLock') logger: Logger, @InjectArg() prefix: string = '') {
     super();
 
     this.lockRepository = lockRepository;

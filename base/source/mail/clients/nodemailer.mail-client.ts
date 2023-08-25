@@ -1,17 +1,19 @@
-import { container, injectArg, singleton } from '#/container/index.js';
-import type { WritableOneOrMany } from '#/types.js';
-import { isUndefined } from '#/utils/type-guards.js';
+import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-disable-line @typescript-eslint/no-require-imports
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
+
+import { InjectArg, Singleton } from '#/injector/index.js';
+import { Injector } from '#/injector/injector.js';
+import type { WritableOneOrMany } from '#/types.js';
+import { isUndefined } from '#/utils/type-guards.js';
 import { MailClient, MailClientConfig } from '../mail.client.js';
 import type { MailAddress, MailData, MailSendResult } from '../models/index.js';
-import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-disable-line @typescript-eslint/no-require-imports
 
-@singleton()
+@Singleton()
 export class NodemailerMailClient extends MailClient {
   private readonly transporter: Transporter<SMTPTransport.SentMessageInfo>;
 
-  constructor(@injectArg() config: MailClientConfig) {
+  constructor(@InjectArg() config: MailClientConfig) {
     super();
 
     const options = convertConfig(config);
@@ -61,6 +63,6 @@ function convertConfig(config: MailClientConfig): SMTPTransport.Options {
  */
 export function configureNodemailerMailClient(register: boolean = true): void {
   if (register) {
-    container.registerSingleton(NodemailerMailClient, { useToken: MailClient });
+    Injector.registerSingleton(NodemailerMailClient, { useToken: MailClient });
   }
 }

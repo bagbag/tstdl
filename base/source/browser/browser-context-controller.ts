@@ -1,12 +1,12 @@
 import type { BrowserContext } from 'playwright';
 
-import { injectable } from '#/container/decorators.js';
-import type { Injectable } from '#/container/interfaces.js';
-import { resolveArgumentType } from '#/container/interfaces.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
+import { Injectable } from '#/injector/decorators.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { Logger } from '#/logger/logger.js';
-import type { Record } from '#/types.js';
+import type { Record, Writable } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { Opaque } from 'type-fest';
@@ -29,19 +29,23 @@ export type BrowserContextState = Opaque<Record<string | number, unknown>, 'Brow
 
 export type BrowserContextControllerArgument = NewBrowserContextOptions;
 
-@injectable({
+@Injectable<BrowserContextController, BrowserContextControllerArgument, { browserController: BrowserController }>({
   provider: {
-    useFactory: async (argument: BrowserContextControllerArgument | undefined, context) => {
-      const browserController = await context.resolveAsync(BrowserController);
-      return browserController.newContext(argument);
+    useFactory: (_, context) => {
+      context.context.browserController = context.resolve(BrowserController);
+      return new BrowserContextController(null as any);
+    },
+    async afterResolve(value, argument, context) {
+      const { context: browserContext, controllerOptions } = await context.browserController.newRawContext(argument);
+      (value as Writable<BrowserContextController>).context = browserContext;
+      (value as Writable<BrowserContextController>).options = controllerOptions;
     }
   }
 })
-export class BrowserContextController implements AsyncDisposable, Injectable<BrowserContextControllerArgument> {
-  private readonly options: BrowserContextControllerOptions;
-
+export class BrowserContextController implements AsyncDisposable, Resolvable<BrowserContextControllerArgument> {
   /** @deprecated should be avoided */
   readonly context: BrowserContext;
+  readonly options: BrowserContextControllerOptions;
 
   declare readonly [resolveArgumentType]: BrowserContextControllerArgument;
   constructor(context: BrowserContext, options: BrowserContextControllerOptions = {}) {

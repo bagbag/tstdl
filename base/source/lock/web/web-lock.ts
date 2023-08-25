@@ -1,4 +1,4 @@
-import { injectable } from '#/container/index.js';
+import { Injectable } from '#/injector/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { CancellationToken } from '#/utils/cancellation-token.js';
 import { assertStringPass, isDefined, isNull, isObject } from '#/utils/type-guards.js';
@@ -7,7 +7,7 @@ import type { AcquireResult, LockArgument, LockController, LockedFunction, Using
 import { Lock } from '../lock.js';
 import { WebLockProvider } from './web-lock.provider.js';
 
-@injectable({
+@Injectable({
   provider: {
     useFactory: (argument, context) => {
       const arg = argument as LockArgument;

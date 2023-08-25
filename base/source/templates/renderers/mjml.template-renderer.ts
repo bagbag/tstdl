@@ -1,4 +1,4 @@
-import { forwardRef, singleton } from '#/container/index.js';
+import { ForwardRef, Singleton } from '#/injector/decorators.js';
 import type { Record } from '#/types.js';
 import mjml2html from 'mjml';
 import type { MJMLParsingOptions } from 'mjml-core';
@@ -14,11 +14,11 @@ export type MjmlRendererString = 'mjml' | `mjml-${string}`;
 
 export type MjmlTemplateRenderObject = TemplateRenderObject<MjmlRendererString, MjmlRendererOptions, string>;
 
-@singleton()
+@Singleton()
 export class MjmlTemplateRenderer extends TemplateRenderer<MjmlRendererString, MjmlRendererOptions> {
   private readonly rendererProvider: TemplateRendererProvider;
 
-  constructor(@forwardRef(() => TemplateRendererProvider) rendererProvider: TemplateRendererProvider) {
+  constructor(@ForwardRef(() => TemplateRendererProvider) rendererProvider: TemplateRendererProvider) {
     super();
 
     this.rendererProvider = rendererProvider;

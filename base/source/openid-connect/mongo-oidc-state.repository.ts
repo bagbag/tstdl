@@ -1,7 +1,8 @@
-import type { Injectable } from '#/container/index.js';
-import { container, forwardArg, resolveArg, singleton, type resolveArgumentType } from '#/container/index.js';
 import type { CollectionArgument, EntityTransformer, MongoRepositoryConfig, TypedIndexDescription } from '#/database/mongo/index.js';
 import { Collection, MongoEntityRepository, mapTo } from '#/database/mongo/index.js';
+import type { Resolvable } from '#/injector/index.js';
+import { ForwardArg, ResolveArg, Singleton, resolveArgumentType } from '#/injector/index.js';
+import { Injector } from '#/injector/injector.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { TypedOmit } from '#/types.js';
@@ -25,10 +26,10 @@ const transformer: EntityTransformer<OidcState, MongoOidcState> = {
   }
 };
 
-@singleton({ defaultArgumentProvider: () => repositoryConfig })
-export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository, Injectable<CollectionArgument<MongoOidcState>> {
+@Singleton({ defaultArgumentProvider: () => repositoryConfig })
+export class MongoOidcStateRepository extends MongoEntityRepository<OidcState, MongoOidcState> implements OidcStateRepository, Resolvable<CollectionArgument<MongoOidcState>> {
   declare readonly [resolveArgumentType]: CollectionArgument<MongoOidcState>;
-  constructor(@forwardArg() collection: Collection<MongoOidcState>, @resolveArg<LoggerArgument>('MongoOidcStateRepository') logger: Logger) {
+  constructor(@ForwardArg() collection: Collection<MongoOidcState>, @ResolveArg<LoggerArgument>('MongoOidcStateRepository') logger: Logger) {
     super(collection, transformer, { logger, indexes });
   }
 }
@@ -42,6 +43,6 @@ export function configureMongoOidcStateRepository(mongoOidcStateRepositoryConfig
   repositoryConfig = mongoOidcStateRepositoryConfig;
 
   if (register) {
-    container.registerSingleton(OidcStateRepository, { useToken: MongoOidcStateRepository });
+    Injector.registerSingleton(OidcStateRepository, { useToken: MongoOidcStateRepository });
   }
 }

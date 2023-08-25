@@ -1,4 +1,4 @@
-import { container } from '#/container/index.js';
+import { Injector } from '#/injector/injector.js';
 import type { Type } from '#/types.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { MailLogRepository } from './mail-log.repository.js';
@@ -18,18 +18,18 @@ export type MailModuleConfig = {
  */
 export function configureMail({ clientConfig, client, logRepository, defaultData }: Partial<MailModuleConfig>): void {
   if (isDefined(clientConfig)) {
-    container.registerSingleton(MailClientConfig, { useValue: clientConfig });
+    Injector.registerSingleton(MailClientConfig, { useValue: clientConfig });
   }
 
   if (isDefined(client)) {
-    container.registerSingleton(MailClient, { useToken: client });
+    Injector.registerSingleton(MailClient, { useToken: client });
   }
 
   if (isDefined(logRepository)) {
-    container.registerSingleton(MailLogRepository, { useToken: logRepository });
+    Injector.registerSingleton(MailLogRepository, { useToken: logRepository });
   }
 
   if (isDefined(defaultData)) {
-    container.registerSingleton(MAIL_DEFAULT_DATA, { useValue: defaultData });
+    Injector.registerSingleton(MAIL_DEFAULT_DATA, { useValue: defaultData });
   }
 }

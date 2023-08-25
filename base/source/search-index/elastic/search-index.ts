@@ -1,9 +1,9 @@
 /* eslint-disable max-classes-per-file */
-import type { AfterResolve } from '#/container/index.js';
-import { afterResolve } from '#/container/index.js';
 import type { Entity, Query, QueryOptions } from '#/database/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
 import { MultiError } from '#/error/multi.error.js';
+import type { AfterResolve } from '#/injector/interfaces.js';
+import { afterResolve } from '#/injector/interfaces.js';
 import type { Logger } from '#/logger/index.js';
 import type { SearchResult, SearchResultItem } from '#/search-index/index.js';
 import { SearchIndex, SearchIndexError } from '#/search-index/index.js';

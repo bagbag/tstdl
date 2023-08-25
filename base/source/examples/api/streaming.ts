@@ -4,12 +4,12 @@ import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/in
 import { defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { container } from '#/container/index.js';
-import { CORE_LOGGER } from '#/core.js';
+import { CORE_LOGGER, configureTstdl, rootInjector } from '#/core.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import { configureNodeHttpServer } from '#/http/server/node/index.js';
+import { inject } from '#/injector/inject.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
 import { ServerSentEvents, ServerSentEventsSource } from '#/sse/index.js';
 import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding.js';
@@ -18,7 +18,9 @@ import { cancelableTimeout, timeout } from '#/utils/timing.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { Agent } from 'undici';
 
-const logger = container.resolve(CORE_LOGGER);
+configureTstdl();
+
+const logger = rootInjector.resolve(CORE_LOGGER);
 
 type StreamingApiDefinition = typeof streamingApiDefinition;
 
@@ -75,9 +77,9 @@ async function* counter(): AsyncIterableIterator<string> {
 const StreamingApiClient = compileClient(streamingApiDefinition);
 
 async function clientTest(): Promise<void> {
-  await timeout(250); // allow server to start
+  const streamingApiClient = inject(StreamingApiClient);
 
-  const streamingApiClient = container.resolve(StreamingApiClient);
+  await timeout(250); // allow server to start
 
   const response = await streamingApiClient.echo(undefined, getReadableStreamFromIterable(counter()).pipeThrough(encodeUtf8Stream()));
 
@@ -94,12 +96,10 @@ function main(): void {
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   configureHttpClient({ baseUrl: 'http://localhost:8000' });
 
-  Application.run(WebServerModule);
+  Application.run(WebServerModule, clientTest);
 }
 
 main();
-void clientTest().catch((error) => logger.error(error as Error));
-
 
 function eventsSource(): ServerSentEventsSource {
   const events = new ServerSentEventsSource();

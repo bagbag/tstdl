@@ -1,4 +1,4 @@
-import { singleton } from '#/container/decorators.js';
+import { Singleton } from '#/injector/index.js';
 import { PasswordStrength } from '#/password/password-check-result.model.js';
 import { checkPassword } from '#/password/password-check.js';
 import { isNumber } from '#/utils/type-guards.js';
@@ -15,7 +15,7 @@ export abstract class AuthenticationSecretRequirementsValidator {
   abstract validateSecretRequirements(secret: string): Promise<void>;
 }
 
-@singleton({ alias: AuthenticationSecretRequirementsValidator })
+@Singleton({ alias: AuthenticationSecretRequirementsValidator })
 export class DefaultAuthenticationSecretRequirementsValidator extends AuthenticationSecretRequirementsValidator {
   async checkSecretRequirements(secret: string): Promise<SecretCheckResult> {
     return checkPassword(secret, { checkForPwned: true });

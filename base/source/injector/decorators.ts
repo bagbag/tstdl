@@ -2,7 +2,7 @@
 
 import type { Decorator } from '#/reflection/index.js';
 import { createClassDecorator, createDecorator } from '#/reflection/index.js';
-import type { Constructor, OneOrMany, Simplify, TypedOmit } from '#/types.js';
+import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';
@@ -12,14 +12,14 @@ import type { InjectionToken } from './token.js';
 import type { InjectMetadata } from './type-info.js';
 import type { ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOptions } from './types.js';
 
-type InjectDecorator = Decorator<'accessor' | 'constructorParameter'>;
+export type InjectDecorator = Decorator<'accessor' | 'constructorParameter'>;
 
-export type InjectableOptions<T, A> = RegistrationOptions<T, A> & {
+export type InjectableOptions<T, A, C extends Record = Record> = RegistrationOptions<T, A, C> & {
   /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
   alias?: OneOrMany<InjectionToken>,
 
   /** custom provider. Useful for example if initialization is required */
-  provider?: Provider<T, A>
+  provider?: Provider<T, A, C>
 };
 
 export type InjectableOptionsWithoutLifecycle<T, A> = Simplify<TypedOmit<InjectableOptions<T, A>, 'lifecycle'>>;
@@ -37,7 +37,7 @@ export function ReplaceClass<T>(constructor: Constructor<T>): ClassDecorator {
  * Globally registers the class for injection
  * @param options registration options
  */
-export function Injectable<T = any, A = any>(options: InjectableOptions<T, A> = {}): ClassDecorator {
+export function Injectable<T = any, A = any, C extends Record = Record>(options: InjectableOptions<T, A, C> = {}): ClassDecorator {
   return createClassDecorator({
     data: { [injectableMetadataSymbol]: {} },
     mergeData: true,
@@ -81,6 +81,30 @@ export function Scoped<T = any, A = any>(lifecycle: 'resolution' | 'injector', o
  */
 export function Inject<T, A>(token?: InjectionToken<T, A>, argument?: A, mapperOrKey?: Mapper<T> | keyof T): InjectDecorator {
   const injectMetadata: InjectMetadata = {};
+
+  if (isDefined(token)) {
+    injectMetadata.injectToken = token;
+  }
+
+  if (isDefined(argument)) {
+    injectMetadata.resolveArgumentProvider = () => argument;
+  }
+
+  if (isDefined(mapperOrKey)) {
+    injectMetadata.mapper = isFunction(mapperOrKey) ? mapperOrKey : ((value: any) => (value as Record<any, unknown>)[mapperOrKey]);
+  }
+
+  return createInjectDecorator(injectMetadata);
+}
+
+/**
+ * sets the token used to resolve the parameter. Resolves all providers
+ * @param token token used for resolving
+ * @param argument resolve argument
+ * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
+ */
+export function InjectAll<T, A>(token?: InjectionToken<T, A>, argument?: A, mapperOrKey?: Mapper<T> | keyof T): InjectDecorator {
+  const injectMetadata: InjectMetadata = { resolveAll: true };
 
   if (isDefined(token)) {
     injectMetadata.injectToken = token;

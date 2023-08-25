@@ -1,8 +1,10 @@
-import type { Injectable } from '#/container/index.js';
-import { container, type resolveArgumentType } from '#/container/index.js';
 import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client/index.js';
 import { HttpClient, HttpClientRequest } from '#/http/client/index.js';
 import { normalizeSingleHttpValue } from '#/http/types.js';
+import { inject } from '#/injector/inject.js';
+import { Injector } from '#/injector/injector.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { UndefinableJsonObject } from '#/types.js';
@@ -15,7 +17,7 @@ import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, Api
 import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
 
-export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Injectable<HttpClientOptions>;
+export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Resolvable<HttpClientOptions>;
 
 export type ClientOptions = {
   /**
@@ -41,19 +43,19 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {
-    [apiName]: class implements Injectable<HttpClient | HttpClientOptions> {
+    [apiName]: class implements Resolvable<HttpClient | HttpClientOptions> {
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
       declare readonly [resolveArgumentType]: HttpClientOptions;
       constructor(httpClientOrOptions: HttpClient | HttpClientArgument) {
-        this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : container.resolve(HttpClient, httpClientOrOptions);
+        this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : inject(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;
       }
     }
   }[apiName]!;
 
-  container.registerSingleton(api, {
+  Injector.registerSingleton(api, {
     useFactory: (argument, context) => {
       const httpClient = (argument instanceof HttpClient) ? argument : context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions);
       return new api(httpClient);

@@ -1,14 +1,15 @@
-import { injectable } from '#/container/index.js';
+import type { Observable } from 'rxjs';
+import { Subject, filter, map } from 'rxjs';
+
+import { Injectable } from '#/injector/index.js';
 import { Logger } from '#/logger/index.js';
 import { assertStringPass } from '#/utils/type-guards.js';
-import type { Observable } from 'rxjs';
-import { filter, map, Subject } from 'rxjs';
 import { MessageBusBase } from '../message-bus-base.js';
 import type { MessageBus } from '../message-bus.js';
 import { LocalMessageBusProvider } from './local-message-bus-provider.js';
 import type { LocalMessageBusItem } from './types.js';
 
-@injectable({
+@Injectable({
   provider: {
     useFactory: (argument, context) => {
       const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');

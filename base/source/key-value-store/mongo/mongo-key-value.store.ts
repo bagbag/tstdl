@@ -1,6 +1,6 @@
-import { injectArg, singleton } from '#/container/index.js';
 import { getNewId } from '#/database/index.js';
 import type { UpdateFilter } from '#/database/mongo/index.js';
+import { InjectArg, Singleton } from '#/injector/index.js';
 import { KeyValueStore } from '#/key-value-store/index.js';
 import type { StringMap } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
@@ -9,13 +9,13 @@ import { assertStringPass, isUndefined } from '#/utils/type-guards.js';
 import type { MongoKeyValue } from './mongo-key-value.model.js';
 import { MongoKeyValueRepository } from './mongo-key-value.repository.js';
 
-@singleton()
+@Singleton()
 export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> {
   private readonly keyValueRepository: MongoKeyValueRepository;
 
   constructor(
     keyValueRepository: MongoKeyValueRepository,
-    @injectArg((argument) => assertStringPass(argument, 'key-value store argument missing (module)')) module: string
+    @InjectArg((argument) => assertStringPass(argument, 'key-value store argument missing (module)')) module: string
   ) {
     super(module);
 

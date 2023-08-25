@@ -1,4 +1,4 @@
-import { assertDefined, isNull } from '#/utils/type-guards.js';
+import { assertDefined, isNotNull } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';
 import type { Resolvable, ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
@@ -14,6 +14,7 @@ export type InjectArgumentOptions = {
 };
 
 export type InjectionContext = {
+  injector: Injector,
   argument: unknown,
   inject<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T,
   injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T[],
@@ -92,8 +93,20 @@ export function injectArgument<T, R>(_this?: Resolvable<T>, options?: InjectArgu
   return argument as T;
 }
 
-export function getCurrentInjectionContext(): InjectionContext | null {
+export function getCurrentInjectionContext(required: true): InjectionContext;
+export function getCurrentInjectionContext(required?: boolean): InjectionContext | null;
+export function getCurrentInjectionContext(required: boolean = false): InjectionContext | null {
+  if (required) {
+    assertInInjectionContext(getCurrentInjector);
+  }
+
   return currentInjectionContext;
+}
+
+export function getCurrentInjector(required: true): Injector;
+export function getCurrentInjector(required?: boolean): Injector | null;
+export function getCurrentInjector(required: boolean = false): Injector | null {
+  return getCurrentInjectionContext(required)?.injector ?? null;
 }
 
 export function setCurrentInjectionContext(context: InjectionContext | null): InjectionContext | null {
@@ -113,6 +126,7 @@ export function setCurrentInjectionContext(context: InjectionContext | null): In
 export function runInInjectionContext<ReturnT>(injectorOrContext: Injector | InjectionContext, fn: () => ReturnT): ReturnT {
   const context: InjectionContext = injectorOrContext instanceof Injector
     ? {
+      injector: injectorOrContext,
       argument: undefined,
       inject(token, argument, options) { return injectorOrContext.resolve(token, argument, options); },
       injectAll(token, argument, options) { return injectorOrContext.resolveAll(token, argument, options); },
@@ -131,13 +145,17 @@ export function runInInjectionContext<ReturnT>(injectorOrContext: Injector | Inj
   }
 }
 
+export function isInInjectionContext(): boolean {
+  return isNotNull(currentInjectionContext);
+}
+
 /**
  * Asserts that the current stack frame is within an injection context and has access to {@link inject}.
  *
  * @param debugFn a reference to the function making the assertion (used for the error message).
  */
 export function assertInInjectionContext(debugFn: Function): void {
-  if (isNull(currentInjectionContext)) {
+  if (!isInInjectionContext()) {
     throw new Error(`${debugFn.name}() can only be used within an injection context such as a constructor, a factory function, a field initializer, or a function used with \`runInInjectionContext\``);
   }
 }

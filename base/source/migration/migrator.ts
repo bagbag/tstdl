@@ -1,4 +1,4 @@
-import { resolveArg, singleton } from '#/container/index.js';
+import { ResolveArg, Singleton } from '#/injector/index.js';
 import type { LockProviderArgument } from '#/lock/index.js';
 import { LockProvider } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
@@ -9,8 +9,8 @@ import { compareByValueSelectionDescending } from '#/utils/comparison.js';
 import { round } from '#/utils/math.js';
 import { Timer } from '#/utils/timer.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { NewMigrationState } from './migration-state.js';
 import { MigrationStateRepository } from './migration-state-repository.js';
+import type { NewMigrationState } from './migration-state.js';
 
 export type MigrationDefinition<T = void> = {
   name: string,
@@ -35,13 +35,13 @@ export type MigrationResult<T> = {
   restartRequested: boolean
 };
 
-@singleton()
+@Singleton()
 export class Migrator {
   private readonly migrationStateRepository: MigrationStateRepository;
   private readonly lockProvider: LockProvider;
   private readonly logger: Logger;
 
-  constructor(migrationStateRepository: MigrationStateRepository, @resolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @resolveArg<LoggerArgument>('Migrator') logger: Logger) {
+  constructor(migrationStateRepository: MigrationStateRepository, @ResolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @ResolveArg<LoggerArgument>('Migrator') logger: Logger) {
     this.migrationStateRepository = migrationStateRepository;
     this.lockProvider = lockProvider;
     this.logger = logger;

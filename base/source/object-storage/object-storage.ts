@@ -1,5 +1,5 @@
-import type { Injectable } from '#/container/index.js';
-import type { resolveArgumentType } from '#/container/index.js';
+import type { Resolvable } from '#/injector/interfaces.js';
+import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { ObjectMetadata, ObjectStorageObject } from './object.js';
 
 export type UploadObjectOptions = {
@@ -8,7 +8,7 @@ export type UploadObjectOptions = {
 
 export type ObjectStorageArgument = string;
 
-export abstract class ObjectStorage implements Injectable<ObjectStorageArgument> {
+export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument> {
   /** object storage module */
   readonly module: string;
 

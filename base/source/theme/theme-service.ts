@@ -1,11 +1,13 @@
-import { inject, injectionToken, singleton } from '#/container/index.js';
+import chroma from 'chroma-js';
+import type { Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+
+import { Inject, Singleton } from '#/injector/decorators.js';
+import { injectionToken } from '#/injector/token.js';
 import { createArray } from '#/utils/array/array.js';
 import { memoize } from '#/utils/function/memoize.js';
 import { fromEntries, objectEntries, objectKeys } from '#/utils/object/object.js';
 import { isString } from '#/utils/type-guards.js';
-import chroma from 'chroma-js';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
 
 export type CalculatedPalette<Colors extends string = string> = {
   [Color in Colors]: ColorTonesWithRgb
@@ -47,7 +49,7 @@ export const DEFAULT_THEME = injectionToken<Theme>('default theme');
 const calculateTheme = memoize(_calculateTheme, { weak: true });
 const generateColorTones = memoize(_generateColorTones);
 
-@singleton()
+@Singleton()
 export class ThemeService<Colors extends string = string> {
   private readonly themeSubject: BehaviorSubject<Theme<Colors>>;
   private readonly calculatedThemeSubject: BehaviorSubject<CalculatedTheme<Colors>>;
@@ -65,7 +67,7 @@ export class ThemeService<Colors extends string = string> {
     return this.calculatedThemeSubject.value;
   }
 
-  constructor(@inject(DEFAULT_THEME) defaultTheme: Theme<Colors>) {
+  constructor(@Inject(DEFAULT_THEME) defaultTheme: Theme<Colors>) {
     this.defaultTheme = defaultTheme;
     this.colors = objectKeys(defaultTheme.palette);
 

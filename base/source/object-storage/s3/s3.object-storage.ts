@@ -1,4 +1,9 @@
-import { singleton } from '#/container/index.js';
+import type { BucketItem, BucketItemStat } from 'minio';
+import { Client } from 'minio';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+
+import { Singleton } from '#/injector/decorators.js';
 import type { UploadObjectOptions } from '#/object-storage/index.js';
 import { ObjectStorage } from '#/object-storage/index.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
@@ -7,16 +12,15 @@ import { now } from '#/utils/date-time.js';
 import { readableStreamFromPromise } from '#/utils/stream/index.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { assertStringPass, isObject } from '#/utils/type-guards.js';
-import type { BucketItem, BucketItemStat } from 'minio';
-import { Client } from 'minio';
-import { Readable } from 'node:stream';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { S3ObjectStorageProvider } from './s3.object-storage-provider.js';
 import { S3Object } from './s3.object.js';
 
-@singleton({
+@Singleton<S3ObjectStorage>({
   provider: {
-    useFactory: async (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)'))
+    useFactory: (argument, context) => context.resolve(S3ObjectStorageProvider).get(assertStringPass(argument, 'resolve argument must be a string (object storage module)')),
+    async afterResolve(value) {
+      await value.ensureBucketExists();
+    }
   }
 })
 export class S3ObjectStorage extends ObjectStorage {

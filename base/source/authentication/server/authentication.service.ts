@@ -1,7 +1,7 @@
-import type { AfterResolve } from '#/container/index.js';
-import { afterResolve, inject, optional, singleton } from '#/container/index.js';
 import { InvalidTokenError } from '#/error/invalid-token.error.js';
 import { NotImplementedError } from '#/error/not-implemented.error.js';
+import type { AfterResolve } from '#/injector/index.js';
+import { Inject, Optional, Singleton, afterResolve } from '#/injector/index.js';
 import type { Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
@@ -91,7 +91,7 @@ type CreateSecretResetTokenResult = {
 
 const SIGNING_SECRETS_LENGTH = 64;
 
-@singleton()
+@Singleton()
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
@@ -115,9 +115,9 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     credentialsRepository: AuthenticationCredentialsRepository,
     sessionRepository: AuthenticationSessionRepository,
     authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator,
-    @inject(AuthenticationSubjectResolver) @optional() subjectResolver: AuthenticationSubjectResolver | undefined,
-    @inject(AuthenticationTokenPayloadProvider) @optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
-    @inject(AuthenticationSecretResetHandler) @optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined,
+    @Inject(AuthenticationSubjectResolver) @Optional() subjectResolver: AuthenticationSubjectResolver | undefined,
+    @Inject(AuthenticationTokenPayloadProvider) @Optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
+    @Inject(AuthenticationSecretResetHandler) @Optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined,
     options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsRepository;

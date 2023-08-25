@@ -1,4 +1,5 @@
-import type { Injectable, resolveArgumentType } from '#/container/index.js';
+import type { Resolvable } from '#/injector/index.js';
+import { resolveArgumentType } from '#/injector/index.js';
 import { Property } from '#/schema/decorators/property.js';
 import { BooleanProperty } from '#/schema/schemas/boolean.js';
 import { Optional } from '#/schema/schemas/optional.js';
@@ -27,7 +28,7 @@ export class MailClientConfig {
   auth?: MailClientAuthConfig;
 }
 
-export abstract class MailClient implements Injectable<MailClientConfig> {
+export abstract class MailClient implements Resolvable<MailClientConfig> {
   declare readonly [resolveArgumentType]: MailClientConfig;
 
   abstract send(data: MailData): Promise<MailSendResult>;
