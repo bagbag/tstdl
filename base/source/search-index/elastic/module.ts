@@ -30,16 +30,16 @@ Injector.registerSingleton<Client, ClientOptions, { logger: Logger }>(Client, {
   useFactory: (argument, context) => {
     assertDefined(argument, 'missing elasticsearch client options');
 
-    context.context.logger = inject(Logger, elasticsearchModuleConfig.logPrefix);
+    context.data.logger = inject(Logger, elasticsearchModuleConfig.logPrefix);
     const client: Client = new Client(argument);
 
-    context.addDisposeHandler(async () => client.close().then(() => context.context.logger.info('closed connection')));
+    context.addDisposeHandler(async () => client.close().then(() => context.data.logger.info('closed connection')));
 
     return client;
   },
-  async afterResolve(client, options, context) {
+  async afterResolve(client, options, { cancellationToken, data: { logger } }) {
     const url = getUrl(options.node ?? options.nodes);
-    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), context.logger);
+    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger, cancellationToken);
   },
   defaultArgumentProvider() {
     return elasticsearchModuleConfig.defaultOptions;

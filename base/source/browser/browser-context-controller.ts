@@ -9,7 +9,7 @@ import type { Logger } from '#/logger/logger.js';
 import type { Record, Writable } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { Opaque } from 'type-fest';
+import type { Tagged } from 'type-fest';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import { BrowserController } from './browser-controller.js';
 import type { PageControllerOptions } from './page-controller.js';
@@ -25,18 +25,18 @@ export type NewPageOptions = {
   controllerOptions?: PageControllerOptions
 };
 
-export type BrowserContextState = Opaque<Record<string | number, unknown>, 'BrowserContextState'>;
+export type BrowserContextState = Tagged<Record<string | number, unknown>, 'BrowserContextState'>;
 
 export type BrowserContextControllerArgument = NewBrowserContextOptions;
 
 @Injectable<BrowserContextController, BrowserContextControllerArgument, { browserController: BrowserController }>({
   provider: {
     useFactory: (_, context) => {
-      context.context.browserController = context.resolve(BrowserController);
+      context.data.browserController = context.resolve(BrowserController);
       return new BrowserContextController(null as any);
     },
-    async afterResolve(value, argument, context) {
-      const { context: browserContext, controllerOptions } = await context.browserController.newRawContext(argument);
+    async afterResolve(value, argument, { data: { browserController } }) {
+      const { context: browserContext, controllerOptions } = await browserController.newRawContext(argument);
       (value as Writable<BrowserContextController>).context = browserContext;
       (value as Writable<BrowserContextController>).options = controllerOptions;
     }

@@ -41,13 +41,13 @@ Injector.registerSingleton<MongoClient, MongoClientArgument, { logger: Logger, u
 
     context.addDisposeHandler(async () => client.close());
 
-    context.context.logger = logger;
-    context.context.url = url;
+    context.data.logger = logger;
+    context.data.url = url;
 
     return client;
   },
-  async afterResolve(client, _argument, context) {
-    await connect(`mongo at ${context.url}`, async () => client.connect(), context.logger);
+  async afterResolve(client, _argument, { cancellationToken, data: { url, logger } }) {
+    await connect(`mongo at ${url}`, async () => client.connect(), logger, cancellationToken);
   }
 }, {
   defaultArgumentProvider: (): MongoClientArgument => mongoModuleConfig.defaultConnection,
@@ -73,12 +73,12 @@ Injector.registerSingleton<Collection, CollectionArgument, { database: Database 
 
     const database = context.resolve(Database, config);
 
-    context.context.database = database;
+    context.data.database = database;
 
     return database.collection(config.collection) as Collection;
   },
-  async afterResolve(_, config, context) {
-    const existingCollections = await context.database.collections();
+  async afterResolve(_, config, { data: { database } }) {
+    const existingCollections = await database.collections();
 
     for (const collection of existingCollections) {
       if (collection.collectionName == config.collection) {
@@ -86,7 +86,7 @@ Injector.registerSingleton<Collection, CollectionArgument, { database: Database 
       }
     }
 
-    await context.database.createCollection(config.collection);
+    await database.createCollection(config.collection);
   }
 }, {
   argumentIdentityProvider: JSON.stringify

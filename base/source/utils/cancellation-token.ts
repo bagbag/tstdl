@@ -1,6 +1,7 @@
-import { noopOperator } from '#/rxjs/noop.js';
-import type { Observable, Observer, Subscribable, Subscription } from 'rxjs';
+import type { Observable, Observer, Subscribable, Subscription, Unsubscribable } from 'rxjs';
 import { BehaviorSubject, distinctUntilChanged, filter, first, firstValueFrom, from, fromEvent, isObservable, map, skip, take } from 'rxjs';
+
+import { noopOperator } from '#/rxjs/noop.js';
 import { noop } from './noop.js';
 import { isBoolean } from './type-guards.js';
 
@@ -42,78 +43,82 @@ export type ConnectConfig = {
   once?: boolean
 };
 
-export interface ReadonlyCancellationToken extends PromiseLike<void>, Subscribable<void> {
+export abstract class ReadonlyCancellationToken implements PromiseLike<void>, Subscribable<void> {
   /**
    * Returns whether this token set.
    */
-  readonly isSet: boolean;
+  abstract readonly isSet: boolean;
 
   /**
    * Returns whether this token unset.
    */
-  readonly isUnset: boolean;
+  abstract readonly isUnset: boolean;
 
   /**
    * Observable which emits the current state and every state change.
    */
-  readonly state$: Observable<boolean>;
+  abstract readonly state$: Observable<boolean>;
 
   /**
    * Observable which emits when this token is set.
    */
-  readonly set$: Observable<void>;
+  abstract readonly set$: Observable<void>;
 
   /**
    * Observable which emits when this token is unset.
    */
-  readonly unset$: Observable<void>;
+  abstract readonly unset$: Observable<void>;
 
   /**
    * Returns a promise which is resolved when this token is set.
    */
-  readonly $set: Promise<void>;
+  abstract readonly $set: Promise<void>;
 
   /**
    * Returns a promise which is resolved when this token is unset.
    */
-  readonly $unset: Promise<void>;
+  abstract readonly $unset: Promise<void>;
 
   /**
    * Returns a promise which is resolved when this token changes its state.
    */
-  readonly $state: Promise<boolean>;
+  abstract readonly $state: Promise<boolean>;
 
   /**
    * Returns an AbortSignal.
    */
-  asAbortSignal(): AbortSignal;
+  abstract asAbortSignal(): AbortSignal;
 
   /**
    * Create a new token and connect it to this instance.
    * @see {@link connect}
    */
-  createChild(config?: ConnectConfig): CancellationToken;
+  abstract createChild(config?: ConnectConfig): CancellationToken;
 
   /**
    * Propagate events from this instance to the `child`. Events from the `child` are *not* propagated to this instance.
    * @param child child to connect
    */
-  connect(child: CancellationToken, config?: ConnectConfig): void;
+  abstract connect(child: CancellationToken, config?: ConnectConfig): void;
+
+  abstract subscribe(observer: Partial<Observer<void>>): Unsubscribable;
+
+  abstract then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | undefined | null): Promise<TResult>;
 }
 
-export class CancellationToken implements ReadonlyCancellationToken {
-  private readonly stateSubject: BehaviorSubject<boolean>;
+export class CancellationToken extends ReadonlyCancellationToken {
+  readonly #stateSubject = new BehaviorSubject<boolean>(false);
 
-  readonly state$: Observable<boolean>;
-  readonly set$: Observable<void>;
-  readonly unset$: Observable<void>;
+  readonly state$ = this.#stateSubject.pipe(distinctUntilChanged());
+  readonly set$ = this.state$.pipe(filter((state) => state), map(() => undefined));
+  readonly unset$ = this.state$.pipe(filter((state) => !state), map(() => undefined));
 
   get isSet(): boolean {
-    return this.stateSubject.value;
+    return this.#stateSubject.value;
   }
 
   get isUnset(): boolean {
-    return !this.stateSubject.value;
+    return !this.#stateSubject.value;
   }
 
   get $set(): Promise<void> {
@@ -135,10 +140,9 @@ export class CancellationToken implements ReadonlyCancellationToken {
    * @default false
    */
   constructor(initialState: boolean = false) {
-    this.stateSubject = new BehaviorSubject<boolean>(initialState);
-    this.state$ = this.stateSubject.pipe(distinctUntilChanged());
-    this.set$ = this.state$.pipe(filter((state) => state), map(() => undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    this.unset$ = this.state$.pipe(filter((state) => !state), map(() => undefined)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    super();
+
+    this.#stateSubject.next(initialState);
   }
 
   /**
@@ -180,7 +184,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
       complete: complete ? (() => target.complete()) : noop
     });
 
-    target.stateSubject.subscribe({
+    target.#stateSubject.subscribe({
       error: () => subscription.unsubscribe(),
       complete: () => subscription.unsubscribe()
     });
@@ -220,28 +224,28 @@ export class CancellationToken implements ReadonlyCancellationToken {
    * Set this token.
    */
   set(): void {
-    this.stateSubject.next(true);
+    this.#stateSubject.next(true);
   }
 
   /**
    * Unset this token.
    */
   unset(): void {
-    this.stateSubject.next(false);
+    this.#stateSubject.next(false);
   }
 
   /**
    * Set the state.
    */
   setState(state: boolean): void {
-    this.stateSubject.next(state);
+    this.#stateSubject.next(state);
   }
 
   /**
    * Errors the token.
    */
   error(error: Error): void {
-    this.stateSubject.error(error);
+    this.#stateSubject.error(error);
   }
 
   /**
@@ -250,7 +254,7 @@ export class CancellationToken implements ReadonlyCancellationToken {
    * Keep in mind that *active* awaits (promise) on this token will throw.
    */
   complete(): void {
-    this.stateSubject.complete();
+    this.#stateSubject.complete();
   }
 
   async then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | undefined | null): Promise<TResult> {

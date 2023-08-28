@@ -1,4 +1,4 @@
-import { isDefined } from '#/utils/type-guards.js';
+import { isDefined, isNullOrUndefined } from '#/utils/type-guards.js';
 import { MultiError } from '../error/multi.error.js';
 import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
 import { CancellationToken } from '../utils/cancellation-token.js';
@@ -20,34 +20,64 @@ export type Deferrer = {
   yield(): void
 };
 
-export class AsyncDisposer implements AsyncDisposable {
-  private readonly deferrers: Set<Deferrer>;
-  private readonly tasks: AsyncDisposeTask[];
+export class AsyncDisposer implements AsyncDisposable, AsyncDisposableStack {
+  readonly #disposingToken: CancellationToken;
+  readonly #disposedToken: CancellationToken;
 
-  readonly _disposingToken: CancellationToken;
-  readonly _disposedToken: CancellationToken;
+  #deferrers: Set<Deferrer>;
+  #tasks: AsyncDisposeTask[];
 
   get disposingToken(): ReadonlyCancellationToken {
-    return this._disposingToken;
+    return this.#disposingToken;
   }
 
   get disposedToken(): ReadonlyCancellationToken {
-    return this._disposedToken;
+    return this.#disposedToken;
   }
 
   get disposing(): boolean {
-    return this._disposingToken.isSet;
+    return this.#disposingToken.isSet;
   }
 
   get disposed(): boolean {
-    return this._disposedToken.isSet;
+    return this.#disposedToken.isSet;
   }
 
+  readonly [Symbol.toStringTag] = 'AsyncDisposable';
+
   constructor() {
-    this.deferrers = new Set();
-    this.tasks = [];
-    this._disposingToken = new CancellationToken();
-    this._disposedToken = new CancellationToken();
+    this.#deferrers = new Set();
+    this.#tasks = [];
+    this.#disposingToken = new CancellationToken();
+    this.#disposedToken = new CancellationToken();
+  }
+
+  use<T extends globalThis.AsyncDisposable | globalThis.Disposable | null | undefined>(value: T): T {
+    if (isNullOrUndefined(value)) {
+      return value;
+    }
+
+    this.add(value);
+    return value;
+  }
+
+  adopt<T>(value: T, onDisposeAsync: (value: T) => void | PromiseLike<void>): T {
+    this.add(async () => onDisposeAsync(value));
+    return value;
+  }
+
+  move(): AsyncDisposableStack {
+    const disposer = new AsyncDisposer();
+    disposer.#tasks = this.#tasks;
+    disposer.#deferrers = this.#deferrers;
+
+    this.#tasks = [];
+    this.#deferrers = new Set();
+
+    this.#disposingToken.set();
+    this.#disposedToken.set();
+
+    return disposer;
   }
 
   getDeferrer(): Deferrer {
@@ -55,11 +85,11 @@ export class AsyncDisposer implements AsyncDisposable {
       [deferrerToken]: new CancellationToken(),
       yield: () => {
         deferrer[deferrerToken].set();
-        this.deferrers.delete(deferrer);
+        this.#deferrers.delete(deferrer);
       }
     };
 
-    this.deferrers.add(deferrer);
+    this.#deferrers.add(deferrer);
 
     return deferrer;
   }
@@ -87,19 +117,23 @@ export class AsyncDisposer implements AsyncDisposable {
         ? () => fnOrDisposable[dispose]()
         : fnOrDisposable;
 
-    this.tasks.push({ taskFunction: fn });
+    this.#tasks.push({ taskFunction: fn });
+  }
+
+  async disposeAsync(): Promise<void> {
+    await this.dispose();
   }
 
   async dispose(): Promise<void> {
     if (this.disposing) {
-      return this._disposedToken.$set;
+      return this.#disposedToken.$set;
     }
 
-    this._disposingToken.set();
+    this.#disposingToken.set();
 
     const errors: Error[] = [];
 
-    for (const deferrer of this.deferrers) {
+    for (const deferrer of this.#deferrers) {
       try {
         await deferrer[deferrerToken];
       }
@@ -108,9 +142,9 @@ export class AsyncDisposer implements AsyncDisposable {
       }
     }
 
-    for (let i = this.tasks.length - 1; i >= 0; i--) {
+    for (let i = this.#tasks.length - 1; i >= 0; i--) {
       try {
-        const task = this.tasks[i]!;
+        const task = this.#tasks[i]!;
         await task.taskFunction();
       }
       catch (error) {
@@ -125,14 +159,16 @@ export class AsyncDisposer implements AsyncDisposable {
         : undefined;
 
     if (isDefined(error)) {
-      this._disposedToken.error(error);
+      this.#disposedToken.error(error);
       throw error;
     }
 
-    this._disposedToken.set();
+    this.#disposedToken.set();
+
+    return undefined;
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     return this.dispose();
   }
 }

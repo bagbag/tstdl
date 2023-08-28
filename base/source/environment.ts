@@ -1,5 +1,6 @@
 import type * as NodeOs from 'node:os';
 import type * as NodeWorkerThreads from 'node:worker_threads';
+
 import { dynamicImport } from './import.js';
 import { dynamicRequire } from './require.js';
 

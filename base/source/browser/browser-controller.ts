@@ -37,11 +37,11 @@ type BrowserControllerResolutionContext = { browserService: BrowserService };
 @Injectable<BrowserController, BrowserControllerArgument, BrowserControllerResolutionContext>({
   provider: {
     useFactory: (_argument: BrowserControllerArgument | undefined, context) => {
-      context.context.browserService = inject(BrowserService);
+      context.data.browserService = inject(BrowserService);
       return new BrowserController(null as any); // eslint-disable-line @typescript-eslint/no-unsafe-argument
     },
-    async afterResolve(value, argument, context) {
-      const { browser, controllerOptions } = await context.browserService.newRawBrowser(argument);
+    async afterResolve(value, argument, { data: { browserService } }) {
+      const { browser, controllerOptions } = await browserService.newRawBrowser(argument);
       (value as Writable<BrowserController>).browser = browser;
       (value as Writable<BrowserController>).options = controllerOptions;
     }

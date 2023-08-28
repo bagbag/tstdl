@@ -1,14 +1,14 @@
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
-import { AsyncDisposer } from '#/disposable/async-disposer.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync, isAsyncDisposable, isDisposable } from '#/disposable/disposable.js';
+import { isAsyncDisposable, isDisposable, isSyncOrAsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { ConstructorParameterMetadata } from '#/reflection/registry.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import type { Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
+import { CancellationToken } from '#/utils/cancellation-token.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -23,7 +23,7 @@ import { ResolveError } from './resolve.error.js';
 import { injectMetadataSymbol, injectableMetadataSymbol } from './symbols.js';
 import { getTokenName, type InjectionToken } from './token.js';
 import type { InjectMetadata } from './type-info.js';
-import type { RegistrationOptions, ResolutionContext, ResolveContext, ResolveOptions } from './types.js';
+import type { AfterResolveContext, RegistrationOptions, ResolveContext, ResolveContextData, ResolveOptions } from './types.js';
 
 type ResolutionTag = symbol;
 
@@ -41,7 +41,7 @@ type InternalResolveContext = {
 
   /** all resolutions in this chain for postprocessing */
   resolutions: Resolution<any, any>[],
-  resolutionContexts: FactoryMap<ResolutionTag, ResolutionContext<Record>>,
+  resolutionContextData: FactoryMap<ResolutionTag, ResolveContextData<Record>>,
 
   forwardRefQueue: CircularBuffer<(() => void | Promise<void>)>,
   forwardRefs: Set<ForwardRef>,
@@ -54,6 +54,7 @@ type Resolution<T, A> = {
   registration: Registration<T>,
   value: T,
   argument: ResolveArgument<T, A>,
+  afterResolveContext: AfterResolveContext<any>,
   chain: ResolveChain
 };
 
@@ -72,22 +73,43 @@ export type GetRegistrationOptions = {
   onlySelf?: boolean
 };
 
+export type AddDisposeHandler = (handler: Disposable | AsyncDisposable | (() => any)) => void;
+
 export class Injector implements AsyncDisposable {
   static readonly #globalRegistrations: GlobalRegistrationsMap = new Map();
 
   readonly #parent: Injector | null;
   readonly #children: Injector[] = [];
-  readonly #disposer = new AsyncDisposer();
+  readonly #disposeToken = new CancellationToken();
+  readonly #disposableStack = new AsyncDisposableStack();
   readonly #registrations: RegistrationsMap = new Map();
   readonly #injectorScopedResolutions = new MultiKeyMap<[InjectionToken, unknown], Resolution<any, any>>();
+  readonly #addDisposeHandler: AddDisposeHandler;
 
   readonly name: string;
+
+  get disposed(): boolean {
+    return this.#disposableStack.disposed;
+  }
 
   constructor(name: string, parent: Injector | null = null) {
     this.name = name;
     this.#parent = parent;
 
     this.register(Injector, { useValue: this });
+    this.register(CancellationToken, { useValue: this.#disposeToken });
+
+    this.#addDisposeHandler = (handler: AsyncDisposeHandler): void => {
+      if (isSyncOrAsyncDisposable(handler)) {
+        this.#disposableStack.use(handler);
+      }
+      else {
+        this.#disposableStack.defer(handler);
+      }
+    };
+
+    this.#disposableStack.defer(() => this.#registrations.clear());
+    this.#disposableStack.defer(() => this.#injectorScopedResolutions.clear());
   }
 
   /**
@@ -119,10 +141,11 @@ export class Injector implements AsyncDisposable {
   }
 
   async dispose(): Promise<void> {
-    await this.#disposer.dispose();
+    this.#disposeToken.set();
+    await this.#disposableStack.disposeAsync();
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.dispose();
   }
 
@@ -130,7 +153,7 @@ export class Injector implements AsyncDisposable {
     const child = new Injector(name, this);
 
     this.#children.push(child);
-    this.#disposer.add(child);
+    this.#disposableStack.use(child);
 
     return child;
   }
@@ -142,6 +165,8 @@ export class Injector implements AsyncDisposable {
    * @param options registration options
    */
   register<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options: RegistrationOptions<T, A, C> = {}): void {
+    this.assertNotDisposed();
+
     for (const provider of toArray(providers)) {
       const registration: Registration<T> = {
         token,
@@ -259,6 +284,8 @@ export class Injector implements AsyncDisposable {
   }
 
   private _resolve<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions, context: InternalResolveContext, chain: ResolveChain): T | undefined {
+    this.assertNotDisposed();
+
     if (isUndefined(token)) {
       throw new ResolveError('Token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case.', chain);
     }
@@ -282,6 +309,8 @@ export class Injector implements AsyncDisposable {
   }
 
   private _resolveAll<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions, context: InternalResolveContext, chain: ResolveChain): T[] {
+    this.assertNotDisposed();
+
     if (isUndefined(token)) {
       throw new ResolveError('Token is undefined - this might be because of circular dependencies, use alias or forwardRef in this case.', chain);
     }
@@ -332,7 +361,15 @@ export class Injector implements AsyncDisposable {
 
       const value = this._resolveProvider(resolutionTag, registration, resolveArgument, options, context, injectionContext, chain);
 
-      const resolution: Resolution<T, A> = { tag: resolutionTag, registration, value, argument: injectionContext.argument as ResolveArgument<T, A>, chain };
+      const resolution: Resolution<T, A> = {
+        tag: resolutionTag,
+        registration,
+        value,
+        argument: injectionContext.argument as ResolveArgument<T, A>,
+        afterResolveContext: this.getAfterResolveContext(resolutionTag, context),
+        chain
+      };
+
       context.resolutions.push(resolution);
 
       if (resolutionScoped) {
@@ -408,7 +445,7 @@ export class Injector implements AsyncDisposable {
       }
 
       if (isDisposable(result.value) || isAsyncDisposable(result.value)) {
-        this.#disposer.add(result.value);
+        this.#disposableStack.use(result.value);
       }
 
       return result.value;
@@ -503,9 +540,22 @@ export class Injector implements AsyncDisposable {
     const context: ResolveContext<any> = {
       resolve: (token, argument, options) => this._resolve(token, argument, options ?? {}, resolveContext, chain.addToken(token)),
       resolveAll: (token, argument, options) => this._resolveAll(token, argument, options ?? {}, resolveContext, chain.addToken(token)),
-      addDisposeHandler: (handler: AsyncDisposeHandler) => this.#disposer.add(handler),
-      get context() {
-        return resolveContext.resolutionContexts.get(resolutionTag);
+      cancellationToken: this.#disposeToken,
+      addDisposeHandler: this.#addDisposeHandler,
+      get data() {
+        return resolveContext.resolutionContextData.get(resolutionTag);
+      }
+    };
+
+    return context;
+  }
+
+  private getAfterResolveContext(resolutionTag: ResolutionTag, resolveContext: InternalResolveContext): AfterResolveContext<any> {
+    const context: AfterResolveContext<any> = {
+      cancellationToken: this.#disposeToken,
+      addDisposeHandler: this.#addDisposeHandler,
+      get data() {
+        return resolveContext.resolutionContextData.get(resolutionTag);
       }
     };
 
@@ -523,6 +573,12 @@ export class Injector implements AsyncDisposable {
     };
 
     return context;
+  }
+
+  private assertNotDisposed(): void {
+    if (this.disposed) {
+      throw new Error('Injector is disposed.');
+    }
   }
 }
 
@@ -558,7 +614,7 @@ function newInternalResolveContext(): InternalResolveContext {
     resolving: new Set(),
     resolutionScopedResolutions: new MultiKeyMap(),
     resolutions: [],
-    resolutionContexts: new FactoryMap(() => ({})),
+    resolutionContextData: new FactoryMap(() => ({})),
     forwardRefQueue: new CircularBuffer(),
     forwardRefs: new Set(),
     $done: new DeferredPromise()
@@ -574,20 +630,17 @@ function postProcess(context: InternalResolveContext): void {
 
   for (const resolution of context.resolutions) {
     if (isFunction((resolution.value as Resolvable | undefined)?.[afterResolve])) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      const returnValue = (resolution.value as Resolvable)[afterResolve]!(resolution.argument, resolutionContext);
+      const returnValue = (resolution.value as Resolvable)[afterResolve]!(resolution.argument, resolution.afterResolveContext);
       throwOnPromise(returnValue, '[afterResolve]', resolution.chain);
     }
 
     if (isProviderWithInitializer(resolution.registration.provider)) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      const returnValue = resolution.registration.provider.afterResolve?.(resolution.value, resolution.argument, resolutionContext);
+      const returnValue = resolution.registration.provider.afterResolve?.(resolution.value, resolution.argument, resolution.afterResolveContext);
       throwOnPromise(returnValue, 'provider afterResolve handler', resolution.chain);
     }
 
     if (isDefined(resolution.registration.options.afterResolve)) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      const returnValue = resolution.registration.options.afterResolve(resolution.value, resolution.argument, resolutionContext);
+      const returnValue = resolution.registration.options.afterResolve(resolution.value, resolution.argument, resolution.afterResolveContext);
       throwOnPromise(returnValue, 'registration afterResolve handler', resolution.chain);
     }
   }
@@ -602,18 +655,15 @@ async function postProcessAsync(context: InternalResolveContext): Promise<void> 
 
   for (const resolution of context.resolutions) {
     if (isFunction((resolution.value as Resolvable | undefined)?.[afterResolve])) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      await (resolution.value as Resolvable)[afterResolve]!(resolution.argument, resolutionContext);
+      await (resolution.value as Resolvable)[afterResolve]!(resolution.argument, resolution.afterResolveContext);
     }
 
     if (isProviderWithInitializer(resolution.registration.provider)) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      await resolution.registration.provider.afterResolve?.(resolution.value, resolution.argument, resolutionContext);
+      await resolution.registration.provider.afterResolve?.(resolution.value, resolution.argument, resolution.afterResolveContext);
     }
 
     if (isDefined(resolution.registration.options.afterResolve)) {
-      const resolutionContext = context.resolutionContexts.get(resolution.tag);
-      await resolution.registration.options.afterResolve(resolution.value, resolution.argument, resolutionContext);
+      await resolution.registration.options.afterResolve(resolution.value, resolution.argument, resolution.afterResolveContext);
     }
   }
 }

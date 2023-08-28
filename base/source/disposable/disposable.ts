@@ -1,20 +1,24 @@
 import { isFunction } from '#/utils/type-guards.js';
 
-export const dispose: unique symbol = Symbol('dispose');
-export const disposeAsync: unique symbol = Symbol('disposeAsync');
+export const dispose: typeof Symbol.dispose = Symbol.dispose;
+export const disposeAsync: typeof Symbol.asyncDispose = Symbol.asyncDispose;
 
 export interface Disposable {
-  [dispose](): void;
+  [Symbol.dispose](): void;
 }
 
 export interface AsyncDisposable {
-  [disposeAsync](): Promise<void>;
+  [Symbol.asyncDispose](): PromiseLike<void>;
 }
 
 export function isDisposable(object: any): object is Disposable {
-  return isFunction((object as Disposable | undefined)?.[dispose]);
+  return isFunction((object as Disposable | undefined)?.[Symbol.dispose]);
 }
 
 export function isAsyncDisposable(object: any): object is AsyncDisposable {
-  return isFunction((object as AsyncDisposable | undefined)?.[disposeAsync]);
+  return isFunction((object as AsyncDisposable | undefined)?.[Symbol.asyncDispose]);
+}
+
+export function isSyncOrAsyncDisposable(object: any): object is Disposable | AsyncDisposable {
+  return isFunction((object as Disposable | undefined)?.[Symbol.dispose] ?? (object as AsyncDisposable | undefined)?.[Symbol.asyncDispose]);
 }

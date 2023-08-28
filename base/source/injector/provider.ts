@@ -3,21 +3,21 @@ import { hasOwnProperty } from '#/utils/object/object.js';
 import { isFunction, isObject } from '#/utils/type-guards.js';
 import type { ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
-import type { ResolveContext } from './types.js';
+import type { AfterResolveContext, ResolveContext } from './types.js';
 
-export type Factory<T, A = any, C extends Record = Record> = (argument: ResolveArgument<T, A>, context: ResolveContext<C>) => T;
+export type Factory<T, A = any, D extends Record = Record> = (argument: ResolveArgument<T, A>, context: ResolveContext<D>) => T;
 
 export type ProviderWithArgument<T, A> = { defaultArgument?: ResolveArgument<T, A>, defaultArgumentProvider?: () => ResolveArgument<T, A> };
 
-export type ProviderWithInitializer<T, A, C extends Record> = { afterResolve?: (value: T, argument: A, context: C) => void | Promise<void> };
+export type ProviderWithInitializer<T, A, D extends Record> = { afterResolve?: (value: T, argument: A, context: AfterResolveContext<D>) => void | Promise<void> };
 
-export type Provider<T = any, A = any, C extends Record = Record> =
-  | ClassProvider<T, A, C>
+export type Provider<T = any, A = any, D extends Record = Record> =
+  | ClassProvider<T, A, D>
   | ValueProvider<T>
-  | TokenProvider<T, A, C>
-  | FactoryProvider<T, A, C>;
+  | TokenProvider<T, A, D>
+  | FactoryProvider<T, A, D>;
 
-export type ClassProvider<T = any, A = any, C extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, C> & {
+export type ClassProvider<T = any, A = any, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
   useClass: Constructor<T>
 };
 
@@ -25,7 +25,7 @@ export type ValueProvider<T = any> = {
   useValue: T
 };
 
-export type TokenProvider<T = any, A = any, C extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, C> & (
+export type TokenProvider<T = any, A = any, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & (
   | { useToken: InjectionToken<T, A>, useTokenProvider?: undefined }
   | { useToken?: undefined, useTokenProvider: () => InjectionToken<T, A> }
 ) & {
@@ -35,11 +35,11 @@ export type TokenProvider<T = any, A = any, C extends Record = Record> = Provide
   resolveAll?: boolean
 };
 
-export type FactoryProvider<T = any, A = unknown, C extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, C> & {
-  useFactory: Factory<T, A, C>
+export type FactoryProvider<T = any, A = unknown, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
+  useFactory: Factory<T, A, D>
 };
 
-export function classProvider<T, A, C extends Record>(constructor: Constructor<T>, options?: TypedOmit<ClassProvider<T, A, C>, 'useClass'>): ClassProvider<T, A, C> {
+export function classProvider<T, A, D extends Record>(constructor: Constructor<T>, options?: TypedOmit<ClassProvider<T, A, D>, 'useClass'>): ClassProvider<T, A, D> {
   return { useClass: constructor, ...options };
 }
 
@@ -47,11 +47,11 @@ export function valueProvider<T>(value: T, options?: TypedOmit<ValueProvider<T>,
   return { useValue: value, ...options };
 }
 
-export function tokenProvider<T, A, C extends Record>(token: InjectionToken<T, A>, options?: TypedOmit<TokenProvider<T, A, C>, 'useToken' | 'useTokenProvider'>): TokenProvider<T> {
+export function tokenProvider<T, A, D extends Record>(token: InjectionToken<T, A>, options?: TypedOmit<TokenProvider<T, A, D>, 'useToken' | 'useTokenProvider'>): TokenProvider<T> {
   return { useToken: token, ...options };
 }
 
-export function factoryProvider<T, A, C extends Record>(factory: Factory<T, A, C>, options?: TypedOmit<FactoryProvider<T, A, C>, 'useFactory'>): FactoryProvider<T, A, C> {
+export function factoryProvider<T, A, D extends Record>(factory: Factory<T, A, D>, options?: TypedOmit<FactoryProvider<T, A, D>, 'useFactory'>): FactoryProvider<T, A, D> {
   return { useFactory: factory, ...options };
 }
 

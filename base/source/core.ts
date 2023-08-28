@@ -1,4 +1,3 @@
-import { AsyncDisposer } from './disposable/async-disposer.js';
 import { Injector } from './injector/injector.js';
 import type { InjectionToken } from './injector/token.js';
 import { injectionToken } from './injector/token.js';
@@ -6,14 +5,13 @@ import { ConsoleLogger } from './logger/console/logger.js';
 import type { LoggerArgument } from './logger/index.js';
 import { LogLevel, Logger } from './logger/index.js';
 import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
+import type { ReadonlyCancellationToken } from './utils/cancellation-token.js';
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
 export const CORE_LOGGER = injectionToken<Logger>('core logger');
 
 export const rootInjector = new Injector('RootInjector');
-
-export const disposer: AsyncDisposer = new AsyncDisposer();
 
 let _isDevMode = true;
 
@@ -29,11 +27,11 @@ export function enableProdMode(): void {
   _isDevMode = false;
 }
 
-export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, maxTries: number = 5): Promise<void> {
+export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, cancellationToken: ReadonlyCancellationToken, maxTries: number = 5): Promise<void> {
   let triesLeft = maxTries;
   let success = false;
 
-  while (!success && !disposer.disposing && triesLeft-- > 0) {
+  while (!success && cancellationToken.isUnset && triesLeft-- > 0) {
     try {
       logger.verbose(`connecting to ${name}...`);
 
@@ -53,10 +51,6 @@ export async function connect(name: string, connectFunction: (() => Promise<any>
       await timeout(3000);
     }
   }
-}
-
-export async function disposeInstances(): Promise<void> {
-  await disposer.dispose();
 }
 
 export type CoreConfiguration = {

@@ -1,4 +1,4 @@
-import { disposeInstances, rootInjector } from '#/core.js';
+import { rootInjector } from '#/core.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument, runInInjectionContext } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
@@ -146,7 +146,6 @@ export class Application implements Resolvable<LoggerArgument> {
 
       await this.stopModules(modules);
       await this.#injector.dispose();
-      await disposeInstances();
 
       this.#logger.info('Bye');
     }
