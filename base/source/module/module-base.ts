@@ -1,6 +1,6 @@
+import type { CancellationSignal } from '#/cancellation/index.js';
+import { CancellationToken } from '#/cancellation/index.js';
 import type { StringMap } from '#/types.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import type { Module, ModuleMetric } from './module.js';
 import { ModuleState } from './module.js';
 
@@ -54,5 +54,5 @@ export abstract class ModuleBase implements Module {
     await this.runPromise.catch(() => { /* ignore */ });
   }
 
-  protected abstract _run(cancellationToken: ReadonlyCancellationToken): Promise<void>;
+  protected abstract _run(cancellationSignal: CancellationSignal): Promise<void>;
 }

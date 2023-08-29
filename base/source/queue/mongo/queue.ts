@@ -1,16 +1,16 @@
+import type { CancellationSignal } from '#/cancellation/index.js';
+import { CancellationToken } from '#/cancellation/index.js';
 import { getNewId } from '#/database/id.js';
 import type { Filter, UpdateFilter } from '#/database/mongo/index.js';
 import { Singleton } from '#/injector/decorators.js';
 import { Lock } from '#/lock/index.js';
 import type { MessageBus } from '#/message-bus/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
-import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument, QueueConfig } from '#/queue/index.js';
-import { Queue, UniqueTagStrategy, defaultJobPriority, defaultQueueConfig } from '#/queue/index.js';
+import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue/index.js';
+import { Queue, UniqueTagStrategy, defaultJobPriority, defaultQueueConfig, type QueueConfig } from '#/queue/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import type { BackoffOptions } from '#/utils/backoff.js';
 import { backoffGenerator } from '#/utils/backoff.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { propertyNameOf } from '#/utils/object/property-name.js';
 import { getRandomString } from '#/utils/random.js';
@@ -247,10 +247,10 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     return this.cancelMany(jobIds);
   }
 
-  async *getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>> {
+  async *getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>> {
     const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
-    for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
+    for await (const backoff of backoffGenerator(backoffOptions, cancellationSignal)) {
       const job = await this.dequeue();
 
       if (job != undefined) {
@@ -264,10 +264,10 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     continueToken.complete();
   }
 
-  async *getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]> {
+  async *getBatchConsumer(size: number, cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>[]> {
     const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
-    for await (const backoff of backoffGenerator(backoffOptions, cancellationToken)) {
+    for await (const backoff of backoffGenerator(backoffOptions, cancellationSignal)) {
       const jobs = await this.dequeueMany(size);
 
       if (jobs.length > 0) {

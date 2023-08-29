@@ -1,4 +1,5 @@
-import { rootInjector } from '#/core.js';
+import type { CancellationSignal } from '#/cancellation/token.js';
+import { getGlobalInjector } from '#/core.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument, runInInjectionContext } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
@@ -11,12 +12,11 @@ import type { Module } from '#/module/module.js';
 import { ModuleState } from '#/module/module.js';
 import type { FunctionModuleFunction } from '#/module/modules/function.module.js';
 import { FunctionModule } from '#/module/modules/function.module.js';
-import { shutdownToken } from '#/process-shutdown.js';
+import { getShutdownSignal, getShutdownToken } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { OneOrMany, Type } from '#/types.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
 import { isDefined, isFunction, isObject, isUndefined } from '#/utils/type-guards.js';
 
 export type BootstrapFn = () => void | Promise<void>;
@@ -31,10 +31,10 @@ export class Application implements Resolvable<LoggerArgument> {
 
   private static get instance(): Application {
     if (isUndefined(this._instance)) {
-      this._instance = rootInjector.resolve(Application, 'App');
+      this._instance = getGlobalInjector().resolve(Application, 'App');
 
       // @ts-expect-error readonly
-      this._instance.#shutdownToken = shutdownToken;
+      this._instance.#shutdownToken = getShutdownToken();
     }
 
     return this._instance;
@@ -45,16 +45,16 @@ export class Application implements Resolvable<LoggerArgument> {
   readonly #logger = this.#injector.resolve(Logger, this.#name);
   readonly #moduleTypesAndInstances = new Set<Module | Type<Module>>();
   readonly #shutdownPromise = new DeferredPromise();
-  readonly #shutdownToken = shutdownToken.createChild();
+  readonly #shutdownToken = getShutdownSignal().createChild();
 
   declare readonly [resolveArgumentType]: string;
 
-  get shutdownToken(): ReadonlyCancellationToken {
-    return this.#shutdownToken.asReadonly();
+  get shutdownSignal(): CancellationSignal {
+    return this.#shutdownToken.signal;
   }
 
-  static get shutdownToken(): ReadonlyCancellationToken {
-    return Application.instance.shutdownToken;
+  static get shutdownSignal(): CancellationSignal {
+    return Application.instance.shutdownSignal;
   }
 
   static registerModule(moduleType: Type<Module>): void {
@@ -103,7 +103,7 @@ export class Application implements Resolvable<LoggerArgument> {
   }
 
   requestShutdown(): void {
-    if (this.shutdownToken.isSet) {
+    if (this.shutdownSignal.isSet) {
       return;
     }
 
@@ -133,7 +133,7 @@ export class Application implements Resolvable<LoggerArgument> {
     try {
       await Promise.race([
         this.runModules(modules),
-        this.shutdownToken
+        this.shutdownSignal
       ]);
     }
     catch (error) {

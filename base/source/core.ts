@@ -1,3 +1,4 @@
+import type { CancellationSignal } from './cancellation/token.js';
 import { Injector } from './injector/injector.js';
 import type { InjectionToken } from './injector/token.js';
 import { injectionToken } from './injector/token.js';
@@ -5,15 +6,25 @@ import { ConsoleLogger } from './logger/console/logger.js';
 import type { LoggerArgument } from './logger/index.js';
 import { LogLevel, Logger } from './logger/index.js';
 import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
-import type { ReadonlyCancellationToken } from './utils/cancellation-token.js';
 import { timeout } from './utils/timing.js';
-import { assertDefinedPass, isDefined } from './utils/type-guards.js';
+import { assertDefinedPass, isDefined, isUndefined } from './utils/type-guards.js';
 
 export const CORE_LOGGER = injectionToken<Logger>('core logger');
 
-export const rootInjector = new Injector('RootInjector');
+let globalInjector: Injector | undefined;
 
 let _isDevMode = true;
+
+/**
+ * @deprecated Should be avoided. Use `Application` scoped injector instead.
+ */
+export function getGlobalInjector(): Injector {
+  if (isUndefined(globalInjector)) {
+    globalInjector = new Injector('GlobalInjector');
+  }
+
+  return globalInjector;
+}
 
 export function isDevMode(): boolean {
   return _isDevMode;
@@ -27,11 +38,11 @@ export function enableProdMode(): void {
   _isDevMode = false;
 }
 
-export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, cancellationToken: ReadonlyCancellationToken, maxTries: number = 5): Promise<void> {
+export async function connect(name: string, connectFunction: (() => Promise<any>), logger: Logger, cancellationSignal: CancellationSignal, maxTries: number = 5): Promise<void> {
   let triesLeft = maxTries;
   let success = false;
 
-  while (!success && cancellationToken.isUnset && triesLeft-- > 0) {
+  while (!success && cancellationSignal.isUnset && triesLeft-- > 0) {
     try {
       logger.verbose(`connecting to ${name}...`);
 
@@ -67,7 +78,7 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
     enableProdMode();
   }
 
-  const logger = rootInjector.resolve(CORE_LOGGER);
+  const logger = getGlobalInjector().resolve(CORE_LOGGER);
 
   setProcessShutdownLogger(logger);
   initializeSignals();

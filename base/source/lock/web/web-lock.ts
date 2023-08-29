@@ -1,6 +1,6 @@
+import { CancellationToken } from '#/cancellation/index.js';
 import { Injectable } from '#/injector/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { assertStringPass, isDefined, isNull, isObject } from '#/utils/type-guards.js';
 import { map, timer } from 'rxjs';
 import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock.js';

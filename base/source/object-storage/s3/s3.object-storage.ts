@@ -104,7 +104,7 @@ export class S3ObjectStorage extends ObjectStorage {
 
   getObjectsCursor(): AsyncIterable<S3Object> {
     const stream = this.client.listObjectsV2(this.bucket, this.prefix, true);
-    return mapAsync(stream, (item: BucketItem) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this))
+    return mapAsync(stream, (item: Extract<BucketItem, { name: string }>) => new S3Object(this.module, this.getKey(item.name), `s3://${this.bucket}/${item.name}`, item.size, this));
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await

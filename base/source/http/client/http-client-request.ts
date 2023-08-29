@@ -1,8 +1,8 @@
+import type { CancellationSignal } from '#/cancellation/index.js';
+import { CancellationToken } from '#/cancellation/index.js';
 import type { Disposable } from '#/disposable/index.js';
 import { dispose } from '#/disposable/index.js';
 import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { clone } from '#/utils/clone.js';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import type { HttpFormObject } from '../http-form.js';
@@ -34,7 +34,7 @@ export type HttpRequestAuthorization = {
   token?: string
 };
 
-export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url' | 'method' | 'abortToken' | 'abort' | 'headers' | 'query' | 'body'>> & {
+export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url' | 'method' | 'abortSignal' | 'abort' | 'headers' | 'query' | 'body'>> & {
   urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
   headers?: HttpHeadersObject | HttpHeaders,
   query?: HttpQueryObject | HttpQuery,
@@ -47,7 +47,7 @@ export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url
     buffer?: Uint8Array,
     stream?: ReadableStream<Uint8Array>
   },
-  abortToken?: ReadonlyCancellationToken
+  abortSignal?: CancellationSignal
 };
 
 export type HttpRequestCredentials = 'omit' | 'same-origin' | 'include';
@@ -58,7 +58,7 @@ export type HttpClientRequestObject = HttpClientRequestOptions & {
 };
 
 export class HttpClientRequest implements Disposable {
-  private readonly _abortToken: CancellationToken;
+  readonly #abortToken: CancellationToken;
 
   url: string;
   method: HttpMethod;
@@ -136,8 +136,8 @@ export class HttpClientRequest implements Disposable {
   /**
    * can be used to cancel the request. Throws HttpError
    */
-  get abortToken(): ReadonlyCancellationToken {
-    return this._abortToken.asReadonly();
+  get abortSignal(): CancellationSignal {
+    return this.#abortToken.signal;
   }
 
   constructor(url: string, method?: HttpMethod, options?: HttpClientRequestOptions);
@@ -170,18 +170,18 @@ export class HttpClientRequest implements Disposable {
     this.throwOnNon200 = requestOptions.throwOnNon200 ?? true;
     this.context = requestOptions.context ?? {};
 
-    this._abortToken = requestOptions.abortToken?.createChild() ?? new CancellationToken();
+    this.#abortToken = requestOptions.abortSignal?.createChild() ?? new CancellationToken();
   }
 
   [dispose](): void {
-    this._abortToken.set();
-    this._abortToken.complete();
+    this.#abortToken.set();
+    this.#abortToken.complete();
   }
 
   /** abort the request */
   abort(): void {
-    this._abortToken.set();
-    this._abortToken.complete();
+    this.#abortToken.set();
+    this.#abortToken.complete();
   }
 
   clone(): HttpClientRequest {

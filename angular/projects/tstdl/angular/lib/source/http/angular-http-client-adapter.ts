@@ -32,7 +32,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
             body: getAngularBody(request.body),
             withCredentials: (request.credentials == 'same-origin') || (request.credentials == 'include')
           }),
-          request.abortToken.set$.pipe(switchMap(() => throwError(() => aborted)))
+          request.abortSignal.set$.pipe(switchMap(() => throwError(() => aborted)))
         )
       );
 

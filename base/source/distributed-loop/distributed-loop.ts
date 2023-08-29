@@ -1,9 +1,9 @@
+import type { CancellationSignal } from '#/cancellation/index.js';
+import { CancellationToken } from '#/cancellation/index.js';
 import { InjectArg, Injectable, resolveArgumentType } from '#/injector/index.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { LockProvider } from '#/lock/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { Timer } from '#/utils/timer.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import type { LoopController } from './controller.js';
@@ -37,15 +37,15 @@ export class DistributedLoop implements Resolvable<DistributedLoopArgument> {
 
   /**
    * run the function {@link func} every {@link interval} milliseconds with an accuracy of {@link accuracy}
-   * until {@link cancellationToken} is set or stop on the {@link LoopController} is called
+   * until {@link cancellationSignal} is set or stop on the {@link LoopController} is called
    * @param interval in millseconds
    * @param accuracy in millseconds
    * @param func handler to run
-   * @param cancellationToken token to cancel loop (same as calling stop on the {@link LoopController})
+   * @param cancellationSignal token to cancel loop (same as calling stop on the {@link LoopController})
    */
-  run(interval: number, accuracy: number, func: LoopFunction, cancellationToken?: ReadonlyCancellationToken): LoopController {
+  run(interval: number, accuracy: number, func: LoopFunction, cancellationSignal?: CancellationSignal): LoopController {
     const $stopped = new DeferredPromise();
-    const stopToken = cancellationToken?.createChild() ?? new CancellationToken();
+    const stopToken = cancellationSignal?.createChild() ?? new CancellationToken();
 
     const stopFunction = async (): Promise<void> => {
       if (!stopToken.isSet) {
@@ -60,14 +60,12 @@ export class DistributedLoop implements Resolvable<DistributedLoopArgument> {
       $stopped
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async () => {
+    void (async () => {
       const lock = this.lockProvider.get(this.key);
       const timer = new Timer();
 
       try {
-        // eslint-disable-next-line no-unmodified-loop-condition
-        while (!stopToken.isSet) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+        while (!stopToken.isSet) {
           timer.restart();
 
           await lock.use(undefined, false, async () => {

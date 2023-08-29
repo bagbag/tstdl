@@ -1,5 +1,5 @@
-import type { Logger } from '../logger/index.js';
-import type { ReadonlyCancellationToken } from './cancellation-token.js';
+import type { CancellationSignal } from '#/cancellation/token.js';
+import type { Logger } from '#/logger/index.js';
 import { formatDuration } from './format.js';
 import { AggregationMode, PeriodicSampler } from './periodic-sampler.js';
 import { Timer } from './timer.js';
@@ -16,7 +16,7 @@ export async function measureEventLoopDelay(): Promise<number> {
   });
 }
 
-export function runEventLoopWatcher(logger: Logger, cancellationToken: ReadonlyCancellationToken): void {
+export function runEventLoopWatcher(logger: Logger, cancellationSignal: CancellationSignal): void {
   const sampler = new PeriodicSampler(measureEventLoopDelay, 50);
 
   sampler
@@ -26,5 +26,5 @@ export function runEventLoopWatcher(logger: Logger, cancellationToken: ReadonlyC
   sampler.start();
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  cancellationToken.then(async () => sampler.stop());
+  cancellationSignal.then(async () => sampler.stop());
 }

@@ -1,11 +1,11 @@
 import { API_CONTROLLERS, ApiGateway, getApiControllerDefinition } from '#/api/server/index.js';
+import type { CancellationSignal } from '#/cancellation/index.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import { HttpServer } from '#/http/server/http-server.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { resolveArgumentType } from '#/injector/interfaces.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
 import { ModuleBase } from '../module-base.js';
 import type { Module } from '../module.js';
 import { ModuleMetricType } from '../module.js';
@@ -51,12 +51,12 @@ export class WebServerModule extends ModuleBase implements Module, Resolvable<We
     }
   }
 
-  protected async _run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
+  protected async _run(cancellationSignal: CancellationSignal): Promise<void> {
     this.initialize();
 
     await this.httpServer.listen(this.config.port);
 
-    const closePromise = cancellationToken.$set.then(async () => {
+    const closePromise = cancellationSignal.$set.then(async () => {
       await this.httpServer[disposeAsync]();
     });
 

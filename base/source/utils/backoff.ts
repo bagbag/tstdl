@@ -1,5 +1,5 @@
-import type { ReadonlyCancellationToken } from './cancellation-token.js';
-import { CancellationToken } from './cancellation-token.js';
+import type { CancellationSignal } from '#/cancellation/token.js';
+import { CancellationToken } from '#/cancellation/token.js';
 import { noop } from './noop.js';
 import { cancelableTimeout } from './timing.js';
 import { isDefined } from './type-guards.js';
@@ -80,7 +80,7 @@ export class BackoffHelper {
  * @param cancellationToken token to cancel loop
  * @param loopFunction function to call
  */
-export async function autoBackoffLoop(options: BackoffOptions, loopFunction: BackoffLoopFunction, extras?: { cancellationToken?: ReadonlyCancellationToken, errorHandler?: (error: Error) => void }): Promise<void> {
+export async function autoBackoffLoop(options: BackoffOptions, loopFunction: BackoffLoopFunction, extras?: { cancellationSignal?: CancellationSignal, errorHandler?: (error: Error) => void }): Promise<void> {
   const errorHandler = extras?.errorHandler ?? noop;
 
   return backoffLoop(options, async (controller) => {
@@ -91,18 +91,18 @@ export async function autoBackoffLoop(options: BackoffOptions, loopFunction: Bac
       errorHandler(error as Error);
       controller.backoff();
     }
-  }, { cancellationToken: extras?.cancellationToken });
+  }, { cancellationSignal: extras?.cancellationSignal });
 }
 
 /**
  * runs a function until token is set or controller returns.
  * @param options backoff options
- * @param cancellationToken token to cancel loop
+ * @param cancellationToken signal to cancel loop
  * @param loopFunction function to call
  */
-export async function backoffLoop(options: BackoffOptions, loopFunction: BackoffLoopFunction, extras?: { cancellationToken?: ReadonlyCancellationToken }): Promise<void> {
+export async function backoffLoop(options: BackoffOptions, loopFunction: BackoffLoopFunction, extras?: { cancellationSignal?: CancellationSignal }): Promise<void> {
   const backoffHelper = new BackoffHelper(options);
-  const loopCancellationToken = extras?.cancellationToken?.createChild({ unset: false, complete: false }) ?? new CancellationToken();
+  const loopCancellationToken = extras?.cancellationSignal?.createChild({ unset: false, complete: false }) ?? new CancellationToken();
   let backoff = false;
 
   const controller: BackoffLoopController = {
@@ -113,7 +113,7 @@ export async function backoffLoop(options: BackoffOptions, loopFunction: Backoff
   while (!loopCancellationToken.isSet) {
     await loopFunction(controller);
 
-    if (loopCancellationToken.isSet) {
+    if (loopCancellationToken.isSet) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       return;
     }
 
@@ -131,7 +131,7 @@ export async function backoffLoop(options: BackoffOptions, loopFunction: Backoff
 /**
  * generates endless function which, when called, backs off next iteration
  * @param options backoff options
- * @param cancellationToken token to cancel loop
+ * @param cancellationSignal signal to cancel loop
  * @example
  * for await (const backoff of backoffGenerator(options, token)) {
  *  if (iWantToBackoff) {
@@ -139,18 +139,18 @@ export async function backoffLoop(options: BackoffOptions, loopFunction: Backoff
  *  }
  * }
  */
-export async function* backoffGenerator(options: BackoffOptions, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<BackoffGeneratorYield> {
+export async function* backoffGenerator(options: BackoffOptions, cancellationSignal: CancellationSignal): AsyncIterableIterator<BackoffGeneratorYield> {
   const backoffHelper = new BackoffHelper(options);
 
-  while (cancellationToken.isUnset) {
+  while (cancellationSignal.isUnset) {
     let backoff = false;
-    let timeoutToken: ReadonlyCancellationToken | undefined = cancellationToken;
+    let timeoutToken: CancellationSignal | undefined = cancellationSignal;
 
     const backoffFunction: BackoffGeneratorYield = (continueToken?: CancellationToken): void => {
       backoff = true;
 
       if (isDefined(continueToken)) {
-        timeoutToken = cancellationToken.createChild().inherit(continueToken);
+        timeoutToken = cancellationSignal.createChild().inherit(continueToken);
       }
     };
 

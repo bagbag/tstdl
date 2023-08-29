@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 
+import type { CancellationSignal } from '#/cancellation/index.js';
+import { CancellationToken } from '#/cancellation/index.js';
 import type { Logger } from '#/logger/index.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
-import { isDefined } from '#/utils/type-guards.js';
+import { isDefined, isUndefined } from '#/utils/type-guards.js';
 
 type Signal = 'SIGTERM' | 'SIGINT' | 'SIGHUP' | 'SIGBREAK';
 type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection' | 'rejectionHandled';
@@ -10,7 +11,19 @@ type QuitEvent = 'uncaughtException' | 'multipleResolves' | 'unhandledRejection'
 const quitSignals: Signal[] = ['SIGTERM', 'SIGINT', 'SIGHUP', 'SIGBREAK'];
 const quitEvents: QuitEvent[] = ['uncaughtException' /* , 'multipleResolves' */, 'unhandledRejection', 'rejectionHandled'];
 
-export const shutdownToken = new CancellationToken();
+let shutdownToken: CancellationToken | undefined;
+
+export function getShutdownToken(): CancellationToken {
+  if (isUndefined(shutdownToken)) {
+    shutdownToken = new CancellationToken();
+  }
+
+  return shutdownToken;
+}
+
+export function getShutdownSignal(): CancellationSignal {
+  return getShutdownToken().signal;
+}
 
 let logger: Logger;
 
@@ -27,7 +40,7 @@ export function requestShutdown(exitCode: number = 1): void {
   }
 
   shutdownRequested = true;
-  shutdownToken.set();
+  getShutdownToken().set();
 
   const timeout = setTimeout(() => {
     logger.warn('forcefully quitting after 20 seconds...');

@@ -1,7 +1,8 @@
 import type { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
-import { DeferredPromise } from '../promise/deferred-promise.js';
-import { CancellationToken } from './cancellation-token.js';
+
+import { CancellationToken } from '#/cancellation/token.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { cancelableTimeout } from './timing.js';
 
 export class PeriodicReporter {

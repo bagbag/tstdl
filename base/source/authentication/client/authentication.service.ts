@@ -2,6 +2,7 @@ import type { Observable } from 'rxjs';
 import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
 
 import type { ApiClient } from '#/api/client/index.js';
+import { CancellationToken } from '#/cancellation/token.js';
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { BadRequestError } from '#/error/bad-request.error.js';
@@ -19,7 +20,6 @@ import type { MessageBusArgument } from '#/message-bus/index.js';
 import { MessageBus } from '#/message-bus/index.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
 import type { Record } from '#/types.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';

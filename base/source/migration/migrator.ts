@@ -1,10 +1,10 @@
+import { CancellationToken } from '#/cancellation/index.js';
 import { ResolveArg, Singleton } from '#/injector/index.js';
 import type { LockProviderArgument } from '#/lock/index.js';
 import { LockProvider } from '#/lock/index.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { toArray } from '#/utils/array/array.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { compareByValueSelectionDescending } from '#/utils/comparison.js';
 import { round } from '#/utils/math.js';
 import { Timer } from '#/utils/timer.js';

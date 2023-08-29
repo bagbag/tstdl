@@ -1,5 +1,5 @@
+import type { CancellationSignal } from '#/cancellation/token.js';
 import type { Comparator } from '#/utils/sort.js';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
 import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers/index.js';
 import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers/index.js';
 import { isNotNullOrUndefined } from '../utils/type-guards.js';
@@ -195,8 +195,8 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
     return new Enumerable(taken);
   }
 
-  takeUntil(cancellationToken: ReadonlyCancellationToken): Enumerable<T> {
-    const taken = takeUntil(this.source, cancellationToken);
+  takeUntil(cancellationSignal: CancellationSignal): Enumerable<T> {
+    const taken = takeUntil(this.source, cancellationSignal);
     return new Enumerable(taken);
   }
 

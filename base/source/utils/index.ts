@@ -6,7 +6,6 @@ export * from './base64.js';
 export * from './benchmark.js';
 export * from './binary-search.js';
 export * from './binary.js';
-export * from './cancellation-token.js';
 export * from './clone.js';
 export * from './comparison.js';
 export * from './date-time.js';

@@ -1,8 +1,9 @@
-import type { Logger } from '#/logger/index.js';
 import type { Observable } from 'rxjs';
 import { defer, merge, share, Subject, takeUntil } from 'rxjs';
+
+import type { Logger } from '#/logger/index.js';
+import { CancellationToken } from '../cancellation/token.js';
 import { disposeAsync } from '../disposable/disposable.js';
-import { CancellationToken } from '../utils/cancellation-token.js';
 import { MessageBus } from './message-bus.js';
 
 export abstract class MessageBusBase<T> extends MessageBus<T> {

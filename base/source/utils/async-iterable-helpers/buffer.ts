@@ -1,6 +1,6 @@
+import { CancellationToken } from '#/cancellation/token.js';
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
-import { CancellationToken } from '../cancellation-token.js';
 import { hasOwnProperty } from '../object/object.js';
 import { takeUntilAsync } from './take-until.js';
 

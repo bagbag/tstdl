@@ -46,8 +46,8 @@ Injector.registerSingleton<MongoClient, MongoClientArgument, { logger: Logger, u
 
     return client;
   },
-  async afterResolve(client, _argument, { cancellationToken, data: { url, logger } }) {
-    await connect(`mongo at ${url}`, async () => client.connect(), logger, cancellationToken);
+  async afterResolve(client, _argument, { cancellationSignal, data: { url, logger } }) {
+    await connect(`mongo at ${url}`, async () => client.connect(), logger, cancellationSignal);
   }
 }, {
   defaultArgumentProvider: (): MongoClientArgument => mongoModuleConfig.defaultConnection,

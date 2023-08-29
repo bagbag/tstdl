@@ -4,7 +4,7 @@ import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/in
 import { defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { CORE_LOGGER, configureTstdl, rootInjector } from '#/core.js';
+import { CORE_LOGGER, configureTstdl, getGlobalInjector } from '#/core.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { HttpServerResponse } from '#/http/server/index.js';
@@ -20,7 +20,7 @@ import { Agent } from 'undici';
 
 configureTstdl();
 
-const logger = rootInjector.resolve(CORE_LOGGER);
+const logger = getGlobalInjector().resolve(CORE_LOGGER);
 
 type StreamingApiDefinition = typeof streamingApiDefinition;
 
@@ -67,10 +67,10 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
 async function* counter(): AsyncIterableIterator<string> {
   let currentNumber = 0;
 
-  while (Application.shutdownToken.isUnset && (currentNumber < 10)) {
+  while (Application.shutdownSignal.isUnset && (currentNumber < 10)) {
     yield (`${++currentNumber}`).toString();
     logger.info(`yield: "${currentNumber}"`);
-    await cancelableTimeout(1000, Application.shutdownToken);
+    await cancelableTimeout(1000, Application.shutdownSignal);
   }
 }
 

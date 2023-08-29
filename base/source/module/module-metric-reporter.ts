@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
+import type { CancellationSignal } from '#/cancellation/index.js';
 import { reduce } from '#/utils/iterable-helpers/reduce.js';
 import type { MetricAggregation, MetricAggregationOptions } from '#/utils/moving-metric.js';
 import { MovingMetric } from '#/utils/moving-metric.js';
@@ -54,10 +54,10 @@ export class ModuleMetricReporter {
     this.updateNameLengths();
   }
 
-  async run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
+  async run(cancellationSignal: CancellationSignal): Promise<void> {
     let counter = 0;
 
-    while (cancellationToken.isUnset) {
+    while (cancellationSignal.isUnset) {
       for (const { registrations } of this.metricGroups) {
         for (const { metric, moving } of registrations) {
           moving.add(metric.getValue());
@@ -78,7 +78,7 @@ export class ModuleMetricReporter {
         }
       }
 
-      await cancelableTimeout(this.sampleInterval, cancellationToken);
+      await cancelableTimeout(this.sampleInterval, cancellationSignal);
     }
   }
 

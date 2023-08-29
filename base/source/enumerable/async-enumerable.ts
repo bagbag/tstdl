@@ -1,6 +1,6 @@
+import type { CancellationSignal } from '#/cancellation/token.js';
 import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
 import { isAnyIterable } from '#/utils/any-iterable-iterator.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
 import type { AsyncComparator } from '#/utils/sort.js';
 import { isNotNullOrUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
@@ -234,8 +234,8 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     return new AsyncEnumerable(taken);
   }
 
-  takeUntil(cancellationToken: ReadonlyCancellationToken): AsyncEnumerable<T> {
-    const taken = takeUntilAsync(this.source, cancellationToken);
+  takeUntil(cancellationSignal: CancellationSignal): AsyncEnumerable<T> {
+    const taken = takeUntilAsync(this.source, cancellationSignal);
     return new AsyncEnumerable(taken);
   }
 

@@ -1,6 +1,7 @@
-import { TimeoutError } from '#/error/timeout.error.js';
 import { firstValueFrom, map, race, timer } from 'rxjs';
-import type { ReadonlyCancellationToken } from './cancellation-token.js';
+
+import type { CancellationSignal } from '#/cancellation/token.js';
+import { TimeoutError } from '#/error/timeout.error.js';
 import { _throw } from './throw.js';
 import type { ValueOrProvider } from './value-or-provider.js';
 import { resolveValueOrProvider } from './value-or-provider.js';
@@ -26,17 +27,17 @@ export async function timeoutUntil(timestamp: number | Date): Promise<void> {
 }
 
 /** timeout for specified duration */
-export async function cancelableTimeout(milliseconds: number, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
+export async function cancelableTimeout(milliseconds: number, cancelSignal: CancellationSignal): Promise<boolean> {
   return firstValueFrom(race([
     timer(milliseconds).pipe(map(() => false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    cancelToken.set$.pipe(map(() => true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    cancelSignal.set$.pipe(map(() => true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
   ]));
 }
 
 /** timeout until specified time */
-export async function cancelableTimeoutUntil(timestamp: number | Date, cancelToken: ReadonlyCancellationToken): Promise<boolean> {
+export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: CancellationSignal): Promise<boolean> {
   const left = timestamp.valueOf() - Date.now();
-  return cancelableTimeout(left, cancelToken);
+  return cancelableTimeout(left, cancelSignal);
 }
 
 export async function withTimeout<T>(milliseconds: number, promiseOrProvider: ValueOrProvider<Promise<T>>, options?: { errorMessage?: string }): Promise<T> {

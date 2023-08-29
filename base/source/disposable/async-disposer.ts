@@ -1,7 +1,7 @@
+import type { CancellationSignal } from '#/cancellation/token.js';
 import { isDefined, isNullOrUndefined } from '#/utils/type-guards.js';
+import { CancellationToken } from '../cancellation/token.js';
 import { MultiError } from '../error/multi.error.js';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
-import { CancellationToken } from '../utils/cancellation-token.js';
 import type { AsyncDisposable, Disposable } from './disposable.js';
 import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable.js';
 
@@ -27,11 +27,11 @@ export class AsyncDisposer implements AsyncDisposable, AsyncDisposableStack {
   #deferrers: Set<Deferrer>;
   #tasks: AsyncDisposeTask[];
 
-  get disposingToken(): ReadonlyCancellationToken {
+  get disposingSignal(): CancellationSignal {
     return this.#disposingToken;
   }
 
-  get disposedToken(): ReadonlyCancellationToken {
+  get disposedSignal(): CancellationSignal {
     return this.#disposedToken;
   }
 

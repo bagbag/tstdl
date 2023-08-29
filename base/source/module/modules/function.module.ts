@@ -1,8 +1,8 @@
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import type { Module } from '../module.js';
+import type { CancellationSignal } from '#/cancellation/index.js';
 import { ModuleBase } from '../module-base.js';
+import type { Module } from '../module.js';
 
-export type FunctionModuleFunction = (cancellationToken: ReadonlyCancellationToken) => void | Promise<void>;
+export type FunctionModuleFunction = (cancellationToken: CancellationSignal) => void | Promise<void>;
 
 export class FunctionModule extends ModuleBase implements Module {
   private readonly fn: FunctionModuleFunction;
@@ -15,7 +15,7 @@ export class FunctionModule extends ModuleBase implements Module {
     this.fn = fn;
   }
 
-  protected async _run(cancellationToken: ReadonlyCancellationToken): Promise<void> {
-    return this.fn(cancellationToken);
+  protected async _run(cancellationSignal: CancellationSignal): Promise<void> {
+    return this.fn(cancellationSignal);
   }
 }

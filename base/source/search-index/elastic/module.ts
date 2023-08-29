@@ -37,9 +37,9 @@ Injector.registerSingleton<Client, ClientOptions, { logger: Logger }>(Client, {
 
     return client;
   },
-  async afterResolve(client, options, { cancellationToken, data: { logger } }) {
+  async afterResolve(client, options, { cancellationSignal, data: { logger } }) {
     const url = getUrl(options.node ?? options.nodes);
-    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger, cancellationToken);
+    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger, cancellationSignal);
   },
   defaultArgumentProvider() {
     return elasticsearchModuleConfig.defaultOptions;

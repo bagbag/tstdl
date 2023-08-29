@@ -1,9 +1,10 @@
 import type { AfterContentChecked, AfterContentInit, AfterViewChecked, AfterViewInit, OnChanges, OnDestroy, OnInit, SimpleChange, SimpleChanges } from '@angular/core';
 import { Injectable } from '@angular/core';
+import type { CancellationSignal } from '@tstdl/base/cancellation';
+import { CancellationToken } from '@tstdl/base/cancellation';
 import type { TypedOmit } from '@tstdl/base/types';
-import type { ReadonlyCancellationToken } from '@tstdl/base/utils';
-import { CancellationToken, isUndefined } from '@tstdl/base/utils';
 import { hasOwnProperty } from '@tstdl/base/utils/object';
+import { isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { ReplaySubject, Subject, defer, filter, map, startWith, switchMap } from 'rxjs';
 
@@ -16,6 +17,8 @@ type ParentProperties<Parent> = Exclude<keyof Parent, keyof LifecycleUtils>;
 
 @Injectable()
 export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestroy, AfterViewInit, AfterContentInit, AfterViewChecked, AfterContentChecked {
+  #destroyToken: CancellationToken | undefined;
+
   private readonly initSubject: Subject<void>;
   private readonly destroySubject: Subject<void>;
   private readonly changesSubject: Subject<SimpleChanges>;
@@ -27,8 +30,6 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   private readonly ionViewDidEnterSubject: Subject<void>;
   private readonly ionViewWillLeaveSubject: Subject<void>;
   private readonly ionViewDidLeaveSubject: Subject<void>;
-
-  private _destroyToken: CancellationToken | undefined;
 
   /**
    * emits on `ngOnInit`. Also emits if subscribed afterwards
@@ -95,12 +96,12 @@ export class LifecycleUtils<Parent = any> implements OnInit, OnChanges, OnDestro
   /**
    * {@link CancellationToken} bound to {@link destroy$}
    */
-  get destroyToken(): ReadonlyCancellationToken {
-    if (isUndefined(this._destroyToken)) {
-      this._destroyToken = CancellationToken.from(this.destroySubject);
+  get destroySignal(): CancellationSignal {
+    if (isUndefined(this.#destroyToken)) {
+      this.#destroyToken = CancellationToken.from(this.destroySubject);
     }
 
-    return this._destroyToken.asReadonly();
+    return this.#destroyToken.signal;
   }
 
   // eslint-disable-next-line max-statements

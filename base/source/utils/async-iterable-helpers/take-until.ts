@@ -1,17 +1,18 @@
 import { firstValueFrom, map, race } from 'rxjs';
+
+import type { CancellationSignal } from '#/cancellation/token.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
-import type { ReadonlyCancellationToken } from '../cancellation-token.js';
 import { isAsyncIterable } from './is-async-iterable.js';
 
-export function takeUntilAsync<T>(iterable: AnyIterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
+export function takeUntilAsync<T>(iterable: AnyIterable<T>, cancellationSignal: CancellationSignal): AsyncIterableIterator<T> {
   return isAsyncIterable(iterable)
-    ? async(iterable, cancellationToken)
-    : sync(iterable, cancellationToken);
+    ? async(iterable, cancellationSignal)
+    : sync(iterable, cancellationSignal);
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-async function* sync<T>(iterable: Iterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
-  if (cancellationToken.isSet) {
+async function* sync<T>(iterable: Iterable<T>, cancellationSignal: CancellationSignal): AsyncIterableIterator<T> {
+  if (cancellationSignal.isSet) {
     return;
   }
 
@@ -19,15 +20,15 @@ async function* sync<T>(iterable: Iterable<T>, cancellationToken: ReadonlyCancel
     yield item;
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (cancellationToken.isSet) {
+    if (cancellationSignal.isSet) {
       break;
     }
   }
 }
 
-async function* async<T>(iterable: AsyncIterable<T>, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<T> {
+async function* async<T>(iterable: AsyncIterable<T>, cancellationSignal: CancellationSignal): AsyncIterableIterator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
-  const cancel$ = cancellationToken.set$.pipe(map((): IteratorResult<T> => ({ done: true, value: undefined }))); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+  const cancel$ = cancellationSignal.set$.pipe(map((): IteratorResult<T> => ({ done: true, value: undefined }))); // eslint-disable-line @typescript-eslint/no-unsafe-argument
 
   try {
     while (true) {

@@ -1,7 +1,7 @@
+import type { CancellationSignal } from '#/cancellation/token.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { resolveArgumentType } from '#/injector/interfaces.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
-import type { ReadonlyCancellationToken } from '../utils/cancellation-token.js';
 import { QueueEnqueueBatch } from './enqueue-batch.js';
 
 export type JobTag = string | number | null;
@@ -78,6 +78,6 @@ export abstract class Queue<T> implements Resolvable<QueueArgument> {
   abstract acknowledge(job: Job<T>): Promise<void>;
   abstract acknowledgeMany(jobs: Job<T>[]): Promise<void>;
 
-  abstract getConsumer(cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>>;
-  abstract getBatchConsumer(size: number, cancellationToken: ReadonlyCancellationToken): AsyncIterableIterator<Job<T>[]>;
+  abstract getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>>;
+  abstract getBatchConsumer(size: number, cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>[]>;
 }

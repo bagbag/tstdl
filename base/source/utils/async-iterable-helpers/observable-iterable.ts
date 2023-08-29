@@ -1,7 +1,7 @@
+import { CancellationToken } from '#/cancellation/token.js';
 import type { Observable } from 'rxjs';
 import { merge, take } from 'rxjs';
 import { ObservableArray } from '../../collections/observable/observable-array.js';
-import { CancellationToken } from '../cancellation-token.js';
 
 export async function* observableAsyncIterable<T>(observable: Observable<T>): AsyncIterableIterator<T> {
   const buffer = new ObservableArray<T>();

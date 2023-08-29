@@ -1,5 +1,5 @@
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
+import type { CancellationSignal } from '#/cancellation/token.js';
+import { CancellationToken } from '#/cancellation/token.js';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
 import { BehaviorSubject, Subject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race } from 'rxjs';
@@ -150,7 +150,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
 
   clone(newMaxBufferSize: number | undefined = this.maxBufferSize): CircularBuffer<T> {
     if (isDefined(newMaxBufferSize) && (newMaxBufferSize < this.size)) {
-      throw new Error('newSize must be equal or larger to current size');
+      throw new Error('newSize must be equal or larger to current size.');
     }
 
     const cloned = new CircularBuffer<T>(newMaxBufferSize);
@@ -168,8 +168,8 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
 
     try {
       for (let i = 0; i < size; i++) {
-        if (modified) {
-          throw new Error('buffer was modified while being iterated');
+        if (modified) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+          throw new Error('Buffer was modified while being iterated.');
         }
 
         yield this.backingArray[readIndex]!;
@@ -190,21 +190,21 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
 
   /**
    * yields all items from the buffer, removes them and waits fore more
-   * @param cancellationToken token to cancel iteration
-   * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately when {@link cancellationToken} is set
+   * @param cancellationSignal token to cancel iteration
+   * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately when {@link cancellationSignal} is set
    * @returns
    */
-  async *consumeAsync(cancellationToken: ReadonlyCancellationToken = new CancellationToken(), yieldOutstandingItems: boolean = true): AsyncIterable<T> {
+  async *consumeAsync(cancellationSignal: CancellationSignal = new CancellationToken(), yieldOutstandingItems: boolean = true): AsyncIterable<T> {
     while (true) {
       if (this.isEmpty) {
-        await firstValueFrom(race([this.onItems$, cancellationToken]));
+        await firstValueFrom(race([this.onItems$, cancellationSignal]));
       }
 
-      while ((this.size > 0) && (cancellationToken.isUnset || yieldOutstandingItems)) {
+      while ((this.size > 0) && (cancellationSignal.isUnset || yieldOutstandingItems)) { // eslint-disable-line no-unmodified-loop-condition
         yield this.tryRemove()!;
       }
 
-      if (cancellationToken.isSet) {
+      if (cancellationSignal.isSet) {
         return;
       }
     }
@@ -231,7 +231,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
 
   private resize(size: number): void {
     if (size < this.size) {
-      throw new Error('buffer has more items than it would have capacity after resize');
+      throw new Error('Buffer has more items than it would have capacity after resize.');
     }
 
     let newBackingArray: (T | undefined)[];

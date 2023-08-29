@@ -8,7 +8,7 @@ import type { ConstructorParameterMetadata } from '#/reflection/registry.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import type { Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
+import { CancellationSignal, CancellationToken } from '#/cancellation/index.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -97,7 +97,7 @@ export class Injector implements AsyncDisposable {
     this.#parent = parent;
 
     this.register(Injector, { useValue: this });
-    this.register(CancellationToken, { useValue: this.#disposeToken });
+    this.register(CancellationSignal, { useValue: this.#disposeToken.signal });
 
     this.#addDisposeHandler = (handler: AsyncDisposeHandler): void => {
       if (isSyncOrAsyncDisposable(handler)) {
@@ -540,7 +540,7 @@ export class Injector implements AsyncDisposable {
     const context: ResolveContext<any> = {
       resolve: (token, argument, options) => this._resolve(token, argument, options ?? {}, resolveContext, chain.addToken(token)),
       resolveAll: (token, argument, options) => this._resolveAll(token, argument, options ?? {}, resolveContext, chain.addToken(token)),
-      cancellationToken: this.#disposeToken,
+      cancellationSignal: this.#disposeToken,
       addDisposeHandler: this.#addDisposeHandler,
       get data() {
         return resolveContext.resolutionContextData.get(resolutionTag);
@@ -552,7 +552,7 @@ export class Injector implements AsyncDisposable {
 
   private getAfterResolveContext(resolutionTag: ResolutionTag, resolveContext: InternalResolveContext): AfterResolveContext<any> {
     const context: AfterResolveContext<any> = {
-      cancellationToken: this.#disposeToken,
+      cancellationSignal: this.#disposeToken,
       addDisposeHandler: this.#addDisposeHandler,
       get data() {
         return resolveContext.resolutionContextData.get(resolutionTag);

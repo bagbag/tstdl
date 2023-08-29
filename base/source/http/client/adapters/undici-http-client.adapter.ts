@@ -63,7 +63,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter {
     try {
       const response = await request(httpClientRequest.url, {
         method: httpClientRequest.method,
-        signal: httpClientRequest.abortToken.asAbortSignal(),
+        signal: httpClientRequest.abortSignal.asAbortSignal(),
         headers: httpClientRequest.headers.asNormalizedObject(),
         body,
         headersTimeout: httpClientRequest.timeout,

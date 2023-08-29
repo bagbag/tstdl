@@ -1,6 +1,6 @@
+import type { CancellationSignal } from '#/cancellation/index.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import type { Record } from '#/types.js';
-import type { ReadonlyCancellationToken } from '#/utils/cancellation-token.js';
 import type { Injector } from './injector.js';
 import type { ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
@@ -15,13 +15,13 @@ export type Lifecycle = 'transient' | 'resolution' | 'injector' | 'singleton';
 
 export type ResolveContext<D extends Record> = Pick<Injector, 'resolve' | 'resolveAll'> & {
   readonly data: ResolveContextData<D>,
-  readonly cancellationToken: ReadonlyCancellationToken,
+  readonly cancellationSignal: CancellationSignal,
   addDisposeHandler(handler: AsyncDisposeHandler): void
 };
 
 export type AfterResolveContext<D extends Record> = {
   readonly data: ResolveContextData<D>,
-  readonly cancellationToken: ReadonlyCancellationToken,
+  readonly cancellationSignal: CancellationSignal,
   addDisposeHandler(handler: AsyncDisposeHandler): void
 };
 

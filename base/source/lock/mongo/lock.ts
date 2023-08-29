@@ -1,9 +1,9 @@
+import { CancellationToken } from '#/cancellation/index.js';
 import { Injectable } from '#/injector/decorators.js';
 import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '#/lock/index.js';
 import { Lock } from '#/lock/index.js';
 import { Logger } from '#/logger/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
-import { CancellationToken } from '#/utils/cancellation-token.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { getRandomString } from '#/utils/random.js';
 import { Timer } from '#/utils/timer.js';
