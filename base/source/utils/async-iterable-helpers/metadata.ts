@@ -9,7 +9,7 @@ export function metadataAsync<T>(iterable: AnyIterable<T>): AsyncIterableIterato
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<IterableItemMetadata<T>> {
+async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<IterableItemMetadata<T>> {
   let index = 0;
   let isFirst = true;
 
@@ -33,7 +33,7 @@ export async function* sync<T>(iterable: Iterable<T>): AsyncIterableIterator<Ite
   }
 }
 
-export async function* async<T>(iterable: AnyIterable<T>): AsyncIterableIterator<IterableItemMetadata<T>> {
+async function* async<T>(iterable: AnyIterable<T>): AsyncIterableIterator<IterableItemMetadata<T>> {
   let index = 0;
   let isFirst = true;
 
