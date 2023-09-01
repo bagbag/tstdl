@@ -35,6 +35,12 @@ export class DocumentController<T extends Page | Frame = Page | Frame> extends L
     this.options = options;
   }
 
+  async evaluate<R, A>(fn: string | ((argument: A) => R | Promise<R>), argument: A): Promise<R>;
+  async evaluate<R, A>(fn: string | ((argument?: A) => R | Promise<R>), argument?: A): Promise<R>;
+  async evaluate<R, A>(fn: string | ((argument: A) => R | Promise<R>), argument?: A): Promise<R> {
+    return this.document.evaluate(fn as any, argument);
+  }
+
   frames(): FrameController[] {
     const frames = isPage(this.document) ? this.document.frames() : this.document.childFrames();
     return frames.map((page) => this.getControllerByFrame(page));
