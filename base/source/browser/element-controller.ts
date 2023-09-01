@@ -1,18 +1,10 @@
 import type { ElementHandle, Locator } from 'playwright';
 
 import type { Merge, NonUndefinable, TypedOmit } from '#/types.js';
-import { timeout } from '#/utils/timing.js';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
-import type { ValueOrProvider } from '#/utils/value-or-provider.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
-import type { TimeoutOptions } from './types.js';
-import { assertLocator, assertLocatorPass, isLocator } from './utils.js';
-
-export type Delay = ValueOrProvider<number>;
-
-export type ActionDelayOptions = {
-  actionDelay?: Delay
-};
+import type { ActionDelayOptions, Delay, TimeoutOptions } from './types.js';
+import { assertLocator, assertLocatorPass, delay, isLocator, prepareAction } from './utils.js';
 
 export type TypeDelayOptions = {
   typeDelay?: Delay
@@ -58,7 +50,14 @@ export type Filter = {
   hasNotText?: string | RegExp
 };
 
-const filterNonLocatorErrorMessage = 'Requires a locator basesd controller';
+export type BoundingBox = {
+  x: number,
+  y: number,
+  width: number,
+  height: number
+};
+
+const requiresLocatorBasedController = 'Requires a locator based controller';
 
 export class ElementController<T extends Locator | ElementHandle = Locator | ElementHandle> implements Pick<Locator, Methods> {
   readonly locatorOrHandle: T;
@@ -93,10 +92,23 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
    * @param elementController
    */
   and(elementController: ElementController): ElementController<Locator> {
-    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
-    assertLocator(elementController.locatorOrHandle, filterNonLocatorErrorMessage);
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+    assertLocator(elementController.locatorOrHandle, requiresLocatorBasedController);
 
     const locator = this.locatorOrHandle.and(elementController.locatorOrHandle);
+    return new ElementController(locator, this.options);
+  }
+
+  /**
+   * Get an controller with elements contained in this and the provided controller.
+   * Requires locator based controller
+   * @param elementController
+   */
+  or(elementController: ElementController): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+    assertLocator(elementController.locatorOrHandle, requiresLocatorBasedController);
+
+    const locator = this.locatorOrHandle.or(elementController.locatorOrHandle);
     return new ElementController(locator, this.options);
   }
 
@@ -105,7 +117,7 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
    * Requires locator based controller.
    */
   filter(filter: Filter): ElementController<Locator> {
-    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
 
     const locator = this.locatorOrHandle.filter(convertFilter(filter));
     return new ElementController(locator, this.options);
@@ -116,13 +128,44 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
    * Requires locator based controller.
    */
   locate(selectorOrController: string | ElementController, filter?: Filter): ElementController<Locator> {
-    assertLocator(this.locatorOrHandle, filterNonLocatorErrorMessage);
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
 
-    const selector = isString(selectorOrController) ? selectorOrController : assertLocatorPass(selectorOrController.locatorOrHandle, filterNonLocatorErrorMessage);
+    const selector = isString(selectorOrController) ? selectorOrController : assertLocatorPass(selectorOrController.locatorOrHandle, requiresLocatorBasedController);
     const convertedFilter = isDefined(filter) ? convertFilter(filter) : undefined;
 
     const locator = this.locatorOrHandle.locator(selector, convertedFilter);
     return new ElementController(locator, this.options);
+  }
+
+  first(): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+
+    const locator = this.locatorOrHandle.first();
+    return new ElementController(locator, this.options);
+  }
+
+  last(): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+
+    const locator = this.locatorOrHandle.last();
+    return new ElementController(locator, this.options);
+  }
+
+  nth(index: number): ElementController<Locator> {
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+
+    const locator = this.locatorOrHandle.nth(index);
+    return new ElementController(locator, this.options);
+  }
+
+  async evaluate<R, A>(fn: string | ((element: SVGElement | HTMLElement, argument: A) => R | Promise<R>), argument: A): Promise<R>;
+  async evaluate<R, A>(fn: string | ((element: SVGElement | HTMLElement, argument?: A) => R | Promise<R>), argument?: A): Promise<R>;
+  async evaluate<R, A>(fn: string | ((element: SVGElement | HTMLElement, argument: A) => R | Promise<R>), argument?: A): Promise<R> {
+    if (isLocator(this.locatorOrHandle)) {
+      return this.locatorOrHandle.evaluate(fn as any, argument);
+    }
+
+    return this.locatorOrHandle.evaluate(fn as any, argument);
   }
 
   /**
@@ -138,14 +181,29 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     return this.locatorOrHandle.waitForElementState(state as Parameters<ElementHandle['waitForElementState']>[0], options);
   }
 
+  async boundingBox(options?: TimeoutOptions): Promise<BoundingBox | null> {
+    return this.locatorOrHandle.boundingBox({ timeout: options?.timeout ?? 1000 });
+  }
+
+  async scrollIntoViewIfNeeded(options?: TimeoutOptions): Promise<void> {
+    await this.locatorOrHandle.scrollIntoViewIfNeeded({ timeout: options?.timeout ?? 1000 });
+  }
+
+  /**
+   * Counts matching elements for locator based or returns 1 for handle based.
+   */
+  async count(): Promise<number> {
+    return isLocator(this.locatorOrHandle) ? this.locatorOrHandle.count() : 1;
+  }
+
   /**
    * Check if element exists
    * @param options.state which state is required in order to be deemed existing
    * @param options.timeout how long to wait for the element before being deemed not existing (default: 250ms)
    */
-  async exists(options?: { state?: 'visible' | 'attached', timeout?: number }): Promise<boolean> {
+  async exists(options?: { state?: 'visible' | 'attached' } & TimeoutOptions): Promise<boolean> {
     try {
-      await this.waitFor(options?.state ?? 'visible', { timeout: options?.timeout ?? 250 });
+      await this.waitFor(options?.state ?? 'visible', { timeout: options?.timeout ?? 1000 });
       return true;
     }
     catch (error) {
@@ -181,13 +239,19 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
     return this.locatorOrHandle.isEditable();
   }
 
+  async clear(options?: Merge<LocatorOptions<'clear', 1>, ActionDelayOptions>): Promise<void> {
+    assertLocator(this.locatorOrHandle, requiresLocatorBasedController);
+    await prepareAction(options);
+    await this.locatorOrHandle.clear(options);
+  }
+
   async fill(text: string, options?: Merge<LocatorOptions<'fill', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.fill(text, options);
   }
 
   async type(text: string, options?: Merge<TypedOmit<LocatorOptions<'type', 1>, 'delay'>, ActionDelayOptions & TypeDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
 
     if (isUndefined(this.options.typeDelay)) {
       await this.locatorOrHandle.type(text, options);
@@ -201,38 +265,38 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
   }
 
   async press(key: string, options?: Merge<LocatorOptions<'press', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.press(key, options);
   }
 
   async check(options?: Merge<LocatorOptions<'check', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.check(options);
   }
 
   async uncheck(options?: Merge<LocatorOptions<'uncheck', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.uncheck(options);
   }
 
   async setChecked(checked: boolean, options?: Merge<LocatorOptions<'setChecked', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.setChecked(checked, options);
   }
 
   async selectOption(option: string | string[], options?: Merge<LocatorOptions<'selectOption', 1>, ActionDelayOptions>): Promise<string[]> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     const selectedOptions = await this.locatorOrHandle.selectOption(option, options);
     return selectedOptions;
   }
 
   async setInputFiles(files: LocatorOptions<'setInputFiles', 0>, options?: Merge<LocatorOptions<'setInputFiles', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.setInputFiles(files, options);
   }
 
   async click(options?: Merge<TypedOmit<LocatorOptions<'click', 0>, 'delay'>, ActionDelayOptions & ClickDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
 
     await this.locatorOrHandle.click({
       ...options,
@@ -241,7 +305,7 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
   }
 
   async dblclick(options?: Merge<TypedOmit<LocatorOptions<'click', 0>, 'delay'>, ActionDelayOptions & ClickDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
 
     await this.locatorOrHandle.dblclick({
       ...options,
@@ -250,51 +314,34 @@ export class ElementController<T extends Locator | ElementHandle = Locator | Ele
   }
 
   async hover(options?: Merge<LocatorOptions<'hover', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.hover(options);
   }
 
   async focus(options?: Merge<LocatorOptions<'focus', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.focus(options);
   }
 
   async tap(options?: Merge<LocatorOptions<'tap', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.tap(options);
   }
 
   async selectText(options?: Merge<LocatorOptions<'selectText', 1>, ActionDelayOptions>): Promise<void> {
-    await this.prepareAction(options);
+    await prepareAction(options);
     await this.locatorOrHandle.selectText(options);
   }
 
   async inputValue(options?: LocatorOptions<'inputValue', 0>): Promise<string> {
     return this.locatorOrHandle.inputValue(options);
   }
-
-  private async prepareAction(options?: ActionDelayOptions & TimeoutOptions): Promise<void> {
-    const actionDelay = options?.actionDelay ?? this.options.actionDelay;
-
-    if (isDefined(actionDelay)) {
-      await this.waitFor('visible', { timeout: resolveValueOrProvider(options?.timeout) });
-      await delay(actionDelay);
-    }
-  }
-}
-
-async function delay(milliseconds: Delay | undefined): Promise<void> {
-  if (isUndefined(milliseconds)) {
-    return;
-  }
-
-  await timeout(resolveValueOrProvider(milliseconds));
 }
 
 function convertFilter(filter: Filter): NonUndefinable<Parameters<Locator['filter']>[0]> {
   return {
-    has: isDefined(filter.has) ? assertLocatorPass(filter.has.locatorOrHandle, filterNonLocatorErrorMessage) : undefined,
-    hasNot: isDefined(filter.hasNot) ? assertLocatorPass(filter.hasNot.locatorOrHandle, filterNonLocatorErrorMessage) : undefined,
+    has: isDefined(filter.has) ? assertLocatorPass(filter.has.locatorOrHandle, requiresLocatorBasedController) : undefined,
+    hasNot: isDefined(filter.hasNot) ? assertLocatorPass(filter.hasNot.locatorOrHandle, requiresLocatorBasedController) : undefined,
     hasText: filter.hasText,
     hasNotText: filter.hasNotText
   };

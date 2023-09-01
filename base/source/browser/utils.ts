@@ -1,9 +1,12 @@
 import type { Logger } from '#/logger/logger.js';
 import { objectKeys } from '#/utils/object/object.js';
+import { timeout } from '#/utils/timing.js';
 import { assert, isDefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
+import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
 import type { BrowserContext, ElementHandle, Frame, LaunchOptions, Locator, Page } from 'playwright';
 import type { NewBrowserContextOptions } from './browser-controller.js';
 import type { NewBrowserOptions } from './browser.service.js';
+import type { ActionDelayOptions, Delay, TimeoutOptions } from './types.js';
 
 const pageLoggerMap = new WeakMap<Page, Logger>();
 
@@ -123,4 +126,20 @@ export function isFrame(pageOrFrameOrContext: Page | Frame | BrowserContext): pa
 
 export function isBrowserContext(pageOrFrameOrContext: Page | Frame | BrowserContext): pageOrFrameOrContext is BrowserContext {
   return pageOrFrameOrContext.constructor.name == 'BrowserContext';
+}
+
+export async function prepareAction(options?: ActionDelayOptions & TimeoutOptions): Promise<void> {
+  const actionDelay = options?.actionDelay;
+
+  if (isDefined(actionDelay)) {
+    await timeout(resolveValueOrProvider(actionDelay));
+  }
+}
+
+export async function delay(milliseconds: Delay | undefined): Promise<void> {
+  if (isUndefined(milliseconds)) {
+    return;
+  }
+
+  await timeout(resolveValueOrProvider(milliseconds));
 }

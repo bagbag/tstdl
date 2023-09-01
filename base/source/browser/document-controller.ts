@@ -2,10 +2,10 @@ import type { ElementHandle, Frame, FrameLocator, Page } from 'playwright';
 
 import { isDefined, isNull } from '#/utils/type-guards.js';
 import type { BrowserContextController } from './browser-context-controller.js';
-import type { Delay } from './element-controller.js';
 import { ElementController } from './element-controller.js';
 import type { FrameController, FrameControllerOptions } from './frame-controller.js';
 import { LocatorController } from './locator-controller.js';
+import type { Delay } from './types.js';
 import { isPage } from './utils.js';
 
 export type DocumentControllerOptions = {

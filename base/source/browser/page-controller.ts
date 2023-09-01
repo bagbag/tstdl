@@ -11,12 +11,15 @@ import { millisecondsPerSecond } from '#/utils/units.js';
 import type { BrowserContextController } from './browser-context-controller.js';
 import type { DocumentControllerOptions } from './document-controller.js';
 import { DocumentController } from './document-controller.js';
+import { ElementController } from './element-controller.js';
 import type { FrameController, FrameControllerOptions } from './frame-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
 import type { Abortable } from './types.js';
-import { attachLogger } from './utils.js';
+import { attachLogger, delay } from './utils.js';
 
 export type PageControllerOptions = DocumentControllerOptions;
+
+export type ScrollToCoordinates = { x?: number, y?: number };
 
 export class PageController extends DocumentController<Page> implements AsyncDisposable {
   /** @deprecated should be avoided */
@@ -98,6 +101,68 @@ export class PageController extends DocumentController<Page> implements AsyncDis
   async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {
     const createPdfOptions = convertPdfOptions(options);
     return withTimeout(options.timeout ?? 30 * millisecondsPerSecond, this.page.pdf(createPdfOptions), { errorMessage: 'Rendering pdf timed out.' });
+  }
+
+  async scroll(deltaX: number, deltaY: number): Promise<void> {
+    await this.page.mouse.wheel(deltaX, deltaY);
+  }
+
+  async scrollTo(coordinatesOrController: ScrollToCoordinates | ElementController): Promise<void> {
+    const viewportSize = this.page.viewportSize();
+
+    if (isNull(viewportSize)) {
+      throw new Error('Could not get page viewport size.');
+    }
+
+    const targetLeft = viewportSize.width / 3;
+    const targetRight = viewportSize.width / 3 * 2;
+    const targetTop = viewportSize.height / 3;
+    const targetBottom = viewportSize.height / 3 * 2;
+
+    const offsetX = viewportSize.width / 10;
+    const offsetY = viewportSize.height / 10;
+
+    const isElement = coordinatesOrController instanceof ElementController;
+
+    while (true) {
+      const { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight } = await this.page.evaluate(async () => {
+        const { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight } = document.documentElement;
+        return { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight };
+      });
+
+      let targetX: number | undefined;
+      let targetY: number | undefined;
+
+      if (isElement) {
+        const boundingBox = await coordinatesOrController.boundingBox();
+
+        if (isNull(boundingBox)) {
+          throw new Error('Could not get element bounding box.');
+        }
+
+        targetX = boundingBox.x + (boundingBox.width / 2);
+        targetY = boundingBox.y + (boundingBox.height / 2);
+      }
+      else {
+        targetX = isDefined(coordinatesOrController.x) ? (coordinatesOrController.x - scrollLeft) : undefined;
+        targetY = isDefined(coordinatesOrController.y) ? (coordinatesOrController.y - scrollTop) : undefined;
+      }
+
+      const deltaX = isUndefined(targetX) ? undefined : ((targetX < targetLeft) && (scrollLeft > 0)) ? -offsetX : ((targetX > targetRight) && ((scrollLeft + clientWidth) < scrollWidth)) ? offsetX : undefined;
+      const deltaY = isUndefined(targetY) ? undefined : ((targetY < targetTop) && (scrollTop > 0)) ? -offsetY : ((targetY > targetBottom) && ((scrollTop + clientHeight) < scrollHeight)) ? offsetY : undefined;
+
+      if (isDefined(deltaY)) {
+        await this.page.mouse.wheel(0, deltaY);
+        await delay(Math.max(10, 150 - (Math.abs(targetY! - targetTop) / 10)));
+      }
+      else if (isDefined(deltaX)) {
+        await this.page.mouse.wheel(deltaX, 0);
+        await delay(Math.max(10, 150 - (Math.abs(targetX! - targetLeft) / 10)));
+      }
+      else {
+        break;
+      }
+    }
   }
 
   renderPdfStream(options: PdfRenderOptions & Abortable = {}): ReadableStream<Uint8Array> {
