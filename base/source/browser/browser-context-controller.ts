@@ -1,10 +1,10 @@
-import type { BrowserContext } from 'playwright';
+import type { BrowserContext, Page } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import { Injectable } from '#/injector/decorators.js';
 import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import { afterResolve, resolveArgumentType } from '#/injector/interfaces.js';
 import type { Logger } from '#/logger/logger.js';
 import type { Record, Writable } from '#/types.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
@@ -43,6 +43,8 @@ export type BrowserContextControllerArgument = NewBrowserContextOptions;
   }
 })
 export class BrowserContextController implements AsyncDisposable, Resolvable<BrowserContextControllerArgument> {
+  readonly #pageControllers = new WeakMap<Page, PageController>();
+
   /** @deprecated should be avoided */
   readonly context: BrowserContext;
   readonly options: BrowserContextControllerOptions;
@@ -53,8 +55,45 @@ export class BrowserContextController implements AsyncDisposable, Resolvable<Bro
     this.options = options;
   }
 
+  [afterResolve](): void {
+    this.initialize();
+  }
+
+  initialize(): void {
+    this.context.on('page', (page) => {
+      page.once('close', () => this.#pageControllers.delete(page));
+    });
+  }
+
   async [disposeAsync](): Promise<void> {
     await this.close();
+  }
+
+  pages(): PageController[] {
+    const pages = this.context.pages();
+    return pages.map((page) => this.getControllerByPage(page));
+  }
+
+  /**
+   * Get a controller for the page.
+   * @param page page to get controller for
+   * @param options options to use for the page controller *if* it is new. Ignored if there is already a controller associated.
+   */
+  getControllerByPage(page: Page, options?: PageControllerOptions): PageController {
+    if (page.context() != this.context) {
+      throw new Error('Page is not from this context.');
+    }
+
+    const existingController = this.#pageControllers.get(page);
+
+    if (isDefined(existingController)) {
+      return existingController;
+    }
+
+    const newController = new PageController(page, this, { ...this.options.defaultNewPageOptions?.controllerOptions, ...options });
+    this.#pageControllers.set(page, newController);
+
+    return newController;
   }
 
   async close(): Promise<void> {
@@ -75,7 +114,9 @@ export class BrowserContextController implements AsyncDisposable, Resolvable<Bro
     const page = await this.context.newPage();
 
     const mergedOptions = { ...this.options.defaultNewPageOptions, ...options };
-    const controller = new PageController(page, mergedOptions.controllerOptions);
+    const controller = new PageController(page, this, mergedOptions.controllerOptions);
+
+    this.#pageControllers.set(page, controller);
 
     if (isDefined(mergedOptions.extraHttpHeaders)) {
       await controller.setExtraHttpHeaders(mergedOptions.extraHttpHeaders);

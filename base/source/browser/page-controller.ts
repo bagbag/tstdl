@@ -8,25 +8,23 @@ import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-p
 import { withTimeout } from '#/utils/timing.js';
 import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
+import type { BrowserContextController } from './browser-context-controller.js';
 import type { DocumentControllerOptions } from './document-controller.js';
 import { DocumentController } from './document-controller.js';
-import type { FrameControllerOptions } from './frame-controller.js';
-import { FrameController } from './frame-controller.js';
+import type { FrameController, FrameControllerOptions } from './frame-controller.js';
 import type { PdfRenderOptions } from './pdf-options.js';
 import type { Abortable } from './types.js';
 import { attachLogger } from './utils.js';
 
-export type PageControllerOptions = DocumentControllerOptions & {
-  defaultFrameControllerOptions?: FrameControllerOptions
-};
+export type PageControllerOptions = DocumentControllerOptions;
 
 export class PageController extends DocumentController<Page> implements AsyncDisposable {
   /** @deprecated should be avoided */
   readonly page: Page;
-  readonly options: PageControllerOptions;
+  override readonly options: PageControllerOptions;
 
-  constructor(page: Page, options: PageControllerOptions = {}) {
-    super(page, options, { pageControllerOptions: options, frameControllerOptions: options.defaultFrameControllerOptions ?? options });
+  constructor(page: Page, context: BrowserContextController, options: PageControllerOptions = {}) {
+    super(page, context, options);
 
     this.page = page;
     this.options = options;
@@ -38,6 +36,29 @@ export class PageController extends DocumentController<Page> implements AsyncDis
 
   async close(): Promise<void> {
     await this.page.close();
+  }
+
+  /** finds pages opened by this page (having opener set to this page) */
+  async opened(): Promise<PageController[]> {
+    const openedPages: PageController[] = [];
+
+    for (const page of this.context.pages()) {
+      if (await page.opener() == this) {
+        openedPages.push(page);
+      }
+    }
+
+    return openedPages;
+  }
+
+  async opener(): Promise<PageController | null> {
+    const opener = await this.page.opener();
+
+    if (isNull(opener)) {
+      return null;
+    }
+
+    return this.context.getControllerByPage(opener);
   }
 
   async setExtraHttpHeaders(headers: Record<string, string>): Promise<void> {
@@ -64,14 +85,14 @@ export class PageController extends DocumentController<Page> implements AsyncDis
    * @param frameSelector frame name, url or url predicate
    * @returns
    */
-  frame(frameSelector: Parameters<Page['frame']>[0]): FrameController {
+  frame(frameSelector: Parameters<Page['frame']>[0], options?: FrameControllerOptions): FrameController {
     const frame = this.page.frame(frameSelector);
 
     if (isNull(frame)) {
       throw new Error('Frame not found.');
     }
 
-    return new FrameController(frame, this.options, this.forwardOptions);
+    return this.getControllerByFrame(frame, { ...this.options, ...options });
   }
 
   async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {

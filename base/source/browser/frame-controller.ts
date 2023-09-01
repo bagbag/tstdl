@@ -1,47 +1,40 @@
 import type { Frame, Page } from 'playwright';
 
 import { isNull } from '#/utils/type-guards.js';
+import type { BrowserContextController } from './browser-context-controller.js';
 import type { DocumentControllerOptions } from './document-controller.js';
 import { DocumentController } from './document-controller.js';
-import type { PageControllerOptions } from './page-controller.js';
-import { PageController } from './page-controller.js';
+import type { PageController, PageControllerOptions } from './page-controller.js';
 
 export type FrameControllerOptions = DocumentControllerOptions;
 
-export type FrameControllerForwardOptions = {
-  pageControllerOptions: PageControllerOptions
-};
-
 export class FrameController extends DocumentController<Frame> {
-  private readonly frameControllerForwardOptions: FrameControllerForwardOptions;
-
   /** @deprecated should be avoided */
   readonly frame: Frame;
-  readonly options: FrameControllerOptions;
+  override readonly options: FrameControllerOptions;
 
-  constructor(frame: Frame, options: FrameControllerOptions, forwardOptions: FrameControllerForwardOptions) {
-    super(frame, options, { frameControllerOptions: options, pageControllerOptions: forwardOptions.pageControllerOptions });
+  constructor(frame: Frame, context: BrowserContextController, options: FrameControllerOptions) {
+    super(frame, context, options);
 
     this.options = options;
-    this.frameControllerForwardOptions = forwardOptions;
   }
 
   /** Get the page containing this frame */
-  getPage(): PageController {
-    return new PageController(this.frame.page(), this.frameControllerForwardOptions.pageControllerOptions);
+  getPage(options?: PageControllerOptions): PageController {
+    return this.context.getControllerByPage(this.frame.page(), options);
   }
 
   /**
    * @param frameSelector frame name, url or url predicate
    * @returns
    */
-  getFrame(frameSelector: Parameters<Page['frame']>[0]): FrameController {
+  getFrame(frameSelector: Parameters<Page['frame']>[0], options?: FrameControllerOptions): FrameController {
     const frame = this.frame.page().frame(frameSelector);
 
     if (isNull(frame)) {
       throw new Error('Frame not found.');
     }
 
-    return new FrameController(frame, this.options, this.frameControllerForwardOptions);
+    return this.getControllerByFrame(frame, { ...this.options, ...options });
   }
 }

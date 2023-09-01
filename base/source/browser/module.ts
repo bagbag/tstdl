@@ -6,6 +6,8 @@ import { Injector } from '#/injector/injector.js';
 import { copyObjectProperties, filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { BrowserServiceOptions } from './browser.service.js';
+import { setFrameControllerConstructor } from './document-controller.js';
+import { FrameController } from './frame-controller.js';
 
 export type BrowserModuleOptions = {
   browsers?: {
@@ -42,3 +44,5 @@ export function getBrowserType(type: keyof typeof browserTypes | undefined): Bro
 
   return browserType;
 }
+
+setFrameControllerConstructor(FrameController);

@@ -1,3 +1,5 @@
+import '#/polyfills.js';
+
 import { writeFile } from 'node:fs/promises';
 
 import { Application } from '#/application/index.js';
