@@ -1,4 +1,6 @@
 /* eslint-disable max-classes-per-file */
+import '#/polyfills.js';
+
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { AuthenticationApiClient } from '#/authentication/client/api.client.js';
@@ -16,19 +18,6 @@ import { configureDefaultSignalsImplementation } from '#/signals/implementation/
 import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
-configureDefaultSignalsImplementation();
-
-configureAuthenticationServer({
-  serviceOptions: { secret: 'djp0fq23576aq' },
-  credentialsRepository: MongoAuthenticationCredentialsRepository,
-  sessionRepository: MongoAuthenticationSessionRepository
-});
-
-configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
-configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
-
-configureLocalMessageBus();
-
 async function serverTest(): Promise<void> {
   const authenticationService = await injectAsync(AuthenticationServerService);
   await authenticationService.setCredentials('foobar', 'mysuperdupersecret-fvhc54w');
@@ -37,7 +26,6 @@ async function serverTest(): Promise<void> {
 async function clientTest(): Promise<void> {
   const authenticationService = inject(AuthenticationClientService);
   authenticationService.initialize();
-
   await timeout(250); // allow server to initialize
 
   const passwordCheckResult = await authenticationService.checkSecret('123456');
@@ -56,7 +44,20 @@ async function test(): Promise<void> {
   await Application.shutdown();
 }
 
-function main(): void {
+function bootstrap(): void {
+  configureDefaultSignalsImplementation();
+
+  configureAuthenticationServer({
+    serviceOptions: { secret: 'djp0fq23576aq' },
+    credentialsRepository: MongoAuthenticationCredentialsRepository,
+    sessionRepository: MongoAuthenticationSessionRepository
+  });
+
+  configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
+  configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
+
+  configureLocalMessageBus();
+
   configureAuthenticationClient({
     authenticationApiClient: AuthenticationApiClient
   });
@@ -67,4 +68,4 @@ function main(): void {
   configureHttpClient({ baseUrl: 'http://localhost:8000' });
 }
 
-Application.run(main, test, WebServerModule);
+Application.run({ bootstrap }, WebServerModule, test);

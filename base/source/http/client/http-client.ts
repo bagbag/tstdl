@@ -14,7 +14,7 @@ import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
 import type { HttpMethod, HttpValue } from '../types.js';
 import { normalizeHttpValue, normalizeSingleHttpValue } from '../types.js';
-import type { HttpClientOptions } from './http-client-options.js';
+import { HttpClientOptions } from './http-client-options.js';
 import type { HttpClientRequestOptions } from './http-client-request.js';
 import { HttpClientRequest } from './http-client-request.js';
 import type { HttpClientResponse } from './http-client-response.js';
@@ -33,7 +33,7 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
 
   private callHandler: HttpClientHandler;
 
-  readonly options = injectArgument(this, { optional: true }) ?? {};
+  readonly options = injectArgument(this, { optional: true }) ?? inject(HttpClientOptions, undefined, { optional: true }) ?? {};
 
   declare readonly [resolveArgumentType]: HttpClientOptions;
   constructor() {

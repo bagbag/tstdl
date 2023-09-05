@@ -1,4 +1,6 @@
 /* eslint-disable max-classes-per-file */
+import '#/polyfills.js';
+
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
@@ -17,8 +19,40 @@ import { configureLocalMessageBus } from '#/message-bus/local/module.js';
 import { WebServerModule } from '#/module/modules/index.js';
 import { Property } from '#/schema/index.js';
 import { configureDefaultSignalsImplementation } from '#/signals/implementation/configure.js';
+import { first } from '#/utils/iterable-helpers/first.js';
+import { skip } from '#/utils/iterable-helpers/skip.js';
 import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
+
+class LocalStoragePolyfill implements Storage {
+  readonly #storage = new Map<string, string>();
+
+  get length(): number {
+    return this.#storage.size;
+  }
+
+  clear(): void {
+    throw new Error('Method not implemented.');
+  }
+
+  getItem(key: string): string | null {
+    return this.#storage.get(key) ?? null;
+  }
+
+  key(index: number): string | null {
+    return first(skip(this.#storage, index))[0];
+  }
+
+  removeItem(key: string): void {
+    this.#storage.delete(key);
+  }
+
+  setItem(key: string, value: string): void {
+    this.#storage.set(key, value);
+  }
+}
+
+globalThis.localStorage = new LocalStoragePolyfill();
 
 class CustomTokenPaylod {
   @Property()
@@ -30,6 +64,8 @@ class AuthenticationData {
   deviceId: string;
 }
 
+const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData);
+
 @Singleton()
 class CustomTokenPayloadProvider extends AuthenticationTokenPayloadProvider<CustomTokenPaylod, AuthenticationData> {
   getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
@@ -37,50 +73,57 @@ class CustomTokenPayloadProvider extends AuthenticationTokenPayloadProvider<Cust
   }
 }
 
-configureAuthenticationServer({
-  serviceOptions: { secret: 'djp0fq23576aq' },
-  credentialsRepository: MongoAuthenticationCredentialsRepository,
-  sessionRepository: MongoAuthenticationSessionRepository,
-  tokenPayloadProvider: CustomTokenPayloadProvider
-});
-
-configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
-configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
-
-const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData);
-
-configureAuthenticationClient({
-  authenticationApiClient: CustomAuthenticationApiClient
-});
-
-configureLocalMessageBus();
-
 async function serverTest(): Promise<void> {
   const authenticationService = await injectAsync(AuthenticationServerService);
-  await authenticationService.setCredentials('foobar', 'supersecret');
+  await authenticationService.setCredentials('foobar', 'supersecret-dupidupudoo9275');
 }
 
 async function clientTest(): Promise<void> {
   const authenticationService = inject<AuthenticationClientService<CustomTokenPaylod, AuthenticationData>>(AuthenticationClientService);
 
-  await timeout(250); // allow server to initialize
+  await timeout(1500); // allow server to initialize
 
   authenticationService.initialize();
 
-  await authenticationService.login('foobar', 'supersecret', { deviceId: 'my-device' });
+  await authenticationService.login('foobar', 'supersecret-dupidupudoo9275');
   authenticationService.token$.subscribe((token) => console.log({ token }));
 
   Application.requestShutdown();
 }
 
-function main(): void {
+async function test(): Promise<void> {
+  await Promise.all([
+    serverTest(),
+    clientTest()
+  ]);
+
+  await Application.shutdown();
+}
+
+function bootstrap(): void {
   configureDefaultSignalsImplementation();
+
+  configureAuthenticationServer({
+    serviceOptions: { secret: 'djp0fq23576aq' },
+    credentialsRepository: MongoAuthenticationCredentialsRepository,
+    sessionRepository: MongoAuthenticationSessionRepository,
+    tokenPayloadProvider: CustomTokenPayloadProvider
+  });
+
+  configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
+  configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
+
+  configureLocalMessageBus();
+
+  configureAuthenticationClient({
+    authenticationApiClient: CustomAuthenticationApiClient,
+    initialAuthenticationData: ({ deviceId: 'my-device' }) satisfies AuthenticationData
+  });
+
   configureNodeHttpServer();
   configureApiServer({ controllers: [AuthenticationApiController] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   configureHttpClient({ baseUrl: 'http://localhost:8000' });
-
-  Application.run(WebServerModule, serverTest, clientTest);
 }
 
-main();
+Application.run({ bootstrap }, WebServerModule, test);

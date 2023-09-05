@@ -1,4 +1,3 @@
-import type { Observable } from 'rxjs';
 import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
 
 import type { ApiClient } from '#/api/client/index.js';
@@ -12,11 +11,9 @@ import { NotFoundError } from '#/error/not-found.error.js';
 import { NotSupportedError } from '#/error/not-supported.error.js';
 import { UnauthorizedError } from '#/error/unauthorized.error.js';
 import type { AfterResolve } from '#/injector/index.js';
-import { Inject, Optional, ResolveArg, Singleton, afterResolve } from '#/injector/index.js';
+import { Inject, Optional, Singleton, afterResolve, inject } from '#/injector/index.js';
 import { Lock } from '#/lock/index.js';
-import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
-import type { MessageBusArgument } from '#/message-bus/index.js';
 import { MessageBus } from '#/message-bus/index.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
 import type { Record } from '#/types.js';
@@ -33,20 +30,18 @@ const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
-const localStorage = globalThis.localStorage as Storage | undefined;
-
 @Singleton()
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any> implements AfterResolve, AsyncDisposable {
-  private readonly client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
-  private readonly errorSubject: Subject<Error>;
-  private readonly tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>;
-  private readonly loggedOutBus: MessageBus<void>;
-  private readonly forceRefreshToken: CancellationToken;
-  private readonly refreshLock: Lock | undefined;
-  private readonly logger: Logger;
-  private readonly disposeToken: CancellationToken;
+  private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
+  private readonly errorSubject = new Subject<Error>();
+  private readonly tokenUpdateBus = inject(MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>, tokenUpdateBusName);
+  private readonly loggedOutBus = inject(MessageBus<void>, loggedOutBusName);
+  private readonly forceRefreshToken = new CancellationToken();
+  private readonly refreshLock = inject(Lock, refreshLockResource, { optional: true });
+  private readonly logger = inject(Logger, 'AuthenticationService');
+  private readonly disposeToken = new CancellationToken();
 
-  readonly error$: Observable<Error>;
+  readonly error$ = this.errorSubject.asObservable();
 
   readonly token = signal<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
   readonly isLoggedIn = computed(() => isDefined(this.token()));
@@ -64,25 +59,20 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   readonly definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
 
   readonly isLoggedIn$ = toObservable(this.isLoggedIn);
-  readonly loggedOut$: Observable<void>;
+  readonly loggedOut$ = this.loggedOutBus.allMessages$;
 
-  private get authenticationData(): AuthenticationData | undefined {
-    try {
-      const data = localStorage?.getItem(authenticationDataStorageKey);
-      return isNullOrUndefined(data) ? undefined : JSON.parse(data) as AuthenticationData;
-    }
-    catch {
-      return undefined;
-    }
+  private get authenticationData(): AuthenticationData {
+    const data = localStorage.getItem(authenticationDataStorageKey);
+    return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
   }
 
   private set authenticationData(data: AuthenticationData | undefined) {
     if (isUndefined(data)) {
-      localStorage?.removeItem(authenticationDataStorageKey);
+      localStorage.removeItem(authenticationDataStorageKey);
     }
     else {
       const json = JSON.stringify(data);
-      localStorage?.setItem(authenticationDataStorageKey, json);
+      localStorage.setItem(authenticationDataStorageKey, json);
     }
   }
 
@@ -102,30 +92,10 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return (this.token()?.exp ?? 0) > currentTimestampSeconds();
   }
 
-  constructor(
-    @Inject(AUTHENTICATION_API_CLIENT) client: InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData>>>,
-    @ResolveArg<MessageBusArgument>(tokenUpdateBusName) tokenUpdateBus: MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>,
-    @ResolveArg<MessageBusArgument>(loggedOutBusName) loggedOutBus: MessageBus<void>,
-    @Inject(Lock, refreshLockResource) @Optional() refreshLock: Lock | undefined,
-    @Inject(INITIAL_AUTHENTICATION_DATA) @Optional() initialAuthenticationData: AuthenticationData | undefined,
-    @ResolveArg<LoggerArgument>('AuthenticationService') logger: Logger
-  ) {
-    this.client = client;
-    this.tokenUpdateBus = tokenUpdateBus;
-    this.loggedOutBus = loggedOutBus;
-    this.refreshLock = refreshLock;
-    this.logger = logger;
-
+  constructor(@Inject(INITIAL_AUTHENTICATION_DATA) @Optional() initialAuthenticationData: AuthenticationData | undefined) {
     if (isUndefined(this.authenticationData)) {
       this.authenticationData = initialAuthenticationData;
     }
-
-    this.disposeToken = new CancellationToken();
-    this.errorSubject = new Subject();
-    this.forceRefreshToken = new CancellationToken();
-
-    this.error$ = this.errorSubject.asObservable();
-    this.loggedOut$ = loggedOutBus.allMessages$;
   }
 
   [afterResolve](): void {
@@ -146,6 +116,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   async dispose(): Promise<void> {
     this.disposeToken.set();
     this.errorSubject.complete();
+    await this.loggedOutBus.dispose();
     await this.tokenUpdateBus.dispose();
   }
 
@@ -167,7 +138,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       await Promise.race([
         this.client.endSession(),
         timeout(150)
-      ]).catch((error) => console.error(error));
+      ]).catch((error) => this.logger.error(error as Error));
     }
     finally {
       this.setNewToken(undefined);
@@ -211,16 +182,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
-    if (isUndefined(globalThis.localStorage)) {
-      return;
-    }
-
     if (isNullOrUndefined(token)) {
-      localStorage?.removeItem(tokenStorageKey);
+      localStorage.removeItem(tokenStorageKey);
     }
     else {
       const serialized = JSON.stringify(token);
-      localStorage?.setItem(tokenStorageKey, serialized);
+      localStorage.setItem(tokenStorageKey, serialized);
     }
   }
 
