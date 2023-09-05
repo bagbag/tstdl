@@ -31,10 +31,13 @@ export type ArgumentProvider<T = unknown, D extends Record = Record> = (context:
 
 export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>); // eslint-disable-line @typescript-eslint/ban-types
 
-export type ResolveOptions = {
+export type ResolveOptions<T, A> = {
   optional?: boolean,
   skipSelf?: boolean,
-  onlySelf?: boolean
+  onlySelf?: boolean,
+
+  /** If defined, resolve the token using ForwardRef strategy instead of resolving the token directly can be used to circumvent circular dependency problems */
+  forwardRef?: boolean | ForwardRefInjectionToken<T, A>
 };
 
 /**

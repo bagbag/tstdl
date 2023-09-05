@@ -6,10 +6,7 @@ import type { Resolvable, ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
 import type { ResolveOptions } from './types.js';
 
-export type InjectOptions = ResolveOptions & {
-  /** if defined, resolve the ForwardRefToken using ForwardRef strategy instead resolving the token */
-  forwardRef?: boolean
-};
+export type InjectOptions<T, A> = ResolveOptions<T, A>;
 
 export type InjectArgumentOptions = {
   optional?: boolean
@@ -18,13 +15,13 @@ export type InjectArgumentOptions = {
 export type InjectionContext = {
   injector: Injector,
   argument: unknown,
-  inject<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T,
-  injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T[],
-  injectAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T>,
-  injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T[]>
+  inject<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T,
+  injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T[],
+  injectAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T>,
+  injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T[]>
 };
 
-export type InjectManyArrayItem<T, A> = [token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions];
+export type InjectManyArrayItem<T, A> = [token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>];
 export type InjectManyItem<T, A> = InjectionToken<T, A> | InjectManyArrayItem<T, A>;
 export type InjectManyItemReturnType<T extends InjectManyItem<any, any>> = T extends InjectManyItem<infer U, any>
   ? U | (T extends (InjectManyArrayItem<any, any> & [any, any, { optional: true }]) ? undefined : never)
@@ -41,9 +38,9 @@ let currentInjectionContext: InjectionContext | null = null;
  * @param argument argument to resolve token with
  * @param options resolve options
  */
-export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions & { optional: true }): T | undefined;
-export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions & { optional?: false }): T;
-export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T {
+export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A> & { optional: true }): T | undefined;
+export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A> & { optional?: false }): T;
+export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T {
   assertInInjectionContext(inject);
   return currentInjectionContext!.inject(token, argument, options);
 }
@@ -65,9 +62,9 @@ export function injectMany<T extends InjectManyItem<any, any>[]>(...tokens: T): 
  * @param argument argument to resolve token with
  * @param options resolve options
  */
-export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions & { optional: true }): Promise<T | undefined>;
-export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T>;
-export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T> {
+export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A> & { optional: true }): Promise<T | undefined>;
+export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T>;
+export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T> {
   assertInInjectionContext(inject);
   return currentInjectionContext!.injectAsync(token, argument, options);
 }
@@ -92,7 +89,7 @@ export async function injectManyAsync<T extends InjectManyItem<any, any>[]>(...t
  * @param argument argument to resolve token with
  * @param options resolve options
  */
-export function injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T[] {
+export function injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T[] {
   assertInInjectionContext(injectAll);
   return currentInjectionContext!.injectAll(token, argument, options);
 }
@@ -104,7 +101,7 @@ export function injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveA
  * @param argument argument to resolve token with
  * @param options resolve options
  */
-export async function injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T[]> {
+export async function injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T[]> {
   assertInInjectionContext(injectAll);
   return currentInjectionContext!.injectAllAsync(token, argument, options);
 }

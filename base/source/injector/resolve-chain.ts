@@ -5,7 +5,8 @@ import type { InjectionToken } from './token.js';
 import { getTokenName } from './token.js';
 
 export type ResolveChainNodeBase<Type extends string> = {
-  type: Type
+  type: Type,
+  forwardRef?: true
 };
 
 export type ResolveChainNode =
@@ -21,12 +22,13 @@ export class ResolveChain {
     return this.nodes.length;
   }
 
-  constructor(nodes?: ResolveChainNode[]) {
-    this.nodes = nodes ?? [];
+  /** @deprecated internal */
+  constructor(nodes: ResolveChainNode[]) {
+    this.nodes = nodes;
   }
 
   static startWith(token: InjectionToken): ResolveChain {
-    const chain = new ResolveChain();
+    const chain = new ResolveChain([]);
     return chain.addToken(token);
   }
 
@@ -50,6 +52,13 @@ export class ResolveChain {
     return new ResolveChain([...this.nodes, node]);
   }
 
+  markAsForwardRef(forwardToken: InjectionToken): ResolveChain {
+    const nodes = [...this.nodes];
+    nodes.push({ ...nodes.pop()!, token: forwardToken, forwardRef: true });
+
+    return new ResolveChain(nodes);
+  }
+
   format(truncate?: number): string {
     let chainString = '';
 
@@ -61,27 +70,31 @@ export class ResolveChain {
 
     for (const node of chain.nodes) {
       const tokenName = getTokenName(node.token);
+      const forwardRefPrefix = node.forwardRef ? 'ForwardRef::' : '';
 
       switch (node.type) {
         case 'token':
-          chainString += `\n    -> ${tokenName}`;
+          chainString += `\n    -> ${forwardRefPrefix}${tokenName}`;
           break;
 
         case 'inject':
-          chainString += `\n    -> inject(${tokenName}) #${node.index + 1}`;
+          chainString += ` => inject(${forwardRefPrefix}${tokenName}) [${node.index + 1}]`;
+          chainString += `\n    -> ${tokenName}`;
           break;
 
         case 'parameter':
           const metadata = reflectionRegistry.getMetadata(node.constructor);
           const prefix = '_, '.repeat(node.index);
-          const suffix = ', _'.repeat(assertDefinedPass(metadata?.parameters, 'missing parameters metadata').length - node.index - 1);
-          chainString += `(${prefix}${tokenName}${suffix})`;
+          const suffix = ', _'.repeat(assertDefinedPass(metadata?.parameters, `missing parameters metadata for ${node.constructor.name}`).length - node.index - 1);
+          chainString += `(${prefix}${forwardRefPrefix}${tokenName}${suffix})`;
+          // chainString += `\n       ${' '.repeat(1 + node.constructor.name.length + forwardRefPrefix.length + prefix.length + (tokenName.length / 2))}↓`;
+          chainString += `\n    -> ${tokenName}`;
           break;
 
         case 'property':
           const constructorName = getTokenName(node.constructor);
           const key = getPropertyKeyString(node.property);
-          chainString += `\n    -> ${constructorName}[${key}]: ${tokenName}`;
+          chainString += `\n    -> ${constructorName}[${key}]: ${forwardRefPrefix}${tokenName}`;
           break;
 
         default:

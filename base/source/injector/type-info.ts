@@ -5,8 +5,8 @@ export type InjectMetadata = {
   /** token overwrite by inject decorator */
   injectToken?: InjectionToken,
 
-  /** if defined, resolve the ForwardRefToken using ForwardRef strategy instead resolving the token */
-  forwardRefToken?: ForwardRefInjectionToken,
+  /** if defined, resolve the token or ForwardRefToken using ForwardRef strategy instead of resolving the token directly */
+  forwardRef?: boolean | ForwardRefInjectionToken,
 
   /** whether injection is optional if token is not registered. Set by optional decorator */
   optional?: boolean,

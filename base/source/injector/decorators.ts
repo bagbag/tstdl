@@ -175,9 +175,9 @@ export function Optional(): InjectDecorator {
  * @param token token to resolve
  * @param argument resolve argument
  */
-export function ForwardRef<T extends object, A>(token: ForwardRefInjectionToken<T>, argument?: A): InjectDecorator {
+export function ForwardRef<T extends object, A>(token?: ForwardRefInjectionToken<T>, argument?: A): InjectDecorator {
   const injectMetadata: InjectMetadata = {
-    forwardRefToken: token
+    forwardRef: token ?? true
   };
 
   if (isDefined(argument)) {
