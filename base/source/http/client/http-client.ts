@@ -1,5 +1,5 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response.js';
-import { Singleton, inject, injectArgument, resolveArgumentType } from '#/injector/index.js';
+import { Singleton, inject, injectAll, injectArgument, resolveArgumentType } from '#/injector/index.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import type { OneOrMany, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
@@ -20,14 +20,14 @@ import { HttpClientRequest } from './http-client-request.js';
 import type { HttpClientResponse } from './http-client-response.js';
 import { HttpClientAdapter } from './http-client.adapter.js';
 import type { HttpClientHandler, HttpClientMiddleware, HttpClientMiddlewareNext } from './middleware.js';
-import { HTTP_CLIENT_MIDDLEWARES } from './tokens.js';
+import { HTTP_CLIENT_MIDDLEWARE } from './tokens.js';
 
 export type HttpClientArgument = HttpClientOptions;
 
 @Singleton()
 export class HttpClient implements Resolvable<HttpClientArgument> {
   private readonly adapter = inject(HttpClientAdapter);
-  private readonly middleware = inject(HTTP_CLIENT_MIDDLEWARES);
+  private readonly middleware = injectAll(HTTP_CLIENT_MIDDLEWARE, undefined, { optional: true });
   private readonly headers = new HttpHeaders();
   private readonly internalMiddleware: HttpClientMiddleware[];
 
