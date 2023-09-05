@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.87.4",
+  "version": "0.87.5",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -34,8 +34,8 @@
     "@types/mjml": "4.7",
     "@types/node": "20",
     "@types/nodemailer": "6.4",
-    "@typescript-eslint/eslint-plugin": "6.5",
-    "@typescript-eslint/parser": "6.5",
+    "@typescript-eslint/eslint-plugin": "6.6",
+    "@typescript-eslint/parser": "6.6",
     "concurrently": "8.2",
     "esbuild": "0.19",
     "eslint": "8.48",

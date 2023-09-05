@@ -1,3 +1,4 @@
+import { CancellationSignal, CancellationToken } from '#/cancellation/index.js';
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
@@ -8,7 +9,6 @@ import type { ConstructorParameterMetadata } from '#/reflection/registry.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import type { Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
-import { CancellationSignal, CancellationToken } from '#/cancellation/index.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -417,7 +417,7 @@ export class Injector implements AsyncDisposable {
       }
 
       if (isTokenProvider(provider)) {
-        const innerToken = provider.useToken ?? provider.useTokenProvider();
+        const innerToken = (provider.useToken ?? provider.useTokenProvider()) as InjectionToken<T>;
         const arg = resolveArgument ?? provider.defaultArgument ?? provider.defaultArgumentProvider?.();
         injectionContext.argument = arg;
 

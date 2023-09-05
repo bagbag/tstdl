@@ -1,5 +1,6 @@
 import { Injector } from '#/injector/injector.js';
-import type { Type } from '#/types.js';
+import type { OneOrMany, Type } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { HttpClientOptions } from './http-client-options.js';
 import { HttpClientAdapter } from './http-client.adapter.js';
@@ -12,7 +13,7 @@ export type HttpClientModuleConfig = HttpClientOptions & {
   /**
    * middlewares to add
    */
-  middleware?: HttpClientMiddleware[]
+  middleware?: OneOrMany<HttpClientMiddleware>
 };
 
 let options: HttpClientOptions = {};
@@ -29,8 +30,8 @@ export function configureHttpClient({ adapter, middleware, ...rest }: HttpClient
   };
 
   if (isDefined(middleware)) {
-    for (const m of middleware) {
-      Injector.register(HTTP_CLIENT_MIDDLEWARE, { useToken: m }, { multi: true });
+    for (const m of toArray(middleware)) {
+      Injector.register(HTTP_CLIENT_MIDDLEWARE, { useValue: m }, { multi: true });
     }
   }
 

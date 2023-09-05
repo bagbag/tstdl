@@ -8,6 +8,7 @@ import { isDefined, isObject, isString } from '#/utils/type-guards.js';
 import { LogLevel } from '../level.js';
 import type { LogErrorOptions, LoggerArgument, LoggerForkOptions } from '../logger.js';
 import { Logger } from '../logger.js';
+import { LOG_LEVEL } from '../tokens.js';
 
 const consoleLevelFuncMap: Record<LogLevel, keyof PickBy<typeof console, (message: string) => void>> = {
   [LogLevel.Error]: 'error',
@@ -22,10 +23,10 @@ const consoleLevelFuncMap: Record<LogLevel, keyof PickBy<typeof console, (messag
   provider: {
     useFactory: (argument, context) => {
       if (isObject(argument)) {
-        return new ConsoleLogger(argument.level ?? context.resolve(LogLevel), argument.module, argument.prefix);
+        return new ConsoleLogger(argument.level ?? context.resolve(LOG_LEVEL), argument.module, argument.prefix);
       }
 
-      return new ConsoleLogger(context.resolve(LogLevel), argument, undefined);
+      return new ConsoleLogger(context.resolve(LOG_LEVEL), argument, undefined);
     }
   }
 })

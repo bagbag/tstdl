@@ -1,5 +1,5 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response.js';
-import { InjectAll, InjectArg, Optional, Singleton, resolveArgumentType } from '#/injector/index.js';
+import { Singleton, inject, injectArgument, resolveArgumentType } from '#/injector/index.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import type { OneOrMany, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
@@ -14,39 +14,33 @@ import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
 import type { HttpMethod, HttpValue } from '../types.js';
 import { normalizeHttpValue, normalizeSingleHttpValue } from '../types.js';
-import { HttpClientOptions } from './http-client-options.js';
+import type { HttpClientOptions } from './http-client-options.js';
 import type { HttpClientRequestOptions } from './http-client-request.js';
 import { HttpClientRequest } from './http-client-request.js';
 import type { HttpClientResponse } from './http-client-response.js';
 import { HttpClientAdapter } from './http-client.adapter.js';
 import type { HttpClientHandler, HttpClientMiddleware, HttpClientMiddlewareNext } from './middleware.js';
-import { HTTP_CLIENT_MIDDLEWARE } from './tokens.js';
+import { HTTP_CLIENT_MIDDLEWARES } from './tokens.js';
 
 export type HttpClientArgument = HttpClientOptions;
 
 @Singleton()
 export class HttpClient implements Resolvable<HttpClientArgument> {
-  private readonly adapter: HttpClientAdapter;
-  private readonly headers: HttpHeaders;
-  private readonly middleware: HttpClientMiddleware[];
+  private readonly adapter = inject(HttpClientAdapter);
+  private readonly middleware = inject(HTTP_CLIENT_MIDDLEWARES);
+  private readonly headers = new HttpHeaders();
   private readonly internalMiddleware: HttpClientMiddleware[];
 
   private callHandler: HttpClientHandler;
 
-  readonly options: HttpClientOptions;
+  readonly options = injectArgument(this, { optional: true }) ?? {};
 
   declare readonly [resolveArgumentType]: HttpClientOptions;
-  constructor(adapter: HttpClientAdapter, @Optional() @InjectArg() options: HttpClientOptions = {}, @InjectAll(HTTP_CLIENT_MIDDLEWARE) @Optional() middlewares: HttpClientMiddleware[] = []) {
-    this.adapter = adapter;
-    this.options = options;
-
-    this.middleware = middlewares;
-    this.headers = new HttpHeaders();
-
+  constructor() {
     this.internalMiddleware = [
-      getBuildRequestUrlMiddleware(options.baseUrl),
+      getBuildRequestUrlMiddleware(this.options.baseUrl),
       addRequestHeadersMiddleware,
-      ...((options.enableErrorHandling ?? true) ? [errorMiddleware] : [])
+      ...((this.options.enableErrorHandling ?? true) ? [errorMiddleware] : [])
     ];
 
     this.updateHandlers();

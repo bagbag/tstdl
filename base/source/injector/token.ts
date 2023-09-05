@@ -4,9 +4,9 @@ import { isFunction } from '#/utils/type-guards.js';
 declare const type: unique symbol;
 declare const argument: unique symbol;
 
-export type ArgumentedInjectionToken<T, A> = SimpleInjectionToken<T> & { [argument]: A };
+export type SimpleInjectionToken<T> = AbstractConstructor<T>;
 
-export type SimpleInjectionToken<T> = AbstractConstructor<T> | object;
+export type ArgumentedInjectionToken<T, A> = SimpleInjectionToken<T> & { [argument]: A };
 
 export type InjectionToken<T = any, A = any> = SimpleInjectionToken<T> | ArgumentedInjectionToken<T, A> | ReifyingInjectionToken<T, A>;
 

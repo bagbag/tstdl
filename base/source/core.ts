@@ -5,6 +5,7 @@ import { injectionToken } from './injector/token.js';
 import { ConsoleLogger } from './logger/console/logger.js';
 import type { LoggerArgument } from './logger/index.js';
 import { LogLevel, Logger } from './logger/index.js';
+import { LOG_LEVEL } from './logger/tokens.js';
 import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined, isUndefined } from './utils/type-guards.js';
@@ -85,8 +86,8 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
 
   Injector.register(Logger, { useToken: config.logger ?? ConsoleLogger });
 
-  Injector.registerSingleton<LogLevel, LogLevel>(
-    LogLevel,
+  Injector.register<LogLevel, LogLevel>(
+    LOG_LEVEL,
     { useFactory: (level) => assertDefinedPass(level, 'LogLevel argument not provided') },
     { defaultArgumentProvider: () => config.logLevel ?? LogLevel.Trace }
   );
@@ -97,5 +98,5 @@ export function configureTstdl(config: CoreConfiguration = {}): void {
 }
 
 Injector.register(Logger, { useToken: ConsoleLogger });
-Injector.register(LogLevel, { useValue: LogLevel.Trace });
+Injector.register(LOG_LEVEL, { useValue: LogLevel.Trace });
 Injector.register(CORE_LOGGER, { useToken: Logger, defaultArgumentProvider: () => coreLogPrefix });

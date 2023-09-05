@@ -26,14 +26,11 @@ export type ValueProvider<T = any> = {
 };
 
 export type TokenProvider<T = any, A = any, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & (
-  | { useToken: InjectionToken<T, A>, useTokenProvider?: undefined }
-  | { useToken?: undefined, useTokenProvider: () => InjectionToken<T, A> }
-) & {
-  /**
-   * whether to resolve all providers registered for the token
-   */
-  resolveAll?: boolean
-};
+  | { useToken: InjectionToken<T, A>, useTokenProvider?: undefined, resolveAll?: false }
+  | { useToken?: undefined, useTokenProvider: () => InjectionToken<T, A>, resolveAll?: false }
+  | { useToken: InjectionToken<T extends (infer U)[] ? U : T, A>, useTokenProvider?: undefined, resolveAll: true }
+  | { useToken?: undefined, useTokenProvider: () => InjectionToken<T extends (infer U)[] ? U : T, A>, resolveAll: true }
+);
 
 export type FactoryProvider<T = any, A = unknown, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
   useFactory: Factory<T, A, D>
@@ -47,8 +44,10 @@ export function valueProvider<T>(value: T, options?: TypedOmit<ValueProvider<T>,
   return { useValue: value, ...options };
 }
 
+export function tokenProvider<T, A, D extends Record>(token: InjectionToken<T, A>, options: TypedOmit<TokenProvider<T, A, D>, 'useToken' | 'useTokenProvider'> & { resolveAll: true }): TokenProvider<T[]>;
+export function tokenProvider<T, A, D extends Record>(token: InjectionToken<T, A>, options?: TypedOmit<TokenProvider<T, A, D>, 'useToken' | 'useTokenProvider'>): TokenProvider<T>;
 export function tokenProvider<T, A, D extends Record>(token: InjectionToken<T, A>, options?: TypedOmit<TokenProvider<T, A, D>, 'useToken' | 'useTokenProvider'>): TokenProvider<T> {
-  return { useToken: token, ...options };
+  return { useToken: token, ...options } as TokenProvider<T>;
 }
 
 export function factoryProvider<T, A, D extends Record>(factory: Factory<T, A, D>, options?: TypedOmit<FactoryProvider<T, A, D>, 'useFactory'>): FactoryProvider<T, A, D> {

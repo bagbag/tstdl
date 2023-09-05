@@ -1,4 +1,6 @@
-import { assertDefined, isNotNull } from '#/utils/type-guards.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { assertDefined, isArray, isNotNull } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';
 import type { Resolvable, ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
@@ -22,6 +24,14 @@ export type InjectionContext = {
   injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T[]>
 };
 
+export type InjectManyArrayItem<T, A> = [token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions];
+export type InjectManyItem<T, A> = InjectionToken<T, A> | InjectManyArrayItem<T, A>;
+export type InjectManyItemReturnType<T extends InjectManyItem<any, any>> = T extends InjectManyItem<infer U, any>
+  ? U | (T extends (InjectManyArrayItem<any, any> & [any, any, { optional: true }]) ? undefined : never)
+  : never;
+
+export type InjectManyReturnType<T extends InjectManyItem<any, any>[]> = { [I in keyof T]: InjectManyItemReturnType<T[I]> };
+
 let currentInjectionContext: InjectionContext | null = null;
 
 /**
@@ -32,10 +42,20 @@ let currentInjectionContext: InjectionContext | null = null;
  * @param options resolve options
  */
 export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions & { optional: true }): T | undefined;
-export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T;
+export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions & { optional?: false }): T;
 export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): T {
   assertInInjectionContext(inject);
   return currentInjectionContext!.inject(token, argument, options);
+}
+
+/**
+ * Resolves tokens using the {@link Injector} of the current injection context
+ *
+ * @param token tokens to resolve
+ */
+export function injectMany<T extends InjectManyItem<any, any>[]>(...tokens: T): InjectManyReturnType<T> {
+  assertInInjectionContext(inject);
+  return tokens.map((item): any => (isArray(item) ? currentInjectionContext!.inject(item[0], item[1], item[2]) : currentInjectionContext!.inject(item))) as InjectManyReturnType<T>;
 }
 
 /**
@@ -50,6 +70,19 @@ export async function injectAsync<T = unknown, A = unknown>(token: InjectionToke
 export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions): Promise<T> {
   assertInInjectionContext(inject);
   return currentInjectionContext!.injectAsync(token, argument, options);
+}
+
+/**
+ * Resolves tokens using the {@link Injector} of the current injection context
+ *
+ * @param token tokens to resolve
+ */
+export async function injectManyAsync<T extends InjectManyItem<any, any>[]>(...tokens: T): Promise<InjectManyReturnType<T>> {
+  assertInInjectionContext(inject);
+
+  return toArrayAsync(
+    mapAsync(tokens, async (item) => (isArray(item) ? currentInjectionContext!.injectAsync(item[0], item[1], item[2]) : currentInjectionContext!.injectAsync(item)))
+  ) as InjectManyReturnType<T>;
 }
 
 /**
