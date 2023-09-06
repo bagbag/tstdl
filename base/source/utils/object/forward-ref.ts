@@ -7,15 +7,21 @@ import { lazyObject } from './lazy-property.js';
 
 declare const isForwardRef: unique symbol;
 
+export type ForwardRefTypeHint = 'object' | 'function';
+
 type ForwardRefContext<T extends object = object> = {
-  reference: T | undefined
+  reference: T | undefined,
+  typeHint?: ForwardRefTypeHint
 };
 
 const contexts = new WeakMap<any, ForwardRefContext>();
 
 export type ForwardRefOptions<T extends object = object> = {
   reference?: T,
-  initializer?: () => T
+  initializer?: () => T,
+
+  /** Due to limitations of Proxy, there can be some issues if proxy is created with a target of the "wrong" type. If possible, you should specify the type is forward ref is going to forward to. */
+  typeHint?: ForwardRefTypeHint
 };
 
 export type ForwardRef<T extends object = object> = T & { [isForwardRef]: true };
@@ -60,7 +66,9 @@ export const ForwardRef = {
 };
 
 function getForwardRefProxy<T extends object>(context: ForwardRefContext): ForwardRef<T> {
-  function forwardRef(): void { /* noop */ }
+  const target = (context.typeHint == 'function')
+    ? function forwardRef(): void { /* noop */ } as T
+    : { forwardRef: true } as T;
 
   const handler: ProxyHandler<T> = {};
 
@@ -80,7 +88,7 @@ function getForwardRefProxy<T extends object>(context: ForwardRefContext): Forwa
     }[method];
   }
 
-  return new Proxy(forwardRef as any, handler) as ForwardRef<T>;
+  return new Proxy(target, handler) as ForwardRef<T>;
 }
 
 function getContext(options?: ForwardRefOptions): ForwardRefContext {

@@ -14,6 +14,7 @@ export function resolveValueOrProvider<T>(valueOrProvider: ValueOrProvider<T>): 
 
   return valueOrProvider as T;
 }
+
 export async function resolveAsyncValueOrProvider<T>(valueOrProvider: ValueOrAsyncProvider<T>): Promise<T> {
   if (isFunction(valueOrProvider)) {
     return (valueOrProvider as AsyncProvider<T>)();

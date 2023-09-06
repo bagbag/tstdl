@@ -27,7 +27,7 @@ export function configureAuthenticationClient(config: AuthenticationModuleConfig
   if (isDefined(config.registerMiddleware)) {
     (injector ?? Injector).register(HTTP_CLIENT_MIDDLEWARE, {
       useFactory(_, context) {
-        const authenticationService = context.resolve(AuthenticationService, undefined, { forwardRef: true });
+        const authenticationService = context.resolve(AuthenticationService, undefined, { forwardRef: true, forwardRefTypeHint: 'object' });
         return waitForAuthenticationCredentialsMiddleware(authenticationService);
       }
     }, { multi: true });

@@ -324,7 +324,7 @@ export class Injector implements AsyncDisposable {
     this.assertNotDisposed();
 
     if (isDefined(options.forwardRef) && (options.forwardRef != false)) {
-      const forwardRef = ForwardRef.create<T[]>();
+      const forwardRef = ForwardRef.create<T[]>({ typeHint: options.forwardRefTypeHint });
       const forwardToken = isFunction(options.forwardRef) ? options.forwardRef() : token;
 
       context.forwardRefQueue.add(() => ForwardRef.setRef(forwardRef, this._resolveAll(forwardToken, argument, { ...options, forwardRef: false }, context, chain.markAsForwardRef(forwardToken))));
@@ -501,7 +501,7 @@ export class Injector implements AsyncDisposable {
     }
 
     const resolveFn = (injectMetadata.resolveAll == true) ? '_resolveAll' : '_resolve';
-    const resolved = this[resolveFn](injectToken, parameterResolveArgument, { optional: injectMetadata.optional, forwardRef }, context, getChain(injectToken));
+    const resolved = this[resolveFn](injectToken, parameterResolveArgument, { optional: injectMetadata.optional, forwardRef, forwardRefTypeHint: injectMetadata.forwardRefTypeHint }, context, getChain(injectToken));
     return isDefined(injectMetadata.mapper) ? injectMetadata.mapper(resolved) : resolved;
   }
 
