@@ -1,7 +1,8 @@
 import type { Observable } from 'rxjs';
 import { isObservable } from 'rxjs';
 
-import { inject } from '#/injector/inject.js';
+import { getGlobalInjector } from '#/core.js';
+import { inject, isInInjectionContext } from '#/injector/inject.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, isSignal, toObservable, toSignal } from '#/signals/api.js';
 import { switchMap } from '#/signals/switch-map.js';
@@ -15,7 +16,9 @@ export type DynamicText = ReactiveValue<LocalizableText>;
 
 export const missingLocalizationKeyText = '[MISSING LOCALIZATION KEY]';
 
-export function resolveDynamicText(text: DynamicText, localizationService: LocalizationService = inject(LocalizationService)): Signal<string> {
+export function resolveDynamicText(text: DynamicText, localizationService?: LocalizationService): Signal<string> {
+  const resolvedLocalizationService = localizationService ?? (isInInjectionContext() ? inject(LocalizationService) : getGlobalInjector().resolve(LocalizationService));
+
   const localizableTextSignal =
     isSignal(text) ? text
       : isObservable(text) ? toSignal(text.pipe(runInUntracked()), { initialValue: missingLocalizationKeyText })
@@ -23,7 +26,7 @@ export function resolveDynamicText(text: DynamicText, localizationService: Local
 
   return switchMap(() => {
     const localizableText = localizableTextSignal();
-    return isString(localizableText) ? computed(() => localizableText) : localizationService.localize(localizableText);
+    return isString(localizableText) ? computed(() => localizableText) : resolvedLocalizationService.localize(localizableText);
   });
 }
 
