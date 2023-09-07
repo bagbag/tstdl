@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { Watch } from './watch.js';
+import type { Watch } from './watch.js';
+import { watch } from './watch.js';
 
 /**
  * An effect can, optionally, register a cleanup function. If registered, the cleanup is executed
@@ -29,13 +30,13 @@ export class EffectManager {
 
   private pendingFlush: boolean;
 
-  create(effectFn: (onCleanup: (cleanupFn: EffectCleanupFn) => void) => void, { allowSignalWrites = false }: CreateEffectOptions = {}): EffectRef {
-    const watch = new Watch(effectFn, (watch) => {
-      if (!this.all.has(watch)) {
+  create(effectFn: (onCleanup: (cleanupFn: EffectCleanupFn) => void) => void, allowSignalWrites: boolean): EffectRef {
+    const w = watch(effectFn, () => {
+      if (!this.all.has(w)) {
         return;
       }
 
-      this.queue.add(watch);
+      this.queue.add(w);
 
       if (!this.pendingFlush) {
         this.pendingFlush = true;
@@ -47,14 +48,15 @@ export class EffectManager {
       }
     }, allowSignalWrites);
 
-    this.all.add(watch);
+    this.all.add(w);
 
-    watch.notify();
+    // Effects start dirty.
+    w.notify();
 
-    const destroy = (): void => {
-      watch.cleanup();
-      this.all.delete(watch);
-      this.queue.delete(watch);
+    const destroy = () => {
+      w.cleanup();
+      this.all.delete(w);
+      this.queue.delete(w);
     };
 
     return {
@@ -63,13 +65,13 @@ export class EffectManager {
   }
 
   flush(): void {
-    if (this.queue.size == 0) {
+    if (this.queue.size === 0) {
       return;
     }
 
-    for (const watch of this.queue) {
-      this.queue.delete(watch);
-      watch.run();
+    for (const w of this.queue) {
+      this.queue.delete(w);
+      w.run();
     }
   }
 
@@ -107,5 +109,5 @@ const effectManager = new EffectManager();
  * Create a global `Effect` for the given reactive function.
  */
 export function effect(effectFn: (onCleanup: EffectCleanupRegisterFn) => void, options?: CreateEffectOptions): EffectRef {
-  return effectManager.create(effectFn, options);
+  return effectManager.create(effectFn, options?.allowSignalWrites ?? false);
 }
