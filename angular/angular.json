@@ -90,7 +90,8 @@
             "index": "projects/test/src/index.html",
             "main": "projects/test/src/main.ts",
             "polyfills": [
-              "zone.js"
+              "zone.js",
+              "@tstdl/base/polyfills.js"
             ],
             "tsConfig": "projects/test/tsconfig.app.json",
             "inlineStyleLanguage": "scss",

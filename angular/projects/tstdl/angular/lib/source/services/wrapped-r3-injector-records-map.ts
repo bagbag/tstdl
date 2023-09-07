@@ -92,8 +92,8 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
     try {
       this.#processingProvider = true;
 
-      if (!this.records.has(key) && this.#injector.hasRegistration(key)) {
-        this.r3Injector.processProvider({ provide: key, useFactory: (): any => this.#injector.resolve(key) });
+      if (!this.records.has(key) && this.#injector.hasRegistration(key as any)) {
+        this.r3Injector.processProvider({ provide: key, useFactory: (): any => this.#injector.resolve(key as any) });
       }
     }
     finally {
