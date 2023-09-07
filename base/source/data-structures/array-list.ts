@@ -104,7 +104,10 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
 
   protected _removeAt(index: number): T {
     if (index == 0) {
-      return this.backingArray.shift()!;
+      const value = this.backingArray.shift()!;
+      this.updateSize();
+
+      return value;
     }
 
     return this.removeManyAt(index, 1)[0]!;
