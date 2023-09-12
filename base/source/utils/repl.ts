@@ -1,6 +1,6 @@
 import type { ReplOptions } from 'node:repl';
-import { start as startRepl } from 'node:repl';
 
+import { dynamicImport } from '#/import.js';
 import type { Record } from '#/types.js';
 import { objectEntries } from './object/object.js';
 import { isDefined } from './type-guards.js';
@@ -10,6 +10,7 @@ import { isDefined } from './type-guards.js';
  * @param context context to set the repl context to
  */
 export async function repl(options?: ReplOptions & { context?: Record<string> }): Promise<void> {
+  const { start: startRepl } = await dynamicImport<typeof import('node:repl')>('node:repl');
   const replServer = startRepl(options);
 
   if (isDefined(options?.context)) {

@@ -1,7 +1,7 @@
 import { JsonPath } from '#/json-path/json-path.js';
 import type { Record, StringMap } from '#/types.js';
 import { clone } from '../clone.js';
-import { isArray, isDate, isDefined, isFunction, isNotNull, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards.js';
+import { isArray, isDate, isDefined, isFunction, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards.js';
 import { getCachedDereference } from './dereference.js';
 import { hasOwnProperty, mapObjectValues, objectKeys } from './object.js';
 
@@ -79,7 +79,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
         }
       }
     }
-    else if (isObject(node) && isNotNull(node)) {
+    else if (isObject(node)) {
       for (const key of objectKeys(node)) {
         const ref = getRef((node as StringMap)[key]);
 

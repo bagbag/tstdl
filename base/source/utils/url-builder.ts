@@ -1,4 +1,5 @@
-import { normalizeHttpValue } from '#/http/types.js';
+import type { HttpValue } from '#/http/types.js';
+import { normalizeHttpValue, normalizeSingleHttpValue } from '#/http/types.js';
 import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types.js';
 import { memoizeSingle } from './function/memoize.js';
 import { isArray, isDefined, isObject, isUndefined } from './type-guards.js';
@@ -61,11 +62,13 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
           throw new Error(`Url parameter ${part.value} not provided. (${url})`);
         }
 
-        if (isObject(value)) {
+        if (isObject(value) && !isArray(value)) {
           throw new Error(`Url parameter ${part.value} is an object. (${url})`);
         }
 
-        parsedUrl += isArray(value) ? value.map(normalizeHttpValue).join(arraySeparator) : normalizeHttpValue(value);
+        parsedUrl += isArray(value)
+          ? (value as HttpValue[]).map(normalizeHttpValue).join(arraySeparator)
+          : normalizeSingleHttpValue(value);
       }
     }
 

@@ -1,7 +1,8 @@
-import { isBrowser } from '#/environment.js';
 import type * as NodeWorkerThreads from 'node:worker_threads';
 import type { Observable } from 'rxjs';
 import { fromEvent, map } from 'rxjs';
+
+import { isBrowser } from '#/environment.js';
 import type { RpcMessage } from '../model.js';
 import { RpcEndpoint } from '../rpc-endpoint.js';
 

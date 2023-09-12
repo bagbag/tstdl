@@ -2,8 +2,7 @@ import type { PipeTransform } from '@angular/core';
 import { Injector, Pipe, computed, inject, runInInjectionContext, signal, untracked } from '@angular/core';
 import { switchMap } from '@tstdl/base/signals';
 import { LocalizationService, missingLocalizationKeyText, resolveDynamicText, type DynamicText } from '@tstdl/base/text';
-import { isNull } from '@tstdl/base/utils';
-import { strictEquals } from '@tstdl/base/utils/equals';
+import { isNull, strictEquals } from '@tstdl/base/utils';
 
 @Pipe({
   name: 'dynamicText',

@@ -6,7 +6,7 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
-import type { Enumeration, EnumerationArray, EnumerationObject, EnumerationValue, Record } from '#/types.js';
+import type { Enumeration, EnumerationArray, EnumerationValue, Record } from '#/types.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoize } from '#/utils/function/memoize.js';
 import { deepObjectEntries, hasOwnProperty } from '#/utils/object/object.js';
@@ -297,12 +297,12 @@ export function enumerationLocalization<T extends Enumeration>(enumeration: T, n
 }
 
 function _autoEnumerationLocalization<T extends Enumeration>(enumeration: T, name?: LocalizeItem): EnumerationLocalizationEntry<T> {
-  if (isObject(enumeration)) {
-    return [enumeration, name, Object.fromEntries(enumEntries(enumeration as EnumerationObject).map(([key, value]) => [value, key])) as EnumerationLocalization<T>];
+  if (isArray(enumeration)) {
+    const arrayEntries = (enumeration as EnumerationArray).map((value) => [value, value] as const);
+    return [enumeration, name, Object.fromEntries(arrayEntries) as EnumerationLocalization<T>];
   }
 
-  const arrayEntries = (enumeration as EnumerationArray).map((value) => [value, value] as const);
-  return [enumeration, name, Object.fromEntries(arrayEntries) as EnumerationLocalization<T>];
+  return [enumeration, name, Object.fromEntries(enumEntries(enumeration).map(([key, value]) => [value, key])) as EnumerationLocalization<T>];
 }
 
 function buildMappedLocalization({ language, keys, enums }: Localization): MappedLocalization {

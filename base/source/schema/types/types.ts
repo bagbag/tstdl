@@ -227,14 +227,11 @@ export function isTypeSchema(schema: any): schema is TypeSchema {
 
   const type = (schema as TypeSchema).type;
 
-  return isObject(schema)
-    && (
-      isFunction(type)
-      || (isObject(type) && isFunction(type.deferred))
-      || (type == 'undefined')
-      || (type == 'null')
-      || (type == 'any')
-    );
+  return isFunction(type)
+    || (isObject(type) && isFunction(type.deferred))
+    || (type == 'undefined')
+    || (type == 'null')
+    || (type == 'any');
 }
 
 export function isDeferredValueType<T>(value: SchemaTestable<T>): value is DeferredValueType<T>;

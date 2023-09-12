@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { decycle } from '@tstdl/base/utils/object/decycle';
+import { decycle } from '@tstdl/base/utils/object';
 
 @Pipe({
   name: 'decycle',

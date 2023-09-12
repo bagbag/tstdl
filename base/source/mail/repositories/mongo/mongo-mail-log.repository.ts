@@ -3,7 +3,7 @@ import { Collection, MongoEntityRepository, noopTransformer } from '#/database/m
 import { ForwardArg, Singleton, resolveArgumentType } from '#/injector/index.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/index.js';
-import type { MailLog } from '../models/mail-log.model.js';
+import type { MailLog } from '../../models/mail-log.model.js';
 
 export type MongoMailLogRepositoryConfig = {
   config?: MongoMailLogRepositoryArgument

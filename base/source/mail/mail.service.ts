@@ -6,7 +6,7 @@ import type { TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { MailLogRepository } from './mail-log.repository.js';
+import { MailLogRepository } from './repositories/mail-log.repository.js';
 import { MailClient } from './mail.client.js';
 import type { DefaultMailData, MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';

@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import type { CancellationSignal } from '@tstdl/base/cancellation';
 import { CancellationToken } from '@tstdl/base/cancellation';
 import type { TypedOmit } from '@tstdl/base/types';
+import { isUndefined } from '@tstdl/base/utils';
 import { hasOwnProperty } from '@tstdl/base/utils/object';
-import { isUndefined } from '@tstdl/base/utils/type-guards';
 import type { Observable } from 'rxjs';
 import { ReplaySubject, Subject, defer, filter, map, startWith, switchMap } from 'rxjs';
 

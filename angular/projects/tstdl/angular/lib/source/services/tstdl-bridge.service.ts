@@ -4,7 +4,7 @@ import { Injectable, Injector, assertInInjectionContext, computed, effect, injec
 import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
-import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
+import { HttpClientAdapter } from '@tstdl/base/http';
 import { Injector as TstdlInjector } from '@tstdl/base/injector';
 import { configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';

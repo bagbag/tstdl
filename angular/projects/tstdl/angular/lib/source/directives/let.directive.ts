@@ -1,8 +1,8 @@
 import type { EmbeddedViewRef, OnDestroy, Signal } from '@angular/core';
 import { ChangeDetectorRef, Directive, ErrorHandler, Injector, Input, TemplateRef, ViewContainerRef, inject, isSignal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers/is-async-iterable';
-import { isFunction, isUndefined } from '@tstdl/base/utils/type-guards';
+import { isFunction, isUndefined } from '@tstdl/base/utils';
+import { isAsyncIterable } from '@tstdl/base/utils/async-iterable-helpers';
 import type { Observable, ReadableStreamLike } from 'rxjs';
 import { EMPTY, ReplaySubject, catchError, distinctUntilChanged, from, isObservable, of, switchMap, tap } from 'rxjs';
 

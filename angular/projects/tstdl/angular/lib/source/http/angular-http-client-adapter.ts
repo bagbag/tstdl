@@ -1,12 +1,11 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
 import { Injector } from '@angular/core';
-import { HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
+import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
-import { HttpClientAdapter } from '@tstdl/base/http/client/http-client.adapter';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
 import type { StringMap } from '@tstdl/base/types';
+import { isDefined, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
-import { isDefined, isUndefined } from '@tstdl/base/utils/type-guards';
 import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');

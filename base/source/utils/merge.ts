@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
 import type { Merge, Record } from '#/types.js';
-import { assertArray, assertMap, assertObject, assertSet, isArray, isMap, isObject, isSet, isUndefined } from './type-guards.js';
+import { assertArray, assertLiteralObject, assertMap, assertSet, isArray, isLiteralObject, isMap, isSet, isUndefined } from './type-guards.js';
 
 type BaseType = Record | any[] | Map<any, any> | Set<any>;
 
@@ -19,8 +19,8 @@ export function merge<A extends BaseType, B extends BaseType>(a: A | undefined, 
     return a as any;
   }
 
-  if (isObject(a)) {
-    assertObject(b, 'Cannot merge object into non-object.');
+  if (isLiteralObject(a)) {
+    assertLiteralObject(b, 'Cannot merge object into non-object.');
     return { ...a, ...b } as any;
   }
   else if (isArray(a)) {

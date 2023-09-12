@@ -1,302 +1,394 @@
-/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line */
+/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line, no-eq-null */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
-import type { AbstractConstructor, TypedArray } from '#/types.js';
+import type { AbstractConstructor, JsonPrimitive, Primitive, TypedArray } from '#/types.js';
+import type { PascalCase } from 'type-fest';
 import { AssertionError } from '../error/assertion.error.js';
-
-export type InferIsType<T> = T extends (value: any) => value is infer R ? R : never;
-export type InferIsNotType<ValueType, T> = T extends (value: any) => value is infer R ? Exclude<ValueType, R> : never;
 
 export type AssertionMessage = string | (() => string);
 
+export type IsFunction<T> = <U extends T = T>(value: any) => value is U;
+export type IsNotFunction<T> = <V>(value: V) => value is Exclude<V, T>;
+export type AssertFunction<T> = <U extends T = T>(value: any, message?: AssertionMessage) => asserts value is U;
+export type AssertNotFunction<T> = <V>(value: V, message?: AssertionMessage) => asserts value is Exclude<V, T>;
+export type AssertPassFunction<T> = <U extends T = T>(value: any, message?: AssertionMessage) => U;
+export type AssertNotPassFunction<T> = <V>(value: V, message?: AssertionMessage) => Exclude<V, T>;
+
+export type GuardFunctions<N extends string, T> =
+  & { [P in `is${PascalCase<N>}`]: IsFunction<T> }
+  & { [P in `isNot${PascalCase<N>}`]: IsNotFunction<T> }
+  & { [P in `assert${PascalCase<N>}`]: AssertFunction<T> }
+  & { [P in `assertNot${PascalCase<N>}`]: AssertNotFunction<T> }
+  & { [P in `assert${PascalCase<N>}Pass`]: AssertPassFunction<T> }
+  & { [P in `assertNot${PascalCase<N>}Pass`]: AssertNotPassFunction<T> };
+
 export function assert(condition: boolean, message: AssertionMessage = 'assertion failed'): asserts condition {
   if (!condition) {
-    throw new AssertionError(isFunction(message) ? message() : message);
+    throw new AssertionError((typeof message == 'function') ? message() : message);
   }
 }
 
 export function assertNot(condition: boolean, message: AssertionMessage = 'assertion failed'): asserts condition {
   if (condition) {
-    throw new AssertionError(isFunction(message) ? message() : message);
+    throw new AssertionError((typeof message == 'function') ? message() : message);
   }
 }
 
-export function isType<T>(type: AbstractConstructor<T>, value: any): value is T { return (value instanceof type); }
-export function isNotType<T>(type: AbstractConstructor<T>, value: any): value is InferIsNotType<T, typeof isType> { return !isType(type, value); }
-export function assertType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Expected value to be of type ${type.name}.`): asserts value is T { assert(isType(type, value), message); }
-export function assertNotType<T>(type: AbstractConstructor<T>, value: any, message: AssertionMessage = () => `Expected value to be not of type ${type.name}.`): asserts value is InferIsNotType<T, typeof isType> { assert(isNotType(type, value), message); }
-export function assertTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): T { assertType(type, value, message); return value; }
-export function assertNotTypePass<T>(type: AbstractConstructor<T>, value: any, message?: AssertionMessage): InferIsNotType<T, typeof isType> { assertNotType(type, value, message); return value; }
+export function createGuards<N extends string, T>(name: N, testFn: (value: any) => value is T): GuardFunctions<N, T> {
+  const normalizedName = name.split(' ').map((slice) => slice[0]!.toUpperCase() + slice.slice(1)).join('');
+  const defaultMessage = `Expected value to be ${name}.`;
+  const defaultNotMessage = `Expected value to not be ${name}.`;
 
-export function isUndefined(value: any): value is undefined | void { return value === undefined; }
-export function isDefined<T>(value: T): value is InferIsNotType<T, typeof isUndefined> { return value !== undefined; }
-export function assertUndefined(value: any, message: AssertionMessage = 'Expected value to be undefined.'): asserts value is InferIsType<typeof isUndefined> { assert(isUndefined(value), message); }
-export function assertDefined<T>(value: T, message: AssertionMessage = 'Expected value to not be undefined.'): asserts value is InferIsNotType<T, typeof isUndefined> { assert(isDefined(value), message); }
-export function assertUndefinedPass(value: any, message?: AssertionMessage): InferIsType<typeof isUndefined> { assertUndefined(value, message); return value; }
-export function assertDefinedPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUndefined> { assertDefined(value, message); return value; }
+  return {
+    [`is${normalizedName}`](value: any): value is T {
+      return testFn(value);
+    },
+    [`isNot${normalizedName}`]<V>(value: V): value is Exclude<V, T> {
+      return !testFn(value);
+    },
+    [`assert${normalizedName}`](value: any, message: AssertionMessage = defaultMessage): asserts value is T {
+      assert(testFn(value), message);
+    },
+    [`assertNot${normalizedName}`]<V>(value: V, message: AssertionMessage = defaultNotMessage): asserts value is Exclude<V, T> {
+      assertNot(testFn(value), message);
+    },
+    [`assert${normalizedName}Pass`](value: any, message: AssertionMessage = defaultMessage): T {
+      assert(testFn(value), message);
+      return value;
+    },
+    [`assertNot${normalizedName}Pass`]<V>(value: V, message: AssertionMessage = defaultNotMessage): Exclude<V, T> {
+      assertNot(testFn(value), message);
+      return value as Exclude<V, T>;
+    }
+  } as GuardFunctions<N, T>;
+}
 
-export function isNull(value: any): value is null { return value === null; }
-export function isNotNull<T>(value: T): value is InferIsNotType<T, typeof isNull> { return value !== null; }
-export function assertNull(value: any, message: AssertionMessage = 'Expected value to be null.'): asserts value is InferIsType<typeof isNull> { assert(isNull(value), message); }
-export function assertNotNull<T>(value: T, message: AssertionMessage = 'Expected value to not be null.'): asserts value is InferIsNotType<T, typeof isNull> { assert(isNotNull(value), message); }
-export function assertNullPass(value: any, message?: AssertionMessage): InferIsType<typeof isNull> { assertNull(value, message); return value; }
-export function assertNotNullPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isNull> { assertNotNull(value, message); return value; }
+export function createInstanceGuards<N extends string, T>(name: N, type: AbstractConstructor<T>): GuardFunctions<N, T> {
+  return createGuards(name, (value): value is T => value instanceof type);
+}
 
-export function isNullOrUndefined(value: any): value is null | undefined { return (value === null) || (value === undefined); }
-export function isNotNullOrUndefined<T>(value: T): value is InferIsNotType<T, typeof isNullOrUndefined> { return !isNullOrUndefined(value); }
-export function assertNullOrUndefined(value: any, message: AssertionMessage = 'Expected value to be null or undefined.'): asserts value is InferIsType<typeof isNullOrUndefined> { assert(isNullOrUndefined(value), message); }
-export function assertNotNullOrUndefined<T>(value: T, message: AssertionMessage = 'Expected value to not be null or undefined.'): asserts value is InferIsNotType<T, typeof isNullOrUndefined> { assert(isNotNullOrUndefined(value), message); }
-export function assertNullOrUndefinedPass(value: any, message?: AssertionMessage): InferIsType<typeof isNullOrUndefined> { assertNullOrUndefined(value, message); return value; }
-export function assertNotNullOrUndefinedPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isNullOrUndefined> { assertNotNullOrUndefined(value, message); return value; }
+const undefinedGuards = createGuards('undefined', (value): value is undefined => (value === undefined));
+export const isUndefined: IsFunction<undefined | void> = undefinedGuards.isUndefined;
+export const isDefined: IsNotFunction<undefined | void> = undefinedGuards.isNotUndefined;
+export const assertUndefined: AssertFunction<undefined | void> = undefinedGuards.assertUndefined;
+export const assertDefined: AssertNotFunction<undefined | void> = undefinedGuards.assertNotUndefined;
+export const assertUndefinedPass: AssertPassFunction<undefined | void> = undefinedGuards.assertUndefinedPass;
+export const assertDefinedPass: AssertNotPassFunction<undefined | void> = undefinedGuards.assertNotUndefinedPass;
 
-export function isNumber(value: any): value is number { return (typeof value == 'number'); }
-export function isNotNumber<T>(value: T): value is InferIsNotType<T, typeof isNumber> { return !isNumber(value); }
-export function assertNumber(value: any, message: AssertionMessage = 'Expected value to be number.'): asserts value is InferIsType<typeof isNumber> { assert(isNumber(value), message); }
-export function assertNotNumber<T>(value: T, message: AssertionMessage = 'Expected value to not be number.'): asserts value is InferIsNotType<T, typeof isNumber> { assert(isNotNumber(value), message); }
-export function assertNumberPass(value: any, message?: AssertionMessage): InferIsType<typeof isNumber> { assertNumber(value, message); return value; }
-export function assertNotNumberPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isNumber> { assertNotNumber(value, message); return value; }
+const nullGuards = createGuards('null', (value): value is null => (value === null));
+export const isNull: IsFunction<null> = nullGuards.isNull;
+export const isNotNull: IsNotFunction<null> = nullGuards.isNotNull;
+export const assertNull: AssertFunction<null> = nullGuards.assertNull;
+export const assertNotNull: AssertNotFunction<null> = nullGuards.assertNotNull;
+export const assertNullPass: AssertPassFunction<null> = nullGuards.assertNullPass;
+export const assertNotNullPass: AssertNotPassFunction<null> = nullGuards.assertNotNullPass;
 
-export function isString(value: any): value is string { return (typeof value == 'string'); }
-export function isNotString<T>(value: T): value is InferIsNotType<T, typeof isString> { return !isString(value); }
-export function assertString(value: any, message: AssertionMessage = 'Expected value to be string.'): asserts value is InferIsType<typeof isString> { assert(isString(value), message); }
-export function assertNotString<T>(value: T, message: AssertionMessage = 'Expected value to not be string.'): asserts value is InferIsNotType<T, typeof isString> { assert(isNotString(value), message); }
-export function assertStringPass(value: any, message?: AssertionMessage): InferIsType<typeof isString> { assertString(value, message); return value; }
-export function assertNotStringPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isString> { assertNotString(value, message); return value; }
+const nullOrUndefinedGuards = createGuards('null or undefined', (value): value is null | undefined => (value === null) || (value === undefined));
+export const isNullOrUndefined: IsFunction<null | undefined> = nullOrUndefinedGuards.isNullOrUndefined;
+export const isNotNullOrUndefined: IsNotFunction<null | undefined> = nullOrUndefinedGuards.isNotNullOrUndefined;
+export const assertNullOrUndefined: AssertFunction<null | undefined> = nullOrUndefinedGuards.assertNullOrUndefined;
+export const assertNotNullOrUndefined: AssertNotFunction<null | undefined> = nullOrUndefinedGuards.assertNotNullOrUndefined;
+export const assertNullOrUndefinedPass: AssertPassFunction<null | undefined> = nullOrUndefinedGuards.assertNullOrUndefinedPass;
+export const assertNotNullOrUndefinedPass: AssertNotPassFunction<null | undefined> = nullOrUndefinedGuards.assertNotNullOrUndefinedPass;
 
-export function isBoolean(value: any): value is boolean { return (typeof value == 'boolean'); }
-export function isNotBoolean<T>(value: T): value is InferIsNotType<T, typeof isBoolean> { return !isBoolean(value); }
-export function assertBoolean(value: any, message: AssertionMessage = 'Expected value to be boolean.'): asserts value is InferIsType<typeof isBoolean> { assert(isBoolean(value), message); }
-export function assertNotBoolean<T>(value: T, message: AssertionMessage = 'Expected value to not be boolean.'): asserts value is InferIsNotType<T, typeof isBoolean> { assert(isNotBoolean(value), message); }
-export function assertBooleanPass(value: any, message?: AssertionMessage): InferIsType<typeof isBoolean> { assertBoolean(value, message); return value; }
-export function assertNotBooleanPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBoolean> { assertNotBoolean(value, message); return value; }
+const numberGuards = createGuards('number', (value): value is number => (typeof value == 'number'));
+export const isNumber: IsFunction<number> = numberGuards.isNumber;
+export const isNotNumber: IsNotFunction<number> = numberGuards.isNotNumber;
+export const assertNumber: AssertFunction<number> = numberGuards.assertNumber;
+export const assertNotNumber: AssertNotFunction<number> = numberGuards.assertNotNumber;
+export const assertNumberPass: AssertPassFunction<number> = numberGuards.assertNumberPass;
+export const assertNotNumberPass: AssertNotPassFunction<number> = numberGuards.assertNotNumberPass;
 
-export function isBigInt(value: any): value is bigint { return (typeof value == 'bigint'); }
-export function isNotBigInt<T>(value: T): value is InferIsNotType<T, typeof isBigInt> { return !isBigInt(value); }
-export function assertBigInt(value: any, message: AssertionMessage = 'Expected value to be bigint.'): asserts value is InferIsType<typeof isBigInt> { assert(isBigInt(value), message); }
-export function assertNotBigInt<T>(value: T, message: AssertionMessage = 'Expected value to not be bigint.'): asserts value is InferIsNotType<T, typeof isBigInt> { assert(isNotBigInt(value), message); }
-export function assertBigIntPass(value: any, message?: AssertionMessage): InferIsType<typeof isBigInt> { assertBigInt(value, message); return value; }
-export function assertNotBigIntPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBigInt> { assertNotBigInt(value, message); return value; }
+const stringGuards = createGuards('string', (value): value is string => (typeof value == 'string'));
+export const isString: IsFunction<string> = stringGuards.isString;
+export const isNotString: IsNotFunction<string> = stringGuards.isNotString;
+export const assertString: AssertFunction<string> = stringGuards.assertString;
+export const assertNotString: AssertNotFunction<string> = stringGuards.assertNotString;
+export const assertStringPass: AssertPassFunction<string> = stringGuards.assertStringPass;
+export const assertNotStringPass: AssertNotPassFunction<string> = stringGuards.assertNotStringPass;
 
-export function isFunction<T extends Function = Function>(value: any): value is T { return (typeof value == 'function'); }
-export function isNotFunction<T>(value: T): value is InferIsNotType<T, typeof isFunction> { return !isFunction(value); }
-export function assertFunction<T extends Function = Function>(value: any, message: AssertionMessage = 'Expected value to be function.'): asserts value is InferIsType<typeof isFunction<T>> { assert(isFunction(value), message); }
-export function assertNotFunction<T>(value: T, message: AssertionMessage = 'Expected value to not be function.'): asserts value is InferIsNotType<T, typeof isFunction> { assert(isNotFunction(value), message); }
-export function assertFunctionPass<T extends Function = Function>(value: any, message?: AssertionMessage): InferIsType<typeof isFunction<T>> { assertFunction<T>(value, message); return value; }
-export function assertNotFunctionPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isFunction> { assertNotFunction(value, message); return value; }
+const booleanGuards = createGuards('boolean', (value): value is boolean => (typeof value == 'boolean'));
+export const isBoolean: IsFunction<boolean> = booleanGuards.isBoolean;
+export const isNotBoolean: IsNotFunction<boolean> = booleanGuards.isNotBoolean;
+export const assertBoolean: AssertFunction<boolean> = booleanGuards.assertBoolean;
+export const assertNotBoolean: AssertNotFunction<boolean> = booleanGuards.assertNotBoolean;
+export const assertBooleanPass: AssertPassFunction<boolean> = booleanGuards.assertBooleanPass;
+export const assertNotBooleanPass: AssertNotPassFunction<boolean> = booleanGuards.assertNotBooleanPass;
 
-export function isSymbol(value: any): value is symbol { return (typeof value == 'symbol'); }
-export function isNotSymbol<T>(value: T): value is InferIsNotType<T, typeof isSymbol> { return !isSymbol(value); }
-export function assertSymbol(value: any, message: AssertionMessage = 'Expected value to be symbol.'): asserts value is InferIsType<typeof isSymbol> { assert(isSymbol(value), message); }
-export function assertNotSymbol<T>(value: T, message: AssertionMessage = 'Expected value to not be symbol.'): asserts value is InferIsNotType<T, typeof isSymbol> { assert(isNotSymbol(value), message); }
-export function assertSymbolPass(value: any, message?: AssertionMessage): InferIsType<typeof isSymbol> { assertSymbol(value, message); return value; }
-export function assertNotSymbolPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isSymbol> { assertNotSymbol(value, message); return value; }
+const bigintGuards = createGuards('bigint', (value): value is bigint => (typeof value == 'bigint'));
+export const isBigInt: IsFunction<bigint> = bigintGuards.isBigint;
+export const isNotBigInt: IsNotFunction<bigint> = bigintGuards.isNotBigint;
+export const assertBigInt: AssertFunction<bigint> = bigintGuards.assertBigint;
+export const assertNotBigInt: AssertNotFunction<bigint> = bigintGuards.assertNotBigint;
+export const assertBigIntPass: AssertPassFunction<bigint> = bigintGuards.assertBigintPass;
+export const assertNotBigIntPass: AssertNotPassFunction<bigint> = bigintGuards.assertNotBigintPass;
 
-export function isObject<T extends object = object>(value: any): value is T { return (value as object | undefined)?.constructor == Object; }
-export function isNotObject<T>(value: T): value is InferIsNotType<T, typeof isObject> { return !isObject(value); }
-export function assertObject<T extends object = object>(value: any, message: AssertionMessage = 'Expected value to be object.'): asserts value is InferIsType<typeof isObject<T>> { assert(isObject(value), message); }
-export function assertNotObject<T>(value: T, message: AssertionMessage = 'Expected value to not be object.'): asserts value is InferIsNotType<T, typeof isObject> { assert(isNotObject(value), message); }
-export function assertObjectPass<T extends object = object>(value: any, message?: AssertionMessage): InferIsType<typeof isObject> { assertObject<T>(value, message); return value; }
-export function assertNotObjectPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isObject> { assertNotObject(value, message); return value; }
+const functionGuards = createGuards('function', (value): value is Function => (typeof value == 'function'));
+export const isFunction: IsFunction<Function> = functionGuards.isFunction;
+export const isNotFunction: IsNotFunction<Function> = functionGuards.isNotFunction;
+export const assertFunction: AssertFunction<Function> = functionGuards.assertFunction;
+export const assertNotFunction: AssertNotFunction<Function> = functionGuards.assertNotFunction;
+export const assertFunctionPass: AssertPassFunction<Function> = functionGuards.assertFunctionPass;
+export const assertNotFunctionPass: AssertNotPassFunction<Function> = functionGuards.assertNotFunctionPass;
 
-export function isPrimitive(value: any): value is string | number | boolean | bigint | symbol | null | undefined { const type = typeof value; return type == 'string' || type == 'number' || type == 'boolean' || type == 'bigint' || type == 'symbol' || value === null || value === undefined; }
-export function isNotPrimitive<T>(value: T): value is InferIsNotType<T, typeof isPrimitive> { return !isPrimitive(value); }
-export function assertPrimitive(value: any, message: AssertionMessage = 'Expected value to be primitive.'): asserts value is InferIsType<typeof isPrimitive> { assert(isPrimitive(value), message); }
-export function assertNotPrimitive<T>(value: T, message: AssertionMessage = 'Expected value to not be primitive.'): asserts value is InferIsNotType<T, typeof isPrimitive> { assert(isNotPrimitive(value), message); }
-export function assertPrimitivePass(value: any, message?: AssertionMessage): InferIsType<typeof isPrimitive> { assertPrimitive(value, message); return value; }
-export function assertNotPrimitivePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isPrimitive> { assertNotPrimitive(value, message); return value; }
+const symbolGuards = createGuards('symbol', (value): value is symbol => (typeof value == 'symbol'));
+export const isSymbol: IsFunction<symbol> = symbolGuards.isSymbol;
+export const isNotSymbol: IsNotFunction<symbol> = symbolGuards.isNotSymbol;
+export const assertSymbol: AssertFunction<symbol> = symbolGuards.assertSymbol;
+export const assertNotSymbol: AssertNotFunction<symbol> = symbolGuards.assertNotSymbol;
+export const assertSymbolPass: AssertPassFunction<symbol> = symbolGuards.assertSymbolPass;
+export const assertNotSymbolPass: AssertNotPassFunction<symbol> = symbolGuards.assertNotSymbolPass;
 
-export function isJsonPrimitive(value: any): value is string | number | boolean | null { const type = typeof value; return type == 'string' || type == 'number' || type == 'boolean' || value === null; }
-export function isNotJsonPrimitive<T>(value: T): value is InferIsNotType<T, typeof isJsonPrimitive> { return !isJsonPrimitive(value); }
-export function assertJsonPrimitive(value: any, message: AssertionMessage = 'Expected value to be json-primitive.'): asserts value is InferIsType<typeof isJsonPrimitive> { assert(isJsonPrimitive(value), message); }
-export function assertNotJsonPrimitive<T>(value: T, message: AssertionMessage = 'Expected value to not be json-primitive.'): asserts value is InferIsNotType<T, typeof isJsonPrimitive> { assert(isNotJsonPrimitive(value), message); }
-export function assertJsonPrimitivePass(value: any, message?: AssertionMessage): InferIsType<typeof isJsonPrimitive> { assertJsonPrimitive(value, message); return value; }
-export function assertNotJsonPrimitivePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isJsonPrimitive> { assertNotJsonPrimitive(value, message); return value; }
+const literalObjectGuards = createGuards('literal object', (value): value is object => (typeof value == 'object') && (value != null) && (Reflect.getPrototypeOf(value as object) == Object.prototype) && (Reflect.getPrototypeOf(value as object)!.constructor == Object));
+export const isLiteralObject: IsFunction<object> = literalObjectGuards.isLiteralObject;
+export const isNotLiteralObject: IsNotFunction<object> = literalObjectGuards.isNotLiteralObject;
+export const assertLiteralObject: AssertFunction<object> = literalObjectGuards.assertLiteralObject;
+export const assertNotLiteralObject: AssertNotFunction<object> = literalObjectGuards.assertNotLiteralObject;
+export const assertLiteralObjectPass: AssertPassFunction<object> = literalObjectGuards.assertLiteralObjectPass;
+export const assertNotLiteralObjectPass: AssertNotPassFunction<object> = literalObjectGuards.assertNotLiteralObjectPass;
 
-export function isDate(value: any): value is Date { return (value instanceof Date); }
-export function isNotDate<T>(value: T): value is InferIsNotType<T, typeof isDate> { return !isDate(value); }
-export function assertDate(value: any, message: AssertionMessage = 'Expected value to be Date.'): asserts value is InferIsType<typeof isDate> { assert(isDate(value), message); }
-export function assertNotDate<T>(value: T, message: AssertionMessage = 'Expected value to not be Date.'): asserts value is InferIsNotType<T, typeof isDate> { assert(isNotDate(value), message); }
-export function assertDatePass(value: any, message?: AssertionMessage): InferIsType<typeof isDate> { assertDate(value, message); return value; }
-export function assertNotDatePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isDate> { assertNotDate(value, message); return value; }
+const objectGuards = createGuards('object', (value): value is object => (typeof value == 'object') && (value != null));
+export const isObject: IsFunction<object> = objectGuards.isObject;
+export const isNotObject: IsNotFunction<object> = objectGuards.isNotObject;
+export const assertObject: AssertFunction<object> = objectGuards.assertObject;
+export const assertNotObject: AssertNotFunction<object> = objectGuards.assertNotObject;
+export const assertObjectPass: AssertPassFunction<object> = objectGuards.assertObjectPass;
+export const assertNotObjectPass: AssertNotPassFunction<object> = objectGuards.assertNotObjectPass;
 
-export function isValidDate(value: any): value is Date { return isDate(value) && !Number.isNaN(value.getTime()); }
-export function isNotValidDate<T>(value: T): value is InferIsNotType<T, typeof isValidDate> { return !isValidDate(value); }
-export function assertValidDate(value: any, message: AssertionMessage = 'Expected value to be a valid Date.'): asserts value is InferIsType<typeof isValidDate> { assert(isValidDate(value), message); }
-export function assertNotValidDate<T>(value: T, message: AssertionMessage = 'Expected value to not be a valid Date.'): asserts value is InferIsNotType<T, typeof isValidDate> { assert(isNotValidDate(value), message); }
-export function assertValidDatePass(value: any, message?: AssertionMessage): InferIsType<typeof isValidDate> { assertValidDate(value, message); return value; }
-export function assertNotValidDatePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isValidDate> { assertNotValidDate(value, message); return value; }
+const primitiveGuards = createGuards('primitive', (value): value is Primitive => {
+  const type = typeof value;
+  return (type == 'string') || (type == 'number') || (type == 'boolean') || (type == 'bigint') || (type == 'symbol') || (value === null) || (value === undefined);
+});
+export const isPrimitive: IsFunction<Primitive> = primitiveGuards.isPrimitive;
+export const isNotPrimitive: IsNotFunction<Primitive> = primitiveGuards.isNotPrimitive;
+export const assertPrimitive: AssertFunction<Primitive> = primitiveGuards.assertPrimitive;
+export const assertNotPrimitive: AssertNotFunction<Primitive> = primitiveGuards.assertNotPrimitive;
+export const assertPrimitivePass: AssertPassFunction<Primitive> = primitiveGuards.assertPrimitivePass;
+export const assertNotPrimitivePass: AssertNotPassFunction<Primitive> = primitiveGuards.assertNotPrimitivePass;
 
-export function isRegExp(value: any): value is RegExp { return (value instanceof RegExp); }
-export function isNotRegExp<T>(value: T): value is InferIsNotType<T, typeof isRegExp> { return !isRegExp(value); }
-export function assertRegExp(value: any, message: AssertionMessage = 'Expected value to be RegExp.'): asserts value is InferIsType<typeof isRegExp> { assert(isRegExp(value), message); }
-export function assertNotRegExp<T>(value: T, message: AssertionMessage = 'Expected value to not be RegExp.'): asserts value is InferIsNotType<T, typeof isRegExp> { assert(isNotRegExp(value), message); }
-export function assertRegExpPass(value: any, message?: AssertionMessage): InferIsType<typeof isRegExp> { assertRegExp(value, message); return value; }
-export function assertNotRegExpPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isRegExp> { assertNotRegExp(value, message); return value; }
+const jsonPrimitiveGuards = createGuards('json primitive', (value): value is JsonPrimitive => {
+  const type = typeof value;
+  return (type == 'string') || (type == 'number') || (type == 'boolean') || (value === null);
+});
+export const isJsonPrimitive: IsFunction<JsonPrimitive> = jsonPrimitiveGuards.isJsonPrimitive;
+export const isNotJsonPrimitive: IsNotFunction<JsonPrimitive> = jsonPrimitiveGuards.isNotJsonPrimitive;
+export const assertJsonPrimitive: AssertFunction<JsonPrimitive> = jsonPrimitiveGuards.assertJsonPrimitive;
+export const assertNotJsonPrimitive: AssertNotFunction<JsonPrimitive> = jsonPrimitiveGuards.assertNotJsonPrimitive;
+export const assertJsonPrimitivePass: AssertPassFunction<JsonPrimitive> = jsonPrimitiveGuards.assertJsonPrimitivePass;
+export const assertNotJsonPrimitivePass: AssertNotPassFunction<JsonPrimitive> = jsonPrimitiveGuards.assertNotJsonPrimitivePass;
 
-export function isArray<T = any>(value: any): value is readonly T[] { return Array.isArray(value); }
-export function isNotArray<T>(value: T): value is InferIsNotType<T, typeof isArray> { return !isArray(value); }
-export function assertArray<T = any>(value: any, message: AssertionMessage = 'Expected value to be Array.'): asserts value is InferIsType<typeof isArray<T>> { assert(isArray(value), message); }
-export function assertNotArray<T>(value: T, message: AssertionMessage = 'Expected value to not be Array.'): asserts value is InferIsNotType<T, typeof isArray> { assert(isNotArray(value), message); }
-export function assertArrayPass<T = any>(value: any, message?: AssertionMessage): InferIsType<typeof isArray> { assertArray<T>(value, message); return value; }
-export function assertNotArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isArray> { assertNotArray(value, message); return value; }
+const dateGuards = createInstanceGuards('date', Date);
+export const isDate: IsFunction<Date> = dateGuards.isDate;
+export const isNotDate: IsNotFunction<Date> = dateGuards.isNotDate;
+export const assertDate: AssertFunction<Date> = dateGuards.assertDate;
+export const assertNotDate: AssertNotFunction<Date> = dateGuards.assertNotDate;
+export const assertDatePass: AssertPassFunction<Date> = dateGuards.assertDatePass;
+export const assertNotDatePass: AssertNotPassFunction<Date> = dateGuards.assertNotDatePass;
 
-export function isWritableArray(value: any): value is any[] { return isArray(value); }
-export function isNotWritableArray<T>(value: T): value is InferIsNotType<T, typeof isWritableArray> { return isNotArray(value); }
-export function assertWritableArray(value: any, message: AssertionMessage = 'Expected value to be Array.'): asserts value is InferIsType<typeof isWritableArray> { assertArray(value, message); }
-export function assertNotWritableArray<T>(value: T, message: AssertionMessage = 'Expected value to not be Array.'): asserts value is InferIsNotType<T, typeof isWritableArray> { assertNotArray(value, message); }
-export function assertWritableArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isWritableArray> { return assertArrayPass(value, message) as any[]; }
-export function assertNotWritableArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isWritableArray> { return assertNotArrayPass(value, message) as unknown as Exclude<T, any[]>; }
+const validDateGuards = createGuards('valid date', (value): value is Date => isDate(value) && !Number.isNaN(value.getTime()));
+export const isValidDate: IsFunction<Date> = validDateGuards.isValidDate;
+export const isNotValidDate: IsNotFunction<Date> = validDateGuards.isNotValidDate;
+export const assertValidDate: AssertFunction<Date> = validDateGuards.assertValidDate;
+export const assertNotValidDate: AssertNotFunction<Date> = validDateGuards.assertNotValidDate;
+export const assertValidDatePass: AssertPassFunction<Date> = validDateGuards.assertValidDatePass;
+export const assertNotValidDatePass: AssertNotPassFunction<Date> = validDateGuards.assertNotValidDatePass;
 
-export function isBlob(value: any): value is Blob { return (supportsBlob && (value instanceof Blob)); }
-export function isNotBlob<T>(value: T): value is InferIsNotType<T, typeof isBlob> { return !isBlob(value); }
-export function assertBlob(value: any, message: AssertionMessage = 'Expected value to be Blob.'): asserts value is InferIsType<typeof isBlob> { assert(isBlob(value), message); }
-export function assertNotBlob<T>(value: T, message: AssertionMessage = 'Expected value to not be Blob.'): asserts value is InferIsNotType<T, typeof isBlob> { assert(isNotBlob(value), message); }
-export function assertBlobPass(value: any, message?: AssertionMessage): InferIsType<typeof isBlob> { assertBlob(value, message); return value; }
-export function assertNotBlobPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBlob> { assertNotBlob(value, message); return value; }
+const regexpGuards = createInstanceGuards('regexp', RegExp);
+export const isRegExp: IsFunction<RegExp> = regexpGuards.isRegexp;
+export const isNotRegExp: IsNotFunction<RegExp> = regexpGuards.isNotRegexp;
+export const assertRegExp: AssertFunction<RegExp> = regexpGuards.assertRegexp;
+export const assertNotRegExp: AssertNotFunction<RegExp> = regexpGuards.assertNotRegexp;
+export const assertRegExpPass: AssertPassFunction<RegExp> = regexpGuards.assertRegexpPass;
+export const assertNotRegExpPass: AssertNotPassFunction<RegExp> = regexpGuards.assertNotRegexpPass;
 
-export function isBinaryData(value: any): value is BinaryData { return isArrayBuffer(value) || isArrayBufferView(value); }
-export function isNotBinaryData<T>(value: T): value is InferIsNotType<T, typeof isBinaryData> { return !isBinaryData(value); }
-export function assertBinaryData(value: any, message: AssertionMessage = 'Expected value to be BinaryData.'): asserts value is InferIsType<typeof isBinaryData> { assert(isBinaryData(value), message); }
-export function assertNotBinaryData<T>(value: T, message: AssertionMessage = 'Expected value to not be BinaryData.'): asserts value is InferIsNotType<T, typeof isBinaryData> { assert(isNotBinaryData(value), message); }
-export function assertBinaryDataPass(value: any, message?: AssertionMessage): InferIsType<typeof isBinaryData> { assertBinaryData(value, message); return value; }
-export function assertNotBinaryDataPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBinaryData> { assertNotBinaryData(value, message); return value; }
+const arrayGuards = createGuards('array', (value: any): value is readonly any[] => Array.isArray(value));
+export const isArray: <T = any>(value: any) => value is readonly T[] = arrayGuards.isArray;
+export const isNotArray: IsNotFunction<readonly any[]> = arrayGuards.isNotArray;
+export const assertArray: <T = any>(value: any, message?: AssertionMessage) => asserts value is readonly T[] = arrayGuards.assertArray;
+export const assertNotArray: AssertNotFunction<readonly any[]> = arrayGuards.assertNotArray;
+export const assertArrayPass: <T = any>(value: any, message?: AssertionMessage) => readonly T[] = arrayGuards.assertArrayPass;
+export const assertNotArrayPass: AssertNotPassFunction<readonly any[]> = arrayGuards.assertNotArrayPass;
 
-export function isArrayBuffer(value: any): value is ArrayBuffer { return (value instanceof ArrayBuffer); }
-export function isNotArrayBuffer<T>(value: T): value is InferIsNotType<T, typeof isArrayBuffer> { return !isArrayBuffer(value); }
-export function assertArrayBuffer(value: any, message: AssertionMessage = 'Expected value to be ArrayBuffer.'): asserts value is InferIsType<typeof isArrayBuffer> { assert(isArrayBuffer(value), message); }
-export function assertNotArrayBuffer<T>(value: T, message: AssertionMessage = 'Expected value to not be ArrayBuffer.'): asserts value is InferIsNotType<T, typeof isArrayBuffer> { assert(isNotArrayBuffer(value), message); }
-export function assertArrayBufferPass(value: any, message?: AssertionMessage): InferIsType<typeof isArrayBuffer> { assertArrayBuffer(value, message); return value; }
-export function assertNotArrayBufferPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isArrayBuffer> { assertNotArrayBuffer(value, message); return value; }
+const writableArrayGuards = createGuards('writable array', (value: any): value is any[] => Array.isArray(value));
+export const isWritableArray: <T = any>(value: any) => value is T[] = writableArrayGuards.isWritableArray;
+export const isNotWritableArray: IsNotFunction<any[]> = writableArrayGuards.isNotWritableArray;
+export const assertWritableArray: <T = any>(value: any, message?: AssertionMessage) => asserts value is T[] = writableArrayGuards.assertWritableArray;
+export const assertNotWritableArray: AssertNotFunction<any[]> = writableArrayGuards.assertNotWritableArray;
+export const assertWritableArrayPass: <T = any>(value: any, message?: AssertionMessage) => T[] = writableArrayGuards.assertWritableArrayPass;
+export const assertNotWritableArrayPass: AssertNotPassFunction<any[]> = writableArrayGuards.assertNotWritableArrayPass;
 
-export function isArrayBufferView(value: any): value is ArrayBufferView { return ArrayBuffer.isView(value); }
-export function isNotArrayBufferView<T>(value: T): value is InferIsNotType<T, typeof isArrayBufferView> { return !isArrayBufferView(value); }
-export function assertArrayBufferView(value: any, message: AssertionMessage = 'Expected value to be ArrayBufferView.'): asserts value is InferIsType<typeof isArrayBufferView> { assert(isArrayBufferView(value), message); }
-export function assertNotArrayBufferView<T>(value: T, message: AssertionMessage = 'Expected value to not be ArrayBufferView.'): asserts value is InferIsNotType<T, typeof isArrayBufferView> { assert(isNotArrayBufferView(value), message); }
-export function assertArrayBufferViewPass(value: any, message?: AssertionMessage): InferIsType<typeof isArrayBufferView> { assertArrayBufferView(value, message); return value; }
-export function assertNotArrayBufferViewPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isArrayBufferView> { assertNotArrayBufferView(value, message); return value; }
+const blobGuards = createGuards('Blob', (value: any): value is Blob => (supportsBlob && (value instanceof Blob)));
+export const isBlob: IsFunction<Blob> = blobGuards.isBlob;
+export const isNotBlob: IsNotFunction<Blob> = blobGuards.isNotBlob;
+export const assertBlob: AssertFunction<Blob> = blobGuards.assertBlob;
+export const assertNotBlob: AssertNotFunction<Blob> = blobGuards.assertNotBlob;
+export const assertBlobPass: AssertPassFunction<Blob> = blobGuards.assertBlobPass;
+export const assertNotBlobPass: AssertNotPassFunction<Blob> = blobGuards.assertNotBlobPass;
 
-export function isTypedArray(value: any): value is TypedArray { return ArrayBuffer.isView(value) && isNotDataView(value); }
-export function isNotTypedArray<T>(value: T): value is InferIsNotType<T, typeof isTypedArray> { return !isTypedArray(value); }
-export function assertTypedArray(value: any, message: AssertionMessage = 'Expected value to be TypedArray.'): asserts value is InferIsType<typeof isTypedArray> { assert(isTypedArray(value), message); }
-export function assertNotTypedArray<T>(value: T, message: AssertionMessage = 'Expected value to not be TypedArray.'): asserts value is InferIsNotType<T, typeof isTypedArray> { assert(isNotTypedArray(value), message); }
-export function assertTypedArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isTypedArray> { assertTypedArray(value, message); return value; }
-export function assertNotTypedArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isTypedArray> { assertNotTypedArray(value, message); return value; }
+const arrayBufferGuards = createInstanceGuards('ArrayBuffer', ArrayBuffer);
+export const isArrayBuffer: IsFunction<ArrayBuffer> = arrayBufferGuards.isArrayBuffer;
+export const isNotArrayBuffer: IsNotFunction<ArrayBuffer> = arrayBufferGuards.isNotArrayBuffer;
+export const assertArrayBuffer: AssertFunction<ArrayBuffer> = arrayBufferGuards.assertArrayBuffer;
+export const assertNotArrayBuffer: AssertNotFunction<ArrayBuffer> = arrayBufferGuards.assertNotArrayBuffer;
+export const assertArrayBufferPass: AssertPassFunction<ArrayBuffer> = arrayBufferGuards.assertArrayBufferPass;
+export const assertNotArrayBufferPass: AssertNotPassFunction<ArrayBuffer> = arrayBufferGuards.assertNotArrayBufferPass;
 
-export function isInt8Array(value: any): value is Int8Array { return (value instanceof Int8Array); }
-export function isNotInt8Array<T>(value: T): value is InferIsNotType<T, typeof isInt8Array> { return !isInt8Array(value); }
-export function assertInt8Array(value: any, message: AssertionMessage = 'Expected value to be Int8Array.'): asserts value is InferIsType<typeof isInt8Array> { assert(isInt8Array(value), message); }
-export function assertNotInt8Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Int8Array.'): asserts value is InferIsNotType<T, typeof isInt8Array> { assert(isNotInt8Array(value), message); }
-export function assertInt8ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isInt8Array> { assertInt8Array(value, message); return value; }
-export function assertNotInt8ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isInt8Array> { assertNotInt8Array(value, message); return value; }
+const arrayBufferViewGuards = createGuards('ArrayBufferView', (value: any): value is ArrayBufferView => ArrayBuffer.isView(value));
+export const isArrayBufferView: IsFunction<ArrayBufferView> = arrayBufferViewGuards.isArrayBufferView;
+export const isNotArrayBufferView: IsNotFunction<ArrayBufferView> = arrayBufferViewGuards.isNotArrayBufferView;
+export const assertArrayBufferView: AssertFunction<ArrayBufferView> = arrayBufferViewGuards.assertArrayBufferView;
+export const assertNotArrayBufferView: AssertNotFunction<ArrayBufferView> = arrayBufferViewGuards.assertNotArrayBufferView;
+export const assertArrayBufferViewPass: AssertPassFunction<ArrayBufferView> = arrayBufferViewGuards.assertArrayBufferViewPass;
+export const assertNotArrayBufferViewPass: AssertNotPassFunction<ArrayBufferView> = arrayBufferViewGuards.assertNotArrayBufferViewPass;
 
-export function isUint8Array(value: any): value is Uint8Array { return (value instanceof Uint8Array); }
-export function isNotUint8Array<T>(value: T): value is InferIsNotType<T, typeof isUint8Array> { return !isUint8Array(value); }
-export function assertUint8Array(value: any, message: AssertionMessage = 'Expected value to be Uint8Array.'): asserts value is InferIsType<typeof isUint8Array> { assert(isUint8Array(value), message); }
-export function assertNotUint8Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Uint8Array.'): asserts value is InferIsNotType<T, typeof isUint8Array> { assert(isNotUint8Array(value), message); }
-export function assertUint8ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isUint8Array> { assertUint8Array(value, message); return value; }
-export function assertNotUint8ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUint8Array> { assertNotUint8Array(value, message); return value; }
+const binaryDataGuards = createGuards('BinaryData', (value: any): value is BinaryData => (isArrayBuffer(value) || isArrayBufferView(value)));
+export const isBinaryData: IsFunction<BinaryData> = binaryDataGuards.isBinaryData;
+export const isNotBinaryData: IsNotFunction<BinaryData> = binaryDataGuards.isNotBinaryData;
+export const assertBinaryData: AssertFunction<BinaryData> = binaryDataGuards.assertBinaryData;
+export const assertNotBinaryData: AssertNotFunction<BinaryData> = binaryDataGuards.assertNotBinaryData;
+export const assertBinaryDataPass: AssertPassFunction<BinaryData> = binaryDataGuards.assertBinaryDataPass;
+export const assertNotBinaryDataPass: AssertNotPassFunction<BinaryData> = binaryDataGuards.assertNotBinaryDataPass;
 
-export function isUint8ClampedArray(value: any): value is Uint8ClampedArray { return (value instanceof Uint8ClampedArray); }
-export function isNotUint8ClampedArray<T>(value: T): value is InferIsNotType<T, typeof isUint8ClampedArray> { return !isUint8ClampedArray(value); }
-export function assertUint8ClampedArray(value: any, message: AssertionMessage = 'Expected value to be Uint8ClampedArray.'): asserts value is InferIsType<typeof isUint8ClampedArray> { assert(isUint8ClampedArray(value), message); }
-export function assertNotUint8ClampedArray<T>(value: T, message: AssertionMessage = 'Expected value to not be Uint8ClampedArray.'): asserts value is InferIsNotType<T, typeof isUint8ClampedArray> { assert(isNotUint8ClampedArray(value), message); }
-export function assertUint8ClampedArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isUint8ClampedArray> { assertUint8ClampedArray(value, message); return value; }
-export function assertNotUint8ClampedArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUint8ClampedArray> { assertNotUint8ClampedArray(value, message); return value; }
+const int8ArrayGuards = createInstanceGuards('Int8Array', Int8Array);
+export const isInt8Array: IsFunction<Int8Array> = int8ArrayGuards.isInt8Array;
+export const isNotInt8Array: IsNotFunction<Int8Array> = int8ArrayGuards.isNotInt8Array;
+export const assertInt8Array: AssertFunction<Int8Array> = int8ArrayGuards.assertInt8Array;
+export const assertNotInt8Array: AssertNotFunction<Int8Array> = int8ArrayGuards.assertNotInt8Array;
+export const assertInt8ArrayPass: AssertPassFunction<Int8Array> = int8ArrayGuards.assertInt8ArrayPass;
+export const assertNotInt8ArrayPass: AssertNotPassFunction<Int8Array> = int8ArrayGuards.assertNotInt8ArrayPass;
 
-export function isInt16Array(value: any): value is Int16Array { return (value instanceof Int16Array); }
-export function isNotInt16Array<T>(value: T): value is InferIsNotType<T, typeof isInt16Array> { return !isInt16Array(value); }
-export function assertInt16Array(value: any, message: AssertionMessage = 'Expected value to be Int16Array.'): asserts value is InferIsType<typeof isInt16Array> { assert(isInt16Array(value), message); }
-export function assertNotInt16Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Int16Array.'): asserts value is InferIsNotType<T, typeof isInt16Array> { assert(isNotInt16Array(value), message); }
-export function assertInt16ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isInt16Array> { assertInt16Array(value, message); return value; }
-export function assertNotInt16ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isInt16Array> { assertNotInt16Array(value, message); return value; }
+const uint8ArrayGuards = createInstanceGuards('Uint8Array', Uint8Array);
+export const isUint8Array: IsFunction<Uint8Array> = uint8ArrayGuards.isUint8Array;
+export const isNotUint8Array: IsNotFunction<Uint8Array> = uint8ArrayGuards.isNotUint8Array;
+export const assertUint8Array: AssertFunction<Uint8Array> = uint8ArrayGuards.assertUint8Array;
+export const assertNotUint8Array: AssertNotFunction<Uint8Array> = uint8ArrayGuards.assertNotUint8Array;
+export const assertUint8ArrayPass: AssertPassFunction<Uint8Array> = uint8ArrayGuards.assertUint8ArrayPass;
+export const assertNotUint8ArrayPass: AssertNotPassFunction<Uint8Array> = uint8ArrayGuards.assertNotUint8ArrayPass;
 
-export function isUint16Array(value: any): value is Uint16Array { return (value instanceof Uint16Array); }
-export function isNotUint16Array<T>(value: T): value is InferIsNotType<T, typeof isUint16Array> { return !isUint16Array(value); }
-export function assertUint16Array(value: any, message: AssertionMessage = 'Expected value to be Uint16Array.'): asserts value is InferIsType<typeof isUint16Array> { assert(isUint16Array(value), message); }
-export function assertNotUint16Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Uint16Array.'): asserts value is InferIsNotType<T, typeof isUint16Array> { assert(isNotUint16Array(value), message); }
-export function assertUint16ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isUint16Array> { assertUint16Array(value, message); return value; }
-export function assertNotUint16ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUint16Array> { assertNotUint16Array(value, message); return value; }
+const uint8ClampedArrayGuards = createInstanceGuards('Uint8ClampedArray', Uint8ClampedArray);
+export const isUint8ClampedArray: IsFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.isUint8ClampedArray;
+export const isNotUint8ClampedArray: IsNotFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.isNotUint8ClampedArray;
+export const assertUint8ClampedArray: AssertFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.assertUint8ClampedArray;
+export const assertNotUint8ClampedArray: AssertNotFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.assertNotUint8ClampedArray;
+export const assertUint8ClampedArrayPass: AssertPassFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.assertUint8ClampedArrayPass;
+export const assertNotUint8ClampedArrayPass: AssertNotPassFunction<Uint8ClampedArray> = uint8ClampedArrayGuards.assertNotUint8ClampedArrayPass;
 
-export function isInt32Array(value: any): value is Int32Array { return (value instanceof Int32Array); }
-export function isNotInt32Array<T>(value: T): value is InferIsNotType<T, typeof isInt32Array> { return !isInt32Array(value); }
-export function assertInt32Array(value: any, message: AssertionMessage = 'Expected value to be Int32Array.'): asserts value is InferIsType<typeof isInt32Array> { assert(isInt32Array(value), message); }
-export function assertNotInt32Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Int32Array.'): asserts value is InferIsNotType<T, typeof isInt32Array> { assert(isNotInt32Array(value), message); }
-export function assertInt32ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isInt32Array> { assertInt32Array(value, message); return value; }
-export function assertNotInt32ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isInt32Array> { assertNotInt32Array(value, message); return value; }
+const int16ArrayGuards = createInstanceGuards('Int16Array', Int16Array);
+export const isInt16Array: IsFunction<Int16Array> = int16ArrayGuards.isInt16Array;
+export const isNotInt16Array: IsNotFunction<Int16Array> = int16ArrayGuards.isNotInt16Array;
+export const assertInt16Array: AssertFunction<Int16Array> = int16ArrayGuards.assertInt16Array;
+export const assertNotInt16Array: AssertNotFunction<Int16Array> = int16ArrayGuards.assertNotInt16Array;
+export const assertInt16ArrayPass: AssertPassFunction<Int16Array> = int16ArrayGuards.assertInt16ArrayPass;
+export const assertNotInt16ArrayPass: AssertNotPassFunction<Int16Array> = int16ArrayGuards.assertNotInt16ArrayPass;
 
-export function isUint32Array(value: any): value is Uint32Array { return (value instanceof Uint32Array); }
-export function isNotUint32Array<T>(value: T): value is InferIsNotType<T, typeof isUint32Array> { return !isUint32Array(value); }
-export function assertUint32Array(value: any, message: AssertionMessage = 'Expected value to be Uint32Array.'): asserts value is InferIsType<typeof isUint32Array> { assert(isUint32Array(value), message); }
-export function assertNotUint32Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Uint32Array.'): asserts value is InferIsNotType<T, typeof isUint32Array> { assert(isNotUint32Array(value), message); }
-export function assertUint32ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isUint32Array> { assertUint32Array(value, message); return value; }
-export function assertNotUint32ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isUint32Array> { assertNotUint32Array(value, message); return value; }
+const uint16ArrayGuards = createInstanceGuards('Uint16Array', Uint16Array);
+export const isUint16Array: IsFunction<Uint16Array> = uint16ArrayGuards.isUint16Array;
+export const isNotUint16Array: IsNotFunction<Uint16Array> = uint16ArrayGuards.isNotUint16Array;
+export const assertUint16Array: AssertFunction<Uint16Array> = uint16ArrayGuards.assertUint16Array;
+export const assertNotUint16Array: AssertNotFunction<Uint16Array> = uint16ArrayGuards.assertNotUint16Array;
+export const assertUint16ArrayPass: AssertPassFunction<Uint16Array> = uint16ArrayGuards.assertUint16ArrayPass;
+export const assertNotUint16ArrayPass: AssertNotPassFunction<Uint16Array> = uint16ArrayGuards.assertNotUint16ArrayPass;
 
-export function isFloat32Array(value: any): value is Float32Array { return (value instanceof Float32Array); }
-export function isNotFloat32Array<T>(value: T): value is InferIsNotType<T, typeof isFloat32Array> { return !isFloat32Array(value); }
-export function assertFloat32Array(value: any, message: AssertionMessage = 'Expected value to be Float32Array.'): asserts value is InferIsType<typeof isFloat32Array> { assert(isFloat32Array(value), message); }
-export function assertNotFloat32Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Float32Array.'): asserts value is InferIsNotType<T, typeof isFloat32Array> { assert(isNotFloat32Array(value), message); }
-export function assertFloat32ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isFloat32Array> { assertFloat32Array(value, message); return value; }
-export function assertNotFloat32ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isFloat32Array> { assertNotFloat32Array(value, message); return value; }
+const int32ArrayGuards = createInstanceGuards('Int32Array', Int32Array);
+export const isInt32Array: IsFunction<Int32Array> = int32ArrayGuards.isInt32Array;
+export const isNotInt32Array: IsNotFunction<Int32Array> = int32ArrayGuards.isNotInt32Array;
+export const assertInt32Array: AssertFunction<Int32Array> = int32ArrayGuards.assertInt32Array;
+export const assertNotInt32Array: AssertNotFunction<Int32Array> = int32ArrayGuards.assertNotInt32Array;
+export const assertInt32ArrayPass: AssertPassFunction<Int32Array> = int32ArrayGuards.assertInt32ArrayPass;
+export const assertNotInt32ArrayPass: AssertNotPassFunction<Int32Array> = int32ArrayGuards.assertNotInt32ArrayPass;
 
-export function isFloat64Array(value: any): value is Float64Array { return (value instanceof Float64Array); }
-export function isNotFloat64Array<T>(value: T): value is InferIsNotType<T, typeof isFloat64Array> { return !isFloat64Array(value); }
-export function assertFloat64Array(value: any, message: AssertionMessage = 'Expected value to be Float64Array.'): asserts value is InferIsType<typeof isFloat64Array> { assert(isFloat64Array(value), message); }
-export function assertNotFloat64Array<T>(value: T, message: AssertionMessage = 'Expected value to not be Float64Array.'): asserts value is InferIsNotType<T, typeof isFloat64Array> { assert(isNotFloat64Array(value), message); }
-export function assertFloat64ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isFloat64Array> { assertFloat64Array(value, message); return value; }
-export function assertNotFloat64ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isFloat64Array> { assertNotFloat64Array(value, message); return value; }
+const uint32ArrayGuards = createInstanceGuards('Uint32Array', Uint32Array);
+export const isUint32Array: IsFunction<Uint32Array> = uint32ArrayGuards.isUint32Array;
+export const isNotUint32Array: IsNotFunction<Uint32Array> = uint32ArrayGuards.isNotUint32Array;
+export const assertUint32Array: AssertFunction<Uint32Array> = uint32ArrayGuards.assertUint32Array;
+export const assertNotUint32Array: AssertNotFunction<Uint32Array> = uint32ArrayGuards.assertNotUint32Array;
+export const assertUint32ArrayPass: AssertPassFunction<Uint32Array> = uint32ArrayGuards.assertUint32ArrayPass;
+export const assertNotUint32ArrayPass: AssertNotPassFunction<Uint32Array> = uint32ArrayGuards.assertNotUint32ArrayPass;
 
-export function isBigInt64Array(value: any): value is BigInt64Array { return (value instanceof BigInt64Array); }
-export function isNotBigInt64Array<T>(value: T): value is InferIsNotType<T, typeof isBigInt64Array> { return !isBigInt64Array(value); }
-export function assertBigInt64Array(value: any, message: AssertionMessage = 'Expected value to be BigInt64Array.'): asserts value is InferIsType<typeof isBigInt64Array> { assert(isBigInt64Array(value), message); }
-export function assertNotBigInt64Array<T>(value: T, message: AssertionMessage = 'Expected value to not be BigInt64Array.'): asserts value is InferIsNotType<T, typeof isBigInt64Array> { assert(isNotBigInt64Array(value), message); }
-export function assertBigInt64ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isBigInt64Array> { assertBigInt64Array(value, message); return value; }
-export function assertNotBigInt64ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBigInt64Array> { assertNotBigInt64Array(value, message); return value; }
+const float32ArrayGuards = createInstanceGuards('Float32Array', Float32Array);
+export const isFloat32Array: IsFunction<Float32Array> = float32ArrayGuards.isFloat32Array;
+export const isNotFloat32Array: IsNotFunction<Float32Array> = float32ArrayGuards.isNotFloat32Array;
+export const assertFloat32Array: AssertFunction<Float32Array> = float32ArrayGuards.assertFloat32Array;
+export const assertNotFloat32Array: AssertNotFunction<Float32Array> = float32ArrayGuards.assertNotFloat32Array;
+export const assertFloat32ArrayPass: AssertPassFunction<Float32Array> = float32ArrayGuards.assertFloat32ArrayPass;
+export const assertNotFloat32ArrayPass: AssertNotPassFunction<Float32Array> = float32ArrayGuards.assertNotFloat32ArrayPass;
 
-export function isBigUint64Array(value: any): value is BigUint64Array { return (value instanceof BigUint64Array); }
-export function isNotBigUint64Array<T>(value: T): value is InferIsNotType<T, typeof isBigUint64Array> { return !isBigUint64Array(value); }
-export function assertBigUint64Array(value: any, message: AssertionMessage = 'Expected value to be BigUint64Array.'): asserts value is InferIsType<typeof isBigUint64Array> { assert(isBigUint64Array(value), message); }
-export function assertNotBigUint64Array<T>(value: T, message: AssertionMessage = 'Expected value to not be BigUint64Array.'): asserts value is InferIsNotType<T, typeof isBigUint64Array> { assert(isNotBigUint64Array(value), message); }
-export function assertBigUint64ArrayPass(value: any, message?: AssertionMessage): InferIsType<typeof isBigUint64Array> { assertBigUint64Array(value, message); return value; }
-export function assertNotBigUint64ArrayPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isBigUint64Array> { assertNotBigUint64Array(value, message); return value; }
+const float64ArrayGuards = createInstanceGuards('Float64Array', Float64Array);
+export const isFloat64Array: IsFunction<Float64Array> = float64ArrayGuards.isFloat64Array;
+export const isNotFloat64Array: IsNotFunction<Float64Array> = float64ArrayGuards.isNotFloat64Array;
+export const assertFloat64Array: AssertFunction<Float64Array> = float64ArrayGuards.assertFloat64Array;
+export const assertNotFloat64Array: AssertNotFunction<Float64Array> = float64ArrayGuards.assertNotFloat64Array;
+export const assertFloat64ArrayPass: AssertPassFunction<Float64Array> = float64ArrayGuards.assertFloat64ArrayPass;
+export const assertNotFloat64ArrayPass: AssertNotPassFunction<Float64Array> = float64ArrayGuards.assertNotFloat64ArrayPass;
 
-export function isDataView(value: any): value is DataView { return (value instanceof DataView); }
-export function isNotDataView<T>(value: T): value is InferIsNotType<T, typeof isDataView> { return !isDataView(value); }
-export function assertDataView(value: any, message: AssertionMessage = 'Expected value to be DataView.'): asserts value is InferIsType<typeof isDataView> { assert(isDataView(value), message); }
-export function assertNotDataView<T>(value: T, message: AssertionMessage = 'Expected value to not be DataView.'): asserts value is InferIsNotType<T, typeof isDataView> { assert(isNotDataView(value), message); }
-export function assertDataViewPass(value: any, message?: AssertionMessage): InferIsType<typeof isDataView> { assertDataView(value, message); return value; }
-export function assertNotDataViewPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isDataView> { assertNotDataView(value, message); return value; }
+const bigInt64ArrayGuards = createInstanceGuards('BigInt64Array', BigInt64Array);
+export const isBigInt64Array: IsFunction<BigInt64Array> = bigInt64ArrayGuards.isBigInt64Array;
+export const isNotBigInt64Array: IsNotFunction<BigInt64Array> = bigInt64ArrayGuards.isNotBigInt64Array;
+export const assertBigInt64Array: AssertFunction<BigInt64Array> = bigInt64ArrayGuards.assertBigInt64Array;
+export const assertNotBigInt64Array: AssertNotFunction<BigInt64Array> = bigInt64ArrayGuards.assertNotBigInt64Array;
+export const assertBigInt64ArrayPass: AssertPassFunction<BigInt64Array> = bigInt64ArrayGuards.assertBigInt64ArrayPass;
+export const assertNotBigInt64ArrayPass: AssertNotPassFunction<BigInt64Array> = bigInt64ArrayGuards.assertNotBigInt64ArrayPass;
 
-export function isSet<T>(value: any): value is Set<T> { return (value instanceof Set); }
-export function isNotSet<T>(value: T): value is InferIsNotType<T, typeof isSet> { return !isSet(value); }
-export function assertSet<T>(value: any, message: AssertionMessage = 'Expected value to be Set.'): asserts value is Set<T> { assert(isSet(value), message); }
-export function assertNotSet<T>(value: T, message: AssertionMessage = 'Expected value to not be Set.'): asserts value is InferIsNotType<T, typeof isSet> { assert(isNotSet(value), message); }
-export function assertSetPass<T>(value: any, message?: AssertionMessage): Set<T> { assertSet(value, message); return value as Set<T>; }
-export function assertNotSetPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isSet> { assertNotSet(value, message); return value; }
+const bigUint64ArrayGuards = createInstanceGuards('BigUint64Array', BigUint64Array);
+export const isBigUint64Array: IsFunction<BigUint64Array> = bigUint64ArrayGuards.isBigUint64Array;
+export const isNotBigUint64Array: IsNotFunction<BigUint64Array> = bigUint64ArrayGuards.isNotBigUint64Array;
+export const assertBigUint64Array: AssertFunction<BigUint64Array> = bigUint64ArrayGuards.assertBigUint64Array;
+export const assertNotBigUint64Array: AssertNotFunction<BigUint64Array> = bigUint64ArrayGuards.assertNotBigUint64Array;
+export const assertBigUint64ArrayPass: AssertPassFunction<BigUint64Array> = bigUint64ArrayGuards.assertBigUint64ArrayPass;
+export const assertNotBigUint64ArrayPass: AssertNotPassFunction<BigUint64Array> = bigUint64ArrayGuards.assertNotBigUint64ArrayPass;
 
-export function isMap<K, V>(value: any): value is Map<K, V> { return (value instanceof Map); }
-export function isNotMap<T>(value: T): value is InferIsNotType<T, typeof isMap> { return !isMap(value); }
-export function assertMap<K, V>(value: any, message: AssertionMessage = 'Expected value to be Map.'): asserts value is Map<K, V> { assert(isMap(value), message); }
-export function assertNotMap<T>(value: T, message: AssertionMessage = 'Expected value to not be Map.'): asserts value is InferIsNotType<T, typeof isMap> { assert(isNotMap(value), message); }
-export function assertMapPass<K, V>(value: any, message?: AssertionMessage): Map<K, V> { assertMap(value, message); return value as Map<K, V>; }
-export function assertNotMapPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isMap> { assertNotMap(value, message); return value; }
+const dataViewGuards = createInstanceGuards('DataView', DataView);
+export const isDataView: IsFunction<DataView> = dataViewGuards.isDataView;
+export const isNotDataView: IsNotFunction<DataView> = dataViewGuards.isNotDataView;
+export const assertDataView: AssertFunction<DataView> = dataViewGuards.assertDataView;
+export const assertNotDataView: AssertNotFunction<DataView> = dataViewGuards.assertNotDataView;
+export const assertDataViewPass: AssertPassFunction<DataView> = dataViewGuards.assertDataViewPass;
+export const assertNotDataViewPass: AssertNotPassFunction<DataView> = dataViewGuards.assertNotDataViewPass;
 
-export function isPromise<T>(value: any): value is Promise<T> { return (value instanceof Promise); }
-export function isNotPromise<T>(value: T): value is InferIsNotType<T, typeof isPromise> { return !isPromise(value); }
-export function assertPromise<T>(value: any, message: AssertionMessage = 'Expected value to be Promise.'): asserts value is Promise<T> { assert(isPromise(value), message); }
-export function assertNotPromise<T>(value: T, message: AssertionMessage = 'Expected value to not be Promise.'): asserts value is InferIsNotType<T, typeof isPromise> { assert(isNotPromise(value), message); }
-export function assertPromisePass<T>(value: any, message?: AssertionMessage): Promise<T> { assertPromise(value, message); return value as Promise<T>; } // eslint-disable-line @typescript-eslint/promise-function-async
-export function assertNotPromisePass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isPromise> { assertNotPromise(value, message); return value; }
+const typedArrayGuards = createGuards('TypedArray', (value): value is TypedArray => (ArrayBuffer.isView(value) && isNotDataView(value)));
+export const isTypedArray: IsFunction<TypedArray> = typedArrayGuards.isTypedArray;
+export const isNotTypedArray: IsNotFunction<TypedArray> = typedArrayGuards.isNotTypedArray;
+export const assertTypedArray: AssertFunction<TypedArray> = typedArrayGuards.assertTypedArray;
+export const assertNotTypedArray: AssertNotFunction<TypedArray> = typedArrayGuards.assertNotTypedArray;
+export const assertTypedArrayPass: AssertPassFunction<TypedArray> = typedArrayGuards.assertTypedArrayPass;
+export const assertNotTypedArrayPass: AssertNotPassFunction<TypedArray> = typedArrayGuards.assertNotTypedArrayPass;
 
-export function isReadableStream<T = any>(value: any): value is ReadableStream<T> { return (supportsReadableStream && (value instanceof ReadableStream)); }
-export function isNotReadableStream<T>(value: T): value is InferIsNotType<T, typeof isReadableStream> { return !isReadableStream(value); }
-export function assertReadableStream<T = any>(value: any, message: AssertionMessage = 'Expected value to be ReadableStream.'): asserts value is InferIsType<typeof isReadableStream<T>> { assert(isReadableStream(value), message); }
-export function assertNotReadableStream<T>(value: T, message: AssertionMessage = 'Expected value to not be ReadableStream.'): asserts value is InferIsNotType<T, typeof isReadableStream> { assert(isNotReadableStream(value), message); }
-export function assertReadableStreamPass<T = any>(value: any, message?: AssertionMessage): InferIsType<typeof isReadableStream> { assertReadableStream<T>(value, message); return value; }
-export function assertNotReadableStreamPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isReadableStream> { assertNotReadableStream(value, message); return value; }
+const setGuards = createInstanceGuards('Set', Set);
+export const isSet: IsFunction<Set<any>> = setGuards.isSet;
+export const isNotSet: IsNotFunction<Set<any>> = setGuards.isNotSet;
+export const assertSet: AssertFunction<Set<any>> = setGuards.assertSet;
+export const assertNotSet: AssertNotFunction<Set<any>> = setGuards.assertNotSet;
+export const assertSetPass: AssertPassFunction<Set<any>> = setGuards.assertSetPass;
+export const assertNotSetPass: AssertNotPassFunction<Set<any>> = setGuards.assertNotSetPass;
 
-export function isError(value: any): value is Error { return (value instanceof Error); }
-export function isNotError<T>(value: T): value is InferIsNotType<T, typeof isError> { return !isError(value); }
-export function assertError(value: any, message: AssertionMessage = 'Expected value to be Error.'): asserts value is InferIsType<typeof isError> { assert(isError(value), message); }
-export function assertNotError<T>(value: T, message: AssertionMessage = 'Expected value to not be Error.'): asserts value is InferIsNotType<T, typeof isError> { assert(isNotError(value), message); }
-export function assertErrorPass(value: any, message?: AssertionMessage): InferIsType<typeof isError> { assertError(value, message); return value; }
-export function assertNotErrorPass<T>(value: T, message?: AssertionMessage): InferIsNotType<T, typeof isError> { assertNotError(value, message); return value; }
+const mapGuards = createInstanceGuards('Map', Map);
+export const isMap: IsFunction<Map<any, any>> = mapGuards.isMap;
+export const isNotMap: IsNotFunction<Map<any, any>> = mapGuards.isNotMap;
+export const assertMap: AssertFunction<Map<any, any>> = mapGuards.assertMap;
+export const assertNotMap: AssertNotFunction<Map<any, any>> = mapGuards.assertNotMap;
+export const assertMapPass: AssertPassFunction<Map<any, any>> = mapGuards.assertMapPass;
+export const assertNotMapPass: AssertNotPassFunction<Map<any, any>> = mapGuards.assertNotMapPass;
+
+const promiseGuards = createInstanceGuards('Promise', Promise);
+export const isPromise: IsFunction<Promise<any>> = promiseGuards.isPromise;
+export const isNotPromise: IsNotFunction<Promise<any>> = promiseGuards.isNotPromise;
+export const assertPromise: AssertFunction<Promise<any>> = promiseGuards.assertPromise;
+export const assertNotPromise: AssertNotFunction<Promise<any>> = promiseGuards.assertNotPromise;
+export const assertPromisePass: AssertPassFunction<Promise<any>> = promiseGuards.assertPromisePass;
+export const assertNotPromisePass: AssertNotPassFunction<Promise<any>> = promiseGuards.assertNotPromisePass;
+
+const errorGuards = createInstanceGuards('error', Error);
+export const isError: IsFunction<Error> = errorGuards.isError;
+export const isNotError: IsNotFunction<Error> = errorGuards.isNotError;
+export const assertError: AssertFunction<Error> = errorGuards.assertError;
+export const assertNotError: AssertNotFunction<Error> = errorGuards.assertNotError;
+export const assertErrorPass: AssertPassFunction<Error> = errorGuards.assertErrorPass;
+export const assertNotErrorPass: AssertNotPassFunction<Error> = errorGuards.assertNotErrorPass;
+
+const readableStreamGuards = createGuards('ReadableStream', (value: any): value is ReadableStream => (supportsReadableStream && (value instanceof ReadableStream)));
+export const isReadableStream: <T = any>(value: any) => value is ReadableStream<T> = readableStreamGuards.isReadableStream;
+export const isNotReadableStream: IsNotFunction<ReadableStream> = readableStreamGuards.isNotReadableStream;
+export const assertReadableStream: <T = any>(value: any, message?: AssertionMessage) => asserts value is ReadableStream<T> = readableStreamGuards.assertReadableStream;
+export const assertNotReadableStream: AssertNotFunction<ReadableStream> = readableStreamGuards.assertNotReadableStream;
+export const assertReadableStreamPass: <T = any>(value: any, message?: AssertionMessage) => ReadableStream<T> = readableStreamGuards.assertReadableStreamPass;
+export const assertNotReadableStreamPass: AssertNotPassFunction<ReadableStream> = readableStreamGuards.assertNotReadableStreamPass;

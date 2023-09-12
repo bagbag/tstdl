@@ -4,7 +4,7 @@ import type { ReadonlySignal as PreactReadonlySignal } from '@preact/signals';
 import { signal as preactSignal } from '@preact/signals';
 import type { Record, Type } from '@tstdl/base/types';
 import { isFunction, isUndefined } from '@tstdl/base/utils';
-import { memoizeSingle } from '@tstdl/base/utils/function/memoize';
+import { memoizeSingle } from '@tstdl/base/utils/function';
 import { fromEntries, hasOwnProperty, objectEntries } from '@tstdl/base/utils/object';
 import type { Attributes, FunctionComponent, Component as PreactComponent } from 'preact';
 import { createElement, render } from 'preact';

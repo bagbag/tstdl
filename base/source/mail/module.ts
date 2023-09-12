@@ -1,7 +1,7 @@
 import { Injector } from '#/injector/injector.js';
 import type { Type } from '#/types.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { MailLogRepository } from './mail-log.repository.js';
+import { MailLogRepository } from './repositories/mail-log.repository.js';
 import { MailClient, MailClientConfig } from './mail.client.js';
 import type { DefaultMailData } from './models/index.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';

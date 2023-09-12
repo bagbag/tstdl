@@ -4,6 +4,7 @@ export * from './cache.js';
 export * from './circular-buffer.js';
 export * from './collection.js';
 export * from './dictionary.js';
+export * from './distinct-collection.js';
 export * from './index-out-of-bounds.error.js';
 export * from './iterable-weak-map.js';
 export * from './linked-list.js';
