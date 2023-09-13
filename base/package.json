@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.88.0",
+  "version": "0.88.1",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -77,6 +77,7 @@
     "./migration/mongo": "./migration/mongo/index.js",
     "./module": "./module/index.js",
     "./module/modules": "./module/modules/index.js",
+    "./object-storage": "./object-storage/index.js",
     "./object-storage/s3": "./object-storage/s3/index.js",
     "./openid-connect": "./openid-connect/index.js",
     "./password": "./password/index.js",
