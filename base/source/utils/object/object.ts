@@ -3,7 +3,7 @@ import type { IsEqual } from 'type-fest';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';
-import { isDefined, isObject, isSymbol, isUndefined } from '../type-guards.js';
+import { isArray, isDefined, isObject, isSymbol, isUndefined } from '../type-guards.js';
 
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
   return Object.hasOwn(obj, key);
@@ -122,7 +122,7 @@ export function deepObjectEntries(object: ObjectLiteral, keepInnerObjects: boole
   const entries: [string, any][] = [];
 
   for (const [key, value] of rawEntries) {
-    if (isObject(value)) {
+    if (isObject(value) || isArray(value)) {
       if (keepInnerObjects) {
         entries.push([key, value]);
       }

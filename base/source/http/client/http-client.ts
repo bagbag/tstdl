@@ -8,7 +8,7 @@ import { encodeUtf8 } from '#/utils/encoding.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
-import { isArray, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
 import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
@@ -344,12 +344,12 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
     for (const entry of parameterEntries) {
       const [parameter, value] = entry;
 
-      if (isUndefined(value) || (isObject(value) && !isArray(value))) {
+      if (isUndefined(value) || isObject(value)) {
         continue;
       }
 
       for (const val of toArray(value)) {
-        url.searchParams.append(parameter as string, normalizeSingleHttpValue(val as HttpValue));
+        url.searchParams.append(parameter as string, normalizeSingleHttpValue(val));
       }
 
       parameterEntries.delete(entry);

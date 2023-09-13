@@ -139,15 +139,7 @@ export const assertNotSymbol: AssertNotFunction<symbol> = symbolGuards.assertNot
 export const assertSymbolPass: AssertPassFunction<symbol> = symbolGuards.assertSymbolPass;
 export const assertNotSymbolPass: AssertNotPassFunction<symbol> = symbolGuards.assertNotSymbolPass;
 
-const literalObjectGuards = createGuards('literal object', (value): value is object => (typeof value == 'object') && (value != null) && (Reflect.getPrototypeOf(value as object) == Object.prototype) && (Reflect.getPrototypeOf(value as object)!.constructor == Object));
-export const isLiteralObject: IsFunction<object> = literalObjectGuards.isLiteralObject;
-export const isNotLiteralObject: IsNotFunction<object> = literalObjectGuards.isNotLiteralObject;
-export const assertLiteralObject: AssertFunction<object> = literalObjectGuards.assertLiteralObject;
-export const assertNotLiteralObject: AssertNotFunction<object> = literalObjectGuards.assertNotLiteralObject;
-export const assertLiteralObjectPass: AssertPassFunction<object> = literalObjectGuards.assertLiteralObjectPass;
-export const assertNotLiteralObjectPass: AssertNotPassFunction<object> = literalObjectGuards.assertNotLiteralObjectPass;
-
-const objectGuards = createGuards('object', (value): value is object => (typeof value == 'object') && (value != null));
+const objectGuards = createGuards('object', (value): value is object => (typeof value == 'object') && (value != null) && (Reflect.getPrototypeOf(value as object) == Object.prototype) && (Reflect.getPrototypeOf(value as object)!.constructor == Object));
 export const isObject: IsFunction<object> = objectGuards.isObject;
 export const isNotObject: IsNotFunction<object> = objectGuards.isNotObject;
 export const assertObject: AssertFunction<object> = objectGuards.assertObject;
