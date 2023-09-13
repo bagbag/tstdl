@@ -1,7 +1,8 @@
-import type { BucketItem, BucketItemStat } from 'minio';
-import { Client } from 'minio';
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
+
+import type { BucketItem, BucketItemStat } from 'minio';
+import { Client } from 'minio';
 
 import { Singleton } from '#/injector/decorators.js';
 import type { UploadObjectOptions } from '#/object-storage/index.js';
