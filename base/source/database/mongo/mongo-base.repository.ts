@@ -3,7 +3,7 @@ import type { Entity, MaybeNewEntity } from '#/database/index.js';
 import { NotFoundError } from '#/error/not-found.error.js';
 import type { Record } from '#/types.js';
 import { objectKeys } from '#/utils/object/object.js';
-import { assertDefined, isNullOrUndefined } from '#/utils/type-guards.js';
+import { assertDefined, isNull, isNullOrUndefined } from '#/utils/type-guards.js';
 import type { FindOneAndUpdateOptions, IndexDescription } from 'mongodb';
 import type { Collection } from './classes.js';
 import type { MongoDocument } from './model/document.js';
@@ -205,11 +205,11 @@ export class MongoBaseRepository<T extends Entity> {
   async tryLoadByFilterAndDelete<U extends T = T>(filter: Filter<U>, options?: LoadAndDeleteOptions<U>): Promise<U | undefined> {
     const result = await this.collection.findOneAndDelete(filter as Filter<T>, options as object);
 
-    if (result.value == undefined) {
+    if (isNull(result)) {
       return undefined;
     }
 
-    return toEntity(result.value as unknown as MongoDocument<U>);
+    return toEntity(result as unknown as MongoDocument<U>);
   }
 
   async loadByFilterAndUpdate<U extends T = T>(filter: Filter<U>, update: UpdateFilter<U>, options?: LoadAndUpdateOptions<U>): Promise<U> {
@@ -218,9 +218,9 @@ export class MongoBaseRepository<T extends Entity> {
   }
 
   async tryLoadByFilterAndUpdate<U extends T = T>(filter: Filter<U>, update: UpdateFilter<U>, options?: LoadAndUpdateOptions<U>): Promise<U | undefined> {
-    const { value: document } = await this.collection.findOneAndUpdate(filter as Filter<T>, update as UpdateFilter<T>, options as object);
+    const document = await this.collection.findOneAndUpdate(filter as Filter<T>, update as UpdateFilter<T>, options as object);
 
-    if (document == undefined) {
+    if (isNull(document)) {
       return undefined;
     }
 

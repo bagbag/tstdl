@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.88.5",
+  "version": "0.88.6",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -120,7 +120,7 @@
     "./utils/string": "./utils/object/index.js"
   },
   "dependencies": {
-    "disposablestack": "^1.1.1",
+    "disposablestack": "^1.1",
     "luxon": "^3.4",
     "reflect-metadata": "^0.1",
     "rxjs": "^7.8",
@@ -159,9 +159,9 @@
     "koa": "^2.14",
     "minio": "^7.1",
     "mjml": "^4.14",
-    "mongodb": "^5.8",
+    "mongodb": "^6.1",
     "nodemailer": "^6.9",
-    "playwright": "^1.37",
+    "playwright": "^1.38",
     "preact": "^10.17",
     "preact-render-to-string": "^6.2",
     "undici": "^5.24",
