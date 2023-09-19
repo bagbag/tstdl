@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-
 type Version = number & { __brand: 'Version' };
 
 /**
@@ -23,7 +22,11 @@ export function setActiveConsumer(consumer: ReactiveNode | null): ReactiveNode |
   return prev;
 }
 
-export const REACTIVE_NODE = {
+export function isInNotificationPhase(): boolean {
+  return inNotificationPhase;
+}
+
+export const REACTIVE_NODE: ReactiveNode = {
   version: 0 as Version,
   dirty: false,
   producerNode: undefined,
@@ -287,7 +290,9 @@ export function consumerAfterComputation(
   }
 
   // Truncate the producer tracking arrays.
-  for (let i = node.nextProducerIndex; i < node.producerNode.length; i++) {
+  // Perf note: this is essentially truncating the length to `node.nextProducerIndex`, but
+  // benchmarking has shown that individual pop operations are faster.
+  while (node.producerNode.length > node.nextProducerIndex) {
     node.producerNode.pop();
     node.producerLastReadVersion.pop();
     node.producerIndexOfThis.pop();

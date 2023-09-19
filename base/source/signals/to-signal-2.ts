@@ -35,7 +35,10 @@ export type ToSignal2Options<T> = ToSignalOptions<T> & {
   lazy?: boolean
 };
 
-/** like `toSignal`, except that it uses untracked internal operations (required for some scenarios, but might be less safe in terms of bugs catching) and has the ability to subscribe lazily */
+/**
+ * Like `toSignal`, except that it uses untracked internal operations (required for some scenarios, but might be less safe in terms of bugs catching) and has the ability to subscribe lazily.
+ * Subscription to observable is cleaned up using finalization (garbage collection) of the signal.
+ */
 export function toSignal2<T>(source: ToSignalInput<T>): Signal<T | undefined>;
 export function toSignal2<T>(source: ToSignalInput<T>, options: ToSignal2Options<undefined> & { requireSync: true }): Signal<T>;
 export function toSignal2<T, const I = undefined>(source: ToSignalInput<T>, options: ToSignal2Options<I> & { requireSync?: false }): Signal<T | I>;

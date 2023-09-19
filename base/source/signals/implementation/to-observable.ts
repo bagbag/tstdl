@@ -5,7 +5,7 @@ import { effect } from './effect.js';
 import { untracked } from './untracked.js';
 
 /**
- * Exposes the value of an Angular `Signal` as an RxJS `Observable`.
+ * Exposes the value of an `Signal` as an RxJS `Observable`.
  *
  * The signal's value will be propagated into the `Observable`'s subscribers using an `effect`.
  */
