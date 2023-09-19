@@ -1,11 +1,8 @@
 import { isPromiseLike } from '#/utils/type-guards.js';
-import type { PromiseExecutor, PromiseRejectFunction, PromiseResolveFunction } from './types.js';
+import { CustomPromise } from './custom-promise.js';
+import type { PromiseExecutor } from './types.js';
 
-export class LazyPromise<T> extends Promise<T> {
-  static readonly [Symbol.species] = Promise;
-
-  #resolve: PromiseResolveFunction<T>;
-  #reject: PromiseRejectFunction;
+export class LazyPromise<T> extends CustomPromise<T> {
   #executed = false;
 
   readonly #executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>);
@@ -13,16 +10,7 @@ export class LazyPromise<T> extends Promise<T> {
   readonly [Symbol.toStringTag] = 'LazyPromise';
 
   constructor(executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>)) {
-    let _resolve!: PromiseResolveFunction<T>;
-    let _reject!: PromiseRejectFunction;
-
-    super((resolve, reject) => {
-      _resolve = resolve;
-      _reject = reject;
-    });
-
-    this.#resolve = _resolve;
-    this.#reject = _reject;
+    super();
 
     this.#executorOrPromiseProvider = executorOrPromiseProvider;
   }
@@ -49,10 +37,10 @@ export class LazyPromise<T> extends Promise<T> {
 
     this.#executed = true;
 
-    const result = this.#executorOrPromiseProvider(this.#resolve, this.#reject);
+    const result = this.#executorOrPromiseProvider(this.resolve, this.reject);
 
     if (isPromiseLike(result)) {
-      this.#resolve(result);
+      this.resolve(result);
     }
   }
 }

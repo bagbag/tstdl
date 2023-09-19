@@ -7,8 +7,6 @@ export const enum PromiseState {
 }
 
 export class DeferredPromise<T = void> extends Promise<T> {
-  static readonly [Symbol.species] = Promise;
-
   private backingPromise: Promise<T>;
   private resolvePromise: (value: T | PromiseLike<T>) => void;
   private rejectPromise: (reason?: any) => void;
