@@ -1,10 +1,12 @@
+import type { PromiseExecutor } from './types.js';
+
 export const enum PromiseState {
   Pending = 0,
   Resolved = 1,
   Rejected = 2
 }
 
-export class DeferredPromise<T = void> implements Promise<T> {
+export class DeferredPromise<T = void> extends Promise<T> {
   static readonly [Symbol.species] = Promise;
 
   private backingPromise: Promise<T>;
@@ -31,7 +33,9 @@ export class DeferredPromise<T = void> implements Promise<T> {
     return this.state != PromiseState.Pending;
   }
 
-  constructor(executor?: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+  constructor(executor?: PromiseExecutor<T>) {
+    super(() => { /* noop */ });
+
     this.reset();
 
     if (executor != undefined) {
@@ -39,18 +43,15 @@ export class DeferredPromise<T = void> implements Promise<T> {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
+  override async then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
     return this.backingPromise.then(onfulfilled, onrejected);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined): Promise<T | TResult> {
+  override async catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined): Promise<T | TResult> {
     return this.backingPromise.catch(onrejected);
   }
 
-  // eslint-disable-next-line @typescript-eslint/promise-function-async
-  finally(onfinally?: (() => void) | null | undefined): Promise<T> {
+  override async finally(onfinally?: (() => void) | null | undefined): Promise<T> {
     return this.backingPromise.finally(onfinally);
   }
 

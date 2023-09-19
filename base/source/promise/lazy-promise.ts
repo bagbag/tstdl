@@ -1,36 +1,58 @@
-import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { isPromise } from '#/utils/type-guards.js';
+import { isPromiseLike } from '#/utils/type-guards.js';
+import type { PromiseExecutor, PromiseRejectFunction, PromiseResolveFunction } from './types.js';
 
-type PromiseExecutor<T> = (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void;
-
-export class LazyPromise<T> implements Promise<T> {
+export class LazyPromise<T> extends Promise<T> {
   static readonly [Symbol.species] = Promise;
 
-  private readonly backingPromise: Promise<T>;
+  #resolve: PromiseResolveFunction<T>;
+  #reject: PromiseRejectFunction;
+  #executed = false;
+
+  readonly #executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>);
 
   readonly [Symbol.toStringTag] = 'LazyPromise';
 
-  constructor(executorOrPromiseProvider: () => (Promise<T> | PromiseExecutor<T>)) {
-    lazyProperty(this as any as { backingPromise: Promise<T> }, 'backingPromise', async () => {
-      const providedValue = executorOrPromiseProvider();
+  constructor(executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>)) {
+    let _resolve!: PromiseResolveFunction<T>;
+    let _reject!: PromiseRejectFunction;
 
-      if (isPromise(providedValue)) {
-        return providedValue;
-      }
-
-      return new Promise(providedValue);
+    super((resolve, reject) => {
+      _resolve = resolve;
+      _reject = reject;
     });
+
+    this.#resolve = _resolve;
+    this.#reject = _reject;
+
+    this.#executorOrPromiseProvider = executorOrPromiseProvider;
   }
 
-  async then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
-    return this.backingPromise.then(onfulfilled, onrejected);
+  override async then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
+    this.execute();
+    return super.then(onfulfilled, onrejected);
   }
 
-  async catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined): Promise<T | TResult> {
-    return this.backingPromise.catch(onrejected);
+  override async catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined): Promise<T | TResult> {
+    this.execute();
+    return super.catch(onrejected);
   }
 
-  async finally(onfinally?: (() => void) | null | undefined): Promise<T> {
-    return this.backingPromise.finally(onfinally);
+  override async finally(onfinally?: (() => void) | null | undefined): Promise<T> {
+    this.execute();
+    return super.finally(onfinally);
+  }
+
+  private execute(): void {
+    if (this.#executed) {
+      return;
+    }
+
+    this.#executed = true;
+
+    const result = this.#executorOrPromiseProvider(this.#resolve, this.#reject);
+
+    if (isPromiseLike(result)) {
+      this.#resolve(result);
+    }
   }
 }
