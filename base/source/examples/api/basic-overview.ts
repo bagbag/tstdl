@@ -4,7 +4,7 @@ import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/in
 import { defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
 import { inject } from '#/injector/inject.js';

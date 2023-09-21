@@ -1,3 +1,9 @@
+/**
+ * Errors
+ *
+ * @module Error
+ */
+
 export * from './api.error.js';
 export * from './assertion.error.js';
 export * from './bad-request.error.js';

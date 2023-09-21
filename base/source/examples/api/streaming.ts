@@ -5,7 +5,7 @@ import { defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { CORE_LOGGER, configureTstdl, getGlobalInjector } from '#/core.js';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import { configureNodeHttpServer } from '#/http/server/node/index.js';

@@ -1,1 +1,2 @@
-export * from './mongo/mongo-mail-log.repository.js';
+export * from './mail-log.repository.js';
+export * from './mongo/index.js';

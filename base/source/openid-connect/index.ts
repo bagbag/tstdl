@@ -1,3 +1,9 @@
+/**
+ * OIDC (OAuth 2.0) client implementation
+ *
+ * @module OpenID Connect
+ */
+
 import { Injector } from '#/injector/injector.js';
 import { CachedOidcConfigurationService } from './cached-oidc-configuration.service.js';
 import { OidcConfigurationService } from './oidc-configuration.service.js';

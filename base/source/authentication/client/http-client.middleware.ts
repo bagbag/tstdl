@@ -7,9 +7,9 @@ import type { HttpClientMiddleware, HttpClientMiddlewareNext } from '#/http/clie
 import type { ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { cacheAsyncValueOrProvider } from '#/utils/value-or-provider.js';
 import { dontWaitForValidToken } from '../authentication.api.js';
-import type { AuthenticationService } from './authentication.service.js';
+import type { AuthenticationClientService } from './authentication.service.js';
 
-export function waitForAuthenticationCredentialsMiddleware(authenticationServiceOrProvider: ValueOrAsyncProvider<AuthenticationService>): HttpClientMiddleware {
+export function waitForAuthenticationCredentialsMiddleware(authenticationServiceOrProvider: ValueOrAsyncProvider<AuthenticationClientService>): HttpClientMiddleware {
   const getAuthenticationService = cacheAsyncValueOrProvider(authenticationServiceOrProvider);
 
   // eslint-disable-next-line @typescript-eslint/no-shadow

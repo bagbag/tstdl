@@ -1,3 +1,9 @@
+/**
+ * Dependency Injection
+ *
+ * @module Injector
+ */
+
 export * from './decorators.js';
 export * from './inject.js';
 export * from './injector.js';

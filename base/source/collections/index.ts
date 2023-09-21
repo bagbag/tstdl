@@ -1,3 +1,9 @@
+/**
+ * Data structures
+ *
+ * @module Collections
+ */
+
 export * from './collection.js';
 export * from './keyed-set.js';
 export * from './list.js';

@@ -31,7 +31,7 @@ const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
 @Singleton()
-export class AuthenticationService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any> implements AfterResolve, AsyncDisposable {
+export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any> implements AfterResolve, AsyncDisposable {
   private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
   private readonly errorSubject = new Subject<Error>();
   private readonly tokenUpdateBus = inject(MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>, tokenUpdateBusName);

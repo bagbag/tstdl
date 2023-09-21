@@ -1,11 +1,13 @@
 import { Readable } from 'node:stream';
 import type { ReadableStream } from 'node:stream/web';
+
 import type { Dispatcher } from 'undici';
 import { request, errors as undiciErrors } from 'undici';
 
 import { HttpHeaders } from '#/http/http-headers.js';
 import { HttpError, HttpErrorReason } from '#/http/http.error.js';
-import { InjectArg, Singleton } from '#/injector/index.js';
+import type { Resolvable } from '#/injector/index.js';
+import { Singleton, injectArgument, resolveArgumentType } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined } from '#/utils/type-guards.js';
@@ -20,14 +22,10 @@ export type UndiciHttpClientAdapterOptions = {
 let defaultOptions: UndiciHttpClientAdapterOptions = {};
 
 @Singleton({ defaultArgumentProvider: () => defaultOptions })
-export class UndiciHttpClientAdapter extends HttpClientAdapter {
-  private readonly options: UndiciHttpClientAdapterOptions;
+export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolvable<UndiciHttpClientAdapterOptions> {
+  private readonly options = injectArgument(this);
 
-  constructor(@InjectArg() options: UndiciHttpClientAdapterOptions = {}) {
-    super();
-
-    this.options = options;
-  }
+  declare readonly [resolveArgumentType]: UndiciHttpClientAdapterOptions;
 
   // eslint-disable-next-line max-lines-per-function, max-statements
   async call(httpClientRequest: HttpClientRequest): Promise<HttpClientResponse> {

@@ -377,6 +377,14 @@ export const assertNotPromise: AssertNotFunction<Promise<any>> = promiseGuards.a
 export const assertPromisePass: AssertPassFunction<Promise<any>> = promiseGuards.assertPromisePass;
 export const assertNotPromisePass: AssertNotPassFunction<Promise<any>> = promiseGuards.assertNotPromisePass;
 
+const promiseLikeGuards = createGuards('PromiseLike', (value): value is PromiseLike<any> => isPromise(value) || ((((typeof value == 'object') && (value != null)) || isFunction(value)) && ((typeof (value as PromiseLike<any>).then) == 'function')));
+export const isPromiseLike: IsFunction<PromiseLike<any>> = promiseLikeGuards.isPromiseLike;
+export const isNotPromiseLike: IsNotFunction<PromiseLike<any>> = promiseLikeGuards.isNotPromiseLike;
+export const assertPromiseLike: AssertFunction<PromiseLike<any>> = promiseLikeGuards.assertPromiseLike;
+export const assertNotPromiseLike: AssertNotFunction<PromiseLike<any>> = promiseLikeGuards.assertNotPromiseLike;
+export const assertPromiseLikePass: AssertPassFunction<PromiseLike<any>> = promiseLikeGuards.assertPromiseLikePass;
+export const assertNotPromiseLikePass: AssertNotPassFunction<PromiseLike<any>> = promiseLikeGuards.assertNotPromiseLikePass;
+
 const errorGuards = createInstanceGuards('error', Error);
 export const isError: IsFunction<Error> = errorGuards.isError;
 export const isNotError: IsNotFunction<Error> = errorGuards.isNotError;

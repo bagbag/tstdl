@@ -15,7 +15,7 @@ export type MongoModuleConfig = {
 export const mongoModuleConfig: MongoModuleConfig = {
   defaultConnection: { url: 'mongodb://localhost:27017/test-db' },
   defaultDatabase: undefined,
-  logPrefix: 'MONGO'
+  logPrefix: 'Mongo'
 };
 
 export function configureMongo(config: Partial<MongoModuleConfig>): void {

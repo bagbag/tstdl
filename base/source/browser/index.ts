@@ -1,3 +1,9 @@
+/**
+ * Web automation
+ *
+ * @module Browser
+ */
+
 export * from './browser-context-controller.js';
 export * from './browser-controller.js';
 export * from './browser.service.js';

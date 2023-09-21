@@ -1,3 +1,9 @@
+/**
+ * Repository abstractions
+ *
+ * @module Database
+ */
+
 export * from './entity-repository.js';
 export * from './entity.js';
 export * from './id.js';

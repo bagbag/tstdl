@@ -1,3 +1,9 @@
+/**
+ * Data Structures
+ *
+ * @module Data Structures
+ */
+
 export * from './array-dictionary.js';
 export * from './array-list.js';
 export * from './cache.js';

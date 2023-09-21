@@ -28,14 +28,14 @@ const renewBuffer = expirationTime / 2;
   }
 })
 export class MongoLock extends Lock {
-  private readonly lockRepository: MongoLockRepository;
-  private readonly logger: Logger;
+  readonly #lockRepository: MongoLockRepository;
+  readonly #logger: Logger;
 
   constructor(lockRepository: MongoLockRepository, resource: string, logger: Logger) {
     super(resource);
 
-    this.lockRepository = lockRepository;
-    this.logger = logger;
+    this.#lockRepository = lockRepository;
+    this.#logger = logger;
   }
 
   async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> { // eslint-disable-line max-lines-per-function, max-statements
@@ -88,7 +88,7 @@ export class MongoLock extends Lock {
           expiration = (refreshResult == false) ? new Date(0) : refreshResult; // eslint-disable-line require-atomic-updates
         }
         catch (error: unknown) {
-          this.logger.error(error as Error);
+          this.#logger.error(error as Error);
         }
         finally {
           await cancelableTimeoutUntil(Math.max(currentTimestamp() + 1000, expiration.valueOf() - renewBuffer), releaseToken);
@@ -116,21 +116,21 @@ export class MongoLock extends Lock {
   }
 
   async exists(): Promise<boolean> {
-    return this.lockRepository.exists(this.resource);
+    return this.#lockRepository.exists(this.resource);
   }
 
   private async tryAcquireOrRefresh(resource: string, key: string): Promise<false | Date> {
     const expirationDate = getExpirationDate();
-    return this.lockRepository.tryInsertOrRefresh(resource, key, expirationDate);
+    return this.#lockRepository.tryInsertOrRefresh(resource, key, expirationDate);
   }
 
   private async tryRefresh(resource: string, key: string): Promise<false | Date> {
     const expiration = getExpirationDate();
-    return this.lockRepository.tryUpdateExpiration(resource, key, expiration);
+    return this.#lockRepository.tryUpdateExpiration(resource, key, expiration);
   }
 
   private async release(resource: string, key: string): Promise<boolean> {
-    return this.lockRepository.deleteByResource(resource, key);
+    return this.#lockRepository.deleteByResource(resource, key);
   }
 }
 

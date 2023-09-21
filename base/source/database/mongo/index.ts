@@ -1,3 +1,9 @@
+/**
+ * MongoDB implemenation for Database module
+ *
+ * @module Database - MongoDB
+ */
+
 export * from './classes.js';
 export * from './model/index.js';
 export * from './module.js';

@@ -3,14 +3,14 @@ import '#/polyfills.js';
 
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { AuthenticationService as AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
+import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
 import { AuthenticationTokenPayloadProvider } from '#/authentication/server/authentication-token-payload.provider.js';
 import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller.js';
 import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service.js';
 import { configureAuthenticationServer } from '#/authentication/server/module.js';
 import { MongoAuthenticationCredentialsRepository, configureMongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository.js';
 import { MongoAuthenticationSessionRepository, configureMongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository.js';
-import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici-http-client.adapter.js';
+import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
 import { Singleton } from '#/injector/decorators.js';

@@ -1,3 +1,9 @@
+/**
+ * PDF generation
+ *
+ * @module PDF
+ */
+
 import { BrowserContextController } from '#/browser/browser-context-controller.js';
 import type { BrowserControllerArgument } from '#/browser/browser-controller.js';
 import { BrowserController } from '#/browser/browser-controller.js';

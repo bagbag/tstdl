@@ -5,17 +5,17 @@ import { Injector } from '#/injector/injector.js';
 import type { Type } from '#/types.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
-import { AuthenticationService } from './authentication.service.js';
+import { AuthenticationClientService } from './authentication.service.js';
 import { waitForAuthenticationCredentialsMiddleware } from './http-client.middleware.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
-export type AuthenticationModuleConfig = {
+export type AuthenticationClientModuleConfig = {
   authenticationApiClient?: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>,
   initialAuthenticationData?: unknown,
   registerMiddleware?: boolean
 };
 
-export function configureAuthenticationClient(config: AuthenticationModuleConfig, injector = getCurrentInjector()): void {
+export function configureAuthenticationClient(config: AuthenticationClientModuleConfig, injector = getCurrentInjector()): void {
   if (isDefined(config.authenticationApiClient)) {
     (injector ?? Injector).registerSingleton(AUTHENTICATION_API_CLIENT, { useToken: config.authenticationApiClient });
   }
@@ -27,7 +27,7 @@ export function configureAuthenticationClient(config: AuthenticationModuleConfig
   if (isDefined(config.registerMiddleware)) {
     (injector ?? Injector).register(HTTP_CLIENT_MIDDLEWARE, {
       useFactory(_, context) {
-        const authenticationService = context.resolve(AuthenticationService, undefined, { forwardRef: true, forwardRefTypeHint: 'object' });
+        const authenticationService = context.resolve(AuthenticationClientService, undefined, { forwardRef: true, forwardRefTypeHint: 'object' });
         return waitForAuthenticationCredentialsMiddleware(authenticationService);
       }
     }, { multi: true });
