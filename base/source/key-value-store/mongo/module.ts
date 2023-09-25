@@ -17,6 +17,6 @@ export function configureMongoKeyValueStore(keyValueRepositoryConfig: MongoRepos
 
   if (register) {
     Injector.registerSingleton(KeyValueStoreProvider, { useToken: MongoKeyValueStoreProvider });
-    Injector.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore, defaultArgument: '' });
+    Injector.registerSingleton(KeyValueStore, { useToken: MongoKeyValueStore });
   }
 }

@@ -18,7 +18,9 @@ export const webServerModuleConfiguration: WebServerModuleConfiguration = {
   port: 8000
 };
 
-@Singleton({ defaultArgumentProvider: () => webServerModuleConfiguration })
+@Singleton({
+  defaultArgumentProvider: () => webServerModuleConfiguration
+})
 export class WebServerModule extends ModuleBase implements Module, Resolvable<WebServerModuleConfiguration> {
   private readonly config = injectArgument(this);
   private readonly httpServer = inject(HttpServer);
