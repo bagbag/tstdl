@@ -431,7 +431,17 @@ export class Injector implements AsyncDisposable {
         }
 
         const parameters = (typeMetadata?.parameters ?? []).map((metadata): unknown => this.resolveClassInjection(resolutionTag, context, provider.useClass, metadata, arg, chain));
-        result = { value: new provider.useClass(...parameters) };
+
+        try {
+          result = { value: new provider.useClass(...parameters) };
+        }
+        catch (error) {
+          if (error instanceof ResolveError) {
+            throw error;
+          }
+
+          throw new ResolveError('Error in class constructor.', chain, error as Error);
+        }
       }
 
       if (isValueProvider(provider)) {
