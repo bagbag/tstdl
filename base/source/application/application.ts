@@ -15,6 +15,7 @@ import { FunctionModule } from '#/module/modules/function.module.js';
 import { getShutdownSignal, getShutdownToken } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { OneOrMany, Type } from '#/types.js';
+import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { isDefined, isFunction, isObject, isUndefined } from '#/utils/type-guards.js';
@@ -22,11 +23,13 @@ import { isDefined, isFunction, isObject, isUndefined } from '#/utils/type-guard
 export type BootstrapFn = () => void | Promise<void>;
 
 export type RunOptions = {
-  bootstrap?: BootstrapFn
+  bootstrap?: OneOrMany<BootstrapFn>
 };
 
+export type ApplicationArgument = LoggerArgument;
+
 @Singleton()
-export class Application implements Resolvable<LoggerArgument> {
+export class Application implements Resolvable<ApplicationArgument> {
   static _instance: Application | undefined;
 
   private static get instance(): Application {
@@ -91,6 +94,10 @@ export class Application implements Resolvable<LoggerArgument> {
   }
 
   run(...optionsFunctionsAndModules: [RunOptions | OneOrMany<FunctionModuleFunction | Type<Module>>, ...OneOrMany<FunctionModuleFunction | Type<Module>>[]]): void {
+    if (this.#shutdownToken.isSet) {
+      throw new Error('Application was shut down.');
+    }
+
     const options = ((optionsFunctionsAndModules.length > 0) && isObject(optionsFunctionsAndModules[0])) ? optionsFunctionsAndModules[0]! as RunOptions : undefined;
     const functionsAndModules = (isUndefined(options) ? optionsFunctionsAndModules : optionsFunctionsAndModules.slice(1)) as OneOrMany<FunctionModuleFunction | Type<Module>>[];
 
@@ -125,7 +132,9 @@ export class Application implements Resolvable<LoggerArgument> {
     }
 
     if (isDefined(options.bootstrap)) {
-      await runInInjectionContext(this.#injector, options.bootstrap);
+      for (const fn of toArray(options.bootstrap)) {
+        await runInInjectionContext(this.#injector, fn);
+      }
     }
 
     const modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
