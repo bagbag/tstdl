@@ -1,8 +1,6 @@
 import { CancellationToken } from '#/cancellation/index.js';
-import { ResolveArg, Singleton } from '#/injector/index.js';
-import type { LockProviderArgument } from '#/lock/index.js';
+import { Injector, Singleton, inject, runInInjectionContext } from '#/injector/index.js';
 import { LockProvider } from '#/lock/index.js';
-import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { compareByValueSelectionDescending } from '#/utils/comparison.js';
@@ -37,23 +35,18 @@ export type MigrationResult<T> = {
 
 @Singleton()
 export class Migrator {
-  private readonly migrationStateRepository: MigrationStateRepository;
-  private readonly lockProvider: LockProvider;
-  private readonly logger: Logger;
-
-  constructor(migrationStateRepository: MigrationStateRepository, @ResolveArg<LockProviderArgument>('migrator:') lockProvider: LockProvider, @ResolveArg<LoggerArgument>('Migrator') logger: Logger) {
-    this.migrationStateRepository = migrationStateRepository;
-    this.lockProvider = lockProvider;
-    this.logger = logger;
-  }
+  readonly #injector = inject(Injector);
+  readonly #migrationStateRepository = inject(MigrationStateRepository);
+  readonly #lockProvider = inject(LockProvider, 'migrator:');
+  readonly #logger = inject(Logger, 'Migrator');
 
   // eslint-disable-next-line max-statements, max-lines-per-function
   async migrate<T>({ name, migrations }: MigrationDefinition<T>): Promise<MigrationResult<T>[]> {
     if (migrations.length == 0) {
-      throw new Error('no migrations provided');
+      throw new Error('No migrations provided.');
     }
 
-    const lock = this.lockProvider.get(`${name}`);
+    const lock = this.#lockProvider.get(`${name}`);
 
     // eslint-disable-next-line max-statements, max-lines-per-function
     const { result } = await lock.use(30000, true, async (): Promise<MigrationResult<T>[]> => {
@@ -65,7 +58,7 @@ export class Migrator {
           restart: () => restartToken.set()
         };
 
-        const currentState = await this.migrationStateRepository.tryLoadByFilter({ name });
+        const currentState = await this.#migrationStateRepository.tryLoadByFilter({ name });
         const currentRevision = currentState?.revision ?? 'init';
         const latestRevision = migrations.sort(compareByValueSelectionDescending((migration) => migration.to))[0]!.to;
 
@@ -76,26 +69,27 @@ export class Migrator {
         const suitableMigrations = migrations.filter((migration) => toArray(migration.from).includes(currentRevision));
 
         if (suitableMigrations.length == 0) {
-          throw new Error(`no suitable migration path from current revision ${currentRevision} to latest revision ${latestRevision} found`);
+          throw new Error(`No suitable migration path from current revision ${currentRevision} to latest revision ${latestRevision} found.`);
         }
 
         const migration = suitableMigrations.sort(compareByValueSelectionDescending((m) => m.to))[0]!;
 
-        this.logger.warn(`starting migration for "${name}" from revision ${currentRevision} to ${migration.to}`);
+        this.#logger.warn(`Starting migration for "${name}" from revision ${currentRevision} to ${migration.to}.`);
 
         let migratorResult!: T;
-        const time = await Timer.measureAsync(async () => (migratorResult = await migration.migrator(control)));
+
+        const time = await Timer.measureAsync(async () => (migratorResult = await runInInjectionContext(this.#injector, async () => migration.migrator(control))));
 
         results.push({ from: currentRevision, to: migration.to, time, result: migratorResult, restartRequested: restartToken.isSet });
 
         if (restartToken.isSet) {
-          this.logger.warn(`finished migration in ${round(time / 1000, 2)} seconds`);
-          this.logger.warn('migration-restart requested');
+          this.#logger.warn(`Finished migration in ${round(time / 1000, 2)} seconds.`);
+          this.#logger.warn('Migration-restart requested.');
           continue;
         }
 
         if (isDefined(currentState)) {
-          await this.migrationStateRepository.patchByFilter({ name }, { revision: migration.to });
+          await this.#migrationStateRepository.patchByFilter({ name }, { revision: migration.to });
         }
         else {
           const newState: NewMigrationState = {
@@ -103,10 +97,10 @@ export class Migrator {
             revision: migration.to
           };
 
-          await this.migrationStateRepository.insert(newState);
+          await this.#migrationStateRepository.insert(newState);
         }
 
-        this.logger.warn(`finished migration in ${round(time / 1000, 2)} seconds`);
+        this.#logger.warn(`Finished migration in ${round(time / 1000, 2)} seconds.`);
       }
 
       return results;
