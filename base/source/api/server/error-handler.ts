@@ -1,4 +1,4 @@
-import type { CustomError, CustomErrorStatic } from '#/error/custom.error.js';
+import type { CustomError, CustomErrorStatic } from '#/errors/custom.error.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { Logger } from '#/logger/index.js';
 import type { Type } from '#/types.js';

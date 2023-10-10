@@ -44,7 +44,7 @@
     "./disposable": "./disposable/index.js",
     "./distributed-loop": "./distributed-loop/index.js",
     "./enumerable": "./enumerable/index.js",
-    "./error": "./error/index.js",
+    "./errors": "./errors/index.js",
     "./function": "./function/index.js",
     "./http": "./http/index.js",
     "./http/undici": "./http/client/adapters/undici.adapter.js",

@@ -1,4 +1,4 @@
-import { AssertionError } from '#/error/assertion.error.js';
+import { AssertionError } from '#/errors/assertion.error.js';
 import type { BinaryData } from '#/types.js';
 import { createArray } from './array/array.js';
 import { toUint8Array } from './binary.js';

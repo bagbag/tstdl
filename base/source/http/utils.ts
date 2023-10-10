@@ -1,6 +1,6 @@
-import { MaxBytesExceededError } from '#/error/max-bytes-exceeded.error.js';
-import { NotSupportedError } from '#/error/not-supported.error.js';
-import { UnsupportedMediaTypeError } from '#/error/unsupported-media-type.error.js';
+import { MaxBytesExceededError } from '#/errors/max-bytes-exceeded.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
+import { UnsupportedMediaTypeError } from '#/errors/unsupported-media-type.error.js';
 import type { HttpHeaders } from '#/http/http-headers.js';
 import type { UndefinableJson } from '#/types.js';
 import type { AnyIterable } from '#/utils/any-iterable-iterator.js';

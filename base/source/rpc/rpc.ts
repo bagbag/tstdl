@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import { NotImplementedError } from '#/error/not-implemented.error.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer/index.js';
 import { deserialize, registerSerializer, serialize } from '#/serializer/index.js';
 import type { Record, TypedOmit } from '#/types.js';

@@ -3,7 +3,7 @@
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
 import type { AbstractConstructor, JsonPrimitive, Primitive, TypedArray } from '#/types.js';
 import type { PascalCase } from 'type-fest';
-import { AssertionError } from '../error/assertion.error.js';
+import { AssertionError } from '../errors/assertion.error.js';
 
 export type AssertionMessage = string | (() => string);
 

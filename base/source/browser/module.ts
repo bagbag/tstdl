@@ -1,7 +1,7 @@
 import type { BrowserType } from 'playwright';
 import { chromium, firefox, webkit } from 'playwright';
 
-import { NotSupportedError } from '#/error/not-supported.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Injector } from '#/injector/injector.js';
 import { copyObjectProperties, filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';

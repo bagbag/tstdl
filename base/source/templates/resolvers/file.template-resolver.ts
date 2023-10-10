@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-import { BadRequestError } from '#/error/bad-request.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InjectArg, Singleton } from '#/injector/decorators.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { resolveArgumentType } from '#/injector/interfaces.js';

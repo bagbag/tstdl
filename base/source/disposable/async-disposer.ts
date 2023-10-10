@@ -1,7 +1,7 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
 import { isDefined, isNullOrUndefined } from '#/utils/type-guards.js';
 import { CancellationToken } from '../cancellation/token.js';
-import { MultiError } from '../error/multi.error.js';
+import { MultiError } from '../errors/multi.error.js';
 import type { AsyncDisposable, Disposable } from './disposable.js';
 import { dispose, disposeAsync, isAsyncDisposable, isDisposable } from './disposable.js';
 

@@ -1,4 +1,4 @@
-import { NotSupportedError } from '#/error/not-supported.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { RandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
 import { defaultRandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
 

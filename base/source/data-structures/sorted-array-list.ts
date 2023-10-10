@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import { NotImplementedError } from '#/error/not-implemented.error.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { TryDereference } from '#/serializer/serializable.js';
 import { Serializable, serializable } from '#/serializer/serializable.js';
 import { binarySearch, binarySearchFirst, binarySearchInsertionIndex, binarySearchLast } from '#/utils/binary-search.js';

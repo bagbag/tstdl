@@ -1,4 +1,4 @@
-import { BadRequestError } from '#/error/bad-request.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
 import { numberPattern } from '#/utils/patterns.js';
 import { isNotNumber, isNotString, isNullOrUndefined, isNumber, isString, isUndefined } from '#/utils/type-guards.js';
 import type { HttpValueMapInput } from './http-value-map.js';

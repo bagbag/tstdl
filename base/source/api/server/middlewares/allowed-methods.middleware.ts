@@ -1,4 +1,4 @@
-import { MethodNotAllowedError } from '#/error/method-not-allowed.error.js';
+import { MethodNotAllowedError } from '#/errors/method-not-allowed.error.js';
 import type { HttpServerRequest } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { AsyncMiddlewareNext } from '#/utils/middleware.js';

@@ -1,4 +1,4 @@
-import { BadRequestError } from '#/error/bad-request.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
 import type { OneOrMany, Record } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { isIterable } from '#/utils/iterable-helpers/is-iterable.js';

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 import { supportsNotification } from '#/supports.js';
-import { DetailsError } from '../error/details.error.js';
+import { DetailsError } from '../errors/details.error.js';
 import type { DeepArray, Record } from '../types.js';
 import { decycle } from './object/decycle.js';
 import { isDefined } from './type-guards.js';

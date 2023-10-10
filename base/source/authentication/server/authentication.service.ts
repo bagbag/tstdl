@@ -1,5 +1,5 @@
-import { InvalidTokenError } from '#/error/invalid-token.error.js';
-import { NotImplementedError } from '#/error/not-implemented.error.js';
+import { InvalidTokenError } from '#/errors/invalid-token.error.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { AfterResolve } from '#/injector/index.js';
 import { Inject, Optional, Singleton, afterResolve } from '#/injector/index.js';
 import type { Record } from '#/types.js';

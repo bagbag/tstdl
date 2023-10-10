@@ -1,5 +1,5 @@
 import { ObservableSet } from '../../../collections/observable/observable-set.js';
-import { MultiError } from '../../../error/multi.error.js';
+import { MultiError } from '../../../errors/multi.error.js';
 import type { AnyIterable } from '../../any-iterable-iterator.js';
 import type { ParallelizableIteratorFunction } from '../types.js';
 

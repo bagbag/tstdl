@@ -1,6 +1,6 @@
 import type { Observable } from 'rxjs';
 
-import { DetailsError } from '#/error/details.error.js';
+import { DetailsError } from '#/errors/details.error.js';
 import { ResolveArg, Singleton } from '#/injector/decorators.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';

@@ -1,5 +1,5 @@
-import { BadRequestError } from '#/error/bad-request.error.js';
-import { InvalidTokenError } from '#/error/invalid-token.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
+import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import type { HttpServerRequest } from '#/http/server/index.js';
 import type { OneOrMany, Record } from '#/types.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';

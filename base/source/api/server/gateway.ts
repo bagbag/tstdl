@@ -1,8 +1,8 @@
 import 'urlpattern-polyfill'; // eslint-disable-line import/no-unassigned-import
 
-import { BadRequestError } from '#/error/bad-request.error.js';
-import { NotFoundError } from '#/error/not-found.error.js';
-import { NotImplementedError } from '#/error/not-implemented.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
+import { NotFoundError } from '#/errors/not-found.error.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { HttpServerRequestContext } from '#/http/server/http-server.js';
 import type { HttpServerRequest } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';

@@ -1,4 +1,4 @@
-import { AssertionError } from '#/error/assertion.error.js';
+import { AssertionError } from '#/errors/assertion.error.js';
 import { firstValueFrom, fromEvent, map, race, switchMap, throwError } from 'rxjs';
 import { FactoryMap } from './factory-map.js';
 import { assertNotNullPass, isFunction, isNull } from './type-guards.js';

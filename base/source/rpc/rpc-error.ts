@@ -1,4 +1,4 @@
-import { CustomError } from '#/error/custom.error.js';
+import { CustomError } from '#/errors/custom.error.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined, isObject } from '#/utils/type-guards.js';
 

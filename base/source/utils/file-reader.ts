@@ -1,4 +1,4 @@
-import { DetailsError } from '../error/details.error.js';
+import { DetailsError } from '../errors/details.error.js';
 
 export async function readAsText(blob: Blob, encoding?: string): Promise<string> {
   return setup((reader) => reader.readAsText(blob, encoding));

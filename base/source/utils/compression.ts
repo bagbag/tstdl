@@ -1,4 +1,4 @@
-import { NotSupportedError } from '#/error/not-supported.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { dynamicImport } from '#/import.js';
 import { supportsReadableStream } from '#/supports.js';
 import type { ObjectLiteral } from '#/types.js';

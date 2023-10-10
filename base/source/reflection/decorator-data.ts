@@ -1,4 +1,4 @@
-import { DetailsError } from '#/error/details.error.js';
+import { DetailsError } from '#/errors/details.error.js';
 import { isDefined, isFunction, isNumber, isObject, isUndefined } from '#/utils/type-guards.js';
 import type { DecoratorData } from './types.js';
 import { getConstructor } from './utils.js';

@@ -1,6 +1,6 @@
 
 import type { Entity, MaybeNewEntity } from '#/database/index.js';
-import { NotFoundError } from '#/error/not-found.error.js';
+import { NotFoundError } from '#/errors/not-found.error.js';
 import type { Record } from '#/types.js';
 import { objectKeys } from '#/utils/object/object.js';
 import { assertDefined, isNull, isNullOrUndefined } from '#/utils/type-guards.js';

@@ -1,4 +1,4 @@
-import { NotSupportedError } from '#/error/not-supported.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
 import { isDate, isNumber } from './type-guards.js';

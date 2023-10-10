@@ -1,4 +1,4 @@
-import { NotSupportedError } from '#/error/not-supported.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { Observable } from 'rxjs';
 import { distinctUntilChanged, filter, fromEvent, map, merge, ReplaySubject, share, shareReplay, startWith, takeUntil } from 'rxjs';
 

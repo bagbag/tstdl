@@ -2,7 +2,7 @@ import type { Record, TypedOmit, UndefinableJson } from '#/types.js';
 import type { ErrorExtraInfo } from '#/utils/format-error.js';
 import { propertyNameOf } from '#/utils/object/property-name.js';
 import { isDefined, isNotString, isString } from '#/utils/type-guards.js';
-import { CustomError } from '../error/custom.error.js';
+import { CustomError } from '../errors/custom.error.js';
 import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, HttpClientResponseObject } from './client/index.js';
 
 export enum HttpErrorReason {

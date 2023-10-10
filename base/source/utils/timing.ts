@@ -1,7 +1,7 @@
 import { firstValueFrom, map, race, timer } from 'rxjs';
 
 import type { CancellationSignal } from '#/cancellation/token.js';
-import { TimeoutError } from '#/error/timeout.error.js';
+import { TimeoutError } from '#/errors/timeout.error.js';
 import { _throw } from './throw.js';
 import type { ValueOrProvider } from './value-or-provider.js';
 import { resolveValueOrProvider } from './value-or-provider.js';

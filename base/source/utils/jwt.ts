@@ -1,4 +1,4 @@
-import { InvalidTokenError } from '../error/invalid-token.error.js';
+import { InvalidTokenError } from '../errors/invalid-token.error.js';
 import type { BinaryData, OneOrMany, StringMap } from '../types.js';
 import { toArray } from './array/array.js';
 import { decodeBase64Url, encodeBase64Url } from './base64.js';

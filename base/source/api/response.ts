@@ -1,7 +1,7 @@
 import { SecretRequirementsError } from '#/authentication/errors/secret-requirements.error.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { CustomError, CustomErrorStatic } from '../error/index.js';
-import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../error/index.js';
+import type { CustomError, CustomErrorStatic } from '../errors/index.js';
+import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../errors/index.js';
 import type { UndefinableJson } from '../types.js';
 import { assertString, isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
 import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers.js';

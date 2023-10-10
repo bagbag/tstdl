@@ -1,4 +1,4 @@
-import { BadRequestError } from '#/error/bad-request.error.js';
+import { BadRequestError } from '#/errors/bad-request.error.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
 import { isAnyIterable } from '../any-iterable-iterator.js';
 import { concatArrayBufferViews } from '../binary.js';

@@ -1,5 +1,5 @@
-import { ForbiddenError } from '#/error/forbidden.error.js';
-import { NotImplementedError } from '#/error/not-implemented.error.js';
+import { ForbiddenError } from '#/errors/forbidden.error.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { HttpRequestAuthorization } from '#/http/client/index.js';
 import { HttpClient } from '#/http/client/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';

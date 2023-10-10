@@ -1,5 +1,5 @@
-import type { CustomErrorOptions } from '#/error/custom.error.js';
-import { CustomError } from '#/error/custom.error.js';
+import type { CustomErrorOptions } from '#/errors/custom.error.js';
+import { CustomError } from '#/errors/custom.error.js';
 import type { JsonPath } from '#/json-path/index.js';
 import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';

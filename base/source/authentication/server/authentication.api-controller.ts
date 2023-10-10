@@ -1,6 +1,6 @@
 import { apiController } from '#/api/server/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
-import { UnauthorizedError } from '#/error/unauthorized.error.js';
+import { UnauthorizedError } from '#/errors/unauthorized.error.js';
 import type { SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { Record, TypedOmit } from '#/types.js';
