@@ -45,13 +45,13 @@ export function registerErrorHandler<T extends CustomError, TData extends ErrorH
   errorHandlers.set(constructor.errorName, { statusCode, serializer, deserializer });
 }
 
-export function hasErrorHandler(constructor: CustomErrorStatic | ErrorResponse | string): boolean {
-  const name = isFunction(constructor)
-    ? constructor.errorName
-    : isString(constructor)
-      ? constructor
-      : isErrorResponse(constructor)
-        ? constructor.error.name
+export function hasErrorHandler(typeOrResponseOrName: CustomErrorStatic | ErrorResponse | string): boolean {
+  const name = isFunction(typeOrResponseOrName)
+    ? typeOrResponseOrName.errorName
+    : isString(typeOrResponseOrName)
+      ? typeOrResponseOrName
+      : isErrorResponse(typeOrResponseOrName)
+        ? typeOrResponseOrName.error.name
         : undefined;
 
   return errorHandlers.has(name!);
@@ -59,14 +59,6 @@ export function hasErrorHandler(constructor: CustomErrorStatic | ErrorResponse |
 
 export function getErrorStatusCode(error: CustomError, defaultStatusCode: number = 500): number {
   return errorHandlers.get(error.name)?.statusCode ?? defaultStatusCode;
-}
-
-export function createResultResponse<T>(result: T): ResultResponse<T> {
-  const response: ResultResponse<T> = {
-    result
-  };
-
-  return response;
 }
 
 export function createErrorResponse(error: Error, details?: any): ErrorResponse;
@@ -112,18 +104,6 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   return response;
 }
 
-export function parseResponse<T>(response: Response<T>): T {
-  if (isResultResponse(response)) {
-    return response.result;
-  }
-
-  if (isErrorResponse(response)) {
-    throw parseErrorResponse(response);
-  }
-
-  throw new Error('Unsupported response.');
-}
-
 export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError?: true): Error;
 export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError: false): Error | undefined;
 export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApiError: boolean = true): Error | undefined {
@@ -141,18 +121,8 @@ export function parseErrorResponse(response: ErrorResponse, fallbackToGenericApi
   return new ApiError(response);
 }
 
-export function isResultResponse<T = any>(response: Response<T> | unknown): response is ResultResponse<T> {
-  const hasResult = isObject(response) && isDefined((response as ResultResponse<T>).result);
-  return hasResult;
-}
-
 export function isErrorResponse(response: Response<any> | unknown): response is ErrorResponse {
-  const hasError = isObject(response) && isDefined((response as ErrorResponse).error);
-  return hasError;
-}
-
-export function isResponse<T = any>(obj: unknown): obj is Response<T> {
-  return (isResultResponse(obj) || isErrorResponse(obj));
+  return isObject(response) && isDefined((response as ErrorResponse).error);
 }
 
 registerErrorHandler(ApiError, 400, ({ response }) => response, (response) => new ApiError(response));

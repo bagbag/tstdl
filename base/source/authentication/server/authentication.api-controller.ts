@@ -1,6 +1,6 @@
 import { apiController } from '#/api/server/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
-import { UnauthorizedError } from '#/errors/unauthorized.error.js';
+import { InvalidCredentialsError } from '#/errors/invalid-credentials.error.js';
 import type { SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { Record, TypedOmit } from '#/types.js';
@@ -25,7 +25,7 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record =
     const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
 
     if (!authenticationResult.success) {
-      throw new UnauthorizedError('Invalid credentials.');
+      throw new InvalidCredentialsError();
     }
 
     const result = await this.authenticationService.getToken(authenticationResult.subject, parameters.data);

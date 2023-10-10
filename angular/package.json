@@ -25,7 +25,7 @@
     "@angular/platform-browser-dynamic": "16.2",
     "@angular/router": "16.2",
     "@preact/signals": "1.2",
-    "@tstdl/base": "^0.89.0",
+    "@tstdl/base": "^0.90",
     "chroma-js": "2.4",
     "luxon": "3.4",
     "marked": "9.1",

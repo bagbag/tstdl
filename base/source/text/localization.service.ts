@@ -19,7 +19,11 @@ export type Language = {
   name: string
 };
 
-export type LocalizeFunction<Parameters = void> = (parameters: Parameters) => string;
+export type LocalizeFunctionContext = {
+  localizationService: LocalizationService
+};
+
+export type LocalizeFunction<Parameters = void> = (parameters: Parameters, context: LocalizeFunctionContext) => string;
 
 export type LocalizeItem<Parameters = void> = string | LocalizeFunction<Parameters>;
 
@@ -267,7 +271,7 @@ export class LocalizationService {
     }
 
     if (isFunction(templateOrFunction)) {
-      return templateOrFunction(parameters);
+      return templateOrFunction(parameters, { localizationService: this });
     }
 
     const template = templateOrFunction;
