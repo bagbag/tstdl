@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
-import type { Except, UnionToIntersection } from 'type-fest';
+import type { Except } from 'type-fest';
 import type { Signal } from './signals/api.js';
 
 export type ObjectLiteral = {};
@@ -124,6 +124,8 @@ export type SimplifyDeep<T> = T extends BuiltIn ? T
   : T extends readonly any[] ? { [I in keyof T]: SimplifyDeep<T[I]> }
   : T extends Record ? { [K in keyof T]: SimplifyDeep<T[K]> } & {}
   : T;
+
+export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUnion: Union) => void : never) extends ((mergedIntersection: infer Intersection) => void) ? Intersection : never;
 
 export type UnionToTuple<T, Tuple extends any[] = []> = UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? UnionToTuple<Exclude<T, R>, [R, ...Tuple]> : Tuple;
 
