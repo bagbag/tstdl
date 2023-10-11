@@ -104,9 +104,9 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
       },
       HttpError: {
         header: (error) => (
-          isDefined(error.response)
-            ? `HTTP Fehler ${error.response.statusCode.toString()}`
-            : 'HTTP Fehler'
+          (isDefined(error.response) && error.response.statusCode != 0)
+            ? `Http Fehler - ${error.response.statusCode.toString()}`
+            : 'Http Fehler'
         ),
         message: (error, context) => context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason })
       },
@@ -183,9 +183,9 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
       },
       HttpError: {
         header: (error) => (
-          isDefined(error.response)
-            ? `HTTP error ${error.response.statusCode.toString()}`
-            : 'HTTP error'
+          (isDefined(error.response) && error.response.statusCode != 0)
+            ? `Http error - ${error.response.statusCode.toString()}`
+            : 'Http error'
         ),
         message: (error, context) => context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason })
       },

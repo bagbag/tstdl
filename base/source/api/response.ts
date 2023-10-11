@@ -1,7 +1,7 @@
 import { SecretRequirementsError } from '#/authentication/errors/secret-requirements.error.js';
 import { SchemaError } from '#/schema/schema.error.js';
 import type { CustomError, CustomErrorStatic } from '../errors/index.js';
-import { ApiError, BadRequestError, ForbiddenError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../errors/index.js';
+import { ApiError, BadRequestError, ForbiddenError, InvalidCredentialsError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../errors/index.js';
 import type { UndefinableJson } from '../types.js';
 import { assertString, isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
 import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers.js';
@@ -128,13 +128,14 @@ export function isErrorResponse(response: Response<any> | unknown): response is 
 registerErrorHandler(ApiError, 400, ({ response }) => response, (response) => new ApiError(response));
 registerErrorHandler(BadRequestError, 400, () => undefined, (_, error) => new BadRequestError(error.message));
 registerErrorHandler(ForbiddenError, 403, () => undefined, (_, error) => new ForbiddenError(error.message));
+registerErrorHandler(InvalidCredentialsError, 401, () => undefined, (_, error) => new InvalidCredentialsError(error.message));
 registerErrorHandler(InvalidTokenError, 401, () => undefined, (_, error) => new InvalidTokenError(error.message));
 registerErrorHandler(MaxBytesExceededError, 400, () => undefined, (_, error) => new MaxBytesExceededError(error.message));
+registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
 registerErrorHandler(NotFoundError, 404, () => undefined, (_, error) => new NotFoundError(error.message));
 registerErrorHandler(NotImplementedError, 501, () => undefined, (_, error) => new NotImplementedError(error.message));
 registerErrorHandler(NotSupportedError, 400, () => undefined, (_, error) => new NotSupportedError(error.message));
-registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
-registerErrorHandler(MethodNotAllowedError, 405, () => undefined, (_, error) => new MethodNotAllowedError(error.message));
-registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
 registerErrorHandler(SchemaError, 400, serializeSchemaError, (data, error) => deserializeSchemaError(error.message, data));
 registerErrorHandler(SecretRequirementsError, 403, () => undefined, (_, error) => new SecretRequirementsError(error.message));
+registerErrorHandler(UnauthorizedError, 401, () => undefined, (_, error) => new UnauthorizedError(error.message));
+registerErrorHandler(UnsupportedMediaTypeError, 415, () => undefined, (_, error) => new UnsupportedMediaTypeError(error.message));
