@@ -1,8 +1,9 @@
-import { SecretRequirementsError } from '#/authentication/index.js';
-import { HttpError, HttpErrorReason } from '#/http/http.error.js';
+import type { SecretRequirementsError } from '#/authentication/index.js';
+import type { HttpError } from '#/http/http.error.js';
+import { HttpErrorReason } from '#/http/http.error.js';
 import type { Localization, LocalizeItem } from '#/text/localization.service.js';
 import { enumerationLocalization, getLocalizationKeys } from '#/text/localization.service.js';
-import { Enumeration } from '#/types.js';
+import type { Enumeration } from '#/types.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { ApiError } from './api.error.js';
 import type { BadRequestError } from './bad-request.error.js';
@@ -56,7 +57,7 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
     errors: {
       ApiError: {
         header: 'API Fehler',
-        message: getErrorMessage
+        message: 'Bitte versuchen Sie es später noch einmal.'
       },
       BadRequestError: {
         header: 'Ungültige Anfrage',
@@ -68,11 +69,11 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
       },
       InvalidCredentialsError: {
         header: 'Ungültige Zugangsdaten',
-        message: getErrorMessage
+        message: 'Überprüfen Sie Ihre Eingaben'
       },
       InvalidTokenError: {
         header: 'Anmeldung abgelaufen oder ungültig',
-        message: getErrorMessage
+        message: 'Bitte melden Sie sich erneut an'
       },
       MaxBytesExceededError: {
         header: 'Daten größer als erlaubt',
@@ -135,7 +136,7 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
     errors: {
       ApiError: {
         header: 'API error',
-        message: getErrorMessage
+        message: 'Please try again later'
       },
       BadRequestError: {
         header: 'Bad Request',
@@ -147,11 +148,11 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
       },
       InvalidCredentialsError: {
         header: 'Invalid credentials',
-        message: getErrorMessage
+        message: 'Check your inputs'
       },
       InvalidTokenError: {
         header: 'Login expired or invalid',
-        message: getErrorMessage
+        message: 'Please log in again'
       },
       MaxBytesExceededError: {
         header: 'Data larger than allowed',
@@ -209,5 +210,5 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
 };
 
 function getErrorMessage(error: Error): string {
-  return `${error.message}`;
+  return error.message.replace(/\.$/u, '');
 }
