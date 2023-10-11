@@ -1,10 +1,10 @@
 import type { SecretRequirementsError } from '#/authentication/index.js';
 import type { HttpError } from '#/http/http.error.js';
 import { HttpErrorReason } from '#/http/http.error.js';
-import type { Localization, LocalizeItem } from '#/text/localization.service.js';
+import type { Localization, LocalizeFunctionContext, LocalizeItem } from '#/text/localization.service.js';
 import { enumerationLocalization, getLocalizationKeys } from '#/text/localization.service.js';
 import type { Enumeration } from '#/types.js';
-import { isDefined } from '#/utils/type-guards.js';
+import { isDefined, isNotNull } from '#/utils/type-guards.js';
 import type { ApiError } from './api.error.js';
 import type { BadRequestError } from './bad-request.error.js';
 import type { CustomError, CustomErrorStatic } from './custom.error.js';
@@ -109,7 +109,7 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
             ? `Http Fehler - ${error.response.statusCode.toString()}`
             : 'Http Fehler'
         ),
-        message: (error, context) => context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason })
+        message: getHttpErrorMessage
       },
       SecretRequirementsError: {
         header: 'Passwortanforderungen nicht erfüllt',
@@ -119,10 +119,11 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
   },
   enums: [
     enumerationLocalization(HttpErrorReason, {
-      [HttpErrorReason.Unknown]: 'Unbekannt',
+      [HttpErrorReason.Unknown]: 'Unerwarteter Fehler',
       [HttpErrorReason.Cancelled]: 'Anfrage abgebrochen',
+      [HttpErrorReason.Network]: 'Netzwerkfehler',
       [HttpErrorReason.InvalidRequest]: 'Ungültige Anfrage',
-      [HttpErrorReason.Non200StatusCode]: 'Antwort enthielt einen Fehler',
+      [HttpErrorReason.StatusCode]: 'Antwort enthielt einen Fehler',
       [HttpErrorReason.ErrorResponse]: 'Antwort enthielt einen Fehler',
       [HttpErrorReason.ResponseError]: 'Fehler beim Empfang der Antwort',
       [HttpErrorReason.Timeout]: 'Zeitüberschreitung'
@@ -188,7 +189,7 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
             ? `Http error - ${error.response.statusCode.toString()}`
             : 'Http error'
         ),
-        message: (error, context) => context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason })
+        message: getHttpErrorMessage
       },
       SecretRequirementsError: {
         header: 'Secret requirements not met',
@@ -198,16 +199,23 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
   },
   enums: [
     enumerationLocalization(HttpErrorReason, {
-      [HttpErrorReason.Unknown]: 'Unknown',
+      [HttpErrorReason.Unknown]: 'Unexpected error',
       [HttpErrorReason.Cancelled]: 'Request cancelled',
+      [HttpErrorReason.Network]: 'Network error',
       [HttpErrorReason.InvalidRequest]: 'Invalid request',
-      [HttpErrorReason.Non200StatusCode]: 'Response contained an error',
+      [HttpErrorReason.StatusCode]: 'Response contained an error',
       [HttpErrorReason.ErrorResponse]: 'Response contained an error',
       [HttpErrorReason.ResponseError]: 'Error while receiving the response',
       [HttpErrorReason.Timeout]: 'Zeitüberschreitung'
     })
   ]
 };
+
+function getHttpErrorMessage(error: HttpError, context: LocalizeFunctionContext): string {
+  return (isDefined(error.response) && (isNotNull(error.response.statusMessage)))
+    ? error.response.statusMessage
+    : context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason });
+}
 
 function getErrorMessage(error: Error): string {
   return error.message.replace(/\.$/u, '');

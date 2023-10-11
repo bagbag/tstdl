@@ -287,7 +287,7 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
     const response = await next(request);
 
     if (request.throwOnNon200 && ((response.statusCode < 200) || (response.statusCode >= 400))) {
-      const httpError = await HttpError.create(HttpErrorReason.Non200StatusCode, request, response, `Status code ${response.statusCode}.`);
+      const httpError = await HttpError.create(HttpErrorReason.StatusCode, request, response, `Status code ${response.statusCode}.`);
       throw httpError;
     }
 

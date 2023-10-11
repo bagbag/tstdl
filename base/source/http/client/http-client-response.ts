@@ -1,4 +1,5 @@
 import type { TypedOmit } from '#/types.js';
+import { isString } from '#/utils/type-guards.js';
 import type { HttpBodySource } from '../http-body.js';
 import { HttpBody } from '../http-body.js';
 import type { HttpHeadersObject } from '../http-headers.js';
@@ -13,7 +14,7 @@ export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'hasBody' |
 export type HttpClientResponseOptions = {
   request: HttpClientRequest,
   statusCode: number,
-  statusMessage: string,
+  statusMessage: string | null,
   headers: HttpHeadersObject | HttpHeaders,
   body: HttpBody | HttpBodySource,
   closeHandler: () => void
@@ -24,7 +25,7 @@ export class HttpClientResponse {
 
   readonly request: HttpClientRequest;
   readonly statusCode: number;
-  readonly statusMessage: string;
+  readonly statusMessage: string | null;
   readonly headers: HttpHeaders;
   readonly body: HttpBody;
 
@@ -35,7 +36,7 @@ export class HttpClientResponse {
   constructor(options: HttpClientResponseOptions) {
     this.request = options.request;
     this.statusCode = options.statusCode;
-    this.statusMessage = options.statusMessage;
+    this.statusMessage = (isString(options.statusMessage) && (options.statusMessage.length > 0)) ? options.statusMessage : null;
     this.headers = new HttpHeaders(options.headers);
     this.body = (options.body instanceof HttpBody) ? options.body : new HttpBody(options.body, this.headers);
     this.closeHandler = options.closeHandler;

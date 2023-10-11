@@ -1,4 +1,4 @@
-import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders } from '@angular/common/http';
+import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector } from '@angular/core';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
@@ -53,23 +53,38 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
         throw new HttpError(HttpErrorReason.Cancelled, request);
       }
 
-      if (error instanceof AngularHttpErrorResponse) {
-        const response = new HttpClientResponse({
-          request,
-          statusCode: error.status,
-          statusMessage: error.statusText,
-          headers: convertAngularHeaders(error.headers),
-          body: (error.error instanceof ProgressEvent) ? undefined : error.error,
-          closeHandler: () => request.abort()
-        });
-
-        const httpError = await HttpError.create(HttpErrorReason.InvalidRequest, request, response, error);
-        throw httpError;
+      if (!(error instanceof AngularHttpErrorResponse)) {
+        throw new HttpError(HttpErrorReason.Unknown, request, undefined, undefined, error as Error);
       }
 
-      throw new HttpError(HttpErrorReason.Unknown, request, undefined, undefined, error as Error);
+      const response = new HttpClientResponse({
+        request,
+        statusCode: error.status,
+        statusMessage: error.statusText,
+        headers: convertAngularHeaders(error.headers),
+        body: (error.error instanceof ProgressEvent) ? undefined : error.error,
+        closeHandler: () => request.abort()
+      });
+
+      if ((error.type == HttpEventType.Response) && (error.status > 0)) {
+        return response;
+      }
+
+      const reason = getHttpErrorReason(error);
+      const httpError = await HttpError.create(reason, request, response, error);
+      throw httpError;
     }
   }
+}
+
+function getHttpErrorReason(error: AngularHttpErrorResponse): HttpErrorReason {
+  const statusText = error.statusText.toLowerCase();
+
+  if (statusText.includes('timeout')) {
+    return HttpErrorReason.Timeout;
+  }
+
+  return HttpErrorReason.Unknown;
 }
 
 function convertAngularHeaders(headers: AngularHttpHeaders): HttpHeaders {

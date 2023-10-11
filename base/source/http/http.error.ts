@@ -8,10 +8,16 @@ import type { HttpClientRequest, HttpClientRequestObject, HttpClientResponse, Ht
 export enum HttpErrorReason {
   Unknown = 'Unknown',
   Cancelled = 'Cancelled',
+  Network = 'Network',
   InvalidRequest = 'InvalidRequest',
-  Non200StatusCode = 'Non200StatusCode',
+  StatusCode = 'StatusCode',
+
+  /** Valid http response containing an error */
   ErrorResponse = 'ErrorResponse',
+
+  /** Invalid http response */
   ResponseError = 'ResponseError',
+
   Timeout = 'Timeout'
 }
 

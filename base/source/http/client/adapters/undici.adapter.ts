@@ -82,11 +82,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolv
     }
     catch (error) {
       if (error instanceof undiciErrors.UndiciError) {
-        const reason
-          = ((error instanceof undiciErrors.BodyTimeoutError) || (error instanceof undiciErrors.HeadersTimeoutError)) ? HttpErrorReason.Timeout
-            : (error instanceof undiciErrors.RequestAbortedError) ? HttpErrorReason.Cancelled
-              : HttpErrorReason.Unknown;
-
+        const reason = getHttpErrorReason(error);
         throw new HttpError(reason, httpClientRequest, undefined, undefined, error);
       }
 
@@ -103,5 +99,41 @@ export function configureUndiciHttpClientAdapter(options: UndiciHttpClientAdapte
 
   if (options.register ?? true) {
     Injector.register(HttpClientAdapter, { useToken: UndiciHttpClientAdapter });
+  }
+}
+
+function getHttpErrorReason(error: undiciErrors.UndiciError): HttpErrorReason {
+  switch (error.code) {
+    case 'UND_ERR_CONNECT_TIMEOUT':
+    case 'UND_ERR_HEADERS_TIMEOUT':
+    case 'UND_ERR_BODY_TIMEOUT':
+      return HttpErrorReason.Timeout;
+
+    case 'UND_ERR_RESPONSE_STATUS_CODE':
+      return HttpErrorReason.StatusCode;
+
+    case 'UND_ERR_HEADERS_OVERFLOW':
+    case 'UND_ERR_RES_CONTENT_LENGTH_MISMATCH':
+      return HttpErrorReason.ResponseError;
+
+    case 'UND_ERR_REQ_CONTENT_LENGTH_MISMATCH':
+    case 'UND_ERR_INVALID_ARG':
+    case 'UND_ERR_INVALID_RETURN_VALUE':
+      return HttpErrorReason.InvalidRequest;
+
+    case 'UND_ERR_ABORTED':
+    case 'UND_ERR_DESTROYED':
+    case 'UND_ERR_CLOSED':
+      return HttpErrorReason.Cancelled;
+
+    case 'UND_ERR_SOCKET':
+      return HttpErrorReason.Network;
+
+    case 'UND_ERR_INFO':
+    case 'UND_ERR_NOT_SUPPORTED':
+    case 'UND_ERR_BPL_MISSING_UPSTREAM':
+    case 'UND_ERR_RES_EXCEEDED_MAX_SIZE':
+    default:
+      return HttpErrorReason.Unknown;
   }
 }
