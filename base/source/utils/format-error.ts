@@ -1,3 +1,4 @@
+import { unwrapError } from '#/errors/utils.js';
 import type { Record, UndefinableJson } from '#/types.js';
 import { decycle } from './object/decycle.js';
 import { objectKeys } from './object/object.js';
@@ -40,28 +41,24 @@ export function formatError(error: any, options: FormatErrorOptions = {}): strin
   let rest: Record | undefined;
   let extraInfo: UndefinableJson | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const wrappedError = error?.rejection ?? error?.reason ?? error?.error;
+  const actualError = unwrapError(error);
 
-  if ((error instanceof Error) && !(error.message.startsWith('Uncaught') && (wrappedError instanceof Error))) {
-    ({ name, message, stack, ...rest } = error);
+  if ((actualError instanceof Error)) {
+    ({ name, message, stack, ...rest } = actualError);
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    if (includeExtraInfo && isFunction((error as unknown as ErrorExtraInfo).getExtraInfo)) {
-      extraInfo = (error as unknown as ErrorExtraInfo).getExtraInfo();
+    if (includeExtraInfo && isFunction((actualError as unknown as ErrorExtraInfo).getExtraInfo)) {
+      extraInfo = (actualError as unknown as ErrorExtraInfo).getExtraInfo();
     }
-  }
-  else if (wrappedError instanceof Error) {
-    return formatError(wrappedError, options);
   }
 
   if (isUndefined(name) && (isUndefined(message) || message.trim().length == 0)) {
     try {
-      const decycledError = decycle(error);
+      const decycledError = decycle(actualError);
       message = JSON.stringify(decycledError, null, 2);
     }
     catch {
-      throw error;
+      throw actualError;
     }
   }
 

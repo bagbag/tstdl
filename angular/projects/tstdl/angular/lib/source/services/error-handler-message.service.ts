@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import type { CustomErrorStatic } from '@tstdl/base/errors';
-import { CustomError, errorsLocalizationKeys } from '@tstdl/base/errors';
+import { CustomError, errorsLocalizationKeys, unwrapError } from '@tstdl/base/errors';
 import { LocalizationService, type DynamicText } from '@tstdl/base/text';
 import type { FormatErrorOptions } from '@tstdl/base/utils';
-import { formatError } from '@tstdl/base/utils';
+import { formatError, isUndefined } from '@tstdl/base/utils';
 
 export class ErrorHandlerServiceOptions {
   format?: FormatErrorOptions;
@@ -16,13 +16,25 @@ const defaultFormatErrorOptions: FormatErrorOptions = { includeName: false, incl
   providedIn: 'root'
 })
 export abstract class ErrorHandlerMessageService {
-  readonly #localizationService = inject(LocalizationService);
+  readonly #injector = inject(Injector);
+
+  #_localizationService: LocalizationService | undefined;
+
+  get #localizationService(): LocalizationService {
+    if (isUndefined(this.#_localizationService)) {
+      this.#_localizationService = this.#injector.get(LocalizationService);
+    }
+
+    return this.#_localizationService;
+  }
 
   private readonly format = { ...defaultFormatErrorOptions, ...inject(ErrorHandlerServiceOptions, { optional: true })?.format };
 
   getErrorMessage(error: unknown): { header?: DynamicText, message: DynamicText } {
-    if ((error instanceof CustomError)) {
-      const errorLocalizationKey = errorsLocalizationKeys.errors[(error.constructor as CustomErrorStatic).errorName]!;
+    const actualError = unwrapError(error);
+
+    if ((actualError instanceof CustomError)) {
+      const errorLocalizationKey = errorsLocalizationKeys.errors[(actualError.constructor as CustomErrorStatic).errorName]!;
       const headerLocalizationKey = errorLocalizationKey.header;
       const messageLocalizationKey = errorLocalizationKey.message;
 
@@ -31,15 +43,15 @@ export abstract class ErrorHandlerMessageService {
 
       if (hasHeader || hasMessage) {
         return {
-          header: hasMessage ? { key: headerLocalizationKey, parameters: error } : undefined,
-          message: { key: messageLocalizationKey ?? headerLocalizationKey, parameters: error }
+          header: hasMessage ? { key: headerLocalizationKey, parameters: actualError } : undefined,
+          message: { key: messageLocalizationKey ?? headerLocalizationKey, parameters: actualError }
         };
       }
     }
 
     return {
-      header: (error instanceof Error) ? error.name : undefined,
-      message: formatError(error, this.format)
+      header: (actualError instanceof Error) ? actualError.name : undefined,
+      message: formatError(actualError, this.format)
     };
   }
 }

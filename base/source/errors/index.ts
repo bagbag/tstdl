@@ -22,3 +22,4 @@ export * from './not-supported.error.js';
 export * from './timeout.error.js';
 export * from './unauthorized.error.js';
 export * from './unsupported-media-type.error.js';
+export * from './utils.js';

@@ -2,7 +2,7 @@
 import type { ErrorHandler } from '@angular/core';
 import { Injectable, inject } from '@angular/core';
 import { Logger } from '@tstdl/base/logger';
-import { isNull } from '@tstdl/base/utils';
+import { isNotNull } from '@tstdl/base/utils';
 import type { OperatorFunction } from 'rxjs';
 import { Subject, catchError, throwError } from 'rxjs';
 
@@ -35,7 +35,7 @@ export class ErrorHandlerService implements ErrorHandler {
 
     const errorType = typeof error;
 
-    if ((errorType == 'function') || (errorType == 'object' && !isNull(error))) {
+    if ((errorType == 'function') || (errorType == 'object' && isNotNull(error))) {
       if (this.notifiedErrors.has(error as object)) {
         return;
       }
