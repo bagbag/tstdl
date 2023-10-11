@@ -1,5 +1,5 @@
 import type { EnvironmentProviders } from '@angular/core';
-import { NgModule, importProvidersFrom } from '@angular/core';
+import { APP_INITIALIZER, NgModule, importProvidersFrom, inject } from '@angular/core';
 
 import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, TstdlSkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
@@ -51,13 +51,19 @@ const declarations = [
 
 @NgModule({
   imports: declarations,
-  exports: declarations
+  exports: declarations,
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: () => {
+        const bridgeService = inject(TstdlBridgeService);
+        return () => bridgeService.initialize();
+      },
+      multi: true
+    }
+  ]
 })
-export class TstdlAngularModule {
-  constructor(bridge: TstdlBridgeService) {
-    bridge.initialize();
-  }
-}
+export class TstdlAngularModule { }
 
 export function provideTstdlAngular(): EnvironmentProviders {
   return importProvidersFrom(TstdlAngularModule);

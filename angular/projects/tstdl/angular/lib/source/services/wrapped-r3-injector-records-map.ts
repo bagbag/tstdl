@@ -46,7 +46,7 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
   forEach(callbackfn: (value: any, key: ProviderToken<any>, map: R3InjectorRecordsMap) => void, thisArg?: any): void {
     const _this = this;
 
-    function callback(value: any, key: ProviderToken<any>) {
+    function callback(value: any, key: ProviderToken<any>): void {
       callbackfn(value, key, _this);
     }
 
