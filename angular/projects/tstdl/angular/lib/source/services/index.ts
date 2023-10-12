@@ -3,4 +3,5 @@ export * from './application-tick.service';
 export * from './error-handler-message.service';
 export * from './error-handler.service';
 export * from './notification.service';
+export * from './routing.service';
 export * from './tstdl-bridge.service';
