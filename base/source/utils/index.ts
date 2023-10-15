@@ -49,6 +49,7 @@ export * from './timer.js';
 export * from './timing.js';
 export * from './type-guards.js';
 export * from './type-of.js';
+export * from './type/index.js';
 export * from './units.js';
 export * from './url-builder.js';
 export * from './value-or-provider.js';

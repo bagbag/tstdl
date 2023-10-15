@@ -1,6 +1,7 @@
 import { supportsBuffer } from '#/supports.js';
-import type { BinaryData } from '#/types.js';
-import { assert, isArrayBuffer } from './type-guards.js';
+import type { BinaryData, Type } from '#/types.js';
+import { typeExtends } from './index.js';
+import { assert, isArrayBuffer, isFunction, isNumber } from './type-guards.js';
 
 /**
  * Get ArrayBuffer from binary data
@@ -46,13 +47,16 @@ export function concatArrayBuffers(buffers: ArrayBufferLike[]): ArrayBuffer {
   return bytes.buffer;
 }
 
-export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLength?: number): T {
+export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLength?: number): T;
+export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: ArrayBufferView[], targetType: Type<T, [ArrayBufferLike, number, number]>, totalLength?: number): T;
+export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLengthOrTargetType?: Type<T, [ArrayBufferLike, number, number]> | number, totalLengthOrNothing?: number): T {
   assert(arrays.length > 0, 'No array provided.');
+  const totalLength = isNumber(totalLengthOrTargetType) ? totalLengthOrTargetType : totalLengthOrNothing;
+  const type = isFunction(totalLengthOrTargetType) ? totalLengthOrTargetType : arrays[0]!.constructor as Type<T, [ArrayBufferLike, ...any[]]>;
 
-  const type = arrays[0]!.constructor;
-
-  if (supportsBuffer && ((type == Buffer) || (type == Uint8Array))) {
-    return Buffer.concat(arrays as unknown as Buffer[], totalLength) as unknown as T;
+  if (supportsBuffer && typeExtends(type, Uint8Array)) {
+    const merged = Buffer.concat(arrays as unknown as Uint8Array[], totalLength);
+    return new type(merged.buffer, merged.byteOffset, merged.byteLength);
   }
 
   const totalBytes = totalLength ?? arrays.reduce((sum, array) => sum + array.byteLength, 0);
@@ -65,5 +69,5 @@ export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], t
     currentIndex += uint8Array.byteLength;
   }
 
-  return new (type as Uint8ArrayConstructor)(merged.buffer) as unknown as T;
+  return new type(merged.buffer, merged.byteOffset, merged.byteLength);
 }

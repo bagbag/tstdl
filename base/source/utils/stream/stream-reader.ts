@@ -1,45 +1,112 @@
 import { BadRequestError } from '#/errors/bad-request.error.js';
+import { MaxBytesExceededError } from '#/errors/max-bytes-exceeded.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
-import { isAnyIterable } from '../any-iterable-iterator.js';
 import { concatArrayBufferViews } from '../binary.js';
-import { isDefined } from '../type-guards.js';
-import { getReadableStreamIterable } from './readable-stream-adapter.js';
+import { isDefined, isReadableStream } from '../type-guards.js';
+import { getReadableStreamFromIterable } from './readable-stream-adapter.js';
+import { toBytesStream } from './to-bytes-stream.js';
+
+export type ReadBinaryStreamOptions = {
+  length?: number,
+
+  /** Action if source stream has more bytes than provided length */
+  onLengthExceed?: 'error' | 'close' | 'leave-open',
+
+  /** Action if source stream has less bytes than provided length */
+  onLengthSubceed?: 'error' | 'close' | 'leave-open'
+};
 
 // eslint-disable-next-line max-statements
-export async function readBinaryStream(iterableOrStream: AnyIterable<Uint8Array> | ReadableStream<Uint8Array>, length?: number): Promise<Uint8Array> {
-  const iterable = isAnyIterable(iterableOrStream) ? iterableOrStream : getReadableStreamIterable(iterableOrStream);
+export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array> {
+  const stream = isReadableStream(iterableOrStream)
+    ? isDefined(length)
+      ? toBytesStream(iterableOrStream)
+      : iterableOrStream
+    : getReadableStreamFromIterable(iterableOrStream);
+
 
   if (isDefined(length)) {
-    const array = new Uint8Array(length);
+    const reader = stream.getReader({ mode: 'byob' });
 
-    let bytesWritten = 0;
-    for await (const chunk of iterable) {
-      if ((bytesWritten + chunk.length) > length) {
-        throw new BadRequestError('Size of stream is greater than provided length.');
+    let buffer = new ArrayBuffer(length + 1);
+    let bytesRead = 0;
+
+    while (true) {
+      const result = await reader.read(new Uint8Array(buffer, bytesRead, buffer.byteLength - bytesRead));
+
+      buffer = result.value!.buffer;
+      bytesRead += result.value!.byteLength;
+
+      if (result.done) {
+        break;
       }
 
-      array.set(chunk, bytesWritten);
-      bytesWritten += chunk.length;
+      if (bytesRead > length) {
+        switch (onLengthExceed) {
+          case 'error':
+            await reader.cancel();
+            throw new MaxBytesExceededError('Size of stream is greater than provided length.');
+
+          case 'close':
+            await reader.cancel();
+            break;
+
+          case 'leave-open':
+            reader.releaseLock();
+            break;
+
+          default:
+            throw new NotSupportedError(`Action ${onLengthExceed as string} not supported.`);
+        }
+      }
+
+      if (bytesRead == length + 1) {
+        break;
+      }
     }
 
-    if (bytesWritten != length) {
-      throw new BadRequestError('Size of stream did not match provided length.');
+    if (bytesRead < length) {
+      switch (onLengthSubceed) {
+        case 'error':
+          await reader.cancel();
+          throw new BadRequestError('Size of stream was less than provided length.');
+
+        case 'close':
+          await reader.cancel();
+          break;
+
+        case 'leave-open':
+          reader.releaseLock();
+          break;
+
+        default:
+          throw new NotSupportedError(`Action ${onLengthSubceed as string} not supported.`);
+      }
     }
 
-    return array;
+    await reader.cancel();
+    return new Uint8Array(buffer, 0, Math.min(length, bytesRead));
   }
 
   let totalLength = 0;
-  const chunks: Uint8Array[] = [];
+  const reader = stream.getReader();
+  const views: ArrayBufferView[] = [];
 
-  for await (const chunk of iterable) {
-    chunks.push(chunk);
-    totalLength += chunk.length;
+  while (true) {
+    const result = await reader.read();
+
+    if (result.done) {
+      break;
+    }
+
+    views.push(result.value);
+    totalLength += result.value.byteLength;
   }
 
-  if (chunks.length == 0) {
+  if (views.length == 0) {
     return new Uint8Array(0);
   }
 
-  return concatArrayBufferViews(chunks, totalLength);
+  return concatArrayBufferViews(views, Uint8Array, totalLength);
 }

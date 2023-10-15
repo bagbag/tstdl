@@ -1,4 +1,4 @@
-import type { AnyIterable, AnyIterator } from '../any-iterable-iterator.js';
+import type { AnyIterable } from '../any-iterable-iterator.js';
 import { isAsyncIterable } from '../async-iterable-helpers/is-async-iterable.js';
 
 export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, options: { close?: boolean } = {}): AsyncIterable<T> {
@@ -19,20 +19,18 @@ export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, o
     if (options.close != false) {
       await reader.cancel();
     }
-
-    reader.releaseLock();
+    else {
+      reader.releaseLock();
+    }
   }
 }
 
 export function getReadableStreamFromIterable<T>(iterable: AnyIterable<T>): ReadableStream<T> {
-  let iterator: AnyIterator<T> | undefined;
+  const iterator = isAsyncIterable(iterable) ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
 
   return new ReadableStream({
-    cancel: async (reason) => {
-      await iterator!.return?.(reason);
-    },
     pull: async (controller) => {
-      const result = await iterator!.next();
+      const result = await iterator.next();
 
       if (result.done == true) {
         controller.close();
@@ -41,8 +39,8 @@ export function getReadableStreamFromIterable<T>(iterable: AnyIterable<T>): Read
         controller.enqueue(result.value);
       }
     },
-    start: () => {
-      iterator = isAsyncIterable(iterable) ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
+    cancel: async (reason) => {
+      await iterator.return?.(reason);
     }
   });
 }

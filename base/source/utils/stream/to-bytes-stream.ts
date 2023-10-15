@@ -23,7 +23,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
           return;
         }
 
-        controller.byobRequest!.respond(readResult.value.byteLength);
+        controller.byobRequest!.respondWithNewView(readResult.value);
       },
       async cancel(reason) {
         if (options?.ignoreCancel == true) {

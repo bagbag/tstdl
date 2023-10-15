@@ -72,7 +72,7 @@ export async function readBodyAsBuffer(body: Body, headers: HttpHeaders, options
     uint8Array = new Uint8Array(buffer);
   }
   else if (isReadableStream(body) || isAnyIterable(body)) {
-    uint8Array = await readBinaryStream(readBodyAsBinaryStream(body, headers, options), headers.contentLength);
+    uint8Array = await readBinaryStream(readBodyAsBinaryStream(body, headers, options), { length: headers.contentLength });
   }
   else {
     throw new NotSupportedError('Unsupported body type.');
