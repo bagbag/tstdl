@@ -1,5 +1,6 @@
 import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
+import type { Constructor } from '#/types.js';
 
 export type MemoizeOptions = {
   /** Use WeakMap instead of Map for caching. Can be used with object parameters only */
@@ -49,6 +50,14 @@ export function memoizeSingle<Fn extends (parameter: any) => any>(fn: Fn, option
       return result;
     }
   }[name] as Fn;
+}
+
+export function memoizeClass<T extends Constructor>(type: T, options: MemoizeOptions = {}): (...parameters: ConstructorParameters<T>) => InstanceType<T> {
+  return memoize((...parameters: ConstructorParameters<T>) => new type(...parameters), options);
+}
+
+export function memoizeClassSingle<T extends Constructor<any, [any]>>(type: T, options: MemoizeOptions = {}): (...parameters: ConstructorParameters<T>) => InstanceType<T> {
+  return memoizeSingle((parameter: ConstructorParameters<T>[0]) => new type(parameter), options);
 }
 
 function getMemoizedName(fn: (...args: any[]) => any): string {

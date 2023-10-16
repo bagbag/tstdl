@@ -57,8 +57,8 @@ type EnumerationEntriesHelper<T extends EnumerationObject = EnumerationObject, T
 export type EnumerationEntries<T extends EnumerationObject = EnumerationObject> = EnumerationEntriesHelper<T> extends (infer U)[] ? U[] : never;
 
 export type Type<T = any, Arguments extends any[] = any> = Constructor<T, Arguments> & { prototype: T };
-export type Constructor<T = any, Arguments extends any[] = any> = new (...args: Arguments) => T;
-export type AbstractType<T = any, Arguments extends any[] = any> = AbstractConstructor<T, Arguments> & { prototype: T };
+export type Constructor<T = any, Arguments extends any[] = any[]> = new (...args: Arguments) => T;
+export type AbstractType<T = any, Arguments extends any[] = any[]> = AbstractConstructor<T, Arguments> & { prototype: T };
 export type AbstractConstructor<T = any, Arguments extends any[] = any> = abstract new (...args: Arguments) => T;
 export type ReturnTypeOrT<T> = T extends (...args: any) => infer R ? R : T;
 
