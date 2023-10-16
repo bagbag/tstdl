@@ -39,6 +39,7 @@ export * from './periodic-sampler.js';
 export * from './provider-function-iterable.js';
 export * from './proxy.js';
 export * from './random.js';
+export * from './reactive-value-to-signal.js';
 export * from './reflection.js';
 export * from './repl.js';
 export * from './set.js';
