@@ -14,6 +14,7 @@ import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
 import type { HttpMethod, HttpValue } from '../types.js';
 import { normalizeHttpValue, normalizeSingleHttpValue } from '../types.js';
+import type { ReadBodyOptions } from '../utils.js';
 import { HttpClientOptions } from './http-client-options.js';
 import type { HttpClientRequestOptions } from './http-client-request.js';
 import { HttpClientRequest } from './http-client-request.js';
@@ -96,10 +97,10 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
     });
   }
 
-  getBinaryStream(url: string, options?: HttpClientRequestOptions): ReadableStream<Uint8Array> {
+  getBinaryStream(url: string, options?: HttpClientRequestOptions, readOptions?: ReadBodyOptions): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
       const response = await this.request('GET', url, { ...options });
-      return response.body.readAsBinaryStream();
+      return response.body.readAsBinaryStream(readOptions);
     });
   }
 

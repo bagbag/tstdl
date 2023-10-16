@@ -1,4 +1,5 @@
 import { isNotNull, isNull } from '../type-guards.js';
+import { kibibyte } from '../units.js';
 
 export type ToBytesStreamOptions = {
   ignoreCancel?: boolean
@@ -10,7 +11,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
 
     return new ReadableStream({
       type: 'bytes',
-      autoAllocateChunkSize: 10240,
+      autoAllocateChunkSize: 100 * kibibyte,
       start() {
         byobReader = stream.getReader({ mode: 'byob' });
       },
@@ -19,11 +20,9 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
 
         if (readResult.done) {
           controller.close();
-          controller.byobRequest!.respond(0);
-          return;
         }
 
-        controller.byobRequest!.respondWithNewView(readResult.value);
+        controller.byobRequest!.respondWithNewView(readResult.value!);
       },
       async cancel(reason) {
         if (options?.ignoreCancel == true) {

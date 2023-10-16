@@ -31,7 +31,8 @@ export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options
     : isBlob(body)
       ? body.stream() as unknown as ReadableStream<Uint8Array>
       : (isUint8Array(body))
-        ? new ReadableStream<Uint8Array>({
+        ? new ReadableStream({
+          type: 'bytes',
           start: (controller) => {
             controller.enqueue(body);
             controller.close();
