@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.12",
+  "version": "0.90.13",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -47,10 +47,11 @@
     "./errors": "./errors/index.js",
     "./function": "./function/index.js",
     "./http": "./http/index.js",
-    "./http/undici": "./http/client/adapters/undici.adapter.js",
     "./http/node": "./http/server/node/index.js",
+    "./http/undici": "./http/client/adapters/undici.adapter.js",
     "./image-service": "./image-service/index.js",
     "./injector": "./injector/index.js",
+    "./intl": "./intl/index.js",
     "./json-path": "./json-path/index.js",
     "./key-value-store": "./key-value-store/index.js",
     "./lock": "./lock/index.js",
