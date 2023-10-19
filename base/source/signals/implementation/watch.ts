@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -6,6 +8,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import { SIGNAL } from '../symbol.js';
 import type { ReactiveNode } from './graph.js';
 import { consumerAfterComputation, consumerBeforeComputation, consumerDestroy, consumerMarkDirty, consumerPollProducersForChange, isInNotificationPhase, REACTIVE_NODE } from './graph.js';
 
@@ -39,9 +42,19 @@ export interface Watch {
    * - mark it as destroyed so subsequent run and notify operations are noop.
    */
   destroy(): void;
+
+  [SIGNAL]: WatchNode;
 }
 
-export function watch(
+export interface WatchNode extends ReactiveNode {
+  hasRun: boolean;
+  fn: ((onCleanup: WatchCleanupRegisterFn) => void) | null;
+  schedule: ((watch: Watch) => void) | null;
+  cleanupFn: WatchCleanupFn;
+  ref: Watch;
+}
+
+export function createWatch(
   fn: (onCleanup: WatchCleanupRegisterFn) => void, schedule: (watch: Watch) => void,
   allowSignalWrites: boolean): Watch {
   const node: WatchNode = Object.create(WATCH_NODE);
@@ -60,7 +73,7 @@ export function watch(
     return node.fn === null && node.schedule === null;
   }
 
-  function destroyWatchNode(node: WatchNode) {
+  function destroyWatchNode(node: WatchNode): void {
     if (!isWatchNodeDestroyed(node)) {
       consumerDestroy(node);  // disconnect watcher from the reactive graph
       node.cleanupFn();
@@ -103,20 +116,13 @@ export function watch(
     run,
     cleanup: () => node.cleanupFn(),
     destroy: () => destroyWatchNode(node),
+    [SIGNAL]: node,
   };
 
   return node.ref;
 }
 
 const NOOP_CLEANUP_FN: WatchCleanupFn = () => { };
-
-interface WatchNode extends ReactiveNode {
-  hasRun: boolean;
-  fn: ((onCleanup: WatchCleanupRegisterFn) => void) | null;
-  schedule: ((watch: Watch) => void) | null;
-  cleanupFn: WatchCleanupFn;
-  ref: Watch;
-}
 
 const WATCH_NODE: Partial<WatchNode> = {
   ...REACTIVE_NODE,

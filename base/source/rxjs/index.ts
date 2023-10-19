@@ -11,3 +11,4 @@ export * from './start-with-provider.js';
 export * from './teardown.js';
 export * from './timing.js';
 export * from './touch.js';
+export * from './untrack.js';

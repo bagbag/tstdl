@@ -6,73 +6,19 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import type { Signal, ValueEqualityFn } from './api.js';
-import { SIGNAL, defaultEquals } from './api.js';
+import { SIGNAL } from '../symbol.js';
+import type { Signal } from './api.js';
+import type { ValueEqualityFn } from './equality.js';
+import { defaultEquals } from './equality.js';
 import type { ReactiveNode } from './graph.js';
-import { REACTIVE_NODE, consumerAfterComputation, consumerBeforeComputation, producerAccessed, producerUpdateValueVersion } from './graph.js';
-
-/**
- * Options passed to the `computed` creation function.
- */
-export interface CreateComputedOptions<T> {
-  /**
-   * A comparison function which defines equality for computed values.
-   */
-  equal?: ValueEqualityFn<T>;
-}
-
-/**
- * Create a computed `Signal` which derives a reactive value from an expression.
- */
-export function computed<T>(computation: () => T, options?: CreateComputedOptions<T>): Signal<T> {
-  const node: ComputedNode<T> = Object.create(COMPUTED_NODE);
-  node.computation = computation;
-  options?.equal && (node.equal = options.equal);
-
-  const computed = () => {
-    // Check if the value needs updating before returning it.
-    producerUpdateValueVersion(node);
-
-    // Record that someone looked at this signal.
-    producerAccessed(node);
-
-    if (node.value === ERRORED) {
-      throw node.error;
-    }
-
-    return node.value;
-  };
-  (computed as any)[SIGNAL] = node;
-  return computed as any as Signal<T>;
-}
-
-
-/**
- * A dedicated symbol used before a computed value has been calculated for the first time.
- * Explicitly typed as `any` so we can use it as signal's value.
- */
-const UNSET: any = Symbol('UNSET');
-
-/**
- * A dedicated symbol used in place of a computed signal value to indicate that a given computation
- * is in progress. Used to detect cycles in computation chains.
- * Explicitly typed as `any` so we can use it as signal's value.
- */
-const COMPUTING: any = Symbol('COMPUTING');
-
-/**
- * A dedicated symbol used in place of a computed signal value to indicate that a given computation
- * failed. The thrown error is cached until the computation gets dirty again.
- * Explicitly typed as `any` so we can use it as signal's value.
- */
-const ERRORED: any = Symbol('ERRORED');
+import { consumerAfterComputation, consumerBeforeComputation, producerAccessed, producerUpdateValueVersion, REACTIVE_NODE } from './graph.js';
 
 /**
  * A computation, which derives a value from a declarative reactive expression.
  *
  * `Computed`s are both producers and consumers of reactivity.
  */
-interface ComputedNode<T> extends ReactiveNode {
+export interface ComputedNode<T> extends ReactiveNode {
   /**
    * Current value of the computation, or one of the sentinel values above (`UNSET`, `COMPUTING`,
    * `ERROR`).
@@ -93,6 +39,54 @@ interface ComputedNode<T> extends ReactiveNode {
   equal: ValueEqualityFn<T>;
 }
 
+export type ComputedGetter<T> = (() => T) & {
+  [SIGNAL]: ComputedNode<T>;
+};
+
+/**
+ * Create a computed signal which derives a reactive value from an expression.
+ */
+export function createComputed<T>(computation: () => T): ComputedGetter<T> {
+  const node: ComputedNode<T> = Object.create(COMPUTED_NODE);
+  node.computation = computation;
+
+  const computed = () => {
+    // Check if the value needs updating before returning it.
+    producerUpdateValueVersion(node);
+
+    // Record that someone looked at this signal.
+    producerAccessed(node);
+
+    if (node.value === ERRORED) {
+      throw node.error;
+    }
+
+    return node.value;
+  };
+  (computed as ComputedGetter<T>)[SIGNAL] = node;
+  return computed as unknown as ComputedGetter<T>;
+}
+
+/**
+ * A dedicated symbol used before a computed value has been calculated for the first time.
+ * Explicitly typed as `any` so we can use it as signal's value.
+ */
+const UNSET: any = /* @__PURE__ */ Symbol('UNSET');
+
+/**
+ * A dedicated symbol used in place of a computed signal value to indicate that a given computation
+ * is in progress. Used to detect cycles in computation chains.
+ * Explicitly typed as `any` so we can use it as signal's value.
+ */
+const COMPUTING: any = /* @__PURE__ */ Symbol('COMPUTING');
+
+/**
+ * A dedicated symbol used in place of a computed signal value to indicate that a given computation
+ * failed. The thrown error is cached until the computation gets dirty again.
+ * Explicitly typed as `any` so we can use it as signal's value.
+ */
+const ERRORED: any = /* @__PURE__ */ Symbol('ERRORED');
+
 const COMPUTED_NODE = {
   ...REACTIVE_NODE,
   value: UNSET,
@@ -101,8 +95,8 @@ const COMPUTED_NODE = {
   equal: defaultEquals,
 
   producerMustRecompute(node: ComputedNode<unknown>): boolean {
-    // Force a recomputation if there's no current value, or if the current value is in the process
-    // of being calculated (which should throw an error).
+    // Force a recomputation if there's no current value, or if the current value is in the
+    // process of being calculated (which should throw an error).
     return node.value === UNSET || node.value === COMPUTING;
   },
 
@@ -138,3 +132,25 @@ const COMPUTED_NODE = {
     node.version++;
   },
 };
+
+
+/**
+ * Options passed to the `computed` creation function.
+ */
+export interface CreateComputedOptions<T> {
+  /**
+   * A comparison function which defines equality for computed values.
+   */
+  equal?: ValueEqualityFn<T>;
+}
+
+/**
+ * Create a computed `Signal` which derives a reactive value from an expression.
+ */
+export function computed<T>(computation: () => T, options?: CreateComputedOptions<T>): Signal<T> {
+  const getter = createComputed(computation);
+  if (options?.equal) {
+    getter[SIGNAL].equal = options.equal;
+  }
+  return getter;
+}

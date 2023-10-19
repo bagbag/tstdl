@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-type Version = number & { __brand: 'Version' };
+import { SIGNAL } from '../symbol.js';
 
 /**
  * The currently active consumer `ReactiveNode`, if running code in a reactive context.
@@ -16,14 +16,28 @@ type Version = number & { __brand: 'Version' };
 let activeConsumer: ReactiveNode | null = null;
 let inNotificationPhase = false;
 
+type Version = number & { __brand: 'Version' };
+
 export function setActiveConsumer(consumer: ReactiveNode | null): ReactiveNode | null {
   const prev = activeConsumer;
   activeConsumer = consumer;
   return prev;
 }
 
+export function getActiveConsumer(): ReactiveNode | null {
+  return activeConsumer;
+}
+
 export function isInNotificationPhase(): boolean {
   return inNotificationPhase;
+}
+
+export interface Reactive {
+  [SIGNAL]: ReactiveNode;
+}
+
+export function isReactive(value: unknown): value is Reactive {
+  return (value as Partial<Reactive>)[SIGNAL] !== undefined;
 }
 
 export const REACTIVE_NODE: ReactiveNode = {
@@ -40,6 +54,7 @@ export const REACTIVE_NODE: ReactiveNode = {
   producerMustRecompute: () => false,
   producerRecomputeValue: () => { },
   consumerMarkedDirty: () => { },
+  consumerOnSignalRead: () => { },
 };
 
 /**
@@ -136,6 +151,11 @@ export interface ReactiveNode {
   producerMustRecompute(node: unknown): boolean;
   producerRecomputeValue(node: unknown): void;
   consumerMarkedDirty(node: unknown): void;
+
+  /**
+   * Called when a signal is read within this consumer.
+   */
+  consumerOnSignalRead(node: unknown): void;
 }
 
 interface ConsumerNode extends ReactiveNode {
@@ -161,6 +181,8 @@ export function producerAccessed(node: ReactiveNode): void {
     // Accessed outside of a reactive context, so nothing to record.
     return;
   }
+
+  activeConsumer.consumerOnSignalRead(node);
 
   // This producer is the `idx`th dependency of `activeConsumer`.
   const idx = activeConsumer.nextProducerIndex++;
@@ -377,6 +399,10 @@ function producerAddLiveConsumer(
 function producerRemoveLiveConsumerAtIndex(node: ReactiveNode, idx: number): void {
   assertProducerNode(node);
   assertConsumerNode(node);
+
+  if (idx >= node.liveConsumerNode.length) {
+    throw new Error(`Assertion error: active consumer index ${idx} is out of bounds of ${node.liveConsumerNode.length} consumers)`);
+  }
 
   if (node.liveConsumerNode.length === 1) {
     // When removing the last live consumer, we will no longer be live. We need to remove

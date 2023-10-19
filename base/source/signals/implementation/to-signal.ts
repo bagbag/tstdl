@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -6,48 +8,24 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import type { Observable, Subscribable } from 'rxjs';
-
-import { isDevMode } from '#/core.js';
 import { registerFinalization } from '#/memory/finalization.js';
-import type { Signal } from './api.js';
+import type { Observable, Subscribable } from 'rxjs';
+import { Signal } from './api.js';
+import { assertNotInReactiveContext } from './asserts.js';
 import { computed } from './computed.js';
 import type { WritableSignal } from './signal.js';
 import { signal } from './signal.js';
-import { untracked } from './untracked.js';
-
-const enum StateKind {
-  NoValue = 0,
-  Value = 1,
-  Error = 2
-}
-
-interface NoValueState {
-  kind: StateKind.NoValue;
-}
-
-interface ValueState<T> {
-  kind: StateKind.Value;
-  value: T;
-}
-
-interface ErrorState {
-  kind: StateKind.Error;
-  error: unknown;
-}
-
-type State<T> = NoValueState | ValueState<T> | ErrorState;
 
 /**
  * Options for `toSignal`.
  */
-export interface ToSignalOptions<T> {
+export interface ToSignalOptions {
   /**
    * Initial value for the signal produced by `toSignal`.
    *
    * This will be the value of the signal until the observable emits its first value.
    */
-  initialValue?: T;
+  initialValue?: unknown;
 
   /**
    * Whether to require that the observable emits synchronously when `toSignal` subscribes.
@@ -60,47 +38,16 @@ export interface ToSignalOptions<T> {
   requireSync?: boolean;
 }
 
-/**
- * Get the current value of an `Observable` as a reactive `Signal`.
- *
- * `toSignal` returns a `Signal` which provides synchronous reactive access to values produced
- * by the given `Observable`, by subscribing to that `Observable`. The returned `Signal` will always
- * have the most recent value emitted by the subscription, and will throw an error if the
- * `Observable` errors.
- *
- * Before the `Observable` emits its first value, the `Signal` will return `undefined`. To avoid
- * this, either an `initialValue` can be passed or the `requireSync` option enabled.
- */
+// Base case: no options -> `undefined` in the result type.
 export function toSignal<T>(source: Observable<T> | Subscribable<T>): Signal<T | undefined>;
-
-/**
- * Get the current value of an `Observable` as a reactive `Signal`.
- *
- * `toSignal` returns a `Signal` which provides synchronous reactive access to values produced
- * by the given `Observable`, by subscribing to that `Observable`. The returned `Signal` will always
- * have the most recent value emitted by the subscription, and will throw an error if the
- * `Observable` errors.
- *
- * Before the `Observable` emits its first value, the `Signal` will return the configured
- * `initialValue`, or `undefined` if no `initialValue` is provided. If the `Observable` is
- * guaranteed to emit synchronously, then the `requireSync` option can be passed instead.
- */
-export function toSignal<T>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions<undefined> & { requireSync?: false }): Signal<T | undefined>;
-
-
-/**
- * Get the current value of an `Observable` as a reactive `Signal`.
- *
- * `toSignal` returns a `Signal` which provides synchronous reactive access to values produced
- * by the given `Observable`, by subscribing to that `Observable`. The returned `Signal` will always
- * have the most recent value emitted by the subscription, and will throw an error if the
- * `Observable` errors.
- *
- * Before the `Observable` emits its first value, the `Signal` will return the configured
- * `initialValue`. If the `Observable` is guaranteed to emit synchronously, then the `requireSync`
- * option can be passed instead.
- */
-export function toSignal<T, U extends T | null | undefined>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions<U> & { initialValue: U, requireSync?: false }): Signal<T | U>;
+// Options with `undefined` initial value and no `requiredSync` -> `undefined`.
+export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
+// Options with `null` initial value -> `null`.
+export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: null, requireSync?: false }): Signal<T | null>;
+// Options with `undefined` initial value and `requiredSync` -> strict result type.
+export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: undefined, requireSync: true }): Signal<T>;
+// Options with a more specific initial value type.
+export function toSignal<T, const U extends T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue: U, requireSync?: false }): Signal<T | U>;
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -114,8 +61,9 @@ export function toSignal<T, U extends T | null | undefined>(source: Observable<T
  * immediately upon subscription. No `initialValue` is needed in this case, and the returned signal
  * does not include an `undefined` type.
  */
-export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions<undefined> & { requireSync: true }): Signal<T>;
-export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions<U>): Signal<T | U> {
+export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions & { initialValue?: U }): Signal<T | U> {
+  assertNotInReactiveContext(toSignal, 'Invoking `toSignal` causes new subscriptions every time. Consider moving `toSignal` outside of the reactive context and read the signal value where needed.');
+
   // Note: T is the Observable value type, and U is the initial value type. They don't have to be
   // the same - the returned signal gives values of type `T`.
   let state: WritableSignal<State<T | U>>;
@@ -127,6 +75,12 @@ export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<
     state = signal<State<T | U>>({ kind: StateKind.Value, value: options?.initialValue as U });
   }
 
+  // Note: This code cannot run inside a reactive context (see assertion above). If we'd support
+  // this, we would subscribe to the observable outside of the current reactive context, avoiding
+  // that side-effect signal reads/writes are attribute to the current consumer. The current
+  // consumer only needs to be notified when the `state` signal changes through the observable
+  // subscription. Additional context (related to async pipe):
+  // https://github.com/angular/angular/pull/50522.
   const sub = source.subscribe({
     next: value => state.set({ kind: StateKind.Value, value }),
     error: error => state.set({ kind: StateKind.Error, error }),
@@ -134,7 +88,7 @@ export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<
     // "complete".
   });
 
-  if (isDevMode() && options?.requireSync && untracked(state).kind === StateKind.NoValue) {
+  if (options?.requireSync && state().kind === StateKind.NoValue) {
     throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
   }
 
@@ -156,3 +110,25 @@ export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<
 
   return result;
 }
+
+const enum StateKind {
+  NoValue,
+  Value,
+  Error,
+}
+
+interface NoValueState {
+  kind: StateKind.NoValue;
+}
+
+interface ValueState<T> {
+  kind: StateKind.Value;
+  value: T;
+}
+
+interface ErrorState {
+  kind: StateKind.Error;
+  error: unknown;
+}
+
+type State<T> = NoValueState | ValueState<T> | ErrorState;
