@@ -1,15 +1,15 @@
 import { isUndefined } from '#/utils/type-guards.js';
 import type { Signal } from './api.js';
-import { computed } from './api.js';
+import { computed, untracked } from './api.js';
 
-export function defer<T>(source: () => Signal<T>): Signal<T> {
-  let signal: Signal<T> | undefined;
+export function defer<T>(signalFactory: () => Signal<T>): Signal<T> {
+  let source: Signal<T> | undefined;
 
   return computed(() => {
-    if (isUndefined(signal)) {
-      signal = source();
+    if (isUndefined(source)) {
+      source = untracked(signalFactory);
     }
 
-    return signal();
+    return source();
   });
 }
