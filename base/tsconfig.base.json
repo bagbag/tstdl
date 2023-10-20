@@ -47,7 +47,8 @@
     "jsxImportSource": "preact",
 
     /* misc */
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noErrorTruncation": true
   },
   "exclude": ["dist/"]
 }
