@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+import { filter, Subject, takeUntil } from 'rxjs';
+
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer/index.js';
 import { deserialize, registerSerializer, serialize } from '#/serializer/index.js';
@@ -10,7 +12,6 @@ import { reflectMethods } from '#/utils/proxy.js';
 import { getRandomString } from '#/utils/random.js';
 import { _throw } from '#/utils/throw.js';
 import { assert, isDefined } from '#/utils/type-guards.js';
-import { filter, Subject, takeUntil } from 'rxjs';
 import type { MessagePortRpcEndpointSource } from './endpoints/message-port.rpc-endpoint.js';
 import { MessagePortRpcEndpoint } from './endpoints/message-port.rpc-endpoint.js';
 import type { RpcConnectMessage, RpcMessage, RpcMessageProxyValue, RpcMessageValue, RpcMessageWithProxyIdBase, RpcPostMessageArrayData, RpcPostMessageData, RpcRemote, RpcRemoteInput } from './model.js';

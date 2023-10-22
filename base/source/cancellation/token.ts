@@ -147,8 +147,12 @@ export class CancellationSignal implements PromiseLike<void>, Subscribable<void>
 export class CancellationToken extends CancellationSignal {
   readonly #stateSubject: BehaviorSubject<boolean>;
 
+  #signal: CancellationSignal | undefined;
+
   /** Signal for this token */
-  readonly signal: CancellationSignal;
+  get signal(): CancellationSignal {
+    return (this.#signal ??= new CancellationSignal(this.#stateSubject));
+  }
 
   /**
    * @param initialState which state to initialze this token to
@@ -161,8 +165,7 @@ export class CancellationToken extends CancellationSignal {
 
     super(stateSubject);
 
-    this.#stateSubject = new BehaviorSubject(initialState);
-    this.signal = new CancellationSignal(this.#stateSubject);
+    this.#stateSubject = stateSubject;
   }
 
   /**
@@ -214,7 +217,7 @@ export class CancellationToken extends CancellationSignal {
    * Become a child of the provided parent. Events from the parent are propagated to this token. Events from this token are *not* propagated to the parent.
    */
   inherit(parent: CancellationToken | CancellationSignal, config?: ConnectConfig): this {
-    const state$ = ((parent instanceof CancellationToken) ? parent.signal : parent).state$;
+    const { state$ } = (parent instanceof CancellationToken) ? parent.signal : parent;
 
     CancellationToken.connect(state$, this, config);
     return this;

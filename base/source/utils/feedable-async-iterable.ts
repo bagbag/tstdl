@@ -4,9 +4,9 @@ import { CancellationToken } from '#/cancellation/token.js';
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 
 export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
-  private readonly readSubject: Subject<void>;
-  private readonly closedToken: CancellationToken;
-  private readonly buffer: CircularBuffer<{ item: T, error: undefined } | { item: undefined, error: Error }>;
+  private readonly readSubject = new Subject<void>();
+  private readonly closedToken = new CancellationToken();
+  private readonly buffer = new CircularBuffer<{ item: T, error: undefined } | { item: undefined, error: Error }>();
 
   get $read(): Promise<void> {
     return firstValueFrom(this.readSubject);
@@ -24,15 +24,9 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
     return this.buffer.size;
   }
 
-  constructor() {
-    this.readSubject = new Subject();
-    this.closedToken = new CancellationToken();
-    this.buffer = new CircularBuffer();
-  }
-
   feed(item: T): void {
     if (this.closed) {
-      throw new Error('feedable is already closed');
+      throw new Error('Feedable is already closed.');
     }
 
     this.buffer.add({ item, error: undefined });
@@ -44,7 +38,7 @@ export class FeedableAsyncIterable<T> implements AsyncIterable<T> {
 
   throw(error: Error): void {
     if (this.closed) {
-      throw new Error('feedable is already closed');
+      throw new Error('Feedable is already closed.');
     }
 
     this.buffer.add({ item: undefined, error });
