@@ -1,6 +1,7 @@
 import type * as NodeWorkerThreads from 'node:worker_threads';
+
 import type { Observable } from 'rxjs';
-import { fromEvent, map } from 'rxjs';
+import { Subject, fromEvent, map, takeUntil } from 'rxjs';
 
 import { isBrowser } from '#/environment.js';
 import type { RpcMessage } from '../model.js';
@@ -12,6 +13,8 @@ type NodeSource = NodeWorkerThreads.MessagePort | NodeWorkerThreads.Worker;
 export type MessagePortRpcEndpointSource = BrowserSource | NodeSource;
 
 export class MessagePortRpcEndpoint extends RpcEndpoint {
+  readonly #closeSubject = new Subject<void>();
+
   private readonly source: MessagePortRpcEndpointSource;
   private readonly _postMessage: this['postMessage'];
 
@@ -26,6 +29,7 @@ export class MessagePortRpcEndpoint extends RpcEndpoint {
       : source;
 
     this.message$ = fromEvent((this.source as MessagePort), 'message').pipe(
+      takeUntil(this.#closeSubject),
       map((message: unknown): RpcMessage => ((message instanceof MessageEvent) ? { ...(message.data as RpcMessage), metadata: { source: message } } : message as RpcMessage))
     );
 
@@ -44,6 +48,8 @@ export class MessagePortRpcEndpoint extends RpcEndpoint {
     if (this.source instanceof MessagePort) {
       this.source.close();
     }
+
+    this.#closeSubject.next();
   }
 
   postMessage(data: any, transfer?: any[] | undefined): void {

@@ -1,3 +1,6 @@
+import type * as NodeWorkerThreads from 'node:worker_threads'; // eslint-disable-line import/no-nodejs-modules
+import type { LiteralUnion } from 'type-fest';
+
 import type { AsyncDisposable } from '#/disposable/index.js';
 import { disposeAsync } from '#/disposable/index.js';
 import { isNode } from '#/environment.js';
@@ -6,7 +9,6 @@ import type { Logger } from '#/logger/index.js';
 import { Pool } from '#/pool/index.js';
 import type { RpcRemote } from '#/rpc/index.js';
 import { Rpc } from '#/rpc/index.js';
-import type * as NodeWorkerThreads from 'node:worker_threads'; // eslint-disable-line import/no-nodejs-modules
 import type { ThreadWorker } from './thread-worker.js';
 
 type ThreadPoolWorker = Worker | NodeWorkerThreads.Worker;
@@ -60,7 +62,7 @@ export class ThreadPool implements AsyncDisposable {
     return processor;
   }
 
-  async process<T extends ThreadWorker>(name: string, ...args: Parameters<T>): Promise<ReturnType<T>> {
+  async process<T extends ThreadWorker>(name: LiteralUnion<'default', string>, ...args: Parameters<T>): Promise<ReturnType<T>> {
     return this.pool.use(async (entry) => {
       const hasRemote = entry.remotes.has(name);
 

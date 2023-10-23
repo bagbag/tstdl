@@ -10,7 +10,7 @@ import type { Record, TypedOmit } from '#/types.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
 import { reflectMethods } from '#/utils/proxy.js';
 import { getRandomString } from '#/utils/random.js';
-import { _throw } from '#/utils/throw.js';
+import { _throw, deferThrow } from '#/utils/throw.js';
 import { assert, isDefined } from '#/utils/type-guards.js';
 import type { MessagePortRpcEndpointSource } from './endpoints/message-port.rpc-endpoint.js';
 import { MessagePortRpcEndpoint } from './endpoints/message-port.rpc-endpoint.js';
@@ -26,11 +26,18 @@ type ProxyFinalizationRegistryData = { id: string, endpoint: RpcEndpoint };
 const markedTransfers = new WeakMap<object, any[]>();
 const serializationTargets = new WeakMap<object, SerializationOptions | undefined>();
 const proxyTargets = new WeakSet();
+const responsibleEndpoints = new WeakSet<RpcEndpoint>();
 
 const proxyFinalizationRegistry = new FinalizationRegistry<ProxyFinalizationRegistryData>(async (data) => { // eslint-disable-line @typescript-eslint/no-misused-promises
   const message = createRpcMessage('release-proxy', { proxyId: data.id });
   await data.endpoint.postMessage(message);
+
+  if (responsibleEndpoints.has(data.endpoint)) {
+    data.endpoint.close();
+  }
 });
+
+class RpcProxy { }
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
 export const Rpc = {
@@ -85,8 +92,6 @@ export const Rpc = {
 };
 
 function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: PropertyKey[] = []): RpcRemote<T> {
-  class RpcProxy { }
-
   // eslint-disable-next-line prefer-const
   let proxy: RpcRemote<T>;
 
@@ -126,6 +131,7 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
 
       return endpoint.request(message, postMessageData.transfer).then((responseValue) => parseRpcMessageValue(responseValue, endpoint)) as unknown as boolean;
     },
+
     getPrototypeOf(): object | null {
       return null;
     }
@@ -133,15 +139,15 @@ function createProxy<T extends object>(endpoint: RpcEndpoint, id: string, path: 
 
   for (const method of reflectMethods) {
     if (!hasOwnProperty(handlers, method)) {
-      handlers[method] = () => {
-        throw new Error(`${method} not supported on rpc proxies.`);
-      };
+      handlers[method] = deferThrow(() => new Error(`${method} not supported on rpc proxies.`));
     }
   }
 
   proxy = new Proxy(RpcProxy as any, handlers) as RpcRemote<T>;
 
-  proxyFinalizationRegistry.register(proxy, { id, endpoint });
+  if (path.length == 0) {
+    proxyFinalizationRegistry.register(proxy, { id, endpoint });
+  }
 
   return proxy;
 }
@@ -164,11 +170,11 @@ function exposeConnectable(object: RpcRemoteInput, endpoint: RpcEndpoint, name: 
 }
 
 function exposeObject(object: RpcRemoteInput, endpoint: RpcEndpoint, proxyId: string): void {
-  const abortSubject = new Subject<void>();
+  const releaseSubject = new Subject<void>();
 
   endpoint.message$
     .pipe(
-      takeUntil(abortSubject),
+      takeUntil(releaseSubject),
       filter((message) => ((message as Partial<RpcMessageWithProxyIdBase>).proxyId == proxyId))
     )
     .subscribe(async (message) => { // eslint-disable-line @typescript-eslint/no-misused-promises
@@ -210,7 +216,12 @@ function exposeObject(object: RpcRemoteInput, endpoint: RpcEndpoint, proxyId: st
           }
 
           case 'release-proxy': {
-            abortSubject.next();
+            releaseSubject.next();
+
+            if (responsibleEndpoints.has(endpoint)) {
+              endpoint.close();
+            }
+
             break;
           }
 
@@ -271,6 +282,8 @@ function createProxyValue(value: any, endpoint: RpcEndpoint): [messageValue: Rpc
     const { port1, port2 } = new MessageChannel();
 
     const newEndpoint = new MessagePortRpcEndpoint(port1);
+    responsibleEndpoints.add(newEndpoint);
+
     newEndpoint.start();
 
     exposeObject(value, newEndpoint, id);
@@ -303,6 +316,11 @@ function parseRpcMessageValue(value: RpcMessageValue, endpoint: RpcEndpoint): an
 
     case 'proxy': {
       const proxyEndpoint = (isDefined(value.port)) ? new MessagePortRpcEndpoint(value.port) : endpoint;
+
+      if (isDefined(value.port)) {
+        responsibleEndpoints.add(proxyEndpoint);
+      }
+
       proxyEndpoint.start();
 
       return createProxy(proxyEndpoint, value.id);
@@ -334,8 +352,6 @@ function deref(object: any, path: PropertyKey[], skipLast: boolean = false): { p
 type RpcProxyNonPrimitiveData = TypedOmit<RpcMessageProxyValue, 'type'>;
 
 type RpcProxyNonPrimitive = NonPrimitive<'RpcProxy', RpcProxyNonPrimitiveData>;
-
-class RpcProxy { }
 
 registerSerializer<RpcProxy, RpcProxyNonPrimitiveData>(
   RpcProxy,
