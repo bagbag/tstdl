@@ -165,7 +165,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
           this.apis.set(resource, resourceApis);
         }
 
-        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(new NotImplementedError(`Endpoint ${name} for resource ${resource} not implemented.`));
+        const endpointImplementation = implementation[name]?.bind(implementation) ?? deferThrow(() => new NotImplementedError(`Endpoint ${name} for resource ${resource} not implemented.`));
 
         for (const method of methods) {
           resourceApis.endpoints.set(method, { definition: endpointDefinition, implementation: endpointImplementation as ApiEndpointServerImplementation });

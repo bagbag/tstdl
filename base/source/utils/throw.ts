@@ -1,11 +1,9 @@
-
 export function _throw(value: any): never {
   throw value;
 }
 
-export function deferThrow(value: any): () => never {
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  return function deferThrow() {
-    throw value;
+export function deferThrow(valueProvider: () => any): () => never {
+  return function deferThrow() { // eslint-disable-line @typescript-eslint/no-shadow
+    throw valueProvider();
   };
 }
