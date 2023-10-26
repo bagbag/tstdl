@@ -7,6 +7,7 @@ import { isNode } from '#/environment.js';
 import { dynamicImport } from '#/import.js';
 import type { Logger } from '#/logger/index.js';
 import { Pool } from '#/pool/index.js';
+import { MessagePortRpcEndpoint } from '#/rpc/endpoints/message-port.rpc-endpoint.js';
 import type { RpcRemote } from '#/rpc/index.js';
 import { Rpc } from '#/rpc/index.js';
 import type { ThreadWorker } from './thread-worker.js';
@@ -64,15 +65,13 @@ export class ThreadPool implements AsyncDisposable {
 
   async process<T extends ThreadWorker>(name: LiteralUnion<'default', string>, ...args: Parameters<T>): Promise<ReturnType<T>> {
     return this.pool.use(async (entry) => {
-      const hasRemote = entry.remotes.has(name);
-
-      const remote = hasRemote ? entry.remotes.get(name)! : await Rpc.connect<T>(entry.worker, `thread-worker:${name}`);
-
-      if (!hasRemote) {
+      if (!entry.remotes.has(name)) {
+        const rpcEndpoint = MessagePortRpcEndpoint.from(entry.worker);
+        const remote = await Rpc.connect<T>(rpcEndpoint, `thread-worker:${name}`);
         entry.remotes.set(name, remote);
       }
 
-      return remote(...args) as Promise<ReturnType<T>>;
+      return entry.remotes.get(name)!(...args) as Promise<ReturnType<T>>;
     });
   }
 

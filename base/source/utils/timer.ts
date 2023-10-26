@@ -24,15 +24,17 @@ else {
 }
 
 export class Timer {
-  private elapsedNanoseconds: number;
+  private elapsedNanoseconds = 0;
   private begin?: any;
 
   constructor(start: boolean = false) {
-    this.elapsedNanoseconds = 0;
-
     if (start) {
       this.start();
     }
+  }
+
+  static startNew(): Timer {
+    return new Timer(true);
   }
 
   static measure(func: () => any): number {

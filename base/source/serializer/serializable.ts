@@ -17,8 +17,8 @@ export type TryDereference = (value: unknown, callback: DereferenceCallback) => 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export interface Serializable<T, Data> {
-  [Serializable.serialize](instance: T, context: Record): Data;
-  [Serializable.deserialize](data: Data, tryDereference: TryDereference, context: Record): T;
+  [Serializable.serialize](instance: T, context: Record | undefined): Data;
+  [Serializable.deserialize](data: Data, tryDereference: TryDereference, context: Record | undefined): T;
 }
 
 export type SerializableType<T, Data> = Type<Serializable<T, Data>>;

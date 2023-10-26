@@ -1,10 +1,10 @@
-import type { AbstractConstructor, JsonPrimitive, Nested, Record, StringMap } from '#/types.js';
+import type { AbstractConstructor, JsonPrimitive, Nested, Record } from '#/types.js';
 
 declare const serializedSymbol: unique symbol;
 declare const stringSerializedSymbol: unique symbol;
 declare const decycledSymbol: unique symbol;
 
-export type SerializationReplacer = (value: any) => any;
+export type SerializationReplacer = (value: any, data?: Record) => any;
 
 export type TypeField<T extends string> = `<${T}>`;
 export type NonPrimitive<TypeName extends string = string, Data = unknown> = Record<TypeField<TypeName>, Data>;
@@ -46,7 +46,7 @@ export type SerializationOptions = {
    *
    * Only first level of object is referenced. For example for `{ foo: { bar: 'baz' } }` there will be one context entry having { bar: 'baz' }
    */
-  context?: StringMap<object | Function | string | symbol | bigint>, // eslint-disable-line @typescript-eslint/ban-types
+  context?: Record, // eslint-disable-line @typescript-eslint/ban-types
 
   /**
    * Disables dereferencing of ForwardRefs. Only useful for debugging (when implementing custom serializers) and curiosity
@@ -55,7 +55,7 @@ export type SerializationOptions = {
   doNotDereferenceForwardRefs?: boolean,
 
   /**
-   * Data to be used on de/serialization handlers
+   * Data to be used on de/serialization handlers and replacers
    */
   data?: Record
 };

@@ -54,12 +54,12 @@ export function serialize<T>(value: T, options?: SerializationOptions): Serializ
  * @deprecated
  */
 export function serialize<T>(value: T, options: SerializationOptions, references: Map<any, string>, queue: CircularBuffer<QueueItem>, path: string): Serialized<T>;
-export function serialize(_value: any, options: SerializationOptions = {}, references: Map<any, string> = new Map(), queue: CircularBuffer<QueueItem> = new CircularBuffer(), path: string = '$'): SerializedData {
+export function serialize(_value: any, options: SerializationOptions = {}, references = new Map<any, string>(), queue = new CircularBuffer<QueueItem>(), path: string = '$'): SerializedData {
   let value = _value;
 
   if (isDefined(options.replacers)) {
     for (const replacer of options.replacers) {
-      value = replacer(value);
+      value = replacer(value, options.data);
     }
   }
 
@@ -75,7 +75,7 @@ export function serialize(_value: any, options: SerializationOptions = {}, refer
 
   if ((path == '$') && isDefined(options.context)) {
     for (const entry of objectEntries(options.context)) {
-      references.set(entry[1], `$['__context__']['${entry[0]}']`);
+      references.set(entry[1], `$['__context__']['${String(entry[0])}']`);
     }
   }
 
@@ -166,7 +166,7 @@ export function serialize(_value: any, options: SerializationOptions = {}, refer
       const nonPrimitive: CustomNonPrimitive<string> = { [typeString]: null };
 
       queue.add(() => {
-        const data = registration!.serializer.call(value, value, options.data ?? {});
+        const data = registration!.serializer.call(value, value, options.data);
         (nonPrimitive[typeString] = (registration!.serializeData != false) ? serialize(data, options, references, queue, `${path}['${typeString}']`) : data);
       });
 
@@ -211,7 +211,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
   if (type == 'object') {
     if ((depth == 0) && isDefined(context.options.context)) {
       for (const entry of objectEntries(context.options.context)) {
-        context.references.set(`$['__context__']['${entry[0]}']`, entry[1]);
+        context.references.set(`$['__context__']['${String(entry[0])}']`, entry[1]);
       }
     }
 
@@ -280,7 +280,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
             const deserializedData = _deserialize(nonPrimitiveData, context, `${path}['<${nonPrimitiveType}>']`, depth + 1);
 
             context.addToDeserializeQueue(() => {
-              const deserialized = registration.deserializer(deserializedData, context.tryAddToDerefQueue, context.options.data ?? {});
+              const deserialized = registration.deserializer(deserializedData, context.tryAddToDerefQueue, context.options.data);
               ForwardRef.setRef(forwardRef, deserialized);
             }, depth);
           }, depth);
