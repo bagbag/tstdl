@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.21",
+  "version": "0.90.22",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -150,7 +150,7 @@
     "playwright": "^1.39",
     "preact": "^10.18",
     "preact-render-to-string": "^6.2",
-    "undici": "^5.26",
+    "undici": "^5.27",
     "urlpattern-polyfill": "^9.0"
   },
   "peerDependenciesMeta": {
