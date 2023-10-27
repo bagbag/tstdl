@@ -2,7 +2,8 @@ import { Singleton } from '#/injector/decorators.js';
 import { Property } from '#/schema/index.js';
 import type { PartialProperty, Record, TypedOmit } from '#/types.js';
 import type { ComponentClass, FunctionComponent } from 'preact';
-import { TemplateField } from '../template.model.js';
+import type { Template } from '../template.model.js';
+import { TemplateField, simpleTemplate } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';
 
@@ -30,4 +31,8 @@ export class JsxTemplateResolver extends TemplateResolver<JsxTemplateField, JsxT
 
 export function jsxTemplateField<Renderer extends TemplateRenderer, Context extends Record = any>(field: PartialProperty<TypedOmit<JsxTemplateField<Renderer[TemplateRendererString], Renderer[TemplateRendererOptions], Context>, 'resolver'>, 'renderer'>): JsxTemplateField<Renderer[TemplateRendererString], Renderer[TemplateRendererOptions], Context> {
   return { resolver: 'string', renderer: 'jsx', ...field };
+}
+
+export function simpleJsxTemplate<Context extends Record = any>(name: string, template: JsxTemplate<Context>): Template<{ template: true }, undefined, Context> {
+  return simpleTemplate(name, jsxTemplateField({ template }));
 }

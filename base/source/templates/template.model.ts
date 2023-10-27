@@ -40,11 +40,12 @@ export abstract class Template<Fields extends Record<string, boolean> = Record<s
   options?: TemplateOptions;
 }
 
-export function simpleTemplate(name: string, template: TemplateField): Template<{ template: true }> {
+export function simpleTemplate<Context extends Record = any, Options = any>(name: string, template: TemplateField<string, string, any, Context>, options?: Options): Template<{ template: true }, Options, Context> {
   return {
     name,
     fields: {
       template
-    }
+    },
+    options
   };
 }
