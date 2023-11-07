@@ -4,7 +4,7 @@ import { createArray } from './array/array.js';
 import { encodeBase64, encodeBase64Url } from './base64.js';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding.js';
 import { getRandomBytes } from './random.js';
-import { isDefined, isString } from './type-guards.js';
+import { isArray, isDefined, isString } from './type-guards.js';
 import { zBase32Encode } from './z-base32.js';
 
 export type AesMode = 'CBC' | 'CTR' | 'GCM' | 'KW';
@@ -231,16 +231,29 @@ export async function deriveBytes(algorithm: DeriveAlgorithm, baseKey: CryptoKey
 
 /**
  * derive multiply byte arrays from key
- * @param count how many Uint8Arrays to dervice
- * @param length length of each Uint8Array in bytes
  * @param algorithm algorithm to derive with
  * @param baseKey key to derive from
+ * @param length length of each Uint8Array in bytes, if single number is provided, it is used for every array
+ * @param count how many Uint8Arrays to derive
  */
-export async function deriveBytesMultiple<C extends number>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, count: C, length: number): Promise<ReadonlyTuple<Uint8Array, C>> {
-  const totalBits = count * length * 8;
+export async function deriveBytesMultiple<const Lengths extends readonly number[]>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengths: Lengths): Promise<ReadonlyTuple<Uint8Array, Lengths['length']>>;
+export async function deriveBytesMultiple<const C extends number>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, length: C, count: number): Promise<ReadonlyTuple<Uint8Array, C>>;
+export async function deriveBytesMultiple(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengthOrLengths: number | number[], countOrNothing?: number): Promise<Uint8Array[]> {
+  const lengths = isArray(lengthOrLengths) ? lengthOrLengths : createArray(countOrNothing!, () => lengthOrLengths);
+  const totalBits = lengths.reduce((sum, length) => sum + length, 0) * 8;
   const bytes = await globalThis.crypto.subtle.deriveBits(algorithm, baseKey, totalBits);
 
-  return createArray(count, (index) => new Uint8Array(bytes.slice(index * length, (index * length) + length))) as ReadonlyTuple<Uint8Array, C>;
+  const arrays: Uint8Array[] = [];
+
+  for (let i = 0; i < bytes.byteLength;) {
+    const slice = bytes.slice(i, i + lengths[arrays.length]!);
+    const array = new Uint8Array(slice);
+    arrays.push(array);
+
+    i += slice.byteLength;
+  }
+
+  return arrays;
 }
 
 function isBinaryKey(key: Key): key is BinaryData {
