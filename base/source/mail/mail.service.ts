@@ -1,37 +1,22 @@
-import { Inject, Optional, ResolveArg, Singleton } from '#/injector/index.js';
-import type { LoggerArgument } from '#/logger/index.js';
+import { Singleton, inject } from '#/injector/index.js';
 import { Logger } from '#/logger/index.js';
 import { TemplateService } from '#/templates/template.service.js';
 import type { TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { MailLogRepository } from './repositories/mail-log.repository.js';
 import { MailClient } from './mail.client.js';
-import type { DefaultMailData, MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
+import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
+import { MailLogRepository } from './repositories/mail-log.repository.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';
 
 @Singleton()
 export class MailService {
-  private readonly mailClient: MailClient;
-  private readonly templateService: TemplateService;
-  private readonly mailLogRepository: MailLogRepository | undefined;
-  private readonly defaultData: DefaultMailData;
-  private readonly logger: Logger;
-
-  constructor(
-    mailClient: MailClient,
-    templateService: TemplateService,
-    @Inject(MailLogRepository) @Optional() mailLogRepository: MailLogRepository | undefined,
-    @ResolveArg<LoggerArgument>('MailService') logger: Logger,
-    @Inject(MAIL_DEFAULT_DATA) @Optional() defaultData: DefaultMailData | undefined
-  ) {
-    this.mailClient = mailClient;
-    this.templateService = templateService;
-    this.mailLogRepository = mailLogRepository;
-    this.defaultData = defaultData ?? {};
-    this.logger = logger;
-  }
+  private readonly mailClient = inject(MailClient);
+  private readonly templateService = inject(TemplateService);
+  private readonly mailLogRepository = inject(MailLogRepository, undefined, { optional: true });
+  private readonly defaultData = inject(MAIL_DEFAULT_DATA, undefined, { optional: true });
+  private readonly logger = inject(Logger, 'MailService');
 
   async send(mailData: MailData): Promise<MailSendResult>;
   /** @deprecated internal */

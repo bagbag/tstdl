@@ -31,5 +31,5 @@ export class MailClientConfig {
 export abstract class MailClient implements Resolvable<MailClientConfig> {
   declare readonly [resolveArgumentType]: MailClientConfig;
 
-  abstract send(data: MailData): Promise<MailSendResult>;
+  abstract send(data: MailData, clientConfig?: MailClientConfig): Promise<MailSendResult>;
 }

@@ -2,26 +2,32 @@ import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
 
-import { InjectArg, Singleton } from '#/injector/index.js';
+import type { Disposable } from '#/disposable/disposable.js';
+import { Singleton, injectArgument } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
 import type { WritableOneOrMany } from '#/types.js';
-import { isUndefined } from '#/utils/type-guards.js';
-import { MailClient, MailClientConfig } from '../mail.client.js';
+import { assertDefined, isUndefined } from '#/utils/type-guards.js';
+import type { MailClientConfig } from '../mail.client.js';
+import { MailClient } from '../mail.client.js';
 import type { MailAddress, MailData, MailSendResult } from '../models/index.js';
 
 @Singleton()
-export class NodemailerMailClient extends MailClient {
-  private readonly transporter: Transporter<SMTPTransport.SentMessageInfo>;
+export class NodemailerMailClient extends MailClient implements Disposable {
+  readonly #stack = new DisposableStack();
+  readonly #transports = new Map<string, Transporter<SMTPTransport.SentMessageInfo>>();
+  readonly #defaultClientConfig = injectArgument(this, { optional: true });
 
-  constructor(@InjectArg() config: MailClientConfig) {
-    super();
-
-    const options = convertConfig(config);
-    this.transporter = createTransport(options);
+  [Symbol.dispose](): void {
+    this.#stack.dispose();
   }
 
-  async send(data: MailData): Promise<MailSendResult> {
-    const result = await this.transporter.sendMail({
+  async send(data: MailData, clientConfig?: MailClientConfig): Promise<MailSendResult> {
+    const config = clientConfig ?? this.#defaultClientConfig;
+    assertDefined(config, 'No mail client config provided.');
+
+    const transport = this.getTransport(config);
+
+    const result = await transport.sendMail({
       from: data.from,
       sender: data.sender,
       to: data.to as WritableOneOrMany<MailAddress>,
@@ -42,6 +48,22 @@ export class NodemailerMailClient extends MailClient {
       rejected: result.rejected,
       pending: result.pending
     };
+  }
+
+  private getTransport(config: MailClientConfig): Transporter<SMTPTransport.SentMessageInfo> {
+    const options = convertConfig(config);
+    const optionsJson = JSON.stringify(options);
+
+    if (this.#transports.has(optionsJson)) {
+      return this.#transports.get(optionsJson)!;
+    }
+
+    const transport = createTransport(options);
+    this.#transports.set(optionsJson, transport);
+
+    this.#stack.adopt(transport, () => transport.close());
+
+    return transport;
   }
 }
 

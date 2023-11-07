@@ -28,7 +28,7 @@ catch {
 configureTstdl();
 
 configureMail({
-  clientConfig: {
+  defaultClientConfig: {
     host: string('HOST', '127.0.0.01'),
     port: integer('PORT', 25),
     auth: {
