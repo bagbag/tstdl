@@ -17,11 +17,7 @@ export type GetParameterOptions = {
   providedIn: 'root'
 })
 export class RoutingService {
-  private readonly router: Router;
-
-  constructor(router: Router) {
-    this.router = router;
-  }
+  protected readonly router = inject(Router);
 
   async navigateByUrl(url: string): Promise<void> {
     await this.router.navigateByUrl(url);

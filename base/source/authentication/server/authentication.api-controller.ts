@@ -3,10 +3,11 @@ import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/ty
 import { InvalidCredentialsError } from '#/errors/invalid-credentials.error.js';
 import type { SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
-import type { Record, TypedOmit } from '#/types.js';
+import type { ObjectSchemaOrType, SchemaTestable } from '#/schema/index.js';
+import type { Record, Type, TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
-import { authenticationApiDefinition } from '../authentication.api.js';
+import { authenticationApiDefinition, getAuthenticationApiDefinition } from '../authentication.api.js';
 import type { TokenResult } from './authentication.service.js';
 import { AuthenticationService } from './authentication.service.js';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
@@ -92,7 +93,7 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     return currentTimestamp();
   }
 
-  private getTokenResponse({ token, jsonToken, refreshToken }: TokenResult<AdditionalTokenPayload>): HttpServerResponse {
+  protected getTokenResponse({ token, jsonToken, refreshToken }: TokenResult<AdditionalTokenPayload>): HttpServerResponse {
     const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'token'> = jsonToken.payload as ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'token'>;
 
     return new HttpServerResponse({
@@ -105,4 +106,17 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
       }
     });
   }
+}
+
+export function getAuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>( // eslint-disable-line @typescript-eslint/explicit-function-return-type
+  additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
+  authenticationDataSchema: SchemaTestable<AuthenticationData>,
+  additionalInitSecretResetData: ObjectSchemaOrType<AdditionalInitSecretResetData>
+): Type<AuthenticationApiController<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
+  const apiDefinition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
+
+  @apiController(apiDefinition)
+  class KfinAuthenticationApi extends AuthenticationApiController<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData> { }
+
+  return KfinAuthenticationApi;
 }
