@@ -5,6 +5,7 @@ import type { TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined } from '#/utils/type-guards.js';
+import type { MailClientConfig } from './mail.client.js';
 import { MailClient } from './mail.client.js';
 import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
 import { MailLogRepository } from './repositories/mail-log.repository.js';
@@ -18,10 +19,13 @@ export class MailService {
   private readonly defaultData = inject(MAIL_DEFAULT_DATA, undefined, { optional: true });
   private readonly logger = inject(Logger, 'MailService');
 
-  async send(mailData: MailData): Promise<MailSendResult>;
+  async send(mailData: MailData, clientConfig?: MailClientConfig): Promise<MailSendResult>;
   /** @deprecated internal */
-  async send(mailData: MailData, templateName?: string): Promise<MailSendResult>;
-  async send(mailData: MailData, templateName?: string): Promise<MailSendResult> {
+  async send(mailData: MailData, clientConfig?: MailClientConfig, templateName?: string): Promise<MailSendResult>;
+  async send(mailData: MailData, clientConfigOrTemplateName?: MailClientConfig, templateNameOrNothing?: string): Promise<MailSendResult> {
+    const clientConfig = (typeof clientConfigOrTemplateName == 'object') ? clientConfigOrTemplateName : undefined;
+    const templateName = (typeof clientConfigOrTemplateName == 'object') ? templateNameOrNothing : clientConfigOrTemplateName;
+
     const data: MailData = { ...this.defaultData, ...mailData };
 
     let mailLog: MailLog | undefined;
@@ -39,7 +43,7 @@ export class MailService {
     }
 
     try {
-      const result = await this.mailClient.send(data);
+      const result = await this.mailClient.send(data, clientConfig);
 
       if (isDefined(mailLog)) {
         await this.mailLogRepository!.patch(mailLog, { sendResult: result });
@@ -61,11 +65,11 @@ export class MailService {
     }
   }
 
-  async sendTemplate<Context extends object>(keyOrTemplate: string | MailTemplate<Context>, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: Context): Promise<MailSendResult> {
+  async sendTemplate<Context extends object>(keyOrTemplate: string | MailTemplate<Context>, mailData: TypedOmit<MailData, 'content' | 'subject'>, templateContext?: Context, clientConfig?: MailClientConfig): Promise<MailSendResult> {
     const { name, fields: { subject, html, text } } = await this.templateService.render(keyOrTemplate, templateContext);
 
     const fullMailData = { ...mailData, subject, content: { html, text } };
 
-    return this.send(fullMailData, name);
+    return this.send(fullMailData, clientConfig, name);
   }
 }
