@@ -10,7 +10,7 @@ import { waitForAuthenticationCredentialsMiddleware } from './http-client.middle
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
 export type AuthenticationClientModuleConfig = {
-  authenticationApiClient?: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>,
+  authenticationApiClient?: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any, any>>>,
   initialAuthenticationData?: unknown,
   registerMiddleware?: boolean
 };

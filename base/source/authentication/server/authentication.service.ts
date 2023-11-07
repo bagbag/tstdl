@@ -61,7 +61,7 @@ export type AuthenticationResult =
   | { success: true, subject: string }
   | { success: false, subject?: undefined };
 
-export type TokenResult<AdditionalTokenPayload extends Record = Record<never>> = {
+export type TokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>,
   refreshToken: string
@@ -92,13 +92,13 @@ type CreateSecretResetTokenResult = {
 const SIGNING_SECRETS_LENGTH = 64;
 
 @Singleton()
-export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> implements AfterResolve {
+export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> implements AfterResolve {
   private readonly credentialsRepository: AuthenticationCredentialsRepository;
   private readonly sessionRepository: AuthenticationSessionRepository;
   private readonly authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator;
   private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
   private readonly subjectResolver: AuthenticationSubjectResolver | undefined;
-  private readonly authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined;
+  private readonly authenticationResetSecretHandler: AuthenticationSecretResetHandler<AdditionalInitSecretResetData> | undefined;
   private readonly options: AuthenticationServiceOptions;
 
   private readonly secret: string;
@@ -117,7 +117,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator,
     @Inject(AuthenticationSubjectResolver) @Optional() subjectResolver: AuthenticationSubjectResolver | undefined,
     @Inject(AuthenticationTokenPayloadProvider) @Optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
-    @Inject(AuthenticationSecretResetHandler) @Optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler | undefined,
+    @Inject(AuthenticationSecretResetHandler) @Optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler<AdditionalInitSecretResetData> | undefined,
     options: AuthenticationServiceOptions
   ) {
     this.credentialsRepository = credentialsRepository;
@@ -251,7 +251,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { token, jsonToken, refreshToken: newRefreshToken.token };
   }
 
-  async initResetSecret(subject: string): Promise<void> {
+  async initSecretReset(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
     if (isUndefined(this.authenticationResetSecretHandler)) {
       throw new NotImplementedError();
     }
@@ -259,9 +259,10 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const actualSubject = await this.resolveSubject(subject);
     const secretResetToken = await this.createSecretResetToken(actualSubject, currentTimestamp() + this.secretResetTokenTimeToLive);
 
-    const initSecretResetData: InitSecretResetData = {
+    const initSecretResetData: InitSecretResetData & AdditionalInitSecretResetData = {
       subject: actualSubject,
-      token: secretResetToken.token
+      token: secretResetToken.token,
+      ...data
     };
 
     await this.authenticationResetSecretHandler.handleInitSecretReset(initSecretResetData);

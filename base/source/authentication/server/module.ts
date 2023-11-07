@@ -15,7 +15,7 @@ export type AuthenticationModuleConfig = {
   sessionRepository: InjectionToken<AuthenticationSessionRepository>,
 
   /** override default AuthenticationService */
-  authenticationService?: InjectionToken<AuthenticationService<any, any>>,
+  authenticationService?: InjectionToken<AuthenticationService<any, any, any>>,
   tokenPayloadProvider?: InjectionToken<AuthenticationTokenPayloadProvider<any, any>>,
   subjectResolver?: InjectionToken<AuthenticationSubjectResolver>
 };

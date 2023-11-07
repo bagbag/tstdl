@@ -1,6 +1,9 @@
 /* eslint-disable max-classes-per-file */
 import '#/polyfills.js';
 
+import type { EmptyObject } from 'type-fest';
+import { Agent } from 'undici';
+
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
@@ -17,12 +20,11 @@ import { Singleton } from '#/injector/decorators.js';
 import { inject, injectAsync } from '#/injector/inject.js';
 import { configureLocalMessageBus } from '#/message-bus/local/module.js';
 import { WebServerModule } from '#/module/modules/index.js';
-import { Property } from '#/schema/index.js';
+import { Property, emptyObjectSchema } from '#/schema/index.js';
 import { configureDefaultSignalsImplementation } from '#/signals/implementation/configure.js';
 import { first } from '#/utils/iterable-helpers/first.js';
 import { skip } from '#/utils/iterable-helpers/skip.js';
 import { timeout } from '#/utils/timing.js';
-import { Agent } from 'undici';
 
 class LocalStoragePolyfill implements Storage {
   readonly #storage = new Map<string, string>();
@@ -64,7 +66,7 @@ class AuthenticationData {
   deviceId: string;
 }
 
-const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData);
+const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData, emptyObjectSchema);
 
 @Singleton()
 class CustomTokenPayloadProvider extends AuthenticationTokenPayloadProvider<CustomTokenPaylod, AuthenticationData> {
@@ -79,7 +81,7 @@ async function serverTest(): Promise<void> {
 }
 
 async function clientTest(): Promise<void> {
-  const authenticationService = inject<AuthenticationClientService<CustomTokenPaylod, AuthenticationData>>(AuthenticationClientService);
+  const authenticationService = inject<AuthenticationClientService<CustomTokenPaylod, AuthenticationData, EmptyObject>>(AuthenticationClientService);
 
   await timeout(1500); // allow server to initialize
 

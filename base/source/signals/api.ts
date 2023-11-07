@@ -23,13 +23,7 @@ export let toObservable: typeof Types.toObservable = throwSignalsNotConfigured;
 /* eslint-enable import/no-mutable-exports */
 
 export function configureSignals(configuration: SignalsConfiguration): void {
-  signal = configuration.signal;
-  computed = configuration.computed;
-  effect = configuration.effect;
-  untracked = configuration.untracked;
-  isSignal = configuration.isSignal;
-  toSignal = configuration.toSignal;
-  toObservable = configuration.toObservable;
+  ({ signal, computed, effect, untracked, isSignal, toSignal, toObservable } = configuration);
 }
 
 function throwSignalsNotConfigured(): never {

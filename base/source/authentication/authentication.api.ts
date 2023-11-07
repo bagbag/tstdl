@@ -15,36 +15,38 @@ import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
 export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
 
-type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> =
-  typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>;
+type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> =
+  typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>;
 
-type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
-export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void> =
-  ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData>>;
+export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> =
+  ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
-export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown());
+export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown(), emptyObjectSchema);
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalEndpoints>(
+export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData, AdditionalEndpoints>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
+  initSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>,
   resource?: string,
   additionalEndpoints?: AdditionalEndpoints
 ) {
   return defineApi({
     resource: resource ?? 'auth',
     endpoints: {
-      ...getAuthenticationApiEndpointsDefinition(additionalTokenPayloadSchema, authenticationDataSchema),
+      ...getAuthenticationApiEndpointsDefinition(additionalTokenPayloadSchema, authenticationDataSchema, initSecretResetDataSchema),
       ...additionalEndpoints
     }
   });
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData>(
+export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
-  authenticationDataSchema: SchemaTestable<AuthenticationData>
+  authenticationDataSchema: SchemaTestable<AuthenticationData>,
+  additionalInitSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>
 ) {
   const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema) as unknown as ObjectSchema<TokenPayload<AdditionalTokenPayload>>;
 
@@ -84,11 +86,12 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
         [dontWaitForValidToken]: true
       }
     },
-    initResetSecret: {
+    initSecretReset: {
       resource: 'secret/init-reset',
       method: 'POST',
-      parameters: object({
-        subject: string()
+      parameters: explicitObject({
+        subject: string(),
+        data: additionalInitSecretResetDataSchema
       }),
       result: literal('ok' as const)
     },

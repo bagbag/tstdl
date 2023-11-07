@@ -35,6 +35,7 @@
     "@typescript-eslint/init-declarations": "off",
     "@typescript-eslint/lines-around-comment": "off",
     "@typescript-eslint/lines-between-class-members": ["warn", "always", { "exceptAfterSingleLine": true }],
+    "@typescript-eslint/max-params": "off",
     "@typescript-eslint/method-signature-style": "off",
     "@typescript-eslint/no-confusing-void-expression": ["error", { "ignoreArrowShorthand": true, "ignoreVoidOperator": true }],
     "@typescript-eslint/no-empty-interface": ["warn", { "allowSingleExtends": true }],

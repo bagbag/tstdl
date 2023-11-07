@@ -10,11 +10,12 @@ import type { Record } from '#/types.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import { getAuthenticationApiDefinition } from '../authentication.api.js';
 
-export function getAuthenticationApiClient<AdditionalTokenPayload extends Record, AuthenticationData>(
+export function getAuthenticationApiClient<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
-  authenticationDataSchema: SchemaTestable<AuthenticationData>
-): ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData>> {
-  const definition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema);
+  authenticationDataSchema: SchemaTestable<AuthenticationData>,
+  additionalInitSecretResetData: ObjectSchemaOrType<AdditionalInitSecretResetData>
+): ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
+  const definition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
 
   @Singleton()
   class AuthenticationApiClient extends compileClient(definition) {
@@ -26,7 +27,7 @@ export function getAuthenticationApiClient<AdditionalTokenPayload extends Record
   return AuthenticationApiClient;
 }
 
-const defaultAuthenticationApiClient = getAuthenticationApiClient(emptyObjectSchema, unknown());
+const defaultAuthenticationApiClient = getAuthenticationApiClient(emptyObjectSchema, unknown(), emptyObjectSchema);
 
 @ReplaceClass(defaultAuthenticationApiClient)
 export class AuthenticationApiClient extends defaultAuthenticationApiClient { }

@@ -31,8 +31,8 @@ const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
 @Singleton()
-export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any> implements AfterResolve, AsyncDisposable {
-  private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, any>>>;
+export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any, AdditionalInitSecretResetData extends Record = Record> implements AfterResolve, AsyncDisposable {
+  private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<TokenPayload<AdditionalTokenPayload>, AuthenticationData, AdditionalInitSecretResetData>>>;
   private readonly errorSubject = new Subject<Error>();
   private readonly tokenUpdateBus = inject(MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>, tokenUpdateBusName);
   private readonly loggedOutBus = inject(MessageBus<void>, loggedOutBusName);
@@ -169,8 +169,8 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
-  async initResetSecret(subject: string): Promise<void> {
-    await this.client.initResetSecret({ subject });
+  async initResetSecret(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
+    await this.client.initSecretReset({ subject, data });
   }
 
   async resetSecret(token: string, newSecret: string): Promise<void> {

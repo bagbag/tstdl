@@ -4,7 +4,7 @@ import { injectionToken } from '#/injector/token.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import { AuthenticationApiClient } from './api.client.js';
 
-export const AUTHENTICATION_API_CLIENT = injectionToken<ApiClientImplementation<AuthenticationApiDefinition<any, any>>>('ApiClientImplementation');
+export const AUTHENTICATION_API_CLIENT = injectionToken<ApiClientImplementation<AuthenticationApiDefinition<any, any, any>>>('ApiClientImplementation');
 
 export const INITIAL_AUTHENTICATION_DATA = injectionToken('initial authentication data');
 
