@@ -3,7 +3,7 @@ import { isObservable } from 'rxjs';
 
 import { inject } from '#/injector/inject.js';
 import type { Signal } from '#/signals/api.js';
-import { computed, isSignal, toObservable, toSignal } from '#/signals/api.js';
+import { computed, isSignal, toObservable, toSignal, untracked } from '#/signals/api.js';
 import { switchMap } from '#/signals/switch-map.js';
 import { runInUntracked } from '#/signals/untracked-operator.js';
 import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
@@ -18,7 +18,7 @@ export const missingLocalizationKeyText = '[MISSING LOCALIZATION KEY]';
 export function resolveDynamicText(text: DynamicText, localizationService: LocalizationService = inject(LocalizationService)): Signal<string> {
   const localizableTextSignal =
     isSignal(text) ? text
-      : isObservable(text) ? toSignal(text.pipe(runInUntracked()), { initialValue: missingLocalizationKeyText })
+      : isObservable(text) ? untracked(() => toSignal(text.pipe(runInUntracked()), { initialValue: missingLocalizationKeyText }))
         : computed(() => text);
 
   return switchMap(() => {
