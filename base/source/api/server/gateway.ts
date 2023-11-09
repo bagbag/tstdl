@@ -18,6 +18,7 @@ import type { Type, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import type { AsyncMiddleware, AsyncMiddlewareNext, ComposedAsyncMiddleware } from '#/utils/middleware.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
+import { mapObjectValues } from '#/utils/object/object.js';
 import { deferThrow } from '#/utils/throw.js';
 import { isArray, isBlob, isDefined, isNull, isNullOrUndefined, isObject, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { mebibyte } from '#/utils/units.js';
@@ -244,7 +245,8 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
       throw new BadRequestError('Expected json object as body.');
     }
 
-    const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...context.resourcePatternResult.pathname.groups };
+    const decodedUrlParameters = mapObjectValues(context.resourcePatternResult.pathname.groups, (value) => isDefined(value) ? decodeURIComponent(value) : undefined);
+    const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...decodedUrlParameters };
 
     const validatedParameters = isDefined(context.endpoint.definition.parameters)
       ? Schema.parse(context.endpoint.definition.parameters, parameters)

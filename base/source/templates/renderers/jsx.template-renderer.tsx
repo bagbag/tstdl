@@ -1,9 +1,6 @@
 import { Singleton } from '#/injector/decorators.js';
+import { renderJsx } from '#/jsx/render-to-string.js';
 import type { Record } from '#/types.js';
-import { assertNotNull } from '#/utils/type-guards.js';
-import type { ComponentClass } from 'preact';
-import { Component } from 'preact';
-import { render } from 'preact-render-to-string';
 import type { JsxTemplate } from '../resolvers/jsx.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
 import { TemplateRenderer } from '../template.renderer.js';
@@ -20,14 +17,7 @@ export class JsxTemplateRenderer extends TemplateRenderer<'jsx', undefined> {
     return (type == 'jsx');
   }
 
-  _render({ template: TemplateComponent }: JsxTemplateRenderObject, context: Record): TemplateRenderResult {
-    const node = isComponentClass(TemplateComponent) ? <TemplateComponent {...context}></TemplateComponent> : TemplateComponent(context, context);
-    assertNotNull(node, 'Template returned null');
-
-    return render(node);
+  _render({ template }: JsxTemplateRenderObject, context: Record): TemplateRenderResult {
+    return renderJsx(template, context);
   }
-}
-
-function isComponentClass(template: JsxTemplate): template is ComponentClass<any, any> {
-  return Reflect.getPrototypeOf(template) == Component;
 }

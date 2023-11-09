@@ -1,5 +1,5 @@
 import type { HttpValue } from '#/http/types.js';
-import { normalizeHttpValue, normalizeSingleHttpValue } from '#/http/types.js';
+import { normalizeSingleHttpValue } from '#/http/types.js';
 import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types.js';
 import { memoizeSingle } from './function/memoize.js';
 import { isArray, isDefined, isObject, isUndefined } from './type-guards.js';
@@ -67,8 +67,8 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
         }
 
         parsedUrl += isArray(value)
-          ? (value as HttpValue[]).map(normalizeHttpValue).join(arraySeparator)
-          : normalizeSingleHttpValue(value);
+          ? (value as HttpValue[]).map((httpValue) => encodeURIComponent(normalizeSingleHttpValue(httpValue))).join(arraySeparator)
+          : encodeURIComponent(normalizeSingleHttpValue(value));
       }
     }
 

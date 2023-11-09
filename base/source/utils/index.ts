@@ -23,6 +23,7 @@ export * from './file-reader.js';
 export * from './format-error.js';
 export * from './format.js';
 export * from './helpers.js';
+export * from './html-link-utils.js';
 export * from './image.js';
 export * from './jwt.js';
 export * from './map.js';
