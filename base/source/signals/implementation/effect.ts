@@ -12,8 +12,6 @@ import { assertNotInReactiveContext } from './asserts.js';
 import type { Watch, WatchCleanupRegisterFn } from './watch.js';
 import { createWatch } from './watch.js';
 
-
-
 /**
  * An effect can, optionally, register a cleanup function. If registered, the cleanup is executed
  * before the next effect run. The cleanup function makes it possible to "cancel" any work that the
@@ -80,21 +78,29 @@ export class TstdlEffectScheduler implements EffectScheduler, FlushableEffectRun
 
 
 /**
- * Core reactive node for an Angular effect.
+ * Core reactive node for an effect.
  *
  * `EffectHandle` combines the reactive graph's `Watch` base node for effects with the framework's
  * scheduling abstraction (`EffectScheduler`) as well as automatic cleanup via `DestroyRef` if
  * available/requested.
  */
 class EffectHandle implements EffectRef, SchedulableEffect {
-  protected watcher: Watch;
+  readonly watcher: Watch;
 
-  constructor(private scheduler: EffectScheduler, private effectFn: (onCleanup: EffectCleanupRegisterFn) => void, allowSignalWrites: boolean) {
-    this.watcher = createWatch((onCleanup) => this.runEffect(onCleanup), () => this.schedule(), allowSignalWrites);
+  constructor(
+    private scheduler: EffectScheduler,
+    private effectFn: (onCleanup: EffectCleanupRegisterFn) => void,
+    allowSignalWrites: boolean) {
+    this.watcher = createWatch(
+      (onCleanup) => this.runEffect(onCleanup), () => this.schedule(), allowSignalWrites);
   }
 
   private runEffect(onCleanup: WatchCleanupRegisterFn): void {
-    this.effectFn(onCleanup);
+    try {
+      this.effectFn(onCleanup);
+    } catch (err) {
+      queueMicrotask(() => { throw err; });
+    }
   }
 
   run(): void {
@@ -103,10 +109,6 @@ class EffectHandle implements EffectRef, SchedulableEffect {
 
   private schedule(): void {
     this.scheduler.scheduleEffect(this);
-  }
-
-  notify(): void {
-    this.watcher.notify();
   }
 
   destroy(): void {
@@ -148,11 +150,16 @@ const effectScheduler = new TstdlEffectScheduler();
 export function effect(
   effectFn: (onCleanup: EffectCleanupRegisterFn) => void,
   options?: CreateEffectOptions): EffectRef {
-  assertNotInReactiveContext(effect, 'Call `effect` outside of a reactive context. For example, schedule the effect inside the component constructor.');
+  assertNotInReactiveContext(
+    effect,
+    'Call `effect` outside of a reactive context. For example, schedule the ' +
+    'effect inside the component constructor.');
 
-  const handle = new EffectHandle(effectScheduler, effectFn, options?.allowSignalWrites ?? false);
+  const handle = new EffectHandle(
+    effectScheduler, effectFn,
+    options?.allowSignalWrites ?? false);
 
-  handle.notify();
+  handle.watcher.notify();
 
   return handle;
 }

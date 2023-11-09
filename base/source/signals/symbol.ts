@@ -3,4 +3,4 @@
  *
  * This can be used to auto-unwrap signals in various cases, or to auto-wrap non-signal values.
  */
-export const SIGNAL = /* @__PURE__ */ Symbol('SIGNAL');
+export const SIGNAL = Symbol('SIGNAL');

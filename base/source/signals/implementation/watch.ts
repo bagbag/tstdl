@@ -8,9 +8,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { SIGNAL } from '../symbol.js';
 import type { ReactiveNode } from './graph.js';
-import { consumerAfterComputation, consumerBeforeComputation, consumerDestroy, consumerMarkDirty, consumerPollProducersForChange, isInNotificationPhase, REACTIVE_NODE } from './graph.js';
+import { consumerAfterComputation, consumerBeforeComputation, consumerDestroy, consumerMarkDirty, consumerPollProducersForChange, isInNotificationPhase, REACTIVE_NODE, SIGNAL } from './graph.js';
 
 /**
  * A cleanup function that can be optionally registered from the watch logic. If registered, the
@@ -45,7 +44,6 @@ export interface Watch {
 
   [SIGNAL]: WatchNode;
 }
-
 export interface WatchNode extends ReactiveNode {
   hasRun: boolean;
   fn: ((onCleanup: WatchCleanupRegisterFn) => void) | null;
@@ -73,7 +71,7 @@ export function createWatch(
     return node.fn === null && node.schedule === null;
   }
 
-  function destroyWatchNode(node: WatchNode): void {
+  function destroyWatchNode(node: WatchNode) {
     if (!isWatchNodeDestroyed(node)) {
       consumerDestroy(node);  // disconnect watcher from the reactive graph
       node.cleanupFn();

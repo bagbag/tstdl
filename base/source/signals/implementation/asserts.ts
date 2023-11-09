@@ -14,8 +14,6 @@ import { getActiveConsumer } from './graph.js';
  * to disallow certain code from running inside a reactive context (see {@link toSignal}).
  *
  * @param debugFn a reference to the function making the assertion (used for the error message).
- *
- * @publicApi
  */
 export function assertNotInReactiveContext(debugFn: Function, extraContext?: string): void {
   // Taking a `Function` instead of a string name here prevents the un-minified name of the function

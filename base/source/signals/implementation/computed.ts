@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -6,12 +8,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { SIGNAL } from '../symbol.js';
 import type { Signal } from './api.js';
 import type { ValueEqualityFn } from './equality.js';
 import { defaultEquals } from './equality.js';
 import type { ReactiveNode } from './graph.js';
-import { consumerAfterComputation, consumerBeforeComputation, producerAccessed, producerUpdateValueVersion, REACTIVE_NODE } from './graph.js';
+import { consumerAfterComputation, consumerBeforeComputation, producerAccessed, producerUpdateValueVersion, REACTIVE_NODE, SIGNAL } from './graph.js';
 
 /**
  * A computation, which derives a value from a declarative reactive expression.
@@ -132,7 +133,6 @@ const COMPUTED_NODE = {
     node.version++;
   },
 };
-
 
 /**
  * Options passed to the `computed` creation function.

@@ -8,9 +8,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { registerFinalization } from '#/memory/finalization.js';
 import type { Observable, Subscribable } from 'rxjs';
-import { Signal } from './api.js';
+
+import { registerFinalization } from '#/memory/finalization.js';
+import type { Signal } from './api.js';
 import { assertNotInReactiveContext } from './asserts.js';
 import { computed } from './computed.js';
 import type { WritableSignal } from './signal.js';
@@ -36,18 +37,36 @@ export interface ToSignalOptions {
    * not met.
    */
   requireSync?: boolean;
+
+  /**
+   * Whether `toSignal` should throw errors from the Observable error channel back to RxJS, where
+   * they'll be processed as uncaught exceptions.
+   *
+   * In practice, this means that the signal returned by `toSignal` will keep returning the last
+   * good value forever, as Observables which error produce no further values. This option emulates
+   * the behavior of the `async` pipe.
+   */
+  rejectErrors?: boolean;
 }
 
 // Base case: no options -> `undefined` in the result type.
 export function toSignal<T>(source: Observable<T> | Subscribable<T>): Signal<T | undefined>;
 // Options with `undefined` initial value and no `requiredSync` -> `undefined`.
-export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
+export function toSignal<T>(
+  source: Observable<T> | Subscribable<T>,
+  options: ToSignalOptions & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
 // Options with `null` initial value -> `null`.
-export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: null, requireSync?: false }): Signal<T | null>;
+export function toSignal<T>(
+  source: Observable<T> | Subscribable<T>,
+  options: ToSignalOptions & { initialValue?: null, requireSync?: false }): Signal<T | null>;
 // Options with `undefined` initial value and `requiredSync` -> strict result type.
-export function toSignal<T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue?: undefined, requireSync: true }): Signal<T>;
+export function toSignal<T>(
+  source: Observable<T> | Subscribable<T>,
+  options: ToSignalOptions & { initialValue?: undefined, requireSync: true }): Signal<T>;
 // Options with a more specific initial value type.
-export function toSignal<T, const U extends T>(source: Observable<T> | Subscribable<T>, options: ToSignalOptions & { initialValue: U, requireSync?: false }): Signal<T | U>;
+export function toSignal<T, const U extends T>(
+  source: Observable<T> | Subscribable<T>,
+  options: ToSignalOptions & { initialValue: U, requireSync?: false }): Signal<T | U>;
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -61,8 +80,13 @@ export function toSignal<T, const U extends T>(source: Observable<T> | Subscriba
  * immediately upon subscription. No `initialValue` is needed in this case, and the returned signal
  * does not include an `undefined` type.
  */
-export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<T>, options?: ToSignalOptions & { initialValue?: U }): Signal<T | U> {
-  assertNotInReactiveContext(toSignal, 'Invoking `toSignal` causes new subscriptions every time. Consider moving `toSignal` outside of the reactive context and read the signal value where needed.');
+export function toSignal<T, U = undefined>(
+  source: Observable<T> | Subscribable<T>,
+  options?: ToSignalOptions & { initialValue?: U }): Signal<T | U> {
+  assertNotInReactiveContext(
+    toSignal,
+    'Invoking `toSignal` causes new subscriptions every time. ' +
+    'Consider moving `toSignal` outside of the reactive context and read the signal value where needed.');
 
   // Note: T is the Observable value type, and U is the initial value type. They don't have to be
   // the same - the returned signal gives values of type `T`.
@@ -83,7 +107,14 @@ export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<
   // https://github.com/angular/angular/pull/50522.
   const sub = source.subscribe({
     next: value => state.set({ kind: StateKind.Value, value }),
-    error: error => state.set({ kind: StateKind.Error, error }),
+    error: error => {
+      if (options?.rejectErrors) {
+        // Kick the error back to RxJS. It will be caught and rethrown in a macrotask, which causes
+        // the error to end up as an uncaught exception.
+        throw error;
+      }
+      state.set({ kind: StateKind.Error, error });
+    },
     // Completion of the Observable is meaningless to the signal. Signals don't have a concept of
     // "complete".
   });
@@ -102,6 +133,8 @@ export function toSignal<T, U = undefined>(source: Observable<T> | Subscribable<
       case StateKind.Error:
         throw current.error;
       case StateKind.NoValue:
+        // This shouldn't really happen because the error is thrown on creation.
+        // TODO(alxhub): use a RuntimeError when we finalize the error semantics
         throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
     }
   });

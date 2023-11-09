@@ -8,13 +8,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { SIGNAL } from '../symbol.js';
-import { Signal } from './api.js';
+import type { Signal } from './api.js';
 import type { ValueEqualityFn } from './equality.js';
 import { defaultEquals } from './equality.js';
 import { throwInvalidWriteToSignalError } from './errors.js';
 import type { ReactiveNode } from './graph.js';
-import { producerAccessed, producerNotifyConsumers, producerUpdatesAllowed, REACTIVE_NODE } from './graph.js';
+import { producerAccessed, producerIncrementEpoch, producerNotifyConsumers, producerUpdatesAllowed, REACTIVE_NODE, SIGNAL } from './graph.js';
 
 /**
  * If set, called after `WritableSignal`s are updated.
@@ -68,7 +67,12 @@ export function signalSetFn<T>(node: SignalNode<T>, newValue: T) {
     throwInvalidWriteToSignalError();
   }
 
-  if (!node.equal(node.value, newValue)) {
+  const value = node.value;
+  if (Object.is(value, newValue)) {
+    if (!node.equal(value, newValue)) {
+      console.warn('Signal value equality implementations should always return `true` for values that are the same according to `Object.is` but returned `false` instead.');
+    }
+  } else if (!node.equal(value, newValue)) {
     node.value = newValue;
     signalValueChanged(node);
   }
@@ -91,23 +95,22 @@ export function signalMutateFn<T>(node: SignalNode<T>, mutator: (value: T) => vo
   signalValueChanged(node);
 }
 
-// Note: Using an IIFE here to ensure that the spread assignment is not considered
-// a side-effect, ending up preserving `COMPUTED_NODE` and `REACTIVE_NODE`.
-// TODO: remove when https://github.com/evanw/esbuild/issues/3392 is resolved.
-const SIGNAL_NODE: object = /* @__PURE__ */ (() => {
-  return {
-    ...REACTIVE_NODE,
-    equal: defaultEquals,
-    value: undefined,
-  };
-})();
+const SIGNAL_NODE: object = {
+  ...REACTIVE_NODE,
+  equal: defaultEquals,
+  value: undefined,
+};
 
 function signalValueChanged<T>(node: SignalNode<T>): void {
   node.version++;
+  producerIncrementEpoch();
   producerNotifyConsumers(node);
   postSignalSetFn?.();
 }
 
+/**
+ * A `Signal` with a value that can be mutated via a setter interface.
+ */
 export interface WritableSignal<T> extends Signal<T> {
   /**
    * Directly set the signal to a new value, and notify any dependents.
@@ -115,7 +118,7 @@ export interface WritableSignal<T> extends Signal<T> {
   set(value: T): void;
 
   /**
-   * Update the value of the signal based on itfs current value, and
+   * Update the value of the signal based on its current value, and
    * notify any dependents.
    */
   update(updateFn: (value: T) => T): void;

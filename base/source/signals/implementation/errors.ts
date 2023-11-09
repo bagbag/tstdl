@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -12,7 +14,7 @@ function defaultThrowError(): never {
 
 let throwInvalidWriteToSignalErrorFn = defaultThrowError;
 
-export function throwInvalidWriteToSignalError(): void {
+export function throwInvalidWriteToSignalError() {
   throwInvalidWriteToSignalErrorFn();
 }
 
