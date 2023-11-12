@@ -11,7 +11,7 @@ import { getValueType } from '../utils/value-type.js';
 
 export type LiteralOptions = ValueSchemaOptions;
 
-export function literal<T>(value: T, options?: LiteralOptions): ValueSchema<T> {
+export function literal<const T>(value: T, options?: LiteralOptions): ValueSchema<T> {
   const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options?.valueConstraints ?? []);
   valueConstraints.push(new LiteralConstraint(value));
 

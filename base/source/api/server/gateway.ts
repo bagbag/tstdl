@@ -261,18 +261,26 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
 
     const result = await context.endpoint.implementation(requestContext);
 
-    if (result instanceof HttpServerResponse) {
-      return result;
-    }
+    const response = (result instanceof HttpServerResponse)
+      ? result
+      : new HttpServerResponse({
+        body: isUint8Array(result) ? { buffer: result }
+          : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
+            : isReadableStream<Uint8Array>(result) ? { stream: result }
+              : (result instanceof ServerSentEventsSource) ? { events: result }
+                : (context.endpoint.definition.result == String) ? { text: result }
+                  : { json: result }
+      });
 
-    const response = new HttpServerResponse({
-      body: isUint8Array(result) ? { buffer: result }
-        : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
-          : isReadableStream<Uint8Array>(result) ? { stream: result }
-            : (result instanceof ServerSentEventsSource) ? { events: result }
-              : (context.endpoint.definition.result == String) ? { text: result }
-                : { json: result }
-    });
+    if (isUndefined(response.headers.contentType)) {
+      response.headers.contentType =
+        (isDefined(response.body?.json)) ? 'application/json; charset=utf-8'
+          : (isDefined(response.body?.text)) ? 'text/plain; charset=utf-8'
+            : (isDefined(response.body?.buffer)) ? 'application/octet-stream'
+              : (isDefined(response.body?.stream)) ? 'application/octet-stream'
+                : (isDefined(response.body?.events)) ? 'text/event-stream'
+                  : undefined;
+    }
 
     return response;
   }

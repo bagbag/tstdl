@@ -168,22 +168,6 @@ function getResponder(httpResponse: Http.ServerResponse): (response: HttpServerR
 }
 
 function writeHeaders(response: HttpServerResponse, httpResponse: ServerResponse): void {
-  if (isDefined(response.body?.json)) {
-    httpResponse.setHeader('Content-Type', 'application/json; charset=utf-8');
-  }
-  else if (isDefined(response.body?.text)) {
-    httpResponse.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  }
-  else if (isDefined(response.body?.buffer)) {
-    httpResponse.setHeader('Content-Type', 'application/octet-stream');
-  }
-  else if (isDefined(response.body?.stream)) {
-    httpResponse.setHeader('Content-Type', 'application/octet-stream');
-  }
-  else if (isDefined(response.body?.events)) {
-    httpResponse.setHeader('Content-Type', 'text/event-stream');
-  }
-
   for (const [name, value] of response.headers.normalizedEntries()) {
     httpResponse.setHeader(name, value);
   }

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.31",
+  "version": "0.90.32",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -149,7 +149,7 @@
     "mongodb": "^6.2",
     "nodemailer": "^6.9",
     "playwright": "^1.39",
-    "preact": "^10.18",
+    "preact": "^10.19",
     "preact-render-to-string": "^6.3",
     "undici": "^5.27",
     "urlpattern-polyfill": "^9.0"
