@@ -1,4 +1,6 @@
 /* eslint-disable max-classes-per-file */
+import '#/polyfills.js';
+
 import { compileClient } from '#/api/client/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
 import { defineApi } from '#/api/index.js';

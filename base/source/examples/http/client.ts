@@ -1,3 +1,5 @@
+import '#/polyfills.js';
+
 import { Application } from '#/application/application.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { HttpClient } from '#/http/client/index.js';

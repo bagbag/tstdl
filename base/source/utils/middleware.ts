@@ -1,70 +1,68 @@
-export type ComposedMiddleware<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut;
-export type MiddlewareHandler<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut;
-export type MiddlewareNext<TIn, TOut> = (value: TIn) => TOut;
-export type Middleware<TIn, TOut, Context = unknown> = (value: TIn, next: MiddlewareNext<TIn, TOut>, context: Context) => TOut | TOut;
+export type ComposedMiddleware<Context = unknown> = (context: Context) => void;
+export type MiddlewareNext = () => void;
+export type Middleware<Context = unknown> = (context: Context, next: MiddlewareNext) => void;
 
-export type ComposedAsyncMiddleware<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => Promise<TOut>;
-export type AsyncMiddlewareHandler<TIn, TOut, Context = unknown> = (value: TIn, context: Context) => TOut | Promise<TOut>;
-export type AsyncMiddlewareNext<TIn, TOut> = (value: TIn) => TOut | Promise<TOut>;
-export type AsyncMiddleware<TIn, TOut, Context = unknown> = (value: TIn, next: AsyncMiddlewareNext<TIn, TOut>, context: Context) => TOut | Promise<TOut>;
+export type ComposedAsyncMiddleware<Context = unknown> = (context: Context) => Promise<void>;
+export type AsyncMiddlewareNext = () => void | Promise<void>;
+export type AsyncMiddleware<Context = unknown> = (context: Context, next: AsyncMiddlewareNext) => void | Promise<void>;
 
 export type MiddlewareOptions = {
   allowMultipleNextCalls?: boolean
 };
 
-export function composeMiddleware<TIn, TOut, Context = unknown>(middlewares: Middleware<TIn, TOut, Context>[], handler: MiddlewareHandler<TIn, TOut, Context>, options: MiddlewareOptions = {}): ComposedMiddleware<TIn, TOut, Context> {
-  function composedMiddleware(value: TIn, context: Context): TOut {
+export function composeMiddleware<Context = unknown>(middlewares: Middleware<Context>[], options: MiddlewareOptions = {}): ComposedMiddleware<Context> {
+  function composedMiddleware(context: Context): void {
     let currentIndex = -1;
 
-    function dispatch(index: number, dispatchedValue: TIn): TOut {
+    function dispatch(index: number): void {
       if (index == middlewares.length) {
-        return handler(dispatchedValue, context);
+        return;
       }
 
       const middleware = middlewares[index]!;
       currentIndex = index;
 
-      function next(nextValue: TIn): TOut {
+      function next(): void {
         if ((index < currentIndex) && (options.allowMultipleNextCalls != true)) {
           throw new Error('next() called multiple times');
         }
 
-        return dispatch(index + 1, nextValue);
+        dispatch(index + 1);
       }
 
-      return middleware(dispatchedValue, next, context);
+      middleware(context, next);
     }
 
-    return dispatch(0, value);
+    dispatch(0);
   }
 
   return composedMiddleware;
 }
 
-export function composeAsyncMiddleware<TIn, TOut, Context>(middlewares: AsyncMiddleware<TIn, TOut, Context>[], handler: AsyncMiddlewareHandler<TIn, TOut, Context>, options: MiddlewareOptions = {}): ComposedAsyncMiddleware<TIn, TOut, Context> {
-  async function composedMiddleware(value: TIn, context: Context): Promise<TOut> {
+export function composeAsyncMiddleware<Context>(middlewares: AsyncMiddleware<Context>[], options: MiddlewareOptions = {}): ComposedAsyncMiddleware<Context> {
+  async function composedMiddleware(context: Context): Promise<void> {
     let currentIndex = -1;
 
-    async function dispatch(index: number, dispatchedValue: TIn): Promise<TOut> {
+    async function dispatch(index: number): Promise<void> {
       if (index == middlewares.length) {
-        return handler(dispatchedValue, context);
+        return;
       }
 
       const middleware = middlewares[index]!;
       currentIndex = index;
 
-      async function next(nextValue: TIn): Promise<TOut> {
+      async function next(): Promise<void> {
         if ((index < currentIndex) && (options.allowMultipleNextCalls != true)) {
           throw new Error('next() called multiple times');
         }
 
-        return dispatch(index + 1, nextValue);
+        return dispatch(index + 1);
       }
 
-      return middleware(dispatchedValue, next, context);
+      return middleware(context, next); // eslint-disable-line consistent-return
     }
 
-    return dispatch(0, value);
+    return dispatch(0);
   }
 
   return composedMiddleware;

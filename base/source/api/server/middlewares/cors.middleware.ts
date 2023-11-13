@@ -1,10 +1,8 @@
 import type { ApiEndpointDefinitionCors, ApiEndpointMethod } from '#/api/types.js';
 import { resolveApiEndpointDataProvider } from '#/api/types.js';
-import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
 import { toArray } from '#/utils/array/array.js';
-import type { AsyncMiddlewareNext } from '#/utils/middleware.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext } from '../gateway.js';
+import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext, ApiGatewayMiddlewareNext } from '../gateway.js';
 
 export type CorsMiddlewareOptions = {
   default?: ApiEndpointDefinitionCors
@@ -12,8 +10,10 @@ export type CorsMiddlewareOptions = {
 
 export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayMiddleware {
   // eslint-disable-next-line max-statements, @typescript-eslint/no-shadow
-  async function corsMiddleware(request: HttpServerRequest, next: AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
-    const response = await next(request);
+  async function corsMiddleware(context: ApiGatewayMiddlewareContext, next: ApiGatewayMiddlewareNext): Promise<void> {
+    await next();
+
+    const { request, response } = context;
 
     const requestMethod = request.headers.tryGetSingle('Access-Control-Request-Method') ?? request.method;
     const isOptions = (request.method == 'OPTIONS');
@@ -65,8 +65,6 @@ export function corsMiddleware(options: CorsMiddlewareOptions = {}): ApiGatewayM
         response.headers.setIfMissing('Access-Control-Allow-Origin', origin);
       }
     }
-
-    return response;
   }
 
   return corsMiddleware;

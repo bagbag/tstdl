@@ -8,7 +8,7 @@ import { encodeUtf8 } from '#/utils/encoding.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
-import { isArray, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
+import { assertDefined, isArray, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
 import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
@@ -20,7 +20,7 @@ import type { HttpClientRequestOptions } from './http-client-request.js';
 import { HttpClientRequest } from './http-client-request.js';
 import type { HttpClientResponse } from './http-client-response.js';
 import { HttpClientAdapter } from './http-client.adapter.js';
-import type { HttpClientHandler, HttpClientMiddleware, HttpClientMiddlewareNext } from './middleware.js';
+import type { ComposedHttpClientMiddleware, HttpClientMiddleware, HttpClientMiddlewareContext, HttpClientMiddlewareNext } from './middleware.js';
 import { HTTP_CLIENT_MIDDLEWARE } from './tokens.js';
 
 export type HttpClientArgument = HttpClientOptions;
@@ -30,26 +30,31 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   private readonly adapter = inject(HttpClientAdapter);
   private readonly middleware = injectAll(HTTP_CLIENT_MIDDLEWARE, undefined, { optional: true });
   private readonly headers = new HttpHeaders();
-  private readonly internalMiddleware: HttpClientMiddleware[];
+  private readonly internalStartMiddleware: HttpClientMiddleware[];
+  private readonly internalEndMiddleware: HttpClientMiddleware[];
 
-  private callHandler: HttpClientHandler;
+  private composedMiddleware: ComposedHttpClientMiddleware;
 
   readonly options = injectArgument(this, { optional: true }) ?? inject(HttpClientOptions, undefined, { optional: true }) ?? {};
 
   declare readonly [resolveArgumentType]: HttpClientOptions;
   constructor() {
-    this.internalMiddleware = [
+    this.internalStartMiddleware = [
       getBuildRequestUrlMiddleware(this.options.baseUrl),
-      addRequestHeadersMiddleware,
       ...((this.options.enableErrorHandling ?? true) ? [errorMiddleware] : [])
     ];
 
-    this.updateHandlers();
+    this.internalEndMiddleware = [
+      getAddRequestHeadersMiddleware(this.headers),
+      getAdapterCallMiddleware(this.adapter)
+    ];
+
+    this.updateMiddleware();
   }
 
   addMiddleware(middleware: HttpClientMiddleware): void {
     this.middleware.push(middleware);
-    this.updateHandlers();
+    this.updateMiddleware();
   }
 
   setDefaultHeader(name: string, value: OneOrMany<HttpValue>): void {
@@ -214,85 +219,87 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async rawRequest(request: HttpClientRequest): Promise<HttpClientResponse> {
-    const preparedRequest = this.prepareRequest(request);
-    return this.callHandler(preparedRequest, request.context);
+    const context: HttpClientMiddlewareContext = { request };
+
+    await this.composedMiddleware(context);
+    assertDefined(context.response);
+
+    return context.response;
   }
 
-  private updateHandlers(): void {
-    this.callHandler = composeAsyncMiddleware([...this.middleware, ...this.internalMiddleware], async (request) => this.adapter.call(request), { allowMultipleNextCalls: true });
-  }
-
-  private prepareRequest(request: HttpClientRequest): HttpClientRequest {
-    const clone = request.clone();
-
-    clone.headers = new HttpHeaders(this.headers);
-    clone.headers.setMany(request.headers);
-
-    return clone;
+  private updateMiddleware(): void {
+    this.composedMiddleware = composeAsyncMiddleware([...this.internalStartMiddleware, ...this.middleware, ...this.internalEndMiddleware], { allowMultipleNextCalls: true });
   }
 }
 
 function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
-  async function buildUrlParametersMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
+  async function buildUrlParametersMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
     if (!request.mapParameters) {
-      return next(request);
+      return next();
     }
 
-    const modifiedRequest = mapParameters(request, baseUrl);
-    return next(modifiedRequest);
+    mapParameters(request, baseUrl);
+    return next();
   }
 
   return buildUrlParametersMiddleware;
 }
 
-async function addRequestHeadersMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
-  const clone = request.clone();
-  const { body, authorization } = clone;
+function getAddRequestHeadersMiddleware(defaultHeaders: HttpHeaders): HttpClientMiddleware {
+  async function addRequestHeadersMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
+    await next();
 
-  if (isDefined(body) && isUndefined(clone.headers.contentType)) {
-    if (isDefined(body.json)) {
-      clone.headers.contentType = 'application/json';
+    const { body, authorization } = request;
+
+    for (const [key, value] of defaultHeaders) {
+      request.headers.setIfMissing(key, value);
     }
-    else if (isDefined(body.text)) {
-      clone.headers.contentType = 'text/plain';
+
+    if (isDefined(body) && isUndefined(request.headers.contentType)) {
+      if (isDefined(body.json)) {
+        request.headers.contentType = 'application/json';
+      }
+      else if (isDefined(body.text)) {
+        request.headers.contentType = 'text/plain';
+      }
+      else if (isDefined(body.form)) {
+        request.headers.contentType = 'application/x-www-form-urlencoded';
+      }
+      else if (isDefined(body.blob)) {
+        request.headers.contentType = (body.blob.type.length > 0) ? body.blob.type : 'application/octet-stream';
+      }
+      else if (isDefined(body.stream) || isDefined(body.buffer)) {
+        request.headers.contentType = 'application/octet-stream';
+      }
     }
-    else if (isDefined(body.form)) {
-      clone.headers.contentType = 'application/x-www-form-urlencoded';
-    }
-    else if (isDefined(body.blob)) {
-      clone.headers.contentType = (body.blob.type.length > 0) ? body.blob.type : 'application/octet-stream';
-    }
-    else if (isDefined(body.stream) || isDefined(body.buffer)) {
-      clone.headers.contentType = 'application/octet-stream';
+
+    if (isDefined(authorization) && isUndefined(request.headers.authorization)) {
+      if (isDefined(authorization.basic)) {
+        const base64 = encodeBase64(encodeUtf8(`${authorization.basic.username}:${authorization.basic.password}`));
+        request.headers.authorization = `Basic ${base64}`;
+      }
+      else if (isDefined(authorization.bearer)) {
+        request.headers.authorization = `Bearer ${authorization.bearer}`;
+      }
+      else if (isDefined(authorization.token)) {
+        request.headers.authorization = `Token ${authorization.token}`;
+      }
     }
   }
 
-  if (isDefined(authorization) && isUndefined(clone.headers.authorization)) {
-    if (isDefined(authorization.basic)) {
-      const base64 = encodeBase64(encodeUtf8(`${authorization.basic.username}:${authorization.basic.password}`));
-      clone.headers.authorization = `Basic ${base64}`;
-    }
-    else if (isDefined(authorization.bearer)) {
-      clone.headers.authorization = `Bearer ${authorization.bearer}`;
-    }
-    else if (isDefined(authorization.token)) {
-      clone.headers.authorization = `Token ${authorization.token}`;
-    }
-  }
-
-  return next(clone);
+  return addRequestHeadersMiddleware;
 }
 
-async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddlewareNext): Promise<HttpClientResponse> {
+async function errorMiddleware(context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
   try {
-    const response = await next(request);
+    await next();
 
-    if (request.throwOnNon200 && ((response.statusCode < 200) || (response.statusCode >= 400))) {
-      const httpError = await HttpError.create(HttpErrorReason.StatusCode, request, response, `Status code ${response.statusCode}.`);
+    assertDefined(context.response);
+
+    if (context.request.throwOnNon200 && ((context.response.statusCode < 200) || (context.response.statusCode >= 400))) {
+      const httpError = await HttpError.create(HttpErrorReason.StatusCode, context.request, context.response, `Status code ${context.response.statusCode}.`);
       throw httpError;
     }
-
-    return response;
   }
   catch (error: unknown) {
     if (!(error instanceof HttpError) || (error.responseInstance?.headers.contentType?.includes('json') == false)) {
@@ -316,9 +323,7 @@ async function errorMiddleware(request: HttpClientRequest, next: HttpClientMiddl
 }
 
 // eslint-disable-next-line max-statements, max-lines-per-function, complexity
-function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClientRequest {
-  const clone = request.clone();
-
+function mapParameters(request: HttpClientRequest, baseUrl?: string): void {
   const isGetOrHead = (request.method == 'GET') || (request.method == 'HEAD');
 
   let url: URL;
@@ -337,7 +342,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
   }
 
   if (request.mapParametersToBody && !isGetOrHead && isUndefined(request.body)) {
-    clone.body = { json: Object.fromEntries(parameterEntries) };
+    request.body = { json: Object.fromEntries(parameterEntries) };
     parameterEntries.clear();
   }
 
@@ -373,7 +378,14 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): HttpClient
     }
   }
 
-  clone.url = url.href;
+  request.url = url.href;
+}
 
-  return clone;
+function getAdapterCallMiddleware(adapter: HttpClientAdapter): HttpClientMiddleware {
+  async function adapterCallMiddleware(context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
+    context.response = await adapter.call(context.request); // eslint-disable-line require-atomic-updates
+    return next();
+  }
+
+  return adapterCallMiddleware;
 }

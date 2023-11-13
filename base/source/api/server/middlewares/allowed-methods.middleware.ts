@@ -1,26 +1,19 @@
 import { MethodNotAllowedError } from '#/errors/method-not-allowed.error.js';
-import type { HttpServerRequest } from '#/http/server/index.js';
-import { HttpServerResponse } from '#/http/server/index.js';
-import type { AsyncMiddlewareNext } from '#/utils/middleware.js';
 import { isUndefined } from '#/utils/type-guards.js';
-import type { ApiGatewayMiddlewareContext } from '../gateway.js';
+import type { ApiGatewayMiddlewareContext, ApiGatewayMiddlewareNext } from '../gateway.js';
 
-export async function allowedMethodsMiddleware(request: HttpServerRequest, next: AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
+export async function allowedMethodsMiddleware({ endpoint, api, request, response }: ApiGatewayMiddlewareContext, next: ApiGatewayMiddlewareNext): Promise<void> {
   if (request.method != 'OPTIONS') {
-    if (isUndefined(context.endpoint)) {
-      throw new MethodNotAllowedError(`Method ${request.method} for resource ${context.api.resource} not available.`);
+    if (isUndefined(endpoint)) {
+      throw new MethodNotAllowedError(`Method ${request.method} for resource ${api.resource} not available.`);
     }
 
-    return next(request);
+    return next();
   }
 
-  const allowMethods = [...context.api.endpoints.keys()].join(', ');
+  const allowMethods = [...api.endpoints.keys()].join(', ');
 
-  return HttpServerResponse.fromObject({
-    statusCode: 204,
-    statusMessage: 'No Content',
-    headers: {
-      Allow: allowMethods
-    }
-  });
+  response.statusCode = 204;
+  response.statusMessage = 'No Content';
+  response.headers.setIfMissing('Allow', allowMethods);
 }

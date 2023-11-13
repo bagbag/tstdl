@@ -28,7 +28,7 @@ import { getFullApiEndpointResource } from '../utils.js';
 import { ApiRequestTokenProvider } from './api-request-token.provider.js';
 import { handleApiError } from './error-handler.js';
 import type { CorsMiddlewareOptions } from './middlewares/cors.middleware.js';
-import { allowedMethodsMiddleware, catchErrorMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares/index.js';
+import { allowedMethodsMiddleware, getCatchErrorMiddleware, contentTypeMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares/index.js';
 import { API_MODULE_OPTIONS } from './tokens.js';
 
 const defaultMaxBytes = 10 * mebibyte;
@@ -38,11 +38,14 @@ export type ApiGatewayMiddlewareContext = {
 
   /** can be undefined if used before allowedMethods middleware */
   endpoint: GatewayEndpoint,
-  resourcePatternResult: URLPatternResult
+  resourcePatternResult: URLPatternResult,
+
+  request: HttpServerRequest,
+  response: HttpServerResponse
 };
 
-export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext<HttpServerRequest, HttpServerResponse>;
-export type ApiGatewayMiddleware = AsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
+export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext;
+export type ApiGatewayMiddleware = AsyncMiddleware<ApiGatewayMiddlewareContext>;
 
 export abstract class ApiGatewayOptions {
   /**
@@ -104,7 +107,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
   private readonly catchErrorMiddleware: ApiGatewayMiddleware;
   private readonly options: ApiGatewayOptions;
 
-  private handler: ComposedAsyncMiddleware<HttpServerRequest, HttpServerResponse, ApiGatewayMiddlewareContext>;
+  private composedMiddleware: ComposedAsyncMiddleware<ApiGatewayMiddlewareContext>;
 
   declare readonly [resolveArgumentType]: ApiGatewayOptions;
   constructor(requestTokenProvider: ApiRequestTokenProvider, @ResolveArg<LoggerArgument>('ApiGateway') logger: Logger, @InjectArg() options: ApiGatewayOptions = {}) {
@@ -116,7 +119,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
     this.apis = new Map();
     this.middlewares = options.middlewares ?? [];
     this.supressedErrors = new Set(options.supressedErrors);
-    this.catchErrorMiddleware = catchErrorMiddleware(this.supressedErrors, logger);
+    this.catchErrorMiddleware = getCatchErrorMiddleware(this.supressedErrors, logger);
 
     this.updateMiddleware();
   }
@@ -178,18 +181,22 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
   async handleHttpServerRequestContext({ request, respond, close }: HttpServerRequestContext): Promise<void> {
     let responded = false;
 
+    const response = new HttpServerResponse();
+
     try {
       const { api, patternResult } = this.getApiMetadata(request.url);
       const endpoint = api.endpoints.get(request.method)!;
+      const context: ApiGatewayMiddlewareContext = { api, resourcePatternResult: patternResult, endpoint, request, response };
 
-      const response = await this.handler(request, { api, resourcePatternResult: patternResult, endpoint });
+      await this.composedMiddleware(context);
 
       responded = true;
-      await respond(response);
+
+      await respond(context.response);
     }
     catch (error) {
       try {
-        const response = handleApiError(error, this.supressedErrors, this.logger);
+        handleApiError(error, response, this.supressedErrors, this.logger);
 
         if (responded) {
           await close();
@@ -226,19 +233,19 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
   }
 
   private updateMiddleware(): void {
-    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, corsMiddleware(this.options.cors), allowedMethodsMiddleware, this.catchErrorMiddleware, ...this.middlewares];
-    this.handler = composeAsyncMiddleware(middlewares, async (request, context) => this.middlewareHandler(request, context));
+    const middlewares: ApiGatewayMiddleware[] = [responseTimeMiddleware, contentTypeMiddleware, this.catchErrorMiddleware, corsMiddleware(this.options.cors), allowedMethodsMiddleware, ...this.middlewares, async (context, next) => this.endpointMiddleware(context, next)];
+    this.composedMiddleware = composeAsyncMiddleware(middlewares);
   }
 
-  private async middlewareHandler(request: HttpServerRequest, context: ApiGatewayMiddlewareContext): Promise<HttpServerResponse> {
+  private async endpointMiddleware(context: ApiGatewayMiddlewareContext, next: ApiGatewayMiddlewareNext): Promise<void> {
     const readBodyOptions: ReadBodyOptions = { maxBytes: context.endpoint.definition.maxBytes ?? this.options.defaultMaxBytes ?? defaultMaxBytes };
 
     const body = isDefined(context.endpoint.definition.body)
-      ? await this.getBody(request, readBodyOptions, context.endpoint.definition.body)
+      ? await getBody(context.request, readBodyOptions, context.endpoint.definition.body)
       : undefined;
 
-    const bodyAsParameters = (isUndefined(context.endpoint.definition.body) && (request.headers.contentType?.includes('json') == true))
-      ? await request.body.readAsJson(readBodyOptions)
+    const bodyAsParameters = (isUndefined(context.endpoint.definition.body) && (context.request.headers.contentType?.includes('json') == true))
+      ? await context.request.body.readAsJson(readBodyOptions)
       : undefined;
 
     if (isDefined(bodyAsParameters) && !isObject(bodyAsParameters)) {
@@ -246,7 +253,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
     }
 
     const decodedUrlParameters = mapObjectValues(context.resourcePatternResult.pathname.groups, (value) => isDefined(value) ? decodeURIComponent(value) : undefined);
-    const parameters = { ...request.query.asObject(), ...bodyAsParameters, ...decodedUrlParameters };
+    const parameters = { ...context.request.query.asObject(), ...bodyAsParameters, ...decodedUrlParameters };
 
     const validatedParameters = isDefined(context.endpoint.definition.parameters)
       ? Schema.parse(context.endpoint.definition.parameters, parameters)
@@ -255,64 +262,55 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
     const requestContext: ApiRequestContext = {
       parameters: validatedParameters,
       body,
-      request,
+      request: context.request,
       getToken: async () => this.requestTokenProvider.getToken(requestContext)
     };
 
     const result = await context.endpoint.implementation(requestContext);
 
-    const response = (result instanceof HttpServerResponse)
-      ? result
-      : new HttpServerResponse({
-        body: isUint8Array(result) ? { buffer: result }
-          : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
-            : isReadableStream<Uint8Array>(result) ? { stream: result }
-              : (result instanceof ServerSentEventsSource) ? { events: result }
-                : (context.endpoint.definition.result == String) ? { text: result }
-                  : { json: result }
-      });
-
-    if (isUndefined(response.headers.contentType)) {
-      response.headers.contentType =
-        (isDefined(response.body?.json)) ? 'application/json; charset=utf-8'
-          : (isDefined(response.body?.text)) ? 'text/plain; charset=utf-8'
-            : (isDefined(response.body?.buffer)) ? 'application/octet-stream'
-              : (isDefined(response.body?.stream)) ? 'application/octet-stream'
-                : (isDefined(response.body?.events)) ? 'text/event-stream'
-                  : undefined;
+    if (result instanceof HttpServerResponse) {
+      context.response = result; // eslint-disable-line require-atomic-updates
+    }
+    else {
+      context.response.body = isUint8Array(result) ? { buffer: result } // eslint-disable-line require-atomic-updates
+        : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
+          : isReadableStream<Uint8Array>(result) ? { stream: result }
+            : (result instanceof ServerSentEventsSource) ? { events: result }
+              : (context.endpoint.definition.result == String) ? { text: result }
+                : { json: result };
     }
 
-    return response;
+    await next();
   }
+}
 
-  private async getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
-    let body: Awaited<ReturnType<typeof this.getBody>> | undefined;
+async function getBody(request: HttpServerRequest, options: ReadBodyOptions, schema: SchemaTestable | ApiBinaryType): Promise<UndefinableJson | Uint8Array | Blob | ReadableStream<Uint8Array>> {
+  let body: Awaited<ReturnType<typeof getBody>> | undefined;
 
-    if (request.hasBody) {
-      if (schema == ReadableStream) {
-        body = request.body.readAsBinaryStream(options);
-      }
-      else if (schema == Uint8Array) {
-        body = await request.body.readAsBuffer(options);
-      }
-      else if (schema == Blob) {
-        const buffer = await request.body.readAsBuffer(options);
-        body = new Blob([buffer], { type: request.headers.contentType });
-      }
-      else if (schema == String) {
-        body = await request.body.readAsText(options);
-      }
-      else if (request.headers.contentType?.startsWith('text') == true) {
-        body = await request.body.readAsText(options);
-      }
-      else if (request.headers.contentType?.includes('json') == true) {
-        body = await request.body.readAsJson(options);
-      }
-      else {
-        body = await request.body.readAsBuffer(options);
-      }
+  if (request.hasBody) {
+    if (schema == ReadableStream) {
+      body = request.body.readAsBinaryStream(options);
     }
-
-    return Schema.parse(schema as SchemaTestable<UndefinableJson | Uint8Array | ReadableStream>, body);
+    else if (schema == Uint8Array) {
+      body = await request.body.readAsBuffer(options);
+    }
+    else if (schema == Blob) {
+      const buffer = await request.body.readAsBuffer(options);
+      body = new Blob([buffer], { type: request.headers.contentType });
+    }
+    else if (schema == String) {
+      body = await request.body.readAsText(options);
+    }
+    else if (request.headers.contentType?.startsWith('text') == true) {
+      body = await request.body.readAsText(options);
+    }
+    else if (request.headers.contentType?.includes('json') == true) {
+      body = await request.body.readAsJson(options);
+    }
+    else {
+      body = await request.body.readAsBuffer(options);
+    }
   }
+
+  return Schema.parse(schema as SchemaTestable<UndefinableJson | Uint8Array | ReadableStream>, body);
 }

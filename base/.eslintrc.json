@@ -86,6 +86,7 @@
     "capitalized-comments": "off",
     "class-methods-use-this": "off",
     "complexity": "off",
+    "consistent-return": ["error", { "treatUndefinedAsUnspecified": true }],
     "dot-location": ["error", "property"],
     "eqeqeq": "off",
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
