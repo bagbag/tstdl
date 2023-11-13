@@ -6,7 +6,7 @@ export async function responseTimeMiddleware({ response }: ApiGatewayMiddlewareC
   const timer = Timer.startNew();
 
   await next();
-  const time = round(timer.milliseconds, 2);
 
+  const time = round(timer.milliseconds, 2);
   response.headers.set('X-Response-Time', `${time}ms`);
 }

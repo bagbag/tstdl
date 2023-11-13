@@ -234,11 +234,10 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
 
 function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMiddleware {
   async function buildUrlParametersMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
-    if (!request.mapParameters) {
-      return next();
+    if (request.mapParameters) {
+      mapParameters(request, baseUrl);
     }
 
-    mapParameters(request, baseUrl);
     return next();
   }
 
@@ -247,8 +246,6 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
 
 function getAddRequestHeadersMiddleware(defaultHeaders: HttpHeaders): HttpClientMiddleware {
   async function addRequestHeadersMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
-    await next();
-
     const { body, authorization } = request;
 
     for (const [key, value] of defaultHeaders) {
@@ -285,6 +282,8 @@ function getAddRequestHeadersMiddleware(defaultHeaders: HttpHeaders): HttpClient
         request.headers.authorization = `Token ${authorization.token}`;
       }
     }
+
+    return next();
   }
 
   return addRequestHeadersMiddleware;

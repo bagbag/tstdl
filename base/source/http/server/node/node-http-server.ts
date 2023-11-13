@@ -56,8 +56,10 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   async [disposeAsync](): Promise<void> {
-    await this.close(3000);
-    this.requestIterable.end();
+    if (this.httpServer.listening) {
+      await this.close(3000);
+      this.requestIterable.end();
+    }
   }
 
   async listen(port: number): Promise<void> {

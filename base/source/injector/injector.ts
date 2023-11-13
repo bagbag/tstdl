@@ -3,7 +3,7 @@ import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { isAsyncDisposable, isDisposable, isSyncOrAsyncDisposable } from '#/disposable/disposable.js';
+import { isSyncOrAsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { ConstructorParameterMetadata } from '#/reflection/registry.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
@@ -82,6 +82,7 @@ export class Injector implements AsyncDisposable {
   readonly #children: Injector[] = [];
   readonly #disposeToken = new CancellationToken();
   readonly #disposableStack = new AsyncDisposableStack();
+  readonly #disposableStackRegistrations = new Set<object>();
   readonly #registrations: RegistrationsMap = new Map();
   readonly #injectorScopedResolutions = new MultiKeyMap<[InjectionToken, unknown], Resolution<any, any>>();
   readonly #addDisposeHandler: AddDisposeHandler;
@@ -110,6 +111,7 @@ export class Injector implements AsyncDisposable {
 
     this.#disposableStack.defer(() => this.#registrations.clear());
     this.#disposableStack.defer(() => this.#injectorScopedResolutions.clear());
+    this.#disposableStack.defer(() => this.#disposableStackRegistrations.clear());
   }
 
   /**
@@ -476,8 +478,9 @@ export class Injector implements AsyncDisposable {
         throw new Error('Unsupported provider.');
       }
 
-      if (isDisposable(result.value) || isAsyncDisposable(result.value)) {
+      if (isSyncOrAsyncDisposable(result.value) && !this.#disposableStackRegistrations.has(result.value)) {
         this.#disposableStack.use(result.value);
+        this.#disposableStackRegistrations.add(result.value);
       }
 
       return result.value;
