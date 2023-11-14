@@ -4,6 +4,7 @@ export * from './media-query.js';
 export * from './mutation-observer.js';
 export * from './noop.js';
 export * from './performance-observer.js';
+export * from './reject-error.js';
 export * from './resize-observer.js';
 export * from './retry-backoff.js';
 export * from './slow-array.js';
