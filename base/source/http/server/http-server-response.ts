@@ -38,19 +38,23 @@ export class HttpServerResponse {
   };
 
   constructor(response: HttpServerResponseOptions = {}) {
-    this.statusCode = response.statusCode;
-    this.statusMessage = response.statusMessage;
-    this.headers = new HttpHeaders(response.headers);
-    this.body = response.body;
-
-    if (isDefined(response.cookies)) {
-      for (const [name, options] of objectEntries(response.cookies)) {
-        this.headers.append('Set-Cookie', formatSetCookie(name, options.value, options));
-      }
-    }
+    this.update(response);
   }
 
   static fromObject(options?: HttpServerResponseOptions): HttpServerResponse {
     return new HttpServerResponse(options);
+  }
+
+  update(options: HttpServerResponseOptions): void {
+    this.statusCode = options.statusCode;
+    this.statusMessage = options.statusMessage;
+    this.headers = new HttpHeaders(options.headers);
+    this.body = options.body;
+
+    if (isDefined(options.cookies)) {
+      for (const [name, cookie] of objectEntries(options.cookies)) {
+        this.headers.append('Set-Cookie', formatSetCookie(name, cookie.value, cookie));
+      }
+    }
   }
 }

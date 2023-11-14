@@ -28,20 +28,20 @@ import { getFullApiEndpointResource } from '../utils.js';
 import { ApiRequestTokenProvider } from './api-request-token.provider.js';
 import { handleApiError } from './error-handler.js';
 import type { CorsMiddlewareOptions } from './middlewares/cors.middleware.js';
-import { allowedMethodsMiddleware, getCatchErrorMiddleware, contentTypeMiddleware, corsMiddleware, responseTimeMiddleware } from './middlewares/index.js';
+import { allowedMethodsMiddleware, contentTypeMiddleware, corsMiddleware, getCatchErrorMiddleware, responseTimeMiddleware } from './middlewares/index.js';
 import { API_MODULE_OPTIONS } from './tokens.js';
 
 const defaultMaxBytes = 10 * mebibyte;
 
 export type ApiGatewayMiddlewareContext = {
-  api: ApiItem,
+  readonly api: ApiItem,
 
   /** can be undefined if used before allowedMethods middleware */
-  endpoint: GatewayEndpoint,
-  resourcePatternResult: URLPatternResult,
+  readonly endpoint: GatewayEndpoint,
+  readonly resourcePatternResult: URLPatternResult,
 
-  request: HttpServerRequest,
-  response: HttpServerResponse
+  readonly request: HttpServerRequest,
+  readonly response: HttpServerResponse
 };
 
 export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext;
@@ -269,7 +269,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
     const result = await context.endpoint.implementation(requestContext);
 
     if (result instanceof HttpServerResponse) {
-      context.response = result; // eslint-disable-line require-atomic-updates
+      context.response.update(result); // eslint-disable-line require-atomic-updates
     }
     else {
       context.response.body = isUint8Array(result) ? { buffer: result } // eslint-disable-line require-atomic-updates

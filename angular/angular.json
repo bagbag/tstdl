@@ -84,11 +84,11 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/test",
             "index": "projects/test/src/index.html",
-            "main": "projects/test/src/main.ts",
+            "browser": "projects/test/src/main.ts",
             "polyfills": [
               "zone.js",
               "@tstdl/base/polyfills"
@@ -121,16 +121,13 @@
               "outputHashing": "all"
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": false,
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
             },
             "stats": {
               "extractLicenses": false,
-              "vendorChunk": true,
               "sourceMap": true,
               "namedChunks": true,
               "statsJson": true
@@ -142,10 +139,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "test:build:production"
+              "buildTarget": "test:build:production"
             },
             "development": {
-              "browserTarget": "test:build:development"
+              "buildTarget": "test:build:development"
             }
           },
           "defaultConfiguration": "development"
