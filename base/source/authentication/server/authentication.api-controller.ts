@@ -126,7 +126,7 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     };
 
     if (isDefined(impersonatorRefreshToken)) {
-      options.cookies!['impersonatorRefreshToken'] = { value: `Bearer ${refreshToken}`, ...cookieBaseOptions, expires: assertDefinedPass(impersonatorRefreshTokenExpiration) * 1000 };
+      options.cookies!['impersonatorRefreshToken'] = { value: `Bearer ${impersonatorRefreshToken}`, ...cookieBaseOptions, expires: assertDefinedPass(impersonatorRefreshTokenExpiration) * 1000 };
     }
 
     if (omitImpersonatorRefreshToken == true) {
