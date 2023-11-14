@@ -48,6 +48,8 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   readonly isLoggedIn = computed(() => isDefined(this.token()));
   readonly subject = computed(() => this.token()?.subject);
   readonly sessionId = computed(() => this.token()?.sessionId);
+  readonly impersonator = computed(() => this.token()?.impersonator);
+  readonly impersonated = computed(() => isDefined(this.impersonator()));
 
   readonly token$ = toObservable(this.token);
   readonly definedToken$ = this.token$.pipe(filter(isDefined));
