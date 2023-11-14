@@ -51,7 +51,7 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
   const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema) as unknown as ObjectSchema<TokenPayload<AdditionalTokenPayload>>;
 
   return {
-    token: {
+    getToken: {
       resource: 'token',
       method: 'POST',
       parameters: explicitObject({
@@ -67,6 +67,31 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
     },
     refresh: {
       resource: 'refresh',
+      method: 'POST',
+      parameters: explicitObject({
+        data: authenticationDataSchema
+      }),
+      result: tokenResultSchema,
+      credentials: true,
+      data: {
+        [dontWaitForValidToken]: true
+      }
+    },
+    impersonate: {
+      resource: 'impersonate',
+      method: 'POST',
+      parameters: explicitObject({
+        data: authenticationDataSchema,
+        subject: string()
+      }),
+      result: tokenResultSchema,
+      credentials: true,
+      data: {
+        [dontWaitForValidToken]: true
+      }
+    },
+    unimpersonate: {
+      resource: 'unimpersonate',
       method: 'POST',
       parameters: explicitObject({
         data: authenticationDataSchema

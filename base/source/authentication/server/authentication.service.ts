@@ -1,7 +1,8 @@
+import { ForbiddenError } from '#/errors/forbidden.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { AfterResolve } from '#/injector/index.js';
-import { Inject, Optional, Singleton, afterResolve } from '#/injector/index.js';
+import { Singleton, afterResolve, inject } from '#/injector/index.js';
 import type { Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
@@ -12,13 +13,11 @@ import { getRandomBytes, getRandomString } from '#/utils/random.js';
 import { isBinaryData, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
 import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
+import { AuthenticationAncillaryService, GetTokenPayloadContextAction } from './authentication-ancillary.service.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import type { SecretTestResult } from './authentication-secret-requirements.validator.js';
 import { AuthenticationSecretRequirementsValidator } from './authentication-secret-requirements.validator.js';
-import { AuthenticationSecretResetHandler } from './authentication-secret-reset.handler.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
-import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
-import { AuthenticationTokenPayloadProvider, GetTokenPayloadContextAction } from './authentication-token-payload.provider.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 
 export type CreateTokenData<AdditionalTokenPayload extends Record> = {
@@ -29,6 +28,7 @@ export type CreateTokenData<AdditionalTokenPayload extends Record> = {
   additionalTokenPayload: AdditionalTokenPayload,
   subject: string,
   sessionId: string,
+  impersonator: string | undefined,
   refreshTokenExpiration: number,
   timestamp?: number
 };
@@ -64,7 +64,10 @@ export type AuthenticationResult =
 export type TokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>,
-  refreshToken: string
+  refreshToken: string,
+  omitImpersonatorRefreshToken?: boolean,
+  impersonatorRefreshToken?: string,
+  impersonatorRefreshTokenExpiration?: number
 };
 
 export type SetCredentialsOptions = {
@@ -93,46 +96,20 @@ const SIGNING_SECRETS_LENGTH = 64;
 
 @Singleton()
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> implements AfterResolve {
-  private readonly credentialsRepository: AuthenticationCredentialsRepository;
-  private readonly sessionRepository: AuthenticationSessionRepository;
-  private readonly authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator;
-  private readonly tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined;
-  private readonly subjectResolver: AuthenticationSubjectResolver | undefined;
-  private readonly authenticationResetSecretHandler: AuthenticationSecretResetHandler<AdditionalInitSecretResetData> | undefined;
-  private readonly options: AuthenticationServiceOptions;
+  private readonly credentialsRepository = inject(AuthenticationCredentialsRepository);
+  private readonly sessionRepository = inject(AuthenticationSessionRepository);
+  private readonly authenticationSecretRequirementsValidator = inject(AuthenticationSecretRequirementsValidator);
+  private readonly authenticationAncillaryService = inject<AuthenticationAncillaryService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>(AuthenticationAncillaryService, undefined, { optional: true });
+  private readonly options = inject(AuthenticationServiceOptions);
 
-  private readonly secret: string;
-  private readonly tokenVersion: number;
-  private readonly tokenTimeToLive: number;
-  private readonly refreshTokenTimeToLive: number;
-  private readonly secretResetTokenTimeToLive: number;
+  private readonly tokenVersion = this.options.version ?? 1;
+  private readonly tokenTimeToLive: number = this.options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
+  private readonly refreshTokenTimeToLive = this.options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
+  private readonly secretResetTokenTimeToLive = this.options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
 
   private derivedTokenSigningSecret: Uint8Array;
   private derivedRefreshTokenSigningSecret: Uint8Array;
   private derivedSecretResetTokenSigningSecret: Uint8Array;
-
-  constructor(
-    credentialsRepository: AuthenticationCredentialsRepository,
-    sessionRepository: AuthenticationSessionRepository,
-    authenticationSecretRequirementsValidator: AuthenticationSecretRequirementsValidator,
-    @Inject(AuthenticationSubjectResolver) @Optional() subjectResolver: AuthenticationSubjectResolver | undefined,
-    @Inject(AuthenticationTokenPayloadProvider) @Optional() tokenPayloadProvider: AuthenticationTokenPayloadProvider<AdditionalTokenPayload, AuthenticationData> | undefined,
-    @Inject(AuthenticationSecretResetHandler) @Optional() authenticationResetSecretHandler: AuthenticationSecretResetHandler<AdditionalInitSecretResetData> | undefined,
-    options: AuthenticationServiceOptions
-  ) {
-    this.credentialsRepository = credentialsRepository;
-    this.sessionRepository = sessionRepository;
-    this.authenticationSecretRequirementsValidator = authenticationSecretRequirementsValidator;
-    this.subjectResolver = subjectResolver;
-    this.tokenPayloadProvider = tokenPayloadProvider;
-    this.authenticationResetSecretHandler = authenticationResetSecretHandler;
-    this.options = options;
-
-    this.tokenVersion = options.version ?? 1;
-    this.tokenTimeToLive = options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
-    this.refreshTokenTimeToLive = options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
-    this.secretResetTokenTimeToLive = options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
-  }
 
   async [afterResolve](): Promise<void> {
     await this.initialize();
@@ -187,7 +164,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { success: false };
   }
 
-  async getToken(subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+  async getToken(subject: string, authenticationData: AuthenticationData, { impersonator }: { impersonator?: string } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
     const actualSubject = await this.resolveSubject(subject);
     const now = currentTimestamp();
     const end = now + this.refreshTokenTimeToLive;
@@ -201,9 +178,9 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       refreshTokenHash: new Uint8Array()
     });
 
-    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
-    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
-    const refreshToken = await this.createRefreshToken(actualSubject, session.id, end);
+    const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
+    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
+    const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
 
     await this.sessionRepository.extend(session.id, {
       end,
@@ -220,12 +197,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     await this.sessionRepository.end(sessionId, now);
   }
 
-  async refresh(refreshToken: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
-    const validatedToken = await this.validateRefreshToken(refreshToken);
-    const sessionId = validatedToken.payload.sessionId;
+  async refresh(refreshToken: string, authenticationData: AuthenticationData, { omitImpersonator = false }: { omitImpersonator?: boolean } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
+    const validatedRefreshToken = await this.validateRefreshToken(refreshToken);
+    const sessionId = validatedRefreshToken.payload.sessionId;
 
     const session = await this.sessionRepository.load(sessionId);
-    const hash = await this.getHash(validatedToken.payload.secret, session.refreshTokenSalt);
+    const hash = await this.getHash(validatedRefreshToken.payload.secret, session.refreshTokenSalt);
 
     if (session.end <= currentTimestamp()) {
       throw new InvalidTokenError('Session is expired.');
@@ -236,10 +213,11 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     }
 
     const now = currentTimestamp();
+    const impersonator = omitImpersonator ? undefined : validatedRefreshToken.payload.impersonator;
     const newEnd = now + this.refreshTokenTimeToLive;
-    const tokenPayload = await this.tokenPayloadProvider?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
-    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: session.subject, sessionId, refreshTokenExpiration: newEnd, timestamp: now });
-    const newRefreshToken = await this.createRefreshToken(validatedToken.payload.subject, sessionId, newEnd);
+    const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
+    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: session.subject, sessionId, refreshTokenExpiration: newEnd, impersonator, timestamp: now });
+    const newRefreshToken = await this.createRefreshToken(validatedRefreshToken.payload.subject, sessionId, newEnd, { impersonator });
 
     await this.sessionRepository.extend(sessionId, {
       end: newEnd,
@@ -248,11 +226,34 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       refreshTokenHash: newRefreshToken.hash
     });
 
-    return { token, jsonToken, refreshToken: newRefreshToken.token };
+    return { token, jsonToken, refreshToken: newRefreshToken.token, omitImpersonatorRefreshToken: omitImpersonator };
+  }
+
+  async impersonate(impersonatorRoken: string, impersonatorRefreshToken: string, subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+    const validatedImpersonatorRoken = await this.validateToken(impersonatorRoken);
+    const validatedImpersonatorRefreshToken = await this.validateRefreshToken(impersonatorRefreshToken);
+
+    const allowed = await this.authenticationAncillaryService?.canImpersonate(validatedImpersonatorRoken.payload, subject, authenticationData) ?? false;
+
+    if (!allowed) {
+      throw new ForbiddenError('Impersonation forbidden.');
+    }
+
+    const tokenResult = await this.getToken(subject, authenticationData, { impersonator: validatedImpersonatorRoken.payload.subject });
+
+    return {
+      ...tokenResult,
+      impersonatorRefreshToken,
+      impersonatorRefreshTokenExpiration: validatedImpersonatorRefreshToken.payload.exp
+    };
+  }
+
+  async unimpersonate(impersonatorRefreshToken: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+    return this.refresh(impersonatorRefreshToken, authenticationData, { omitImpersonator: true });
   }
 
   async initSecretReset(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
-    if (isUndefined(this.authenticationResetSecretHandler)) {
+    if (isUndefined(this.authenticationAncillaryService)) {
       throw new NotImplementedError();
     }
 
@@ -265,7 +266,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       ...data
     };
 
-    await this.authenticationResetSecretHandler.handleInitSecretReset(initSecretResetData);
+    await this.authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
   }
 
   async resetSecret(tokenString: string, newSecret: string): Promise<void> {
@@ -298,11 +299,11 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   async resolveSubject(subject: string): Promise<string> {
-    return this.subjectResolver?.resolveSubject(subject) ?? subject;
+    return this.authenticationAncillaryService?.resolveSubject(subject) ?? subject;
   }
 
   /** Creates a token without session or refresh token and is not saved in database */
-  async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, timestamp = currentTimestamp() }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
+  async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, impersonator: impersonatedBy, timestamp = currentTimestamp() }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: tokenVersion ?? this.tokenVersion,
       alg: 'HS256',
@@ -316,6 +317,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       refreshTokenExp: timestampToTimestampSeconds(refreshTokenExpiration),
       sessionId,
       subject,
+      impersonator: impersonatedBy,
       ...additionalTokenPayload
     };
 
@@ -330,7 +332,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /** Creates a refresh token without session or something else. */
-  async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number): Promise<CreateRefreshTokenResult> {
+  async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number, options?: { impersonator?: string }): Promise<CreateRefreshTokenResult> {
     const secret = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
@@ -343,6 +345,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       payload: {
         exp: timestampToTimestampSeconds(expirationTimestamp),
         subject,
+        impersonator: options?.impersonator,
         sessionId,
         secret
       }

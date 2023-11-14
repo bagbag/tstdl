@@ -7,7 +7,7 @@ import { Agent } from 'undici';
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
-import { AuthenticationTokenPayloadProvider } from '#/authentication/server/authentication-token-payload.provider.js';
+import { AuthenticationAncillaryService } from '#/authentication/index.js';
 import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller.js';
 import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service.js';
 import { configureAuthenticationServer } from '#/authentication/server/module.js';
@@ -69,9 +69,21 @@ class AuthenticationData {
 const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPaylod, AuthenticationData, emptyObjectSchema);
 
 @Singleton()
-class CustomTokenPayloadProvider extends AuthenticationTokenPayloadProvider<CustomTokenPaylod, AuthenticationData> {
-  getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
+class CustomAuthenticationAncillaryService extends AuthenticationAncillaryService<CustomTokenPaylod, AuthenticationData> {
+  override  getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
     return { deviceRegistrationId: `registration:${authenticationData.deviceId}` };
+  }
+
+  override resolveSubject(): string | Promise<string> {
+    throw new Error('Method not implemented.');
+  }
+
+  override handleInitSecretReset(): void | Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  override canImpersonate(): boolean | Promise<boolean> {
+    throw new Error('Method not implemented.');
   }
 }
 
@@ -109,7 +121,7 @@ function bootstrap(): void {
     serviceOptions: { secret: 'djp0fq23576aq' },
     credentialsRepository: MongoAuthenticationCredentialsRepository,
     sessionRepository: MongoAuthenticationSessionRepository,
-    tokenPayloadProvider: CustomTokenPayloadProvider
+    authenticationAncillaryService: CustomAuthenticationAncillaryService
   });
 
   configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });

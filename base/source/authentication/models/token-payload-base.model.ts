@@ -22,4 +22,7 @@ export class TokenPayloadBase {
 
   @Property()
   subject: string;
+
+  @Property({ optional: true })
+  impersonator?: string;
 }

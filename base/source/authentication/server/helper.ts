@@ -65,7 +65,7 @@ export async function getTokenFromString<AdditionalTokenPayload extends Record =
     throw new InvalidTokenError('Invalid token version');
   }
 
-  if ((validatedToken.payload.exp + 2500) <= currentTimestampSeconds()) {
+  if (validatedToken.payload.exp <= currentTimestampSeconds()) {
     throw new InvalidTokenError('Token expired');
   }
 

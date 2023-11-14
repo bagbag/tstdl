@@ -129,7 +129,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
       this.setAdditionalData(data);
     }
 
-    const token = await this.client.token({ subject, secret, data: this.authenticationData });
+    const token = await this.client.getToken({ subject, secret, data: this.authenticationData });
     this.setNewToken(token);
   }
 

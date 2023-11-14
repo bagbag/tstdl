@@ -3,10 +3,9 @@ import type { Provider } from '#/injector/provider.js';
 import { isProvider } from '#/injector/provider.js';
 import type { InjectionToken } from '#/injector/token.js';
 import { isDefined } from '#/utils/type-guards.js';
+import { AuthenticationAncillaryService } from './authentication-ancillary.service.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
-import { AuthenticationSubjectResolver } from './authentication-subject.resolver.js';
-import { AuthenticationTokenPayloadProvider } from './authentication-token-payload.provider.js';
 import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service.js';
 
 export type AuthenticationModuleConfig = {
@@ -16,8 +15,7 @@ export type AuthenticationModuleConfig = {
 
   /** override default AuthenticationService */
   authenticationService?: InjectionToken<AuthenticationService<any, any, any>>,
-  tokenPayloadProvider?: InjectionToken<AuthenticationTokenPayloadProvider<any, any>>,
-  subjectResolver?: InjectionToken<AuthenticationSubjectResolver>
+  authenticationAncillaryService?: InjectionToken<AuthenticationAncillaryService<any, any, any>>
 };
 
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
@@ -35,11 +33,7 @@ export function configureAuthenticationServer(config: AuthenticationModuleConfig
     Injector.registerSingleton(AuthenticationService, { useToken: config.authenticationService });
   }
 
-  if (isDefined(config.tokenPayloadProvider)) {
-    Injector.registerSingleton(AuthenticationTokenPayloadProvider, { useToken: config.tokenPayloadProvider });
-  }
-
-  if (isDefined(config.subjectResolver)) {
-    Injector.registerSingleton(AuthenticationSubjectResolver, { useToken: config.subjectResolver });
+  if (isDefined(config.authenticationAncillaryService)) {
+    Injector.registerSingleton(AuthenticationAncillaryService, { useToken: config.authenticationAncillaryService });
   }
 }

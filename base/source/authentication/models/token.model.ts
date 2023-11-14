@@ -15,6 +15,7 @@ export type RefreshToken = JwtToken<{
   exp: number,
 
   subject: string,
+  impersonator?: string,
   sessionId: string,
   secret: string
 }>;
