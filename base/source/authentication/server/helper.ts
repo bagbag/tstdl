@@ -13,8 +13,8 @@ import type { RefreshToken, SecretResetToken, Token } from '../models/index.js';
  * @param cookieName (default "authorization")
  * @returns token string
  */
-export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerRequest, cookieName: string = 'authorization', forceCookie: boolean = false): string | undefined {
-  const authorizationHeaders = forceCookie ? undefined : (request.headers.tryGet('Authorization') as OneOrMany<string> | undefined);
+export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerRequest, cookieName: string = 'authorization', fromCookieOnly: boolean = false): string | undefined {
+  const authorizationHeaders = (fromCookieOnly || (cookieName.toLocaleLowerCase() != 'authorization')) ? undefined : (request.headers.tryGet('Authorization') as OneOrMany<string> | undefined);
 
   const authorizationString = (isArray(authorizationHeaders) ? authorizationHeaders[0] : authorizationHeaders)
     ?? request.cookies.tryGet(cookieName);
