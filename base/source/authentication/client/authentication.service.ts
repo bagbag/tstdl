@@ -26,6 +26,7 @@ import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens
 
 const tokenStorageKey = 'AuthenticationService:token';
 const authenticationDataStorageKey = 'AuthenticationService:authentication-data';
+const impersonatorAuthenticationDataStorageKey = 'AuthenticationService:impersonator-authentication-data';
 const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
@@ -37,7 +38,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   private readonly tokenUpdateBus = inject(MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>, tokenUpdateBusName);
   private readonly loggedOutBus = inject(MessageBus<void>, loggedOutBusName);
   private readonly forceRefreshToken = new CancellationToken();
-  private readonly refreshLock = inject(Lock, refreshLockResource, { optional: true });
+  private readonly lock = inject(Lock, refreshLockResource);
   private readonly logger = inject(Logger, 'AuthenticationService');
   private readonly disposeToken = new CancellationToken();
 
@@ -73,6 +74,21 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     else {
       const json = JSON.stringify(data);
       localStorage.setItem(authenticationDataStorageKey, json);
+    }
+  }
+
+  private get impersonatorAuthenticationData(): AuthenticationData {
+    const data = localStorage.getItem(impersonatorAuthenticationDataStorageKey);
+    return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
+  }
+
+  private set impersonatorAuthenticationData(data: AuthenticationData | undefined) {
+    if (isUndefined(data)) {
+      localStorage.removeItem(impersonatorAuthenticationDataStorageKey);
+    }
+    else {
+      const json = JSON.stringify(data);
+      localStorage.setItem(impersonatorAuthenticationDataStorageKey, json);
     }
   }
 
@@ -169,6 +185,40 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
+  async impersonate(subject: string, data?: AuthenticationData): Promise<void> {
+    await this.lock.use(10000, true, async () => {
+      this.impersonatorAuthenticationData = this.authenticationData;
+      this.authenticationData = data;
+
+      try {
+        const token = await this.client.impersonate({ subject, data: data! });
+        this.setNewToken(token);
+      }
+      catch (error) {
+        await this.handleRefreshError(error as Error);
+        throw error;
+      }
+    });
+  }
+
+  async unimpersonate(data?: AuthenticationData): Promise<void> {
+    await this.lock.use(10000, true, async () => {
+      const newData = data ?? this.impersonatorAuthenticationData;
+
+      try {
+        const token = await this.client.unimpersonate({ data: newData });
+        this.authenticationData = newData;
+        this.impersonatorAuthenticationData = undefined;
+
+        this.setNewToken(token);
+      }
+      catch (error) {
+        await this.handleRefreshError(error as Error);
+        throw error;
+      }
+    });
+  }
+
   async initResetSecret(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
     await this.client.initSecretReset({ subject, data });
   }
@@ -214,13 +264,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   private async refreshLoop(): Promise<void> {
     while (this.disposeToken.isUnset) {
       try {
-        if (isDefined(this.refreshLock)) {
-          await this.refreshLock.use(0, false, async () => this.refreshLoopIteration());
-        }
-        else {
-          await this.refreshLoopIteration();
-        }
-
+        await this.lock.use(0, false, async () => this.refreshLoopIteration());
         await firstValueFrom(race([timer(2500), this.disposeToken, this.forceRefreshToken]));
       }
       catch {

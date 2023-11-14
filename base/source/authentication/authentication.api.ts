@@ -81,8 +81,8 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
       resource: 'impersonate',
       method: 'POST',
       parameters: explicitObject({
-        data: authenticationDataSchema,
-        subject: string()
+        subject: string(),
+        data: authenticationDataSchema
       }),
       result: tokenResultSchema,
       credentials: true,
