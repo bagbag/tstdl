@@ -3,19 +3,18 @@ import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
 
 import type { Disposable } from '#/disposable/disposable.js';
-import { Singleton, injectArgument } from '#/injector/index.js';
+import { Singleton, inject, injectArgument } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
 import type { WritableOneOrMany } from '#/types.js';
 import { assertDefined, isUndefined } from '#/utils/type-guards.js';
-import type { MailClientConfig } from '../mail.client.js';
-import { MailClient } from '../mail.client.js';
+import { MailClient, MailClientConfig } from '../mail.client.js';
 import type { MailAddress, MailData, MailSendResult } from '../models/index.js';
 
 @Singleton()
 export class NodemailerMailClient extends MailClient implements Disposable {
   readonly #stack = new DisposableStack();
   readonly #transports = new Map<string, Transporter<SMTPTransport.SentMessageInfo>>();
-  readonly #defaultClientConfig = injectArgument(this, { optional: true });
+  readonly #defaultClientConfig = injectArgument(this, { optional: true }) ?? inject(MailClientConfig, undefined, { optional: true });
 
   [Symbol.dispose](): void {
     this.#stack.dispose();

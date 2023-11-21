@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.45",
+  "version": "0.90.46",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -20,7 +20,6 @@
   },
   "exports": {
     "./tsconfig.json": "./tsconfig.json",
-
     ".": "./index.js",
     "./environment": "./environment.js",
     "./interfaces": "./interfaces.js",
@@ -30,7 +29,6 @@
     "./tokens": "./tokens.js",
     "./types": "./types.js",
     "./web-types": "./web-types.js",
-
     "./api": "./api/index.js",
     "./application": "./application/index.js",
     "./authentication": "./authentication/index.js",
@@ -109,8 +107,7 @@
     "disposablestack": "^1.1",
     "luxon": "^3.4",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7.8",
-    "type-fest": "^4.7"
+    "rxjs": "^7.8"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -121,17 +118,18 @@
     "@types/mjml": "4.7",
     "@types/node": "20",
     "@types/nodemailer": "6.4",
-    "@typescript-eslint/eslint-plugin": "6.11",
-    "@typescript-eslint/parser": "6.11",
+    "@typescript-eslint/eslint-plugin": "6.12",
+    "@typescript-eslint/parser": "6.12",
     "concurrently": "8.2",
     "esbuild": "0.19",
-    "eslint": "8.53",
+    "eslint": "8.54",
     "eslint-import-resolver-typescript": "3.6",
     "eslint-plugin-import": "2.29",
     "tsc-alias": "1.8",
+    "type-fest": "4.7",
     "typedoc": "0.25",
     "typedoc-plugin-missing-exports": "2.1",
-    "typescript": "5.2"
+    "typescript": "5.3"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.10",
@@ -146,9 +144,9 @@
     "koa": "^2.14",
     "minio": "^7.1",
     "mjml": "^4.14",
-    "mongodb": "^6.2",
+    "mongodb": "^6.3",
     "nodemailer": "^6.9",
-    "playwright": "^1.39",
+    "playwright": "^1.40",
     "preact": "^10.19",
     "preact-render-to-string": "^6.3",
     "undici": "^5.27",
