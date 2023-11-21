@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.46",
+  "version": "0.90.47",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -107,7 +107,8 @@
     "disposablestack": "^1.1",
     "luxon": "^3.4",
     "reflect-metadata": "^0.1",
-    "rxjs": "^7.8"
+    "rxjs": "^7.8",
+    "type-fest": "4.7"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -126,7 +127,6 @@
     "eslint-import-resolver-typescript": "3.6",
     "eslint-plugin-import": "2.29",
     "tsc-alias": "1.8",
-    "type-fest": "4.7",
     "typedoc": "0.25",
     "typedoc-plugin-missing-exports": "2.1",
     "typescript": "5.3"
