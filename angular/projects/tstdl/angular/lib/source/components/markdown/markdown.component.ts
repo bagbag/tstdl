@@ -14,6 +14,6 @@ export class TstdlMarkdownComponent {
 
   @HostBinding('innerHTML')
   get markdownHtml(): string {
-    return marked(this.markdown ?? '');
+    return marked(this.markdown ?? '') as string;
   }
 }
