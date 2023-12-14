@@ -153,7 +153,13 @@ export function numericDateToDateTime(numericDate: number, units?: DateObjectUni
 }
 
 export function dateTimeToTime(dateTime: DateTime): number {
-  return dateTime.startOf('day').until(dateTime).count('milliseconds');
+  const interval = dateTime.startOf('day').until(dateTime);
+
+  if (interval.isValid) {
+    return interval.count('milliseconds');
+  }
+
+  throw new Error('Invalid DateTime.');
 }
 
 export function numericDateTimeToDateTime({ date, time }: NumericDateTime, zone?: string): DateTime {

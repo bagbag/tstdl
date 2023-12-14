@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import 'reflect-metadata'; // eslint-disable-line import/no-unassigned-import
+import 'reflect-metadata/lite'; // eslint-disable-line import/no-unassigned-import
 
 import type { ConstructorParameterDecorator } from '#/types.js';
 import { noop } from '#/utils/noop.js';

@@ -1,4 +1,4 @@
-import 'reflect-metadata'; // eslint-disable-line import/no-unassigned-import
+import 'reflect-metadata/lite'; // eslint-disable-line import/no-unassigned-import
 
 import type { Type } from '#/types.js';
 

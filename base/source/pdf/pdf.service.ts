@@ -4,15 +4,19 @@
  * @module PDF
  */
 
+import { execFile as execFileCallback } from 'node:child_process';
+import { access, readFile, unlink, writeFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
+
 import { BrowserContextController } from '#/browser/browser-context-controller.js';
 import type { BrowserControllerArgument } from '#/browser/browser-controller.js';
 import { BrowserController } from '#/browser/browser-controller.js';
 import type { PageController } from '#/browser/page-controller.js';
 import { PdfRenderOptions } from '#/browser/pdf-options.js';
 import type { Resolvable } from '#/injector/index.js';
-import { ForwardArg, InjectArg, ResolveArg, Singleton, resolveArgumentType } from '#/injector/index.js';
+import { Singleton, inject, injectArgument, resolveArgumentType } from '#/injector/index.js';
 import { LogLevel } from '#/logger/level.js';
-import type { LoggerArgument } from '#/logger/logger.js';
 import { Logger } from '#/logger/logger.js';
 import { Optional } from '#/schema/index.js';
 import type { TemplateField } from '#/templates/index.js';
@@ -21,7 +25,9 @@ import { finalizeStream } from '#/utils/stream/finalize-stream.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { timeout } from '#/utils/timing.js';
-import { isDefined } from '#/utils/type-guards.js';
+import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
+
+const execFile = promisify(execFileCallback);
 
 export class PdfServiceRenderOptions extends PdfRenderOptions {
   @Optional()
@@ -69,25 +75,13 @@ const browserArguments = ['--font-render-hinting=none', '--disable-web-security'
 
 @Singleton()
 export class PdfService implements Resolvable<PdfServiceArgument> {
-  private readonly templateService: TemplateService;
-  private readonly browserController: BrowserController;
-  private readonly logger: Logger;
+  private readonly templateService = inject(TemplateService);
+  private readonly browserController = inject(BrowserController, injectArgument(this, { optional: true })?.browserControllerArgument ?? { browserArguments });
+  private readonly logger = inject(Logger, 'PdfService');
 
-  private readonly defaultLocale: string | undefined;
+  private readonly defaultLocale = injectArgument(this, { optional: true })?.locale;
 
   declare readonly [resolveArgumentType]: PdfServiceArgument;
-  constructor(
-    templateService: TemplateService,
-    @ForwardArg<PdfServiceArgument | undefined, BrowserControllerArgument>((argument) => argument?.browserControllerArgument ?? { browserArguments }) browserController: BrowserController,
-    @ResolveArg<LoggerArgument>('PdfService') logger: Logger,
-    @InjectArg() options: PdfServiceOptions = {}
-  ) {
-    this.templateService = templateService;
-    this.browserController = browserController;
-    this.logger = logger;
-
-    this.defaultLocale = options.locale;
-  }
 
   /**
    * Renders HTML to pdf stream
@@ -159,6 +153,43 @@ export class PdfService implements Resolvable<PdfServiceArgument> {
   async renderTemplate(keyOrTemplate: string | PdfTemplate, templateContext?: object, options?: PdfServiceRenderOptions): Promise<Uint8Array> {
     const stream = this.renderTemplateStream(keyOrTemplate, templateContext, options);
     return readBinaryStream(stream);
+  }
+
+  async merge(pdfs: (string | Uint8Array)[]): Promise<Uint8Array> {
+    await using stack = new AsyncDisposableStack();
+
+    const tmp = tmpdir();
+
+    const sourceFiles = await Promise.all(
+      pdfs.map(async (pdf) => {
+        if (isString(pdf)) {
+          return pdf;
+        }
+
+        const file = `${tmp}/${crypto.randomUUID()}.pdf`;
+        await writeFile(file, pdf);
+        stack.defer(async () => unlink(file));
+
+        return file;
+      })
+    );
+
+    const resultFile = `${tmp}/${crypto.randomUUID()}.pdf`;
+
+    const resultPromise = execFile('pdfunite', [...sourceFiles, resultFile]);
+    const result = await resultPromise;
+
+    try {
+      await access(resultFile);
+      stack.defer(async () => unlink(resultFile));
+    }
+    catch { /* ignore */ }
+
+    if (resultPromise.child.exitCode != 0) {
+      throw new Error(result.stderr);
+    }
+
+    return readFile(resultFile);
   }
 
   private renderStream(handler: (page: PageController) => Promise<PdfServiceRenderOptions | undefined | void>, options: PdfServiceRenderOptions = {}): ReadableStream<Uint8Array> {
