@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.90.10",
+  "version": "0.90.11",
   "dependencies": {
     "tslib": "^2.6"
   },

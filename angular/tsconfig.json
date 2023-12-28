@@ -20,6 +20,12 @@
       "@tstdl/angular": [
         "projects/tstdl/angular/lib",
       ],
+      "@tstdl/angular/data-card/*": [
+        "projects/tstdl/angular/data-card/*",
+      ],
+      "@tstdl/angular/data-card": [
+        "projects/tstdl/angular/data-card",
+      ],
       "@tstdl/angular/data-grid/*": [
         "projects/tstdl/angular/data-grid/*",
       ],
