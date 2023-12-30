@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line, no-eq-null */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
-import type { AbstractConstructor, JsonPrimitive, Primitive, TypedArray } from '#/types.js';
-import type { PascalCase } from 'type-fest';
+import type { AbstractConstructor, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';
 import { AssertionError } from '../errors/assertion.error.js';
 
 export type AssertionMessage = string | (() => string);

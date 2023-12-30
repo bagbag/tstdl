@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
-import type { Except } from 'type-fest';
+import type { CamelCase, Except } from 'type-fest';
+
 import type { Signal } from './signals/api.js';
 
 export type ObjectLiteral = {};
@@ -216,3 +217,6 @@ export type TypeFromPath<T extends Record, Path extends Paths<T> | string> = {
 export type ConstructorParameterDecorator = (target: Object, propertyKey: undefined, parameterIndex: number) => void;
 
 export type ReactiveValue<T> = T | Signal<T> | Observable<T>;
+
+/* type-fests PascalCase minus options. Fixes tsc bug for some reason */
+export type PascalCase<Value> = CamelCase<Value> extends string ? Capitalize<CamelCase<Value>> : CamelCase<Value>;
