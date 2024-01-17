@@ -1,4 +1,3 @@
-import type { WritableSignal } from '@angular/core';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TstdlReactModule } from '@tstdl/angular/react';
 import type { ReactTestComponentProperties } from './react-test.component';
@@ -17,7 +16,7 @@ export class ReactComponent {
 
   readonly counter = signal(0);
 
-  properties: WritableSignal<ReactTestComponentProperties> = signal({
+  properties = signal<ReactTestComponentProperties>({
     counter: this.counter,
     numCounter: 0,
     clickHandler: () => this.onClick()
