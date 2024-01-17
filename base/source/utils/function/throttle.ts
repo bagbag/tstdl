@@ -7,7 +7,6 @@ export function throttleFunction<Args extends any[], ReturnValue>(func: (...args
   let pending = false;
   let nextArgs: Args;
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const throttled = (...args: Args) => {
     const nextAllowedCall = lastCall + interval;
     const now = currentTimestamp(); // eslint-disable-line no-shadow

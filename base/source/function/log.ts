@@ -6,16 +6,22 @@ import { typeOf } from '#/utils/type-of.js';
 
 export type WrapLogOptions = {
   fnName?: string,
-  logger?: Logger
+  logger?: Logger,
+  trace?: boolean
 };
 
-export function wrapLog(fn: Function, { fnName = fn.name, logger }: WrapLogOptions = {}): Function {
+export function wrapLog(fn: Function, { fnName = fn.name, logger, trace = false }: WrapLogOptions = {}): Function {
   const log = logger?.trace.bind(logger) ?? console.log.bind(console); // eslint-disable-line no-console
 
   const wrapped = {
     [fnName](...args: any[]): unknown {
       const argString = args.map((arg) => stringifyArg(arg)).join(', ');
+
       log(`[call: ${fnName}(${argString})]`);
+
+      if (trace) {
+        console.trace();
+      }
 
       return Reflect.apply(fn, this, args);
     }

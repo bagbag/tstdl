@@ -1,26 +1,31 @@
-import { Directive, ElementRef, HostListener, Input } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Directive, ElementRef, HostListener, Input, booleanAttribute } from '@angular/core';
 import { isRegExp, isString, isUndefined } from '@tstdl/base/utils';
 
 @Directive({
   selector: 'input[tslInputPattern]',
   standalone: true
 })
-export class InputPatternDirective {
+export class InputPatternDirective implements OnInit {
   private readonly element: HTMLInputElement;
 
   private pattern: RegExp | undefined;
-  private currentValue: string;
+
+  @Input({ transform: booleanAttribute }) firstMatchOnly = false;
 
   @Input() // eslint-disable-line accessor-pairs
   set tslInputPattern(pattern: string | RegExp | null | undefined) {
     this.pattern = isRegExp(pattern) ? pattern
-      : isString(pattern) ? new RegExp(pattern, 'u')
+      : isString(pattern) ? new RegExp(pattern, 'ug')
         : undefined;
   }
 
   constructor(elementRef: ElementRef<HTMLInputElement>) {
     this.element = elementRef.nativeElement;
-    this.currentValue = this.element.value;
+  }
+
+  ngOnInit(): void {
+    this.onChange();
   }
 
   @HostListener('drop')
@@ -32,16 +37,14 @@ export class InputPatternDirective {
   @HostListener('mousedown')
   @HostListener('mouseup')
   onChange(): void {
-    const oldValue = this.currentValue;
-    this.currentValue = this.element.value;
-
     if (isUndefined(this.pattern)) {
       return;
     }
 
-    if (!this.pattern.test(this.currentValue)) {
-      this.element.value = oldValue;
-      this.currentValue = oldValue;
-    }
+    const matches = [...this.element.value.matchAll(this.pattern)];
+
+    this.element.value = this.firstMatchOnly
+      ? (matches[0]?.[0] ?? '')
+      : matches.map((match) => match[0]).join('');
   }
 }

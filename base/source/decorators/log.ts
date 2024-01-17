@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import type { WrapLogOptions } from '#/function/log.js';
 import { wrapLog } from '#/function/log.js';
 import type { Decorator } from '#/reflection/types.js';
 import { createDecorator } from '#/reflection/utils.js';
@@ -24,22 +25,22 @@ function setWrapped(constructor: AbstractConstructor, property: PropertyKey, isS
   map.get(constructor)!.add(property);
 }
 
-export function Log(): Decorator<'class' | 'method'> {
+export function Log(options?: WrapLogOptions): Decorator<'class' | 'method'> {
   return createDecorator({ class: true, method: true }, (data) => {
     if (data.type == 'method') {
       setWrapped(data.constructor, data.methodKey, data.static);
-      return { value: wrapLog(data.descriptor.value as Function) };
+      return { value: wrapLog(data.descriptor.value as Function, options) };
     }
 
     const staticProperties = objectKeys(data.constructor).filter((property) => (property != 'length') && (property != 'name') && (property != 'prototype') && isFunction(data.constructor[property]) && !isWrapped(data.constructor, property, true));
     const instanceProperties = objectKeys(data.prototype).filter((property) => (property != 'constructor') && isFunction(data.prototype[property]) && !isWrapped(data.constructor, property, false));
 
     for (const property of staticProperties) {
-      (data.constructor as Record)[property] = wrapLog((data.constructor as Record)[property] as Function, property);
+      (data.constructor as Record)[property] = wrapLog((data.constructor as Record)[property] as Function, options);
     }
 
     for (const property of instanceProperties) {
-      (data.prototype as Record)[property] = wrapLog((data.prototype as Record)[property] as Function, property);
+      (data.prototype as Record)[property] = wrapLog((data.prototype as Record)[property] as Function, options);
     }
 
     return undefined;
