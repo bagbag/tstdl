@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.50",
+  "version": "0.90.51",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -109,7 +109,7 @@
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.9"
+    "type-fest": "4.10"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -150,8 +150,8 @@
     "playwright": "^1.41",
     "preact": "^10.19",
     "preact-render-to-string": "^6.3",
-    "undici": "^6.3",
-    "urlpattern-polyfill": "^9.0"
+    "undici": "^6.4",
+    "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {
     "@tstdl/angular": {
