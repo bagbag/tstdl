@@ -70,6 +70,7 @@
     "./promise": "./promise/index.js",
     "./queue": "./queue/index.js",
     "./queue/mongo": "./queue/mongo/index.js",
+    "./random": "./random/index.js",
     "./reflection": "./reflection/index.js",
     "./rpc": "./rpc/index.js",
     "./rpc/endpoints": "./rpc/endpoints/index.js",
