@@ -17,7 +17,7 @@ import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, Api
 import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
 
-export type ApiClient<T extends ApiDefinition> = new (httpClient: HttpClient) => ApiClientImplementation<T> & Resolvable<HttpClientOptions>;
+export type ApiClient<T extends ApiDefinition> = new (httpClientOrOptions?: HttpClient | HttpClientOptions) => ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>;
 
 export type ClientOptions = {
   /**
@@ -43,12 +43,12 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
   const apiName = `${constructedApiName}ApiClient`;
 
   const api = {
-    [apiName]: class implements Resolvable<HttpClient | HttpClientOptions> {
+    [apiName]: class implements Resolvable<HttpClient | HttpClientArgument> {
       protected readonly [httpClientSymbol]: HttpClient;
       readonly [apiDefinitionSymbol]: T;
 
-      declare readonly [resolveArgumentType]: HttpClientOptions;
-      constructor(httpClientOrOptions?: HttpClient | HttpClientArgument) {
+      declare readonly [resolveArgumentType]: HttpClient | HttpClientArgument;
+      constructor(httpClientOrOptions?: HttpClient | HttpClientOptions) {
         this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : inject(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;
       }

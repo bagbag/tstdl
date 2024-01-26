@@ -1,6 +1,5 @@
 import type { ApiClient } from '#/api/client/index.js';
 import { compileClient } from '#/api/client/index.js';
-import { HttpClient } from '#/http/client/http-client.js';
 import { ReplaceClass, Singleton } from '#/injector/index.js';
 import type { SchemaTestable } from '#/schema/schema.js';
 import { emptyObjectSchema } from '#/schema/schemas/object.js';
@@ -18,11 +17,7 @@ export function getAuthenticationApiClient<AdditionalTokenPayload extends Record
   const definition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
 
   @Singleton()
-  class AuthenticationApiClient extends compileClient(definition) {
-    constructor(httpClient: HttpClient) {
-      super(httpClient);
-    }
-  }
+  class AuthenticationApiClient extends compileClient(definition) { }
 
   return AuthenticationApiClient;
 }

@@ -32,24 +32,24 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolv
     let body: Dispatcher.DispatchOptions['body'];
 
     if (isDefined(httpClientRequest.body?.json)) {
-      body = JSON.stringify(httpClientRequest.body!.json);
+      body = JSON.stringify(httpClientRequest.body.json);
     }
     else if (isDefined(httpClientRequest.body?.text)) {
-      body = httpClientRequest.body!.text;
+      body = httpClientRequest.body.text;
     }
     else if (isDefined(httpClientRequest.body?.buffer)) {
-      body = httpClientRequest.body!.buffer;
+      body = httpClientRequest.body.buffer;
     }
     else if (isDefined(httpClientRequest.body?.blob)) {
-      body = Readable.from(httpClientRequest.body!.blob.stream() as ReadableStream);
+      body = Readable.from(httpClientRequest.body.blob.stream() as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.stream)) {
-      body = Readable.from(httpClientRequest.body!.stream as ReadableStream);
+      body = Readable.from(httpClientRequest.body.stream as ReadableStream);
     }
     else if (isDefined(httpClientRequest.body?.form)) {
       const params = new URLSearchParams();
 
-      for (const [key, entry] of httpClientRequest.body!.form.normalizedEntries()) {
+      for (const [key, entry] of httpClientRequest.body.form.normalizedEntries()) {
         for (const value of toArray(entry)) {
           params.append(key, value);
         }
