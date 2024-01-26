@@ -73,6 +73,13 @@ export type GetRegistrationOptions = {
   onlySelf?: boolean
 };
 
+export type ResolveManyArrayItem<T, A> = [token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>];
+export type ResolveManyItem<T, A> = InjectionToken<T, A> | ResolveManyArrayItem<T, A>;
+export type ResolveManyItemReturnType<T extends ResolveManyItem<any, any>> = T extends ResolveManyItem<infer U, any>
+  ? U | (T extends (ResolveManyArrayItem<any, any> & [any, any, { optional: true }]) ? undefined : never)
+  : never;
+export type ResolveManyReturnType<T extends ResolveManyItem<any, any>[]> = { [I in keyof T]: ResolveManyItemReturnType<T[I]> };
+
 export type AddDisposeHandler = (handler: Disposable | AsyncDisposable | (() => any)) => void;
 
 export class Injector implements AsyncDisposable {
@@ -263,6 +270,23 @@ export class Injector implements AsyncDisposable {
     return values;
   }
 
+  resolveMany<T extends ResolveManyItem<any, any>[]>(...tokens: T): ResolveManyReturnType<T> {
+    const context: InternalResolveContext = newInternalResolveContext();
+
+    const values = tokens.map(
+      (token) => (
+        isArray(token)
+          ? this._resolve(token[0], token[1], token[2] ?? {}, context, ResolveChain.startWith(token[0]))
+          : this._resolve(token, undefined, {}, context, ResolveChain.startWith(token))
+      ) as ResolveManyItemReturnType<any>
+    ) as ResolveManyReturnType<T>;
+
+    postProcess(context);
+
+    context.$done.resolve();
+    return values;
+  }
+
   async resolveAsync<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions<T, A> & { optional: true }): Promise<T | undefined>;
   async resolveAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: ResolveOptions<T, A>): Promise<T>;
   async resolveAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options: ResolveOptions<T, A> = {}): Promise<T | undefined> {
@@ -278,6 +302,23 @@ export class Injector implements AsyncDisposable {
   async resolveAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options: ResolveOptions<T, A> = {}): Promise<T[]> {
     const context: InternalResolveContext = newInternalResolveContext();
     const values = this._resolveAll(token, argument, options, context, ResolveChain.startWith(token));
+
+    await postProcessAsync(context);
+
+    context.$done.resolve();
+    return values;
+  }
+
+  async resolveManyAsync<T extends ResolveManyItem<any, any>[]>(...tokens: T): Promise<ResolveManyReturnType<T>> {
+    const context: InternalResolveContext = newInternalResolveContext();
+
+    const values = tokens.map(
+      (token) => (
+        isArray(token)
+          ? this._resolve(token[0], token[1], token[2] ?? {}, context, ResolveChain.startWith(token[0]))
+          : this._resolve(token, undefined, {}, context, ResolveChain.startWith(token))
+      ) as ResolveManyItemReturnType<any>
+    ) as ResolveManyReturnType<T>;
 
     await postProcessAsync(context);
 
@@ -366,7 +407,7 @@ export class Injector implements AsyncDisposable {
     const resolutionTag = Symbol(); // eslint-disable-line symbol-description
 
     try {
-      const token = registration.token;
+      const { token } = registration;
       const resolutionScoped = registration.options.lifecycle == 'resolution';
       const injectorScoped = registration.options.lifecycle == 'injector';
       const singletonScoped = registration.options.lifecycle == 'singleton';
@@ -419,7 +460,7 @@ export class Injector implements AsyncDisposable {
     try {
       setResolving(registration.token, context, chain);
 
-      const provider = registration.provider;
+      const { provider } = registration;
 
       let result: { value: T } | undefined;
 
@@ -456,7 +497,7 @@ export class Injector implements AsyncDisposable {
         injectionContext.argument = arg;
 
         if (provider.resolveAll == true) {
-          return this._resolveAll<T, A>(innerToken, arg, options, context, chain.addToken(innerToken))! as T;
+          return this._resolveAll<T, A>(innerToken, arg, options, context, chain.addToken(innerToken)) as T;
         }
 
         result = { value: this._resolve<T, A>(innerToken, arg, options, context, chain.addToken(innerToken))! };
@@ -501,7 +542,7 @@ export class Injector implements AsyncDisposable {
     }
 
     const parameterResolveArgument = injectMetadata.forwardArgumentMapper?.(resolveArgument) ?? injectMetadata.resolveArgumentProvider?.(this.getResolveContext(resolutionTag, context, getChain(injectToken)));
-    const forwardRef = injectMetadata.forwardRef;
+    const { forwardRef } = injectMetadata;
 
     if (isDefined(forwardRef)) {
       context.forwardRefQueue.add(() => {
@@ -530,7 +571,7 @@ export class Injector implements AsyncDisposable {
   }
 
   private resolveInjectionAll<T, A>(token: InjectionToken<T>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A>, context: InternalResolveContext, injectIndex: number, chain: ResolveChain): T[] {
-    return this._resolveAll(token, argument, options, context, chain.addInject(token, injectIndex))!;
+    return this._resolveAll(token, argument, options, context, chain.addInject(token, injectIndex));
   }
 
   private async resolveInjectionAllAsync<T, A>(token: InjectionToken<T>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A>, context: InternalResolveContext, injectIndex: number, chain: ResolveChain): Promise<T[]> {
@@ -572,10 +613,12 @@ export class Injector implements AsyncDisposable {
     const context: InjectionContext = {
       injector: this,
       argument: resolveArgument,
-      inject: <T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>) => this.resolveInjection(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
-      injectAll: <T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>) => this.resolveInjectionAll(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
-      injectAsync: async <T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>) => this.resolveInjectionAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
-      injectAllAsync: async <T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>) => this.resolveInjectionAllAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain)
+      inject: (token, argument, options) => this.resolveInjection(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectAll: (token, argument, options) => this.resolveInjectionAll(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectMany: (...tokens) => this.resolveMany(...tokens),
+      injectAsync: async (token, argument, options) => this.resolveInjectionAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectAllAsync: async (token, argument, options) => this.resolveInjectionAllAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectManyAsync: async (...tokens) => this.resolveManyAsync(...tokens)
     };
 
     return context;

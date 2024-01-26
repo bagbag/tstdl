@@ -5,7 +5,7 @@ import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import { HttpClientAdapter } from '@tstdl/base/http';
-import { Injector as TstdlInjector } from '@tstdl/base/injector';
+import { Injector as TstdlInjector, runInInjectionContext as runInTstdlInjectionContext, isInInjectionContext as isInTstdlInjectionContext } from '@tstdl/base/injector';
 import { configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
 
@@ -40,6 +40,22 @@ export class TstdlBridgeService {
     this.#tstdlInjector.register(DOCUMENT, { useFactory: () => this.#injector.get(ANGULAR_DOCUMENT) });
 
     WrappedR3InjectorRecordsMap.wrap(this.#tstdlInjector, this.#injector);
+    this.wrapInjector(this.#injector);
+  }
+
+  private wrapInjector(injector: Injector): void {
+    const tstdlInjector = this.#tstdlInjector;
+    const originalGet = injector.constructor.prototype.get as Function;
+
+    function tstdlGetWrapper(this: R3Injector, ...args: any[]): any {
+      if (isInTstdlInjectionContext()) {
+        return originalGet.apply(this, args);
+      }
+
+      return runInTstdlInjectionContext(tstdlInjector, () => originalGet.apply(this, args));
+    }
+
+    injector.constructor.prototype.get = tstdlGetWrapper;
   }
 
   private configureSignals(): void {

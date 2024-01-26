@@ -1,10 +1,11 @@
-import type { Injector, Provider, ProviderToken } from '@angular/core';
+import type { Provider, ProviderToken } from '@angular/core';
+import { Injector } from '@angular/core';
 import type { Injector as TstdlInjector } from '@tstdl/base/injector';
 
-export type R3Injector = Injector & {
-  records: R3InjectorRecordsMap,
-  processProvider(provider: Provider): void
-};
+export declare abstract class R3Injector extends Injector {
+  records: R3InjectorRecordsMap;
+  processProvider(provider: Provider): void;
+}
 
 export type R3InjectorRecordsMap = Map<ProviderToken<any>, any>;
 
@@ -31,8 +32,7 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
   }
 
   static wrap(injector: TstdlInjector, r3Injector: R3Injector): void {
-    const records = r3Injector.records;
-    r3Injector.records = new WrappedR3InjectorRecordsMap(injector, r3Injector, records);
+    r3Injector.records = new WrappedR3InjectorRecordsMap(injector, r3Injector, r3Injector.records);
   }
 
   clear(): void {
@@ -44,7 +44,7 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
   }
 
   forEach(callbackfn: (value: any, key: ProviderToken<any>, map: R3InjectorRecordsMap) => void, thisArg?: any): void {
-    const _this = this;
+    const _this = this; // eslint-disable-line consistent-this, @typescript-eslint/no-this-alias
 
     function callback(value: any, key: ProviderToken<any>): void {
       callbackfn(value, key, _this);
