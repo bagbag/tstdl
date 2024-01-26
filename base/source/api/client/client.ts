@@ -48,7 +48,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
       readonly [apiDefinitionSymbol]: T;
 
       declare readonly [resolveArgumentType]: HttpClientOptions;
-      constructor(httpClientOrOptions: HttpClient | HttpClientArgument) {
+      constructor(httpClientOrOptions?: HttpClient | HttpClientArgument) {
         this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : inject(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;
       }
