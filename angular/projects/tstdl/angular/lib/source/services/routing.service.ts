@@ -39,12 +39,28 @@ export class RoutingService {
       : observable.pipe(map((value) => assertStringPass(value, `Missing ${parameter} in route parameters.`)));
   }
 
+  getParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
+    return toSignal(this.getParameters$(parameter), { requireSync: true });
+  }
+
+  getParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
+    return getParametersFromAll$(parameter);
+  }
+
   getQueryParameter<T extends string>(parameter: string): Signal<LiteralUnion<T, string> | null> {
     return toSignal(this.getQueryParameter$(parameter), { requireSync: true });
   }
 
   getQueryParameter$<T extends string>(parameter: string): Observable<LiteralUnion<T, string> | null> {
     return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.get(parameter)));
+  }
+
+  getQueryParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
+    return toSignal(this.getQueryParameters$(parameter), { requireSync: true });
+  }
+
+  getQueryParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
+    return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.getAll(parameter)));
   }
 
   getFragmet(): Signal<string | null> {
@@ -55,12 +71,12 @@ export class RoutingService {
     return inject(ActivatedRoute).fragment;
   }
 
-  getData(): Signal<Record> {
+  getData<T extends Record = Record>(): Signal<T> {
     return toSignal(this.getData$(), { requireSync: true });
   }
 
-  getData$(): Observable<Record> {
-    return inject(ActivatedRoute).data;
+  getData$<T extends Record = Record>(): Observable<T> {
+    return inject(ActivatedRoute).data as Observable<T>;
   }
 
   async setQueryParameter(key: string, value: string | null, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
@@ -100,6 +116,25 @@ function getParameterFromAll$(parameter: string, route: ActivatedRoute = inject(
       }
 
       return null;
+    })
+  );
+}
+
+function getParametersFromAll$(parameter: string, route: ActivatedRoute = inject(ActivatedRoute)): Observable<string[]> {
+  const path = getRoutePath(route);
+  const paramMaps = path.map((r) => r.paramMap);
+
+  return combineLatest(paramMaps).pipe(
+    map((maps) => {
+      for (const paramMap of maps) {
+        const values = paramMap.getAll(parameter);
+
+        if (values.length > 0) {
+          return values;
+        }
+      }
+
+      return [];
     })
   );
 }

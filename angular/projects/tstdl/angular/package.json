@@ -10,7 +10,7 @@
     "@tstdl/base": "^0.90.0",
     "chroma-js": "^2.4",
     "luxon": "^3.4",
-    "marked": "^11.1"
+    "marked": "^11.2"
   },
   "sideEffects": false
 }
