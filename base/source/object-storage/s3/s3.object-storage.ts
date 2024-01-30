@@ -44,7 +44,7 @@ export class S3ObjectStorage extends ObjectStorage {
       return;
     }
 
-    await this.client.makeBucket(this.bucket, region, { ObjectLocking: options?.objectLocking ?? false });
+    await this.client.makeBucket(this.bucket, region ?? '', { ObjectLocking: options?.objectLocking ?? false });
   }
 
   async exists(key: string): Promise<boolean> {
