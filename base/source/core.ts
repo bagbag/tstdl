@@ -10,6 +10,16 @@ import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.
 import { timeout } from './utils/timing.js';
 import { assertDefinedPass, isDefined, isUndefined } from './utils/type-guards.js';
 
+declare global {
+  var tstdlLoaded: boolean | undefined;
+}
+
+if (globalThis.tstdlLoaded == true) {
+  console.error(new Error('tstdl seems to be loaded multiple times. This is likely an error as some modules won\'t work as intended this way.'));
+}
+
+globalThis.tstdlLoaded = true;
+
 export const CORE_LOGGER = injectionToken<Logger>('core logger');
 
 let globalInjector: Injector | undefined;
