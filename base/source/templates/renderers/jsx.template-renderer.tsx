@@ -1,5 +1,5 @@
 import { Singleton } from '#/injector/decorators.js';
-import { renderJsx } from '#/jsx/render-to-string.js';
+import { renderJsxAsync } from '#/jsx/render-to-string.js';
 import type { Record } from '#/types.js';
 import type { JsxTemplate } from '../resolvers/jsx.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
@@ -17,7 +17,7 @@ export class JsxTemplateRenderer extends TemplateRenderer<'jsx', undefined> {
     return (type == 'jsx');
   }
 
-  _render({ template }: JsxTemplateRenderObject, context: Record): TemplateRenderResult {
-    return renderJsx(template, context);
+  async _render({ template }: JsxTemplateRenderObject, context: Record): Promise<TemplateRenderResult> {
+    return renderJsxAsync(template, context);
   }
 }
