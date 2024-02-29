@@ -1,19 +1,20 @@
+import type { ObjectLiteral } from '#/types.js';
 import { FactoryMap } from './factory-map.js';
 
 export type Builder<T> = () => T;
 export type AsyncBuilder<T> = () => Promise<T>;
 
 const globalScope = Symbol('global singleton scope');
-const scopes: FactoryMap<any, Map<any, any>> = new FactoryMap(() => new Map());
+const scopes = new FactoryMap(() => new Map<any, any>());
 
-export function singleton<T>(type: any, builder: Builder<T>): T;
-export function singleton<T>(type: any, builder: AsyncBuilder<T>): Promise<T>;
-export function singleton<T>(scope: any, type: any, builder: Builder<T>): T;
-export function singleton<T>(scope: any, type: any, builder: AsyncBuilder<T>): Promise<T>;
-export function singleton<T>(scopeOrType: any, typeOrBuilder: Builder<T> | AsyncBuilder<T> | any, _builder?: Builder<T>): T | Promise<T> {
-  const builder = _builder != undefined ? _builder : typeOrBuilder as Builder<T> | AsyncBuilder<T>;
-  const scope = _builder != undefined ? scopeOrType : globalScope;
-  const type = _builder != undefined ? typeOrBuilder : scopeOrType;
+export function singleton<T>(type: ObjectLiteral, builder: Builder<T>): T;
+export function singleton<T>(type: ObjectLiteral, builder: AsyncBuilder<T>): Promise<T>;
+export function singleton<T>(scope: ObjectLiteral, type: ObjectLiteral, builder: Builder<T>): T;
+export function singleton<T>(scope: ObjectLiteral, type: ObjectLiteral, builder: AsyncBuilder<T>): Promise<T>;
+export function singleton<T>(scopeOrType: ObjectLiteral, typeOrBuilder: Builder<T> | AsyncBuilder<T> | ObjectLiteral, _builder?: Builder<T>): T | Promise<T> {
+  const builder = _builder ?? typeOrBuilder as Builder<T> | AsyncBuilder<T>;
+  const scope = _builder == undefined ? globalScope : scopeOrType;
+  const type = _builder == undefined ? scopeOrType : typeOrBuilder;
 
   const instances = scopes.get(scope);
 

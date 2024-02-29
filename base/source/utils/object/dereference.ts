@@ -1,12 +1,11 @@
-import type { JsonPathInput } from '#/json-path/index.js';
-import { JsonPath } from '#/json-path/index.js';
+import { JsonPath, type JsonPathInput } from '#/json-path/index.js';
 import type { Record } from '#/types.js';
 import { memoizeSingle } from '../function/memoize.js';
 
 export type CompiledDereferencer = (object: object) => unknown;
 
 /**
- * compiles a dereferencer for a specific reference
+ * Compiles a dereferencer for a specific reference
  * @param object object to dereference
  * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
@@ -28,7 +27,7 @@ export function compileDereferencer(reference: JsonPathInput): (object: object) 
 }
 
 /**
- * dereference a reference
+ * Dereference a reference
  *
  * @description useful if you dereference a reference a few times at most
  *
@@ -42,7 +41,7 @@ export function dereference(object: object, reference: JsonPathInput): unknown {
 }
 
 /**
- * cached version of {@link dereference}. It caches the internally used dereferencer, but it does *not* cache the referenced value
+ * Cached version of {@link dereference}. It caches the internally used dereferencer, but it does *not* cache the referenced value
  *
  * @description
  * useful if you dereference multiple references, each multiple times

@@ -62,10 +62,10 @@ export type ValueSchema<T = unknown> = {
   optional?: boolean,
   nullable?: boolean,
 
-  /** use default coercers */
+  /** Use default coercers */
   coerce?: boolean,
 
-  /** custom coercers */
+  /** Custom coercers */
   coercers?: OneOrMany<SchemaValueCoercer>,
   transformers?: OneOrMany<SchemaValueTransformer>,
   arrayConstraints?: OneOrMany<SchemaArrayConstraint>,

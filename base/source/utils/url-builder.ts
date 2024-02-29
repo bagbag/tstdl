@@ -1,5 +1,4 @@
-import type { HttpValue } from '#/http/types.js';
-import { normalizeSingleHttpValue } from '#/http/types.js';
+import { normalizeSingleHttpValue, type HttpValue } from '#/http/types.js';
 import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types.js';
 import { memoizeSingle } from './function/memoize.js';
 import { isArray, isDefined, isObject, isUndefined } from './type-guards.js';
@@ -19,10 +18,9 @@ export type UrlBuilderParameters = UndefinableJsonObject;
 export type UrlBuilderOptions = { arraySeparator?: string };
 export type UrlBuilderResult = { parsedUrl: string, parametersRest: UrlBuilderParameters };
 
-const urlParseRegex = /([^:]+|:\/+)|:([\w-]+)/ug;
+const urlParseRegex = /(?<literal>[^:]+|:\/+)|:(?<parameter>[\w-]+)/ug;
 const isFullUrlRegex = /^\w+:\/\//u;
 
-// eslint-disable-next-line max-lines-per-function
 export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters, options?: UrlBuilderOptions) => UrlBuilderResult {
   const parts: UrlBuilderPart[] = [];
   const isFullUrl = isFullUrlRegex.test(url);
@@ -37,7 +35,9 @@ export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParamete
 
   const matches = parseUrl.matchAll(urlParseRegex);
 
-  for (const [, literal, parameter] of matches) {
+  for (const { groups } of matches) {
+    const { literal, parameter } = groups!;
+
     if (isDefined(literal)) {
       parts.push({ type: UrlBuilderPartType.Literal, value: literal });
     }

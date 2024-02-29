@@ -2,11 +2,24 @@
 
 import { isNull } from './type-guards.js';
 
+export type TypeOfTypes =
+  | 'string'
+  | 'number'
+  | 'bigint'
+  | 'boolean'
+  | 'symbol'
+  | 'undefined'
+  | 'object'
+  | 'null'
+  | `[class ${string}]`
+  | `[function ${string}]`
+  | `[instanceof ${string}]`;
+
 /**
- * get the type of value. Returns 'null' instead of 'object' for null, tries to distinguish between function and class and to get their names
+ * Get the type of value. Returns 'null' instead of 'object' for null, tries to distinguish between function and class and to get their names
  * @param value value to get type of
  */
-export function typeOf(value: any): 'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'undefined' | 'object' | 'null' | `[class ${string}]` | `[function ${string}]` | `[instanceof ${string}]` {
+export function typeOf(value: unknown): TypeOfTypes {
   const type = typeof value;
 
   if (type == 'function') {

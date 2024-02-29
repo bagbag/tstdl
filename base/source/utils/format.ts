@@ -1,3 +1,4 @@
+import { kibibyte, kilobyte, microsecondsPerMillisecond, millisecondsPerSecond, nanosecondsPerMillisecond } from './units.js';
 
 const siByteSizes = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 const iecByteSizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
@@ -6,20 +7,20 @@ export function formatDuration(milliseconds: number, precision: number): string 
   let value: number;
   let suffix: string;
 
-  if (milliseconds >= (10 ** 3)) {
-    value = milliseconds / (10 ** 3);
+  if (milliseconds >= millisecondsPerSecond) {
+    value = milliseconds / millisecondsPerSecond;
     suffix = 's';
   }
   else if (milliseconds >= 1) {
     value = milliseconds;
     suffix = 'ms';
   }
-  else if (milliseconds >= 1 / (10 ** 3)) {
-    value = milliseconds * (10 ** 3);
+  else if (milliseconds >= 1 / microsecondsPerMillisecond) {
+    value = milliseconds * microsecondsPerMillisecond;
     suffix = 'us';
   }
   else {
-    value = milliseconds * (10 ** 6);
+    value = milliseconds * nanosecondsPerMillisecond;
     suffix = 'ns';
   }
 
@@ -31,7 +32,7 @@ export function formatDuration(milliseconds: number, precision: number): string 
 
 export function formatBytes(bytes: number, { decimals = 2, unit = 'IEC' }: { decimals?: number, unit?: 'SI' | 'IEC' } = {}): string {
   const iec = unit == 'IEC';
-  const base = iec ? 1024 : 1000;
+  const base = iec ? kibibyte : kilobyte;
   const exponent = Math.floor(Math.log(bytes) / Math.log(base));
   const prefix = (iec ? iecByteSizes : siByteSizes)[exponent];
   const result = (bytes / (base ** exponent));

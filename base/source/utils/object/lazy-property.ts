@@ -1,4 +1,4 @@
-import type { IfUnknown } from '#/types.js';
+import type { AnyFunction, IfUnknown } from '#/types.js';
 import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards.js';
 import { filterObject, hasOwnProperty, objectEntries } from './object.js';
 
@@ -7,42 +7,42 @@ const lazyObjectValueSymbol = Symbol('LazyObjectValue');
 export type LazyPropertyInitializer<T, K extends keyof T> = (this: T, key: K) => T[K];
 
 export type LazyPropertyObjectDefinition<T extends object, P extends keyof T> = LazyPropertyDescriptor & {
-  /** define property with existing value */
+  /** Define property with existing value */
   value?: T[P],
 
-  /** define property with getter */
+  /** Define property with getter */
   get?: (this: T) => T[P],
 
-  /** define property with setter */
+  /** Define property with setter */
   set?: (this: T, value: T[P]) => void,
 
-  /** lazily define property with initializer */
+  /** Lazily define property with initializer */
   initializer?: LazyPropertyInitializer<T, P>
 };
 
 export type LazyObjectValue<T> = { [lazyObjectValueSymbol]: typeof lazyObjectValueSymbol, value: T };
 
 export type LazyInitializerItem<T extends object, P extends keyof T> =
-  | Exclude<IfUnknown<T[P], never, T[P]>, Function | object>
+  | Exclude<IfUnknown<T[P], never, T[P]>, AnyFunction | object>
   | LazyPropertyInitializer<T, P>
   | LazyPropertyObjectDefinition<T, P>
   | LazyObjectValue<T[P]>;
 
 export type LazyPropertyDescriptor = {
   /**
-   * true if the type of this property descriptor may be changed and if the property may be deleted from the corresponding object
+   * True if the type of this property descriptor may be changed and if the property may be deleted from the corresponding object
    * @default true
    */
   configurable?: boolean,
 
   /**
-   * true if and only if this property shows up during enumeration of the properties on the corresponding object
+   * True if and only if this property shows up during enumeration of the properties on the corresponding object
    * @default true
    */
   enumerable?: boolean,
 
   /**
-   * true if the value associated with the property may be changed with an assignment operator
+   * True if the value associated with the property may be changed with an assignment operator
    * @default true
    */
   writable?: boolean
@@ -74,15 +74,16 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
 
       return _value;
     },
-    set: !writable ? undefined
-      : function set(value: T[K]) {
+    set: writable
+      ? function set(value: T[K]) {
         if (configurable) {
           Object.defineProperty(object, propertyKey, { configurable, enumerable, writable, value });
         }
 
         _value = value;
         initialized = true;
-      },
+      }
+      : undefined,
     enumerable,
     configurable
   });

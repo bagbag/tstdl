@@ -6,12 +6,12 @@ export type ToBytesStreamOptions = {
 };
 
 export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?: ToBytesStreamOptions): ReadableStream<Uint8Array> {
-  try { // try to use byob mode from source
+  try { // Try to use byob mode from source
     let byobReader: ReadableStreamBYOBReader;
 
     return new ReadableStream({
       type: 'bytes',
-      autoAllocateChunkSize: 100 * kibibyte,
+      autoAllocateChunkSize: 100 * kibibyte, // eslint-disable-line @typescript-eslint/no-magic-numbers
       start() {
         byobReader = stream.getReader({ mode: 'byob' });
       },
@@ -34,7 +34,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
       }
     });
   }
-  catch { /* ignore */ }
+  catch { /* Ignore */ }
 
   let reader: ReadableStreamDefaultReader<ArrayBufferView>;
   let buffer: ArrayBufferView | null = null;
@@ -49,7 +49,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
       const bufferIsEmpty = isNull(buffer) || (buffer.byteLength == 0);
 
       if (!isByobRequest && !bufferIsEmpty) {
-        // we stil have data left in buffer from previous pull which was byob
+        // We still have data left in buffer from previous pull which was byob
         controller.enqueue(buffer!);
         buffer = null;
         return;

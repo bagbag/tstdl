@@ -33,5 +33,5 @@ export function cacheAsyncValueOrProvider<T>(provider: ValueOrAsyncProvider<T>):
     return valuePromise;
   };
 
-  return () => getValue(); // eslint-disable-line @typescript-eslint/promise-function-async
+  return async () => getValue();
 }

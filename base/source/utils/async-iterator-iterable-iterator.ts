@@ -18,12 +18,12 @@ export class AsyncIteratorIterableIterator<T, TReturn = any, TNext = undefined> 
   }
 
   async return(value?: TReturn | PromiseLike<TReturn>): Promise<IteratorResult<T, TReturn>> {
-    assertDefined(this.iterator.return, 'underlying iterator has no return function defined'); // eslint-disable-line @typescript-eslint/unbound-method
+    assertDefined(this.iterator.return, 'underlying iterator has no return function defined');
     return this.iterator.return(value);
   }
 
   async throw(error?: any): Promise<IteratorResult<T, TReturn>> {
-    assertDefined(this.iterator.throw, 'underlying iterator has no throw function defined'); // eslint-disable-line @typescript-eslint/unbound-method
+    assertDefined(this.iterator.throw, 'underlying iterator has no throw function defined');
     return this.iterator.throw(error);
   }
 
@@ -31,7 +31,7 @@ export class AsyncIteratorIterableIterator<T, TReturn = any, TNext = undefined> 
     let finished = false;
 
     try {
-      while (true) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+      while (true) {
         const result = await this.iterator.next();
 
         if (result.done == true) {

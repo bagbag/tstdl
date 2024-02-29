@@ -1,7 +1,7 @@
 import type { AnyIterable } from '../any-iterable-iterator.js';
 import { isAsyncIterable } from '../async-iterable-helpers/is-async-iterable.js';
 
-export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, options: { close?: boolean } = {}): AsyncIterable<T> {
+export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, { close = true }: { close?: boolean } = {}): AsyncIterable<T> {
   const reader = stream.getReader();
 
   try {
@@ -16,7 +16,7 @@ export async function* getReadableStreamIterable<T>(stream: ReadableStream<T>, o
     }
   }
   finally {
-    if (options.close != false) {
+    if (close) {
       await reader.cancel();
     }
     else {

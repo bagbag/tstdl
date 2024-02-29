@@ -12,11 +12,11 @@ export type StreamFinalizerHandler = (event: ReadableStreamFinalizeEvent) => voi
 
 export type FinalizeStreamHandlers = {
   finalizer?: StreamFinalizerHandler,
-  beforeDone?: () => void | Promise<void>,
-  done?: () => void | Promise<void>,
-  error?: (error: Error) => void | Promise<void>,
-  beforeCancel?: (reason: any) => void | Promise<void>,
-  cancel?: (reason: any) => void | Promise<void>
+  beforeDone?(): void | Promise<void>,
+  done?(): void | Promise<void>,
+  error?(error: Error): void | Promise<void>,
+  beforeCancel?(reason: any): void | Promise<void>,
+  cancel?(reason: any): void | Promise<void>
 };
 
 export function finalizeStream<T>(stream: ReadableStream<T>, finalizerOrHandlers: StreamFinalizerHandler | FinalizeStreamHandlers): ReadableStream<T> {

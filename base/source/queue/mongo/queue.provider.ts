@@ -1,13 +1,10 @@
 import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo/index.js';
 import { ForwardArg, ResolveArg, Singleton } from '#/injector/decorators.js';
 import { Injector } from '#/injector/injector.js';
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
-import type { LockProviderArgument } from '#/lock/index.js';
-import { LockProvider } from '#/lock/index.js';
+import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
+import { LockProvider, type LockProviderArgument } from '#/lock/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
-import type { QueueConfig } from '#/queue/index.js';
-import { Queue, QueueProvider } from '#/queue/index.js';
+import { Queue, QueueProvider, type QueueConfig } from '#/queue/index.js';
 import type { MongoJob } from './job.js';
 import { MongoJobRepository } from './mongo-job.repository.js';
 import { MongoQueue } from './queue.js';

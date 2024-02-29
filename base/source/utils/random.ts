@@ -7,7 +7,7 @@ let randomBytesBuffer = new Uint8Array();
 let randomBytesBufferIndex = 0;
 
 /**
- * generate cryptographically secure random bytes
+ * Generate cryptographically secure random bytes
  *
  * if allowUnsafe is true a view on the underlying pool is returned. This can be dangerous as the underlying
  * pool can be read and modified by other callers of {@link getRandomBytes} but improves performance as
@@ -33,7 +33,7 @@ export function getRandomBytes(count: number, allowUnsafe: boolean = false): Uin
 }
 
 /**
- * generate a cryptographically secure random string (in terms of source of randomness).
+ * Generate a cryptographically secure random string (in terms of source of randomness).
  * @param length length of string
  * @param alphabet alphabet to choose characters from. Defaults to {@link Alphabet.LowerUpperCaseNumbers}
  */

@@ -1,6 +1,4 @@
-import type { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
-import { bufferCount, filter, map } from 'rxjs';
+import { Subject, bufferCount, filter, map, type Observable } from 'rxjs';
 import { compareByValue } from './comparison.js';
 import { average } from './math.js';
 import { timeout } from './timing.js';
@@ -78,20 +76,23 @@ function aggregate(aggregation: AggregationMode, values: number[]): number {
     case AggregationMode.Mean:
       return average(values);
 
-    case AggregationMode.Median:
+    case AggregationMode.Median: {
       values.sort(compareByValue);
       const median = Math.floor(values.length / 2);
       return values[median]!;
+    }
 
-    case AggregationMode.FirstQuartile:
+    case AggregationMode.FirstQuartile: {
       values.sort(compareByValue);
       const firstQuartile = Math.floor(values.length / 4 * 1);
       return values[firstQuartile]!;
+    }
 
-    case AggregationMode.ThirdQuartile:
+    case AggregationMode.ThirdQuartile: {
       values.sort(compareByValue);
       const thirdQuartile = Math.floor(values.length / 4 * 3);
       return values[thirdQuartile]!;
+    }
 
     default:
       throw new Error(`aggregation mode ${aggregation as number} not implemented`);

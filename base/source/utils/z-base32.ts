@@ -1,4 +1,4 @@
-/* eslint-disable no-bitwise, @typescript-eslint/no-magic-numbers */
+/* eslint-disable @typescript-eslint/no-magic-numbers */
 
 import type { BinaryData } from '#/types.js';
 import { Alphabet } from './alphabet.js';
@@ -8,7 +8,6 @@ const alphabet = Alphabet.ZBase32;
 
 const charValueMap = new Map(alphabet.split('').map((char, index) => [char, index]));
 
-// eslint-disable-next-line max-statements
 export function zBase32Encode(buffer: BinaryData): string {
   const byteView = toUint8Array(buffer);
 
@@ -34,7 +33,6 @@ export function zBase32Encode(buffer: BinaryData): string {
   return result;
 }
 
-// eslint-disable-next-line max-statements
 export function zBase32Decode(input: string): Uint8Array {
   const bytes = new Uint8Array((input.length * 5 / 8) | 0);
 

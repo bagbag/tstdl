@@ -86,7 +86,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
         ? (a as Function).toString() == (b as Function).toString()
         : false;
 
-    case 'object':
+    case 'object': {
       if (isNull(a) || isNull(b)) { // hasn't passed equals check at top, so one must be a true object
         return false;
       }
@@ -118,7 +118,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
         return (b as Equals)[Equals.symbol](a);
       }
 
-      if ((aPrototype != Object.prototype) && isNotNull(aPrototype)) { // checking a is enough, because b must have equal prototype (checked above)
+      if ((aPrototype != Object.prototype) && isNotNull(aPrototype)) { // Checking a is enough, because b must have equal prototype (checked above)
         throw new Error('Equals only supports literal objects, arrays, primitives and Equals interface implementations.');
       }
 
@@ -127,6 +127,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
       }
 
       return objectEquals(a as Record, b as Record, options, visitedNodes);
+    }
 
     default:
       return a === b;

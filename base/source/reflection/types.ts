@@ -35,6 +35,7 @@ export type DecoratorMetadataMap = DecoratorTypeMap<{
   constructorParameter: ConstructorParameterMetadata
 }>;
 
+/* eslint-disable @typescript-eslint/no-invalid-void-type */
 export type DecoratorHandlerReturnTypeMap = DecoratorTypeMap<{
   class: void | undefined | Constructor,
   property: void,
@@ -44,6 +45,7 @@ export type DecoratorHandlerReturnTypeMap = DecoratorTypeMap<{
   methodParameter: void,
   constructorParameter: void
 }>;
+/* eslint-enable @typescript-eslint/no-invalid-void-type */
 
 export type DecoratorMap = DecoratorTypeMap<{
   class: ClassDecorator,

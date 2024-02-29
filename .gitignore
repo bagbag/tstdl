@@ -3,3 +3,4 @@ dist/
 /base/source/test*.ts
 /angular-test
 /base/doc
+.eslintcache

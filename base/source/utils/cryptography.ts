@@ -47,7 +47,7 @@ export interface SignResult extends CryptionResult { }
 const subtle = globalThis.crypto.subtle;
 
 /**
- * encrypt data
+ * Encrypt data
  * @param algorithm algorithm as supported by Web Crypto API
  * @param key key
  * @param data data to encrypt. Encodes string to utf8
@@ -66,7 +66,7 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
 }
 
 /**
- * decrypt data
+ * Decrypt data
  * @param algorithm algorithm as supported by Web Crypto API
  * @param key key
  * @param data data to decrypt
@@ -85,7 +85,7 @@ export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: Bin
 }
 
 /**
- * hashes data
+ * Hashes data
  * @param algorithm algorithm as supported by Web Crypto API
  * @param data data to encrypt. Encodes string to utf8
  */
@@ -105,7 +105,7 @@ export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | st
 }
 
 /**
- * signs data
+ * Signs data
  * @param algorithm algorithm as supported by Web Crypto API
  * @param key key
  * @param data data to sign
@@ -127,7 +127,7 @@ export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData 
 }
 
 /**
- * verifies data
+ * Verifies data
  * @param algorithm algorithm as supported by Web Crypto API
  * @param key key
  * @param signature signature
@@ -141,7 +141,7 @@ export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature
 }
 
 /**
- * imports a HMAC CryptoKey
+ * Imports a HMAC CryptoKey
  * @param algorithm hash algorithm
  * @param key JWK or binary key
  * @param extractable whether the key can be used for exportKey
@@ -157,7 +157,7 @@ export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key
 }
 
 /**
- * imports a CryptoKey for symmetric encryption
+ * Imports a CryptoKey for symmetric encryption
  * @param algorithm symmetric algorithm
  * @param length key length
  * @param key JWK or binary key
@@ -174,7 +174,7 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
 }
 
 /**
- * imports an ECDSA CryptoKey
+ * Imports an ECDSA CryptoKey
  * @param curve ECDSA curve
  * @param key JWK or DER encoded key
  * @param extractable whether the key can be used for exportKey
@@ -190,7 +190,7 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
 }
 
 /**
- * import a pbkdf2 CryptoKey
+ * Import a pbkdf2 CryptoKey
  * @param key binary key
  * @param extractable whether the key can be used for exportKey
  */
@@ -200,7 +200,7 @@ export async function importPbkdf2Key(key: BinaryData | string, extractable: boo
 }
 
 /**
- * generates a new ECDSA CryptoKeyPair
+ * Generates a new ECDSA CryptoKeyPair
  * @param curve ECDSA cruve to use
  * @param extractable whether the key can be used for exportKey
  * @param usages whether to generate a key for signing, verifiying or both. Defaults to both
@@ -210,7 +210,7 @@ export async function generateEcdsaKey(curve: EcdsaCurve, extractable: boolean =
 }
 
 /**
- * generates a pbkdf2 CryptoKey
+ * Generates a pbkdf2 CryptoKey
  * @param extractable whether the key can be used for exportKey
  */
 export async function generatePbkdf2Key(extractable: boolean = false): Promise<CryptoKey> {
@@ -219,7 +219,7 @@ export async function generatePbkdf2Key(extractable: boolean = false): Promise<C
 }
 
 /**
- * derive byte array from key
+ * Derive byte array from key
  * @param length length in bytes
  * @param algorithm algorithm to derive with
  * @param baseKey key to derive from
@@ -230,7 +230,7 @@ export async function deriveBytes(algorithm: DeriveAlgorithm, baseKey: CryptoKey
 }
 
 /**
- * derive multiply byte arrays from key
+ * Derive multiply byte arrays from key
  * @param algorithm algorithm to derive with
  * @param baseKey key to derive from
  * @param length length of each Uint8Array in bytes, if single number is provided, it is used for every array

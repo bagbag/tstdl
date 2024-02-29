@@ -7,7 +7,7 @@ import { decycle } from './object/decycle.js';
 import { isDefined } from './type-guards.js';
 
 /**
- * create an structured clone of an value using Notification if available, otherwise history state (may alters history)
+ * Create an structured clone of an value using Notification if available, otherwise history state (may alters history)
  *
  * may not work in every environment!
  * @param value value to clone
@@ -27,7 +27,7 @@ export function structuredClone<T>(value: T): T {
 }
 
 /**
- * create an structured clone of an value using a MessageChannel
+ * Create an structured clone of an value using a MessageChannel
  *
  * should work in all environments
  * @param value value to clone
@@ -90,22 +90,22 @@ export function parseFirstAndFamilyName(name: string): { firstName: string | und
 
 export type NormalizeTextOptions = {
   /**
-   * remove leading and trailing whitespace
+   * Remove leading and trailing whitespace
    */
   trim?: boolean,
 
   /**
-   * lowercase all characters
+   * Lowercase all characters
    */
   lowercase?: boolean,
 
   /**
-   * remove multiple consecutive whitespace characters
+   * Remove multiple consecutive whitespace characters
    */
   multipleWhitespace?: boolean,
 
   /**
-   * remove diacritics (è -> e)
+   * Remove diacritics (è -> e)
    *
    * applies unicode NFD normalization and removes diacritics
    * @see unicode option
@@ -113,7 +113,7 @@ export type NormalizeTextOptions = {
   diacritics?: boolean,
 
   /**
-   * replace ligatures with their consecutive characters (æ -> ae)
+   * Replace ligatures with their consecutive characters (æ -> ae)
    *
    * applies unicode NFKC normalization
    * @see unicode option
@@ -121,14 +121,14 @@ export type NormalizeTextOptions = {
   ligatures?: boolean,
 
   /**
-   * unicode normalization
+   * Unicode normalization
    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/normalize
    */
   unicode?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD'
 };
 
 /**
- * trims, lowercases, replaces multi-character whitespace with a single space and unicode normalization
+ * Trims, lowercases, replaces multi-character whitespace with a single space and unicode normalization
  * @param text text to normalize
  * @param options specify what to normalize. Defaults to all except unicode
  * @returns normalized text

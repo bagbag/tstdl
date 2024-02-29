@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+
 import chroma from 'chroma-js';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, type Observable } from 'rxjs';
 
 import { Inject, Singleton } from '#/injector/decorators.js';
 import { injectionToken } from '#/injector/token.js';
@@ -117,8 +118,8 @@ function _generateColorTones(base: string): ColorTones {
 function toColorTonesWithRgb(tones: ColorTones): ColorTonesWithRgb {
   return {
     /* eslint-disable @typescript-eslint/naming-convention, quote-props */
-    base: tones.base,
-    baseRgb: getRgbString(tones.base),
+    'base': tones.base,
+    'baseRgb': getRgbString(tones.base),
     '50': tones['50'],
     '50Rgb': getRgbString(tones['50']),
     '100': tones['100'],

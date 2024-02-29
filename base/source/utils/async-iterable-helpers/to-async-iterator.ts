@@ -22,19 +22,19 @@ export function iterableToAsyncIterator<T>(iterable: AnyIterable<T>): AsyncItera
 
 export function iteratorToAsyncIterator<T, TReturn = any, TNext = undefined>(iterator: Iterator<T, TReturn, TNext>): AsyncIterator<T, TReturn, TNext> {
   const asyncIterator: AsyncIterator<T, TReturn, TNext> = {
-    async next(...args: [] | [TNext]) { // eslint-disable-line @typescript-eslint/require-await
+    async next(...args: [] | [TNext]) {
       return iterator.next(...args);
     }
   };
 
-  if (isDefined(iterator.return)) { // eslint-disable-line @typescript-eslint/unbound-method
+  if (isDefined(iterator.return)) {
     asyncIterator.return = async function _return(value?: TReturn | PromiseLike<TReturn>) {
       return iterator.return!(await value);
     };
   }
 
-  if (isDefined(iterator.throw)) { // eslint-disable-line @typescript-eslint/unbound-method
-    asyncIterator.throw = async function _throw(error?: any) { // eslint-disable-line @typescript-eslint/require-await
+  if (isDefined(iterator.throw)) {
+    asyncIterator.throw = async function _throw(error?: any) {
       return iterator.throw!(error);
     };
   }

@@ -1,4 +1,6 @@
-/* data sizes */
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+
+/* Data sizes */
 export const kilobyte = 1000;
 export const megabyte = 1000 * kilobyte;
 export const gigabyte = 1000 * megabyte;
@@ -17,7 +19,7 @@ export const exbibyte = 1024 * pebibyte;
 export const zebibyte = 1024 * exbibyte;
 export const yobibyte = 1024 * zebibyte;
 
-/* durations */
+/* Durations */
 export const nanosecondsPerMicrosecond = 1000;
 export const nanosecondsPerMillisecond = 1000 * nanosecondsPerMicrosecond;
 export const nanosecondsPerSecond = 1000 * nanosecondsPerMillisecond;

@@ -8,7 +8,7 @@ const byteToHex = createArray(2 ** 8, (i) => i).map((value) => value.toString(16
 const hexToByte = new Map(byteToHex.map((hex, value) => [hex, value]));
 
 /**
- * encodes text to utf8
+ * Encodes text to utf8
  * @param text text to encode
  * @returns utf8 encoded text
  */
@@ -18,14 +18,14 @@ export function encodeUtf8(text: string): Uint8Array {
 }
 
 /**
- * encodes text stream to utf8 bytes stream
+ * Encodes text stream to utf8 bytes stream
  */
 export function encodeUtf8Stream(): TransformStream<string, Uint8Array> {
   return new TextEncoderStream();
 }
 
 /**
- * decodes buffer to string
+ * Decodes buffer to string
  * @param buffer buffer to decode
  * @param encoding encoding, defaults to utf8
  * @returns decoded string
@@ -36,7 +36,7 @@ export function decodeText(buffer: BinaryData, encoding?: string): string {
 }
 
 /**
- * transforms binary stream to string stream
+ * Transforms binary stream to string stream
  * @param encoding encoding, defaults to utf8
  * @returns stream of decoded string
  */
@@ -45,7 +45,7 @@ export function decodeTextStream(encoding?: string): TransformStream<BinaryData,
 }
 
 /**
- * encodes buffer to hex
+ * Encodes buffer to hex
  * @param buffer buffer to encode
  * @returns hex encoded string
  */
@@ -62,7 +62,7 @@ export function encodeHex(buffer: BinaryData): string {
 }
 
 /**
- * decodes hex string to buffer
+ * Decodes hex string to buffer
  * @param hex hex string to decode
  * @returns decoded buffer
  */

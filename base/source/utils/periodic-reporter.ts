@@ -1,5 +1,4 @@
-import type { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
+import { Subject, type Observable } from 'rxjs';
 
 import { CancellationToken } from '#/cancellation/token.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';

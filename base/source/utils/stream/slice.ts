@@ -53,7 +53,7 @@ export function sliceStream<T>(stream: ReadableStream<T>, offset: number, length
 
   return new ReadableStream({
     type: 'bytes',
-    autoAllocateChunkSize: 100 * kibibyte,
+    autoAllocateChunkSize: 100 * kibibyte, // eslint-disable-line @typescript-eslint/no-magic-numbers
     async pull(controller) {
       while (bytesRead < offset) {
         const readResult = await byobReader.read(new Uint8Array(offsetBuffer!, 0, Math.min(offsetBuffer!.byteLength, offset - bytesRead)));

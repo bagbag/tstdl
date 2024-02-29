@@ -1,4 +1,4 @@
-export function _throw(value: any): never {
+export function _throw(value: any): never { // eslint-disable-line no-underscore-dangle
   throw value;
 }
 

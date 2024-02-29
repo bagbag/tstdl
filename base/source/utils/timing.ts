@@ -3,10 +3,9 @@ import { firstValueFrom, map, race, timer } from 'rxjs';
 import type { CancellationSignal } from '#/cancellation/token.js';
 import { TimeoutError } from '#/errors/timeout.error.js';
 import { _throw } from './throw.js';
-import type { ValueOrProvider } from './value-or-provider.js';
-import { resolveValueOrProvider } from './value-or-provider.js';
+import { resolveValueOrProvider, type ValueOrProvider } from './value-or-provider.js';
 
-/** timeout for specified duration */
+/** Timeout for specified duration */
 export async function timeout(milliseconds: number = 0, options?: { abortSignal?: AbortSignal }): Promise<void> {
   return new Promise<void>((resolve) => {
     const abortListener = () => clearTimeout(timeoutRef);
@@ -20,13 +19,13 @@ export async function timeout(milliseconds: number = 0, options?: { abortSignal?
   });
 }
 
-/** timeout until specified time */
+/** Timeout until specified time */
 export async function timeoutUntil(timestamp: number | Date): Promise<void> {
   const left = timestamp.valueOf() - Date.now();
   return timeout(left);
 }
 
-/** timeout for specified duration */
+/** Timeout for specified duration */
 export async function cancelableTimeout(milliseconds: number, cancelSignal: CancellationSignal): Promise<boolean> {
   return firstValueFrom(race([
     timer(milliseconds).pipe(map(() => false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
@@ -34,7 +33,7 @@ export async function cancelableTimeout(milliseconds: number, cancelSignal: Canc
   ]));
 }
 
-/** timeout until specified time */
+/** Timeout until specified time */
 export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: CancellationSignal): Promise<boolean> {
   const left = timestamp.valueOf() - Date.now();
   return cancelableTimeout(left, cancelSignal);

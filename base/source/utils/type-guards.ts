@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/restrict-template-expressions, max-statements-per-line, no-eq-null */
+/* eslint-disable max-lines, @typescript-eslint/ban-types, @typescript-eslint/no-invalid-void-type, @typescript-eslint/restrict-template-expressions, max-statements-per-line, no-eq-null */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
 import type { AbstractConstructor, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';

@@ -10,7 +10,7 @@ export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean 
 }
 
 /**
- * returns object entries including those with symbols keys (which Object.entries does not)
+ * Returns object entries including those with symbols keys (which Object.entries does not)
  */
 export function objectEntries<T extends ObjectLiteral>(object: T): [keyof T, T[keyof T]][] {
   const keys = objectKeys(object);
@@ -18,7 +18,7 @@ export function objectEntries<T extends ObjectLiteral>(object: T): [keyof T, T[k
 }
 
 /**
- * returns object keys including symbols (which Object.keys does not)
+ * Returns object keys including symbols (which Object.keys does not)
  */
 export function objectKeys<T extends ObjectLiteral>(object: T): (keyof T)[] {
   return (Reflect.ownKeys(object) as (keyof T)[]).filter((key) => key != '__proto__');

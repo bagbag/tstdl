@@ -5,8 +5,7 @@ import type { Decorator } from '#/reflection/index.js';
 import { createSchemaValueConstraintDecorator } from '../decorators/utils.js';
 import { SchemaError } from '../schema.error.js';
 import { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { ConstraintContext, ConstraintResult } from '../types/types.js';
-import { typeSchema } from '../types/types.js';
+import { typeSchema, type ConstraintContext, type ConstraintResult } from '../types/types.js';
 
 export class MinimumConstraint extends SchemaValueConstraint {
   private readonly minimum: number;

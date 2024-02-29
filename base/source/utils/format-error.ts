@@ -6,28 +6,28 @@ import { isDefined, isFunction, isUndefined } from './type-guards.js';
 
 export type FormatErrorOptions = {
   /**
-   * include error name in message
+   * Include error name in message
    */
   includeName?: boolean,
 
   /**
-   * include all error properties beside name and message
+   * Include all error properties beside name and message
    */
   includeRest?: boolean | 'if-no-extra-info',
 
   /**
-   * include extraInfo from errors implementing {@link ErrorExtraInfo}
+   * Include extraInfo from errors implementing {@link ErrorExtraInfo}
    */
   includeExtraInfo?: boolean,
 
   /**
-   * include stack trace
+   * Include stack trace
    */
   includeStack?: boolean
 };
 
 export interface ErrorExtraInfo {
-  /** format extra data (without message and stack) as JSON */
+  /** Format extra data (without message and stack) as JSON */
   getExtraInfo(): UndefinableJson | undefined;
 }
 

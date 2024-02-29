@@ -4,9 +4,26 @@ import { memoizeSingle } from './function/memoize.js';
 import { objectEntries } from './object/object.js';
 import { isNumber } from './type-guards.js';
 
-const memoizedEnumEntries = memoizeSingle(_enumEntries, { weak: true });
-const memoizedEnumKeys = memoizeSingle(_enumKeys, { weak: true });
-const memoizedEnumValues = memoizeSingle(_enumValues, { weak: true });
+const memoizedEnumEntries = memoizeSingle(
+  <T extends EnumerationObject>(enumeration: T) => objectEntries<EnumerationObject>(enumeration).filter((entry): entry is EnumerationEntry<T> => Number.isNaN(Number(entry[0]))) as EnumerationEntries<T>,
+  { weak: true }
+);
+
+const memoizedEnumKeys = memoizeSingle(
+  <T extends EnumerationObject>(enumeration: T) => {
+    const entries = enumEntries(enumeration) as EnumerationEntry<T>[];
+    return entries.map((entry) => entry[0]);
+  },
+  { weak: true }
+);
+
+const memoizedEnumValues = memoizeSingle(
+  <T extends EnumerationObject>(enumeration: T) => {
+    const entries = enumEntries(enumeration) as EnumerationEntry<T>[];
+    return entries.map((entry) => entry[1] as EnumerationValue<T>);
+  },
+  { weak: true }
+);
 
 export function enumValueName<T extends EnumerationObject>(enumeration: T, value: T[keyof T]): string {
   return isNumber(value) ? enumeration[value]?.toString() ?? value.toString() : value;
@@ -26,19 +43,4 @@ export function enumValues<T extends EnumerationObject>(enumeration: T): Enumera
 
 export function randomEnumValue<T extends EnumerationObject>(enumeration: T): EnumerationValue<T> {
   return randomItem(enumValues(enumeration));
-}
-
-function _enumEntries<T extends EnumerationObject>(enumeration: T): EnumerationEntries<T> {
-  return objectEntries<EnumerationObject>(enumeration)
-    .filter((entry): entry is EnumerationEntry<T> => Number.isNaN(Number(entry[0]))) as EnumerationEntries<T>;
-}
-
-function _enumKeys<T extends EnumerationObject>(enumeration: T): EnumerationKey<T>[] {
-  const entries = enumEntries(enumeration) as EnumerationEntry<T>[];
-  return entries.map((entry) => entry[0]);
-}
-
-function _enumValues<T extends EnumerationObject>(enumeration: T): EnumerationValue<T>[] {
-  const entries = enumEntries(enumeration) as EnumerationEntry<T>[];
-  return entries.map((entry) => entry[1] as EnumerationValue<T>);
 }

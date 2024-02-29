@@ -1,5 +1,4 @@
-import type { Observable } from 'rxjs';
-import { Subject, debounceTime, defaultIfEmpty, firstValueFrom, merge, takeUntil } from 'rxjs';
+import { Subject, debounceTime, defaultIfEmpty, firstValueFrom, merge, takeUntil, type Observable } from 'rxjs';
 
 import { CancellationToken } from '#/cancellation/token.js';
 import type { Record, StringMap } from '#/types.js';
@@ -14,8 +13,8 @@ export type PatchWorkerOptions<T extends StringMap> = {
   retryDelay?: number,
   handleOn?: Observable<any>,
   completeOn?: Observable<any>,
-  handler: (patch: Partial<T>) => void | Promise<void>,
-  errorHandler?: (error: Error) => void | Promise<void>
+  handler(patch: Partial<T>): void | Promise<void>,
+  errorHandler?(error: Error): void | Promise<void>
 };
 
 export class PatchWorker<T extends Record> {

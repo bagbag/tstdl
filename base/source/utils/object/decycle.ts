@@ -8,7 +8,7 @@ import { hasOwnProperty, mapObjectValues, objectKeys } from './object.js';
 export type Decycled<T> = { __type: T } & Record<string>;
 
 /**
- * replaces cycles (circular references) in objects with JSONPath
+ * Replaces cycles (circular references) in objects with JSONPath
  * @param value object to decycle
  * @param replacer replace values. Like JSON.stringify(value, *replacer*)
  */
@@ -18,7 +18,7 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
 
   const replacerFn = isDefined(replacer) ? replacer : (value: unknown) => value;
 
-  function _decycle(__value: any, path: JsonPath): any {
+  function decycleInternal(__value: any, path: JsonPath): any {
     const value = replacerFn(__value);
 
     if (isPrimitive(value) || isRegExp(value) || isDate(value) || isFunction(value)) {
@@ -34,17 +34,17 @@ export function decycle<T>(_value: T, replacer?: (value: any) => any): Decycled<
     mapping.set(value, path);
 
     if (isArray(value)) {
-      return value.map((item, index): any => _decycle(item, path.add(index))) as any;
+      return value.map((item, index): any => decycleInternal(item, path.add(index))) as any;
     }
 
-    return mapObjectValues(value, (item, key): any => _decycle(item, path.add(key)));
+    return mapObjectValues(value, (item, key): any => decycleInternal(item, path.add(key)));
   }
 
-  return _decycle(_value, JsonPath.ROOT) as Decycled<T>;
+  return decycleInternal(_value, JsonPath.ROOT) as Decycled<T>;
 }
 
 /**
- * replaces JSONPath in objects with their reference
+ * Replaces JSONPath in objects with their reference
  * @param value object to recycle
  */
 export function recycle<T = any>(value: Decycled<T>, clone?: boolean): T; // eslint-disable-line @typescript-eslint/no-shadow
@@ -66,7 +66,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
     return undefined;
   }
 
-  function _recycle(node: any): void {
+  function recycleInternal(node: any): void {
     if (isWritableArray(node)) {
       for (let i = 0; i < node.length; i++) {
         const ref = getRef(node[i]);
@@ -75,7 +75,7 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
           node[i] = deref(value, ref);
         }
         else {
-          _recycle(node[i]);
+          recycleInternal(node[i]);
         }
       }
     }
@@ -87,12 +87,12 @@ export function recycle<T = any>(_value: Decycled<T>, _clone: boolean = true): T
           (node as StringMap)[key] = deref(value, ref);
         }
         else {
-          _recycle((node as StringMap)[key]);
+          recycleInternal((node as StringMap)[key]);
         }
       }
     }
   }
 
-  _recycle(value);
+  recycleInternal(value);
   return value as any as T;
 }

@@ -1,4 +1,4 @@
-/* eslint-disable no-bitwise */
+/* eslint-disable @typescript-eslint/no-magic-numbers, no-bitwise */
 
 import { supportsBuffer } from '#/supports.js';
 import type { BinaryData } from '../types.js';

@@ -1,3 +1,5 @@
+/* eslint-disable import/no-nodejs-modules */
+
 import type { ReplOptions } from 'node:repl';
 
 import { dynamicImport } from '#/import.js';
@@ -14,7 +16,7 @@ export async function repl(options?: ReplOptions & { context?: Record<string> })
   const replServer = startRepl(options);
 
   if (isDefined(options?.context)) {
-    for (const [key, value] of objectEntries(options!.context)) {
+    for (const [key, value] of objectEntries(options.context)) {
       replServer.context[key] = value;
     }
   }

@@ -159,7 +159,7 @@ export function dateTimeToTime(dateTime: DateTime): number {
     return interval.count('milliseconds');
   }
 
-  throw new Error('Invalid DateTime.');
+  throw new Error(`Invalid DateTime: ${interval.invalidExplanation}`);
 }
 
 export function numericDateTimeToDateTime({ date, time }: NumericDateTime, zone?: string): DateTime {

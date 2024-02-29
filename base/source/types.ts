@@ -8,14 +8,14 @@ import type { Signal } from './signals/api.js';
 export type ObjectLiteral = {};
 
 export type PrimitiveTypeMap = {
-  'string': string,
-  'number': number,
-  'boolean': boolean,
-  'bigint': bigint,
-  'symbol': symbol,
-  'object': object,
-  'function': Function,
-  'undefined': undefined
+  string: string,
+  number: number,
+  boolean: boolean,
+  bigint: bigint,
+  symbol: symbol,
+  object: object,
+  function: Function,
+  undefined: undefined
 };
 
 export type PrimitiveTypeString<T extends PrimitiveTypeMap[keyof PrimitiveTypeMap] = PrimitiveTypeMap[keyof PrimitiveTypeMap]> = Simplify<keyof PickBy<PrimitiveTypeMap, T>>;
@@ -98,12 +98,12 @@ export type SharedProperties<A, B, C = unknown, D = unknown, E = unknown, F = un
 >>;
 
 /**
- * omit properties from a type that extend from a specific type.
+ * Omit properties from a type that extend from a specific type.
  */
 export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]>;
 
 /**
- * normalize properties of a type that allow `undefined` to make them optional.
+ * Normalize properties of a type that allow `undefined` to make them optional.
  */
 export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
 
@@ -133,7 +133,7 @@ export type UnionToTuple<T, Tuple extends any[] = []> = UnionToIntersection<T ex
 export type UndefinableObject<T extends Record> = { [K in keyof T]: T[K] | undefined };
 
 /**
- * pick properties from a type that extend from a specific type.
+ * Pick properties from a type that extend from a specific type.
  */
 export type PickBy<T, V> = Pick<T, { [K in keyof T]: V extends Extract<T[K], V> ? K : never }[keyof T]>;
 
@@ -142,7 +142,7 @@ export type NonUndefinable<T> = T extends undefined ? never : T;
 export type NonNullOrUndefinable<T> = T extends null | undefined ? never : T;
 
 /**
- * makes optional properties required and removes null and undefined
+ * Makes optional properties required and removes null and undefined
  */
 export type DeepNonNullable<T> = T extends Record ? { [P in keyof T]-?: DeepNonNullable<T[P]> } : NonNullable<T>;
 
@@ -218,5 +218,36 @@ export type ConstructorParameterDecorator = (target: Object, propertyKey: undefi
 
 export type ReactiveValue<T> = T | Signal<T> | Observable<T>;
 
-/* type-fests PascalCase minus options. Fixes tsc bug for some reason */
+/* Type-fests PascalCase minus options. Fixes tsc bug for some reason */
 export type PascalCase<Value> = CamelCase<Value> extends string ? Capitalize<CamelCase<Value>> : CamelCase<Value>;
+
+type PickOmitDeepSelection<T> = T extends (infer U)[] ? (boolean | PickOmitDeepSelection<U>)
+  : T extends Record<any> ? (boolean | { [P in keyof T]?: PickOmitDeepSelection<T[P]> })
+  : boolean;
+
+export type PickDeepSelection<T> = PickOmitDeepSelection<T>;
+export type OmitDeepSelection<T> = PickOmitDeepSelection<T>;
+
+export type PickDeep<T, S extends PickDeepSelection<T>> =
+  T extends Record<any> ? Simplify<{
+    [P in keyof S as S[P] extends (true | Record<any>) ? P : never]:
+    S[P] extends true
+    ? T[Extract<P, keyof T>]
+    : T[Extract<P, keyof T>] extends (infer U)[]
+    ? S[P] extends PickDeepSelection<U> ? PickDeep<U, S[P]>[] : never
+    : S[P] extends Record<any>
+    ? S[P] extends PickDeepSelection<T[Extract<P, keyof T>]> ? PickDeep<T[Extract<P, keyof T>], S[P]> : never
+    : never
+  }> : T;
+
+export type OmitDeep<T, S extends OmitDeepSelection<T>> = T extends Record<any> ? Simplify<{
+  [P in keyof T as true extends S[Extract<P, keyof S>] ? never : P]:
+  [S[Extract<P, keyof S>]] extends ([false] | [never]) ? T[P]
+  : S[Extract<P, keyof S>] extends Record<any>
+  ? T[P] extends (infer U)[]
+  ? S[Extract<P, keyof S>] extends OmitDeepSelection<U> ? OmitDeep<U, S[Extract<P, keyof S>]>[] : never
+  : S[Extract<P, keyof S>] extends OmitDeepSelection<T[P]> ? OmitDeep<T[P], S[Extract<P, keyof S>]> : never
+  : never
+}> : T;
+
+export type AnyFunction = Function;

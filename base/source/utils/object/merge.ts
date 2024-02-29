@@ -6,17 +6,17 @@ import { hasOwnProperty, objectEntries } from './object.js';
 
 export type MergeObjectsOptions = {
   /**
-   * whether to merge arrays or ensure they are equal
+   * Whether to merge arrays or ensure they are equal
    * @default 'merge'
    */
   array?: 'merge' | 'merge-unique' | 'equals' | 'equals-sorted'
 };
 
 export function mergeObjects<T extends object>(objects: T[], options: MergeObjectsOptions = {}): T {
-  return objects.reduce((merged, object) => _mergeObjects(merged, object, options), {}) as T;
+  return objects.reduce((merged, object) => mergeObjectsInternal(merged, object, options), {}) as T;
 }
 
-function _mergeObjects(a: object, b: object, options: MergeObjectsOptions, path: string = '$'): object {
+function mergeObjectsInternal(a: Record<string>, b: Record<string>, options: MergeObjectsOptions, path: string = '$'): object {
   const merged: Record<string> = { ...a };
 
   const bEntries = objectEntries(b);
@@ -58,7 +58,7 @@ function mergeValues(a: any, b: any, options: MergeObjectsOptions, path: string)
     return mergeArray(a, b, options, path); // eslint-disable-line @typescript-eslint/no-unsafe-return
   }
 
-  return _mergeObjects(a as object, b as object, options, path);
+  return mergeObjectsInternal(a as object, b as object, options, path);
 }
 
 function mergeArray<T, U>(a: readonly T[], b: readonly U[], options: MergeObjectsOptions, path: string): (T | U)[] {

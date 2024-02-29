@@ -1,7 +1,6 @@
 import { clamp, linearInterpolate, randomFloat } from '#/utils/math.js';
 import { isDefined, isNumber } from '#/utils/type-guards.js';
-import type { RandomNumberGeneratorFn } from './number-generator/random-number-generator-function.js';
-import { defaultRandomNumberGeneratorFn } from './number-generator/random-number-generator-function.js';
+import { defaultRandomNumberGeneratorFn, type RandomNumberGeneratorFn } from './number-generator/random-number-generator-function.js';
 
 export type RandomSeriesOptions = {
   /**
