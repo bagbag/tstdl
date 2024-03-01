@@ -11,7 +11,7 @@ export type CompiledDereferencer = (object: object) => unknown;
  * @returns referenced value
  */
 export function compileDereferencer(reference: JsonPathInput): (object: object) => unknown {
-  const nodes = new JsonPath(reference).nodes;
+  const nodes = JsonPath.from(reference).nodes;
 
   function dereferencer(object: object): unknown {
     let target = object;

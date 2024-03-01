@@ -12,7 +12,7 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
   private _path: string | undefined;
   private _nodes: readonly JsonPathNode[] | undefined;
 
-  /** json path as encoded string */
+  /** Json path as encoded string */
   get path(): string {
     if (isUndefined(this._path)) {
       this._path = encodeJsonPath(this._nodes!, this._options);
@@ -21,7 +21,7 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     return this._path;
   }
 
-  /** json path as decoded array */
+  /** Json path as decoded array */
   get nodes(): readonly JsonPathNode[] {
     if (isUndefined(this._nodes)) {
       this._nodes = decodeJsonPath(this._path!);
@@ -57,12 +57,18 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     }
   }
 
+  static from(options?: JsonPathOptions): JsonPath;
+  static from(path: JsonPathInput, options?: JsonPathOptions): JsonPath;
+  static from(pathOrNodesOrOptions: JsonPathInput | JsonPathOptions = [], options: JsonPathOptions = {}): JsonPath {
+    return new JsonPath(pathOrNodesOrOptions as JsonPathInput, options);
+  }
+
   static isJsonPath(path: string): boolean {
     return isJsonPath(path);
   }
 
   /**
-   * add a property or index to current path
+   * Add a property or index to current path
    * @param key
    * @returns new JsonPath instance
    */
@@ -71,7 +77,7 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
   }
 
   /**
-   * updates options
+   * Updates options
    * @param options
    * @returns new JsonPath instance
    */
@@ -85,10 +91,10 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
 }
 
 export type JsonPathOptions = {
-  /** encode as array.0 instead of array[0] */
+  /** Encode as array.0 instead of array[0] */
   treatArrayAsObject?: boolean,
 
-  /** encode as ['foo'] instead of .foo */
+  /** Encode as ['foo'] instead of .foo */
   forceBrackets?: boolean,
 
   /**
@@ -99,7 +105,7 @@ export type JsonPathOptions = {
 };
 
 export type JsonPathContext = {
-  /** if path contains symbols, they are required in order to be mapped, otherwise they are created from global symbol registry */
+  /** If path contains symbols, they are required in order to be mapped, otherwise they are created from global symbol registry */
   symbols?: symbol[]
 };
 
@@ -108,7 +114,7 @@ export function isJsonPath(path: string): boolean {
 }
 
 /**
- * encodes an array of nodes into a JSONPath
+ * Encodes an array of nodes into a JSONPath
  * @param nodes nodes to encode
  * @param options encoding options
  * @returns JSONPath string
@@ -153,7 +159,7 @@ export function encodeJsonPath(nodes: readonly JsonPathNode[], options: JsonPath
 }
 
 /**
- * decodes a JSONPath into its nodes. Only supports child operator
+ * Decodes a JSONPath into its nodes. Only supports child operator
  * @param path JSONPath string
  * @returns array of nodes
  * @example
