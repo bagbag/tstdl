@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/naming-convention */
 
-import type { Decorator } from '#/reflection/index.js';
-import { createClassDecorator, createDecorator } from '#/reflection/index.js';
+import { createClassDecorator, createDecorator, type Decorator } from '#/reflection/index.js';
 import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
@@ -15,10 +14,10 @@ import type { ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOp
 export type InjectDecorator = Decorator<'accessor' | 'constructorParameter'>;
 
 export type InjectableOptions<T, A, C extends Record = Record> = RegistrationOptions<T, A, C> & {
-  /** aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
+  /** Aliases (tokens) for the class. Useful for example for circular dependencies when you can't use the class itself as a token */
   alias?: OneOrMany<InjectionToken>,
 
-  /** custom provider. Useful for example if initialization is required */
+  /** Custom provider. Useful for example if initialization is required */
   provider?: Provider<T, A, C>
 };
 
@@ -58,7 +57,7 @@ export function Injectable<T = any, A = any, C extends Record = Record>(options:
 }
 
 /**
- * registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
+ * Registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
 export function Singleton<T = any, A = any>(options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
@@ -66,7 +65,7 @@ export function Singleton<T = any, A = any>(options: InjectableOptionsWithoutLif
 }
 
 /**
- * registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
+ * Registers the class in the global container with scoped lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
 export function Scoped<T = any, A = any>(lifecycle: 'resolution' | 'injector', options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
@@ -74,7 +73,7 @@ export function Scoped<T = any, A = any>(lifecycle: 'resolution' | 'injector', o
 }
 
 /**
- * sets the token used to resolve the parameter
+ * Sets the token used to resolve the parameter
  * @param token token used for resolving
  * @param argument resolve argument
  * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
@@ -98,7 +97,7 @@ export function Inject<T, A>(token?: InjectionToken<T, A>, argument?: A, mapperO
 }
 
 /**
- * sets the token used to resolve the parameter. Resolves all providers
+ * Sets the token used to resolve the parameter. Resolves all providers
  * @param token token used for resolving
  * @param argument resolve argument
  * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
@@ -122,7 +121,7 @@ export function InjectAll<T, A>(token?: InjectionToken<T, A>, argument?: A, mapp
 }
 
 /**
- * sets the argument used for resolving the parameter
+ * Sets the argument used for resolving the parameter
  * @param argument
  */
 export function ResolveArg<T>(argument: T): InjectDecorator {
@@ -130,7 +129,7 @@ export function ResolveArg<T>(argument: T): InjectDecorator {
 }
 
 /**
- * sets the argument provider used for resolving the parameter
+ * Sets the argument provider used for resolving the parameter
  * @param argumentProvider
  */
 export function ResolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): InjectDecorator {
@@ -138,7 +137,7 @@ export function ResolveArgProvider<T>(argumentProvider: ArgumentProvider<T>): In
 }
 
 /**
- * injects the argument used for resolving the class instead of resolving the parameter
+ * Injects the argument used for resolving the class instead of resolving the parameter
  * @param argument
  * @param mapperOrKey map the resolved value. If {@link PropertyKey} is provided, that property of the resolved value will be injected
  */
@@ -153,7 +152,7 @@ export function InjectArg<T>(mapperOrKey?: Mapper<T> | keyof T): InjectDecorator
 }
 
 /**
- * sets the argument used for resolving the decorated parameter to the the argument provided for parent resolve
+ * Sets the argument used for resolving the decorated parameter to the the argument provided for parent resolve
  * @param mapper map the argument (for example to select a property instead of forwarding the whole object)
  */
 export function ForwardArg(): InjectDecorator;
@@ -163,7 +162,7 @@ export function ForwardArg(mapper: Mapper = (value): unknown => value): InjectDe
 }
 
 /**
- * marks the argument as optional
+ * Marks the argument as optional
  * @param argument
  */
 export function Optional(): InjectDecorator {
@@ -171,7 +170,7 @@ export function Optional(): InjectDecorator {
 }
 
 /**
- * resolve using ForwardRef to handle circular dependencies. Resolve logic derefs all ForwardRefs which are direct properties of resolved instances automatically
+ * Resolve using ForwardRef to handle circular dependencies. Resolve logic derefs all ForwardRefs which are direct properties of resolved instances automatically
  * @param token token to resolve
  * @param argument resolve argument
  */
