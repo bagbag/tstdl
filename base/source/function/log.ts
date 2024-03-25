@@ -6,16 +6,17 @@ import { typeOf } from '#/utils/type-of.js';
 
 export type WrapLogOptions = {
   fnName?: string,
+  logResult?: boolean,
   logger?: Logger,
   trace?: boolean
 };
 
-export function wrapLog(fn: Function, { fnName = fn.name, logger, trace = false }: WrapLogOptions = {}): Function {
+export function wrapLog(fn: Function, { fnName = fn.name, logResult = true, logger, trace = false }: WrapLogOptions = {}): Function {
   const log = logger?.trace.bind(logger) ?? console.log.bind(console); // eslint-disable-line no-console
 
   const wrapped = {
     [fnName](...args: any[]): unknown {
-      const argString = args.map((arg) => stringifyArg(arg)).join(', ');
+      const argString = args.map((arg) => stringifyValue(arg)).join(', ');
 
       log(`[call: ${fnName}(${argString})]`);
 
@@ -23,15 +24,23 @@ export function wrapLog(fn: Function, { fnName = fn.name, logger, trace = false 
         console.trace();
       }
 
-      return Reflect.apply(fn, this, args);
+      const result = Reflect.apply(fn, this, args);
+
+      if (logResult) {
+        const resultString = stringifyValue(result);
+        log(`[return: ${fnName} => ${resultString}]`);
+      }
+
+      return result;
     }
   };
 
   return wrapped[fnName]!;
 }
-function stringifyArg(arg: any, depth = 1): string {
+
+function stringifyValue(arg: any, depth = 1): string {
   if (isArray(arg) && (depth > 0)) {
-    const argString = arg.map((innerArg) => stringifyArg(innerArg, depth - 1)).join(', ');
+    const argString = arg.map((innerArg) => stringifyValue(innerArg, depth - 1)).join(', ');
     return `[${argString}]`;
   }
 

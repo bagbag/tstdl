@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
-import * as chroma from 'chroma-js';
+import { scale } from 'chroma-js';
 import { widthAnimation } from '../../animations';
 import { LifecycleUtils } from '../../utils/lifecycle';
 
-const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a30d'])
+const progressColorScaler = scale(['#dc2626', '#ea580c', '#facc15', '#65a30d'])
   .classes([0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1])
   .mode('lab');
 
@@ -17,7 +17,7 @@ const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a
     widthAnimation({ duration: 1000, ease: 'ease' })
   ],
   host: {
-    '[class.tsl-tw]': 'true'
+    class: 'tsl-tw'
   }
 })
 export class TstdlColoredProgressbarComponent extends LifecycleUtils<TstdlColoredProgressbarComponent> {

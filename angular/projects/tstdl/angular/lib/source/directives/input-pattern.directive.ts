@@ -1,5 +1,4 @@
-import type { OnInit } from '@angular/core';
-import { Directive, ElementRef, HostListener, Input, booleanAttribute } from '@angular/core';
+import { Directive, ElementRef, HostListener, booleanAttribute, computed, inject, input, type OnInit } from '@angular/core';
 import { isRegExp, isString, isUndefined } from '@tstdl/base/utils';
 
 @Directive({
@@ -7,22 +6,20 @@ import { isRegExp, isString, isUndefined } from '@tstdl/base/utils';
   standalone: true
 })
 export class InputPatternDirective implements OnInit {
-  private readonly element: HTMLInputElement;
+  private readonly element = inject<ElementRef<HTMLInputElement>>(ElementRef).nativeElement;
 
-  private pattern: RegExp | undefined;
+  private readonly pattern = computed(() => {
+    const inputPattern = this.tslInputPattern();
 
-  @Input({ transform: booleanAttribute }) firstMatchOnly = false;
-
-  @Input() // eslint-disable-line accessor-pairs
-  set tslInputPattern(pattern: string | RegExp | null | undefined) {
-    this.pattern = isRegExp(pattern) ? pattern
-      : isString(pattern) ? new RegExp(pattern, 'ug')
+    return isRegExp(inputPattern)
+      ? inputPattern
+      : isString(inputPattern)
+        ? new RegExp(inputPattern, 'ug')
         : undefined;
-  }
+  });
 
-  constructor(elementRef: ElementRef<HTMLInputElement>) {
-    this.element = elementRef.nativeElement;
-  }
+  readonly firstMatchOnly = input(false, { transform: booleanAttribute });
+  readonly tslInputPattern = input.required<string | RegExp | null | undefined>();
 
   ngOnInit(): void {
     this.onChange();
@@ -37,13 +34,15 @@ export class InputPatternDirective implements OnInit {
   @HostListener('mousedown')
   @HostListener('mouseup')
   onChange(): void {
-    if (isUndefined(this.pattern)) {
+    const pattern = this.pattern();
+
+    if (isUndefined(pattern)) {
       return;
     }
 
-    const matches = [...this.element.value.matchAll(this.pattern)];
+    const matches = [...this.element.value.matchAll(pattern)];
 
-    this.element.value = this.firstMatchOnly
+    this.element.value = this.firstMatchOnly()
       ? (matches[0]?.[0] ?? '')
       : matches.map((match) => match[0]).join('');
   }

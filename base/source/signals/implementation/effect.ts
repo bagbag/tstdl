@@ -38,31 +38,30 @@ export abstract class EffectScheduler {
    * It is an error to attempt to execute any effects synchronously during a scheduling operation.
    */
   abstract scheduleEffect(e: SchedulableEffect): void;
-}
 
-/**
- * Interface to an `EffectScheduler` capable of running scheduled effects synchronously.
- */
-export interface FlushableEffectRunner {
   /**
    * Run any scheduled effects.
    */
-  flush(): void;
+  abstract flush(): void;
 }
 
-export class TstdlEffectScheduler implements EffectScheduler, FlushableEffectRunner {
+export class TstdlEffectScheduler implements EffectScheduler {
   private readonly queue = new Set<SchedulableEffect>();
 
-  private pendingFlush = false;
+  private hasPendingFlush = false;
 
   scheduleEffect(effect: SchedulableEffect): void {
+    if (this.queue.has(effect)) {
+      return;
+    }
+
     this.queue.add(effect);
 
-    if (!this.pendingFlush) {
-      this.pendingFlush = true;
+    if (!this.hasPendingFlush) {
+      this.hasPendingFlush = true;
 
       queueMicrotask(() => {
-        this.pendingFlush = false;
+        this.hasPendingFlush = false;
         this.flush();
       });
     }
