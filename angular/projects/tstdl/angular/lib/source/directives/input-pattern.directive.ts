@@ -12,7 +12,7 @@ export class InputPatternDirective implements OnInit {
     const inputPattern = this.tslInputPattern();
 
     return isRegExp(inputPattern)
-      ? inputPattern
+      ? new RegExp(inputPattern, inputPattern.flags) // Hack/workaround for unknown bug or weird behaviour
       : isString(inputPattern)
         ? new RegExp(inputPattern, 'ug')
         : undefined;
@@ -21,19 +21,27 @@ export class InputPatternDirective implements OnInit {
   readonly firstMatchOnly = input(false, { transform: booleanAttribute });
   readonly tslInputPattern = input.required<string | RegExp | null | undefined>();
 
+  lastKnownValue: string;
+
   ngOnInit(): void {
     this.onChange();
   }
 
-  @HostListener('drop')
   @HostListener('input')
+  @HostListener('change')
   @HostListener('keydown')
+  @HostListener('keyup')
+  @HostListener('drop')
+  @HostListener('paste')
   @HostListener('select')
   @HostListener('contextmenu')
-  @HostListener('keyup')
   @HostListener('mousedown')
   @HostListener('mouseup')
   onChange(): void {
+    if (this.element.value == this.lastKnownValue) {
+      return;
+    }
+
     const pattern = this.pattern();
 
     if (isUndefined(pattern)) {
@@ -42,8 +50,11 @@ export class InputPatternDirective implements OnInit {
 
     const matches = [...this.element.value.matchAll(pattern)];
 
-    this.element.value = this.firstMatchOnly()
+    const result = this.firstMatchOnly()
       ? (matches[0]?.[0] ?? '')
       : matches.map((match) => match[0]).join('');
+
+    this.element.value = result;
+    this.lastKnownValue = result;
   }
 }
