@@ -3,14 +3,12 @@ import * as Http from 'node:http';
 import type { Socket } from 'node:net';
 
 import { CancellationToken } from '#/cancellation/index.js';
-import type { AsyncDisposable } from '#/disposable/index.js';
-import { disposeAsync } from '#/disposable/index.js';
+import { disposeAsync, type AsyncDisposable } from '#/disposable/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
 import { HttpQuery } from '#/http/http-query.js';
 import type { HttpMethod } from '#/http/types.js';
 import { ResolveArg, Singleton } from '#/injector/index.js';
-import type { LoggerArgument } from '#/logger/index.js';
-import { Logger } from '#/logger/index.js';
+import { Logger, type LoggerArgument } from '#/logger/index.js';
 import { encodeUtf8 } from '#/utils/encoding.js';
 import { FeedableAsyncIterable } from '#/utils/feedable-async-iterable.js';
 import { getReadableStreamIterable } from '#/utils/stream/readable-stream-adapter.js';
@@ -20,8 +18,7 @@ import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
 import { bindNodeCallback, share } from 'rxjs';
 import { HttpServerRequest } from '../http-server-request.js';
 import type { HttpServerResponse } from '../http-server-response.js';
-import type { HttpServerRequestContext } from '../http-server.js';
-import { HttpServer } from '../http-server.js';
+import { HttpServer, type HttpServerRequestContext } from '../http-server.js';
 
 type RequestItem = { request: Http.IncomingMessage, response: Http.ServerResponse };
 

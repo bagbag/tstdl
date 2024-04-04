@@ -2,21 +2,17 @@ import { CancellationSignal, CancellationToken } from '#/cancellation/index.js';
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { isSyncOrAsyncDisposable } from '#/disposable/disposable.js';
+import { isSyncOrAsyncDisposable, type AsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { ConstructorParameterMetadata } from '#/reflection/registry.js';
-import { reflectionRegistry } from '#/reflection/registry.js';
+import { reflectionRegistry, type ConstructorParameterMetadata } from '#/reflection/registry.js';
 import type { Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { assert, isArray, isBoolean, isDefined, isFunction, isNotNull, isNull, isPromise, isUndefined } from '#/utils/type-guards.js';
-import type { InjectOptions, InjectionContext } from './inject.js';
-import { setCurrentInjectionContext } from './inject.js';
-import type { Resolvable, ResolveArgument } from './interfaces.js';
-import { afterResolve } from './interfaces.js';
+import { setCurrentInjectionContext, type InjectOptions, type InjectionContext } from './inject.js';
+import { afterResolve, type Resolvable, type ResolveArgument } from './interfaces.js';
 import { isClassProvider, isFactoryProvider, isProviderWithInitializer, isTokenProvider, isValueProvider, type Provider } from './provider.js';
 import { ResolveChain } from './resolve-chain.js';
 import { ResolveError } from './resolve.error.js';
@@ -36,10 +32,10 @@ type InternalResolveContext = {
   /** Currently resolving tokens (for circular dependency detection) */
   resolving: Set<InjectionToken>,
 
-  /** resolutions for resolution scoped dependencies  */
+  /** Resolutions for resolution scoped dependencies  */
   resolutionScopedResolutions: MultiKeyMap<[InjectionToken, unknown], Resolution<any, any>>,
 
-  /** all resolutions in this chain for postprocessing */
+  /** All resolutions in this chain for postprocessing */
   resolutions: Resolution<any, any>[],
   resolutionContextData: FactoryMap<ResolutionTag, ResolveContextData<Record>>,
 
@@ -58,9 +54,12 @@ type Resolution<T, A> = {
   chain: ResolveChain
 };
 
+export type ProvidersItem<T = any, A = any, D extends Record = Record> = Provider<T, A, D> & { provide: InjectionToken<T, A>, multi?: boolean };
+
 export type GlobalRegistration<T = any, A = any> = {
   token: InjectionToken<T, A>,
   provider: Provider<T, A>,
+  providers: ProvidersItem[],
   options: RegistrationOptions<T, A>
 };
 
@@ -127,12 +126,15 @@ export class Injector implements AsyncDisposable {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  static register<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options: RegistrationOptions<T, A, C> = {}): void {
+  static register<T, A = any, D extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, D>>, options: RegistrationOptions<T, A, D> = {}): void {
+    const multi = isArray(providers);
+
     for (const provider of toArray(providers)) {
       const registration: GlobalRegistration<T> = {
         token,
         provider,
-        options: { multi: isArray(providers), ...options }
+        providers: options.providers ?? [],
+        options: { multi, ...options }
       };
 
       addRegistration(Injector.#globalRegistrations, registration);
@@ -176,11 +178,14 @@ export class Injector implements AsyncDisposable {
   register<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options: RegistrationOptions<T, A, C> = {}): void {
     this.assertNotDisposed();
 
+    const multi = isArray(providers);
+
     for (const provider of toArray(providers)) {
       const registration: Registration<T> = {
         token,
         provider,
-        options: { multi: isArray(providers), ...options },
+        providers: options.providers ?? [],
+        options: { multi, ...options },
         resolutions: new Map()
       };
 
@@ -212,25 +217,27 @@ export class Injector implements AsyncDisposable {
    * @param token token to get registration for
    */
   tryGetRegistration<T, A>(token: InjectionToken<T, A>, options?: GetRegistrationOptions): Registration<T, A> | Registration<T, A>[] | undefined {
-    if (isNull(this.#parent) && !this.#registrations.has(token) && Injector.#globalRegistrations.has(token)) {
-      const globalRegistrations = toArray(Injector.#globalRegistrations.get(token)!);
+    if (isNull(this.#parent) && !this.#registrations.has(token)) {
+      const globalRegistrations = toArray(Injector.#globalRegistrations.get(token) ?? []);
 
       for (const globalRegistration of globalRegistrations) {
         this.register(globalRegistration.token, globalRegistration.provider, globalRegistration.options);
       }
     }
 
-    const ownRegistration = (options?.skipSelf != true) ? this.#registrations.get(token) : undefined;
+    if (options?.skipSelf != true) {
+      const ownRegistration = this.#registrations.get(token);
 
-    if (isDefined(ownRegistration)) {
-      return ownRegistration;
+      if (isDefined(ownRegistration)) {
+        return ownRegistration;
+      }
     }
 
-    if (options?.onlySelf == true) {
-      return undefined;
+    if (options?.onlySelf != true) {
+      return this.#parent?.tryGetRegistration(token);
     }
 
-    return this.#parent?.tryGetRegistration(token);
+    return undefined;
   }
 
   /**
@@ -347,20 +354,20 @@ export class Injector implements AsyncDisposable {
 
     const registration = (options.skipSelf == true) ? undefined : this.tryGetRegistration(token);
 
-    if (isUndefined(registration)) {
-      if (isNotNull(this.#parent) && (options.onlySelf != true)) {
-        return this.#parent._resolve(token, argument, { ...options, skipSelf: false }, context, chain);
-      }
-
-      if (options.optional == true) {
-        return undefined;
-      }
-
-      throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
+    if (isDefined(registration)) {
+      const singleRegistration = isArray(registration) ? registration[0]! : registration;
+      return this._resolveRegistration(singleRegistration, argument, options, context, chain);
     }
 
-    const singleRegistration = isArray(registration) ? registration[0]! : registration;
-    return this._resolveRegistration(singleRegistration, argument, options, context, chain);
+    if (isNotNull(this.#parent) && (options.onlySelf != true)) {
+      return this.#parent._resolve(token, argument, { ...options, skipSelf: false }, context, chain);
+    }
+
+    if (options.optional == true) {
+      return undefined;
+    }
+
+    throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
   }
 
   private _resolveAll<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions<T, A>, context: InternalResolveContext, chain: ResolveChain): T[] {
@@ -382,36 +389,43 @@ export class Injector implements AsyncDisposable {
 
     const registration = (options.skipSelf == true) ? undefined : this.tryGetRegistration(token);
 
-    if (isUndefined(registration)) {
-      if (isNotNull(this.#parent) && (options.onlySelf != true)) {
-        return this.#parent._resolveAll(token, argument, { ...options, skipSelf: false }, context, chain);
-      }
-
-      if (options.optional == true) {
-        return [];
-      }
-
-      throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
+    if (isDefined(registration)) {
+      const registrations = isArray(registration) ? registration : [registration];
+      return registrations.map((reg) => this._resolveRegistration(reg, argument, options, context, chain));
     }
 
-    const registrations = isArray(registration) ? registration : [registration];
-    return registrations.map((reg) => this._resolveRegistration(reg, argument, options, context, chain));
+    if (isNotNull(this.#parent) && (options.onlySelf != true)) {
+      return this.#parent._resolveAll(token, argument, { ...options, skipSelf: false }, context, chain);
+    }
+
+    if (options.optional == true) {
+      return [];
+    }
+
+    throw new ResolveError(`No provider for ${getTokenName(token)} registered.`, chain);
   }
 
   private _resolveRegistration<T, A>(registration: Registration<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions<T, A>, context: InternalResolveContext, chain: ResolveChain): T {
     checkOverflow(chain, context);
 
-    const injectionContext = this.getInjectionContext(context, argument, chain);
+    const { token, providers } = registration;
+
+    const injector = (providers.length > 0) ? this.fork('LocalProvidersInjector') : this;
+
+    for (const nestedProvider of providers) {
+      injector.register(nestedProvider.provide, nestedProvider, { multi: nestedProvider.multi });
+    }
+
+    const injectionContext = injector.getInjectionContext(context, argument, chain);
     const previousInjectionContext = setCurrentInjectionContext(injectionContext);
 
     const resolutionTag = Symbol(); // eslint-disable-line symbol-description
 
     try {
-      const { token } = registration;
       const resolutionScoped = registration.options.lifecycle == 'resolution';
       const injectorScoped = registration.options.lifecycle == 'injector';
       const singletonScoped = registration.options.lifecycle == 'singleton';
-      const resolveArgument = argument ?? registration.options.defaultArgument ?? (registration.options.defaultArgumentProvider?.(this.getResolveContext(resolutionTag, context, chain)));
+      const resolveArgument = argument ?? registration.options.defaultArgument ?? (registration.options.defaultArgumentProvider?.(injector.getResolveContext(resolutionTag, context, chain)));
       const argumentIdentity = resolveArgumentIdentity(registration, resolveArgument);
 
       if (resolutionScoped && context.resolutionScopedResolutions.hasFlat(token, argumentIdentity)) {
@@ -424,14 +438,14 @@ export class Injector implements AsyncDisposable {
         return registration.resolutions.get(argumentIdentity)!;
       }
 
-      const value = this._resolveProvider(resolutionTag, registration, resolveArgument, options, context, injectionContext, chain);
+      const value = injector._resolveProvider(resolutionTag, registration, resolveArgument, options, context, injectionContext, chain);
 
       const resolution: Resolution<T, A> = {
         tag: resolutionTag,
         registration,
         value,
         argument: injectionContext.argument as ResolveArgument<T, A>,
-        afterResolveContext: this.getAfterResolveContext(resolutionTag, context),
+        afterResolveContext: injector.getAfterResolveContext(resolutionTag, context),
         chain
       };
 

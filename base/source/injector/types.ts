@@ -2,12 +2,12 @@ import type { CancellationSignal } from '#/cancellation/index.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import type { Record } from '#/types.js';
 import type { ForwardRefTypeHint } from '#/utils/object/forward-ref.js';
-import type { Injector } from './injector.js';
+import type { Injector, ProvidersItem } from './injector.js';
 import type { ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
 
 /**
- * transient: new resolution for every resolve
+ * Transient: new resolution for every resolve
  * resolution: one resolution per resolve tree
  * injector: one resolution per injector
  * singleton: one resolution at injector where token is registered
@@ -43,12 +43,15 @@ export type ResolveOptions<T, A> = {
 };
 
 /**
- * data to store between different stages like resolve and afterResolve
+ * Data to store between different stages like resolve and afterResolve
  */
 export type ResolveContextData<T extends Record> = T;
 
 export type RegistrationOptions<T, A = unknown, D extends Record = Record> = {
   lifecycle?: Lifecycle,
+
+  /** Local providers for inner resolutions */
+  providers?: ProvidersItem[],
 
   /** Default resolve argument used when neither token nor explicit resolve argument is provided */
   defaultArgument?: ResolveArgument<T, A>,
@@ -73,6 +76,6 @@ export type RegistrationOptions<T, A = unknown, D extends Record = Record> = {
   /** Whether multiple values can be resolved or not (used with {@link Injector.resolveAll}). If false, previous registrations are removed */
   multi?: boolean,
 
-  /** custom metadata */
+  /** Custom metadata */
   metadata?: Record
 };

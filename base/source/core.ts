@@ -1,10 +1,8 @@
 import type { CancellationSignal } from './cancellation/token.js';
 import { Injector } from './injector/injector.js';
-import type { InjectionToken } from './injector/token.js';
-import { injectionToken } from './injector/token.js';
+import { injectionToken, type InjectionToken } from './injector/token.js';
 import { ConsoleLogger } from './logger/console/logger.js';
-import type { LoggerArgument } from './logger/index.js';
-import { LogLevel, Logger } from './logger/index.js';
+import { LogLevel, Logger, type LoggerArgument } from './logger/index.js';
 import { LOG_LEVEL } from './logger/tokens.js';
 import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
 import { timeout } from './utils/timing.js';

@@ -1,6 +1,5 @@
 import { assertDefined, isNotNull } from '#/utils/type-guards.js';
-import type { ResolveManyItem, ResolveManyReturnType } from './injector.js';
-import { Injector } from './injector.js';
+import { Injector, type ResolveManyItem, type ResolveManyReturnType } from './injector.js';
 import type { Resolvable, ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
 import type { ResolveOptions } from './types.js';

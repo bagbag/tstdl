@@ -5,8 +5,7 @@ import 'reflect-metadata/lite'; // eslint-disable-line import/no-unassigned-impo
 import type { ConstructorParameterDecorator } from '#/types.js';
 import { noop } from '#/utils/noop.js';
 import type { Decorator, DecoratorHandler } from './types.js';
-import type { CreateDecoratorOptions, SpecificCreateDecoratorOptions } from './utils.js';
-import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator } from './utils.js';
+import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator, type CreateDecoratorOptions, type SpecificCreateDecoratorOptions } from './utils.js';
 
 export function Decorate({ handler, ...options }: CreateDecoratorOptions & { handler?: DecoratorHandler } = {}): Decorator {
   return createDecorator(
