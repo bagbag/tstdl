@@ -1,18 +1,16 @@
 import { Readable } from 'node:stream';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
-import type { BucketItem, BucketItemStat } from 'minio';
-import { Client } from 'minio';
+import type { BucketItem, BucketItemStat, Client } from 'minio';
 
 import { Singleton } from '#/injector/decorators.js';
-import type { UploadObjectOptions } from '#/object-storage/index.js';
-import { ObjectStorage } from '#/object-storage/index.js';
+import { ObjectStorage, type UploadObjectOptions } from '#/object-storage/index.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { now } from '#/utils/date-time.js';
 import { readableStreamFromPromise } from '#/utils/stream/index.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
-import { assertStringPass, isObject } from '#/utils/type-guards.js';
+import { assertStringPass, isObject, isUint8Array } from '#/utils/type-guards.js';
 import { S3ObjectStorageProvider } from './s3.object-storage-provider.js';
 import { S3Object } from './s3.object.js';
 
@@ -68,20 +66,25 @@ export class S3ObjectStorage extends ObjectStorage {
     return this.client.statObject(this.bucket, bucketKey);
   }
 
-  async uploadObject(key: string, content: Uint8Array, options?: UploadObjectOptions): Promise<void> {
+  async uploadObject(key: string, content: Uint8Array | ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void> {
     const bucketKey = this.getBucketKey(key);
-    await this.client.putObject(this.bucket, bucketKey, Buffer.from(content), options?.metadata);
+
+    if (isUint8Array(content)) {
+      await this.client.putObject(this.bucket, bucketKey, Buffer.from(content), options?.metadata);
+    }
+    else {
+      const readable = Readable.fromWeb(content as NodeReadableStream);
+      const errorPromise = new Promise((_, reject) => readable.on('error', reject));
+
+      await Promise.race([
+        this.client.putObject(this.bucket, bucketKey, readable, options?.metadata),
+        errorPromise
+      ]);
+    }
   }
 
   async uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void> {
-    const bucketKey = this.getBucketKey(key);
-    const readable = Readable.fromWeb(stream as NodeReadableStream);
-    const errorPromise = new Promise((_, reject) => readable.on('error', reject));
-
-    await Promise.race([
-      this.client.putObject(this.bucket, bucketKey, readable, options?.metadata),
-      errorPromise
-    ]);
+    return this.uploadObject(key, stream, options);
   }
 
   async getContent(key: string): Promise<Uint8Array> {
@@ -118,11 +121,11 @@ export class S3ObjectStorage extends ObjectStorage {
     return this.getResourceUriSync(key);
   }
 
-  async getDownloadUrl(key: string, expirationTimestamp: number): Promise<string> {
+  async getDownloadUrl(key: string, expirationTimestamp: number, responseHeaders?: Record<string, string>): Promise<string> {
     const bucketKey = this.getBucketKey(key);
     const { date, expiration } = getDateAndExpiration(expirationTimestamp);
 
-    return this.client.presignedGetObject(this.bucket, bucketKey, expiration, {}, date);
+    return this.client.presignedGetObject(this.bucket, bucketKey, expiration, responseHeaders, date);
   }
 
   async getUploadUrl(key: string, expirationTimestamp: number): Promise<string> {

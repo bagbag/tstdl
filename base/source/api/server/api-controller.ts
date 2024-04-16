@@ -1,6 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { InjectableOptionsWithoutLifecycle } from '#/injector/decorators.js';
-import { Singleton } from '#/injector/decorators.js';
+import { Singleton, type InjectableOptionsWithoutLifecycle } from '#/injector/decorators.js';
 import type { Constructor, Type } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';

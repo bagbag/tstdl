@@ -8,8 +8,7 @@
     "build:stats": "ng build --configuration stats test && npm run analyze:source-maps",
     "build:watch": "ng build @tstdl/angular --watch --configuration development",
     "build:tailwind": "tailwind --config projects/tstdl/angular/tailwind.config.js --output dist/tstdl/angular/tailwind.css && deno run --allow-read --allow-write projects/tstdl/angular/patch-tailwind.ts dist/tstdl/angular/tailwind.css dist/tstdl/angular/tailwind.css && cat dist/tstdl/angular/tailwind.css >> dist/tstdl/angular/styles.css && mv dist/tstdl/angular/styles.css dist/tstdl/angular/styles.scss && rm dist/tstdl/angular/tailwind.css",
-    "analyze": "npm run build:stats && npm run analyze:source-maps && npm run analyze:webpack-stats",
-    "analyze:webpack-stats": "webpack-bundle-analyzer dist/test/stats.json --mode static --report dist/test/webpack-stats.html",
+    "analyze": "npm run build:stats && npm run analyze:source-maps",
     "analyze:source-maps": "source-map-explorer dist/test/**/*.js --html dist/test/source-map-stats.html && xdg-open dist/test/source-map-stats.html",
     "pub": "npm run build && npm publish dist/tstdl/angular/",
     "lint": "ng lint"
@@ -49,16 +48,15 @@
     "@tailwindcss/typography": "0.5",
     "@types/chroma-js": "2.4",
     "@types/luxon": "3.4",
-    "@typescript-eslint/eslint-plugin": "7.3",
-    "@typescript-eslint/parser": "7.3",
+    "@typescript-eslint/eslint-plugin": "7.7",
+    "@typescript-eslint/parser": "7.7",
     "eslint-import-resolver-typescript": "3.6",
     "eslint-plugin-import": "2.29",
     "eslint": "8.57",
     "ng-packagr": "17.3",
     "source-map-explorer": "2.5",
     "tailwindcss": "3.4",
-    "typescript-eslint": "7.3",
-    "typescript": "5.4",
-    "webpack-bundle-analyzer": "4.10"
+    "typescript-eslint": "7.7",
+    "typescript": "5.4"
   }
 }

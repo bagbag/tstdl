@@ -1,5 +1,4 @@
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import type { ObjectMetadata, ObjectStorageObject } from './object.js';
 
 export type UploadObjectOptions = {
@@ -9,7 +8,7 @@ export type UploadObjectOptions = {
 export type ObjectStorageArgument = string;
 
 export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument> {
-  /** object storage module */
+  /** Object storage module */
   readonly module: string;
 
   declare readonly [resolveArgumentType]: ObjectStorageArgument;
@@ -18,75 +17,77 @@ export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument>
   }
 
   /**
-   * checks if an object exists
+   * Checks if an object exists
    * @param key object key
    */
   abstract exists(key: string): Promise<boolean>;
 
   /**
-   * uploads an object
+   * Uploads an object
    * @param key object key
    * @param content content of object
    */
-  abstract uploadObject(key: string, content: Uint8Array, options?: UploadObjectOptions): Promise<void>;
+  abstract uploadObject(key: string, content: Uint8Array | ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
 
   /**
-   * uploads an object stream
+   * Uploads an object stream
    * @param key object key
    * @param stream stream of object
+   * @deprecated use {@link uploadObject} instead
    */
   abstract uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
 
   /**
-   * get an url which can be used to upload the object without further authorization
+   * Get an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */
   abstract getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
 
   /**
-   * get all objects
+   * Get all objects
    */
   abstract getObjects(): Promise<ObjectStorageObject[]>;
 
   /**
-   * get all objects
+   * Get all objects
    */
   abstract getObjectsCursor(): AsyncIterable<ObjectStorageObject>;
 
   /**
-   * get object
+   * Get object
    * @param key object key
    */
   abstract getObject(key: string): Promise<ObjectStorageObject>;
 
   /**
-   * get object resource uri
+   * Get object resource uri
    * @param key object key
    */
   abstract getResourceUri(key: string): Promise<string>;
 
   /**
-   * get stream of object content
+   * Get stream of object content
    * @param key object key
    */
   abstract getContentStream(key: string): ReadableStream<Uint8Array>;
 
   /**
-   * get an url which can be used to download the object without further authorization
+   * Get an url which can be used to download the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
+   * @param responseHeaders headers used for download response
    */
-  abstract getDownloadUrl(key: string, expirationTimestamp: number): Promise<string>;
+  abstract getDownloadUrl(key: string, expirationTimestamp: number, responseHeaders?: Record<string, string>): Promise<string>;
 
   /**
-   * deletes an object
+   * Deletes an object
    * @param key object key
    */
   abstract deleteObject(key: string): Promise<void>;
 
   /**
-   * deletes objects
+   * Deletes objects
    * @param keys object key
    */
   abstract deleteObjects(keys: string[]): Promise<void>;
