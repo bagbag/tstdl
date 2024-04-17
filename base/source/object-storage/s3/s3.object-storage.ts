@@ -125,7 +125,7 @@ export class S3ObjectStorage extends ObjectStorage {
     const bucketKey = this.getBucketKey(key);
     const { date, expiration } = getDateAndExpiration(expirationTimestamp);
 
-    return this.client.presignedGetObject(this.bucket, bucketKey, expiration, responseHeaders, date);
+    return this.client.presignedGetObject(this.bucket, bucketKey, expiration, responseHeaders ?? {}, date);
   }
 
   async getUploadUrl(key: string, expirationTimestamp: number): Promise<string> {
