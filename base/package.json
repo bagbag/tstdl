@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.64",
+  "version": "0.90.65",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -105,7 +105,7 @@
     "./utils/string": "./utils/object/index.js"
   },
   "dependencies": {
-    "core-js": "3.37",
+    "disposablestack": "1.1",
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
