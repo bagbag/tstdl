@@ -1,9 +1,7 @@
-import type { AfterViewInit } from '@angular/core';
-import { ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 import { observeIntersection, observeResize } from '@tstdl/base/rxjs';
 import { isDefined, isUndefined, timeout } from '@tstdl/base/utils';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, combineLatest, EMPTY, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, combineLatest, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils/lifecycle';
 
 type ElementOrElementRef = Element | ElementRef<Element>;
@@ -24,35 +22,35 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
   items: T[];
 
   /**
-   * items to lazily append to {@link items}
+   * Items to lazily append to {@link items}
    */
   @Input('tslLazyList') source: T[];
 
   /**
-   * how many items to add at the first tick
+   * How many items to add at the first tick
    * @default 1
    */
   @Input('lazyInitialSize') initialSize: number;
 
   /**
-   * how many items to add at once per tick
+   * How many items to add at once per tick
    * @default 1
    */
   @Input('lazyBatchSize') batchSize: number;
 
   /**
-   * how far to preload items. Percentage of scroll elements client height
+   * How far to preload items. Percentage of scroll elements client height
    * @default 50
    */
   @Input('lazyMargin') margin: number;
 
   /**
-   * element to observe for scrolling and load items when at end
+   * Element to observe for scrolling and load items when at end
    */
   @Input('lazyScrollElement') scrollElement: ElementOrElementRef | undefined;
 
   /**
-   * element to observe for intersection with the scroll element to trigger at tick
+   * Element to observe for intersection with the scroll element to trigger at tick
    */
   @Input('lazyObserveElement') observeElement: ElementOrElementRef | undefined;
 
