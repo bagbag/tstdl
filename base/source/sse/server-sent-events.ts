@@ -1,6 +1,5 @@
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { Observable } from 'rxjs';
-import { distinctUntilChanged, filter, fromEvent, map, merge, ReplaySubject, share, shareReplay, startWith, takeUntil } from 'rxjs';
+import { ReplaySubject, distinctUntilChanged, filter, fromEvent, map, merge, share, shareReplay, startWith, takeUntil, type Observable } from 'rxjs';
 
 export enum ServerSentEventsState {
   Connecting = 0,

@@ -1,23 +1,33 @@
-import { Directive, HostListener, output } from '@angular/core';
-import { isNull } from '@tstdl/base/utils';
+import { Directive, HostListener, input, output } from '@angular/core';
+import { isDefined, isNotNull, isNull } from '@tstdl/base/utils';
 
 @Directive({
   selector: '[tslDrop]',
-  standalone: true
+  standalone: true,
+  exportAs: 'drop'
 })
 export class DropDirective {
+  readonly effect = input<DataTransfer['dropEffect']>();
+
   readonly enter = output<DragEvent>();
   readonly leave = output<DragEvent>();
+  readonly over = output<DragEvent>();
   readonly dropped = output<DragEvent>();
   readonly itemsDropped = output<DataTransferItem[]>();
   readonly filesDropped = output<File[]>();
 
   readonly entered = output<boolean>();
-  readonly over = output<boolean>();
+  readonly isOver = output<boolean>();
 
   @HostListener('dragenter', ['$event'])
   onDragEnter(event: DragEvent): void {
     event.preventDefault();
+
+    const effect = this.effect();
+
+    if (isDefined(effect) && isNotNull(event.dataTransfer)) {
+      event.dataTransfer.dropEffect = effect;
+    }
 
     this.enter.emit(event);
     this.entered.emit(true);
@@ -27,7 +37,8 @@ export class DropDirective {
   onDragOver(event: DragEvent): void {
     event.preventDefault();
 
-    this.over.emit(true);
+    this.over.emit(event);
+    this.isOver.emit(true);
   }
 
   @HostListener('dragleave', ['$event'])
@@ -36,7 +47,7 @@ export class DropDirective {
 
     this.leave.emit(event);
     this.entered.emit(false);
-    this.over.emit(false);
+    this.isOver.emit(false);
   }
 
   // Drop listener
@@ -45,7 +56,7 @@ export class DropDirective {
     event.preventDefault();
 
     this.entered.emit(false);
-    this.over.emit(false);
+    this.isOver.emit(false);
     this.dropped.emit(event);
 
     if (isNull(event.dataTransfer)) {

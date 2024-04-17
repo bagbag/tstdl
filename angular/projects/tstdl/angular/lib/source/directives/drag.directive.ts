@@ -4,7 +4,8 @@ import { objectEntries } from '@tstdl/base/utils/object';
 
 @Directive({
   selector: '[tslDrag]',
-  standalone: true
+  standalone: true,
+  exportAs: 'drag'
 })
 export class DragDirective {
   readonly clearData = input<boolean>(false);

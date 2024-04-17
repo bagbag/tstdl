@@ -57,7 +57,7 @@ export type ApiEndpointDefinition = {
   rootResource?: string | null,
 
   /**
-   * sub resource in api
+   * Sub resource in api
    *
    * results in
    * ```ts
@@ -111,7 +111,7 @@ export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEn
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream;
+export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream<any>;
 
 export type ApiInputType<T extends SchemaTestable> =
   | T extends ApiBinaryType ? (Uint8Array | Blob | ReadableStream<Uint8Array>)

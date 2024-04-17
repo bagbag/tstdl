@@ -4,7 +4,7 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
 import { concatArrayBufferViews } from '../binary.js';
 import { isDefined, isReadableStream } from '../type-guards.js';
-import { getReadableStreamFromIterable } from './readable-stream-adapter.js';
+import { getReadableStreamFromIterable, getReadableStreamIterable } from './readable-stream-adapter.js';
 import { toBytesStream } from './to-bytes-stream.js';
 
 export type ReadBinaryStreamOptions = {
@@ -109,4 +109,16 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBuffer
   }
 
   return concatArrayBufferViews(views, Uint8Array, totalLength);
+}
+
+export async function readTextStream(iterableOrStream: AnyIterable<string> | ReadableStream<string>): Promise<string> {
+  const iterable = isReadableStream(iterableOrStream) ? getReadableStreamIterable(iterableOrStream) : iterableOrStream
+
+  let text = '';
+
+  for await (const chunk of iterable) {
+    text += chunk;
+  }
+
+  return text;
 }
