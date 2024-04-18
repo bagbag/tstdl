@@ -2,22 +2,14 @@ import { dynamicImport } from '#/import.js';
 import { decodeTextStream } from '#/utils/encoding.js';
 import { readTextStream } from '#/utils/stream/stream-reader.js';
 import { isUint8Array } from '#/utils/type-guards.js';
+import { mimeTypesMap } from './mime-types.js';
 
 export async function getMimeType(file: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
   return spawnFileCommand(['--brief', '--mime-type', '-'], file);
 }
 
-export async function getMimeTypeExtension(file: Uint8Array | ReadableStream<Uint8Array>): Promise<string | null> {
-  const extensions = await spawnFileCommand(['--brief', '--extension', '-'], file);
-  const indexOfSlash = extensions.indexOf('/');
-
-  const extension = (indexOfSlash > 0) ? extensions.slice(0, indexOfSlash) : extensions;
-
-  if (extension == '???') {
-    return null;
-  }
-
-  return extension;
+export function getMimeTypeExtensions(mimeType: string): string[] {
+  return mimeTypesMap.get(mimeType) ?? [];
 }
 
 async function spawnFileCommand(args: string[], file: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
