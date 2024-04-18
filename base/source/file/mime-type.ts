@@ -7,7 +7,7 @@ export async function getMimeType(file: Uint8Array | ReadableStream<Uint8Array>)
   return spawnFileCommand(['--brief', '--mime-type', '-'], file);
 }
 
-export async function getMimeTypeExtensions(file: Uint8Array | ReadableStream<Uint8Array>): Promise<string | null> {
+export async function getMimeTypeExtension(file: Uint8Array | ReadableStream<Uint8Array>): Promise<string | null> {
   const extensions = await spawnFileCommand(['--brief', '--extension', '-'], file);
   const indexOfSlash = extensions.indexOf('/');
 
