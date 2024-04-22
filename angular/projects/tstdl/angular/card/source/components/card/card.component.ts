@@ -1,13 +1,12 @@
 import { CommonModule } from '@angular/common';
-import type { AfterViewInit } from '@angular/core';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Input, QueryList, type AfterViewInit } from '@angular/core';
 import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, fadeInOutAnimation } from '@tstdl/angular';
 import type { Record } from '@tstdl/base/types';
 import { merge } from 'rxjs';
 import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardPostHeaderDirective, CardPreHeaderDirective, CardSubHeaderDirective } from '../../directives';
 
 @Component({
-  selector: 'tsl-card',
+  selector: 'tsl-card, [tslCard]',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   imports: [CommonModule, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective],
