@@ -1,4 +1,4 @@
-import { Directive, HostListener, input, output } from '@angular/core';
+import { Directive, HostListener, input, output, signal } from '@angular/core';
 import { isDefined, isNull, isString } from '@tstdl/base/utils';
 import { objectEntries } from '@tstdl/base/utils/object';
 
@@ -16,9 +16,9 @@ export class DragDirective {
   readonly data = input<string | Record<string, string>>();
 
   readonly start = output<DragEvent>();
-  readonly dragging = output<boolean>();
   readonly drag = output<DragEvent>();
   readonly end = output<DragEvent>();
+  readonly dragging = signal(false);
 
   @HostListener('drag', ['$event'])
   onDrag(event: DragEvent): void {
@@ -28,7 +28,7 @@ export class DragDirective {
   @HostListener('dragstart', ['$event'])
   onDragStart(event: DragEvent): void {
     this.start.emit(event);
-    this.dragging.emit(true);
+    this.dragging.set(true);
 
     if (isNull(event.dataTransfer)) {
       return;
@@ -65,6 +65,6 @@ export class DragDirective {
   @HostListener('dragend', ['$event'])
   onDragEnd(event: DragEvent): void {
     this.end.emit(event);
-    this.dragging.emit(false);
+    this.dragging.set(false);
   }
 }
