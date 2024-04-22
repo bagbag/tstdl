@@ -1,21 +1,15 @@
-import type { CancellationSignal } from '#/cancellation/index.js';
-import { CancellationToken } from '#/cancellation/index.js';
-import type { Disposable } from '#/disposable/index.js';
-import { dispose } from '#/disposable/index.js';
+import { CancellationToken, type CancellationSignal } from '#/cancellation/index.js';
+import { dispose, type Disposable } from '#/disposable/index.js';
 import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types.js';
 import { clone } from '#/utils/clone.js';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
-import type { HttpFormObject } from '../http-form.js';
-import { HttpForm } from '../http-form.js';
-import type { HttpHeadersObject } from '../http-headers.js';
-import { HttpHeaders } from '../http-headers.js';
-import type { HttpQueryObject } from '../http-query.js';
-import { HttpQuery } from '../http-query.js';
-import type { HttpUrlParametersObject } from '../http-url-parameters.js';
-import { HttpUrlParameters } from '../http-url-parameters.js';
+import { HttpForm, type HttpFormObject } from '../http-form.js';
+import { HttpHeaders, type HttpHeadersObject } from '../http-headers.js';
+import { HttpQuery, type HttpQueryObject } from '../http-query.js';
+import { HttpUrlParameters, type HttpUrlParametersObject } from '../http-url-parameters.js';
 import type { HttpMethod } from '../types.js';
 
-/** only one type at a time is supported. If multiple are set, behaviour is undefined */
+/** Only one type at a time is supported. If multiple are set, behaviour is undefined */
 export type HttpRequestBody = {
   text?: string,
   json?: UndefinableJson,
@@ -65,7 +59,7 @@ export class HttpClientRequest implements Disposable {
   headers: HttpHeaders;
 
   /**
-   * automatically maps parameters to `urlParameters`, `query` and `body`
+   * Automatically maps parameters to `urlParameters`, `query` and `body`
    * depending on whether the `url` has parameters specified, the request `method`
    * and if there is already a `body` or not
    * @see mapParameters
@@ -75,14 +69,14 @@ export class HttpClientRequest implements Disposable {
    */
   parameters: UndefinableJsonObject | undefined;
 
-  /** if false, disable parameters mapping completely */
+  /** If false, disable parameters mapping completely */
   mapParameters: boolean;
   mapParametersToUrl: boolean;
   mapParametersToQuery: boolean;
   mapParametersToBody: boolean;
 
   /**
-   * parameters for url
+   * Parameters for url
    * @example
    * {
    *   url: 'http://domain.tld/users/:userId',
@@ -93,7 +87,7 @@ export class HttpClientRequest implements Disposable {
   urlParameters: HttpUrlParameters;
 
   /**
-   * separator for url parameter array
+   * Separator for url parameter array
    * @default ','
    * @example
    * {
@@ -106,7 +100,7 @@ export class HttpClientRequest implements Disposable {
   urlParametersSeparator: string;
 
   /**
-   * url query
+   * Url query
    * @example
    * {
    *   url: 'http://domain.tld/search',
@@ -120,21 +114,21 @@ export class HttpClientRequest implements Disposable {
   body: HttpRequestBody | undefined;
 
   /**
-   * request timeout in milliseconds
+   * Request timeout in milliseconds
    * @default 30000
    */
   timeout: number;
   throwOnNon200: boolean;
 
   /**
-   * can be used to store data for middleware etc.
+   * Can be used to store data for middleware etc.
    *
    * will not be used for actual request
    */
   context: Record<string>;
 
   /**
-   * can be used to cancel the request. Throws HttpError
+   * Can be used to cancel the request. Throws HttpError
    */
   get abortSignal(): CancellationSignal {
     return this.#abortToken.signal;
@@ -178,7 +172,7 @@ export class HttpClientRequest implements Disposable {
     this.#abortToken.complete();
   }
 
-  /** abort the request */
+  /** Abort the request */
   abort(): void {
     this.#abortToken.set();
     this.#abortToken.complete();
@@ -197,7 +191,7 @@ export class HttpClientRequest implements Disposable {
   }
 
   asObject(): HttpClientRequestObject {
-    const body: HttpClientRequestObject['body'] = isDefined(this.body?.form) ? { form: this.body!.form.asNormalizedObject() } : this.body;
+    const body: HttpClientRequestObject['body'] = isDefined(this.body?.form) ? { form: this.body.form.asNormalizedObject() } : this.body;
 
     return {
       url: this.url,

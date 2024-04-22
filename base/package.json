@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.68",
+  "version": "0.90.69",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -110,7 +110,7 @@
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.15"
+    "type-fest": "4.16"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",

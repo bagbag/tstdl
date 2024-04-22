@@ -330,14 +330,14 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): void {
   const filteredParameters = Object.fromEntries(filteredParameterEntries);
   let parameterEntries = new Set(filteredParameterEntries);
 
-  if (!request.mapParametersToUrl) {
-    url = new URL(request.url, baseUrl);
-  }
-  else {
+  if (request.mapParametersToUrl) {
     const { parsedUrl, parametersRest } = buildUrl(request.url, filteredParameters, { arraySeparator: request.urlParametersSeparator });
 
     url = new URL(parsedUrl, baseUrl);
     parameterEntries = new Set(objectEntries(parametersRest));
+  }
+  else {
+    url = new URL(request.url, baseUrl);
   }
 
   if (request.mapParametersToBody && !isGetOrHead && isUndefined(request.body)) {

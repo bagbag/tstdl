@@ -6,6 +6,7 @@ import type { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
+import { resolveValueOrProvider, type ValueOrProvider } from '#/utils/value-or-provider.js';
 import type { ApiGatewayMiddlewareContext } from './server/index.js';
 
 export type ApiRegistrationOptions = {
@@ -87,7 +88,7 @@ export type ApiEndpointDefinition = {
   cors?: ApiEndpointDefinitionCors
 };
 
-export type ApiEndpointsDefinition = Record<string, ApiEndpointDefinition | (() => ApiEndpointDefinition)>;
+export type ApiEndpointsDefinition = Record<string, ValueOrProvider<ApiEndpointDefinition>>;
 
 export type ApiDefinition<Resource extends string = string, Endpoints extends ApiEndpointsDefinition = ApiEndpointsDefinition> = {
   /**
@@ -156,9 +157,12 @@ export type ApiController<T extends ApiDefinition = any> = {
   [P in ApiEndpointKeys<T>]: ApiEndpointServerImplementation<T, P>
 };
 
-export type ApiClientImplementation<T extends ApiDefinition = any> = {
-  [P in ApiEndpointKeys<T>]: ApiEndpointClientImplementation<T, P>
-};
+export type ApiClientImplementation<T extends ApiDefinition = any> =
+  { [P in ApiEndpointKeys<T>]: ApiEndpointClientImplementation<T, P> }
+  & {
+    getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string,
+    getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string
+  };
 
 export function defineApi<T extends ApiDefinition>(definition: T): T {
   return definition;
@@ -178,5 +182,5 @@ export function normalizedApiDefinitionEndpoints<T extends ApiDefinition['endpoi
 }
 
 export function normalizedApiDefinitionEndpointsEntries<T extends ApiDefinition['endpoints']>(apiDefinition: T): [keyof T, ApiEndpointDefinition][] {
-  return objectEntries(apiDefinition).map(([key, def]): [string, ApiEndpointDefinition] => [key as string, isFunction(def) ? def() : def]);
+  return objectEntries(apiDefinition).map(([key, def]): [string, ApiEndpointDefinition] => [key as string, resolveValueOrProvider(def)]);
 }

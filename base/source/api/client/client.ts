@@ -1,10 +1,8 @@
-import type { HttpClientArgument, HttpClientOptions, HttpClientResponse, HttpRequestBody } from '#/http/client/index.js';
-import { HttpClient, HttpClientRequest } from '#/http/client/index.js';
+import { HttpClient, HttpClientRequest, type HttpClientArgument, type HttpClientOptions, type HttpClientResponse, type HttpRequestBody } from '#/http/client/index.js';
 import { normalizeSingleHttpValue } from '#/http/types.js';
 import { inject } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { UndefinableJsonObject } from '#/types.js';
@@ -13,15 +11,15 @@ import { objectEntries } from '#/utils/object/object.js';
 import { toTitleCase } from '#/utils/string/title-case.js';
 import { isArray, isBlob, isDefined, isObject, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
-import type { ApiClientImplementation, ApiDefinition, ApiEndpointDefinition, ApiEndpointDefinitionResult } from '../types.js';
-import { normalizedApiDefinitionEndpointsEntries } from '../types.js';
+import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
+import { normalizedApiDefinitionEndpointsEntries, type ApiClientImplementation, type ApiDefinition, type ApiEndpointDefinition, type ApiEndpointDefinitionResult, type ApiEndpointKeys, type ApiParameters } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
 
 export type ApiClient<T extends ApiDefinition> = new (httpClientOrOptions?: HttpClient | HttpClientOptions) => ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>;
 
 export type ClientOptions = {
   /**
-   * url prefix
+   * Url prefix
    * @default `api/`
    */
   prefix?: string,
@@ -52,6 +50,21 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         this[httpClientSymbol] = (httpClientOrOptions instanceof HttpClient) ? httpClientOrOptions : inject(HttpClient, httpClientOrOptions);
         this[apiDefinitionSymbol] = definition;
       }
+
+      getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string {
+        const resource = getFullApiEndpointResource({ api: definition, endpoint: resolveValueOrProvider(definition.endpoints[endpoint as any]!), defaultPrefix: options.prefix });
+
+        if (isUndefined(parameters)) {
+          return resource;
+        }
+
+        return buildUrl(resource, parameters).parsedUrl;
+      }
+
+      getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): URL {
+        const url = this.getEndpointResource(endpoint, parameters);
+        return new URL(url, this[httpClientSymbol].options.baseUrl);
+      }
     }
   }[apiName]!;
 
@@ -69,7 +82,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
     const resource = getFullApiEndpointResource({ api: definition, endpoint, defaultPrefix: options.prefix });
 
     const hasGet = methods.includes('GET');
-    const fallbackMethod = methods.filter((method) => method != 'GET')[0] ?? 'GET';
+    const fallbackMethod = methods.find((method) => method != 'GET') ?? 'GET';
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject, requestBody?: any): Promise<unknown> {
@@ -168,4 +181,12 @@ function getServerSentEvents(baseUrl: string | undefined, resource: string, endp
   }
 
   return new ServerSentEvents(url.toString(), { withCredentials: endpoint.credentials });
+}
+
+export function getHttpClientOfApiClient(apiClient: any): HttpClient {
+  return (apiClient as Record<typeof httpClientSymbol, HttpClient>)[httpClientSymbol];
+}
+
+export function getApiDefinitionOfApiClient(apiClient: any): ApiDefinition {
+  return (apiClient as Record<typeof apiDefinitionSymbol, ApiDefinition>)[apiDefinitionSymbol];
 }
