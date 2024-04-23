@@ -1,16 +1,16 @@
-<div *ngIf="loading" @fadeInOut class="absolute top-0 inset-x-0">
+<div *ngIf="loading()" @fadeInOut class="absolute top-0 inset-x-0">
   <tsl-indeterminate-progress-bar></tsl-indeterminate-progress-bar>
 </div>
 
-<div *ngIf="hasHeader" class="flex flex-wrap gap-2" [ngClass]="headerOuterContainerClass">
+<div *ngIf="hasHeader()" class="flex flex-wrap gap-2" [ngClass]="headerOuterContainerClass()">
   <ng-content select="[tslCardPreHeader]"></ng-content>
 
-  <div *ngIf="(headers.length + subHeaders.length) > 0" class="flex-grow" [ngClass]="headerContainerClass">
-    <div *ngIf="headers.length > 0" class="contents text-xl font-medium">
+  <div *ngIf="(headers().length + subHeaders().length) > 0" class="flex-grow" [ngClass]="headerContainerClass()">
+    <div *ngIf="headers().length > 0" class="contents text-xl font-medium">
       <ng-content select="[tslCardHeader]"></ng-content>
     </div>
 
-    <div *ngIf="subHeaders.length > 0" class="contents text-sm text-neutral-800 dark:text-neutral-200">
+    <div *ngIf="subHeaders().length > 0" class="contents text-sm text-neutral-800 dark:text-neutral-200">
       <ng-content select="[tslCardSubHeader]"></ng-content>
     </div>
   </div>
@@ -18,25 +18,30 @@
   <ng-content select="[tslCardPostHeader]"></ng-content>
 </div>
 
-<div *ngIf="showHeaderSeparator" class="w-12 h-[2px] ml-3 border-t-2"></div>
+<div *ngIf="showHeaderSeparator()" class="w-12 h-[2px] ml-3 border-t-2"></div>
 
-<div *ngIf="hasBody" class="grow grid gap-4 min-h-0">
+<div *ngIf="hasBody()" class="grow grid gap-4 min-h-0">
   <ng-content select="[tslCardBody]"></ng-content>
 </div>
 
-<tsl-colored-progressbar *ngIf="progress != undefined"
+<tsl-colored-progressbar *ngIf="progress() != undefined"
                          class="w-auto -mx-6 -mb-4 mt-4 !h-[2px]"
-                         [progress]="progress"></tsl-colored-progressbar>
+                         [progress]="progress()"></tsl-colored-progressbar>
 
-<div *ngIf="hasFooter" class="relative -mx-6 -mb-5 px-6 py-3 border-solid"
-     [class.bg-neutral-100]="footerBackground"
-     [class.dark:bg-neutral-700]="footerBackground"
-     [class.mt-4]="(progress == undefined) && (hasHeader || hasBody)"
-     [class.border-t-2]="showFooterSeparator">
+<div *ngIf="hasFooter()" class="relative -mx-6 -mb-5 px-6 py-3 border-solid"
+     [class.bg-neutral-100]="footerBackground()"
+     [class.dark:bg-neutral-700]="footerBackground()"
+     [class.mt-4]="(progress() == undefined) && (hasHeader() || hasBody())"
+     [class.border-t-2]="showFooterSeparator()">
   <ng-content select="[tslCardFooter]"></ng-content>
 
-  <div *ngIf="hasAction" class="flex flex-wrap justify-end gap-2">
-    <ng-content select="[tslCardAction]"></ng-content>
+  <div *ngIf="hasAction()" class="grid grid-cols-[auto_auto] gap-2">
+    <div class="empty:hidden flex gap-2 flex-wrap content-end">
+      <ng-content #content select="[tslCardAction][slot=left]"></ng-content>
+    </div>
+    <div class="empty:hidden flex gap-2 flex-wrap justify-end content-end">
+      <ng-content select="[tslCardAction]"></ng-content>
+    </div>
   </div>
 </div>
 
