@@ -2,6 +2,7 @@ import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import type { ObjectMetadata, ObjectStorageObject } from './object.js';
 
 export type UploadObjectOptions = {
+  contentLength?: number,
   metadata?: ObjectMetadata
 };
 

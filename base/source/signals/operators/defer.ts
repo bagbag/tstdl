@@ -1,4 +1,4 @@
-import { computed, untracked, type Signal } from './api.js';
+import { computed, untracked, type Signal } from '../api.js';
 
 export function defer<T>(signalFactory: () => Signal<T>): Signal<T> {
   let computation = (): T => {

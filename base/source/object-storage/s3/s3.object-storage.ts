@@ -70,14 +70,14 @@ export class S3ObjectStorage extends ObjectStorage {
     const bucketKey = this.getBucketKey(key);
 
     if (isUint8Array(content)) {
-      await this.client.putObject(this.bucket, bucketKey, Buffer.from(content), options?.metadata);
+      await this.client.putObject(this.bucket, bucketKey, Buffer.from(content), options?.contentLength, options?.metadata);
     }
     else {
       const readable = Readable.fromWeb(content as NodeReadableStream);
       const errorPromise = new Promise((_, reject) => readable.on('error', reject));
 
       await Promise.race([
-        this.client.putObject(this.bucket, bucketKey, readable, options?.metadata),
+        this.client.putObject(this.bucket, bucketKey, readable, options?.contentLength, options?.metadata),
         errorPromise
       ]);
     }

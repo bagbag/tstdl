@@ -1,9 +1,8 @@
-import type { MonoTypeOperatorFunction } from 'rxjs';
-import { Observable } from 'rxjs';
+import { Observable, type MonoTypeOperatorFunction } from 'rxjs';
 
 import { untracked } from './api.js';
 
-/** wraps observer in {@link untracked} */
+/** Wraps observer in {@link untracked} */
 export function runInUntracked<T>(): MonoTypeOperatorFunction<T> {
   return function runInUntracked<T>(source: Observable<T>): Observable<T> { // eslint-disable-line @typescript-eslint/no-shadow
     return new Observable<T>((subscriber) => source.subscribe({
