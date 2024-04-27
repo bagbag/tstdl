@@ -85,7 +85,7 @@ function _normalizeValueSchema<T>(schema: ValueSchema<T>): NormalizedValueSchema
 
 function _normalizeTypeSchema<T>(schema: TypeSchema<T>): NormalizedTypeSchema<T> {
   const normalizedSchema: NormalizedTypeSchema<T> = {
-    foo: resolveValueType(schema.type)
+    type: resolveValueType(schema.type)
   };
 
   return normalizedSchema;

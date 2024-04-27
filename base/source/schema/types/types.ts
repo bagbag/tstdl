@@ -52,7 +52,7 @@ export type TypedObjectSchemaUnknownProperties<K extends PropertyKey, V> = {
 
 export type TypeSchema<T = any> = { type: ValueType<T> };
 
-export type NormalizedTypeSchema<T = any> = { foo: ResolvedValueType<T> };
+export type NormalizedTypeSchema<T = any> = { type: ResolvedValueType<T> };
 
 export type ValueSchema<T = unknown> = {
   [optimized]?: boolean,
