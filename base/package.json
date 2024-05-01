@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.72",
+  "version": "0.90.73",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -111,11 +111,11 @@
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.17"
+    "type-fest": "4.18"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "1.7",
+    "@stylistic/eslint-plugin": "1.8",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -132,7 +132,7 @@
     "typedoc": "0.25",
     "typedoc-plugin-missing-exports": "2.2",
     "typescript": "5.4",
-    "typescript-eslint": "7.7"
+    "typescript-eslint": "7.8"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.13",
@@ -145,14 +145,14 @@
     "chroma-js": "^2.4",
     "handlebars": "^4.7",
     "koa": "^2.15",
-    "minio": "^7.1",
+    "minio": "^8.0",
     "mjml": "^4.15",
     "mongodb": "^6.5",
     "nodemailer": "^6.9",
     "playwright": "^1.43",
-    "preact": "^10.20",
+    "preact": "^10.21",
     "preact-render-to-string": "^6.4",
-    "undici": "^6.14",
+    "undici": "^6.15",
     "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {
