@@ -15,8 +15,9 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
     fadeInOutAnimation({ duration: 100 })
   ],
   host: {
-    class: 'tsl-tw',
-    '[class.padding]': 'padding()'
+    class: 'tsl-tw relative flex flex-col gap-4 rounded-xl shadow-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 outline outline-1 outline-neutral-600/10 dark:outline-neutral-100/10 overflow-hidden',
+    '[class.py-5]': 'padding()',
+    '[class.px-6]': 'padding()'
   }
 })
 export class CardComponent {
