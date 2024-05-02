@@ -1,5 +1,5 @@
-import type { AnimationTriggerMetadata } from '@angular/animations';
-import { animate, state, style, transition, trigger } from '@angular/animations';
+import { animate, state, style, transition, trigger, type AnimationTriggerMetadata } from '@angular/animations';
+
 import type { AnimationOptions } from './animation-options';
 import { getAnimateTimings } from './utils';
 
