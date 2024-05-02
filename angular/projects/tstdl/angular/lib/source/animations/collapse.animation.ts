@@ -17,3 +17,7 @@ export function collapseAnimation(options?: AnimationOptions & { direction: 'ver
     ),
   ]);
 }
+
+export function horizontalCollapseAnimation(options?: AnimationOptions): AnimationTriggerMetadata {
+  return collapseAnimation({ trigger: 'horizontalCollapse', ...options, direction: 'horizontal' });
+}
