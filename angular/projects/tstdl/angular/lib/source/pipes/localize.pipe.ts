@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe, computed, inject, signal, untracked } from '@angular/core';
-import { switchMap } from '@tstdl/base/signals';
+import { switchAll } from '@tstdl/base/signals';
 import type { LocalizationData, LocalizationKey } from '@tstdl/base/text';
 import { LocalizationService, isProxyLocalizationKey } from '@tstdl/base/text';
 import { isNotNull, isNull, isNullOrUndefined, isString, strictEquals } from '@tstdl/base/utils';
@@ -17,7 +17,7 @@ export class LocalizePipe implements PipeTransform {
   readonly #transformParameters = signal<any>(undefined, { equal: strictEquals });
   readonly #transformData = signal<LocalizationData | null>(null, { equal: strictEquals });
 
-  readonly #result = switchMap(() => {
+  readonly #result = switchAll(() => {
     const data = this.#transformData();
 
     if (isNotNull(data)) {

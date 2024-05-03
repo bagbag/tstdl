@@ -101,3 +101,19 @@ export type InputAttributes = {
   type?: InputType,
   value?: any
 };
+
+export type TextAreaAttributes = {
+  autocomplete?: InputAutocomplete,
+  autofocus?: boolean,
+  cols?: number,
+  rows?: number,
+  maxlength?: number,
+  minlength?: number,
+  name?: string,
+  disabled?: boolean,
+  id?: string,
+  placeholder?: string,
+  readonly?: boolean,
+  required?: boolean,
+  wrap?: 'hard' | 'soft' | 'off'
+};

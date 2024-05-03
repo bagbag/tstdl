@@ -9,9 +9,10 @@ export type CancelablePromiseResult<T, R> =
   | { canceled: false, value: T };
 
 export class CancelablePromise<T, R = void> extends CustomPromise<CancelablePromiseResult<T, R>> {
-  #cancellationToken = new CancellationToken();
-  #resolve: PromiseResolveFunction<CancelablePromiseResult<T, R>>;
-  #reject: PromiseRejectFunction;
+  readonly #cancellationToken = new CancellationToken();
+  readonly #resolve: PromiseResolveFunction<CancelablePromiseResult<T, R>>;
+  readonly #reject: PromiseRejectFunction;
+
   #pending = true;
 
   constructor(executor: CancelablePromiseExecutor<T>) {

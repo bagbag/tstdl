@@ -2,7 +2,7 @@ import { isObservable, type Observable } from 'rxjs';
 
 import { inject } from '#/injector/inject.js';
 import { computed, isSignal, toObservable, toSignal, untracked, type Signal } from '#/signals/api.js';
-import { switchMap } from '#/signals/operators/switch-map.js';
+import { switchAll } from '#/signals/index.js';
 import { runInUntracked } from '#/signals/untracked-operator.js';
 import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
 import { isString } from '#/utils/type-guards.js';
@@ -21,7 +21,7 @@ export function resolveDynamicText(text: DynamicText, localizationService: Local
         ? untracked(() => toSignal(text.pipe(runInUntracked()), { initialValue: missingLocalizationKeyText }))
         : computed(() => text);
 
-  return switchMap(() => {
+  return switchAll(() => {
     const localizableText = localizableTextSignal();
     return isString(localizableText) ? computed(() => localizableText) : localizationService.localize(localizableText);
   });

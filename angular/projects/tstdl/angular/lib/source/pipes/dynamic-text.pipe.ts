@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Injector, Pipe, computed, inject, runInInjectionContext, signal, untracked } from '@angular/core';
-import { switchMap } from '@tstdl/base/signals';
+import { switchAll } from '@tstdl/base/signals';
 import type { DynamicText } from '@tstdl/base/text';
 import { LocalizationService, missingLocalizationKeyText, resolveDynamicText } from '@tstdl/base/text';
 import { isNull, strictEquals } from '@tstdl/base/utils';
@@ -15,7 +15,7 @@ export class DynamicTextPipe implements PipeTransform {
   readonly #localizationService = inject(LocalizationService);
 
   readonly #text = signal<DynamicText | null | undefined>(undefined, { equal: strictEquals });
-  readonly #result = switchMap(() => {
+  readonly #result = switchAll(() => {
     const text = this.#text();
     return isNull(text)
       ? computed(() => null)

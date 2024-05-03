@@ -1,8 +1,6 @@
-import type { Observable } from 'rxjs';
-import { Subject, switchMap } from 'rxjs';
+import { Subject, switchMap, type Observable } from 'rxjs';
 
-import type { Signal, ToSignalOptions } from './api.js';
-import { computed, toSignal } from './api.js';
+import { computed, toSignal, type Signal, type ToSignalOptions } from './api.js';
 
 const LAZY = Symbol('LAZY');
 

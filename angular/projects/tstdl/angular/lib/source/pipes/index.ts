@@ -14,5 +14,6 @@ export * from './pad.pipe';
 export * from './safe-html.pipe';
 export * from './safe-resource-url.pipe';
 export * from './safe-url.pipe';
+export * from './sanitize.pipe';
 export * from './serialize.pipe';
 export * from './to-observable.pipe';

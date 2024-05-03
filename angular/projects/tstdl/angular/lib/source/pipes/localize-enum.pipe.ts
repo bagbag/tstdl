@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe, computed, inject, signal, untracked } from '@angular/core';
-import { switchMap } from '@tstdl/base/signals';
+import { switchAll } from '@tstdl/base/signals';
 import { LocalizationService } from '@tstdl/base/text';
 import type { Enumeration, EnumerationValue } from '@tstdl/base/types';
 import { isNotNull, isNullOrUndefined, isObject, strictEquals } from '@tstdl/base/utils';
@@ -17,7 +17,7 @@ export class LocalizeEnumPipe implements PipeTransform {
   readonly #value = signal<EnumerationValue | null>(null, { equal: strictEquals });
   readonly #parameters = signal<any>(undefined, { equal: strictEquals });
 
-  readonly #result = switchMap(() => {
+  readonly #result = switchAll(() => {
     const enumeration = this.#enumeration();
 
     if (isNotNull(enumeration)) {

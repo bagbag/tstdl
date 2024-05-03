@@ -3,7 +3,7 @@ import { animate, state, style, transition, trigger, type AnimationTriggerMetada
 import type { AnimationOptions } from './animation-options';
 import { getAnimateTimings } from './utils';
 
-export function collapseAnimation(options?: AnimationOptions & { direction: 'vertical' | 'horizontal' }): AnimationTriggerMetadata {
+export function collapseAnimation(options?: AnimationOptions & { direction?: 'vertical' | 'horizontal' }): AnimationTriggerMetadata {
   const animateTimings = getAnimateTimings(options);
 
   const property = options?.direction == 'horizontal' ? 'width' : 'height';
