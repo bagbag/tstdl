@@ -1,4 +1,4 @@
-import { animate, state, style, transition, trigger, type AnimationTriggerMetadata } from '@angular/animations';
+import { AUTO_STYLE, animate, state, style, transition, trigger, type AnimationTriggerMetadata } from '@angular/animations';
 
 import type { AnimationOptions } from './animation-options';
 import { getAnimateTimings } from './utils';
@@ -10,7 +10,7 @@ export function collapseAnimation(options?: AnimationOptions & { direction?: 've
 
   return trigger(options?.trigger ?? 'collapse', [
     state('true, void', style({ [property]: '0px', visibility: 'hidden' })),
-    state('false', style({ [property]: '*', visibility: '' })),
+    state('false', style({ [property]: AUTO_STYLE, visibility: AUTO_STYLE })),
     transition(
       'false <=> true, void => true',
       animate(animateTimings)

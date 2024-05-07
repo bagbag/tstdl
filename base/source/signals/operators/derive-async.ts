@@ -2,8 +2,7 @@ import { Subject, concatAll, exhaustAll, isObservable, mergeAll, of, switchAll, 
 
 import { registerFinalization } from '#/memory/finalization.js';
 import { isPromise } from '#/utils/type-guards.js';
-import { computed, toSignal, untracked, type Signal, type ToSignalOptions } from '../api.js';
-import { effect } from '../implementation/effect.js';
+import { computed, effect, toSignal, untracked, type Signal, type ToSignalOptions } from '../api.js';
 
 export type DeriveAsyncOptions = ToSignalOptions & {
   behavior?: DeriveAsyncBehavior
