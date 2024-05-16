@@ -5,6 +5,7 @@ import { toArray } from './array/array.js';
 import { toUint8Array } from './binary.js';
 import { compareByValue } from './comparison.js';
 import { sort } from './iterable-helpers/sort.js';
+import { objectKeys } from './object/object.js';
 import type { Comparator } from './sort.js';
 import { isDefined, isNotNull, isNull } from './type-guards.js';
 
@@ -56,7 +57,8 @@ export type EqualsOptions = {
   deep?: boolean,
   arrayDeep?: boolean,
   sortArray?: boolean,
-  coerceStrings?: boolean
+  coerceStrings?: boolean,
+  checkPrototype?: boolean
 };
 
 const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];
@@ -98,10 +100,11 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
       visitedNodes.add(a);
 
       const aPrototype = Object.getPrototypeOf(a);
-      const bPrototype = Object.getPrototypeOf(b);
 
-      if (aPrototype !== bPrototype) {
-        return false;
+      if (options.checkPrototype != false) {
+        if (aPrototype !== Object.getPrototypeOf(b)) {
+          return false;
+        }
       }
 
       if (Array.isArray(a)) {
@@ -118,7 +121,7 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
         return (b as Equals)[Equals.symbol](a);
       }
 
-      if ((aPrototype != Object.prototype) && isNotNull(aPrototype)) { // Checking a is enough, because b must have equal prototype (checked above)
+      if ((options.checkPrototype != false) && (aPrototype != Object.prototype) && isNotNull(aPrototype)) { // Checking a is enough, because b must have equal prototype (checked above)
         throw new Error('Equals only supports literal objects, arrays, primitives and Equals interface implementations.');
       }
 
@@ -136,8 +139,8 @@ export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes
 
 // eslint-disable-next-line max-statements, max-lines-per-function
 function objectEquals(a: Record<string, unknown>, b: Record<string, unknown>, options: EqualsOptions, visitedNodes: Set<any>): boolean {
-  const aProperties = Object.getOwnPropertyNames(a);
-  const bProperties = Object.getOwnPropertyNames(b);
+  const aProperties = objectKeys(a);
+  const bProperties = objectKeys(b);
 
   if (!arrayEquals(aProperties, bProperties, { sort: compareByValue })) {
     return false;
