@@ -5,7 +5,7 @@ import { Injector } from '#/injector/injector.js';
 import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
-import type { UndefinableJsonObject } from '#/types.js';
+import type { Type, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { toTitleCase } from '#/utils/string/title-case.js';
@@ -15,7 +15,7 @@ import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
 import { normalizedApiDefinitionEndpointsEntries, type ApiClientImplementation, type ApiDefinition, type ApiEndpointDefinition, type ApiEndpointDefinitionResult, type ApiEndpointKeys, type ApiParameters } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
 
-export type ApiClient<T extends ApiDefinition> = new (httpClientOrOptions?: HttpClient | HttpClientOptions) => ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>;
+export type ApiClient<T extends ApiDefinition> = Type<ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>, [httpClientOrOptions?: HttpClient | HttpClientOptions]>;
 
 export type ClientOptions = {
   /**

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.77",
+  "version": "0.90.78",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -115,7 +115,7 @@
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "1.8",
+    "@stylistic/eslint-plugin": "2.1",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -131,7 +131,7 @@
     "typedoc": "0.25",
     "typedoc-plugin-missing-exports": "2.2",
     "typescript": "5.4",
-    "typescript-eslint": "7.9"
+    "typescript-eslint": "7.10"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.13",
@@ -150,8 +150,8 @@
     "nodemailer": "^6.9",
     "playwright": "^1.44",
     "preact": "^10.22",
-    "preact-render-to-string": "^6.4",
-    "undici": "^6.16",
+    "preact-render-to-string": "^6.5",
+    "undici": "^6.18",
     "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {
