@@ -22,9 +22,9 @@ export type ClientOptions = {
    * Url prefix
    * @default `api/`
    */
-  prefix?: string,
+  prefix?: string | null,
 
-  defaultHttpClientOptions?: HttpClientOptions
+  defaultHttpClientOptions?: HttpClientOptions | null
 };
 
 export type ApiClientHttpRequestContext = {
@@ -76,7 +76,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   Injector.registerSingleton(api, {
     useFactory: (argument, context) => {
-      const httpClient = (argument instanceof HttpClient) ? argument : context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions);
+      const httpClient = (argument instanceof HttpClient) ? argument : context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions ?? undefined);
       return new api(httpClient);
     }
   });
