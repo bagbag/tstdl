@@ -5,7 +5,7 @@ import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import { HttpClientAdapter } from '@tstdl/base/http';
-import { Injector as TstdlInjector, runInInjectionContext as runInTstdlInjectionContext, isInInjectionContext as isInTstdlInjectionContext } from '@tstdl/base/injector';
+import { Injector as TstdlInjector, isInInjectionContext as isInTstdlInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
 import { configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
 
@@ -33,7 +33,7 @@ export class TstdlBridgeService {
     this.configureSignals();
 
     if (!this.#tstdlInjector.hasRegistration(HttpClientAdapter)) {
-      configureAngularHttpClientAdapter(true);
+      configureAngularHttpClientAdapter();
     }
 
     this.#tstdlInjector.register(Injector, { useValue: this.#injector });

@@ -1,5 +1,5 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
-import { Injector } from '@angular/core';
+import { Injector as AngularInjector, inject } from '@angular/core';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
@@ -12,11 +12,7 @@ const aborted = Symbol('aborted');
 
 @Singleton()
 export class AngularHttpClientAdapter implements HttpClientAdapter {
-  private readonly angularHttpClient: AngularHttpClient;
-
-  constructor(angularHttpClient: AngularHttpClient) {
-    this.angularHttpClient = angularHttpClient;
-  }
+  private readonly angularHttpClient = inject(AngularHttpClient);
 
   // eslint-disable-next-line max-lines-per-function
   async call(request: HttpClientRequest): Promise<HttpClientResponse> {
@@ -129,12 +125,7 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   throw new Error('Unsupported body.');
 }
 
-/**
- * @param register whether to register for {@link HttpClientAdapter}
- */
-export function configureAngularHttpClientAdapter(register: boolean): void {
-  if (register) {
-    TstdlInjector.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
-    TstdlInjector.register(AngularHttpClient, { useFactory: (_, context) => context.resolve(Injector).get(AngularHttpClient) });
-  }
+export function configureAngularHttpClientAdapter(): void {
+  TstdlInjector.register(HttpClientAdapter, { useToken: AngularHttpClientAdapter });
+  TstdlInjector.register(AngularHttpClient, { useFactory: (_, context) => context.resolve(AngularInjector).get(AngularHttpClient) });
 }

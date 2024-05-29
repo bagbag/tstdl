@@ -7,7 +7,7 @@ import { Schema } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { Type, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
-import { objectEntries } from '#/utils/object/object.js';
+import { copyObjectProperties, objectEntries } from '#/utils/object/object.js';
 import { toTitleCase } from '#/utils/string/title-case.js';
 import { isArray, isBlob, isDefined, isObject, isReadableStream, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
@@ -34,8 +34,14 @@ export type ApiClientHttpRequestContext = {
 export const httpClientSymbol = Symbol('ApiTransport');
 export const apiDefinitionSymbol = Symbol('ApiDefinition');
 
+export const defaultOptions: ClientOptions = {};
+
+export function setDefaultApiClientOptions(options: ClientOptions): void {
+  copyObjectProperties(options, defaultOptions);
+}
+
 // eslint-disable-next-line max-lines-per-function
-export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions = {}): ApiClient<T> {
+export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions = defaultOptions): ApiClient<T> {
   const { resource: path, endpoints } = definition;
   const constructedApiName = toTitleCase(path[0] ?? '');
   const apiName = `${constructedApiName}ApiClient`;
