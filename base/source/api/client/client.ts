@@ -85,13 +85,15 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
 
   for (const [name, endpoint] of endpointsEntries) {
     const methods = isArray(endpoint.method) ? endpoint.method : [endpoint.method ?? 'GET'];
-    const resource = getFullApiEndpointResource({ api: definition, endpoint, defaultPrefix: options.prefix });
+    let resource: string | undefined;
 
     const hasGet = methods.includes('GET');
     const fallbackMethod = methods.find((method) => method != 'GET') ?? 'GET';
 
     const apiEndpointFunction = {
       async [name](this: InstanceType<typeof api>, parameters?: UndefinableJsonObject, requestBody?: any): Promise<unknown> {
+        resource ??= getFullApiEndpointResource({ api: definition, endpoint, defaultPrefix: options.prefix });
+
         const context: ApiClientHttpRequestContext = { endpoint };
         const method = (hasGet && isUndefined(parameters)) ? 'GET' : fallbackMethod;
 
