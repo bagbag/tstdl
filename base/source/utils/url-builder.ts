@@ -18,20 +18,12 @@ export type UrlBuilderParameters = UndefinableJsonObject;
 export type UrlBuilderOptions = { arraySeparator?: string };
 export type UrlBuilderResult = { parsedUrl: string, parametersRest: UrlBuilderParameters };
 
-const urlParseRegex = /(?<literal>[^:]+|:\/+)|:(?<parameter>[\w-]+)/ug;
-const isFullUrlRegex = /^\w+:\/\//u;
+const urlParseRegex = /(?<literal>[^:]+|:\/+|:\d[^:]+)|:(?<parameter>[\w-]+)/ug;
 
 export function compileUrlBuilder(url: string): (parameters?: UrlBuilderParameters, options?: UrlBuilderOptions) => UrlBuilderResult {
   const parts: UrlBuilderPart[] = [];
-  const isFullUrl = isFullUrlRegex.test(url);
 
   let parseUrl = url;
-
-  if (isFullUrl) {
-    const { origin } = new URL(url);
-    parts.push({ type: UrlBuilderPartType.Literal, value: origin });
-    parseUrl = url.slice(origin.length);
-  }
 
   const matches = parseUrl.matchAll(urlParseRegex);
 
