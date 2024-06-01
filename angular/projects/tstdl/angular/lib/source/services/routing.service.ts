@@ -23,62 +23,6 @@ export class RoutingService {
     await this.router.navigateByUrl(url);
   }
 
-  getParameter<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Signal<LiteralUnion<T, string> | null>;
-  getParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<LiteralUnion<T, string>>;
-  getParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<LiteralUnion<T, string> | null> {
-    return toSignal(this.getParameter$(parameter, options), { requireSync: true });
-  }
-
-  getParameter$<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Observable<LiteralUnion<T, string> | null>;
-  getParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<LiteralUnion<T, string>>;
-  getParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<LiteralUnion<T, string> | null> {
-    const observable = getParameterFromAll$(parameter);
-
-    return (options?.optional == true)
-      ? observable
-      : observable.pipe(map((value) => assertStringPass(value, `Missing ${parameter} in route parameters.`)));
-  }
-
-  getParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
-    return toSignal(this.getParameters$(parameter), { requireSync: true });
-  }
-
-  getParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
-    return getParametersFromAll$(parameter);
-  }
-
-  getQueryParameter<T extends string>(parameter: string): Signal<LiteralUnion<T, string> | null> {
-    return toSignal(this.getQueryParameter$(parameter), { requireSync: true });
-  }
-
-  getQueryParameter$<T extends string>(parameter: string): Observable<LiteralUnion<T, string> | null> {
-    return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.get(parameter)));
-  }
-
-  getQueryParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
-    return toSignal(this.getQueryParameters$(parameter), { requireSync: true });
-  }
-
-  getQueryParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
-    return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.getAll(parameter)));
-  }
-
-  getFragmet(): Signal<string | null> {
-    return toSignal(this.getFragmet$(), { requireSync: true });
-  }
-
-  getFragmet$(): Observable<string | null> {
-    return inject(ActivatedRoute).fragment;
-  }
-
-  getData<T extends Record = Record>(): Signal<T> {
-    return toSignal(this.getData$(), { requireSync: true });
-  }
-
-  getData$<T extends Record = Record>(): Observable<T> {
-    return inject(ActivatedRoute).data as Observable<T>;
-  }
-
   async setQueryParameter(key: string, value: string | null, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
     const route = inject(ActivatedRoute);
 
@@ -99,6 +43,62 @@ export class RoutingService {
       fragment: value ?? ''
     });
   }
+}
+
+export function injectParameter<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Signal<LiteralUnion<T, string> | null>;
+export function injectParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<LiteralUnion<T, string>>;
+export function injectParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<LiteralUnion<T, string> | null> {
+  return toSignal(injectParameter$(parameter, options), { requireSync: true });
+}
+
+export function injectParameter$<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Observable<LiteralUnion<T, string> | null>;
+export function injectParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<LiteralUnion<T, string>>;
+export function injectParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<LiteralUnion<T, string> | null> {
+  const observable = getParameterFromAll$(parameter);
+
+  return (options?.optional == true)
+    ? observable
+    : observable.pipe(map((value) => assertStringPass(value, `Missing ${parameter} in route parameters.`)));
+}
+
+export function injectParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
+  return toSignal(injectParameters$(parameter), { requireSync: true });
+}
+
+export function injectParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
+  return getParametersFromAll$(parameter);
+}
+
+export function injectQueryParameter<T extends string>(parameter: string): Signal<LiteralUnion<T, string> | null> {
+  return toSignal(injectQueryParameter$(parameter), { requireSync: true });
+}
+
+export function injectQueryParameter$<T extends string>(parameter: string): Observable<LiteralUnion<T, string> | null> {
+  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.get(parameter)));
+}
+
+export function injectQueryParameters<T extends string>(parameter: string): Signal<LiteralUnion<T, string>[]> {
+  return toSignal(injectQueryParameters$(parameter), { requireSync: true });
+}
+
+export function injectQueryParameters$<T extends string>(parameter: string): Observable<LiteralUnion<T, string>[]> {
+  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.getAll(parameter)));
+}
+
+export function injectFragmet(): Signal<string | null> {
+  return toSignal(injectFragmet$(), { requireSync: true });
+}
+
+export function injectFragmet$(): Observable<string | null> {
+  return inject(ActivatedRoute).fragment;
+}
+
+export function injectRouteData<T extends Record = Record>(): Signal<T> {
+  return toSignal(injectRouteData$(), { requireSync: true });
+}
+
+export function injectRouteData$<T extends Record = Record>(): Observable<T> {
+  return inject(ActivatedRoute).data as Observable<T>;
 }
 
 function getParameterFromAll$(parameter: string, route: ActivatedRoute = inject(ActivatedRoute)): Observable<string | null> {
