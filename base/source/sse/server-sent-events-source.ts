@@ -1,45 +1,38 @@
+import { signal } from '#/signals/api.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { ServerSentJsonEvent, ServerSentTextEvent } from './model.js';
 
 export class ServerSentEventsSource {
-  private readonly writable: WritableStream<string>;
-  private readonly writer: WritableStreamDefaultWriter<string>;
-
-  private _closed: boolean;
-  private _error: Error | undefined;
+  readonly #writable: WritableStream<string>;
+  readonly #writer: WritableStreamDefaultWriter<string>;
+  readonly #closed = signal(false);
+  readonly #error = signal<Error | undefined>(undefined);
 
   readonly readable: ReadableStream<string>;
 
-  get closed(): boolean {
-    return this._closed;
-  }
-
-  get error(): Error | undefined {
-    return this._error;
-  }
+  readonly closed = this.#closed.asReadonly();
+  readonly error = this.#error.asReadonly();
 
   constructor() {
     const { writable, readable } = new TransformStream<string, string>();
 
-    this.writable = writable;
+    this.#writable = writable;
     this.readable = readable;
 
-    this._closed = false;
-    this._error = undefined;
-    this.writer = this.writable.getWriter();
+    this.#writer = this.#writable.getWriter();
 
-    this.writer.closed
-      .then(() => (this._closed = true))
-      .catch((error) => (this._error = error as Error));
+    this.#writer.closed
+      .then(() => (this.#closed.set(true)))
+      .catch((error) => this.#error.set(error as Error));
   }
 
   async close(): Promise<void> {
-    await this.writer.close();
+    await this.#writer.close();
   }
 
   async sendComment(comment: string): Promise<void> {
     const text = formatText(comment, '');
-    await this.writer.write(text);
+    await this.#writer.write(text);
   }
 
   async sendText({ name, data, id, retry }: ServerSentTextEvent): Promise<void> {
@@ -63,7 +56,7 @@ export class ServerSentEventsSource {
 
     message += '\n';
 
-    await this.writer.write(message);
+    await this.#writer.write(message);
   }
 
   async sendJson({ name, data, id, retry }: ServerSentJsonEvent): Promise<void> {

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.82",
+  "version": "0.90.83",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -111,7 +111,7 @@
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.18"
+    "type-fest": "4.20"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -123,6 +123,7 @@
     "@types/mjml": "4.7",
     "@types/node": "20",
     "@types/nodemailer": "6.4",
+    "@typescript-eslint/eslint-plugin": "7.12",
     "concurrently": "8.2",
     "eslint": "8.57",
     "eslint-import-resolver-typescript": "3.6",
@@ -130,8 +131,7 @@
     "tsc-alias": "1.8",
     "typedoc": "0.25",
     "typedoc-plugin-missing-exports": "2.2",
-    "typescript": "5.4",
-    "typescript-eslint": "7.11"
+    "typescript": "5.4"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.13",

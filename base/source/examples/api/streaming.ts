@@ -1,6 +1,8 @@
 /* eslint-disable max-classes-per-file */
 import '#/polyfills.js';
 
+import { Agent } from 'undici';
+
 import { compileClient } from '#/api/client/client.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
 import { defineApi } from '#/api/index.js';
@@ -13,14 +15,15 @@ import { HttpServerResponse } from '#/http/server/index.js';
 import { configureNodeHttpServer } from '#/http/server/node/index.js';
 import { inject } from '#/injector/inject.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
+import { configureDefaultSignalsImplementation } from '#/signals/implementation/configure.js';
 import { ServerSentEvents, ServerSentEventsSource } from '#/sse/index.js';
 import { decodeTextStream, encodeUtf8Stream } from '#/utils/encoding.js';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from '#/utils/stream/index.js';
 import { cancelableTimeout, timeout } from '#/utils/timing.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { Agent } from 'undici';
 
 configureTstdl();
+configureDefaultSignalsImplementation();
 
 const logger = getGlobalInjector().resolve(CORE_LOGGER);
 
@@ -92,27 +95,25 @@ async function clientTest(): Promise<void> {
   await Application.shutdown();
 }
 
-function main(): void {
+function bootstrap(): void {
   configureNodeHttpServer();
   configureApiServer({ controllers: [StreamingApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
   configureHttpClient({ baseUrl: 'http://localhost:8000' });
-
-  Application.run(WebServerModule, clientTest);
 }
 
-main();
+Application.run({ bootstrap }, WebServerModule, clientTest);
 
 function eventsSource(): ServerSentEventsSource {
   const events = new ServerSentEventsSource();
 
   void (async () => {
     for (let i = 1; i <= 10; i++) {
-      if (events.closed || isDefined(events.error)) {
+      if (events.closed() || isDefined(events.error())) {
         return;
       }
 
-      await events.sendJson({ name: 'time', id: i.toString(), data: { dateTime: `${new Date().toLocaleString()}`, uptime: performance.now() }, retry: 1000 });
+      await events.sendJson({ name: 'time', id: i.toString(), data: { dateTime: new Date().toLocaleString(), uptime: performance.now() }, retry: 1000 });
       await timeout(1000);
     }
 

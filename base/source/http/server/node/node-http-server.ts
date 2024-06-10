@@ -183,14 +183,15 @@ function writeHeaders(response: HttpServerResponse, httpResponse: ServerResponse
 async function writeResponseBody(response: HttpServerResponse, httpResponse: ServerResponse): Promise<void> {
   const simpleData =
     isDefined(response.body?.json) ? JSON.stringify(response.body!.json)
-      : isDefined(response.body?.text) ? response.body!.text
-        : isDefined(response.body?.buffer) ? response.body!.buffer
+      : isDefined(response.body?.text) ? response.body.text
+        : isDefined(response.body?.buffer) ? response.body.buffer
           : undefined;
 
-  const streamData = isDefined(simpleData) ? undefined
-    : isDefined(response.body?.stream) ? response.body!.stream
-      : isDefined(response.body?.events) ? response.body!.events.readable
-        : undefined;
+  const streamData =
+    isDefined(simpleData) ? undefined
+      : isDefined(response.body?.stream) ? response.body.stream
+        : isDefined(response.body?.events) ? response.body.events.readable
+          : undefined;
 
   if (isDefined(simpleData)) {
     const bytes = isString(simpleData) ? encodeUtf8(simpleData) : simpleData;
