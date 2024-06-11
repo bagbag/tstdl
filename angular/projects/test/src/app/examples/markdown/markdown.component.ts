@@ -167,7 +167,7 @@ export class MarkdownComponent {
 
   Images work exactly like links, but they have exclamation points in front. They work with references and titles too.
 
-  ![Google Logo](https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_150x54dp.png)
+  ![Angular Logo](https://angular.dev/assets/images/press-kit/angular_wordmark_gradient.png)
 
 
   Inline HTML

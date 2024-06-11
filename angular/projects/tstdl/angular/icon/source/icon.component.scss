@@ -1,0 +1,10 @@
+@layer tstdl.components {
+  tsl-icon {
+    @apply contents;
+
+    svg {
+      width: 1em;
+      aspect-ratio: 1;
+    }
+  }
+}

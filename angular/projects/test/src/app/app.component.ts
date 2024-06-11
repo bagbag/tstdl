@@ -1,14 +1,25 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ButtonComponent } from '@tstdl/angular/button';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, ButtonComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
-  title = 'test';
+  readonly routes = [
+    { href: '/icon', label: 'Icon' },
+    { href: '/card', label: 'Card' },
+    { href: '/drawer-card', label: 'Drawer Card' },
+    { href: '/data-card', label: 'Data Card' },
+    { href: '/data-grid', label: 'Data Grid' },
+    { href: '/vertical-tab-group', label: 'Vertical Tab Group' },
+    { href: '/react', label: 'React' },
+    { href: '/markdown', label: 'Markdown' },
+    { href: '/misc', label: 'Miscellaneous' }
+  ];
 }

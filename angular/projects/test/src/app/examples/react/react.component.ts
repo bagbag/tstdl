@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { TstdlReactModule } from '@tstdl/angular/react';
+import { ReactComponent } from '@tstdl/angular/react';
+
 import type { ReactTestComponentProperties } from './react-test.component';
 import { ReactTestComponent } from './react-test.component';
 
 @Component({
   selector: 'app-react',
   standalone: true,
-  imports: [TstdlReactModule],
+  imports: [ReactComponent],
   templateUrl: './react.component.html',
   styleUrls: ['./react.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ReactComponent {
+export class ReactExampleComponent {
   readonly ReactTestComponent = ReactTestComponent;
 
   readonly counter = signal(0);
@@ -28,4 +29,4 @@ export class ReactComponent {
   }
 }
 
-export default ReactComponent;
+export default ReactExampleComponent;

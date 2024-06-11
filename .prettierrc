@@ -1,0 +1,14 @@
+{
+  "bracketSameLine": true,
+  "htmlWhitespaceSensitivity": "css",
+  "printWidth": 800,
+  "overrides": [
+    {
+      "files": "*.component.html",
+      "options": {
+        "printWidth": 200,
+        "parser": "angular"
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+<div class="border-r self-stretch">
+  @if (title(); as title) {
+    <div class="tab-title-container">
+      <div>{{ title | dynamicText }}</div>
+    </div>
+  }
+
+  <div>
+    @for (tab of tabs(); track tab) {
+      <div class="tab" (click)="selectedTabIndex.set(tabs().indexOf(tab))" [class.tab-selected]="tab == selectedTab()">
+        <div class="flex items-center gap-2">
+          @if (tab.icon(); as icon) {
+            <tsl-icon [icon]="icon" size="2xl"></tsl-icon>
+          }
+          <div class="tab-label">{{ tab.label() | dynamicText }}</div>
+        </div>
+
+        @if (tab.description(); as description) {
+          <div class="tab-description">{{ description | dynamicText }}</div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<div class="tabs-container">
+  @for (tab of tabs(); let index = $index; track tab) {
+    <div
+      class="tab-container"
+      [class.opacity-0]="index != selectedTabIndex()"
+      [class.pointer-events-none]="index != selectedTabIndex()"
+      [attr.inert]="index != selectedTabIndex() ? true : null"
+      [ngClass]="tab.class()">
+      <ng-container [ngTemplateOutlet]="tab.contentTemplate() ?? null"></ng-container>
+    </div>
+  }
+</div>

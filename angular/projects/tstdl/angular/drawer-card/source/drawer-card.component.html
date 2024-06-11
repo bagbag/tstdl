@@ -1,0 +1,7 @@
+<ng-content select="tsl-drawer-card-content"></ng-content>
+
+@defer {
+  <div [@collapse]="!open()" class="drawer-container" [ngClass]="drawerContentComponent()?.containerClasses()">
+    <ng-content select="tsl-drawer-card-drawer-content"></ng-content>
+  </div>
+}

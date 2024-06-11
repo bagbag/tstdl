@@ -1,0 +1,37 @@
+@layer tstdl.components {
+  tsl-vertical-tab-group {
+    @apply grid grid-cols-[auto_1fr] bg-white dark:bg-neutral-800;
+
+    .tab {
+      @apply relative px-6 py-4 border-b last:border-b-0 cursor-pointer;
+
+      &:not(.tab-selected) {
+        @apply hover:bg-amber-50 hover:dark:bg-neutral-500/20;
+      }
+    }
+
+    .tab-selected {
+      @apply text-amber-600 dark:text-amber-500 bg-amber-100 dark:bg-neutral-700 after:absolute dark:after:border-r after:border-neutral-500/80 after:right-0 after:top-0 after:bottom-0 after:transition-[border];
+    }
+
+    .tab-title-container {
+      @apply px-6 py-6 border-b text-3xl font-bold;
+    }
+
+    .tab-label {
+      @apply font-semibold;
+    }
+
+    .tab-description {
+      @apply mt-2 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch];
+    }
+
+    .tabs-container {
+      @apply grid grid-cols-1 grid-rows-1 bg-neutral-50 dark:bg-neutral-700;
+    }
+
+    .tab-container {
+      @apply col-start-1 row-start-1 p-4 transition-opacity;
+    }
+  }
+}

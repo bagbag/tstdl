@@ -21,6 +21,18 @@
       "@tstdl/angular": [
         "projects/tstdl/angular/lib",
       ],
+      "@tstdl/angular/badge/*": [
+        "projects/tstdl/angular/badge/*",
+      ],
+      "@tstdl/angular/badge": [
+        "projects/tstdl/angular/badge",
+      ],
+      "@tstdl/angular/button/*": [
+        "projects/tstdl/angular/button/*",
+      ],
+      "@tstdl/angular/button": [
+        "projects/tstdl/angular/button",
+      ],
       "@tstdl/angular/data-card/*": [
         "projects/tstdl/angular/data-card/*",
       ],
@@ -33,17 +45,41 @@
       "@tstdl/angular/data-grid": [
         "projects/tstdl/angular/data-grid",
       ],
+      "@tstdl/angular/drawer-card/*": [
+        "projects/tstdl/angular/drawer-card/*",
+      ],
+      "@tstdl/angular/drawer-card": [
+        "projects/tstdl/angular/drawer-card",
+      ],
       "@tstdl/angular/card/*": [
         "projects/tstdl/angular/card/*",
       ],
       "@tstdl/angular/card": [
         "projects/tstdl/angular/card",
       ],
+      "@tstdl/angular/icon/*": [
+        "projects/tstdl/angular/icon/*",
+      ],
+      "@tstdl/angular/icon": [
+        "projects/tstdl/angular/icon",
+      ],
+      "@tstdl/angular/input/*": [
+        "projects/tstdl/angular/input/*",
+      ],
+      "@tstdl/angular/input": [
+        "projects/tstdl/angular/input",
+      ],
       "@tstdl/angular/react/*": [
         "projects/tstdl/angular/react/*",
       ],
       "@tstdl/angular/react": [
         "projects/tstdl/angular/react",
+      ],
+      "@tstdl/angular/vertical-tab-group/*": [
+        "projects/tstdl/angular/vertical-tab-group/*",
+      ],
+      "@tstdl/angular/vertical-tab-group": [
+        "projects/tstdl/angular/vertical-tab-group",
       ]
     },
     "lib": ["es2022", "dom"]

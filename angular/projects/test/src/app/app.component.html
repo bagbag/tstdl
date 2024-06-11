@@ -1,11 +1,11 @@
-<div class="p-5">
+<div class="content-grid py-5">
   <div class="flex flex-wrap gap-6 mb-8">
-    <a routerLink="/card" routerLinkActive="!bg-accent-400 dark:!bg-accent-700" class="px-5 py-1.5 rounded transition-colors bg-accent-500 hover:bg-accent-400 dark:hover:bg-accent-600">Card</a>
-    <a routerLink="/data-card" routerLinkActive="!bg-accent-400 dark:!bg-accent-700" class="px-5 py-1.5 rounded transition-colors bg-accent-500 hover:bg-accent-400 dark:hover:bg-accent-600">Data Card</a>
-    <a routerLink="/data-grid" routerLinkActive="!bg-accent-400 dark:!bg-accent-700" class="px-5 py-1.5 rounded transition-colors bg-accent-500 hover:bg-accent-400 dark:hover:bg-accent-600">Data Grid</a>
-    <a routerLink="/react" routerLinkActive="!bg-accent-400 dark:!bg-accent-700" class="px-5 py-1.5 rounded transition-colors bg-accent-500 hover:bg-accent-400 dark:hover:bg-accent-600">React</a>
-    <a routerLink="/markdown" routerLinkActive="!bg-accent-400 dark:!bg-accent-700" class="px-5 py-1.5 rounded transition-colors bg-accent-500 hover:bg-accent-400 dark:hover:bg-accent-600">Markdown</a>
+    @for (route of routes; track route.label) {
+      <a tslButton #routerLinkActive="routerLinkActive" [routerLink]="route.href" routerLinkActive [color]="routerLinkActive.isActive ? 'amber' : 'sky'">{{ route.label }}</a>
+    }
   </div>
 
-  <router-outlet></router-outlet>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
 </div>

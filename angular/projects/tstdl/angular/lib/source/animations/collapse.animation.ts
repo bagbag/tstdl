@@ -1,4 +1,5 @@
 import { AUTO_STYLE, animate, state, style, transition, trigger, type AnimationTriggerMetadata } from '@angular/animations';
+import { isDefined } from '@tstdl/base/utils';
 import { filterUndefinedObjectProperties, mapObjectValues } from '@tstdl/base/utils/object';
 
 import type { AnimationOptions } from './animation-options';
@@ -19,8 +20,10 @@ export type CollapseAnimationOptions = AnimationOptions & {
 export function collapseAnimation(options: CollapseAnimationOptions = {}): AnimationTriggerMetadata {
   const animateTimings = getAnimateTimings(options);
 
+  const hasCustomAnimation = isDefined(options.height) || isDefined(options.width) || isDefined(options.opacity) || isDefined(options.scale);
+
   const voidStyle = filterUndefinedObjectProperties({
-    height: (options.height != false) ? '0px' : undefined,
+    height: ((!hasCustomAnimation && options.height != false) || (options.height == true)) ? '0px' : undefined,
     width: (options.width == true) ? '0px' : undefined,
     opacity: (options.opacity == true) ? 0 : undefined,
     scale: (options.scale == true) ? 0 : undefined,

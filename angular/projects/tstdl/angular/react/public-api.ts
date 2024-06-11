@@ -1,2 +1,1 @@
-export * from './source/components';
-export * from './source/react.module';
+export * from './source/react.component';

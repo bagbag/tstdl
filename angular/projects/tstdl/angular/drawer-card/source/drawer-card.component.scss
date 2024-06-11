@@ -1,0 +1,9 @@
+@layer tstdl.components {
+  tsl-drawer-card {
+    @apply block rounded-lg overflow-clip shadow bg-neutral-100 dark:bg-neutral-700 border border-neutral-500/25 dark:border-neutral-400/25;
+
+    .drawer-container {
+      @apply overflow-clip;
+    }
+  }
+}
