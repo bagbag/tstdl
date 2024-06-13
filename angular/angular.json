@@ -69,14 +69,34 @@
     "test": {
       "projectType": "application",
       "schematics": {
+        "@schematics/angular:class": {
+          "skipTests": true
+        },
         "@schematics/angular:component": {
-          "standalone": false
+          "style": "scss",
+          "changeDetection": "OnPush",
+          "skipTests": true,
+          "standalone": true
         },
         "@schematics/angular:directive": {
+          "skipTests": true,
           "standalone": true
         },
+        "@schematics/angular:guard": {
+          "skipTests": true
+        },
+        "@schematics/angular:interceptor": {
+          "skipTests": true
+        },
         "@schematics/angular:pipe": {
+          "skipTests": true,
           "standalone": true
+        },
+        "@schematics/angular:resolver": {
+          "skipTests": true
+        },
+        "@schematics/angular:service": {
+          "skipTests": true
         }
       },
       "root": "projects/test",
@@ -90,13 +110,16 @@
             "index": "projects/test/src/index.html",
             "browser": "projects/test/src/main.ts",
             "polyfills": [
-              "zone.js",
               "@tstdl/base/polyfills"
             ],
             "tsConfig": "projects/test/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "projects/test/src/favicon.ico",
+              {
+                "glob": "**/*",
+                "input": "projects/test/public",
+                "followSymlinks": true
+              },
               "projects/test/src/assets"
             ],
             "styles": [
@@ -109,13 +132,13 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kb",
-                  "maximumError": "1mb"
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "2kB",
+                  "maximumError": "4kB"
                 }
               ],
               "outputHashing": "all"
@@ -123,14 +146,7 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            },
-            "stats": {
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true,
-              "statsJson": true
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -147,14 +163,8 @@
           },
           "defaultConfiguration": "development"
         },
-        "lint": {
-          "builder": "@angular-eslint/builder:lint",
-          "options": {
-            "lintFilePatterns": [
-              "projects/test/**/*.ts",
-              "projects/test/**/*.html"
-            ]
-          }
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n"
         }
       }
     }

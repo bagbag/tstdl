@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 
 import type { NgZone } from '@angular/core';
-import type { MonoTypeOperatorFunction } from 'rxjs';
-import { Observable } from 'rxjs';
+import { Observable, type MonoTypeOperatorFunction } from 'rxjs';
 
 export function runInZone<T>(zone: NgZone): MonoTypeOperatorFunction<T> {
   return function runInZone<T>(source: Observable<T>): Observable<T> {
