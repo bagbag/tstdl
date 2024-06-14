@@ -1,5 +1,5 @@
 import { AfterViewInit, ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
-import { observeIntersection, observeResize } from '@tstdl/base/rxjs';
+import { observeIntersection$, observeResize$ } from '@tstdl/base/dom';
 import { isDefined, isUndefined, timeout } from '@tstdl/base/utils';
 import { BehaviorSubject, EMPTY, Observable, combineLatest, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils/lifecycle';
@@ -100,7 +100,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     super.ngAfterViewInit();
 
     const resize$ = this.scrollElement$.pipe(
-      switchMap((element) => (isDefined(element) ? observeResize(element) : EMPTY)),
+      switchMap((element) => (isDefined(element) ? observeResize$(element) : EMPTY)),
       takeUntil(this.destroy$)
     );
 
@@ -110,7 +110,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     );
 
     const intersects$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
-      switchMap(([scrollElement, observeElement, margin]) => (isUndefined(observeElement) ? EMPTY : observeIntersection(observeElement, { root: scrollElement, rootMargin: `${margin}%` }))),
+      switchMap(([scrollElement, observeElement, margin]) => (isUndefined(observeElement) ? EMPTY : observeIntersection$(observeElement, { root: scrollElement, rootMargin: `${margin}%` }))),
       takeUntil(this.destroy$),
       map((entries) => entries[0]!.isIntersecting),
       shareReplay(1)

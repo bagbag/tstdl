@@ -1,6 +1,6 @@
 import type { AfterViewInit, EmbeddedViewRef, OnDestroy } from '@angular/core';
 import { ChangeDetectorRef, Directive, ElementRef, Input, Renderer2, TemplateRef, ViewContainerRef } from '@angular/core';
-import { observeIntersection } from '@tstdl/base/rxjs';
+import { observeIntersection$ } from '@tstdl/base/dom';
 import { assertDefinedPass, isDefined, isUndefined } from '@tstdl/base/utils';
 import { combineLatest, filter, switchMap, take, takeUntil } from 'rxjs';
 import { LifecycleUtils } from '../utils';
@@ -82,7 +82,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
 
     combineLatest([this.observe('tslLazyRoot'), this.observe('tslLazyRootMargin'), this.observe('tslLazyThreshold')])
       .pipe(
-        switchMap(([root, rootMargin, threshold]) => observeIntersection(intersectionElement, { root, rootMargin, threshold })),
+        switchMap(([root, rootMargin, threshold]) => observeIntersection$(intersectionElement, { root, rootMargin, threshold })),
         filter((intersections) => intersections.some((intersection) => intersection.isIntersecting)),
         take(1),
         takeUntil(this.destroy$)
