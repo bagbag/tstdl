@@ -1,57 +1,56 @@
 import type { ToJson } from '#/interfaces.js';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, distinctUntilChanged, filter, firstValueFrom, map, startWith, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, distinctUntilChanged, filter, firstValueFrom, map, startWith, type Observable } from 'rxjs';
 
 export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
   private readonly sizeSubject: BehaviorSubject<number>;
   private readonly changeSubject: Subject<TThis>;
   private readonly clearSubject: Subject<TThis>;
 
-  /** emits collection on subscribe and change */
+  /** Emits collection on subscribe and change */
   readonly observe$: Observable<TThis>;
 
-  /** emits size of collection */
+  /** Emits size of collection */
   readonly size$: Observable<number>;
 
-  /** emits collection on change */
+  /** Emits collection on change */
   readonly change$: Observable<TThis>;
 
-  /* emits collection on clear */
+  /* Emits collection on clear */
   readonly clear$: Observable<TThis>;
 
-  /** emits when the collection is empty */
+  /** Emits when the collection is empty */
   readonly onEmpty$: Observable<void>;
 
-  /** emits when the collection has items */
+  /** Emits when the collection has items */
   readonly onItems$: Observable<void>;
 
-  /** emits whether the collection is empty */
+  /** Emits whether the collection is empty */
   readonly isEmpty$: Observable<boolean>;
 
-  /** emits whether the collection has items */
+  /** Emits whether the collection has items */
   readonly hasItems$: Observable<boolean>;
 
-  /** resolves when the collection is empty */
+  /** Resolves when the collection is empty */
   get $onEmpty(): Promise<void> {
     return firstValueFrom(this.onEmpty$);
   }
 
-  /** resolves when the collection has items */
+  /** Resolves when the collection has items */
   get $onItems(): Promise<void> {
     return firstValueFrom(this.onItems$);
   }
 
-  /** size of collection */
+  /** Size of collection */
   get size(): number {
     return this.sizeSubject.value;
   }
 
-  /** whether the collection is empty */
+  /** Whether the collection is empty */
   get isEmpty(): boolean {
     return this.size == 0;
   }
 
-  /** whether the collection has items */
+  /** Whether the collection has items */
   get hasItems(): boolean {
     return this.size > 0;
   }
@@ -85,14 +84,14 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     return this.toArray();
   }
 
-  /** remove all items */
+  /** Remove all items */
   clear(): void {
     this._clear();
     this.clearSubject.next(this as unknown as TThis);
     this.setSize(0);
   }
 
-  /** sets collection size */
+  /** Sets collection size */
   protected setSize(size: number): void {
     if (size != this.size) {
       this.sizeSubject.next(size);
@@ -100,12 +99,12 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     }
   }
 
-  /** increment collection size by amount (default 1) */
+  /** Increment collection size by amount (default 1) */
   protected incrementSize(amount: number = 1): void {
     this.setSize(this.size + amount);
   }
 
-  /** decrement collection size by amount (default 1) */
+  /** Decrement collection size by amount (default 1) */
   protected decrementSize(amount: number = 1): void {
     this.setSize(this.size - amount);
   }
@@ -116,18 +115,18 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
 
   abstract includes(item: T): boolean;
 
-  /** add item to collection */
+  /** Add item to collection */
   abstract add(item: T): void;
 
-  /** add many items to collection */
+  /** Add many items to collection */
   abstract addMany(items: Iterable<T>): void;
 
-  /** clone collection */
+  /** Clone collection */
   abstract clone(): TThis;
 
-  /** yields all items from the collection */
+  /** Yields all items from the collection */
   abstract items(): IterableIterator<T>;
 
-  /** clear all data - size is set to 0 automatically */
+  /** Clear all data - size is set to 0 automatically */
   protected abstract _clear(): void;
 }

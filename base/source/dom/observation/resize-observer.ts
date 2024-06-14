@@ -1,49 +1,45 @@
-import { Signal, toSignal } from '#/signals/api.js';
-import { toArray } from '#/utils/array/array.js';
-import { isArray, isDefined } from '#/utils/type-guards.js';
-import type { Subscription } from 'rxjs';
-import { Observable } from 'rxjs';
+import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
+import { toSignal, type Signal } from '#/signals/api.js';
+import type { Record } from '#/types.js';
+import { FactoryMap } from '#/utils/factory-map.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
 
-export type ObserveResizeOptions = ResizeObserverOptions & {
-  observeTrigger?: Observable<Element>,
-  unobserveTrigger?: Observable<Element>
-};
+let observer: ResizeObserver | undefined;
+let subject: Subject<ResizeObserverEntry[]> | undefined;
 
-export function observeResize$(elements: Element | (Element | [Element, ResizeObserverOptions])[], options: ObserveResizeOptions = {}): Observable<ResizeObserverEntry[]> {
-  const { observeTrigger, unobserveTrigger, ...defaultOptions } = options;
+const elementObservablesMap = new FactoryMap<Element, Partial<Record<ResizeObserverBoxOptions | 'undefined', Observable<ResizeObserverEntry>>>>(() => ({}), new IterableWeakMap());
 
-  return new Observable<ResizeObserverEntry[]>((subscriber) => {
-    const observer = new ResizeObserver((entries) => subscriber.next(entries));
-    const subscriptions: Subscription[] = [];
+function observeResize$(element: Element, options?: ResizeObserverOptions): Observable<ResizeObserverEntry> {
+  const box = options?.box ?? 'undefined';
+  const elementObservables = elementObservablesMap.get(element);
 
-    for (const element of toArray(elements)) {
-      observe(observer, element, defaultOptions);
+  if (isDefined(elementObservables) && isDefined(elementObservables[box])) {
+    return elementObservables[box]!;
+  }
+
+  subject ??= new Subject();
+  observer ??= new ResizeObserver((entries) => subject!.next(entries));
+
+  const elementResize$ = fromEventPattern<ResizeObserverEntry>(
+    (handler) => {
+      observer!.observe(element, options);
+      return subject!.pipe(
+        map((entries) => entries.find((entry) => entry.target == element)),
+        filter(isDefined)
+      ).subscribe((entry) => handler(entry));
+    },
+    (_, subscription: Subscription) => {
+      observer!.unobserve(element);
+      subscription.unsubscribe();
     }
+  ).pipe(shareReplay({ bufferSize: 1, refCount: true }));
 
-    if (isDefined(observeTrigger)) {
-      subscriptions.push(observeTrigger.subscribe({ next: (element) => observe(observer, element, defaultOptions) }));
-    }
+  elementObservables[box] = elementResize$;
 
-    if (isDefined(unobserveTrigger)) {
-      subscriptions.push(unobserveTrigger.subscribe({ next: (element) => observer.unobserve(element) }));
-    }
-
-    return () => {
-      observer.disconnect();
-      subscriptions.forEach((subscription) => subscription.unsubscribe());
-    };
-  });
+  return elementResize$;
 }
 
-export function observeResize(elements: Element | (Element | [Element, ResizeObserverOptions])[], options?: ObserveResizeOptions): Signal<ResizeObserverEntry[]> {
-  return toSignal(observeResize$(elements, options), { requireSync: true });
-}
-
-function observe(observer: ResizeObserver, element: Element | [Element, ResizeObserverOptions?], defaultOptions?: ResizeObserverOptions): void {
-  if (isArray(element)) {
-    observer.observe(element[0], element[1] ?? defaultOptions);
-  }
-  else {
-    observer.observe(element, defaultOptions);
-  }
+export function observeResize(elements: Element, options?: ResizeObserverOptions): Signal<ResizeObserverEntry | undefined> {
+  return toSignal(observeResize$(elements, options));
 }

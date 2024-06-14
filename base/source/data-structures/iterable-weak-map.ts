@@ -14,7 +14,7 @@ export class IterableWeakMap<K extends object, V> extends Collection<[K, V], Ite
   readonly [Symbol.toStringTag] = 'IterableWeakMap';
 
   /**
-   * provides the real size. This is slow because it requires a cleanup iteration
+   * Provides the real size. This is slow because it requires a cleanup iteration
    */
   get realSize(): number {
     this.cleanup();
@@ -108,7 +108,7 @@ export class IterableWeakMap<K extends object, V> extends Collection<[K, V], Ite
     return deleted;
   }
 
-  /** prune garbage collected entries */
+  /** Prune garbage collected entries */
   cleanup(): void {
     drain(this);
     this.updateSize();

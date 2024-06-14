@@ -1,46 +1,46 @@
-import { Signal, toSignal } from '#/signals/api.js';
-import { toArray } from '#/utils/array/array.js';
-import { isDefined } from '#/utils/type-guards.js';
-import { Observable, type Subscription } from 'rxjs';
+import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
+import { toSignal, type Signal } from '#/signals/api.js';
+import { FactoryMap } from '#/utils/factory-map.js';
+import { isDefined, isNumber } from '#/utils/type-guards.js';
+import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
 
-export type ObserveIntersectionOptions = IntersectionObserverInit & {
-  takeRecordsTrigger?: Observable<any>,
-  observeTrigger?: Observable<Element>,
-  unobserveTrigger?: Observable<Element>
+type ObserverMapEntry = {
+  observer: IntersectionObserver,
+  subject: Subject<IntersectionObserverEntry[]>,
+  elementObservables: FactoryMap<Element, Observable<IntersectionObserverEntry>>
 };
 
-export function observeIntersection$(elements: Element | Element[], options: ObserveIntersectionOptions = {}): Observable<IntersectionObserverEntry[]> {
-  const { takeRecordsTrigger, observeTrigger, unobserveTrigger, ...init } = options;
+const observerMap = new FactoryMap(
+  (root: IntersectionObserverInit['root']) =>
+    new FactoryMap((rootMargin: IntersectionObserverInit['rootMargin']) =>
+      new FactoryMap((threshold: IntersectionObserverInit['threshold']): ObserverMapEntry => {
+        const observer = new IntersectionObserver((entries) => subject.next(entries), { root, rootMargin, threshold });
+        const subject = new Subject<IntersectionObserverEntry[]>;
 
-  return new Observable<IntersectionObserverEntry[]>((subscriber) => {
-    const observer = new IntersectionObserver((entries) => subscriber.next(entries), init);
-    const subscriptions: Subscription[] = [];
+        return ({
+          observer,
+          subject,
+          elementObservables: new FactoryMap((element) => fromEventPattern<IntersectionObserverEntry>(
+            (handler) => {
+              observer.observe(element);
+              return subject.pipe(
+                map((entries) => entries.find((entry) => entry.target == element)),
+                filter(isDefined)
+              ).subscribe((entry) => handler(entry));
+            },
+            (_, subscription: Subscription) => {
+              observer.unobserve(element);
+              subscription.unsubscribe();
+            }
+          ).pipe(shareReplay({ bufferSize: 1, refCount: true })), new IterableWeakMap())
+        });
+      }, undefined, (threshold) => isNumber(threshold) ? threshold : threshold?.join(',')))
+);
 
-    for (const element of toArray(elements)) {
-      observer.observe(element);
-    }
-
-    if (isDefined(takeRecordsTrigger)) {
-      subscriptions.push(takeRecordsTrigger.subscribe({ next: () => subscriber.next(observer.takeRecords()) }));
-    }
-
-    if (isDefined(observeTrigger)) {
-      subscriptions.push(observeTrigger.subscribe({ next: (element) => observer.observe(element) }));
-    }
-
-    if (isDefined(unobserveTrigger)) {
-      subscriptions.push(unobserveTrigger.subscribe({ next: (element) => observer.unobserve(element) }));
-    }
-
-    subscriber.next(observer.takeRecords());
-
-    return () => {
-      observer.disconnect();
-      subscriptions.forEach((subscription) => subscription.unsubscribe());
-    };
-  });
+function observeResize$(element: Element, options?: IntersectionObserverInit): Observable<IntersectionObserverEntry> {
+  return observerMap.get(options?.root).get(options?.rootMargin).get(options?.threshold).elementObservables.get(element);
 }
 
-export function observeIntersection(elements: Element | Element[], options?: ObserveIntersectionOptions): Signal<IntersectionObserverEntry[]> {
-  return toSignal(observeIntersection$(elements, options), { requireSync: true });
+export function observeResize(elements: Element, options?: IntersectionObserverInit): Signal<IntersectionObserverEntry | undefined> {
+  return toSignal(observeResize$(elements, options));
 }

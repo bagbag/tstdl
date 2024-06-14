@@ -1,5 +1,4 @@
-import type { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
+import { Subject, type Observable } from 'rxjs';
 
 export class ObservableFinalizationRegistry<T> extends FinalizationRegistry<T> {
   private readonly finalizeSubject: Subject<T>;
