@@ -1,3 +1,4 @@
+import { Signal, toSignal } from '#/signals/api.js';
 import { toArray } from '#/utils/array/array.js';
 import { isArray, isDefined } from '#/utils/type-guards.js';
 import type { Subscription } from 'rxjs';
@@ -8,7 +9,7 @@ export type ObserveResizeOptions = ResizeObserverOptions & {
   unobserveTrigger?: Observable<Element>
 };
 
-export function observeResize(elements: Element | (Element | [Element, ResizeObserverOptions])[], options: ObserveResizeOptions = {}): Observable<ResizeObserverEntry[]> {
+export function observeResize$(elements: Element | (Element | [Element, ResizeObserverOptions])[], options: ObserveResizeOptions = {}): Observable<ResizeObserverEntry[]> {
   const { observeTrigger, unobserveTrigger, ...defaultOptions } = options;
 
   return new Observable<ResizeObserverEntry[]>((subscriber) => {
@@ -32,6 +33,10 @@ export function observeResize(elements: Element | (Element | [Element, ResizeObs
       subscriptions.forEach((subscription) => subscription.unsubscribe());
     };
   });
+}
+
+export function observeResize(elements: Element | (Element | [Element, ResizeObserverOptions])[], options?: ObserveResizeOptions): Signal<ResizeObserverEntry[]> {
+  return toSignal(observeResize$(elements, options), { requireSync: true });
 }
 
 function observe(observer: ResizeObserver, element: Element | [Element, ResizeObserverOptions?], defaultOptions?: ResizeObserverOptions): void {

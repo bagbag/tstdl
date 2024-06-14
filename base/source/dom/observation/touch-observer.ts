@@ -1,5 +1,4 @@
-import type { Observable } from 'rxjs';
-import { combineLatestWith, fromEvent, map, of, startWith, switchMap } from 'rxjs';
+import { combineLatestWith, fromEvent, map, of, startWith, switchMap, type Observable } from 'rxjs';
 import type { EventListenerOptions } from 'rxjs/internal/observable/fromEvent';
 
 export type TouchEvents = {
@@ -10,10 +9,10 @@ export type TouchEvents = {
 };
 
 /**
- * creates an observable that emits object with the latest state from all touch events. Values are reset on every new start event
+ * Creates an observable that emits object with the latest state from all touch events. Values are reset on every new start event
  * @param element element to observe touches on
  */
-export function observeTouch(element: HTMLElement, options: EventListenerOptions = {}): Observable<TouchEvents> {
+export function observeTouch$(element: HTMLElement, options: EventListenerOptions = {}): Observable<TouchEvents> {
   const start$ = fromEvent<TouchEvent>(element, 'touchstart', options).pipe(startWith(undefined));
   const move$ = fromEvent<TouchEvent>(element, 'touchmove', options).pipe(startWith(undefined));
   const end$ = fromEvent<TouchEvent>(element, 'touchend', options).pipe(startWith(undefined));

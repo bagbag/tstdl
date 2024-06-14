@@ -10,7 +10,7 @@ export type ObservePerformanceOptions = {
 
 export interface PerformanceObserverEntryListLike extends PerformanceObserverEntryList { }
 
-export function observePerformance(inits?: PerformanceObserverInit | PerformanceObserverInit[], options: ObservePerformanceOptions = {}): Observable<PerformanceObserverEntryListLike> {
+export function observePerformance$(inits?: PerformanceObserverInit | PerformanceObserverInit[], options: ObservePerformanceOptions = {}): Observable<PerformanceObserverEntryListLike> {
   const { takeRecordsTrigger, observeTrigger } = options;
 
   return new Observable<PerformanceObserverEntryListLike>((subscriber) => {

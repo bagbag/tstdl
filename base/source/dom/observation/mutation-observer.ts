@@ -1,14 +1,13 @@
 import { toArray } from '#/utils/array/array.js';
 import { isArray, isDefined } from '#/utils/type-guards.js';
-import type { Subscription } from 'rxjs';
-import { Observable } from 'rxjs';
+import { Observable, type Subscription } from 'rxjs';
 
 export type ObserveMutationOptions = MutationObserverInit & {
   takeRecordsTrigger?: Observable<any>,
   observeTrigger?: Observable<Node | [Node, MutationObserverInit?]>
 };
 
-export function observeMutation(nodes: Node | (Node | [Node, MutationObserverInit?])[], options: ObserveMutationOptions = {}): Observable<MutationRecord[]> {
+export function observeMutation$(nodes: Node | (Node | [Node, MutationObserverInit?])[], options: ObserveMutationOptions = {}): Observable<MutationRecord[]> {
   const { takeRecordsTrigger, observeTrigger, ...defaultInit } = options;
 
   return new Observable<MutationRecord[]>((subscriber) => {

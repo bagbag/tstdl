@@ -1,7 +1,7 @@
+import { Signal, toSignal } from '#/signals/api.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { Subscription } from 'rxjs';
-import { Observable } from 'rxjs';
+import { Observable, type Subscription } from 'rxjs';
 
 export type ObserveIntersectionOptions = IntersectionObserverInit & {
   takeRecordsTrigger?: Observable<any>,
@@ -9,7 +9,7 @@ export type ObserveIntersectionOptions = IntersectionObserverInit & {
   unobserveTrigger?: Observable<Element>
 };
 
-export function observeIntersection(elements: Element | Element[], options: ObserveIntersectionOptions = {}): Observable<IntersectionObserverEntry[]> {
+export function observeIntersection$(elements: Element | Element[], options: ObserveIntersectionOptions = {}): Observable<IntersectionObserverEntry[]> {
   const { takeRecordsTrigger, observeTrigger, unobserveTrigger, ...init } = options;
 
   return new Observable<IntersectionObserverEntry[]>((subscriber) => {
@@ -32,9 +32,15 @@ export function observeIntersection(elements: Element | Element[], options: Obse
       subscriptions.push(unobserveTrigger.subscribe({ next: (element) => observer.unobserve(element) }));
     }
 
+    subscriber.next(observer.takeRecords());
+
     return () => {
       observer.disconnect();
       subscriptions.forEach((subscription) => subscription.unsubscribe());
     };
   });
+}
+
+export function observeIntersection(elements: Element | Element[], options?: ObserveIntersectionOptions): Signal<IntersectionObserverEntry[]> {
+  return toSignal(observeIntersection$(elements, options), { requireSync: true });
 }

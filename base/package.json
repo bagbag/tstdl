@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.84",
+  "version": "0.90.85",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -130,7 +130,7 @@
     "eslint-plugin-import": "2.29",
     "tsc-alias": "1.8",
     "typedoc": "0.25",
-    "typedoc-plugin-missing-exports": "2.2",
+    "typedoc-plugin-missing-exports": "2.3",
     "typescript": "5.4"
   },
   "peerDependencies": {
@@ -151,7 +151,7 @@
     "playwright": "^1.44",
     "preact": "^10.22",
     "preact-render-to-string": "^6.5",
-    "undici": "^6.18",
+    "undici": "^6.19",
     "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {
