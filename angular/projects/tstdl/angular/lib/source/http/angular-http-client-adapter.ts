@@ -4,7 +4,7 @@ import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, Http
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
 import type { StringMap } from '@tstdl/base/types';
-import { isDefined, isUndefined } from '@tstdl/base/utils';
+import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
 import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
@@ -93,33 +93,42 @@ function getAngularBody(body: HttpClientRequest['body']): any {
     return null;
   }
 
-  else if (isDefined(body.json)) {
+  if (isDefined(body.json)) {
     return JSON.stringify(body.json);
   }
-  else if (isDefined(body.text)) {
+
+  if (isDefined(body.text)) {
     return body.text;
   }
-  if (isDefined(body.buffer)) {
-    return new Blob([body.buffer]);
-  }
-  if (isDefined(body.blob)) {
-    return body.blob;
-  }
-  if (isDefined(body.stream)) {
-    throw new Error('AngularHttpClientAdapter does not support streams. Use buffer instead.');
-  }
-  else if (isDefined(body.form)) {
-    const formData = new FormData();
 
-    for (const [key, valueOrValues] of body.form.normalizedEntries()) {
-      for (const value of toArray(valueOrValues)) {
-        if (isDefined(value)) {
-          formData.append(key, value.toString());
-        }
+  if (isDefined(body.binary)) {
+    if (isBlob(body.binary)) {
+      return body.binary;
+    }
+
+    if (isUint8Array(body.binary)) {
+      return new Blob([body.binary]);
+    }
+
+    if (isReadableStream(body.binary)) {
+      throw new Error('AngularHttpClientAdapter does not support streams. Use buffer instead.');
+    }
+  }
+
+  if (isDefined(body.form)) {
+    const params = new URLSearchParams();
+
+    for (const [key, entry] of body.form.normalizedEntries()) {
+      for (const value of toArray(entry)) {
+        params.append(key, value);
       }
     }
 
-    return formData;
+    return params.toString();
+  }
+
+  if (isDefined(body.formData)) {
+    return body.formData;
   }
 
   throw new Error('Unsupported body.');

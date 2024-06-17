@@ -47,7 +47,7 @@
     "@angular-eslint/template-parser": "18.0",
     "@angular/cli": "18.0",
     "@angular/compiler-cli": "18.0",
-    "@stylistic/eslint-plugin": "2.1",
+    "@stylistic/eslint-plugin": "2.2",
     "@tailwindcss/typography": "0.5",
     "@types/chroma-js": "2.4",
     "@types/luxon": "3.4",

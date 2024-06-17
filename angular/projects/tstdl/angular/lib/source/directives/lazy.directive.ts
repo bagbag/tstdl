@@ -83,7 +83,7 @@ export class LazyDirective extends LifecycleUtils<LazyDirective> implements Afte
     combineLatest([this.observe('tslLazyRoot'), this.observe('tslLazyRootMargin'), this.observe('tslLazyThreshold')])
       .pipe(
         switchMap(([root, rootMargin, threshold]) => observeIntersection$(intersectionElement, { root, rootMargin, threshold })),
-        filter((intersections) => intersections.some((intersection) => intersection.isIntersecting)),
+        filter((intersection) => intersection.isIntersecting),
         take(1),
         takeUntil(this.destroy$)
       )

@@ -112,7 +112,7 @@ export class LazyListDirective<T> extends LifecycleUtils<LazyListDirective<T>> i
     const intersects$ = combineLatest([this.scrollElement$, this.observeElement$, this.observe('margin')]).pipe(
       switchMap(([scrollElement, observeElement, margin]) => (isUndefined(observeElement) ? EMPTY : observeIntersection$(observeElement, { root: scrollElement, rootMargin: `${margin}%` }))),
       takeUntil(this.destroy$),
-      map((entries) => entries[0]!.isIntersecting),
+      map((entry) => entry.isIntersecting),
       shareReplay(1)
     );
 

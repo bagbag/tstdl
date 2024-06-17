@@ -14,9 +14,8 @@ export type HttpRequestBody = {
   text?: string,
   json?: UndefinableJson,
   form?: HttpForm,
-  buffer?: Uint8Array,
-  blob?: Blob,
-  stream?: ReadableStream<Uint8Array>
+  formData?: FormData,
+  binary?: Uint8Array | Blob | ReadableStream<Uint8Array>
 };
 
 export type HttpRequestAuthorization = {
@@ -34,13 +33,7 @@ export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url
   query?: HttpQueryObject | HttpQuery,
   credentials?: HttpRequestCredentials,
   authorization?: HttpRequestAuthorization,
-  body?: {
-    text?: string,
-    json?: UndefinableJson,
-    form?: HttpFormObject | HttpForm,
-    buffer?: Uint8Array,
-    stream?: ReadableStream<Uint8Array>
-  },
+  body?: TypedOmit<HttpRequestBody, 'form'> & { form?: HttpFormObject | HttpForm },
   abortSignal?: CancellationSignal
 };
 

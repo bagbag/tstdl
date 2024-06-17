@@ -135,16 +135,8 @@ function getRequestBody(body: unknown): HttpRequestBody | undefined {
     return undefined;
   }
 
-  if (isUint8Array(body)) {
-    return { buffer: body };
-  }
-
-  if (isReadableStream(body)) {
-    return { stream: body };
-  }
-
-  if (isBlob(body)) {
-    return { blob: body };
+  if (isUint8Array(body) || isReadableStream(body) || isBlob(body)) {
+    return { binary: body };
   }
 
   if (isString(body)) {

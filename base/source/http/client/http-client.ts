@@ -8,7 +8,7 @@ import { encodeUtf8 } from '#/utils/encoding.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
-import { assertDefined, isArray, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
+import { assertDefined, isArray, isBlob, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
 import { HttpHeaders } from '../http-headers.js';
 import { HttpError, HttpErrorReason } from '../http.error.js';
@@ -262,11 +262,13 @@ function getAddRequestHeadersMiddleware(defaultHeaders: HttpHeaders): HttpClient
       else if (isDefined(body.form)) {
         request.headers.contentType = 'application/x-www-form-urlencoded';
       }
-      else if (isDefined(body.blob)) {
-        request.headers.contentType = (body.blob.type.length > 0) ? body.blob.type : 'application/octet-stream';
+      else if (isDefined(body.formData)) {
+        // Form data content type header has to be set by implementation because of boundary value
       }
-      else if (isDefined(body.stream) || isDefined(body.buffer)) {
-        request.headers.contentType = 'application/octet-stream';
+      else if (isDefined(body.binary)) {
+        request.headers.contentType = ((isBlob(body.binary) && body.binary.type.length > 0))
+          ? body.binary.type
+          : 'application/octet-stream';
       }
     }
 

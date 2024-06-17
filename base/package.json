@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.87",
+  "version": "0.90.88",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -115,7 +115,7 @@
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "2.1",
+    "@stylistic/eslint-plugin": "2.2",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -134,7 +134,7 @@
     "typescript": "5.4"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.13",
+    "@elastic/elasticsearch": "^8.14",
     "@koa/router": "^12.0",
     "@tstdl/angular": "^0.90",
     "@zxcvbn-ts/core": "^3.0",

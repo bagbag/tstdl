@@ -37,10 +37,10 @@ const observerMap = new FactoryMap(
       }, undefined, (threshold) => isNumber(threshold) ? threshold : threshold?.join(',')))
 );
 
-function observeResize$(element: Element, options?: IntersectionObserverInit): Observable<IntersectionObserverEntry> {
+export function observeIntersection$(element: Element, options?: IntersectionObserverInit): Observable<IntersectionObserverEntry> {
   return observerMap.get(options?.root).get(options?.rootMargin).get(options?.threshold).elementObservables.get(element);
 }
 
-export function observeResize(elements: Element, options?: IntersectionObserverInit): Signal<IntersectionObserverEntry | undefined> {
-  return toSignal(observeResize$(elements, options));
+export function observeIntersection(elements: Element, options?: IntersectionObserverInit): Signal<IntersectionObserverEntry | undefined> {
+  return toSignal(observeIntersection$(elements, options));
 }

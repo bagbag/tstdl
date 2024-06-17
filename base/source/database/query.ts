@@ -1,4 +1,4 @@
-import type { Flatten, StringMap } from '#/types.js';
+import type { Flatten, Record } from '#/types.js';
 import type { Geometry } from '#/types/geo-json.js';
 
 export type QueryOptions<T = any> = {
@@ -11,7 +11,7 @@ export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | Log
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
-export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & StringMap<ComparisonQueryOrValue>;
+export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & Record<ComparisonQueryOrValue>;
 export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | T | Flatten<T>;
 
 export type ComparisonQuery<T = any> = Partial<
@@ -147,12 +147,14 @@ export type ComparisonGeoDistanceQuery = {
   $geoDistance: {
     longitude: number,
     latitude: number,
+
     /**
-     * maximum distance in meters
+     * Maximum distance in meters
      */
     maxDistance?: number,
+
     /**
-     * minimum distance in meters
+     * Minimum distance in meters
      */
     minDistance?: number
   }

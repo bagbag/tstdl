@@ -10,7 +10,7 @@ let subject: Subject<ResizeObserverEntry[]> | undefined;
 
 const elementObservablesMap = new FactoryMap<Element, Partial<Record<ResizeObserverBoxOptions | 'undefined', Observable<ResizeObserverEntry>>>>(() => ({}), new IterableWeakMap());
 
-function observeResize$(element: Element, options?: ResizeObserverOptions): Observable<ResizeObserverEntry> {
+export function observeResize$(element: Element, options?: ResizeObserverOptions): Observable<ResizeObserverEntry> {
   const box = options?.box ?? 'undefined';
   const elementObservables = elementObservablesMap.get(element);
 
