@@ -1,8 +1,10 @@
 import { CancellationToken, type CancellationSignal } from '#/cancellation/index.js';
 import { dispose, type Disposable } from '#/disposable/index.js';
+import type { OneOrMany } from '#/schema/index.js';
 import type { Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types.js';
 import { clone } from '#/utils/clone.js';
-import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { isArray, isBlob, isDefined, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { HttpForm, type HttpFormObject } from '../http-form.js';
 import { HttpHeaders, type HttpHeadersObject } from '../http-headers.js';
 import { HttpQuery, type HttpQueryObject } from '../http-query.js';
@@ -27,13 +29,16 @@ export type HttpRequestAuthorization = {
   token?: string
 };
 
+export type HttpFormDataObjectValue = string | number | boolean | Uint8Array | Blob;
+export type HttpFormDataObject = Record<string, OneOrMany<HttpFormDataObjectValue>>;
+
 export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url' | 'method' | 'abortSignal' | 'abort' | 'headers' | 'query' | 'body'>> & {
   urlParameter?: HttpUrlParametersObject | HttpUrlParameters,
   headers?: HttpHeadersObject | HttpHeaders,
   query?: HttpQueryObject | HttpQuery,
   credentials?: HttpRequestCredentials,
   authorization?: HttpRequestAuthorization,
-  body?: TypedOmit<HttpRequestBody, 'form'> & { form?: HttpFormObject | HttpForm },
+  body?: TypedOmit<HttpRequestBody, 'form' | 'formData'> & { form?: HttpFormObject | HttpForm, formData?: HttpFormDataObject | FormData },
   abortSignal?: CancellationSignal
 };
 
@@ -213,5 +218,34 @@ function normalizeBody(body: HttpClientRequestOptions['body']): HttpClientReques
     normalizedBody.form = new HttpForm(normalizedBody.form);
   }
 
+  if (isDefined(normalizedBody.formData) && !(normalizedBody.formData instanceof FormData)) {
+    const formData = new FormData();
+
+    for (const [key, value] of objectEntries(normalizedBody.formData)) {
+      if (isArray(value)) {
+        for (const item of value) {
+          formData.append(key, convertFormDataObjectValue(item));
+        }
+      }
+      else {
+        formData.set(key, convertFormDataObjectValue(value));
+      }
+    }
+
+    normalizedBody.formData = formData;
+  }
+
   return normalizedBody as HttpClientRequest['body'];
+}
+
+function convertFormDataObjectValue(value: HttpFormDataObjectValue): string | Blob {
+  if (isString(value) || isBlob(value)) {
+    return value;
+  }
+
+  if (isUint8Array(value)) {
+    return new Blob([value]);
+  }
+
+  return String(value);
 }
