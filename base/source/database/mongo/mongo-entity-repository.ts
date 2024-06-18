@@ -6,7 +6,7 @@ import { afterResolve } from '#/injector/index.js';
 import type { Logger } from '#/logger/index.js';
 import type { Record } from '#/types.js';
 import { equals } from '#/utils/equals.js';
-import { filterUndefinedFromRecord, objectEntries, objectKeys } from '#/utils/object/object.js';
+import { filterUndefinedObjectProperties, objectEntries, objectKeys } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { Collection } from './classes.js';
@@ -377,7 +377,7 @@ function normalizeIndex<T extends Entity<any>>(index: TypedIndexDescription<T>):
   const { name: providedName, unique, v, background, ns, ...indexRest } = index as (TypedIndexDescription<T> & { v?: any, background?: any, ns?: any }); // eslint-disable-line @typescript-eslint/no-unused-vars
   const name = providedName ?? objectKeys(index.key).join('_');
 
-  return filterUndefinedFromRecord({ name, unique: (unique == true) ? true : undefined, ...indexRest });
+  return filterUndefinedObjectProperties({ name, unique: (unique == true) ? true : undefined, ...indexRest }) as TypedIndexDescription<T>;
 }
 
 function convertOptions<T extends Entity<any>, TDb extends Entity<any>>(options: QueryOptions<T> | undefined, mappingMap: TransformerMappingMap<T, TDb>): LoadOptions<TDb> | undefined {

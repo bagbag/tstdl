@@ -1,5 +1,4 @@
-import type { FromEntries, ObjectLiteral, PickBy, Record, SimplifyObject } from '#/types.js';
-import type { IsEqual } from 'type-fest';
+import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject } from '#/types.js';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';
@@ -66,11 +65,11 @@ export async function filterObjectAsync<T extends ObjectLiteral>(object: T, pred
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 
-export function filterUndefinedFromRecord<T extends Record>(record: T): T extends Record<infer K, infer V> ? Record<K, Exclude<V, undefined>> : never {
-  return filterObject(record, isDefined) as T extends Record<infer K, infer V> ? Record<K, Exclude<V, undefined>> : never;
+export function filterUndefinedFromRecord<K extends PropertyKey, V>(record: Record<K, V>): Record<BaseType<K>, Exclude<V, undefined>> {
+  return filterObject(record, isDefined) as any as Record<BaseType<K>, Exclude<V, undefined>>;
 }
 
-export function filterUndefinedObjectProperties<T extends ObjectLiteral>(object: T): { [P in keyof T]?: IsEqual<T[P], undefined> extends true ? never : Exclude<T[P], undefined> } {
+export function filterUndefinedObjectProperties<T extends ObjectLiteral>(object: T): SimplifyObject<Optionalize<T>> {
   return filterObject(object, isDefined) as T;
 }
 

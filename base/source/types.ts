@@ -92,6 +92,13 @@ export type ReplaceIfUnknown<T, U> = IfUnknown<T, U, T>;
 
 export type OmitNever<T extends Record> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
 
+export type BaseType<T extends Exclude<Primitive, null | undefined>> =
+  | T extends string ? string : never
+  | T extends number ? number : never
+  | T extends boolean ? boolean : never
+  | T extends bigint ? bigint : never
+  | T extends symbol ? symbol : never;
+
 export type SharedProperties<A, B, C = unknown, D = unknown, E = unknown, F = unknown, G = unknown, H = unknown, I = unknown, J = unknown> = OmitNever<Pick<
   A & B & C & D & E & F & G & H & I & J,
   keyof A & keyof B & keyof ReplaceIfUnknown<C, never> & keyof ReplaceIfUnknown<D, never> & keyof ReplaceIfUnknown<E, never> & keyof ReplaceIfUnknown<F, never> & keyof ReplaceIfUnknown<G, never> & keyof ReplaceIfUnknown<H, never> & keyof ReplaceIfUnknown<I, never> & keyof ReplaceIfUnknown<J, never>
@@ -106,8 +113,6 @@ export type OmitBy<T, V> = Omit<T, { [K in keyof T]: V extends Extract<T[K], V> 
  * Normalize properties of a type that allow `undefined` to make them optional.
  */
 export type Optionalize<T extends object> = OmitBy<T, undefined> & Partial<PickBy<T, undefined>>;
-
-export type SimplifiedOptionalize<T extends object> = SimplifyObject<Optionalize<T>>;
 
 export type Unoptionalize<T extends object> = SimplifyObject<OmitBy<T, undefined> & { [P in PropertiesOfType<T, undefined>]: T[P] | undefined }>;
 
