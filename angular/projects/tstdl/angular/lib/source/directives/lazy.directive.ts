@@ -69,6 +69,8 @@ export class LazyDirective implements OnDestroy {
         this.initialTemplateView = this.viewContainer.createEmbeddedView(initialTemplate);
       }
 
+      this.changeDetector.markForCheck();
+
       const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
 
       observerConfig$
