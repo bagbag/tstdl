@@ -1,3 +1,4 @@
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { map } from '#/utils/iterable-helpers/map.js';
 
 export enum KeyedSetMode {
@@ -45,6 +46,34 @@ export class KeyedSet<T> implements Set<T> {
   delete(value: T): boolean {
     const key = this.selector(value);
     return this.backingMap.delete(key);
+  }
+
+  union<U>(_other: ReadonlySetLike<U>): Set<T | U> {
+    throw new NotSupportedError();
+  }
+
+  intersection<U>(_other: ReadonlySetLike<U>): Set<T & U> {
+    throw new NotSupportedError();
+  }
+
+  difference<U>(_other: ReadonlySetLike<U>): Set<T> {
+    throw new NotSupportedError();
+  }
+
+  symmetricDifference<U>(_other: ReadonlySetLike<U>): Set<T | U> {
+    throw new NotSupportedError();
+  }
+
+  isSubsetOf(_other: ReadonlySetLike<unknown>): boolean {
+    throw new NotSupportedError();
+  }
+
+  isSupersetOf(_other: ReadonlySetLike<unknown>): boolean {
+    throw new NotSupportedError();
+  }
+
+  isDisjointFrom(_other: ReadonlySetLike<unknown>): boolean {
+    throw new NotSupportedError();
   }
 
   forEach(callback: (value: T, value2: T, set: KeyedSet<T>) => void, thisArg?: any): void {

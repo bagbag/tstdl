@@ -1,44 +1,59 @@
-import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
+import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
+
 import { toSignal, type Signal } from '#/signals/api.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { isDefined, isNumber } from '#/utils/type-guards.js';
-import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
 
-type ObserverMapEntry = {
-  observer: IntersectionObserver,
-  subject: Subject<IntersectionObserverEntry[]>,
-  elementObservables: FactoryMap<Element, Observable<IntersectionObserverEntry>>
-};
+const nullRoot = { nullRoot: true };
 
-const observerMap = new FactoryMap(
-  (root: IntersectionObserverInit['root']) =>
-    new FactoryMap((rootMargin: IntersectionObserverInit['rootMargin']) =>
-      new FactoryMap((threshold: IntersectionObserverInit['threshold']): ObserverMapEntry => {
-        const observer = new IntersectionObserver((entries) => subject.next(entries), { root, rootMargin, threshold });
-        const subject = new Subject<IntersectionObserverEntry[]>;
+const rootMap = new FactoryMap((root: NonNullable<IntersectionObserverInit['root']> | typeof nullRoot) => {
+  const rootMarginMap = new FactoryMap((rootMargin: IntersectionObserverInit['rootMargin']) => {
+    const thresholdMap = new FactoryMap((threshold: IntersectionObserverInit['threshold']): FactoryMap<Element, Observable<IntersectionObserverEntry>> => {
+      const observer = new IntersectionObserver((entries) => subject.next(entries), { root: root == nullRoot ? null : root as IntersectionObserverInit['root'], rootMargin, threshold });
+      const subject = new Subject<IntersectionObserverEntry[]>();
 
-        return ({
-          observer,
-          subject,
-          elementObservables: new FactoryMap((element) => fromEventPattern<IntersectionObserverEntry>(
-            (handler) => {
-              observer.observe(element);
-              return subject.pipe(
-                map((entries) => entries.find((entry) => entry.target == element)),
-                filter(isDefined)
-              ).subscribe((entry) => handler(entry));
-            },
-            (_, subscription: Subscription) => {
-              observer.unobserve(element);
-              subscription.unsubscribe();
+      const elementObservablesMap = new FactoryMap(
+        (element: Element) => fromEventPattern<IntersectionObserverEntry>(
+          (handler) => {
+            observer.observe(element);
+            return subject.pipe(
+              map((entries) => entries.find((entry) => entry.target == element)),
+              filter(isDefined)
+            ).subscribe((entry) => handler(entry));
+          },
+          (_, subscription: Subscription) => {
+            observer.unobserve(element);
+            subscription.unsubscribe();
+
+            elementObservablesMap.delete(element);
+
+            if (elementObservablesMap.size == 0) {
+              thresholdMap.delete(threshold);
+
+              if (thresholdMap.size == 0) {
+                rootMarginMap.delete(rootMargin);
+
+                if (rootMarginMap.size == 0) {
+                  rootMap.delete(root);
+                }
+              }
             }
-          ).pipe(shareReplay({ bufferSize: 1, refCount: true })), new IterableWeakMap())
-        });
-      }, undefined, (threshold) => isNumber(threshold) ? threshold : threshold?.join(',')))
+          }
+        ).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+      );
+
+      return elementObservablesMap;
+    }, undefined, (threshold) => isNumber(threshold) ? threshold : threshold?.join(','));
+
+    return thresholdMap;
+  });
+
+  return rootMarginMap;
+}
 );
 
 export function observeIntersection$(element: Element, options?: IntersectionObserverInit): Observable<IntersectionObserverEntry> {
-  return observerMap.get(options?.root).get(options?.rootMargin).get(options?.threshold).elementObservables.get(element);
+  return rootMap.get(options?.root ?? nullRoot).get(options?.rootMargin).get(options?.threshold).get(element);
 }
 
 export function observeIntersection(elements: Element, options?: IntersectionObserverInit): Signal<IntersectionObserverEntry | undefined> {

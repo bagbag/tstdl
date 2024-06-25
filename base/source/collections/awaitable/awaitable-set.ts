@@ -58,6 +58,34 @@ export class AwaitableSet<T> implements Set<T> {
     return success;
   }
 
+  union<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.backingSet.union(other);
+  }
+
+  intersection<U>(other: ReadonlySetLike<U>): Set<T & U> {
+    return this.backingSet.intersection(other);
+  }
+
+  difference<U>(other: ReadonlySetLike<U>): Set<T> {
+    return this.backingSet.difference(other);
+  }
+
+  symmetricDifference<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.backingSet.symmetricDifference(other);
+  }
+
+  isSubsetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSubsetOf(other);
+  }
+
+  isSupersetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSupersetOf(other);
+  }
+
+  isDisjointFrom(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isDisjointFrom(other);
+  }
+
   forEach(callback: (value: T, value2: T, set: AwaitableSet<T>) => void, thisArg?: any): void {
     const boundCallback = callback.bind(thisArg);
     this.backingSet.forEach((value, value2) => boundCallback(value, value2, this));

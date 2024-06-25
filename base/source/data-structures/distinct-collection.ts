@@ -1,7 +1,11 @@
 import { Collection } from './collection.js';
 
+interface BackingSetInternal<T> {
+  _backingSet: Set<T> | undefined;
+};
+
 export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, TThis> = DistinctCollection<T, any>> extends Collection<T, TThis> {
-  /** Creates a new map and copies the items */
+  /** Creates a new set and copies the items */
   toSet(): Set<T> {
     return new Set(this);
   }
@@ -13,12 +17,18 @@ export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, 
 
   abstract has(value: T): boolean;
   abstract delete(value: T): boolean;
+
+  protected abstract _getBackingSet(): ReadonlySet<T> | undefined;
 }
 
 export class SetAdapter<T> implements Set<T> {
   private readonly collection: DistinctCollection<T>;
 
   readonly [Symbol.toStringTag] = 'SetAdapter';
+
+  private get fastestBackingSet(): ReadonlySet<T> {
+    return (this.collection as any as BackingSetInternal<T>)._backingSet ?? this.collection.toSet();
+  }
 
   get size(): number {
     return this.collection.size;
@@ -39,6 +49,34 @@ export class SetAdapter<T> implements Set<T> {
 
   delete(value: T): boolean {
     return this.collection.delete(value);
+  }
+
+  union<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.fastestBackingSet.union(other);
+  }
+
+  intersection<U>(other: ReadonlySetLike<U>): Set<T & U> {
+    return this.fastestBackingSet.intersection(other);
+  }
+
+  difference<U>(other: ReadonlySetLike<U>): Set<T> {
+    return this.fastestBackingSet.difference(other);
+  }
+
+  symmetricDifference<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.fastestBackingSet.symmetricDifference(other);
+  }
+
+  isSubsetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.fastestBackingSet.isSubsetOf(other);
+  }
+
+  isSupersetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.fastestBackingSet.isSupersetOf(other);
+  }
+
+  isDisjointFrom(other: ReadonlySetLike<unknown>): boolean {
+    return this.fastestBackingSet.isDisjointFrom(other);
   }
 
   forEach(callbackfn: (value: T, value2: T, set: Set<T>) => void, thisArg?: any): void {

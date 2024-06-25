@@ -1,12 +1,12 @@
-import type { ObservableCollection } from './observable-collection.js';
 import { ObservableCollectionBase } from './observable-collection-base.js';
+import type { ObservableCollection } from './observable-collection.js';
 
 export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<T>> implements Set<T>, ObservableCollection<T> {
   private readonly backingSet: Set<T>;
 
   readonly [Symbol.toStringTag]: 'ObservableSet';
 
-  get self(): ObservableSet<T> {
+  get self(): this {
     return this;
   }
 
@@ -76,6 +76,34 @@ export class ObservableSet<T> extends ObservableCollectionBase<T, ObservableSet<
 
   delete(value: T): boolean {
     return this.remove(value);
+  }
+
+  union<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.backingSet.union(other);
+  }
+
+  intersection<U>(other: ReadonlySetLike<U>): Set<T & U> {
+    return this.backingSet.intersection(other);
+  }
+
+  difference<U>(other: ReadonlySetLike<U>): Set<T> {
+    return this.backingSet.difference(other);
+  }
+
+  symmetricDifference<U>(other: ReadonlySetLike<U>): Set<T | U> {
+    return this.backingSet.symmetricDifference(other);
+  }
+
+  isSubsetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSubsetOf(other);
+  }
+
+  isSupersetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSupersetOf(other);
+  }
+
+  isDisjointFrom(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isDisjointFrom(other);
   }
 
   forEach(callback: (value: T, value2: T, set: ObservableSet<T>) => void, thisArg?: any): void {

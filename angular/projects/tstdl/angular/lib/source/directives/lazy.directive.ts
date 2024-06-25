@@ -1,106 +1,93 @@
-import type { AfterViewInit, EmbeddedViewRef, OnDestroy } from '@angular/core';
-import { ChangeDetectorRef, Directive, ElementRef, Input, Renderer2, TemplateRef, ViewContainerRef } from '@angular/core';
+import { AfterRenderPhase, ChangeDetectorRef, DestroyRef, Directive, ElementRef, Renderer2, TemplateRef, ViewContainerRef, afterNextRender, booleanAttribute, computed, inject, input, type EmbeddedViewRef, type OnDestroy } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { observeIntersection$ } from '@tstdl/base/dom';
-import { assertDefinedPass, isDefined, isUndefined } from '@tstdl/base/utils';
-import { combineLatest, filter, switchMap, take, takeUntil } from 'rxjs';
-import { LifecycleUtils } from '../utils';
+import { assertDefinedPass, isDefined, isNotNullOrUndefined, isString, isUndefined } from '@tstdl/base/utils';
+import { filter, switchMap, take } from 'rxjs';
 
 /**
- * lazily render the element when it intersects the viewport (default) or specified {@link root} element.
- * {@link rootMargin} (default 10%) and {@link threshold} (0) can be specified.
+ * Lazily render the element when it intersects the viewport (default) or specified {@link root} element.
+ * {@link rootMargin} (default 25%) and {@link threshold} (0) can be specified.
  * Uses a div of size {@link intrinsicWidth} and {@link intrinsicHeight} to track visibility using {@link IntersectionObserver}
  */
 @Directive({
   selector: '[tslLazy]',
   standalone: true
 })
-export class LazyDirective extends LifecycleUtils<LazyDirective> implements AfterViewInit, OnDestroy {
-  private readonly templateRef: TemplateRef<any>;
-  private readonly viewContainer: ViewContainerRef;
-  private readonly elementRef: ElementRef<Node>;
-  private readonly renderer: Renderer2;
-  private readonly changeDetector: ChangeDetectorRef;
+export class LazyDirective implements OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly templateRef = inject(TemplateRef<any>);
+  private readonly viewContainer = inject(ViewContainerRef);
+  private readonly elementRef = inject<ElementRef<Node>>(ElementRef);
+  private readonly renderer = inject(Renderer2);
+  private readonly changeDetector = inject(ChangeDetectorRef);
 
   private intersectionTracker: HTMLDivElement | undefined;
   private initialTemplateView: EmbeddedViewRef<any> | undefined;
 
-  /** unused */
-  @Input() tslLazy: any;
-
-  @Input() tslLazyRoot: Element | Document | null | undefined;
-  @Input() tslLazyRootMargin: string | undefined;
-  @Input() tslLazyThreshold: number | number[] | undefined;
-  @Input() tslLazyIntrinsicWidth: string;
-  @Input() tslLazyIntrinsicHeight: string;
+  readonly root = input<Element | Document | null | undefined>(undefined, { alias: 'tslLazyRoot' });
+  readonly rootMargin = input<string | undefined>('25%', { alias: 'tslLazyRootMargin' });
+  readonly threshold = input<number | number[] | undefined | null, number | `${number}` | number[] | undefined | null>(undefined, { alias: 'tslLazyThreshold', transform: (value) => isString(value) ? Number(value) : value });
+  readonly intrinsicWidth = input<string | null | undefined>(undefined, { alias: 'tslLazyIntrinsicWidth' });
+  readonly intrinsicHeight = input<string | null | undefined>(undefined, { alias: 'tslLazyIntrinsicHeight' });
 
   /**
-   * template to render before actual deferred view. Useful for eg. for skeletons.
+   * Template to render before actual deferred view. Useful for eg. for skeletons.
    * Should be lightweight/fast to render
    */
-  @Input() tslLazyInitialTemplate: TemplateRef<any>;
+  readonly initialTemplate = input<TemplateRef<any> | null | undefined>(undefined, { alias: 'tslLazyInitialTemplate' });
 
   /**
-   * insert intersection tracker
+   * Insert intersection tracker
    * true: insert even if `initialTemplate` is provided,
    * false: only insert if no initialTemplate is provided (default)
    */
-  @Input() tslLazyTracker: boolean | null | undefined;
+  readonly tracker = input<boolean, boolean | `${boolean}`>(false, { alias: 'tslLazyTracker', transform: booleanAttribute });
 
-  constructor(templateRef: TemplateRef<any>, viewContainer: ViewContainerRef, elementRef: ElementRef<Node>, renderer: Renderer2, changeDetector: ChangeDetectorRef) {
-    super();
+  constructor() {
+    const observerConfig$ = toObservable(computed(() => ({ root: this.root(), rootMargin: this.rootMargin(), threshold: this.threshold() ?? undefined })));
 
-    this.templateRef = templateRef;
-    this.viewContainer = viewContainer;
-    this.elementRef = elementRef;
-    this.renderer = renderer;
-    this.changeDetector = changeDetector;
+    afterNextRender(() => {
+      const initialTemplate = this.initialTemplate();
+      const intrinsicWidth = this.intrinsicWidth();
+      const intrinsicHeight = this.intrinsicHeight();
 
-    this.tslLazyRootMargin = '25%';
-    this.tslLazyTracker = false;
-  }
+      if (this.tracker() || isUndefined(initialTemplate)) {
+        this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
 
-  override ngAfterViewInit(): void {
-    if ((this.tslLazyTracker == true) || isUndefined(this.tslLazyInitialTemplate)) {
-      this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
+        if (isDefined(intrinsicWidth)) {
+          this.renderer.setStyle(this.intersectionTracker, 'width', intrinsicWidth);
+        }
 
-      if (isDefined(this.tslLazyIntrinsicWidth)) {
-        this.renderer.setStyle(this.intersectionTracker, 'width', this.tslLazyIntrinsicWidth);
+        if (isDefined(intrinsicHeight)) {
+          this.renderer.setStyle(this.intersectionTracker, 'height', intrinsicHeight);
+        }
+
+        this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
       }
 
-      if (isDefined(this.tslLazyIntrinsicHeight)) {
-        this.renderer.setStyle(this.intersectionTracker, 'height', this.tslLazyIntrinsicHeight);
+      if (isNotNullOrUndefined(initialTemplate)) {
+        this.initialTemplateView = this.viewContainer.createEmbeddedView(initialTemplate);
       }
 
-      this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
-    }
+      const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
 
-    if (isDefined(this.tslLazyInitialTemplate)) {
-      this.initialTemplateView = this.viewContainer.createEmbeddedView(this.tslLazyInitialTemplate);
-    }
-
-    const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
-
-    combineLatest([this.observe('tslLazyRoot'), this.observe('tslLazyRootMargin'), this.observe('tslLazyThreshold')])
-      .pipe(
-        switchMap(([root, rootMargin, threshold]) => observeIntersection$(intersectionElement, { root, rootMargin, threshold })),
-        filter((intersection) => intersection.isIntersecting),
-        take(1),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-        this.removeTracker();
-        this.viewContainer.createEmbeddedView(this.templateRef);
-        this.changeDetector.markForCheck();
-      });
-
-    setTimeout(() => this.changeDetector.markForCheck(), 0);
-
-    super.ngAfterViewInit();
+      observerConfig$
+        .pipe(
+          switchMap((config) => observeIntersection$(intersectionElement, config)),
+          filter((intersection) => intersection.isIntersecting),
+          take(1),
+          takeUntilDestroyed(this.destroyRef)
+        )
+        .subscribe(() => {
+          this.removeTracker();
+          this.viewContainer.createEmbeddedView(this.templateRef);
+          this.changeDetector.markForCheck();
+        });
+    }, { phase: AfterRenderPhase.Write });
   }
 
-  override ngOnDestroy(): void {
+  ngOnDestroy(): void {
     this.removeTracker();
-    super.ngOnDestroy();
   }
 
   private removeTracker(): void {

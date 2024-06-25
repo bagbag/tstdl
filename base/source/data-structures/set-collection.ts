@@ -11,6 +11,13 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
     this.updateSize();
   }
 
+  private static withBackingSet<T>(set: globalThis.Set<T>): SetCollection<T> {
+    const collection = new SetCollection<T>();
+    (collection as any as { backingSet: globalThis.Set<T> }).backingSet = set;
+
+    return collection;
+  }
+
   includes(item: T): boolean {
     return this.has(item);
   }
@@ -45,6 +52,34 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
     return result;
   }
 
+  union<U>(other: ReadonlySetLike<U>): SetCollection<T | U> {
+    return SetCollection.withBackingSet(this.backingSet.union(other));
+  }
+
+  intersection<U>(other: ReadonlySetLike<U>): SetCollection<T & U> {
+    return SetCollection.withBackingSet(this.backingSet.intersection(other));
+  }
+
+  difference<U>(other: ReadonlySetLike<U>): SetCollection<T> {
+    return SetCollection.withBackingSet(this.backingSet.difference(other));
+  }
+
+  symmetricDifference<U>(other: ReadonlySetLike<U>): SetCollection<T | U> {
+    return SetCollection.withBackingSet(this.backingSet.symmetricDifference(other));
+  }
+
+  isSubsetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSubsetOf(other);
+  }
+
+  isSupersetOf(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isSupersetOf(other);
+  }
+
+  isDisjointFrom(other: ReadonlySetLike<unknown>): boolean {
+    return this.backingSet.isDisjointFrom(other);
+  }
+
   forEach(callbackfn: (value: T, value2: T, set: globalThis.Set<T>) => void, thisArg?: any): void {
     this.backingSet.forEach(callbackfn, thisArg);
   }
@@ -67,6 +102,10 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
 
   protected _clear(): void {
     this.backingSet.clear();
+  }
+
+  protected override _getBackingSet(): ReadonlySet<T> | undefined {
+    return this.backingSet;
   }
 
   private updateSize(): void {

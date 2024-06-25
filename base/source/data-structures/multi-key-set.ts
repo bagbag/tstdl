@@ -1,5 +1,5 @@
 import { DistinctCollection } from './distinct-collection.js';
-import { MultiKeyMap, NewMapProvider } from './multi-key-map.js';
+import { MultiKeyMap, type NewMapProvider } from './multi-key-map.js';
 
 export class MultiKeySet<T extends any[]> extends DistinctCollection<T> {
   readonly #map: MultiKeyMap<T, true>;
@@ -70,6 +70,10 @@ export class MultiKeySet<T extends any[]> extends DistinctCollection<T> {
   protected _clear(): void {
     this.#map.clear();
     this.updateSize();
+  }
+
+  protected override _getBackingSet(): ReadonlySet<T> | undefined {
+    return undefined;
   }
 
   private updateSize(): void {

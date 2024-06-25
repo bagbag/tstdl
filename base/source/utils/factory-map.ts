@@ -1,4 +1,4 @@
-export type Factory<Key, Value> = (key: Key) => Value;
+export type Factory<K, V> = (key: K) => V;
 
 export type FactoryItemIdentityProvider<K, I> = (key: K) => I;
 
