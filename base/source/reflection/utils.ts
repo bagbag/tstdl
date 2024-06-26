@@ -11,10 +11,10 @@ export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
 export type CreateDecoratorOptions = {
   data?: Record<string | symbol>,
 
-  /** merge data values instead of replacing them (requires them to be objects, arrays, maps or sets) */
+  /** Merge data values instead of replacing them (requires them to be objects, arrays, maps or sets) */
   mergeData?: boolean,
 
-  /** return values of these decorators are not used */
+  /** Return values of these decorators are not used */
   include?: OneOrMany<DecoratorUnion>
 };
 

@@ -1,6 +1,18 @@
 <div class="border shadow rounded-md overflow-clip">
   <tsl-vertical-tab-group title="Some Title">
-    <tsl-vertical-tab label="Tab 1" icon="usb-drive" description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis eos voluptates.">Content 1</tsl-vertical-tab>
+    <tsl-vertical-tab label="Tab 1" description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Perferendis eos voluptates.">
+      <div *verticalTabLabel class="flex gap-2">
+        <svg viewBox="20 30 440 100" class="w-12">
+          <ellipse cx="240" cy="100" rx="220" ry="30" fill="purple" />
+          <ellipse cx="220" cy="70" rx="190" ry="20" fill="lime" />
+          <ellipse cx="210" cy="45" rx="170" ry="15" fill="orange" />
+        </svg>
+
+        <span>Ellipses (template label for svg)</span>
+      </div>
+
+      Content 1
+    </tsl-vertical-tab>
     <tsl-vertical-tab label="Tab 2" icon="diagram-2" description="Enim sapiente impedit suscipit odit cupiditate, molestiae voluptatem nulla in rem.">Content 2</tsl-vertical-tab>
   </tsl-vertical-tab-group>
 </div>
