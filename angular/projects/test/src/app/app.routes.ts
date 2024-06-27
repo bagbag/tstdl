@@ -2,6 +2,7 @@ import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
   { path: 'icon', loadComponent: () => import('./examples/icon-example/icon-example.component').then((module) => module.IconExampleComponent) },
+  { path: 'form', loadComponent: () => import('./examples/form/form.component').then((module) => module.FormComponent) },
   { path: 'card', loadComponent: () => import('./examples/card/card.component') },
   { path: 'drawer-card', loadComponent: () => import('./examples/drawer-card-example/drawer-card-example.component').then((module) => module.DrawerCardExampleComponent) },
   { path: 'data-card', loadComponent: () => import('./examples/data-card-example/data-card-example.component') },

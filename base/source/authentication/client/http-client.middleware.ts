@@ -2,8 +2,7 @@ import { firstValueFrom } from 'rxjs';
 
 import type { ApiClientHttpRequestContext } from '#/api/client/index.js';
 import type { HttpClientMiddleware, HttpClientMiddlewareContext, HttpClientMiddlewareNext } from '#/http/client/middleware.js';
-import type { ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
-import { cacheAsyncValueOrProvider } from '#/utils/value-or-provider.js';
+import { cacheAsyncValueOrProvider, type ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { dontWaitForValidToken } from '../authentication.api.js';
 import type { AuthenticationClientService } from './authentication.service.js';
 

@@ -13,6 +13,7 @@ import { ButtonComponent } from '@tstdl/angular/button';
 export class AppComponent {
   readonly routes = [
     { href: '/icon', label: 'Icon' },
+    { href: '/form', label: 'Form' },
     { href: '/card', label: 'Card' },
     { href: '/drawer-card', label: 'Drawer Card' },
     { href: '/data-card', label: 'Data Card' },

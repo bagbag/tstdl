@@ -1,0 +1,26 @@
+@layer tstdl.components {
+  tsl-input-group {
+    @apply flex w-full sm:text-sm sm:leading-6 bg-neutral-100 dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100 rounded-md;
+    @apply border border-neutral-300 dark:border-neutral-500;
+
+    &:focus-within {
+        @apply border-accent-600;
+    }
+
+    & > * {
+      @apply [&:not(:last-child)]:border-r border-neutral-300 dark:border-neutral-500;
+    }
+
+    & > * {
+      @apply rounded-none;
+    }
+
+    & > :first-child {
+      @apply rounded-l-md;
+    }
+
+    & > :last-child {
+      @apply rounded-r-md;
+    }
+  }
+}

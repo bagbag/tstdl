@@ -1,0 +1,5 @@
+@layer tstdl.components {
+  tsl-input-group-label {
+    @apply flex items-center px-2 border-solid border-r border-r-neutral-300;
+  }
+}

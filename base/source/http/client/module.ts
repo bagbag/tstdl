@@ -11,7 +11,7 @@ export type HttpClientModuleConfig = HttpClientOptions & {
   adapter?: Type<HttpClientAdapter>,
 
   /**
-   * middlewares to add
+   * Middlewares to add
    */
   middleware?: OneOrMany<HttpClientMiddleware>
 };

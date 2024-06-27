@@ -63,11 +63,11 @@
       "@tstdl/angular/icon": [
         "projects/tstdl/angular/icon",
       ],
-      "@tstdl/angular/input/*": [
-        "projects/tstdl/angular/input/*",
+      "@tstdl/angular/form/*": [
+        "projects/tstdl/angular/form/*",
       ],
-      "@tstdl/angular/input": [
-        "projects/tstdl/angular/input",
+      "@tstdl/angular/form": [
+        "projects/tstdl/angular/form",
       ],
       "@tstdl/angular/react/*": [
         "projects/tstdl/angular/react/*",

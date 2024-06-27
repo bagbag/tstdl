@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ButtonComponent } from '@tstdl/angular/button/public-api';
-import { InputComponent } from 'projects/tstdl/angular/input';
+import { ButtonComponent } from '@tstdl/angular/button';
+import { InputComponent } from '@tstdl/angular/form';
 
 @Component({
   selector: 'app-misc-examples',

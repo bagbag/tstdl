@@ -3,24 +3,6 @@ import { NgControl } from '@angular/forms';
 import { isNullOrUndefined } from '@tstdl/base/utils';
 import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-types';
 
-const textInputNeutralClasses = [
-  'ring-neutral-300',
-  'dark:ring-neutral-400',
-  'focus:ring-accent-700',
-  'dark:focus:ring-accent-400',
-  'placeholder:text-neutral-400'
-];
-
-const textInputValidClasses = [
-  'ring-lime-500',
-  'placeholder:text-lime-500'
-];
-
-const textInputInvalidClasses = [
-  'ring-red-600',
-  'placeholder:text-red-600'
-];
-
 @Component({
   selector: '[tslInput]',
   standalone: true,
@@ -47,15 +29,17 @@ export class InputComponent {
   readonly autocomplete = input<InputAutocomplete | null>(null);
 
   readonly classes = computed(() => {
+    /*
     const stateClasses = (isNullOrUndefined(this.#control) || (this.#control.touched != true))
       ? textInputNeutralClasses
       : (this.#control.valid == true) ? textInputValidClasses
         : (this.#control.invalid == true) ? textInputInvalidClasses
           : textInputNeutralClasses;
+          */
 
     return (this.type() == 'checkbox')
       ? ['input-checkbox']
-      : ['input-text', ...stateClasses];
+      : ['input-text'];
   });
 
   get id(): string {
