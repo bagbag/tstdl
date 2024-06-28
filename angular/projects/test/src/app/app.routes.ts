@@ -1,6 +1,7 @@
 import type { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: 'button', loadComponent: () => import('./examples/button/button.component').then((module) => module.ButtonComponent) },
   { path: 'icon', loadComponent: () => import('./examples/icon-example/icon-example.component').then((module) => module.IconExampleComponent) },
   { path: 'form', loadComponent: () => import('./examples/form/form.component').then((module) => module.FormComponent) },
   { path: 'card', loadComponent: () => import('./examples/card/card.component') },

@@ -1,0 +1,41 @@
+<div class="flex gap-4">
+  <button tslButton design="flat">Flat</button>
+  <button tslButton design="outline">Outline</button>
+  <button tslButton design="icon-outline">
+    <tsl-icon icon="house"></tsl-icon>
+  </button>
+  <button tslButton design="icon">
+    <tsl-icon icon="house"></tsl-icon>
+  </button>
+  <button tslButton design="none">None</button>
+</div>
+
+<div class="flex flex-wrap gap-2 mt-16">
+  @for (color of colors; track color) {
+    <button tslButton design="flat" [color]="color">{{ color }}</button>
+  }
+</div>
+
+<div class="flex flex-wrap gap-2 mt-16">
+  @for (color of colors; track color) {
+    <button tslButton design="outline" [color]="color">{{ color }}</button>
+  }
+</div>
+
+<div class="flex flex-wrap gap-2 mt-16">
+  @for (color of colors; track color) {
+    <button tslButton design="flat" [color]="color" coloredText="true">{{ color }}</button>
+  }
+</div>
+
+<div class="flex flex-wrap gap-2 mt-16">
+  @for (color of colors; track color) {
+    <button tslButton design="outline" [color]="color" coloredText="true">{{ color }}</button>
+  }
+</div>
+
+<div class="flex flex-wrap gap-2 mt-16">
+  @for (color of colors; track color) {
+    <button tslButton  [color]="color" disabled="true">{{ color }}</button>
+  }
+</div>

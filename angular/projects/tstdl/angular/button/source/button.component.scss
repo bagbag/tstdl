@@ -1,5 +1,5 @@
 @layer tstdl.components {
   [tslButton] {
-    @apply relative inline overflow-hidden text-base disabled:opacity-65 transition-[background,border,opacity];
+    @apply relative inline overflow-hidden text-base font-semibold outline-none disabled:opacity-65 disabled:cursor-not-allowed transition-[background,border,opacity,box-shadow,color];
   }
 }

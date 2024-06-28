@@ -1,82 +1,107 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
+import { fromEntries, objectEntries } from '@tstdl/base/utils/object';
 
-export type ButtonStyle = 'flat' | 'outline' | 'icon' | 'icon-outline' | 'none';
+export type ButtonDesign = 'flat' | 'outline' | 'icon' | 'icon-outline' | 'none';
 export type ButtonSize = 'normal' | 'small';
 export type ButtonColor = 'transparent' | 'white' | 'neutral' | 'stone' | 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose';
 
-const flatColorClasses: Record<ButtonColor, string> = {
+const flatColorClasses = {
   transparent: 'bg-transparent hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15',
-  white: 'bg-white hover:bg-neutral-200',
-  neutral: 'bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-200 hover:dark:bg-neutral-500/75',
-  stone: 'bg-stone-500 dark:bg-stone-600 hover:bg-stone-400 hover:dark:bg-stone-500/75',
-  red: 'bg-red-500 dark:bg-red-600 hover:bg-red-400 hover:dark:bg-red-500/75',
-  orange: 'bg-orange-500 dark:bg-orange-600 hover:bg-orange-400 hover:dark:bg-orange-500/75',
-  amber: 'bg-amber-500 dark:bg-amber-600 hover:bg-amber-400 hover:dark:bg-amber-500/75',
-  yellow: 'bg-yellow-500 dark:bg-yellow-600 hover:bg-yellow-400 hover:dark:bg-yellow-500/75',
-  lime: 'bg-lime-400 dark:bg-lime-600 hover:bg-lime-300 hover:dark:bg-lime-500/75',
-  green: 'bg-green-500 dark:bg-green-600 hover:bg-green-400 hover:dark:bg-green-500/75',
-  emerald: 'bg-emerald-500 dark:bg-emerald-600 hover:bg-emerald-400 hover:dark:bg-emerald-500/75',
-  teal: 'bg-teal-500 dark:bg-teal-600 hover:bg-teal-400 hover:dark:bg-teal-500/75',
-  cyan: 'bg-cyan-500 dark:bg-cyan-600 hover:bg-cyan-400 hover:dark:bg-cyan-500/75',
-  sky: 'bg-sky-500 dark:bg-sky-600 hover:bg-sky-400 hover:dark:bg-sky-500/75',
-  blue: 'bg-blue-500 dark:bg-blue-600 hover:bg-blue-400 hover:dark:bg-blue-500/75',
-  indigo: 'bg-indigo-500 dark:bg-indigo-600 hover:bg-indigo-400 hover:dark:bg-indigo-500/75',
-  violet: 'bg-violet-500 dark:bg-violet-600 hover:bg-violet-400 hover:dark:bg-violet-500/75',
-  purple: 'bg-purple-500 dark:bg-purple-600 hover:bg-purple-400 hover:dark:bg-purple-500/75',
-  fuchsia: 'bg-fuchsia-500 dark:bg-fuchsia-600 hover:bg-fuchsia-400 hover:dark:bg-fuchsia-500/75',
-  pink: 'bg-pink-500 dark:bg-pink-600 hover:bg-pink-400 hover:dark:bg-pink-500/75',
-  rose: 'bg-rose-500 dark:bg-rose-600 hover:bg-rose-400 hover:dark:bg-rose-500/75',
-};
+  white: 'bg-white hover:bg-neutral-200 dark:hover:bg-neutral-200',
+  neutral: 'bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-400 dark:hover:bg-neutral-500',
+  stone: 'bg-stone-300 dark:bg-stone-600 hover:bg-stone-400 dark:hover:bg-stone-500',
+  red: 'bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-500',
+  orange: 'bg-orange-400 dark:bg-orange-600 hover:bg-orange-500 dark:hover:bg-orange-500',
+  amber: 'bg-amber-400 dark:bg-amber-600 hover:bg-amber-500 dark:hover:bg-amber-500',
+  yellow: 'bg-yellow-400 dark:bg-yellow-600 hover:bg-yellow-500 dark:hover:bg-yellow-500',
+  lime: 'bg-lime-400 dark:bg-lime-600 hover:bg-lime-500 dark:hover:bg-lime-500',
+  green: 'bg-green-400 dark:bg-green-600 hover:bg-green-500 dark:hover:bg-green-500',
+  emerald: 'bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-500 dark:hover:bg-emerald-500',
+  teal: 'bg-teal-400 dark:bg-teal-600 hover:bg-teal-500 dark:hover:bg-teal-500',
+  cyan: 'bg-cyan-400 dark:bg-cyan-600 hover:bg-cyan-500 dark:hover:bg-cyan-500',
+  sky: 'bg-sky-400 dark:bg-sky-600 hover:bg-sky-500 dark:hover:bg-sky-500',
+  blue: 'bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-500',
+  indigo: 'bg-indigo-400 dark:bg-indigo-600 hover:bg-indigo-500 dark:hover:bg-indigo-500',
+  violet: 'bg-violet-400 dark:bg-violet-600 hover:bg-violet-500 dark:hover:bg-violet-500',
+  purple: 'bg-purple-400 dark:bg-purple-600 hover:bg-purple-500 dark:hover:bg-purple-500',
+  fuchsia: 'bg-fuchsia-400 dark:bg-fuchsia-600 hover:bg-fuchsia-500 dark:hover:bg-fuchsia-500',
+  pink: 'bg-pink-400 dark:bg-pink-600 hover:bg-pink-500 dark:hover:bg-pink-500',
+  rose: 'bg-rose-400 dark:bg-rose-600 hover:bg-rose-500 dark:hover:bg-rose-500',
+} satisfies Record<ButtonColor, string>;
 
-const borderColorClasses: Record<ButtonColor, string> = {
-  transparent: '',
-  white: 'border-white',
-  neutral: 'border-neutral-500 dark:border-neutral-600',
-  stone: 'border-stone-500 dark:border-stone-600',
-  red: 'border-red-500 dark:border-red-600',
-  orange: 'border-orange-500 dark:border-orange-600',
-  amber: 'border-amber-500 dark:border-amber-600',
-  yellow: 'border-yellow-500 dark:border-yellow-600',
-  lime: 'border-lime-500 dark:border-lime-600',
-  green: 'border-green-500 dark:border-green-600',
-  emerald: 'border-emerald-500 dark:border-emerald-600',
-  teal: 'border-teal-500 dark:border-teal-600',
-  cyan: 'border-cyan-500 dark:border-cyan-600',
-  sky: 'border-sky-500 dark:border-sky-600',
-  blue: 'border-blue-500 dark:border-blue-600',
-  indigo: 'border-indigo-500 dark:border-indigo-600',
-  violet: 'border-violet-500 dark:border-violet-600',
-  purple: 'border-purple-500 dark:border-purple-600',
-  fuchsia: 'border-fuchsia-500 dark:border-fuchsia-600',
-  pink: 'border-pink-500 dark:border-pink-600',
-  rose: 'border-rose-500 dark:border-rose-600'
-};
+const outlineColorClasses = {
+  transparent: 'hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15',
+  white: 'ring-1 focus-visible:ring-2 ring-white hover:bg-neutral-200 dark:hover:bg-neutral-200',
+  neutral: 'ring-1 focus-visible:ring-2 ring-neutral-400 hover:bg-neutral-400 dark:hover:bg-neutral-600',
+  stone: 'ring-1 focus-visible:ring-2 ring-stone-400 hover:bg-stone-400 dark:hover:bg-stone-600',
+  red: 'ring-1 focus-visible:ring-2 ring-red-400 hover:bg-red-400 dark:hover:bg-red-600',
+  orange: 'ring-1 focus-visible:ring-2 ring-orange-400 hover:bg-orange-400 dark:hover:bg-orange-600',
+  amber: 'ring-1 focus-visible:ring-2 ring-amber-400 hover:bg-amber-400 dark:hover:bg-amber-600',
+  yellow: 'ring-1 focus-visible:ring-2 ring-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-600',
+  lime: 'ring-1 focus-visible:ring-2 ring-lime-400 hover:bg-lime-400 dark:hover:bg-lime-600',
+  green: 'ring-1 focus-visible:ring-2 ring-green-400 hover:bg-green-400 dark:hover:bg-green-600',
+  emerald: 'ring-1 focus-visible:ring-2 ring-emerald-400 hover:bg-emerald-400 dark:hover:bg-emerald-600',
+  teal: 'ring-1 focus-visible:ring-2 ring-teal-400 hover:bg-teal-400 dark:hover:bg-teal-600',
+  cyan: 'ring-1 focus-visible:ring-2 ring-cyan-400 hover:bg-cyan-400 dark:hover:bg-cyan-600',
+  sky: 'ring-1 focus-visible:ring-2 ring-sky-400 hover:bg-sky-400 dark:hover:bg-sky-600',
+  blue: 'ring-1 focus-visible:ring-2 ring-blue-400 hover:bg-blue-400 dark:hover:bg-blue-600',
+  indigo: 'ring-1 focus-visible:ring-2 ring-indigo-400 hover:bg-indigo-400 dark:hover:bg-indigo-600',
+  violet: 'ring-1 focus-visible:ring-2 ring-violet-400 hover:bg-violet-400 dark:hover:bg-violet-600',
+  purple: 'ring-1 focus-visible:ring-2 ring-purple-400 hover:bg-purple-400 dark:hover:bg-purple-600',
+  fuchsia: 'ring-1 focus-visible:ring-2 ring-fuchsia-400 hover:bg-fuchsia-400 dark:hover:bg-fuchsia-600',
+  pink: 'ring-1 focus-visible:ring-2 ring-pink-400 hover:bg-pink-400 dark:hover:bg-pink-600',
+  rose: 'ring-1 focus-visible:ring-2 ring-rose-400 hover:bg-rose-400 dark:hover:bg-rose-600',
+} satisfies Record<ButtonColor, string>;
 
-const textColorClasses: Record<ButtonColor, string> = {
+const flatTextColorClasses = {
   transparent: '',
-  white: 'text-white',
-  neutral: 'text-neutral-600 dark:text-neutral-300',
-  stone: 'text-stone-500 dark:text-stone-600',
-  red: 'text-red-500 dark:text-red-600',
-  orange: 'text-orange-500 dark:text-orange-600',
-  amber: 'text-amber-500 dark:text-amber-600',
-  yellow: 'text-yellow-500 dark:text-yellow-600',
-  lime: 'text-lime-500 dark:text-lime-600',
-  green: 'text-green-500 dark:text-green-600',
-  emerald: 'text-emerald-500 dark:text-emerald-600',
-  teal: 'text-teal-500 dark:text-teal-600',
-  cyan: 'text-cyan-500 dark:text-cyan-600',
-  sky: 'text-sky-500 dark:text-sky-600',
-  blue: 'text-blue-500 dark:text-blue-600',
-  indigo: 'text-indigo-500 dark:text-indigo-600',
-  violet: 'text-violet-500 dark:text-violet-600',
-  purple: 'text-purple-500 dark:text-purple-600',
-  fuchsia: 'text-fuchsia-500 dark:text-fuchsia-600',
-  pink: 'text-pink-500 dark:text-pink-600',
-  rose: 'text-rose-500 dark:text-rose-600'
-};
+  white: 'text-neutral-700',
+  neutral: 'text-neutral-800 dark:text-neutral-200',
+  stone: 'text-stone-800 dark:text-stone-200',
+  red: 'text-red-900 dark:text-red-100',
+  orange: 'text-orange-900 dark:text-orange-100',
+  amber: 'text-amber-900 dark:text-amber-100',
+  yellow: 'text-yellow-900 dark:text-yellow-100',
+  lime: 'text-lime-900 dark:text-lime-100',
+  green: 'text-green-900 dark:text-green-100',
+  emerald: 'text-emerald-900 dark:text-emerald-100',
+  teal: 'text-teal-900 dark:text-teal-100',
+  cyan: 'text-cyan-900 dark:text-cyan-100',
+  sky: 'text-sky-900 dark:text-sky-100',
+  blue: 'text-blue-900 dark:text-blue-100',
+  indigo: 'text-indigo-900 dark:text-indigo-100',
+  violet: 'text-violet-900 dark:text-violet-100',
+  purple: 'text-purple-900 dark:text-purple-100',
+  fuchsia: 'text-fuchsia-900 dark:text-fuchsia-100',
+  pink: 'text-pink-900 dark:text-pink-100',
+  rose: 'text-rose-900 dark:text-rose-100'
+} satisfies Record<ButtonColor, string>;
+
+const outlineTextColorClasses = {
+  transparent: '',
+  white: 'text-neutral-800 dark:text-white hover:text-neutral-700 dark:hover:text-neutral-700',
+  neutral: 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-800 dark:hover:text-neutral-200',
+  stone: 'text-stone-800 dark:text-stone-200 hover:text-stone-800 dark:hover:text-stone-200',
+  red: 'text-red-600 dark:text-red-600 hover:text-red-900 dark:hover:text-red-100',
+  orange: 'text-orange-600 dark:text-orange-600 hover:text-orange-900 dark:hover:text-orange-100',
+  amber: 'text-amber-600 dark:text-amber-600 hover:text-amber-900 dark:hover:text-amber-100',
+  yellow: 'text-yellow-600 dark:text-yellow-600 hover:text-yellow-900 dark:hover:text-yellow-100',
+  lime: 'text-lime-600 dark:text-lime-600 hover:text-lime-900 dark:hover:text-lime-100',
+  green: 'text-green-600 dark:text-green-600 hover:text-green-900 dark:hover:text-green-100',
+  emerald: 'text-emerald-600 dark:text-emerald-600 hover:text-emerald-900 dark:hover:text-emerald-100',
+  teal: 'text-teal-600 dark:text-teal-600 hover:text-teal-900 dark:hover:text-teal-100',
+  cyan: 'text-cyan-600 dark:text-cyan-600 hover:text-cyan-900 dark:hover:text-cyan-100',
+  sky: 'text-sky-600 dark:text-sky-600 hover:text-sky-900 dark:hover:text-sky-100',
+  blue: 'text-blue-600 dark:text-blue-600 hover:text-blue-900 dark:hover:text-blue-100',
+  indigo: 'text-indigo-600 dark:text-indigo-600 hover:text-indigo-900 dark:hover:text-indigo-100',
+  violet: 'text-violet-600 dark:text-violet-600 hover:text-violet-900 dark:hover:text-violet-100',
+  purple: 'text-purple-600 dark:text-purple-600 hover:text-purple-900 dark:hover:text-purple-100',
+  fuchsia: 'text-fuchsia-600 dark:text-fuchsia-600 hover:text-fuchsia-900 dark:hover:text-fuchsia-100',
+  pink: 'text-pink-600 dark:text-pink-600 hover:text-pink-900 dark:hover:text-pink-100',
+  rose: 'text-rose-600 dark:text-rose-600 hover:text-rose-900 dark:hover:text-rose-100',
+} satisfies Record<ButtonColor, string>;
 
 @Component({
   selector: '[tslButton]',
@@ -88,8 +113,7 @@ const textColorClasses: Record<ButtonColor, string> = {
   encapsulation: ViewEncapsulation.None,
   providers: [MatRipple],
   host: {
-    '[attr.disabled]': 'disabledAttribute()',
-    '[attr.inert]': '(disabledAttribute() || inert()) ? "true" : null'
+    '[attr.disabled]': 'disabledAttribute()'
   },
   hostDirectives: [NgClass]
 })
@@ -98,9 +122,10 @@ export class ButtonComponent implements OnInit, OnDestroy {
   readonly #ripple = inject(MatRipple);
   readonly changeDetector = inject(ChangeDetectorRef);
 
-  readonly style = input<ButtonStyle>('flat');
+  readonly design = input<ButtonDesign>('flat');
   readonly color = input<ButtonColor>('lime');
   readonly size = input<ButtonSize>('normal');
+  readonly coloredText = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly invertIconPadding = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly inert = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
@@ -108,31 +133,38 @@ export class ButtonComponent implements OnInit, OnDestroy {
   readonly disabledAttribute = computed(() => this.disabled() ? true : null);
 
   readonly classes = computed(() => {
-    const style = this.style();
+    const design = this.design();
     const size = this.size();
     const color = this.color();
+    const coloredText = this.coloredText();
     const invertIconPadding = this.invertIconPadding();
+    const disabled = this.disabled();
 
     const small = size == 'small';
-    const useNoneStyle = style == 'none';
-    const useFlatStyle = style == 'flat';
-    const useOutlineStyle = (style == 'outline') || (style == 'icon-outline');
-    const useIconStyle = (style == 'icon') || (style == 'icon-outline');
-    const useTextColorStyle = useIconStyle;
+    const useNoneStyle = design == 'none';
+    const useFlatStyle = design == 'flat';
+    const useOutlineStyle = (design == 'outline') || (design == 'icon-outline');
+    const useIconStyle = (design == 'icon') || (design == 'icon-outline');
 
-    return {
-      [flatColorClasses[color]]: useFlatStyle,
-      [`border-2 ${borderColorClasses[color]}`]: useOutlineStyle,
-      [textColorClasses[color]]: useTextColorStyle,
-      'text-neutral-900 dark:text-neutral-200': !useTextColorStyle,
-      'text-neutral-800 dark:text-neutral-100': useFlatStyle,
-      'rounded-full aspect-square hover:bg-neutral-800/10 hover:dark:bg-neutral-200/10': useIconStyle,
+    const ngClassEntries = objectEntries({
+      [`${flatColorClasses[color]} ${coloredText ? flatTextColorClasses[color] : ''}`]: useFlatStyle,
+      [`bg-neutral-400/10 ring-inset ${outlineColorClasses[color]} ${coloredText ? outlineTextColorClasses[color] : ''}`]: useOutlineStyle,
+      // [textColorClasses[color]]: true,
+      // 'text-neutral-900 dark:text-neutral-200': !useTextColorStyle,
+      // 'text-neutral-800 dark:text-neutral-100': useFlatStyle,
+      'rounded-full aspect-square hover:bg-neutral-800/10 dark:hover:bg-neutral-200/10': useIconStyle,
       'rounded-lg': !useIconStyle,
       'px-4 py-1.5': !useIconStyle && !useNoneStyle && !small,
       'px-2 py-1 text-sm': !useIconStyle && !useNoneStyle && small,
       [`p-2.5 ${invertIconPadding ? '-m-2.5' : ''}`]: useIconStyle && !small,
       [`p-1.5 ${invertIconPadding ? '-m-1.5' : ''}`]: useIconStyle && small
-    };
+    });
+
+    return fromEntries(
+      ngClassEntries
+        .filter(([, classesEnabled]) => classesEnabled)
+        .map(([key, value]) => [disabled ? (key as string).split(' ').filter((k) => !k.includes('hover:')).join(' ') : key, value])
+    );
   });
 
   constructor() {
