@@ -13,6 +13,12 @@ body {
 
 @layer reset {
   @tailwind base;
+
+  *,
+  ::before,
+  ::after {
+    @apply border-neutral-500/30 dark:border-neutral-400/20;
+  }
 }
 
 @layer application {
