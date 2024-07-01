@@ -11,6 +11,7 @@ import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-ty
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
+    'class': 'tsl-tw',
     '[class]': 'classes()',
     '[attr.disabled]': 'this.disabled() ? true : null',
     '[attr.type]': 'this.type()',

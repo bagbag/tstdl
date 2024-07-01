@@ -163,6 +163,7 @@ const dotColor: Record<BadgeColor, string> = {
   providers: [MatRipple],
   encapsulation: ViewEncapsulation.None,
   host: {
+    'class': 'tsl-tw',
     '[class.cursor-pointer]': 'interactive() && !disabled()',
     '[class.opacity-60]': '!active() && !disabled()',
     '[class.opacity-50]': 'disabled()'

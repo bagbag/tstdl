@@ -13,7 +13,10 @@ import { DrawerCardDrawerContentComponent } from './drawer-card-drawer-content/d
   styleUrl: './drawer-card.component.scss',
   animations: [collapseAnimation({ duration: 300, ease: 'cubic-bezier(0.4, 0, 0.2, 1)' })],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'tsl-tw'
+  }
 })
 export class DrawerCardComponent {
   private readonly contentComponent = contentChild(DrawerCardContentComponent);

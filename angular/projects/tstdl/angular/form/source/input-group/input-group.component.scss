@@ -1,13 +1,13 @@
 @layer tstdl.components {
   tsl-input-group {
-    @apply flex w-full sm:text-sm sm:leading-6 bg-neutral-100 dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100 border rounded-md;
+    @apply flex w-full sm:text-sm sm:leading-6 bg-neutral-100 dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100 border border-neutral-500/50 dark:border-neutral-300/50 rounded-md;
 
     &:focus-within {
       @apply border-accent-600;
     }
 
     & > * {
-      @apply border-0 [&:not(:last-child)]:border-r;
+      @apply border-0 [&:not(:last-child)]:border-r border-neutral-500/50 dark:border-neutral-300/50;
     }
 
     & > * {

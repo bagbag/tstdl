@@ -113,6 +113,7 @@ const outlineTextColorClasses = {
   encapsulation: ViewEncapsulation.None,
   providers: [MatRipple],
   host: {
+    'class': 'tsl-tw',
     '[attr.disabled]': 'disabledAttribute()'
   },
   hostDirectives: [NgClass]

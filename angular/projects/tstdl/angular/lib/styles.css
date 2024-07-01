@@ -33,7 +33,7 @@
 .tsl-tw ::after,
 .tsl-tw::before,
 .tsl-tw::after {
-  border-color: rgb(var(--tsl-color-neutral-500) / 0.2);
+  @apply border-neutral-500/30 dark:border-neutral-300/30;
 }
 
 .content-grid {
