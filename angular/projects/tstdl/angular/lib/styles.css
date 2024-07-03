@@ -1,5 +1,4 @@
-:root,
-.tsl-light {
+:root {
   /* tailwind zinc */
   --tsl-color-neutral-50: 250 250 250;
   --tsl-color-neutral-100: 244 244 245;
@@ -43,15 +42,18 @@
   --content: min(var(--content-max), 100% - var(--gap) * 2);
   --popout: minmax(0, 3rem);
   --feature: minmax(0, 8rem);
+  --feature-xl: minmax(0, 10rem);
 
   display: grid;
   grid-template-columns:
     [full-start] var(--full)
+    [feature-xl-start] var(--feature-xl)
     [feature-start] var(--feature)
     [popout-start] var(--popout)
     [content-start] var(--content) [content-end]
     var(--popout) [popout-end]
     var(--feature) [feature-end]
+    var(--feature-xl) [feature-xl-end]
     var(--full) [full-end];
 
   > :not(.popout, .feature, .full) {
@@ -64,6 +66,10 @@
 
   > .feature {
     grid-column: feature;
+  }
+
+  > .feature-xl {
+    grid-column: feature-xl;
   }
 
   > .full {
