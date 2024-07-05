@@ -69,6 +69,12 @@
       "@tstdl/angular/form": [
         "projects/tstdl/angular/form",
       ],
+      "@tstdl/angular/nav-tabs/*": [
+        "projects/tstdl/angular/nav-tabs/*",
+      ],
+      "@tstdl/angular/nav-tabs": [
+        "projects/tstdl/angular/nav-tabs",
+      ],
       "@tstdl/angular/react/*": [
         "projects/tstdl/angular/react/*",
       ],

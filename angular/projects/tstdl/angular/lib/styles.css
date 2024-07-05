@@ -32,7 +32,7 @@
 .tsl-tw ::after,
 .tsl-tw::before,
 .tsl-tw::after {
-  @apply border-neutral-500/30 dark:border-neutral-300/30;
+  @apply border-neutral-400/75 dark:border-neutral-600/75;
 }
 
 .content-grid {
@@ -56,7 +56,7 @@
     var(--feature-xl) [feature-xl-end]
     var(--full) [full-end];
 
-  > :not(.popout, .feature, .full) {
+  > :not(.popout, .feature, .feature-xl, .full) {
     grid-column: content;
   }
 

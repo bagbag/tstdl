@@ -15,6 +15,7 @@ export class AppComponent {
     { href: '/button', label: 'Button' },
     { href: '/icon', label: 'Icon' },
     { href: '/form', label: 'Form' },
+    { href: '/nav-tabs', label: 'Nav Tabs' },
     { href: '/card', label: 'Card' },
     { href: '/drawer-card', label: 'Drawer Card' },
     { href: '/data-card', label: 'Data Card' },
