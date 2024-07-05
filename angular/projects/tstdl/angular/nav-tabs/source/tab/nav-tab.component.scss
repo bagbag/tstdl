@@ -3,11 +3,11 @@
   [tslNavTab] {
     @apply hover:z-10 whitespace-nowrap px-8 pb-1 pt-1.5 font-medium border-x border-t rounded-t-lg;
 
-    &:not(.tab-selected) {
+    &:not(.tab-active) {
       @apply hover:text-accent-500 cursor-pointer border-transparent;
     }
 
-    &.tab-selected {
+    &.tab-active {
       @apply text-accent-500 bg-neutral-50 dark:bg-neutral-900;
     }
   }

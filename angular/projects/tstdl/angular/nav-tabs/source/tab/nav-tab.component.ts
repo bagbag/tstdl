@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, input, model, ViewEncapsulation } from '@angular/core';
 
 import { NavTabsComponent } from '../nav-tabs.component';
 
@@ -11,13 +11,12 @@ import { NavTabsComponent } from '../nav-tabs.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    '[class.tab-selected]': 'selected()'
+    '[class.tab-active]': 'active()'
   }
 })
 export class NavTabComponent<T> {
   readonly navTabs = inject(NavTabsComponent);
-
-  readonly selected = signal<boolean>(false);
+  readonly active = model<boolean>(false);
 
   readonly data = input<T>();
 

@@ -19,7 +19,7 @@ import { NavTabComponent } from './tab/nav-tab.component';
   }
 })
 export class NavTabsComponent<T> {
-  readonly tabs = contentChildren(NavTabComponent<T>);
+  readonly tabs = contentChildren(NavTabComponent);
 
   readonly selectedTabIndex = model<number | null>(null);
   readonly selectedTab = computed(() => this.tabs()[this.selectedTabIndex()!] ?? null);
@@ -39,14 +39,12 @@ export class NavTabsComponent<T> {
   }
 
   tabSelected(tab: NavTabComponent<T>): void {
-    console.log(tab)
-
     this.selectedTabIndex.set(null);
 
     this.tabs().forEach((t, tabIndex) => {
       const selected = t == tab;
 
-      t.selected.set(selected);
+      t.active.set(selected);
 
       if (selected) {
         this.selectedTabIndex.set(tabIndex);
