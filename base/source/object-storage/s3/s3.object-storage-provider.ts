@@ -7,31 +7,31 @@ import { S3ObjectStorage } from './s3.object-storage.js';
 
 export class S3ObjectStorageProviderConfig {
   /**
-   * s3 endpoint
+   * S3 endpoint
    */
   endpoint: string;
 
   /**
-   * s3 bucket, use a single bucket for all modules (which will become transparent key prefixes)
+   * S3 bucket, use a single bucket for all modules (which will become transparent key prefixes)
    *
    * mutually exclusive with bucketPerModule
    */
   bucket?: string;
 
   /**
-   * use an own bucket for every module
+   * Use an own bucket for every module
    *
    * mutually exclusive with bucket
    */
   bucketPerModule?: boolean;
 
   /**
-   * s3 access key
+   * S3 access key
    */
   accessKey: string;
 
   /**
-   * s3 secret key
+   * S3 secret key
    */
   secretKey: string;
 }
@@ -72,7 +72,7 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
 }
 
 /**
- * configure s3 object storage provider
+ * Configure s3 object storage provider
  * @param config s3 config
  * @param register whether to register for {@link ObjectStorage} and {@link ObjectStorageProvider}
  */

@@ -64,7 +64,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           return resource;
         }
 
-        return buildUrl(resource, parameters).parsedUrl;
+        return buildUrl(resource, parameters as UndefinableJsonObject | undefined).parsedUrl;
       }
 
       getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): URL {

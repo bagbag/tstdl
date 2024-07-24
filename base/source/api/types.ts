@@ -115,7 +115,7 @@ export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpoi
 export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream<any>;
 
 export type ApiInputType<T extends SchemaTestable> =
-  | T extends ApiBinaryType ? (Uint8Array | Blob | ReadableStream<Uint8Array>)
+  | T extends ApiBinaryType ? InstanceType<ApiBinaryType>
   : T extends typeof ServerSentEvents ? ServerSentEventsSource
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 

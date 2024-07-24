@@ -1,5 +1,4 @@
-import type { EnvironmentProviders } from '@angular/core';
-import { APP_INITIALIZER, NgModule, importProvidersFrom, inject } from '@angular/core';
+import { APP_INITIALIZER, type EnvironmentProviders, NgModule, importProvidersFrom, inject } from '@angular/core';
 
 import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, TstdlSkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';

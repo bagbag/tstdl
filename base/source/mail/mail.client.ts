@@ -1,7 +1,6 @@
-import type { Resolvable } from '#/injector/index.js';
-import { resolveArgumentType } from '#/injector/index.js';
+import { resolveArgumentType, type Resolvable } from '#/injector/index.js';
 import { Property } from '#/schema/decorators/property.js';
-import { BooleanProperty } from '#/schema/schemas/boolean.js';
+import { BooleanProperty } from '#/schema/index.js';
 import { Optional } from '#/schema/schemas/optional.js';
 import type { MailData, MailSendResult } from './models/index.js';
 
@@ -20,8 +19,8 @@ export class MailClientConfig {
   @Property()
   port: number;
 
+  /** Enable TLS (if not defined it is automatically set depending on port) */
   @BooleanProperty({ optional: true })
-  /* enable TLS (if not defined it is automatically set depending on port) */
   secure?: boolean;
 
   @Optional(MailClientAuthConfig)

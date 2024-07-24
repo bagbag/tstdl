@@ -10,6 +10,7 @@ const tailwindStyles = await Deno.readTextFile(tailwindStylesFile);
 const patchedTailwindStyles = patchTailwindStyles(tailwindStyles);
 
 const output = `
+@layer tstdl.base, tstdl.components;
 @layer tstdl.base {
 ${baseStyles}
 

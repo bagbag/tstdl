@@ -1,5 +1,6 @@
 export * from './auto-for.directive';
 export * from './auto-id.directive';
+export * from './date-input-control-value-accessor.directive';
 export * from './drag.directive';
 export * from './drop.directive';
 export * from './filter-helper.directive';

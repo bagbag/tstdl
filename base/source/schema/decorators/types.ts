@@ -1,22 +1,17 @@
-import type { OneOrMany } from '#/types.js';
+import type { Decorator } from '#/reflection/types.js';
 import type { SchemaTestable } from '../schema.js';
-import type { ObjectSchema, SchemaArrayConstraint, SchemaFactoryFunction, SchemaValueCoercer, SchemaValueConstraint, SchemaValueTransformer, TypeSchema, ValueSchema, ValueType } from '../types/index.js';
+import type { ObjectSchemaFactoryFunction, ObjectSchemaOptions } from '../schemas/object.js';
 
-export type SchemaTypeReflectionData = Partial<Pick<ObjectSchema, 'mask' | 'unknownProperties' | 'unknownPropertiesKey'>> & {
-  schema?: ObjectSchema | TypeSchema | ValueType,
-  factory?: SchemaFactoryFunction<any>
+export type SchemaPropertyDecorator = Decorator<'property' | 'accessor'>;
+
+export type SchemaTypeReflectionData = Partial<Pick<ObjectSchemaOptions, 'mask' | 'unknownProperties' | 'unknownPropertiesKey'>> & {
+  schema?: SchemaTestable,
+  factory?: ObjectSchemaFactoryFunction<any>
 };
 
 export type SchemaPropertyReflectionData = {
-  schema?: OneOrMany<SchemaTestable>,
+  schema?: SchemaTestable,
   array?: boolean,
   optional?: boolean,
-  nullable?: boolean,
-  coerce?: boolean,
-  coercers?: readonly SchemaValueCoercer[],
-  transformers?: readonly SchemaValueTransformer[],
-  arrayConstraints?: readonly SchemaArrayConstraint[],
-  valueConstraints?: readonly SchemaValueConstraint[]
+  nullable?: boolean
 };
-
-export type PropertyOptions = Partial<ValueSchema<any>>;

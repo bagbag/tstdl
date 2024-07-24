@@ -1,13 +1,9 @@
-import type { CustomErrorOptions } from '#/errors/custom.error.js';
-import { CustomError } from '#/errors/custom.error.js';
+import { CustomError, type CustomErrorOptions } from '#/errors/custom.error.js';
 import type { JsonPath } from '#/json-path/index.js';
-import type { OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
+import type { AbstractConstructor, OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import type { ErrorExtraInfo } from '#/utils/format-error.js';
-import { isArray, isDefined, isNotNullOrUndefined, isString } from '#/utils/type-guards.js';
-import { getExpectString } from './schema.js';
-import type { ValueType } from './types/index.js';
-import { getValueTypeName } from './utils/index.js';
+import { isArray, isDefined, isFunction, isNotNullOrUndefined, isString } from '#/utils/type-guards.js';
 
 export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,
@@ -42,30 +38,28 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static expectedButGot(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
-    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getExpectString(exp)));
-    const gotName = isString(got) ? got : getValueTypeName(got);
+  static expectedButGot(expected: OneOrMany<string | AbstractConstructor>, got: string, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
+    const expectedNames = toArray(expected).map((e) => isFunction(e) ? e.name : e);
 
     const expectedString = expectedNames.length == 1
       ? expectedNames[0]!
       : `(${expectedNames.join(' | ')})`;
 
-    const customMessage = isDefined(options.customMessage) ? `: ${options.customMessage}` : '.';
-    const message = `Expected ${expectedString} but got ${gotName}${customMessage}`;
+    const customMessage = isDefined(options?.customMessage) ? `: ${options.customMessage}` : '.';
+    const message = `Expected ${expectedString} but got ${got}${customMessage}`;
     return new SchemaError(message, { path, ...options });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  static couldNotCoerce(expected: OneOrMany<string | ValueType>, got: string | ValueType, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
-    const expectedNames = toArray(expected).map((exp) => (isString(exp) ? exp : getValueTypeName(exp)));
-    const gotText = isString(got) ? got : getValueTypeName(got);
+  static couldNotCoerce(expected: OneOrMany<string | AbstractConstructor>, got: string, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
+    const expectedNames = toArray(expected).map((e) => isFunction(e) ? e.name : e);
 
     const expectedString = expectedNames.length == 1
       ? expectedNames[0]!
       : `[${expectedNames.join(', ')}]`;
 
     const customMessageString = isDefined(options.customMessage) ? `: ${options.customMessage}` : '.';
-    const errorMessage = `Could not coerce ${gotText} to ${expectedString}${customMessageString}`;
+    const errorMessage = `Could not coerce ${got} to ${expectedString}${customMessageString}`;
     return new SchemaError(errorMessage, { path, ...options });
   }
 

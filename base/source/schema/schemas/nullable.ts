@@ -1,16 +1,36 @@
-import type { Decorator } from '#/reflection/index.js';
-import { createSchemaPropertyDecorator } from '../decorators/utils.js';
-import type { SchemaTestable } from '../schema.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/index.js';
-import { valueSchema } from '../types/index.js';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { TypedOmit } from '#/types.js';
+import { isNull } from '#/utils/type-guards.js';
+import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { schemaTestableToSchema } from '../testable.js';
 
-export type NullableOptions = ValueSchemaOptions;
+export class NullableSchema<T> extends Schema<T | null> {
+  readonly schema: Schema<T>;
 
-export function nullable<T>(schema: SchemaTestable<T>, options?: NullableOptions): ValueSchema<T | null> {
-  return valueSchema(schema, { ...options, nullable: true }) as ValueSchema<T | null>;
+  constructor(schema: SchemaTestable<T>) {
+    if ((schema instanceof NullableSchema) && (schema == schema.schema)) {
+      return schema; // eslint-disable-line no-constructor-return
+    }
+
+    super();
+
+    this.schema = schemaTestableToSchema(schema);
+  }
+
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | null> {
+    if (isNull(value)) {
+      return { valid: true, value };
+    }
+
+    return this.schema._test(value, path, options);
+  }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function Nullable(options?: NullableOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecorator({ ...options, nullable: true });
+export function nullable<T>(schema: SchemaTestable<T>): NullableSchema<T> {
+  return new NullableSchema(schema);
+}
+
+export function Nullable(schema?: SchemaTestable, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'nullable'>): SchemaPropertyDecorator {
+  return createSchemaPropertyDecorator({ schema, ...options, nullable: true });
 }

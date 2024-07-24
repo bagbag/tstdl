@@ -1,15 +1,19 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
+import { resolveValueOrProvider } from '@tstdl/base/utils';
 import { fromEntries, objectEntries } from '@tstdl/base/utils/object';
+
+import { TstdlButtonConfig } from './config';
 
 export type ButtonDesign = 'flat' | 'outline' | 'icon' | 'icon-outline' | 'none';
 export type ButtonSize = 'normal' | 'small';
-export type ButtonColor = 'transparent' | 'white' | 'neutral' | 'stone' | 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose';
+export type ButtonColor = 'transparent' | 'white' | 'accent' | 'neutral' | 'stone' | 'red' | 'orange' | 'amber' | 'yellow' | 'lime' | 'green' | 'emerald' | 'teal' | 'cyan' | 'sky' | 'blue' | 'indigo' | 'violet' | 'purple' | 'fuchsia' | 'pink' | 'rose';
 
 const flatColorClasses = {
   transparent: 'bg-transparent hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15',
   white: 'bg-white hover:bg-neutral-200 dark:hover:bg-neutral-200',
+  accent: 'bg-accent-400 dark:bg-accent-600 hover:bg-accent-500 dark:hover:bg-accent-500',
   neutral: 'bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-400 dark:hover:bg-neutral-500',
   stone: 'bg-stone-300 dark:bg-stone-600 hover:bg-stone-400 dark:hover:bg-stone-500',
   red: 'bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-500',
@@ -34,6 +38,7 @@ const flatColorClasses = {
 const outlineColorClasses = {
   transparent: 'hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15',
   white: 'ring-1 focus-visible:ring-2 ring-white hover:bg-neutral-200 dark:hover:bg-neutral-200',
+  accent: 'ring-1 focus-visible:ring-2 ring-accent-400 hover:bg-accent-400 dark:hover:bg-accent-600',
   neutral: 'ring-1 focus-visible:ring-2 ring-neutral-400 hover:bg-neutral-400 dark:hover:bg-neutral-600',
   stone: 'ring-1 focus-visible:ring-2 ring-stone-400 hover:bg-stone-400 dark:hover:bg-stone-600',
   red: 'ring-1 focus-visible:ring-2 ring-red-400 hover:bg-red-400 dark:hover:bg-red-600',
@@ -58,6 +63,7 @@ const outlineColorClasses = {
 const flatTextColorClasses = {
   transparent: '',
   white: 'text-neutral-700',
+  accent: 'text-accent-900 dark:text-accent-100',
   neutral: 'text-neutral-800 dark:text-neutral-200',
   stone: 'text-stone-800 dark:text-stone-200',
   red: 'text-red-900 dark:text-red-100',
@@ -82,6 +88,7 @@ const flatTextColorClasses = {
 const outlineTextColorClasses = {
   transparent: '',
   white: 'text-neutral-800 dark:text-white hover:text-neutral-700 dark:hover:text-neutral-700',
+  accent: 'text-accent-600 dark:text-accent-600 hover:text-accent-900 dark:hover:text-accent-100',
   neutral: 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-800 dark:hover:text-neutral-200',
   stone: 'text-stone-800 dark:text-stone-200 hover:text-stone-800 dark:hover:text-stone-200',
   red: 'text-red-600 dark:text-red-600 hover:text-red-900 dark:hover:text-red-100',
@@ -121,12 +128,13 @@ const outlineTextColorClasses = {
 export class ButtonComponent implements OnInit, OnDestroy {
   readonly #ngClass = inject(NgClass);
   readonly #ripple = inject(MatRipple);
+  readonly #config = inject(TstdlButtonConfig, { optional: true });
   readonly changeDetector = inject(ChangeDetectorRef);
 
-  readonly design = input<ButtonDesign>('flat');
-  readonly color = input<ButtonColor>('lime');
-  readonly size = input<ButtonSize>('normal');
-  readonly coloredText = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
+  readonly design = input<ButtonDesign | null | undefined>(null);
+  readonly color = input<ButtonColor | null | undefined>(null);
+  readonly size = input<ButtonSize | null | undefined>(null);
+  readonly coloredText = input<boolean | null | undefined, boolean | `${boolean}` | null | undefined>(null, { transform: booleanAttribute });
   readonly invertIconPadding = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly inert = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
@@ -134,10 +142,10 @@ export class ButtonComponent implements OnInit, OnDestroy {
   readonly disabledAttribute = computed(() => this.disabled() ? true : null);
 
   readonly classes = computed(() => {
-    const design = this.design();
-    const size = this.size();
-    const color = this.color();
-    const coloredText = this.coloredText();
+    const design = this.design() ?? resolveValueOrProvider(this.#config?.default?.design) ?? 'flat';
+    const size = this.size() ?? resolveValueOrProvider(this.#config?.default?.size) ?? 'normal';
+    const color = this.color() ?? resolveValueOrProvider(this.#config?.default?.color) ?? 'accent';
+    const coloredText = this.coloredText() ?? resolveValueOrProvider(this.#config?.default?.coloredText) ?? false;
     const invertIconPadding = this.invertIconPadding();
     const disabled = this.disabled();
 
@@ -150,9 +158,6 @@ export class ButtonComponent implements OnInit, OnDestroy {
     const ngClassEntries = objectEntries({
       [`${flatColorClasses[color]} ${coloredText ? flatTextColorClasses[color] : ''}`]: useFlatStyle,
       [`bg-neutral-400/10 ring-inset ${outlineColorClasses[color]} ${coloredText ? outlineTextColorClasses[color] : ''}`]: useOutlineStyle,
-      // [textColorClasses[color]]: true,
-      // 'text-neutral-900 dark:text-neutral-200': !useTextColorStyle,
-      // 'text-neutral-800 dark:text-neutral-100': useFlatStyle,
       'rounded-full aspect-square hover:bg-neutral-800/10 dark:hover:bg-neutral-200/10': useIconStyle,
       'rounded-lg': !useIconStyle,
       'px-4 py-1.5': !useIconStyle && !useNoneStyle && !small,

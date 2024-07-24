@@ -4,3 +4,4 @@ export type Predicate<T> = (item: T, index: number) => boolean;
 export type IteratorFunction<TIn, TOut> = (item: TIn, index: number) => TOut;
 export type Reducer<T, U> = (previous: U, current: T, index: number) => U;
 export type IterableItemMetadata<T> = { index: number, isFirst: boolean, isLast: boolean, value: T };
+export type GroupSelectors<T, TGroup extends any[]> = { [P in keyof TGroup]: IteratorFunction<T, TGroup[P]> };

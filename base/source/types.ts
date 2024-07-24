@@ -33,6 +33,7 @@ export type PrimitiveValue = Primitive | PrimitiveObject | PrimitiveArray;
 export type PrimitiveObject = { [key: string]: PrimitiveValue };
 export type PrimitiveArray = PrimitiveValue[];
 export type BuiltIn = Primitive | RegExp | Date | Function;
+export type IsPrimitive<T> = [T] extends [Primitive] ? true : false;
 
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
@@ -158,6 +159,7 @@ export type IsAny<T> = IfAny<T, true, false>;
 export type IsUnknown<T> = IfUnknown<T, true, false>;
 
 export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
+export type Not<T extends boolean> = T extends true ? false : true;
 
 export type Fallback<T, F> = [T] extends [never] ? F : T;
 

@@ -1,78 +1,32 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { isDefined, isRegExp, isString } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/types.js';
-import { toArrayCopy } from '#/utils/array/array.js';
-import { isDefined } from '#/utils/type-guards.js';
-import { MaximumLengthConstraint, MinimumLengthConstraint, PatternConstraint } from '../constraints/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
-import { LowercaseTransformer, TrimTransformer, UppercaseTransformer } from '../transformers/index.js';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { SchemaValueTransformer } from '../types/schema-value-transformer.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
-import { valueSchema } from '../types/types.js';
-
-export type StringOptions = ValueSchemaOptions & {
-  /** trim */
-  trim?: boolean,
-
-  /** lowercase */
-  lowercase?: boolean,
-
-  /** uppercase */
-  uppercase?: boolean,
-
-  /** minimum length */
-  minimumLength?: number,
-
-  /** maximum length */
-  maximumLength?: number,
-
-  /** regular expression */
-  pattern?: string | RegExp,
-
-  /** regular expression flags */
-  patternFlags?: string,
-
-  /** name for errors */
-  patternName?: string
+export type StringSchemaOptions = SimpleSchemaOptions & {
+  pattern?: RegExp | string
 };
 
-export function string(options: StringOptions = {}): ValueSchema<string> {
-  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
-  const transformers: SchemaValueTransformer[] = toArrayCopy(options.transformers ?? []);
+export class StringSchema extends SimpleSchema<string> {
+  constructor(options?: StringSchemaOptions) {
+    const pattern = isDefined(options?.pattern) ? isString(options.pattern) ? RegExp(options.pattern, 'u') : isRegExp(options.pattern) ? options.pattern : undefined : undefined;
 
-  if (isDefined(options.minimumLength)) {
-    valueConstraints.push(new MinimumLengthConstraint(options.minimumLength));
+    super('string', isString, options, {
+      coercers: {
+        number: (value) => ({ success: true, value: globalThis.String(value), valid: true }),
+        boolean: (value) => ({ success: true, value: globalThis.String(value), valid: true }),
+        bigint: (value) => ({ success: true, value: globalThis.String(value), valid: true })
+      },
+      constraints: [
+        isDefined(pattern) ? ((value) => pattern.test(value) ? ({ success: true }) : ({ success: false, error: 'Value did not match pattern.' })) : null
+      ]
+    });
   }
-
-  if (isDefined(options.maximumLength)) {
-    valueConstraints.push(new MaximumLengthConstraint(options.maximumLength));
-  }
-
-  if (isDefined(options.pattern)) {
-    const pattern = RegExp(options.pattern, options.patternFlags);
-    valueConstraints.push(new PatternConstraint(pattern, options.patternName));
-  }
-
-  if (isDefined(options.trim)) {
-    transformers.push(new TrimTransformer());
-  }
-
-  if (isDefined(options.lowercase)) {
-    transformers.push(new LowercaseTransformer());
-  }
-
-  if (isDefined(options.uppercase)) {
-    transformers.push(new UppercaseTransformer());
-  }
-
-  return valueSchema<string>(String, {
-    ...options,
-    valueConstraints,
-    transformers
-  });
 }
 
-export function StringProperty(options?: StringOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(string(options));
+export function string(options?: StringSchemaOptions): StringSchema {
+  return new StringSchema(options);
+}
+
+export function StringProperty(options?: SchemaPropertyDecoratorOptions & StringSchemaOptions): SchemaPropertyDecorator {
+  return Property(string(options), options);
 }

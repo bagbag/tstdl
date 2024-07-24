@@ -1,14 +1,28 @@
 @layer tstdl.components {
   tsl-nav-tab,
   [tslNavTab] {
-    @apply hover:z-10 whitespace-nowrap px-8 pb-1 pt-1.5 font-medium border-x border-t rounded-t-lg;
+    .design-underline & {
+      @apply whitespace-nowrap px-3 py-1 font-semibold border-b-2 rounded-t-lg;
 
-    &:not(.tab-active) {
-      @apply hover:text-accent-500 cursor-pointer border-transparent;
+      &:not(.tab-active) {
+        @apply text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 hover:border-neutral-500/25 cursor-pointer border-transparent;
+      }
+
+      &.tab-active {
+        @apply text-accent-500 border-accent-500;
+      }
     }
 
-    &.tab-active {
-      @apply text-accent-500 bg-neutral-50 dark:bg-neutral-900;
+    .design-register & {
+      @apply hover:z-10 whitespace-nowrap px-8 pb-1 pt-1.5 border-x border-t rounded-t-lg;
+
+      &:not(.tab-active) {
+        @apply hover:text-accent-500 cursor-pointer border-transparent;
+      }
+
+      &.tab-active {
+        @apply text-accent-500 bg-neutral-50 dark:bg-neutral-900;
+      }
     }
   }
 }

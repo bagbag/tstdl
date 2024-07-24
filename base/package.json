@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.90.92",
+  "version": "0.91.0",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -111,7 +111,7 @@
     "luxon": "^3.4",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.20"
+    "type-fest": "4.23"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -123,7 +123,7 @@
     "@types/mjml": "4.7",
     "@types/node": "20",
     "@types/nodemailer": "6.4",
-    "@typescript-eslint/eslint-plugin": "7.14",
+    "@typescript-eslint/eslint-plugin": "7.17",
     "concurrently": "8.2",
     "eslint": "8.57",
     "eslint-import-resolver-typescript": "3.6",
@@ -142,16 +142,16 @@
     "@zxcvbn-ts/language-de": "^3.0",
     "@zxcvbn-ts/language-en": "^3.0",
     "chroma-js": "^2.4",
-    "drizzle-orm": "^0.31",
+    "drizzle-orm": "^0.32",
     "handlebars": "^4.7",
     "koa": "^2.15",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.7",
+    "mongodb": "^6.8",
     "nodemailer": "^6.9",
     "pg": "^8.12",
     "playwright": "^1.45",
-    "preact": "^10.22",
+    "preact": "^10.23",
     "preact-render-to-string": "^6.5",
     "undici": "^6.19",
     "urlpattern-polyfill": "^10.0"

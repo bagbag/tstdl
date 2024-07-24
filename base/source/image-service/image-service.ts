@@ -1,4 +1,4 @@
-import { Coerce, Enumeration, Optional } from '#/schema/index.js';
+import { Enumeration, NumberProperty, Optional } from '#/schema/index.js';
 
 export enum ImageResizeMode {
   Fit = 'fit',
@@ -32,20 +32,17 @@ export class ImageOptions {
   @Enumeration(ImageResizeMode)
   resizeMode?: ImageResizeMode;
 
-  @Optional()
-  @Coerce()
+  @NumberProperty({ optional: true, coerce: true })
   width?: number;
 
-  @Optional()
-  @Coerce()
+  @NumberProperty({ optional: true, coerce: true })
   height?: number;
 
   @Optional()
   @Enumeration(ImageOrigin)
   origin?: ImageOrigin;
 
-  @Optional()
-  @Coerce()
+  @NumberProperty({ optional: true, coerce: true })
   quality?: number;
 
   @Optional()

@@ -1,28 +1,28 @@
 
 export type CustomErrorOptions = {
   /**
-   * name of error
+   * Name of error
    *
    * defaults to static {@link CustomErrorStatic.errorName} if set and constructor (class) name if unset.
    */
   name?: string,
 
   /**
-   * error message
+   * Error message
    */
   message?: string,
 
   /**
-   * stack trace
+   * Stack trace
    */
   stack?: string,
 
   /**
-   * cause for error
+   * Cause for error
    */
   cause?: Error,
 
-  /** skip {@link Error} super call, which improves speed but looses stack trace */
+  /** Skip {@link Error} super call, which improves speed but looses stack trace */
   fast?: boolean | undefined
 };
 

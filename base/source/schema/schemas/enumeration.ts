@@ -1,28 +1,44 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
-import type { Decorator } from '#/reflection/index.js';
 import type { Enumeration as EnumerationType, EnumerationValue } from '#/types.js';
-import { toArrayCopy } from '#/utils/array/array.js';
-import { EnumerationConstraint } from '../constraints/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
-import { valueSchema } from '../types/types.js';
+import { enumValues } from '#/utils/enum.js';
+import { isArray, isString } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type EnumerationOptions = ValueSchemaOptions;
+export type EnumerationSchemaOptions = SimpleSchemaOptions;
 
-export function enumeration<T extends EnumerationType>(enumerationValue: T, options?: EnumerationOptions): ValueSchema<EnumerationValue<T>> {
-  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options?.valueConstraints ?? []);
+export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<EnumerationValue<T>> {
+  readonly #allowedValuesSet: Set<EnumerationValue>;
 
-  const enumerationConstraint = new EnumerationConstraint(enumerationValue);
-  valueConstraints.push(enumerationConstraint);
+  readonly enumeration: EnumerationType;
 
-  return valueSchema(enumerationConstraint.suitableTypes, {
-    ...options,
-    valueConstraints
-  });
+  constructor(enumeration: T, options?: EnumerationSchemaOptions) {
+    const allowedValues = isArray(enumeration) ? enumeration : enumValues(enumeration);
+    const allowedValuesString = allowedValues.map((value) => (isString(value) ? `"${value}"` : String(value))).join(', ');
+
+    super(
+      `one of [${allowedValuesString}]`,
+      (value): value is EnumerationValue<T> => this.#allowedValuesSet.has(value),
+      options,
+      {
+        coercers: {
+          string: (value) => ({ success: true, value: Number(value) as EnumerationValue<T>, valid: false }),
+          number: (value) => ({ success: true, value: String(value) as EnumerationValue<T>, valid: false })
+        },
+        gotValueFormatter: (value) => isString(value) ? `"${value}"` : String(value)
+      }
+    );
+
+    this.enumeration = enumeration;
+
+    this.#allowedValuesSet = new Set(allowedValues);
+  }
 }
 
-export function Enumeration(enumerationValue: EnumerationType, options?: EnumerationOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(enumeration(enumerationValue, options));
+export function enumeration<T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions): EnumerationSchema<T> {
+  return new EnumerationSchema(enumeration, options);
+}
+
+export function Enumeration(enumeration: EnumerationType, options?: EnumerationSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator;
+export function Enumeration(enums: EnumerationType, options?: EnumerationSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return Property(enumeration(enums, options), options);
 }

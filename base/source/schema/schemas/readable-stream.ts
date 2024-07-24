@@ -1,17 +1,19 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { isReadableStream } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { Schema } from '../schema.js';
-import { valueSchema } from '../types/index.js';
-import type { ValueSchemaOptions } from '../types/types.js';
+export type ReadableStreamSchemaOptions = SimpleSchemaOptions;
 
-export type ReadableStreamOptions = ValueSchemaOptions;
-
-export function readableStream(options?: ReadableStreamOptions): Schema<ReadableStream> {
-  return valueSchema(ReadableStream, options);
+export class ReadableStreamSchema extends SimpleSchema<ReadableStream> {
+  constructor(options?: ReadableStreamSchemaOptions) {
+    super('ReadableStream', isReadableStream, options);
+  }
 }
 
-export function ReadableStreamProperty(options?: ReadableStreamOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(readableStream(options));
+export function readableStream(options?: ReadableStreamSchemaOptions): ReadableStreamSchema {
+  return new ReadableStreamSchema(options);
+}
+
+export function ReadableStreamProperty(options?: SchemaPropertyDecoratorOptions & ReadableStreamSchemaOptions): SchemaPropertyDecorator {
+  return Property(readableStream(options), options);
 }

@@ -1,5 +1,4 @@
-import { Enumeration } from '#/schema/schemas/enumeration.js';
-import { Optional } from '#/schema/schemas/optional.js';
+import { Enumeration, Optional, Union } from '#/schema/index.js';
 
 export enum PdfFormat {
   Letter = 'letter',
@@ -16,16 +15,16 @@ export enum PdfFormat {
 }
 
 export class PdfMarginObject {
-  @Optional([Number, String])
+  @Union(Number, String, { optional: true })
   top?: number | string;
 
-  @Optional([Number, String])
+  @Union(Number, String, { optional: true })
   bottom?: number | string;
 
-  @Optional([Number, String])
+  @Union(Number, String, { optional: true })
   right?: number | string;
 
-  @Optional([Number, String])
+  @Union(Number, String, { optional: true })
   left?: number | string;
 }
 
@@ -39,16 +38,16 @@ export class PdfRenderOptions {
   @Enumeration(PdfFormat, { optional: true })
   format?: PdfFormat;
 
-  @Optional([String, Number])
+  @Union(String, Number, { optional: true })
   width?: string | number;
 
-  @Optional([String, Number])
+  @Union(String, Number, { optional: true })
   height?: string | number;
 
   @Optional()
   scale?: number;
 
-  @Optional([String, Number, PdfMarginObject])
+  @Union(String, Number, PdfMarginObject, { optional: true })
   margin?: string | number | PdfMarginObject;
 
   @Optional()

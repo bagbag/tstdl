@@ -20,7 +20,7 @@ export type TypeMetadata = MetadataBase<'type'> & {
   readonly constructor: AbstractConstructor,
   readonly parent: AbstractConstructor | null,
 
-  /** undefined if class has no constructor */
+  /** Undefined if class has no constructor */
   readonly parameters: ConstructorParameterMetadata[] | undefined,
 
   readonly properties: ReadonlyMap<string | symbol, PropertyMetadata>,

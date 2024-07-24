@@ -270,7 +270,7 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
         : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
           : isReadableStream<Uint8Array>(result) ? { stream: result }
             : (result instanceof ServerSentEventsSource) ? { events: result }
-              : (context.endpoint.definition.result == String) ? { text: result }
+              : (context.endpoint.definition.result == String) ? { text: result as string }
                 : { json: result };
     }
 
@@ -306,5 +306,5 @@ async function getBody(request: HttpServerRequest, options: ReadBodyOptions, sch
     }
   }
 
-  return Schema.parse(schema as SchemaTestable<UndefinableJson | Uint8Array | ReadableStream>, body);
+  return Schema.parse(schema as SchemaTestable<UndefinableJson | Uint8Array | Blob | ReadableStream>, body);
 }

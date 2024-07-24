@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, input, model, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, input, output, ViewEncapsulation } from '@angular/core';
 
 import { NavTabsComponent } from '../nav-tabs.component';
 
@@ -15,13 +15,15 @@ import { NavTabsComponent } from '../nav-tabs.component';
   }
 })
 export class NavTabComponent<T> {
-  readonly navTabs = inject(NavTabsComponent);
-  readonly active = model<boolean>(false);
+  readonly navTabs = inject(NavTabsComponent) as NavTabsComponent<T>;
+  readonly active = input<boolean>(false);
+  readonly selected = output();
 
   readonly data = input<T>();
 
   @HostListener('click')
   onClick(): void {
-    this.navTabs.tabSelected(this);
+    this.selected.emit();
+    this.navTabs.tabSelected.emit(this.data()!);
   }
 }

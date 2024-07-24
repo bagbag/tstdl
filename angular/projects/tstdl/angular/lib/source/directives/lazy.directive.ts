@@ -1,4 +1,4 @@
-import { AfterRenderPhase, ChangeDetectorRef, DestroyRef, Directive, ElementRef, Renderer2, TemplateRef, ViewContainerRef, afterNextRender, booleanAttribute, computed, inject, input, type EmbeddedViewRef, type OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, DestroyRef, Directive, ElementRef, Renderer2, TemplateRef, ViewContainerRef, afterNextRender, booleanAttribute, computed, inject, input, type EmbeddedViewRef, type OnDestroy } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { observeIntersection$ } from '@tstdl/base/dom';
 import { assertDefinedPass, isDefined, isNotNullOrUndefined, isString, isUndefined } from '@tstdl/base/utils';
@@ -46,46 +46,48 @@ export class LazyDirective implements OnDestroy {
   constructor() {
     const observerConfig$ = toObservable(computed(() => ({ root: this.root(), rootMargin: this.rootMargin(), threshold: this.threshold() ?? undefined })));
 
-    afterNextRender(() => {
-      const initialTemplate = this.initialTemplate();
-      const intrinsicWidth = this.intrinsicWidth();
-      const intrinsicHeight = this.intrinsicHeight();
+    afterNextRender({
+      write: () => {
+        const initialTemplate = this.initialTemplate();
+        const intrinsicWidth = this.intrinsicWidth();
+        const intrinsicHeight = this.intrinsicHeight();
 
-      if (this.tracker() || isUndefined(initialTemplate)) {
-        this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
+        if (this.tracker() || isUndefined(initialTemplate)) {
+          this.intersectionTracker = this.renderer.createElement('div') as HTMLDivElement;
 
-        if (isDefined(intrinsicWidth)) {
-          this.renderer.setStyle(this.intersectionTracker, 'width', intrinsicWidth);
+          if (isDefined(intrinsicWidth)) {
+            this.renderer.setStyle(this.intersectionTracker, 'width', intrinsicWidth);
+          }
+
+          if (isDefined(intrinsicHeight)) {
+            this.renderer.setStyle(this.intersectionTracker, 'height', intrinsicHeight);
+          }
+
+          this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
         }
 
-        if (isDefined(intrinsicHeight)) {
-          this.renderer.setStyle(this.intersectionTracker, 'height', intrinsicHeight);
+        if (isNotNullOrUndefined(initialTemplate)) {
+          this.initialTemplateView = this.viewContainer.createEmbeddedView(initialTemplate);
         }
 
-        this.renderer.insertBefore(this.elementRef.nativeElement.parentNode, this.intersectionTracker, this.elementRef.nativeElement);
+        this.changeDetector.markForCheck();
+
+        const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
+
+        observerConfig$
+          .pipe(
+            switchMap((config) => observeIntersection$(intersectionElement, config)),
+            filter((intersection) => intersection.isIntersecting),
+            take(1),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe(() => {
+            this.removeTracker();
+            this.viewContainer.createEmbeddedView(this.templateRef);
+            this.changeDetector.markForCheck();
+          });
       }
-
-      if (isNotNullOrUndefined(initialTemplate)) {
-        this.initialTemplateView = this.viewContainer.createEmbeddedView(initialTemplate);
-      }
-
-      this.changeDetector.markForCheck();
-
-      const intersectionElement = assertDefinedPass(this.intersectionTracker ?? this.initialTemplateView?.rootNodes[0] as Element | undefined);
-
-      observerConfig$
-        .pipe(
-          switchMap((config) => observeIntersection$(intersectionElement, config)),
-          filter((intersection) => intersection.isIntersecting),
-          take(1),
-          takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe(() => {
-          this.removeTracker();
-          this.viewContainer.createEmbeddedView(this.templateRef);
-          this.changeDetector.markForCheck();
-        });
-    }, { phase: AfterRenderPhase.Write });
+    });
   }
 
   ngOnDestroy(): void {

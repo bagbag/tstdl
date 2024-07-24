@@ -14,10 +14,6 @@ export class StringTemplateField<Renderer extends string = string, Options = any
 
 @Singleton()
 export class StringTemplateResolver extends TemplateResolver<StringTemplateField> {
-  constructor() {
-    super();
-  }
-
   canHandle(resolver: string): boolean {
     return (resolver == 'string');
   }

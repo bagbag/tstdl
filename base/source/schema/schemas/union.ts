@@ -1,24 +1,47 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import type { JsonPath } from '#/json-path/json-path.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { isSchemaTestable, schemaTestableToSchema } from '../testable.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { assert, isArray } from '#/utils/type-guards.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { SchemaTestable } from '../schema.js';
-import type { SchemaOutput, ValueSchema, ValueSchemaOptions } from '../types/index.js';
-import { valueSchema } from '../types/index.js';
+type UnionSchemaType<T extends [SchemaTestable, ...SchemaTestable[]]> = T[number] extends SchemaTestable<infer V> ? V : never;
 
-export type UnionOptions = ValueSchemaOptions;
+export class UnionSchema<T extends [SchemaTestable, ...SchemaTestable[]]> extends Schema<UnionSchemaType<T>> {
+  readonly schemas: { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
 
-export function union<T extends SchemaTestable[]>(...schemas: [...T]): ValueSchema<SchemaOutput<T[number]>>;
-export function union<T extends SchemaTestable[]>(schemas: [...T], options?: UnionOptions): ValueSchema<SchemaOutput<T[number]>>;
-export function union<T extends SchemaTestable[]>(...args: T | [schemas: T, options?: UnionOptions]): ValueSchema<SchemaOutput<T[number]>> {
-  const schemas = isArray(args[0]) ? args[0] : args as T;
-  const options = isArray(args[0]) ? args[1] as UnionOptions : undefined;
+  constructor(schemas: T) {
+    super();
 
-  assert(schemas.length >= 2, 'Union requires at least 2 schemas.');
-  return valueSchema(schemas, options);
+    this.schemas = schemas.map((schema) => schemaTestableToSchema(schema)) as { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
+  }
+
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<UnionSchemaType<T>> {
+    let firstInvalidResult: SchemaTestResult<UnionSchemaType<T>> | undefined;
+
+    for (const schema of this.schemas) {
+      const result = schema._test(value, path, options) as SchemaTestResult<UnionSchemaType<T>>;
+
+      if (result.valid) {
+        return result;
+      }
+
+      firstInvalidResult ??= result;
+    }
+
+    return firstInvalidResult!;
+  }
 }
 
-export function Union(...schemas: SchemaTestable[]): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(union(...schemas));
+export function union<T extends [SchemaTestable, ...SchemaTestable[]]>(...schemas: T): UnionSchema<T> {
+  return new UnionSchema(schemas);
+}
+
+export function Union(...schemasAndOptions: [SchemaTestable, ...SchemaTestable[]] | [SchemaTestable, ...SchemaTestable[], options: SchemaPropertyDecoratorOptions]): SchemaPropertyDecorator {
+  const schemaOrOptions = schemasAndOptions.at(-1)!;
+
+  if (isSchemaTestable(schemaOrOptions)) {
+    return Property(union(...schemasAndOptions as [SchemaTestable, ...SchemaTestable[]]));
+  }
+
+  const schemas = schemasAndOptions.slice(0, -1);
+  return Property(union(...schemas as [SchemaTestable, ...SchemaTestable[]]), schemaOrOptions);
 }

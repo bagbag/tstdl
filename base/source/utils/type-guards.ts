@@ -90,7 +90,7 @@ export const assertNotNullOrUndefined: AssertNotFunction<null | undefined> = nul
 export const assertNullOrUndefinedPass: AssertPassFunction<null | undefined> = nullOrUndefinedGuards.assertNullOrUndefinedPass;
 export const assertNotNullOrUndefinedPass: AssertNotPassFunction<null | undefined> = nullOrUndefinedGuards.assertNotNullOrUndefinedPass;
 
-const numberGuards = createGuards('number', (value): value is number => (typeof value == 'number'));
+const numberGuards = createGuards('number', (value): value is number => (typeof value == 'number') && !Number.isNaN(value));
 export const isNumber: IsFunction<number> = numberGuards.isNumber;
 export const isNotNumber: IsNotFunction<number> = numberGuards.isNotNumber;
 export const assertNumber: AssertFunction<number> = numberGuards.assertNumber;

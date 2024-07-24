@@ -1,17 +1,33 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import type { JsonPath } from '#/json-path/json-path.js';
+import { isNullOrUndefined } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { schemaTestableToSchema } from '../testable.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import type { OneOrMany } from '#/types.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
-import type { SchemaTestable } from '../schema.js';
-import type { ValueSchema } from '../types/index.js';
-import { valueSchema } from '../types/index.js';
-import { transform } from './transform.js';
+export class DefaultSchema<T, D> extends Schema<T | D> {
+  readonly schema: Schema<T>;
+  readonly defaultValue: D;
 
-export function defaulted<T, Default>(type: OneOrMany<SchemaTestable<T>>, defaultValue: Default): ValueSchema<NonNullable<T> | Default> {
-  return transform(valueSchema(type, { optional: true, nullable: true }), (value: T) => value ?? defaultValue); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+  constructor(schema: SchemaTestable<T>, defaultValue: D) {
+    super();
+
+    this.schema = schemaTestableToSchema(schema);
+    this.defaultValue = defaultValue;
+  }
+
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | D> {
+    if (isNullOrUndefined(value)) {
+      return { valid: true, value: this.defaultValue };
+    }
+
+    return this.schema._test(value, path, options);
+  }
 }
 
-export function Defaulted(type: OneOrMany<SchemaTestable>, defaultValue: any): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(defaulted(type, defaultValue));
+export function defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D): DefaultSchema<T, D> {
+  return new DefaultSchema(schema, defaultValue);
+}
+
+export function Defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return Property(defaulted(schema, defaultValue), options);
 }

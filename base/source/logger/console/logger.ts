@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 import { Singleton } from '#/injector/decorators.js';
-import type { PickBy, Record } from '#/types.js';
+import type { PropertiesOfType, Record } from '#/types.js';
 import { now } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined, isObject, isString } from '#/utils/type-guards.js';
@@ -10,7 +10,7 @@ import type { LogErrorOptions, LoggerArgument, LoggerForkOptions } from '../logg
 import { Logger } from '../logger.js';
 import { LOG_LEVEL } from '../tokens.js';
 
-const consoleLevelFuncMap: Record<LogLevel, keyof PickBy<typeof console, (message: string) => void>> = {
+const consoleLevelFuncMap: Record<LogLevel, PropertiesOfType<typeof console, (message: string) => void>> = {
   [LogLevel.Error]: 'error',
   [LogLevel.Warn]: 'warn',
   [LogLevel.Info]: 'info',

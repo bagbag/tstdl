@@ -1,26 +1,25 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import type { Decorator } from '#/reflection/index.js';
-import type { OneOrMany, TypedOmit } from '#/types.js';
-import { toArray } from '#/utils/array/array.js';
-import { isDefined, isFunction, isString, isUndefined } from '#/utils/type-guards.js';
-import type { ValueType } from '../types/index.js';
-import { typeSchema } from '../types/index.js';
-import type { PropertyOptions } from './types.js';
+import type { TypedOmit } from '#/types.js';
+import { isDefined } from '#/utils/type-guards.js';
+import type { SchemaTestable } from '../schema.js';
+import { isSchemaTestable } from '../testable.js';
+import type { SchemaPropertyReflectionData } from './types.js';
 import { createSchemaPropertyDecorator } from './utils.js';
 
-export function Property(options?: PropertyOptions): Decorator<'property' | 'accessor'>;
-export function Property(schema?: OneOrMany<ValueType>, options?: TypedOmit<PropertyOptions, 'schema'>): Decorator<'property' | 'accessor'>;
-export function Property(optionsOrTypes: PropertyOptions | OneOrMany<ValueType> = {}, optionsOrNothing?: PropertyOptions): Decorator<'property' | 'accessor'> {
-  const schema = (isFunction(optionsOrTypes) || isString(optionsOrTypes)) ? typeSchema(optionsOrTypes) : undefined;
-  const options = isUndefined(schema) ? (optionsOrTypes as PropertyOptions) : optionsOrNothing ?? ({} as PropertyOptions);
+export type SchemaPropertyDecoratorOptions = TypedOmit<SchemaPropertyReflectionData, 'schema'>;
 
-  return createSchemaPropertyDecorator({
-    schema,
-    ...options,
-    coercers: isDefined(options.coercers) ? toArray(options.coercers) : undefined,
-    transformers: isDefined(options.transformers) ? toArray(options.transformers) : undefined,
-    arrayConstraints: isDefined(options.arrayConstraints) ? toArray(options.arrayConstraints) : undefined,
-    valueConstraints: isDefined(options.valueConstraints) ? toArray(options.valueConstraints) : undefined
-  });
+export function Property(schema?: SchemaTestable, options?: SchemaPropertyDecoratorOptions): Decorator<'property' | 'accessor'>;
+export function Property(options?: SchemaPropertyDecoratorOptions): Decorator<'property' | 'accessor'>;
+export function Property(schemaOrOptions?: SchemaTestable | SchemaPropertyDecoratorOptions, optionsOrNothing?: SchemaPropertyDecoratorOptions): Decorator<'property' | 'accessor'> {
+  if (isDefined(optionsOrNothing)) {
+    return createSchemaPropertyDecorator({ schema: schemaOrOptions as SchemaTestable, ...optionsOrNothing });
+  }
+
+  if (isSchemaTestable(schemaOrOptions)) {
+    return createSchemaPropertyDecorator({ schema: schemaOrOptions });
+  }
+
+  return createSchemaPropertyDecorator(schemaOrOptions);
 }

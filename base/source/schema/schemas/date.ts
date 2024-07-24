@@ -1,36 +1,36 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { isValidDate } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { toArrayCopy } from '#/utils/array/array.js';
-import { isDefined } from '#/utils/type-guards.js';
-import { MaximumDateConstraint, MinimumDateConstraint } from '../constraints/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
-import { valueSchema } from '../types/types.js';
-
-export type DateOptions = ValueSchemaOptions & {
-  minimum?: Date | number,
-  maximum?: Date | number
+export type DateSchemaOptions = SimpleSchemaOptions & {
+  integer?: boolean
 };
 
-export function date(options: DateOptions = {}): ValueSchema<Date> {
-  const constraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
+export class DateSchema extends SimpleSchema<globalThis.Date> {
+  constructor(options?: DateSchemaOptions) {
+    super('date', isValidDate, options, {
+      coercers: {
+        string: (value, path, options) => {
+          const result = new globalThis.Date(value);
 
-  if (isDefined(options.minimum)) {
-    constraints.push(new MinimumDateConstraint(options.minimum));
+          return globalThis.Number.isNaN(result.getTime())
+            ? { success: false, error: SchemaError.couldNotCoerce('date', 'string', path, { fast: options.fastErrors }) }
+            : { success: true, value: result, valid: true };
+        },
+        number: (value) => ({ success: true, value: new globalThis.Date(value), valid: false })
+      },
+      constraints: [
+        (options?.integer == true) ? (value) => globalThis.Number.isInteger(value) ? ({ success: true }) : ({ success: false, error: 'value is not an integer.' }) : null
+      ]
+    });
   }
-
-  if (isDefined(options.maximum)) {
-    constraints.push(new MaximumDateConstraint(options.maximum));
-  }
-
-  return valueSchema(Date, {
-    ...options,
-    valueConstraints: constraints
-  });
 }
 
-export function DateProperty(options?: DateOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(date(options));
+export function date(options?: DateSchemaOptions): DateSchema {
+  return new DateSchema(options);
+}
+
+export function DateProperty(options?: SchemaPropertyDecoratorOptions & DateSchemaOptions): SchemaPropertyDecorator {
+  return Property(date(options), options);
 }

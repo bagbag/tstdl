@@ -1,17 +1,32 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { isRegExp } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { Schema } from '../schema.js';
-import { valueSchema } from '../types/index.js';
-import type { ValueSchemaOptions } from '../types/types.js';
+export type RegExpSchemaOptions = SimpleSchemaOptions;
 
-export type RegExpSchemaOptions = ValueSchemaOptions;
-
-export function regexp(options?: RegExpSchemaOptions): Schema<RegExp> {
-  return valueSchema(RegExp, options);
+export class RegExpSchema extends SimpleSchema<RegExp> {
+  constructor(options?: RegExpSchemaOptions) {
+    super('RegExp', isRegExp, options, {
+      coercers: {
+        string: (value, path, options) => {
+          try {
+            const regex = globalThis.RegExp(value, 'u');
+            return ({ success: true, value: regex, valid: true });
+          }
+          catch (error) {
+            return { success: false, error: SchemaError.couldNotCoerce(globalThis.RegExp, 'string', path, { fast: options.fastErrors, customMessage: (error as Error).message }) };
+          }
+        }
+      }
+    });
+  }
 }
 
-export function RegExpProperty(options?: RegExpSchemaOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(regexp(options));
+export function regExp(options?: RegExpSchemaOptions): RegExpSchema {
+  return new RegExpSchema(options);
+}
+
+export function RegExpProperty(options?: SchemaPropertyDecoratorOptions & RegExpSchemaOptions): SchemaPropertyDecorator {
+  return Property(regExp(options), options);
 }

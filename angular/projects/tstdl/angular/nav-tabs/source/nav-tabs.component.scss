@@ -2,5 +2,9 @@
   tsl-nav-tabs,
   [tslNavTabs] {
     @apply flex;
+
+    &.design-underline {
+      @apply gap-2;
+    }
   }
 }

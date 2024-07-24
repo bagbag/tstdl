@@ -1,43 +1,41 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { isNumber } from '#/utils/type-guards.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { toArrayCopy } from '#/utils/array/array.js';
-import { isDefined } from '#/utils/type-guards.js';
-import { integerConstraint } from '../constraints/integer.js';
-import { MaximumConstraint } from '../constraints/maximum.js';
-import { MinimumConstraint } from '../constraints/minimum.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/utils.js';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
-import { valueSchema } from '../types/types.js';
-
-export type NumberOptions = ValueSchemaOptions & {
-  minimum?: number,
-  maximum?: number,
+export type NumberSchemaOptions = SimpleSchemaOptions & {
   integer?: boolean
 };
 
-export function number(options: NumberOptions = {}): ValueSchema<number> {
-  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options.valueConstraints ?? []);
+export class NumberSchema extends SimpleSchema<number> {
+  constructor(options?: NumberSchemaOptions) {
+    super('number', isNumber, options, {
+      coercers: {
+        string: (value, path, options) => {
+          const result = globalThis.Number(value);
 
-  if (isDefined(options.minimum)) {
-    valueConstraints.push(new MinimumConstraint(options.minimum));
+          return globalThis.Number.isNaN(result)
+            ? { success: false, error: SchemaError.couldNotCoerce('number', 'string', path, { fast: options.fastErrors }) }
+            : { success: true, value: result, valid: true };
+        },
+        boolean: (value) => ({ success: true, value: globalThis.Number(value), valid: true }),
+        bigint: (value) => ({ success: true, value: globalThis.Number(value), valid: false })
+      },
+      constraints: [
+        (options?.integer == true) ? (value) => globalThis.Number.isInteger(value) ? ({ success: true }) : ({ success: false, error: 'value is not an integer.' }) : null
+      ]
+    });
   }
-
-  if (isDefined(options.maximum)) {
-    valueConstraints.push(new MaximumConstraint(options.maximum));
-  }
-
-  if (options.integer == true) {
-    valueConstraints.push(integerConstraint);
-  }
-
-  return valueSchema<number>(Number, {
-    ...options,
-    valueConstraints
-  });
 }
 
-export function NumberProperty(options?: NumberOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(number(options));
+export function number(options?: NumberSchemaOptions): NumberSchema {
+  return new NumberSchema(options);
+}
+
+export function NumberProperty(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
+  return Property(number(options), options);
+}
+
+export function Integer(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
+  return Property(number({ ...options, integer: true }), options);
 }

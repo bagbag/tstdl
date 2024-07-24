@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { AfterRenderPhase, ChangeDetectionStrategy, Component, ViewEncapsulation, afterNextRender, booleanAttribute, contentChild, effect, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, afterNextRender, booleanAttribute, contentChild, effect, input, model } from '@angular/core';
 import { collapseAnimation } from '@tstdl/angular';
 
 import { DrawerCardContentComponent } from './drawer-card-content/drawer-card-content.component';
@@ -31,10 +31,12 @@ export class DrawerCardComponent {
     effect(() => this.drawerContentComponent()?.open.set(this.open()), { allowSignalWrites: true });
     effect(() => this.contentComponent()?.interactive.set(this.interactive()), { allowSignalWrites: true });
 
-    afterNextRender(() => this.contentComponent()?.clicked.subscribe(() => {
-      if (!this.manualOpen()) {
-        this.open.update((open) => !open);
-      }
-    }), { phase: AfterRenderPhase.Write });
+    afterNextRender({
+      read: () => this.contentComponent()?.clicked.subscribe(() => {
+        if (!this.manualOpen()) {
+          this.open.update((open) => !open);
+        }
+      })
+    });
   }
 }

@@ -1,16 +1,56 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import type { JsonPath } from '#/json-path/json-path.js';
+import { SchemaError } from '#/schema/schema.error.js';
+import { isBoolean, isString } from '#/utils/type-guards.js';
+import { typeOf } from '#/utils/type-of.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import type { SchemaTestOptions, SchemaTestResult } from '../schema.js';
+import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/index.js';
-import { valueSchema } from '../types/index.js';
+export type BooleanSchemaOptions = SimpleSchemaOptions;
 
-export type BooleanOptions = ValueSchemaOptions;
+export class BooleanSchema extends SimpleSchema<boolean> {
+  constructor(options?: BooleanSchemaOptions) {
+    super('boolean', isBoolean, options, {
+      coercers: {
+        all: (value) => {
+          const normalizedValue = isString(value) ? value.toLowerCase().trim() : value;
 
-export function boolean(options: BooleanOptions = {}): ValueSchema<boolean> {
-  return valueSchema<boolean>(Boolean, options);
+          switch (normalizedValue) {
+            case 1:
+            case 1n:
+            case 'true':
+            case '1':
+            case 'yes':
+              return { success: true, value: true, valid: true };
+
+            case 0:
+            case 0n:
+            case 'false':
+            case '0':
+            case 'no':
+              return { success: true, value: false, valid: true };
+
+            default:
+              return { success: false };
+          }
+        }
+      }
+    });
+  }
+
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<boolean> {
+    if (isBoolean(value)) {
+      return { valid: true, value };
+    }
+
+    return { valid: false, error: SchemaError.expectedButGot('boolean', typeOf(value), path, { fast: options.fastErrors }) };
+  }
 }
 
-export function BooleanProperty(options?: BooleanOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(boolean(options));
+export function boolean(options?: BooleanSchemaOptions): BooleanSchema {
+  return new BooleanSchema(options);
+}
+
+export function BooleanProperty(options?: BooleanSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return Property(boolean(options), options);
 }

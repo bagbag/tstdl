@@ -1,16 +1,38 @@
-import type { Decorator } from '#/reflection/index.js';
-import type { OneOrMany } from '#/types.js';
-import { createSchemaPropertyDecorator } from '../decorators/utils.js';
-import type { SchemaTestable } from '../schema.js';
-import { valueSchema } from '../types/index.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
+import type { JsonPath } from '#/json-path/json-path.js';
+import type { TypedOmit } from '#/types.js';
+import { isUndefined } from '#/utils/type-guards.js';
+import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { type OPTIONAL, Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { schemaTestableToSchema } from '../testable.js';
 
-export type OptionalOptions = ValueSchemaOptions;
+export class OptionalSchema<T> extends Schema<T | undefined> {
+  declare readonly [OPTIONAL]: true;
 
-export function optional<T>(schema: OneOrMany<SchemaTestable<T>>, options?: OptionalOptions): ValueSchema<T | undefined> {
-  return valueSchema(schema as SchemaTestable<T | undefined>, { ...options, optional: true });
+  readonly schema: Schema<T>;
+
+  constructor(schema: SchemaTestable<T>) {
+    if ((schema instanceof OptionalSchema) && (schema == schema.schema)) {
+      return schema; // eslint-disable-line no-constructor-return
+    }
+
+    super();
+
+    this.schema = schemaTestableToSchema(schema);
+  }
+
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | undefined> {
+    if (isUndefined(value)) {
+      return { valid: true, value: undefined };
+    }
+
+    return this.schema._test(value, path, options);
+  }
 }
 
-export function Optional(schema?: OneOrMany<SchemaTestable>): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecorator({ schema, optional: true });
+export function optional<T>(schema: SchemaTestable<T>): OptionalSchema<T> {
+  return new OptionalSchema(schema);
+}
+
+export function Optional(schema?: SchemaTestable, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'optional'>): SchemaPropertyDecorator {
+  return createSchemaPropertyDecorator({ schema, ...options, optional: true });
 }

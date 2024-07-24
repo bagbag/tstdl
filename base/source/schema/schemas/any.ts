@@ -1,16 +1,16 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaTestResult } from '../schema.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/index.js';
-import { valueSchema } from '../types/index.js';
-
-export type AnyOptions = ValueSchemaOptions;
-
-export function any(options?: AnyOptions): ValueSchema<any> { // eslint-disable-line @typescript-eslint/no-unnecessary-type-arguments
-  return valueSchema('any', options);
+export class AnySchema extends Schema<any> {
+  override _test(value: any): SchemaTestResult<any> {
+    return { valid: true, value };
+  }
 }
 
-export function Any(options?: AnyOptions): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(any(options));
+export function any(): AnySchema {
+  return new AnySchema();
+}
+
+export function Any(options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return Property(any(), options);
 }

@@ -1,13 +1,6 @@
-import type { ApiDefinition, ApiEndpointsDefinition } from '#/api/types.js';
-import { defineApi } from '#/api/types.js';
+import { type ApiDefinition, type ApiEndpointsDefinition, defineApi } from '#/api/types.js';
+import { assign, emptyObjectSchema, explicitObject, literal, number, object, type ObjectSchema, type ObjectSchemaOrType, string, unknown } from '#/schema/index.js';
 import type { SchemaTestable } from '#/schema/schema.js';
-import { assign } from '#/schema/schemas/assign.js';
-import { literal } from '#/schema/schemas/literal.js';
-import { number } from '#/schema/schemas/number.js';
-import { emptyObjectSchema, explicitObject, object } from '#/schema/schemas/object.js';
-import { string } from '#/schema/schemas/string.js';
-import { unknown } from '#/schema/schemas/unknown.js';
-import type { ObjectSchema, ObjectSchemaOrType } from '#/schema/types/types.js';
 import type { Record } from '#/types.js';
 import type { TokenPayload } from './index.js';
 import { SecretCheckResult } from './models/secret-check-result.model.js';
@@ -26,7 +19,7 @@ export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = 
 export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown(), emptyObjectSchema);
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData, AdditionalEndpoints>(
+export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record, AdditionalEndpoints>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
   initSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>,
@@ -43,7 +36,7 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Re
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData>(
+export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
   additionalInitSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>

@@ -1,386 +1,134 @@
-import { JsonPath } from '#/json-path/index.js';
-import type { ObjectLiteral, Record } from '#/types.js';
-import { toArray } from '#/utils/array/array.js';
-import { noop } from '#/utils/noop.js';
-import { objectKeys } from '#/utils/object/object.js';
-import { differenceSets } from '#/utils/set.js';
-import { isArray, isDefined, isFunction, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
-import { booleanCoercer, dateCoercer, numberCoercer, regExpCoercer, stringCoercer, uint8ArrayCoercer } from './coercers/index.js';
-import { SchemaError } from './schema.error.js';
-import type { NormalizedObjectSchema, NormalizedTypeSchema, NormalizedValueSchema, ObjectSchema, ResolvedValueType, SchemaContext, SchemaOutput, SchemaTestOptions, SchemaTestResult, SchemaValueCoercer, TransformResult, TupleSchemaOutput, TypeSchema, ValueSchema, ValueType } from './types/index.js';
-import { isObjectSchema, isTransformErrorResult, isTypeSchema, isValueSchema, resolveValueType, resolveValueTypes, schemaTestableToSchema, transformErrorResultSymbol } from './types/index.js';
-import { getArrayItemSchema, getSchemaTypeNames, getSchemaValueTypes, getValueType, includesValueType, normalizeObjectSchema, normalizeValueSchema, tryGetObjectSchemaFromReflection } from './utils/index.js';
+import type { IsEqual, Or } from 'type-fest';
 
-export type Schema<T = any> = ObjectSchema<T> | ValueSchema<T> | TypeSchema<T>;
-export type SchemaTestable<T = any> = Schema<T> | ValueType<T>;
-export type NormalizedSchema<T = any> = NormalizedObjectSchema<T> | NormalizedValueSchema<T> | NormalizedTypeSchema<T>;
+import { JsonPath } from '#/json-path/json-path.js';
+import type { AbstractConstructor } from '#/types.js';
+import type { SchemaError } from './schema.error.js';
+import type { Coercible, Maskable } from './types.js';
 
-
-const defaultCoercers = new Map<ValueType, SchemaValueCoercer[]>();
-
-let initialize = (): void => {
-  Schema.registerDefaultCoercer(numberCoercer);
-  Schema.registerDefaultCoercer(booleanCoercer);
-  Schema.registerDefaultCoercer(stringCoercer);
-  Schema.registerDefaultCoercer(dateCoercer);
-  Schema.registerDefaultCoercer(regExpCoercer);
-  Schema.registerDefaultCoercer(uint8ArrayCoercer);
-
-  initialize = noop;
+export type SchemaTestOptions = Coercible & Maskable & {
+  /**
+   * Use fast errors which can improve performance a lot but misses detailed stack traces.
+   */
+  fastErrors?: boolean
 };
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
-export const Schema = {
-  registerDefaultCoercer(coercer: SchemaValueCoercer): void {
-    for (const sourceType of toArray(coercer.sourceType)) {
-      if (!defaultCoercers.has(sourceType)) {
-        defaultCoercers.set(sourceType, []);
-      }
+export type SchemaTestResult<T> =
+  | { valid: true, value: T, error?: undefined }
+  | { valid: false, value?: undefined, error: SchemaError };
 
-      defaultCoercers.get(sourceType)!.push(coercer);
-    }
-  },
+type NormalizePrimitiveToConstructor<T> =
+  Or<IsEqual<T, string>, IsEqual<T, String>> extends true ? typeof String
+  : Or<IsEqual<T, number>, IsEqual<T, Number>> extends true ? typeof Number
+  : Or<IsEqual<T, boolean>, IsEqual<T, Boolean>> extends true ? typeof Boolean
+  : Or<IsEqual<T, bigint>, IsEqual<T, BigInt>> extends true ? typeof BigInt
+  : Or<IsEqual<T, symbol>, IsEqual<T, Symbol>> extends true ? typeof Symbol
+  : never;
 
-  test<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
-    const normalizedOptions: SchemaTestOptions = { fastErrors: true, ...options };
+type NormalizeConstructorToPrimitve<T> =
+  | IsEqual<T, String> extends true ? string
+  : IsEqual<T, Number> extends true ? number
+  : IsEqual<T, Boolean> extends true ? boolean
+  : IsEqual<T, BigInt> extends true ? bigint
+  : IsEqual<T, Symbol> extends true ? symbol
+  : T;
 
-    const schema = schemaTestableToSchema(schemaOrValueType);
-    const result = testSchema(schema, value, normalizedOptions, path);
+export type SchemaTestable<T = unknown> = Schema<T> | AbstractConstructor<T> | NormalizePrimitiveToConstructor<T>;
 
-    if (result.valid) {
-      return result;
-    }
+export type SchemaOutput<T extends SchemaTestable> = T extends SchemaTestable<infer U> ? U : never;
 
-    if (isUndefined(result.error.stack)) {
-      result.error.stack = new Error().stack;
-    }
+export declare const OPTIONAL: unique symbol;
 
-    return result;
-  },
+export abstract class Schema<T = unknown> {
+  declare readonly [OPTIONAL]: boolean;
 
-  validate<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): boolean {
-    const schema = schemaTestableToSchema(schemaOrValueType);
-    const result = this.test(schema, value, options);
+  /**
+   * Test an unknown value to see whether it corresponds to the schema.
+   * @param schema schema to test against
+   * @param value value to test
+   * @param options validation options
+   * @returns test result
+   */
+  static readonly test: <T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions) => SchemaTestResult<T>;
 
+  /**
+   * Validate an unknown value to see whether it corresponds to the schema.
+   * @param schema schema to validate against
+   * @param value value to validate
+   * @param options validation options
+   * @returns validation result
+   */
+  static readonly validate: <T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions) => boolean;
+
+  /**
+   * Asserts an unknown value to be valid according to the schema.
+   * @param schema schema to validate against
+   * @param value value to validate
+   * @param options validation options
+   */
+  static readonly assert: <T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions) => asserts value is T;
+
+  /**
+   * Parse an unknown value to comply with the scheme.
+   * @param schema schema to validate against
+   * @param value value to validate
+   * @param options validation options
+   * @returns validation result
+   */
+  static readonly parse: <T>(schema: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions) => T;
+
+  /**
+   * Test an unknown value to see whether it corresponds to the schema.
+   * @param schema schema to test against
+   * @param value value to test
+   * @param options validation options
+   * @returns test result with either the value or validation error
+   */
+  test(value: any, options: SchemaTestOptions = {}): SchemaTestResult<T> {
+    return this._test(value, JsonPath.ROOT, options);
+  }
+
+  /**
+   * Validate an unknown value to see whether it corresponds to the schema.
+   * @param schema schema to validate against
+   * @param value value to validate
+   * @param options validation options
+   * @returns validation result. Throws if validation fails
+   */
+  validate(value: any, options: SchemaTestOptions = {}): boolean {
+    const result = this._test(value, JsonPath.ROOT, options);
     return result.valid;
-  },
+  }
 
-  parse<T>(schemaOrValueType: SchemaTestable<T>, value: unknown, options?: SchemaTestOptions): T {
-    const schema = schemaTestableToSchema(schemaOrValueType);
-    const result = this.test(schema, value, options);
+  /**
+   * Asserts an unknown value to be valid according to the schema.
+   * @param schema schema to validate against
+   * @param value value to validate
+   * @param options validation options
+   */
+  assert(value: any, options: SchemaTestOptions = {}): asserts value is T {
+    const result = this._test(value, JsonPath.ROOT, options);
+
+    if (!result.valid) {
+      throw result.error;
+    }
+  }
+
+  /**
+   * Parse an unknown value to comply with the scheme.
+   * @param schema schema to parse against
+   * @param value value to parse
+   * @param options validation options
+   * @returns parsed value
+   */
+  parse(value: any, options: SchemaTestOptions = {}): T {
+    const result = this._test(value, JsonPath.ROOT, options);
 
     if (result.valid) {
       return result.value;
     }
 
     throw result.error;
-  },
-
-  function<T extends readonly SchemaTestable[], R extends SchemaTestable, F extends (...args: TupleSchemaOutput<T>) => SchemaOutput<R>>(argumentSchemas: T, returnSchema: R, handler: F): F {
-    const name = `validated${handler.name.slice(0, 1).toUpperCase()}${handler.name.slice(1)}`;
-    const schema: ObjectSchema = getFunctionParametersSchema<T>(argumentSchemas);
-
-    return {
-      [name](...unsafeArgs: unknown[]): SchemaOutput<R> {
-        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-        const unsafeResult = handler(...safeArgs);
-
-        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
-      }
-    }[name] as F;
-  },
-
-  asyncFunction<T extends readonly SchemaTestable[], R extends SchemaTestable, F extends (...args: TupleSchemaOutput<T>) => Promise<SchemaOutput<R>>>(argumentSchemas: T, returnSchema: R, handler: F): F {
-    const name = `validated${handler.name.slice(0, 1).toUpperCase()}${handler.name.slice(1)}`;
-    const schema: ObjectSchema = getFunctionParametersSchema<T>(argumentSchemas);
-
-    return {
-      async [name](...unsafeArgs: unknown[]): Promise<SchemaOutput<R>> {
-        const safeArgs = Schema.parse(schema, unsafeArgs, { mask: true }) as TupleSchemaOutput<T>; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
-        const unsafeResult = await handler(...safeArgs);
-
-        return Schema.parse(returnSchema, unsafeResult) as SchemaOutput<R>; // eslint-disable-line @typescript-eslint/no-unsafe-return
-      }
-    }[name] as F;
-  }
-};
-
-function getFunctionParametersSchema<T extends readonly SchemaTestable[]>(argumentSchemas: T): ObjectSchema<TupleSchemaOutput<T>> {
-  const schema: ObjectSchema = {
-    factory: { type: Array },
-    properties: {}
-  };
-
-  argumentSchemas.forEach((arg, index) => (schema.properties[index] = arg));
-
-  return schema;
-}
-
-export function testSchema<T>(schema: Schema<T>, value: unknown, options?: SchemaTestOptions, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
-  initialize();
-
-  if (isValueSchema(schema)) {
-    return testValue(schema, value, options, path);
   }
 
-  if (isTypeSchema(schema)) {
-    return testType(schema, value, options, path);
-  }
-
-  if (isObjectSchema(schema)) {
-    return testObject(schema, value, options, path);
-  }
-
-  throw new Error('Unsupported schema');
-}
-
-function testType<T>(schema: TypeSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
-  const resolvedValueType = resolveValueType(schema.type);
-
-  if (isFunction(resolvedValueType)) {
-    if ((value instanceof resolvedValueType) || (getValueType(value) == resolvedValueType)) {
-      return { valid: true, value: value as T };
-    }
-
-    const objectSchema = tryGetObjectSchemaFromReflection(resolvedValueType);
-
-    if (isNotNull(objectSchema)) {
-      return testObject(objectSchema, value, options, path);
-    }
-  }
-  else if ((resolvedValueType == 'any') || ((resolvedValueType == 'null') && isNull(value)) || ((resolvedValueType == 'undefined') && isUndefined(value))) {
-    return { valid: true, value: value as T };
-  }
-
-  return { valid: false, error: SchemaError.expectedButGot(resolvedValueType, getValueType(value), path, { fast: options.fastErrors }) };
-}
-
-// eslint-disable-next-line complexity
-function testObject<T>(objectSchema: ObjectSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
-  if (!(value instanceof Object)) {
-    return { valid: false, error: SchemaError.expectedButGot(objectSchema.sourceType ?? 'object', getValueType(value), path, { fast: options.fastErrors }) };
-  }
-
-  const schema = normalizeObjectSchema(objectSchema as ObjectSchema);
-  const mask = schema.mask ?? options.mask ?? false;
-  const resultValue: T = isDefined(schema.factory?.type) ? new schema.factory!.type() : {} as Record;
-
-  const schemaPropertyKeys = objectKeys(schema.properties);
-  const valuePropertyKeys = objectKeys(value);
-
-  const unknownValuePropertyKeys = differenceSets(new Set(valuePropertyKeys), new Set(schemaPropertyKeys));
-
-  if ((unknownValuePropertyKeys.length > 0) && !mask && !schema.allowUnknownProperties) {
-    return { valid: false, error: new SchemaError('Unknown property', { path: path.add(unknownValuePropertyKeys[0]!), fast: options.fastErrors }) };
-  }
-
-  for (const key of schemaPropertyKeys) {
-    const propertyResult = testSchema(schema.properties[key as string]!, (value as Record)[key], options, path.add(key));
-
-    if (!propertyResult.valid) {
-      return propertyResult;
-    }
-
-    resultValue[key as keyof T] = propertyResult.value;
-  }
-
-  if (schema.allowUnknownProperties) {
-    for (const key of unknownValuePropertyKeys) {
-      const propertyPath = path.add(key);
-
-      if (isDefined(schema.unknownPropertiesKey)) {
-        const keyResult = testSchema(schema.unknownPropertiesKey, key, options);
-
-        if (!keyResult.valid && !mask) {
-          return { valid: false, error: new SchemaError('Invalid property key.', { path: propertyPath, inner: keyResult.error, fast: options.fastErrors }) };
-        }
-      }
-
-      const propertyResult = testSchema(schema.unknownProperties!, (value as Record)[key], options, path.add(key));
-
-      if (!propertyResult.valid && !mask) {
-        return propertyResult;
-      }
-
-      resultValue[key as keyof T] = propertyResult.value;
-    }
-  }
-
-  const testResultValue = isUndefined(schema.factory) ? resultValue : isDefined(schema.factory.type) ? resultValue : schema.factory.builder!(resultValue);
-
-  return { valid: true, value: testResultValue };
-}
-
-// eslint-disable-next-line max-lines-per-function, max-statements, complexity
-function testValue<T>(schema: ValueSchema<T>, value: unknown, options: SchemaTestOptions = {}, path: JsonPath = JsonPath.ROOT): SchemaTestResult<T> {
-  const normalizedValueSchema = normalizeValueSchema(schema);
-
-  if (normalizedValueSchema.optional && isUndefined(value)) {
-    return { valid: true, value: value as unknown as T };
-  }
-
-  if (normalizedValueSchema.nullable && isNull(value)) {
-    return { valid: true, value: value as unknown as T };
-  }
-
-  const context: SchemaContext = {
-    schema: normalizedValueSchema,
-    options
-  };
-
-  /** handle arrays */
-  if (normalizedValueSchema.array) {
-    if (!isArray(value)) {
-      if (normalizedValueSchema.coerce) {
-        return testValue(schema, [value], options, path);
-      }
-
-      return { valid: false, error: SchemaError.expectedButGot(Array, getValueType(value), path, { fast: options.fastErrors }) };
-    }
-
-    for (const arrayConstraint of normalizedValueSchema.arrayConstraints) {
-      const result = arrayConstraint.validate(value, path, context);
-
-      if (!result.valid) {
-        return { valid: false, error: result.error };
-      }
-    }
-
-    const itemSchema = getArrayItemSchema(schema);
-    const validatedItems = [];
-
-    for (let i = 0; i < value.length; i++) {
-      const result = testValue(itemSchema, value[i], options, path.add(i));
-
-      if (!result.valid) {
-        return result;
-      }
-
-      validatedItems.push(result.value);
-    }
-
-    return { valid: true, value: validatedItems as unknown as T };
-  }
-
-  let valueTestResult!: SchemaTestResult<unknown>;
-  let resultValue: unknown;
-  let valueType!: ResolvedValueType;
-
-  function updateCurrentState(newValue: unknown): void {
-    valueTestResult = isValidValue(normalizedValueSchema.schema, newValue, options, path);
-    resultValue = valueTestResult.valid ? valueTestResult.value : newValue;
-    valueType = getValueType(resultValue);
-  }
-
-  updateCurrentState(value);
-
-  /** try to coerce */
-  if (!valueTestResult.valid) {
-    const targetTypes = getSchemaValueTypes(schema);
-
-    const coercers = [
-      ...(normalizedValueSchema.coercers.get(valueType) ?? []),
-      ...((normalizedValueSchema.coerce || options.coerce == true) ? (defaultCoercers.get(valueType) ?? []) : [])
-    ]
-      .filter((coercer) => includesValueType(coercer.targetType, targetTypes));
-
-    const errors: SchemaError[] = [];
-    let success = false;
-
-    for (const coercer of coercers) {
-      const coerceResult = coercer.coerce(resultValue, path, context);
-
-      if (!coerceResult.success) {
-        errors.push(coerceResult.error);
-        continue;
-      }
-
-      success = true;
-      updateCurrentState(coerceResult.value);
-      break;
-    }
-
-    if (!success && (errors.length > 0)) {
-      return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value could not be coerced.', { inner: errors, path, fast: options.fastErrors }) };
-    }
-  }
-
-  if (!valueTestResult.valid) {
-    return valueTestResult;
-  }
-
-  if (normalizedValueSchema.valueConstraints.length > 0) {
-    const errors: SchemaError[] = [];
-
-    for (const constraint of normalizedValueSchema.valueConstraints) {
-      const result = constraint.validate(resultValue, path, context);
-
-      if (!result.valid) {
-        errors.push(result.error);
-      }
-    }
-
-    if (errors.length > 0) {
-      return { valid: false, error: (errors.length == 1) ? errors[0]! : new SchemaError('Value did not match schema.', { path, inner: errors, fast: options.fastErrors }) };
-    }
-  }
-
-  if (normalizedValueSchema.transformers.length > 0) {
-    for (const transformer of normalizedValueSchema.transformers) {
-      if (isDefined(transformer.sourceType) && !includesValueType(valueType, resolveValueTypes(transformer.sourceType))) {
-        continue;
-      }
-
-      const transformResult = transformer.transform(resultValue, path, context) as TransformResult<T & ObjectLiteral>;
-
-      if (isTransformErrorResult(transformResult)) {
-        return { valid: false, error: transformResult[transformErrorResultSymbol] };
-      }
-
-      return { valid: true, value: transformResult };
-    }
-  }
-
-  return { valid: true, value: resultValue as T };
-}
-
-function isValidValue<T>(validSchemas: Iterable<Schema>, value: unknown, options: SchemaTestOptions, path: JsonPath): SchemaTestResult<T> {
-  const errorResults: SchemaTestResult<T>[] = [];
-
-  for (const schema of validSchemas) {
-    const result = testSchema(schema, value, options, path);
-
-    if (result.valid) {
-      return result;
-    }
-
-    errorResults.push(result);
-  }
-
-  if (errorResults.length == 1) {
-    return errorResults[0]!;
-  }
-
-  const errors = errorResults.map((result) => result.error!);
-
-  const expectStrings: string[] = [];
-
-  for (const schema of validSchemas) {
-    expectStrings.push(getExpectString(schema));
-  }
-
-  const expectString = expectStrings.length > 1 ? `(${expectStrings.join(' | ')})` : expectStrings[0]!;
-
-  return { valid: false, error: SchemaError.expectedButGot(expectString, getValueType(value), path, { inner: errors, fast: options.fastErrors }) };
-}
-
-export function getExpectString(schema: SchemaTestable): string {
-  const expectedNames = getSchemaTypeNames(schema);
-  const arraySuffix = (isValueSchema(schema) && (schema.array == true)) ? '[]' : '';
-  const expectedTypeString = (expectedNames.length == 1) ? `${expectedNames[0]}${arraySuffix}` : `(${expectedNames.join(' | ')})${arraySuffix}`;
-
-  const expects = isValueSchema(schema) ? toArray(schema.valueConstraints ?? []).map((constraint) => constraint.expects) : [];
-  const expectsString = (expects.length > 0) ? `[${expects.join(', ')}]` : '';
-
-  return `${expectedTypeString}${expectsString}`;
+  abstract _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T>;
 }

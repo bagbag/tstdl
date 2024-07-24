@@ -32,7 +32,7 @@ export abstract class Template<Fields extends Record<string, boolean> = Record<s
   @Property()
   name: string;
 
-  @Property({ schema: object({}, { unknownProperties: TemplateField }) })
+  @Property(object({}, { unknownProperties: TemplateField }))
   fields: TemplateFields<Fields, string, string, any, Context>;
 
   @Any()

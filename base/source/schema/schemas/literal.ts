@@ -1,26 +1,41 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import type { JsonPath } from '#/json-path/json-path.js';
+import { isPrimitive } from '#/utils/type-guards.js';
+import { typeOf } from '#/utils/type-of.js';
+import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
+import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
-import type { Decorator } from '#/reflection/index.js';
-import { toArrayCopy } from '#/utils/array/array.js';
-import { LiteralConstraint } from '../constraints/index.js';
-import { createSchemaPropertyDecoratorFromSchema } from '../decorators/index.js';
-import type { SchemaValueConstraint } from '../types/schema-value-constraint.js';
-import type { ValueSchema, ValueSchemaOptions } from '../types/types.js';
-import { valueSchema } from '../types/types.js';
-import { getValueType } from '../utils/value-type.js';
+export class LiteralSchema<const T> extends Schema<T> {
+  readonly value: T;
 
-export type LiteralOptions = ValueSchemaOptions;
+  constructor(value: T) {
+    super();
 
-export function literal<const T>(value: T, options?: LiteralOptions): ValueSchema<T> {
-  const valueConstraints: SchemaValueConstraint[] = toArrayCopy(options?.valueConstraints ?? []);
-  valueConstraints.push(new LiteralConstraint(value));
+    this.value = value;
+  }
 
-  return valueSchema(getValueType(value), {
-    ...options,
-    valueConstraints
-  });
+  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T> {
+    if (value === this.value) {
+      return { valid: true, value };
+    }
+
+    return {
+      valid: false,
+      error: SchemaError.expectedButGot(
+        isPrimitive(this.value) ? String(this.value) : typeOf(this.value),
+        isPrimitive(value) ? String(value) : typeOf(value),
+        path,
+        { fast: options.fastErrors }
+      )
+    };
+  }
 }
 
-export function Literal(value: any): Decorator<'property' | 'accessor'> {
-  return createSchemaPropertyDecoratorFromSchema(literal(value));
+export function literal<const T>(value: T): LiteralSchema<T> {
+  return new LiteralSchema(value);
+}
+
+
+export function Literal(value: any, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return Property(literal(value), options);
 }

@@ -2,8 +2,7 @@
 import '#/polyfills.js';
 
 import { compileClient } from '#/api/client/index.js';
-import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
-import { defineApi } from '#/api/index.js';
+import { ApiController, ApiRequestContext, ApiServerResult, defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
@@ -11,12 +10,12 @@ import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
 import { inject } from '#/injector/inject.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
-import { Property, array, boolean, number, object } from '#/schema/index.js';
+import { NumberProperty, Property, array, boolean, number, object } from '#/schema/index.js';
 import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
 class User {
-  @Property({ coerce: true })
+  @NumberProperty({ coerce: true })
   id: number;
 
   @Property()
@@ -96,7 +95,7 @@ async function clientTest(): Promise<void> {
   Application.requestShutdown();
 }
 
-async function main(): Promise<void> {
+function main(): void {
   configureNodeHttpServer();
   configureApiServer({ controllers: [UserApi] });
   configureUndiciHttpClientAdapter({ dispatcher: new Agent({ keepAliveMaxTimeout: 1 }) });
@@ -105,4 +104,4 @@ async function main(): Promise<void> {
   Application.run(WebServerModule, clientTest);
 }
 
-void main();
+main();
