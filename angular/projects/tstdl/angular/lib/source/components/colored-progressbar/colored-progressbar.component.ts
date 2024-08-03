@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
-import { scale } from 'chroma-js';
+import chroma from 'chroma-js';
+
 import { widthAnimation } from '../../animations';
 import { LifecycleUtils } from '../../utils/lifecycle';
 
-const progressColorScaler = scale(['#dc2626', '#ea580c', '#facc15', '#65a30d'])
+const progressColorScaler = chroma.scale(['#dc2626', '#ea580c', '#facc15', '#65a30d'])
   .classes([0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1])
   .mode('lab');
 

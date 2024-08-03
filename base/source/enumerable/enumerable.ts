@@ -1,6 +1,6 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
 import type { Comparator } from '#/utils/sort.js';
-import type { IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers/index.js';
+import type { GroupSelectors, IterableItemMetadata, IteratorFunction, Predicate, Reducer, TypePredicate } from '../utils/iterable-helpers/index.js';
 import { all, any, assert, batch, concat, defaultIfEmpty, deferredIterable, difference, differenceMany, distinct, drain, filter, first, firstOrDefault, forEach, group, groupSingle, groupToMap, groupToSingleMap, includes, last, lastOrDefault, map, mapMany, materialize, metadata, pairwise, range, reduce, single, singleOrDefault, skip, sort, take, takeUntil, takeWhile, tap, whileSync } from '../utils/iterable-helpers/index.js';
 import { isNotNullOrUndefined } from '../utils/type-guards.js';
 import { AsyncEnumerable } from './async-enumerable.js';
@@ -107,22 +107,30 @@ export class Enumerable<T> implements EnumerableMethods, Iterable<T> {
     return this as any as Enumerable<TNew>;
   }
 
-  group<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T[]]> {
-    const grouped = group(this.source, selector);
+  group<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T[]]>;
+  group<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Enumerable<[TGroup['length'] extends 1 ? TGroup[0] : TGroup, T[]]>;
+  group<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Enumerable<[TGroup, T[]]> {
+    const grouped = group<T, TGroup>(this.source, ...selectors);
     return new Enumerable(grouped);
   }
 
-  groupSingle<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T]> {
-    const grouped = groupSingle(this.source, selector);
+  groupSingle<TGroup>(selector: IteratorFunction<T, TGroup>): Enumerable<[TGroup, T]>;
+  groupSingle<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Enumerable<[TGroup['length'] extends 1 ? TGroup[0] : TGroup, T]>;
+  groupSingle<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Enumerable<[TGroup, T]> {
+    const grouped = groupSingle<T, TGroup>(this.source, ...selectors);
     return new Enumerable(grouped);
   }
 
-  groupToMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T[]> {
-    return groupToMap<T, TGroup>(this.source, selector);
+  groupToMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T[]>;
+  groupToMap<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Map<TGroup['length'] extends 1 ? TGroup[0] : TGroup, T[]>;
+  groupToMap<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Map<TGroup, T[]> {
+    return groupToMap<T, TGroup>(this.source, ...selectors);
   }
 
-  groupToSingleMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T> {
-    return groupToSingleMap<T, TGroup>(this.source, selector);
+  groupToSingleMap<TGroup>(selector: IteratorFunction<T, TGroup>): Map<TGroup, T>;
+  groupToSingleMap<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Map<TGroup['length'] extends 1 ? TGroup[0] : TGroup, T>;
+  groupToSingleMap<TGroup extends [any, ...any[]]>(...selectors: GroupSelectors<T, TGroup>): Map<TGroup, T> {
+    return groupToSingleMap<T, TGroup>(this.source, ...selectors);
   }
 
   tap(tapper: IteratorFunction<T, any>): Enumerable<T> {

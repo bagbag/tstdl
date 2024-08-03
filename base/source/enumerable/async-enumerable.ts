@@ -1,15 +1,13 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
-import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
-import { isAnyIterable } from '#/utils/any-iterable-iterator.js';
+import { type AnyIterable, isAnyIterable } from '#/utils/any-iterable-iterator.js';
 import type { AsyncComparator } from '#/utils/sort.js';
 import { isNotNullOrUndefined } from '#/utils/type-guards.js';
 import type { Observable } from 'rxjs';
-import type { AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers/index.js';
+import type { AsyncGroupSelectors, AsyncIteratorFunction, AsyncPredicate, AsyncReducer, AsyncRetryPredicate, ParallelizableIteratorFunction, ParallelizablePredicate, ThrottleFunction } from '../utils/async-iterable-helpers/index.js';
 import { allAsync, anyAsync, assertAsync, batchAsync, bufferAsync, concatAsync, defaultIfEmptyAsync, deferredAsyncIterable, differenceAsync, differenceManyAsync, distinctAsync, drainAsync, filterAsync, firstAsync, firstOrDefaultAsync, forEachAsync, groupAsync, groupSingleAsync, groupToMapAsync, groupToSingleMapAsync, includesAsync, interruptEveryAsync, interruptPerSecondAsync, isAsyncIterableIterator, iterableToAsyncIterableIterator, iterableToAsyncIterator, lastAsync, lastOrDefaultAsync, mapAsync, mapManyAsync, materializeAsync, metadataAsync, multiplexAsync, pairwiseAsync, reduceAsync, retryAsync, singleAsync, singleOrDefaultAsync, skipAsync, sortAsync, takeAsync, takeUntilAsync, takeWhileAsync, tapAsync, throttle, toArrayAsync, toSync, whileAsync } from '../utils/async-iterable-helpers/index.js';
 import { observableAsyncIterable } from '../utils/async-iterable-helpers/observable-iterable.js';
 import { parallelFilter, parallelForEach, parallelGroup, parallelMap, parallelTap } from '../utils/async-iterable-helpers/parallel/index.js';
-import type { IterableItemMetadata, TypePredicate } from '../utils/iterable-helpers/index.js';
-import { range } from '../utils/iterable-helpers/index.js';
+import { type IterableItemMetadata, range, type TypePredicate } from '../utils/iterable-helpers/index.js';
 import type { EnumerableMethods } from './enumerable-methods.js';
 import { Enumerable } from './enumerable.js';
 
@@ -124,22 +122,30 @@ export class AsyncEnumerable<T> implements EnumerableMethods, AsyncIterable<T> {
     await forEachAsync(this.source, func);
   }
 
-  group<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): AsyncEnumerable<[TGroup, T[]]> {
-    const grouped = groupAsync(this.source, selector);
+  group<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): AsyncEnumerable<[TGroup, T[]]>;
+  group<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): AsyncEnumerable<[TGroup['length'] extends 1 ? TGroup[0] : TGroup, T[]]>;
+  group<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): AsyncEnumerable<[TGroup, T[]]> {
+    const grouped = groupAsync<T, TGroup>(this.source, ...selectors);
     return new AsyncEnumerable(grouped);
   }
 
-  groupSingle<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): AsyncEnumerable<[TGroup, T]> {
-    const grouped = groupSingleAsync(this.source, selector);
+  groupSingle<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): AsyncEnumerable<[TGroup, T]>;
+  groupSingle<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): AsyncEnumerable<[TGroup['length'] extends 1 ? TGroup[0] : TGroup, T]>;
+  groupSingle<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): AsyncEnumerable<[TGroup, T]> {
+    const grouped = groupSingleAsync<T, TGroup>(this.source, ...selectors);
     return new AsyncEnumerable(grouped);
   }
 
-  async groupToMap<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T[]>> {
-    return groupToMapAsync<T, TGroup>(this.source, selector);
+  async groupToMap<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T[]>>;
+  async groupToMap<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): Promise<Map<TGroup['length'] extends 1 ? TGroup[0] : TGroup, T[]>>;
+  async groupToMap<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): Promise<Map<TGroup, T[]>> {
+    return groupToMapAsync<T, TGroup>(this.source, ...selectors);
   }
 
-  async groupToSingleMap<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T>> {
-    return groupToSingleMapAsync<T, TGroup>(this.source, selector);
+  async groupToSingleMap<TGroup>(selector: AsyncIteratorFunction<T, TGroup>): Promise<Map<TGroup, T>>;
+  async groupToSingleMap<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): Promise<Map<TGroup['length'] extends 1 ? TGroup[0] : TGroup, T>>;
+  async groupToSingleMap<TGroup extends [any, ...any[]]>(...selectors: AsyncGroupSelectors<T, TGroup>): Promise<Map<TGroup, T>> {
+    return groupToSingleMapAsync<T, TGroup>(this.source, ...selectors);
   }
 
   tap(tapper: AsyncIteratorFunction<T, any>): AsyncEnumerable<T> {
