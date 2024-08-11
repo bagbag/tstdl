@@ -14,13 +14,10 @@ import { registerFinalization } from '#/memory/finalization.js';
 import type { Signal } from './api.js';
 import { assertNotInReactiveContext } from './asserts.js';
 import { computed } from './computed.js';
-import type { WritableSignal } from './signal.js';
-import { signal } from './signal.js';
+import { ValueEqualityFn } from './equality.js';
+import { signal, WritableSignal } from './writable-signal.js';
 
-/**
- * Options for `toSignal`.
- */
-export interface ToSignalOptions {
+export interface ToSignalOptions<T> {
   /**
    * Initial value for the signal produced by `toSignal`.
    *
@@ -47,6 +44,13 @@ export interface ToSignalOptions {
    * the behavior of the `async` pipe.
    */
   rejectErrors?: boolean;
+
+  /**
+   * A comparison function which defines equality for values emitted by the observable.
+   *
+   * Equality comparisons are executed against the initial value if one is provided.
+   */
+  equal?: ValueEqualityFn<T>;
 }
 
 // Base case: no options -> `undefined` in the result type.
@@ -54,19 +58,26 @@ export function toSignal<T>(source: Observable<T> | Subscribable<T>): Signal<T |
 // Options with `undefined` initial value and no `requiredSync` -> `undefined`.
 export function toSignal<T>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
+  options: NoInfer<ToSignalOptions<T | undefined>> & {
+    initialValue?: undefined;
+    requireSync?: false;
+  },
+): Signal<T | undefined>;
 // Options with `null` initial value -> `null`.
 export function toSignal<T>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: null, requireSync?: false }): Signal<T | null>;
+  options: NoInfer<ToSignalOptions<T | null>> & { initialValue?: null; requireSync?: false },
+): Signal<T | null>;
 // Options with `undefined` initial value and `requiredSync` -> strict result type.
 export function toSignal<T>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue?: undefined, requireSync: true }): Signal<T>;
+  options: NoInfer<ToSignalOptions<T>> & { initialValue?: undefined; requireSync: true },
+): Signal<T>;
 // Options with a more specific initial value type.
 export function toSignal<T, const U extends T>(
   source: Observable<T> | Subscribable<T>,
-  options: ToSignalOptions & { initialValue: U, requireSync?: false }): Signal<T | U>;
+  options: NoInfer<ToSignalOptions<T | U>> & { initialValue: U; requireSync?: false },
+): Signal<T | U>;
 
 /**
  * Get the current value of an `Observable` as a reactive `Signal`.
@@ -82,21 +93,28 @@ export function toSignal<T, const U extends T>(
  */
 export function toSignal<T, U = undefined>(
   source: Observable<T> | Subscribable<T>,
-  options?: ToSignalOptions & { initialValue?: U }): Signal<T | U> {
+  options?: ToSignalOptions<T | U> & { initialValue?: U },
+): Signal<T | U> {
   assertNotInReactiveContext(
     toSignal,
     'Invoking `toSignal` causes new subscriptions every time. ' +
-    'Consider moving `toSignal` outside of the reactive context and read the signal value where needed.');
+    'Consider moving `toSignal` outside of the reactive context and read the signal value where needed.',
+  );
+
+  const equal = makeToSignalEqual(options?.equal);
 
   // Note: T is the Observable value type, and U is the initial value type. They don't have to be
   // the same - the returned signal gives values of type `T`.
   let state: WritableSignal<State<T | U>>;
   if (options?.requireSync) {
     // Initially the signal is in a `NoValue` state.
-    state = signal({ kind: StateKind.NoValue });
+    state = signal({ kind: StateKind.NoValue }, { equal });
   } else {
     // If an initial value was passed, use it. Otherwise, use `undefined` as the initial value.
-    state = signal<State<T | U>>({ kind: StateKind.Value, value: options?.initialValue as U });
+    state = signal<State<T | U>>(
+      { kind: StateKind.Value, value: options?.initialValue as U },
+      { equal },
+    );
   }
 
   // Note: This code cannot run inside a reactive context (see assertion above). If we'd support
@@ -106,8 +124,8 @@ export function toSignal<T, U = undefined>(
   // subscription. Additional context (related to async pipe):
   // https://github.com/angular/angular/pull/50522.
   const sub = source.subscribe({
-    next: value => state.set({ kind: StateKind.Value, value }),
-    error: error => {
+    next: (value) => state.set({ kind: StateKind.Value, value }),
+    error: (error) => {
       if (options?.rejectErrors) {
         // Kick the error back to RxJS. It will be caught and rethrown in a macrotask, which causes
         // the error to end up as an uncaught exception.
@@ -125,23 +143,32 @@ export function toSignal<T, U = undefined>(
 
   // The actual returned signal is a `computed` of the `State` signal, which maps the various states
   // to either values or errors.
-  const result = computed(() => {
-    const current = state();
-    switch (current.kind) {
-      case StateKind.Value:
-        return current.value;
-      case StateKind.Error:
-        throw current.error;
-      case StateKind.NoValue:
-        // This shouldn't really happen because the error is thrown on creation.
-        // TODO(alxhub): use a RuntimeError when we finalize the error semantics
-        throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
-    }
-  });
+  const result = computed(
+    () => {
+      const current = state();
+      switch (current.kind) {
+        case StateKind.Value:
+          return current.value;
+        case StateKind.Error:
+          throw current.error;
+        case StateKind.NoValue:
+          // This shouldn't really happen because the error is thrown on creation.
+          throw new Error('`toSignal()` called with `requireSync` but `Observable` did not emit synchronously.');
+      }
+    },
+    { equal: options?.equal },
+  );
 
   registerFinalization(result, () => sub.unsubscribe());
 
   return result;
+}
+
+function makeToSignalEqual<T>(
+  userEquality: ValueEqualityFn<T> = Object.is,
+): ValueEqualityFn<State<T>> {
+  return (a, b) =>
+    a.kind === StateKind.Value && b.kind === StateKind.Value && userEquality(a.value, b.value);
 }
 
 const enum StateKind {

@@ -229,8 +229,9 @@ export function producerAccessed(node: ReactiveNode): void {
 
     // If the active consumer is live, then add it as a live consumer. If not, then use 0 as a
     // placeholder value.
-    activeConsumer.producerIndexOfThis[idx] =
-      consumerIsLive(activeConsumer) ? producerAddLiveConsumer(node, activeConsumer, idx) : 0;
+    activeConsumer.producerIndexOfThis[idx] = consumerIsLive(activeConsumer)
+      ? producerAddLiveConsumer(node, activeConsumer, idx)
+      : 0;
   }
   activeConsumer.producerLastReadVersion[idx] = node.version;
 }
@@ -330,11 +331,17 @@ export function consumerBeforeComputation(node: ReactiveNode | null): ReactiveNo
  * have finished.
  */
 export function consumerAfterComputation(
-  node: ReactiveNode | null, prevConsumer: ReactiveNode | null): void {
+  node: ReactiveNode | null,
+  prevConsumer: ReactiveNode | null,
+): void {
   setActiveConsumer(prevConsumer);
 
-  if (!node || node.producerNode === undefined || node.producerIndexOfThis === undefined ||
-    node.producerLastReadVersion === undefined) {
+  if (
+    !node ||
+    node.producerNode === undefined ||
+    node.producerIndexOfThis === undefined ||
+    node.producerLastReadVersion === undefined
+  ) {
     return;
   }
 
@@ -401,7 +408,9 @@ export function consumerDestroy(node: ReactiveNode): void {
   }
 
   // Truncate all the arrays to drop all connection from this node to the graph.
-  node.producerNode.length = node.producerLastReadVersion.length = node.producerIndexOfThis.length =
+  node.producerNode.length =
+    node.producerLastReadVersion.length =
+    node.producerIndexOfThis.length =
     0;
   if (node.liveConsumerNode) {
     node.liveConsumerNode.length = node.liveConsumerIndexOfThis!.length = 0;
@@ -415,10 +424,12 @@ export function consumerDestroy(node: ReactiveNode): void {
  * a live consumer of all of its current producers.
  */
 function producerAddLiveConsumer(
-  node: ReactiveNode, consumer: ReactiveNode, indexOfThis: number): number {
+  node: ReactiveNode,
+  consumer: ReactiveNode,
+  indexOfThis: number,
+): number {
   assertProducerNode(node);
-  assertConsumerNode(node);
-  if (node.liveConsumerNode.length === 0) {
+  if (node.liveConsumerNode.length === 0 && isConsumerNode(node)) {
     // When going from 0 to 1 live consumers, we become a live consumer to our producers.
     for (let i = 0; i < node.producerNode.length; i++) {
       node.producerIndexOfThis[i] = producerAddLiveConsumer(node.producerNode[i]!, node, i);
@@ -433,13 +444,14 @@ function producerAddLiveConsumer(
  */
 function producerRemoveLiveConsumerAtIndex(node: ReactiveNode, idx: number): void {
   assertProducerNode(node);
-  assertConsumerNode(node);
 
   if (idx >= node.liveConsumerNode.length) {
-    throw new Error(`Assertion error: active consumer index ${idx} is out of bounds of ${node.liveConsumerNode.length} consumers)`);
+    throw new Error(
+      `Assertion error: active consumer index ${idx} is out of bounds of ${node.liveConsumerNode.length} consumers)`,
+    );
   }
 
-  if (node.liveConsumerNode.length === 1) {
+  if (node.liveConsumerNode.length === 1 && isConsumerNode(node)) {
     // When removing the last live consumer, we will no longer be live. We need to remove
     // ourselves from our producers' tracking (which may cause consumer-producers to lose
     // liveness as well).
@@ -461,8 +473,8 @@ function producerRemoveLiveConsumerAtIndex(node: ReactiveNode, idx: number): voi
   // If the index is still valid, then we need to fix the index pointer from the producer to this
   // consumer, and update it from `lastIdx` to `idx` (accounting for the move above).
   if (idx < node.liveConsumerNode.length) {
-    const idxProducer = node.liveConsumerIndexOfThis[idx]!;
-    const consumer = node.liveConsumerNode[idx]!;
+    const idxProducer = node.liveConsumerIndexOfThis[idx];
+    const consumer = node.liveConsumerNode[idx];
     assertConsumerNode(consumer);
     consumer.producerIndexOfThis[idxProducer] = idx;
   }
@@ -471,7 +483,6 @@ function producerRemoveLiveConsumerAtIndex(node: ReactiveNode, idx: number): voi
 function consumerIsLive(node: ReactiveNode): boolean {
   return node.consumerIsAlwaysLive || (node?.liveConsumerNode?.length ?? 0) > 0;
 }
-
 
 function assertConsumerNode(node: ReactiveNode): asserts node is ConsumerNode {
   node.producerNode ??= [];
@@ -482,4 +493,8 @@ function assertConsumerNode(node: ReactiveNode): asserts node is ConsumerNode {
 function assertProducerNode(node: ReactiveNode): asserts node is ProducerNode {
   node.liveConsumerNode ??= [];
   node.liveConsumerIndexOfThis ??= [];
+}
+
+function isConsumerNode(node: ReactiveNode): node is ConsumerNode {
+  return node.producerNode !== undefined;
 }

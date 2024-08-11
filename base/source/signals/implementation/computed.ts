@@ -121,8 +121,12 @@ const COMPUTED_NODE = {
       consumerAfterComputation(node, prevConsumer);
     }
 
-    if (oldValue !== UNSET && oldValue !== ERRORED && newValue !== ERRORED &&
-      node.equal(oldValue, newValue)) {
+    if (
+      oldValue !== UNSET &&
+      oldValue !== ERRORED &&
+      newValue !== ERRORED &&
+      node.equal(oldValue, newValue)
+    ) {
       // No change to `valueVersion` - old and new values are
       // semantically equivalent.
       node.value = oldValue;

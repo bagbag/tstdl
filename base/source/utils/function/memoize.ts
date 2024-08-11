@@ -8,7 +8,7 @@ export type MemoizeOptions = {
 };
 
 /**
- * memoizes a function with an arbitrary number of parameters. If you only need a single parameter, {@link memoizeSingle} is faster
+ * Memoizes a function with an arbitrary number of parameters. If you only need a single parameter, {@link memoizeSingle} is faster
  * @param fn function memoize
  * @returns memoized function
  */export function memoize<Fn extends (...parameters: any[]) => any>(fn: Fn, options: MemoizeOptions = {}): Fn {
@@ -30,7 +30,7 @@ export type MemoizeOptions = {
 }
 
 /**
- * memoizes a function with a single parameter. Faster than {@link memoize}
+ * Memoizes a function with a single parameter. Faster than {@link memoize}
  * @param fn function memoize
  * @returns memoized function
  */

@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 /**
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -8,8 +6,17 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import type { ReactiveNode } from './graph.js';
-import { consumerAfterComputation, consumerBeforeComputation, consumerDestroy, consumerMarkDirty, consumerPollProducersForChange, isInNotificationPhase, REACTIVE_NODE, SIGNAL } from './graph.js';
+import {
+  consumerAfterComputation,
+  consumerBeforeComputation,
+  consumerDestroy,
+  consumerMarkDirty,
+  consumerPollProducersForChange,
+  isInNotificationPhase,
+  REACTIVE_NODE,
+  type ReactiveNode,
+  SIGNAL,
+} from './graph.js';
 
 /**
  * A cleanup function that can be optionally registered from the watch logic. If registered, the
@@ -53,8 +60,10 @@ export interface WatchNode extends ReactiveNode {
 }
 
 export function createWatch(
-  fn: (onCleanup: WatchCleanupRegisterFn) => void, schedule: (watch: Watch) => void,
-  allowSignalWrites: boolean): Watch {
+  fn: (onCleanup: WatchCleanupRegisterFn) => void,
+  schedule: (watch: Watch) => void,
+  allowSignalWrites: boolean,
+): Watch {
   const node: WatchNode = Object.create(WATCH_NODE);
   if (allowSignalWrites) {
     node.consumerAllowSignalWrites = true;
@@ -73,7 +82,7 @@ export function createWatch(
 
   function destroyWatchNode(node: WatchNode) {
     if (!isWatchNodeDestroyed(node)) {
-      consumerDestroy(node);  // disconnect watcher from the reactive graph
+      consumerDestroy(node); // disconnect watcher from the reactive graph
       node.cleanupFn();
 
       // nullify references to the integration functions to mark node as destroyed

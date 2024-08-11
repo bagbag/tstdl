@@ -1,27 +1,15 @@
-import { Subject, switchMap, type Observable } from 'rxjs';
+import type { Observable } from 'rxjs';
 
-import { computed, toSignal, type Signal, type ToSignalOptions } from './api.js';
+import { computed, toSignal, untracked, type Signal, type ToSignalOptions } from './api.js';
 
-const LAZY = Symbol('LAZY');
-
-export const toLazySignal = function toLazySignal<T, I = undefined>(source: Observable<T>, options?: ToSignalOptions & { initialValue?: I }): Signal<T | I> {
-  const subscribe$ = new Subject<void>();
-  const lazySource = subscribe$.pipe(switchMap(() => source));
-  const signal = toSignal<T>(lazySource, { initialValue: LAZY, ...options as any }) as Signal<T | I>; // eslint-disable-line @typescript-eslint/no-unsafe-argument
-
+export const toLazySignal = function toLazySignal<T, I = undefined>(source: Observable<T>, options?: ToSignalOptions<T | I> & { initialValue?: I }): Signal<T | I> {
   let computation = (): T | I => {
-    subscribe$.next();
-    subscribe$.complete();
-
+    const signal = untracked(() => toSignal<T>(source, { ...options as any }) as Signal<T | I>); // eslint-disable-line @typescript-eslint/no-unsafe-argument
     const value = signal();
+
     computation = signal;
-
-    if (value == LAZY) {
-      throw new Error('`toLazySignal()` called with `requireSync` but `Observable` did not emit synchronously.');
-    }
-
     return value;
   };
 
-  return computed(() => computation());
+  return computed(() => computation(), { equal: options?.equal });
 } as typeof toSignal;

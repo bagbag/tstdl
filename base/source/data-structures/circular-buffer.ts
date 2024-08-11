@@ -1,8 +1,7 @@
-import type { CancellationSignal } from '#/cancellation/token.js';
-import { CancellationToken } from '#/cancellation/token.js';
+import { BehaviorSubject, type Observable, Subject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race } from 'rxjs';
+
+import { type CancellationSignal, CancellationToken } from '#/cancellation/token.js';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
-import type { Observable } from 'rxjs';
-import { BehaviorSubject, Subject, distinctUntilChanged, filter, first, firstValueFrom, from, map, race } from 'rxjs';
 import { Collection } from './collection.js';
 
 export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
@@ -13,45 +12,45 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   private writeIndex: number;
   private readIndex: number;
 
-  /** emits overwritten items */
+  /** Emits overwritten items */
   readonly overflow$: Observable<T>;
 
-  /** emits count of free slots in the buffer */
+  /** Emits count of free slots in the buffer */
   readonly freeSlots$: Observable<number>;
 
-  /** emits when the buffer is full */
+  /** Emits when the buffer is full */
   readonly onFull$: Observable<void>;
 
-  /** emits when the buffer has free slots */
+  /** Emits when the buffer has free slots */
   readonly onFreeSlots$: Observable<void>;
 
-  /** emits whether the buffer is full */
+  /** Emits whether the buffer is full */
   readonly isFull$: Observable<boolean>;
 
-  /** emits whether the buffer has free slots */
+  /** Emits whether the buffer has free slots */
   readonly hasFreeSlots$: Observable<boolean>;
 
-  /** resolves when the buffer is full */
+  /** Resolves when the buffer is full */
   get $onFull(): Promise<void> {
     return firstValueFrom(this.onFull$);
   }
 
-  /** resolves when the buffer has items */
+  /** Resolves when the buffer has items */
   get $onFreeSlots(): Promise<void> {
     return firstValueFrom(this.onFreeSlots$);
   }
 
-  /** size of buffer */
+  /** Size of buffer */
   get bufferSize(): number {
     return this.backingArray.length;
   }
 
-  /** size of buffer */
+  /** Size of buffer */
   get maxBufferSize(): number {
     return this.maxBufferSizeSubject.value ?? Infinity;
   }
 
-  /** count of free slots in buffer */
+  /** Count of free slots in buffer */
   get freeSlots(): number {
     if (isUndefined(this.maxBufferSize)) {
       return Infinity;
@@ -60,12 +59,12 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     return this.bufferSize - this.size;
   }
 
-  /** whether the buffer is full */
+  /** Whether the buffer is full */
   get isFull(): boolean {
     return this.freeSlots == 0;
   }
 
-  /** whether the buffer has free slots */
+  /** Whether the buffer has free slots */
   get hasFreeSlots(): boolean {
     return this.freeSlots > 0;
   }
@@ -181,7 +180,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
     }
   }
 
-  /** yields all items from the buffer and removes them */
+  /** Yields all items from the buffer and removes them */
   *consume(): IterableIterator<T> {
     while (this.size > 0) {
       yield this.tryRemove()!;
@@ -189,7 +188,7 @@ export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
   }
 
   /**
-   * yields all items from the buffer, removes them and waits fore more
+   * Yields all items from the buffer, removes them and waits fore more
    * @param cancellationSignal token to cancel iteration
    * @param yieldOutstandingItems whether to yield all outstanding items or exit immdiately when {@link cancellationSignal} is set
    * @returns

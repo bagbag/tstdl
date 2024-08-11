@@ -10,3 +10,4 @@ export * from './to-observable.js';
 export * from './to-signal.js';
 export * from './untracked.js';
 export * from './watch.js';
+export * from './writable-signal.js';

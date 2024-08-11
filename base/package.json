@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.91.2",
+  "version": "0.91.4",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -108,10 +108,10 @@
   },
   "dependencies": {
     "disposablestack": "1.1",
-    "luxon": "^3.4",
+    "luxon": "^3.5",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.23"
+    "type-fest": "4.24"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -142,7 +142,7 @@
     "@zxcvbn-ts/language-de": "^3.0",
     "@zxcvbn-ts/language-en": "^3.0",
     "chroma-js": "^2.6",
-    "drizzle-orm": "^0.32",
+    "drizzle-orm": "^0.33",
     "handlebars": "^4.7",
     "koa": "^2.15",
     "minio": "^8.0",
@@ -150,7 +150,7 @@
     "mongodb": "^6.8",
     "nodemailer": "^6.9",
     "pg": "^8.12",
-    "playwright": "^1.45",
+    "playwright": "^1.46",
     "preact": "^10.23",
     "preact-render-to-string": "^6.5",
     "undici": "^6.19",

@@ -1,34 +1,49 @@
-import type { ToJson } from '#/interfaces.js';
 import { BehaviorSubject, Subject, distinctUntilChanged, filter, firstValueFrom, map, startWith, type Observable } from 'rxjs';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
-  private readonly sizeSubject: BehaviorSubject<number>;
-  private readonly changeSubject: Subject<TThis>;
-  private readonly clearSubject: Subject<TThis>;
+import type { ToJson } from '#/interfaces.js';
+import { toLazySignal, type Signal } from '#/signals/index.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 
-  /** Emits collection on subscribe and change */
-  readonly observe$: Observable<TThis>;
+export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
+  private readonly sizeSubject = new BehaviorSubject(0);
+  private readonly changeSubject = new Subject<TThis>();
+  private readonly clearSubject = new Subject<TThis>();
 
   /** Emits size of collection */
-  readonly size$: Observable<number>;
+  readonly size$ = this.sizeSubject.asObservable();
+
+  /** Size of collection */
+  readonly $size: Signal<number>;
 
   /** Emits collection on change */
-  readonly change$: Observable<TThis>;
+  readonly change$ = this.changeSubject.asObservable();
+
+  /** Emits collection on subscribe and change */
+  readonly observe$ = this.change$.pipe(startWith(this as unknown as TThis)) as Observable<TThis>; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+
+  /** Notifies on change */
+  readonly $observe: Signal<TThis>;
 
   /* Emits collection on clear */
-  readonly clear$: Observable<TThis>;
-
-  /** Emits when the collection is empty */
-  readonly onEmpty$: Observable<void>;
-
-  /** Emits when the collection has items */
-  readonly onItems$: Observable<void>;
+  readonly clear$ = this.clearSubject.asObservable();
 
   /** Emits whether the collection is empty */
-  readonly isEmpty$: Observable<boolean>;
+  readonly isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
+
+  /** Whether the collection is empty */
+  readonly $isEmpty: Signal<boolean>;
 
   /** Emits whether the collection has items */
-  readonly hasItems$: Observable<boolean>;
+  readonly hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
+
+  /** Whether the collection has items */
+  readonly $hasItems: Signal<boolean>;
+
+  /** Emits when the collection is empty */
+  readonly onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), map(() => undefined));
+
+  /** Emits when the collection has items */
+  readonly onItems$ = this.hasItems$.pipe(filter((hasItems) => hasItems), map(() => undefined));
 
   /** Resolves when the collection is empty */
   get $onEmpty(): Promise<void> {
@@ -56,20 +71,10 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
   }
 
   constructor() {
-    this.sizeSubject = new BehaviorSubject(0);
-    this.changeSubject = new Subject<TThis>();
-    this.clearSubject = new Subject<TThis>();
-
-    this.size$ = this.sizeSubject.asObservable();
-    this.change$ = this.changeSubject.asObservable();
-    this.clear$ = this.clearSubject.asObservable();
-    this.observe$ = this.change$.pipe(startWith(this as unknown as TThis));
-
-    this.isEmpty$ = this.size$.pipe(map(() => this.isEmpty), distinctUntilChanged());
-    this.hasItems$ = this.size$.pipe(map(() => this.hasItems), distinctUntilChanged());
-
-    this.onEmpty$ = this.isEmpty$.pipe(filter((isEmpty) => isEmpty), map(() => undefined));
-    this.onItems$ = this.hasItems$.pipe(filter((hasItems) => hasItems), map(() => undefined));
+    lazyProperty(this, '$size', () => toLazySignal(this.size$, { requireSync: true }));
+    lazyProperty(this, '$observe', () => toLazySignal(this.observe$, { equal: () => false, requireSync: true }));
+    lazyProperty(this, '$isEmpty', () => toLazySignal(this.isEmpty$, { requireSync: true }));
+    lazyProperty(this, '$hasItems', () => toLazySignal(this.hasItems$, { requireSync: true }));
   }
 
   [Symbol.iterator](): IterableIterator<T> {

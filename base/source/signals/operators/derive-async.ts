@@ -4,7 +4,7 @@ import { registerFinalization } from '#/memory/finalization.js';
 import { isPromise } from '#/utils/type-guards.js';
 import { computed, effect, toSignal, untracked, type Signal, type ToSignalOptions } from '../api.js';
 
-export type DeriveAsyncOptions = ToSignalOptions & {
+export type DeriveAsyncOptions<T> = ToSignalOptions<T> & {
   behavior?: DeriveAsyncBehavior
 };
 
@@ -20,11 +20,11 @@ export type DeriveAsyncBehavior = keyof typeof operatorMap;
 type DeriveAsyncSourceParameter<T> = () => (T | Promise<T> | Observable<T>);
 
 export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>): Signal<T | undefined>;
-export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
-export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions & { initialValue?: null, requireSync?: false }): Signal<T | null>;
-export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions & { initialValue?: undefined, requireSync: true }): Signal<T>;
-export function deriveAsync<T, const U extends T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions & { initialValue: U, requireSync?: false }): Signal<T | U>;
-export function deriveAsync<T, I>(source: () => (T | Promise<T> | Observable<T>), options?: DeriveAsyncOptions): Signal<T | I> {
+export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue?: undefined, requireSync?: false }): Signal<T | undefined>;
+export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue?: null, requireSync?: false }): Signal<T | null>;
+export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue?: undefined, requireSync: true }): Signal<T>;
+export function deriveAsync<T, const U extends T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue: U, requireSync?: false }): Signal<T | U>;
+export function deriveAsync<T, I>(source: () => (T | Promise<T> | Observable<T>), options?: DeriveAsyncOptions<T>): Signal<T | I> {
   const outerSource = computed(source);
 
   const source$ = new Subject<Promise<T | I> | Observable<T | I>>();
