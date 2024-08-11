@@ -1,8 +1,9 @@
 @layer tstdl.components {
   tsl-icon {
-    @apply contents;
+    @apply inline-flex items-center justify-center;
 
     svg {
+      display: inline;
       width: 1em;
       aspect-ratio: 1;
     }
