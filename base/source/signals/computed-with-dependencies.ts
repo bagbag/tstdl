@@ -1,5 +1,4 @@
-import type { CreateComputedOptions, Signal } from './api.js';
-import { computed as actualComputed } from './api.js';
+import { computed as actualComputed, type CreateComputedOptions, type Signal } from './api.js';
 
 export function computedWithDependencies<T>(computation: () => T, dependencies: Signal<any>[], options: CreateComputedOptions<T> = {}): Signal<T> {
   if (dependencies.length == 0) {

@@ -1,13 +1,14 @@
 import { DOCUMENT as ANGULAR_DOCUMENT } from '@angular/common';
 import type { CreateEffectOptions, Signal } from '@angular/core';
-import { Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, signal, untracked } from '@angular/core';
+import { Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, runInInjectionContext, signal, untracked } from '@angular/core';
 import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import { HttpClientAdapter } from '@tstdl/base/http';
-import { Injector as TstdlInjector, isInInjectionContext as isInTstdlInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
-import { configureSignals } from '@tstdl/base/signals';
+import { Injector as TstdlInjector, isInInjectionContext, isInInjectionContext as isInTstdlInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
+import { CreateEffectOptions as TstdlCreateEffectOptions, ToObservableOptions as TstdlToObservableOptions, ToSignalOptions as TstdlToSignalOptions, configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
+import { Observable, Subscribable } from 'rxjs';
 
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
 import type { R3Injector } from './wrapped-r3-injector-records-map';
@@ -59,30 +60,41 @@ export class TstdlBridgeService {
   }
 
   private configureSignals(): void {
-    configureSignals({
+    configureSignals<Injector>({
       signal,
       computed,
-      effect: (effectFn: Parameters<typeof effect>[0], options?: CreateEffectOptions) => {
+      effect: (effectFn: Parameters<typeof effect>[0], options?: TstdlCreateEffectOptions) => {
         try {
           assertInInjectionContext(TstdlBridgeService);
-          return effect(effectFn, options);
+          return effect(effectFn, options as CreateEffectOptions);
         }
         catch {
-          return effect(effectFn, { injector: this.#injector, ...options });
+          return effect(effectFn, { injector: this.#injector as Injector, ...options } as CreateEffectOptions);
         }
       },
       untracked,
       isSignal,
-      toSignal,
-      toObservable: <T>(source: Signal<T>, options?: ToObservableOptions) => {
+      toSignal: <T>(source: Observable<T> | Subscribable<T>, options?: TstdlToSignalOptions<T>) => {
         try {
           assertInInjectionContext(TstdlBridgeService);
-          return toObservable(source, options);
+          return toSignal(source, options as any);
         }
         catch {
-          return toObservable(source, { injector: this.#injector, ...options });
+          return toSignal(source, { injector: this.#injector, ...options } as any);
         }
-      }
+      },
+      toObservable: <T>(source: Signal<T>, options?: TstdlToObservableOptions) => {
+        try {
+          assertInInjectionContext(TstdlBridgeService);
+          return toObservable(source, options as ToObservableOptions);
+        }
+        catch {
+          return toObservable(source, { injector: this.#injector, ...options } as ToObservableOptions);
+        }
+      },
+      isInSignalsInjectionContext: () => isInInjectionContext(),
+      getCurrentSignalsInjector: () => inject(Injector),
+      runInSignalsInjectionContext: (injector, fn) => runInInjectionContext(injector, fn)
     });
   }
 }

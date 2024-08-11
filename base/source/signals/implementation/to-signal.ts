@@ -11,6 +11,7 @@
 import type { Observable, Subscribable } from 'rxjs';
 
 import { registerFinalization } from '#/memory/finalization.js';
+import { SignalsInjector } from '../api.js';
 import type { Signal } from './api.js';
 import { assertNotInReactiveContext } from './asserts.js';
 import { computed } from './computed.js';
@@ -34,6 +35,23 @@ export interface ToSignalOptions<T> {
    * not met.
    */
   requireSync?: boolean;
+
+  /**
+   * `Injector` which will provide the `DestroyRef` used to clean up the Observable subscription.
+   *
+   * If this is not provided, a `DestroyRef` will be retrieved from the current [injection
+   * context](guide/di/dependency-injection-context), unless manual cleanup is requested.
+   */
+  injector?: SignalsInjector;
+
+  /**
+   * Whether the subscription should be automatically cleaned up (via `DestroyRef`) when
+   * `toSignal`'s creation context is destroyed.
+   *
+   * If manual cleanup is enabled, then `DestroyRef` is not used, and the subscription will persist
+   * until the `Observable` itself completes.
+   */
+  manualCleanup?: boolean;
 
   /**
    * Whether `toSignal` should throw errors from the Observable error channel back to RxJS, where

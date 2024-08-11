@@ -1,5 +1,4 @@
-import type { CreateEffectOptions, EffectCleanupRegisterFn, EffectRef, Signal } from './api.js';
-import { effect as actualEffect } from './api.js';
+import { effect as actualEffect, type CreateEffectOptions, type EffectCleanupRegisterFn, type EffectRef, type Signal } from './api.js';
 
 export function effectWithDependencies(effectFn: (onCleanup: EffectCleanupRegisterFn) => void, dependencies: Signal<any>[], options?: CreateEffectOptions): EffectRef {
   if (dependencies.length == 0) {

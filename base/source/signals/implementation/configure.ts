@@ -1,4 +1,4 @@
-import { configureSignals } from '../api.js';
+import { configureSignals, type SignalsInjector } from '../api.js';
 import { isSignal } from './api.js';
 import { computed } from './computed.js';
 import { effect } from './effect.js';
@@ -15,6 +15,9 @@ export function configureDefaultSignalsImplementation(): void {
     untracked,
     isSignal,
     toSignal,
-    toObservable
+    toObservable,
+    isInSignalsInjectionContext: () => true,
+    getCurrentSignalsInjector: () => null as any as SignalsInjector,
+    runInSignalsInjectionContext: (_, fn) => fn()
   });
 }

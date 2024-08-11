@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.91.1",
+  "version": "0.91.2",
   "dependencies": {
     "tslib": "^2.6"
   },
@@ -9,10 +9,10 @@
     "@angular/common": ">=17.0",
     "@angular/core": ">=17.0",
     "@angular/material": ">=17.0",
-    "@tstdl/base": "^0.91.0",
+    "@tstdl/base": "^0.91.12",
     "chroma-js": "^2.6",
-    "luxon": "^3.4",
-    "marked": "^13.0"
+    "luxon": "^3.5",
+    "marked": "^14.0"
   },
   "sideEffects": false
 }

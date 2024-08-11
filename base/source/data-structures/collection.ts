@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject, distinctUntilChanged, filter, firstValueFrom, map, startWith, type Observable } from 'rxjs';
 
 import type { ToJson } from '#/interfaces.js';
-import { toLazySignal, type Signal } from '#/signals/index.js';
+import { toLazySignal, untracked, type Signal } from '#/signals/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 
 export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
@@ -71,10 +71,10 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
   }
 
   constructor() {
-    lazyProperty(this, '$size', () => toLazySignal(this.size$, { requireSync: true }));
-    lazyProperty(this, '$observe', () => toLazySignal(this.observe$, { equal: () => false, requireSync: true }));
-    lazyProperty(this, '$isEmpty', () => toLazySignal(this.isEmpty$, { requireSync: true }));
-    lazyProperty(this, '$hasItems', () => toLazySignal(this.hasItems$, { requireSync: true }));
+    lazyProperty(this, '$size', () => untracked(() => toLazySignal(this.size$, { requireSync: true, manualCleanup: true })));
+    lazyProperty(this, '$observe', () => untracked(() => toLazySignal(this.observe$, { requireSync: true, manualCleanup: true, equal: () => false })));
+    lazyProperty(this, '$isEmpty', () => untracked(() => toLazySignal(this.isEmpty$, { requireSync: true, manualCleanup: true })));
+    lazyProperty(this, '$hasItems', () => untracked(() => toLazySignal(this.hasItems$, { requireSync: true, manualCleanup: true })));
   }
 
   [Symbol.iterator](): IterableIterator<T> {

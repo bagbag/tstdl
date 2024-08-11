@@ -8,6 +8,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import type { SignalsInjector } from '../api.js';
 import { assertNotInReactiveContext } from './asserts.js';
 import type { Watch, WatchCleanupRegisterFn } from './watch.js';
 import { createWatch } from './watch.js';
@@ -132,6 +133,22 @@ export interface EffectRef {
  * Options passed to the `effect` function.
  */
 export interface CreateEffectOptions {
+  /**
+   * The `Injector` in which to create the effect.
+   *
+   * If this is not provided, the current [injection context](guide/di/dependency-injection-context)
+   * will be used instead (via `inject`).
+   */
+  injector?: SignalsInjector;
+
+  /**
+   * Whether the `effect` should require manual cleanup.
+   *
+   * If this is `false` (the default) the effect will automatically register itself to be cleaned up
+   * with the current `DestroyRef`.
+   */
+  manualCleanup?: boolean;
+
   /**
    * Whether the `effect` should allow writing to signals.
    *
