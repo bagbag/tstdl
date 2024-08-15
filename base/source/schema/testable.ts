@@ -6,8 +6,10 @@ import { boolean } from './schemas/boolean.js';
 import { func } from './schemas/function.js';
 import { number } from './schemas/number.js';
 import { getSchemaFromReflection } from './schemas/object.js';
+import { readableStream } from './schemas/readable-stream.js';
 import { string } from './schemas/string.js';
 import { symbol } from './schemas/symbol.js';
+import { uint8Array } from './schemas/uint8-array.js';
 
 export function schemaTestableToSchema<T>(testable: SchemaTestable<T>): Schema<T> {
   if (testable instanceof Schema) {
@@ -32,6 +34,12 @@ export function schemaTestableToSchema<T>(testable: SchemaTestable<T>): Schema<T
 
     case Function as AbstractConstructor:
       return func() as Schema<any> as Schema<T>;
+
+    case Uint8Array as AbstractConstructor:
+      return uint8Array() as Schema<any> as Schema<T>;
+
+    case ReadableStream as AbstractConstructor:
+      return readableStream() as Schema<any> as Schema<T>;
 
     default:
       return getSchemaFromReflection(testable as AbstractConstructor<Record>);
