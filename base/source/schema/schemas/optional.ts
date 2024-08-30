@@ -6,6 +6,8 @@ import { type OPTIONAL, Schema, type SchemaTestable, type SchemaTestOptions, typ
 import { schemaTestableToSchema } from '../testable.js';
 
 export class OptionalSchema<T> extends Schema<T | undefined> {
+  override readonly name: string;
+
   declare readonly [OPTIONAL]: true;
 
   readonly schema: Schema<T>;
@@ -18,6 +20,7 @@ export class OptionalSchema<T> extends Schema<T | undefined> {
     super();
 
     this.schema = schemaTestableToSchema(schema);
+    this.name = `Optional[${this.schema.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | undefined> {

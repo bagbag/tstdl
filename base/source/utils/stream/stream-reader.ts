@@ -2,6 +2,7 @@ import { BadRequestError } from '#/errors/bad-request.error.js';
 import { MaxBytesExceededError } from '#/errors/max-bytes-exceeded.error.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { AnyIterable } from '../any-iterable-iterator.js';
+import { isAsyncIterable } from '../async-iterable-helpers/is-async-iterable.js';
 import { concatArrayBufferViews } from '../binary.js';
 import { isDefined, isReadableStream } from '../type-guards.js';
 import { getReadableStreamFromIterable, getReadableStreamIterable } from './readable-stream-adapter.js';
@@ -111,8 +112,8 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBuffer
   return concatArrayBufferViews(views, Uint8Array, totalLength);
 }
 
-export async function readTextStream(iterableOrStream: AnyIterable<string> | ReadableStream<string>): Promise<string> {
-  const iterable = isReadableStream(iterableOrStream) ? getReadableStreamIterable(iterableOrStream) : iterableOrStream
+export async function readTextStream(iterableOrStream: AsyncIterable<string> | ReadableStream<string>): Promise<string> {
+  const iterable = isAsyncIterable(iterableOrStream) ? iterableOrStream : getReadableStreamIterable(iterableOrStream);
 
   let text = '';
 

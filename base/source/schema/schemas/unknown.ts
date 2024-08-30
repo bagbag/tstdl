@@ -2,6 +2,8 @@ import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOpt
 import { Schema, type SchemaTestResult } from '../schema.js';
 
 export class UnknownSchema extends Schema<unknown> {
+  override readonly name = 'unknown';
+
   override _test(value: unknown): SchemaTestResult<unknown> {
     return { valid: true, value };
   }

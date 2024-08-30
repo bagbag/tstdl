@@ -6,6 +6,7 @@ import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestRes
 import { schemaTestableToSchema } from '../testable.js';
 
 export class NullableSchema<T> extends Schema<T | null> {
+  override readonly name: string;
   readonly schema: Schema<T>;
 
   constructor(schema: SchemaTestable<T>) {
@@ -16,6 +17,7 @@ export class NullableSchema<T> extends Schema<T | null> {
     super();
 
     this.schema = schemaTestableToSchema(schema);
+    this.name = `Nullable[${this.schema.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | null> {

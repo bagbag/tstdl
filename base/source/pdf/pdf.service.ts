@@ -6,8 +6,8 @@
 
 import { execFile as execFileCallback } from 'node:child_process';
 import { access, readFile, unlink, writeFile } from 'node:fs/promises';
-import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
+import { promisify } from 'node:util';
 
 import { BrowserContextController } from '#/browser/browser-context-controller.js';
 import type { BrowserControllerArgument } from '#/browser/browser-controller.js';
@@ -25,7 +25,7 @@ import { finalizeStream } from '#/utils/stream/finalize-stream.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { timeout } from '#/utils/timing.js';
-import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isString } from '#/utils/type-guards.js';
 
 const execFile = promisify(execFileCallback);
 

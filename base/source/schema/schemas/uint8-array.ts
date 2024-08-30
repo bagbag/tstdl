@@ -11,6 +11,8 @@ export type Uint8ArraySchemaOptions = SimpleSchemaOptions & {
 };
 
 export class Uint8ArraySchema extends SimpleSchema<Uint8Array> {
+  override readonly name = 'Uint8Array';
+
   readonly options: Uint8ArraySchemaOptions;
 
   constructor(options?: Uint8ArraySchemaOptions) {

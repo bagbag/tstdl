@@ -6,6 +6,8 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 export type RegExpSchemaOptions = SimpleSchemaOptions;
 
 export class RegExpSchema extends SimpleSchema<RegExp> {
+  override readonly name = 'RegExp';
+
   constructor(options?: RegExpSchemaOptions) {
     super('RegExp', isRegExp, options, {
       coercers: {

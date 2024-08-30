@@ -6,12 +6,14 @@ import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export class InstanceSchema<T extends AbstractConstructor> extends Schema<InstanceType<T>> {
+  override readonly name: string;
   readonly type: T;
 
   constructor(type: T) {
     super();
 
     this.type = type;
+    this.name = `Instance[${type.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<InstanceType<T>> {

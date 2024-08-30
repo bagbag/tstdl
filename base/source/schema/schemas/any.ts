@@ -2,6 +2,8 @@ import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOpt
 import { Schema, type SchemaTestResult } from '../schema.js';
 
 export class AnySchema extends Schema<any> {
+  override readonly name = 'any';
+
   override _test(value: any): SchemaTestResult<any> {
     return { valid: true, value };
   }

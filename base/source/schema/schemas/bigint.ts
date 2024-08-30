@@ -7,6 +7,8 @@ import type { SchemaPropertyDecorator } from '../decorators/types.js';
 import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export class BigIntSchema extends Schema<bigint> {
+  override readonly name = 'bigint';
+
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<bigint> {
     if (isBigInt(value)) {
       return { valid: true, value };

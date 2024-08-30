@@ -1,21 +1,33 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { isSchemaTestable, schemaTestableToSchema } from '../testable.js';
 
 type UnionSchemaType<T extends [SchemaTestable, ...SchemaTestable[]]> = T[number] extends SchemaTestable<infer V> ? V : never;
 
 export class UnionSchema<T extends [SchemaTestable, ...SchemaTestable[]]> extends Schema<UnionSchemaType<T>> {
+  override readonly name: string;
+
   readonly schemas: { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
 
   constructor(schemas: T) {
     super();
 
-    this.schemas = schemas.map((schema) => schemaTestableToSchema(schema)) as { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
+    this.schemas = schemas.flatMap((testable) => {
+      const schema = schemaTestableToSchema(testable);
+
+      if (schema instanceof UnionSchema) {
+        return schema.schemas;
+      }
+
+      return schema;
+    }) as { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
+    this.name = `Union[${this.schemas.map((schema) => schema.name).join(', ')}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<UnionSchemaType<T>> {
-    let firstInvalidResult: SchemaTestResult<UnionSchemaType<T>> | undefined;
+    const errors: SchemaError[] = [];
 
     for (const schema of this.schemas) {
       const result = schema._test(value, path, options) as SchemaTestResult<UnionSchemaType<T>>;
@@ -24,10 +36,10 @@ export class UnionSchema<T extends [SchemaTestable, ...SchemaTestable[]]> extend
         return result;
       }
 
-      firstInvalidResult ??= result;
+      errors.push(result.error);
     }
 
-    return firstInvalidResult!;
+    return { valid: false, error: new SchemaError(`None of the schemas [${this.schemas.map((schema) => schema.name).join(', ')}] matched. See inner for details.`, { path, inner: errors, fast: options.fastErrors }) };
   }
 }
 

@@ -6,12 +6,14 @@ import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export class LiteralSchema<const T> extends Schema<T> {
+  override readonly name: string;
   readonly value: T;
 
   constructor(value: T) {
     super();
 
     this.value = value;
+    this.name = `Literal[${String(value)}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T> {

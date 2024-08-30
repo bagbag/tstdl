@@ -18,6 +18,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   readonly path: string;
   readonly details?: UndefinableJson;
   readonly inner?: OneOrMany<SchemaError>;
+  readonly innerMessages?: string[];
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
     super({ message, cause: cause ?? options.cause, fast: options.fast });
@@ -30,6 +31,8 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
           ? options.inner[0]!
           : options.inner
         : options.inner;
+
+      this.innerMessages = toArray(options.inner).flatMap((inner) => [`${inner.path}: ${inner.message}`, ...(inner.innerMessages ?? [])]);
     }
 
     if (isNotNullOrUndefined(options.details)) {

@@ -5,6 +5,8 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 export type ReadableStreamSchemaOptions = SimpleSchemaOptions;
 
 export class ReadableStreamSchema extends SimpleSchema<ReadableStream> {
+  override readonly name = 'ReadableStream';
+
   constructor(options?: ReadableStreamSchemaOptions) {
     super('ReadableStream', isReadableStream, options);
   }

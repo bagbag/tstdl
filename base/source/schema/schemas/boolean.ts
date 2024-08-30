@@ -9,6 +9,8 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 export type BooleanSchemaOptions = SimpleSchemaOptions;
 
 export class BooleanSchema extends SimpleSchema<boolean> {
+  override readonly name = 'boolean';
+
   constructor(options?: BooleanSchemaOptions) {
     super('boolean', isBoolean, options, {
       coercers: {

@@ -5,6 +5,7 @@ import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestRes
 import { schemaTestableToSchema } from '../testable.js';
 
 export class DefaultSchema<T, D> extends Schema<T | D> {
+  override readonly name: string;
   readonly schema: Schema<T>;
   readonly defaultValue: D;
 
@@ -13,6 +14,7 @@ export class DefaultSchema<T, D> extends Schema<T | D> {
 
     this.schema = schemaTestableToSchema(schema);
     this.defaultValue = defaultValue;
+    this.name = `Defaulted[${this.schema.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | D> {

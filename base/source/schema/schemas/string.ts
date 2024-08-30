@@ -7,6 +7,8 @@ export type StringSchemaOptions = SimpleSchemaOptions & {
 };
 
 export class StringSchema extends SimpleSchema<string> {
+  override readonly name = 'string';
+
   constructor(options?: StringSchemaOptions) {
     const pattern = isDefined(options?.pattern) ? isString(options.pattern) ? RegExp(options.pattern, 'u') : isRegExp(options.pattern) ? options.pattern : undefined : undefined;
 

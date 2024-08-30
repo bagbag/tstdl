@@ -8,6 +8,8 @@ export type NumberSchemaOptions = SimpleSchemaOptions & {
 };
 
 export class NumberSchema extends SimpleSchema<number> {
+  override readonly name = 'number';
+
   constructor(options?: NumberSchemaOptions) {
     super('number', isNumber, options, {
       coercers: {

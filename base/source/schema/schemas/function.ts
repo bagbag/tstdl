@@ -5,6 +5,8 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 export type FunctionSchemaOptions = SimpleSchemaOptions;
 
 export class FunctionSchema extends SimpleSchema<Function> {
+  override readonly name = 'function';
+
   constructor(options?: FunctionSchemaOptions) {
     super('function', isFunction, options);
   }

@@ -9,6 +9,7 @@ export type EnumerationSchemaOptions = SimpleSchemaOptions;
 export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<EnumerationValue<T>> {
   readonly #allowedValuesSet: Set<EnumerationValue>;
 
+  override readonly name: string;
   readonly enumeration: EnumerationType;
 
   constructor(enumeration: T, options?: EnumerationSchemaOptions) {
@@ -31,6 +32,7 @@ export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<E
     this.enumeration = enumeration;
 
     this.#allowedValuesSet = new Set(allowedValues);
+    this.name = `Enumeration[${allowedValuesString}]`;
   }
 }
 

@@ -39,6 +39,8 @@ export type SchemaOutput<T extends SchemaTestable> = T extends SchemaTestable<in
 export declare const OPTIONAL: unique symbol;
 
 export abstract class Schema<T = unknown> {
+  abstract readonly name: string;
+
   declare readonly [OPTIONAL]: boolean;
 
   /**

@@ -8,6 +8,8 @@ export type DateSchemaOptions = SimpleSchemaOptions & {
 };
 
 export class DateSchema extends SimpleSchema<globalThis.Date> {
+  override readonly name = 'date';
+
   constructor(options?: DateSchemaOptions) {
     super('date', isValidDate, options, {
       coercers: {

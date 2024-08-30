@@ -27,6 +27,7 @@ export type ObjectSchemaProperties<T extends Record = Record> = { [P in keyof T]
 export type NormalizedObjectSchemaProperties<T extends Record> = { [P in keyof T]-?: Schema<T[P]> };
 
 export type ObjectSchemaOptions<T extends Record = Record, K extends PropertyKey = PropertyKey, V = unknown> = {
+  name?: string,
   mask?: boolean | null,
   unknownProperties?: SchemaTestable<V> | null,
   unknownPropertiesKey?: SchemaTestable<K> | null,
@@ -45,6 +46,8 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
   private readonly propertyKeys: Set<keyof T>;
   private readonly allowUnknownProperties: boolean;
 
+  override readonly name: string;
+
   readonly properties: NormalizedObjectSchemaProperties<T>;
   readonly mask: boolean | null;
   readonly unknownProperties: Schema | null;
@@ -62,6 +65,8 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
 
     this.allowUnknownProperties = isNotNull(this.unknownProperties) || isNotNull(this.unknownPropertiesKey);
     this.propertyKeys = new Set(objectKeys(properties));
+
+    this.name = options.name ?? 'Object';
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T> {
@@ -151,6 +156,7 @@ export function assign(...schemasOrTypes: ObjectSchemaOrType[]): ObjectSchema {
   return object(
     schemas.reduce<ObjectSchemaProperties>((result, schema) => ({ ...result, ...schema.properties }), {}),
     {
+      name: schemas.at(-1)?.name,
       mask: schemas.findLast((schema) => isNotNull(schema.mask))?.mask,
       unknownProperties: schemas.findLast((schema) => isNotNull(schema.unknownProperties))?.unknownProperties,
       unknownPropertiesKey: schemas.findLast((schema) => isNotNull(schema.unknownPropertiesKey))?.unknownPropertiesKey
@@ -235,6 +241,7 @@ function _tryGetSchemaFromReflection<T extends Record>(type: AbstractConstructor
   }
 
   const schema = object(getObjectSchemaPropertiesFromReflection(metadata, type) as ObjectSchemaProperties, {
+    name: type.name,
     factory: isDefined(typeData.factory) ? typeData.factory : { type: type as Type },
     mask: typeData.mask,
     unknownProperties: typeData.unknownProperties,

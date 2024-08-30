@@ -9,6 +9,7 @@ import { union } from './union.js';
 export type OneOrMany<T> = OneOrManyType<T>;
 
 export class OneOrManySchema<T> extends Schema<T | T[]> {
+  override readonly name: string;
   readonly schema: Schema<T | T[]>;
 
   constructor(schema: SchemaTestable<T>) {
@@ -17,6 +18,7 @@ export class OneOrManySchema<T> extends Schema<T | T[]> {
     const oneSchema = schemaTestableToSchema(schema);
 
     this.schema = union(oneSchema, array(oneSchema));
+    this.name = `OneOrMany[${oneSchema.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | T[]> {

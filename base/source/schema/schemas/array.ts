@@ -8,12 +8,14 @@ import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestRes
 import { schemaTestableToSchema } from '../testable.js';
 
 export class ArraySchema<T> extends Schema<T[]> {
+  override readonly name: string;
   readonly itemSchema: Schema<T>;
 
   constructor(itemSchema: SchemaTestable<T>) {
     super();
 
     this.itemSchema = schemaTestableToSchema(itemSchema);
+    this.name = `Array[${this.itemSchema.name}]`;
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T[]> {

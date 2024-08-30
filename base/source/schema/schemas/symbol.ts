@@ -6,6 +6,8 @@ import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOpt
 import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export class SymbolSchema extends Schema<symbol> {
+  override readonly name = 'symbol';
+
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<symbol> {
     if (isSymbol(value)) {
       return { valid: true, value };
