@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.91.14",
+  "version": "0.91.16",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -85,6 +85,7 @@
     "./serializer/handlers": "./serializer/handlers/index.js",
     "./signals": "./signals/index.js",
     "./signals/implementation": "./signals/implementation/index.js",
+    "./process": "./process/index.js",
     "./sse": "./sse/index.js",
     "./templates": "./templates/index.js",
     "./templates/providers": "./templates/providers/index.js",

@@ -5,6 +5,7 @@ import { disposeAsync } from '#/disposable/disposable.js';
 import type { Logger } from '#/logger/logger.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
+import { toReadableStream } from '#/utils/stream/to-readable-stream.js';
 import { withTimeout } from '#/utils/timing.js';
 import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
@@ -168,13 +169,7 @@ export class PageController extends DocumentController<Page> implements AsyncDis
   renderPdfStream(options: PdfRenderOptions & Abortable = {}): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
       const buffer = await this.renderPdf(options);
-
-      return new ReadableStream({
-        pull(controller) {
-          controller.enqueue(buffer);
-          controller.close();
-        }
-      });
+      return toReadableStream(buffer);
     });
   }
 
