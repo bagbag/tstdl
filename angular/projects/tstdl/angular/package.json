@@ -1,18 +1,18 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.91.5",
+  "version": "0.91.6",
   "dependencies": {
-    "tslib": "^2.6"
+    "tslib": "^2.7"
   },
   "peerDependencies": {
     "@angular/cdk": ">=17.0",
     "@angular/common": ">=17.0",
     "@angular/core": ">=17.0",
     "@angular/material": ">=17.0",
-    "@tstdl/base": "^0.91.12",
+    "@tstdl/base": "^0.91",
     "chroma-js": "^2.6",
     "luxon": "^3.5",
-    "marked": "^14.0"
+    "marked": "^14.1"
   },
   "sideEffects": false
 }

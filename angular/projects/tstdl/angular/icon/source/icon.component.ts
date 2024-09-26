@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, ViewEncapsulation, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, Provider, ViewEncapsulation, computed, inject, input } from '@angular/core';
 
 import { IconName } from './icons';
 
@@ -18,6 +18,10 @@ const sizeMap = {
   '6xl': 'text-6xl'
 };
 
+export abstract class IconComponentConfiguration {
+  svgPath?: string;
+}
+
 @Component({
   selector: 'tsl-icon',
   standalone: true,
@@ -31,13 +35,19 @@ const sizeMap = {
   }
 })
 export class IconComponent {
+  readonly #configuration = inject(IconComponentConfiguration, { optional: true });
+
   readonly icon = input.required<IconName>();
   readonly size = input<IconSize | null | undefined>();
 
-  readonly url = computed(() => `/assets/bootstrap-icons.svg#${this.icon()}`);
+  readonly url = computed(() => `${this.#configuration?.svgPath ?? '/assets/bootstrap-icons.svg'}#${this.icon()}`);
 
   @HostBinding('class')
   get sizeClass(): string {
     return sizeMap[this.size() ?? 'base'];
   }
+}
+
+export function provideIconComponentConfiguration(configuration: IconComponentConfiguration): Provider {
+  return { provide: IconComponentConfiguration, useValue: configuration };
 }
