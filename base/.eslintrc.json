@@ -123,7 +123,6 @@
     "import/newline-after-import": ["warn"],
     "import/no-absolute-path": ["warn"],
     "import/no-anonymous-default-export": ["warn"],
-    "import/no-cycle": ["off", { "ignoreExternal": true }],
     "import/no-duplicates": ["warn", { "prefer-inline": true }],
     "import/no-empty-named-blocks": ["warn"],
     "import/no-extraneous-dependencies": ["off", { "devDependencies": false, "includeTypes": true }],

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.91.16",
+  "version": "0.91.18",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -116,7 +116,7 @@
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "2.6",
+    "@stylistic/eslint-plugin": "2.8",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -125,10 +125,10 @@
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@typescript-eslint/eslint-plugin": "7.17",
-    "concurrently": "8.2",
+    "concurrently": "9.0",
     "eslint": "8.57",
     "eslint-import-resolver-typescript": "3.6",
-    "eslint-plugin-import": "2.29",
+    "eslint-plugin-import": "2.30",
     "tsc-alias": "1.8",
     "typedoc": "0.26",
     "typedoc-plugin-missing-exports": "3.0",
@@ -136,7 +136,7 @@
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.15",
-    "@koa/router": "^13.0",
+    "@koa/router": "^13.1",
     "@tstdl/angular": "^0.91",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
@@ -148,11 +148,11 @@
     "koa": "^2.15",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.8",
+    "mongodb": "^6.9",
     "nodemailer": "^6.9",
-    "pg": "^8.12",
-    "playwright": "^1.46",
-    "preact": "^10.23",
+    "pg": "^8.13",
+    "playwright": "^1.47",
+    "preact": "^10.24",
     "preact-render-to-string": "^6.5",
     "undici": "^6.19",
     "urlpattern-polyfill": "^10.0"

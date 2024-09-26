@@ -31,6 +31,8 @@ const tokenUpdateBusName = 'AuthenticationService:tokenUpdate';
 const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
+const localStorage = globalThis.localStorage as Storage | undefined;
+
 @Singleton()
 export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any, AdditionalInitSecretResetData extends Record = Record> implements AfterResolve, AsyncDisposable {
   private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>>;
@@ -65,32 +67,32 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   readonly loggedOut$ = this.loggedOutBus.allMessages$;
 
   private get authenticationData(): AuthenticationData {
-    const data = localStorage.getItem(authenticationDataStorageKey);
+    const data = localStorage?.getItem(authenticationDataStorageKey);
     return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
   }
 
   private set authenticationData(data: AuthenticationData | undefined) {
     if (isUndefined(data)) {
-      localStorage.removeItem(authenticationDataStorageKey);
+      localStorage?.removeItem(authenticationDataStorageKey);
     }
     else {
       const json = JSON.stringify(data);
-      localStorage.setItem(authenticationDataStorageKey, json);
+      localStorage?.setItem(authenticationDataStorageKey, json);
     }
   }
 
   private get impersonatorAuthenticationData(): AuthenticationData {
-    const data = localStorage.getItem(impersonatorAuthenticationDataStorageKey);
+    const data = localStorage?.getItem(impersonatorAuthenticationDataStorageKey);
     return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
   }
 
   private set impersonatorAuthenticationData(data: AuthenticationData | undefined) {
     if (isUndefined(data)) {
-      localStorage.removeItem(impersonatorAuthenticationDataStorageKey);
+      localStorage?.removeItem(impersonatorAuthenticationDataStorageKey);
     }
     else {
       const json = JSON.stringify(data);
-      localStorage.setItem(impersonatorAuthenticationDataStorageKey, json);
+      localStorage?.setItem(impersonatorAuthenticationDataStorageKey, json);
     }
   }
 
@@ -235,20 +237,16 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
 
   private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
     if (isNullOrUndefined(token)) {
-      localStorage.removeItem(tokenStorageKey);
+      localStorage?.removeItem(tokenStorageKey);
     }
     else {
       const serialized = JSON.stringify(token);
-      localStorage.setItem(tokenStorageKey, serialized);
+      localStorage?.setItem(tokenStorageKey, serialized);
     }
   }
 
   private loadToken(): void {
-    if (isUndefined(localStorage)) {
-      return;
-    }
-
-    const existingSerializedToken = localStorage.getItem(tokenStorageKey);
+    const existingSerializedToken = localStorage?.getItem(tokenStorageKey);
 
     const token = isString(existingSerializedToken)
       ? JSON.parse(existingSerializedToken) as TokenPayload<AdditionalTokenPayload>
