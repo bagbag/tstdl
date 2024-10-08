@@ -87,8 +87,7 @@
       "@tstdl/angular/vertical-tab-group": [
         "projects/tstdl/angular/vertical-tab-group",
       ]
-    },
-    "lib": ["es2022", "dom"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable, Injector, inject } from '@angular/core';
-import type { CustomErrorStatic } from '@tstdl/base/errors';
-import { CustomError, errorsLocalizationKeys, unwrapError } from '@tstdl/base/errors';
+import { CustomError, tstdlErrorsLocalizationKeys, unwrapError, type CustomErrorStatic } from '@tstdl/base/errors';
 import { LocalizationService, type DynamicText } from '@tstdl/base/text';
-import type { FormatErrorOptions } from '@tstdl/base/utils';
-import { formatError, isUndefined } from '@tstdl/base/utils';
+import { formatError, isUndefined, type FormatErrorOptions } from '@tstdl/base/utils';
 
 export class ErrorHandlerServiceOptions {
   format?: FormatErrorOptions;
@@ -34,7 +32,7 @@ export abstract class ErrorHandlerMessageService {
     const actualError = unwrapError(error);
 
     if ((actualError instanceof CustomError)) {
-      const errorLocalizationKey = errorsLocalizationKeys.errors[(actualError.constructor as CustomErrorStatic).errorName]!;
+      const errorLocalizationKey = tstdlErrorsLocalizationKeys.errors[(actualError.constructor as CustomErrorStatic).errorName]!;
       const headerLocalizationKey = errorLocalizationKey.header;
       const messageLocalizationKey = errorLocalizationKey.message;
 

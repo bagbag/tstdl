@@ -35,8 +35,7 @@
     "react": "npm:@preact/compat@18.3",
     "react-dom": "npm:@preact/compat@18.3",
     "rxjs": "7.8",
-    "tslib": "2.7",
-    "zone.js": "0.14"
+    "tslib": "2.7"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "18.2",
@@ -47,7 +46,7 @@
     "@angular-eslint/template-parser": "18.3",
     "@angular/cli": "18.2",
     "@angular/compiler-cli": "18.2",
-    "@stylistic/eslint-plugin": "2.8",
+    "@stylistic/eslint-plugin": "2.9",
     "@tailwindcss/typography": "0.5",
     "@types/chroma-js": "2.4",
     "@types/luxon": "3.4",
@@ -55,7 +54,7 @@
     "@typescript-eslint/parser": "7.17",
     "eslint": "8.57",
     "eslint-import-resolver-typescript": "3.6",
-    "eslint-plugin-import": "2.30",
+    "eslint-plugin-import": "2.31",
     "ng-packagr": "18.2",
     "source-map-explorer": "2.5",
     "tailwindcss": "3.4",

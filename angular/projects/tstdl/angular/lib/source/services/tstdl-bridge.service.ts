@@ -11,8 +11,7 @@ import { DOCUMENT } from '@tstdl/base/tokens';
 import { Observable, Subscribable } from 'rxjs';
 
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
-import type { R3Injector } from './wrapped-r3-injector-records-map';
-import { WrappedR3InjectorRecordsMap } from './wrapped-r3-injector-records-map';
+import { type R3Injector, WrappedR3InjectorRecordsMap } from './wrapped-r3-injector-records-map';
 
 @Injectable({
   providedIn: 'root'

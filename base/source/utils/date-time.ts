@@ -1,6 +1,5 @@
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { DateObjectUnits, DateTimeJSOptions } from 'luxon';
-import { DateTime } from 'luxon';
+import { type DateObjectUnits, DateTime, type DateTimeJSOptions } from 'luxon';
 import { isDate, isNumber } from './type-guards.js';
 import { typeOf } from './type-of.js';
 import { millisecondsPerDay, millisecondsPerHour, millisecondsPerMinute, millisecondsPerSecond } from './units.js';

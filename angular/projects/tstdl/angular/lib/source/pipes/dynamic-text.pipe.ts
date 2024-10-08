@@ -1,8 +1,6 @@
-import type { PipeTransform } from '@angular/core';
-import { Injector, Pipe, computed, inject, runInInjectionContext, signal, untracked } from '@angular/core';
+import { Injector, Pipe, type PipeTransform, computed, inject, runInInjectionContext, signal, untracked } from '@angular/core';
 import { switchAll } from '@tstdl/base/signals';
-import type { DynamicText } from '@tstdl/base/text';
-import { LocalizationService, missingLocalizationKeyText, resolveDynamicText } from '@tstdl/base/text';
+import { type DynamicText, LocalizationService, missingLocalizationKeyText, resolveDynamicText } from '@tstdl/base/text';
 import { isNull, strictEquals } from '@tstdl/base/utils';
 
 @Pipe({
