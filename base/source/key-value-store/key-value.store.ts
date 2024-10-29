@@ -1,8 +1,7 @@
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import type { StringMap } from '../types.js';
 
-/** key value store module */
+/** Key value store module */
 export type KeyValueStoreArgument = string;
 
 export abstract class KeyValueStore<KV extends StringMap> implements Resolvable<KeyValueStoreArgument> {
@@ -13,24 +12,24 @@ export abstract class KeyValueStore<KV extends StringMap> implements Resolvable<
     this.module = module;
   }
 
-  /** get value of key */
+  /** Get value of key */
   abstract get<K extends keyof KV>(key: K): Promise<KV[K] | undefined>;
 
-  /** get value of key */
+  /** Get value of key */
   abstract get<K extends keyof KV, D>(key: K, defaultValue: D): Promise<KV[K] | D>;
 
-  /** set key */
+  /** Set key */
   abstract set<K extends keyof KV>(key: K, value: KV[K]): Promise<void>;
 
-  /** set multiple keys */
+  /** Set multiple keys */
   abstract setMany(keyValues: Partial<KV>): Promise<void>;
 
-  /** delete key */
+  /** Delete key */
   abstract delete(key: keyof KV): Promise<boolean>;
 
-  /** delete multiple keys */
+  /** Delete multiple keys */
   abstract deleteMany(keys: (keyof KV)[]): Promise<void>;
 
-  /** delete all keys */
+  /** Delete all keys */
   abstract clear(): Promise<void>;
 }

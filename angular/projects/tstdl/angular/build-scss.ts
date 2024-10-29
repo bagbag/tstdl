@@ -1,4 +1,4 @@
-const pattern = /\.tsl-tw\s+:is\((\.tsl-dark(?:\s+))?(.*?)\)(.*?)\s*\{/u;
+const pattern = /\.tsl-tw\s+((?::is\()?\.tsl-dark(?:\s+))?(.*?)(?:\))?(.*?)\s*\{/u;
 
 const baseStylesFile = Deno.args[0] as string;
 const tailwindStylesFile = Deno.args[1] as string;
@@ -36,8 +36,8 @@ function patchTailwindStyles(styles: string): string {
     const [, dark, utility, affix] = match;
 
     const patchedLine = (dark == undefined)
-      ? `.tsl-tw :is(${utility})${affix}, .tsl-tw:is(${utility})${affix} {`
-      : `:is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark) :is(${utility})${affix}, :is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark):is(${utility})${affix} {`;
+      ? `.tsl-tw ${utility}${affix}, .tsl-tw${utility}${affix} {`
+      : `:is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark) ${utility}${affix}, :is(.tsl-tw .tsl-dark, .tsl-dark .tsl-tw, .tsl-tw.tsl-dark)${utility}${affix} {`;
 
     outputLines.push(patchedLine);
   }

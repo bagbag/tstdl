@@ -268,10 +268,14 @@ function getObjectSchemaPropertiesFromReflection<T extends Record>(metadata: Typ
     const reflectionData = propertyMetadata.data.tryGet<SchemaPropertyReflectionData>('schema');
 
     if (isUndefined(reflectionData?.schema) && (propertyMetadata.type == Object)) {
-      throw new Error(`Schema of property "${String(key)}" on type ${type.name} is inferred as Object. This is most likely unwanted and happens when the property is defined as partial or the type is an union. Use an explicit @Property(Object) if this is wanted.`);
+      throw new Error(`Schema of property "${String(key)}" on type ${type.name} is inferred as Object. This is most likely unwanted and happens if the property is defined as partial or the type is an union. Use an explicit @Property(Object) if this is wanted.`);
     }
 
     let propertySchema = reflectionData?.schema ?? propertyMetadata.type;
+
+    if (isUndefined(propertySchema)) {
+      throw new Error(`Could not infer schema for property "${String(key)}" on type ${type.name}. This happens if neither explicit @Property(type) is used nor reflection metadata is available.`);
+    }
 
     if (reflectionData?.array == true) {
       propertySchema = array(propertySchema);

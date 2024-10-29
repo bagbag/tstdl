@@ -9,6 +9,7 @@ export * from './array-list.js';
 export * from './cache.js';
 export * from './circular-buffer.js';
 export * from './collection.js';
+export * from './context-data-map.js';
 export * from './dictionary.js';
 export * from './distinct-collection.js';
 export * from './index-out-of-bounds.error.js';

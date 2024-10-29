@@ -15,7 +15,14 @@ export function resolveValueOrProvider<T>(valueOrProvider: ValueOrProvider<T>): 
   return valueOrProvider as T;
 }
 
+/**
+ * @deprecated use {@link resolveValueOrAsyncProvider}
+ */
 export async function resolveAsyncValueOrProvider<T>(valueOrProvider: ValueOrAsyncProvider<T>): Promise<T> {
+  return resolveValueOrAsyncProvider(valueOrProvider);
+}
+
+export async function resolveValueOrAsyncProvider<T>(valueOrProvider: ValueOrAsyncProvider<T>): Promise<T> {
   if (isFunction(valueOrProvider)) {
     return (valueOrProvider as AsyncProvider<T>)();
   }
@@ -23,9 +30,17 @@ export async function resolveAsyncValueOrProvider<T>(valueOrProvider: ValueOrAsy
   return valueOrProvider as T;
 }
 
+/**
+ * @deprecated use {@link cacheValueOrAsyncProvider}
+ */
+
 export function cacheAsyncValueOrProvider<T>(provider: ValueOrAsyncProvider<T>): () => (T | Promise<T>) {
+  return cacheValueOrAsyncProvider(provider);
+}
+
+export function cacheValueOrAsyncProvider<T>(provider: ValueOrAsyncProvider<T>): () => (T | Promise<T>) {
   let getValue: () => T | Promise<T> = async () => {
-    const valuePromise = resolveAsyncValueOrProvider(provider);
+    const valuePromise = resolveValueOrAsyncProvider(provider);
 
     getValue = async () => valuePromise;
     void valuePromise.then((resolvedValue) => (getValue = () => resolvedValue));

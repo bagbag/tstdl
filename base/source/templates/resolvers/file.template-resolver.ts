@@ -3,9 +3,8 @@ import * as path from 'node:path';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InjectArg, Singleton } from '#/injector/decorators.js';
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
-import { Property } from '#/schema/index.js';
+import { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import { StringProperty } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
 import { TemplateField } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
@@ -20,7 +19,7 @@ export type FileTemplateProviderArgument = string;
 export const fileTemplateProviderConfig: FileTemplateProviderConfig = {};
 
 export class FileTemplateField<Renderer extends string = string, Options = any> extends TemplateField<'file', Renderer, Options> {
-  @Property()
+  @StringProperty()
   templateFile: string;
 }
 

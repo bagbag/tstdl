@@ -1,4 +1,7 @@
-/* eslint-disable max-lines, @typescript-eslint/ban-types, @typescript-eslint/no-invalid-void-type, @typescript-eslint/restrict-template-expressions, max-statements-per-line, no-eq-null */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-invalid-void-type */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
 import type { AbstractConstructor, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';
@@ -82,13 +85,13 @@ export const assertNotNull: AssertNotFunction<null> = nullGuards.assertNotNull;
 export const assertNullPass: AssertPassFunction<null> = nullGuards.assertNullPass;
 export const assertNotNullPass: AssertNotPassFunction<null> = nullGuards.assertNotNullPass;
 
-const nullOrUndefinedGuards = createGuards('null or undefined', (value): value is null | undefined => (value === null) || (value === undefined));
-export const isNullOrUndefined: IsFunction<null | undefined> = nullOrUndefinedGuards.isNullOrUndefined;
-export const isNotNullOrUndefined: IsNotFunction<null | undefined> = nullOrUndefinedGuards.isNotNullOrUndefined;
-export const assertNullOrUndefined: AssertFunction<null | undefined> = nullOrUndefinedGuards.assertNullOrUndefined;
-export const assertNotNullOrUndefined: AssertNotFunction<null | undefined> = nullOrUndefinedGuards.assertNotNullOrUndefined;
-export const assertNullOrUndefinedPass: AssertPassFunction<null | undefined> = nullOrUndefinedGuards.assertNullOrUndefinedPass;
-export const assertNotNullOrUndefinedPass: AssertNotPassFunction<null | undefined> = nullOrUndefinedGuards.assertNotNullOrUndefinedPass;
+const nullOrUndefinedGuards = createGuards('null or undefined', (value): value is null | undefined | void => (value === null) || (value === undefined));
+export const isNullOrUndefined: (value: any) => value is null | undefined = nullOrUndefinedGuards.isNullOrUndefined;
+export const isNotNullOrUndefined: IsNotFunction<null | undefined | void> = nullOrUndefinedGuards.isNotNullOrUndefined;
+export const assertNullOrUndefined: (value: any, message?: AssertionMessage) => asserts value is null | undefined = nullOrUndefinedGuards.assertNullOrUndefined;
+export const assertNotNullOrUndefined: AssertNotFunction<null | undefined | void> = nullOrUndefinedGuards.assertNotNullOrUndefined;
+export const assertNullOrUndefinedPass: (value: any, message?: AssertionMessage) => null | undefined = nullOrUndefinedGuards.assertNullOrUndefinedPass;
+export const assertNotNullOrUndefinedPass: AssertNotPassFunction<null | undefined | void> = nullOrUndefinedGuards.assertNotNullOrUndefinedPass;
 
 const numberGuards = createGuards('number', (value): value is number => (typeof value == 'number') && !Number.isNaN(value));
 export const isNumber: IsFunction<number> = numberGuards.isNumber;
@@ -138,7 +141,7 @@ export const assertNotSymbol: AssertNotFunction<symbol> = symbolGuards.assertNot
 export const assertSymbolPass: AssertPassFunction<symbol> = symbolGuards.assertSymbolPass;
 export const assertNotSymbolPass: AssertNotPassFunction<symbol> = symbolGuards.assertNotSymbolPass;
 
-const literalObjectGuards = createGuards('literal object', (value): value is object => (typeof value == 'object') && (value != null) && (Reflect.getPrototypeOf(value as object) == Object.prototype) && (Reflect.getPrototypeOf(value as object)!.constructor == Object));
+const literalObjectGuards = createGuards('literal object', (value): value is object => (typeof value == 'object') && (value !== null) && (Reflect.getPrototypeOf(value as object) == Object.prototype) && (Reflect.getPrototypeOf(value as object)!.constructor == Object));
 export const isLiteralObject: IsFunction<object> = literalObjectGuards.isLiteralObject;
 export const isNotLiteralObject: IsNotFunction<object> = literalObjectGuards.isNotLiteralObject;
 export const assertLiteralObject: AssertFunction<object> = literalObjectGuards.assertLiteralObject;
@@ -146,7 +149,7 @@ export const assertNotLiteralObject: AssertNotFunction<object> = literalObjectGu
 export const assertLiteralObjectPass: AssertPassFunction<object> = literalObjectGuards.assertLiteralObjectPass;
 export const assertNotLiteralObjectPass: AssertNotPassFunction<object> = literalObjectGuards.assertNotLiteralObjectPass;
 
-const objectGuards = createGuards('object', (value): value is object => (typeof value == 'object') && (value != null));
+const objectGuards = createGuards('object', (value): value is object => (typeof value == 'object') && (value !== null));
 export const isObject: IsFunction<object> = objectGuards.isObject;
 export const isNotObject: IsNotFunction<object> = objectGuards.isNotObject;
 export const assertObject: AssertFunction<object> = objectGuards.assertObject;
@@ -376,7 +379,7 @@ export const assertNotPromise: AssertNotFunction<Promise<any>> = promiseGuards.a
 export const assertPromisePass: AssertPassFunction<Promise<any>> = promiseGuards.assertPromisePass;
 export const assertNotPromisePass: AssertNotPassFunction<Promise<any>> = promiseGuards.assertNotPromisePass;
 
-const promiseLikeGuards = createGuards('PromiseLike', (value): value is PromiseLike<any> => isPromise(value) || ((((typeof value == 'object') && (value != null)) || isFunction(value)) && ((typeof (value as PromiseLike<any>).then) == 'function')));
+const promiseLikeGuards = createGuards('PromiseLike', (value): value is PromiseLike<any> => isPromise(value) || ((((typeof value == 'object') && (value !== null)) || isFunction(value)) && ((typeof (value as PromiseLike<any>).then) == 'function')));
 export const isPromiseLike: IsFunction<PromiseLike<any>> = promiseLikeGuards.isPromiseLike;
 export const isNotPromiseLike: IsNotFunction<PromiseLike<any>> = promiseLikeGuards.isNotPromiseLike;
 export const assertPromiseLike: AssertFunction<PromiseLike<any>> = promiseLikeGuards.assertPromiseLike;

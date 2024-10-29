@@ -1,4 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isPrimitive } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
@@ -13,7 +14,8 @@ export class LiteralSchema<const T> extends Schema<T> {
     super();
 
     this.value = value;
-    this.name = `Literal[${String(value)}]`;
+
+    lazyProperty(this, 'name', () => `Literal[${String(value)}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T> {

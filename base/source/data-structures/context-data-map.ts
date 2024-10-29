@@ -1,9 +1,9 @@
 import type { Record } from '#/types.js';
 import { merge } from '#/utils/merge.js';
 import { objectEntries } from '#/utils/object/object.js';
-import { isUndefined } from '#/utils/type-guards.js';
+import { isArray, isUndefined } from '#/utils/type-guards.js';
 
-export class ReflectionDataMap {
+export class ContextDataMap {
   private readonly data: Map<PropertyKey, any>;
 
   constructor() {
@@ -14,15 +14,23 @@ export class ReflectionDataMap {
     return this.data.has(key);
   }
 
-  tryGet<T>(key: PropertyKey): T | undefined {
-    return this.data.get(key) as T | undefined;
+  tryGet<T>(key: PropertyKey): T | undefined;
+  tryGet<T, D>(key: PropertyKey, defaultValue: D): T | D;
+  tryGet<T, D>(key: PropertyKey, defaultValue?: D): T | D | undefined {
+    const value = this.data.get(key);
+
+    if (isUndefined(value)) {
+      return defaultValue;
+    }
+
+    return value as T;
   }
 
   get<T>(key: PropertyKey): T {
     const data = this.tryGet<T>(key);
 
     if (isUndefined(data)) {
-      throw new Error(`No data for ${String(key)} available.`);
+      throw new Error(`No data for key "${String(key)}" available.`);
     }
 
     return data;
@@ -40,8 +48,12 @@ export class ReflectionDataMap {
     this.data.set(key, newData);
   }
 
-  setMany(data: Record, mergeValues: boolean = false): void {
-    for (const [key, value] of objectEntries(data)) {
+  setMany(data: Record | readonly [PropertyKey, any][], mergeValues: boolean = false): void {
+    const entries = isArray<[PropertyKey, any]>(data)
+      ? data
+      : objectEntries(data);
+
+    for (const [key, value] of entries) {
       this.set(key, value, mergeValues);
     }
   }

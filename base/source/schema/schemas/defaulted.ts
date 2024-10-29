@@ -1,4 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isNullOrUndefined } from '#/utils/type-guards.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
@@ -14,7 +15,8 @@ export class DefaultSchema<T, D> extends Schema<T | D> {
 
     this.schema = schemaTestableToSchema(schema);
     this.defaultValue = defaultValue;
-    this.name = `Defaulted[${this.schema.name}]`;
+
+    lazyProperty(this, 'name', () => `Defaulted[${this.schema.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | D> {

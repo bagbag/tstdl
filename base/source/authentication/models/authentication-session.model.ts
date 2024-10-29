@@ -1,46 +1,46 @@
-import { Property } from '#/schema/index.js';
+import { NumberProperty, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
 
 export class AuthenticationSession {
-  @Property()
+  @StringProperty()
   id: string;
 
-  @Property()
+  @StringProperty()
   subject: string;
 
-  /** timestamp */
-  @Property()
+  /** Timestamp */
+  @NumberProperty()
   begin: number;
 
-  /** timestamp */
-  @Property()
+  /** Timestamp */
+  @NumberProperty()
   end: number;
 
-  @Property()
+  @NumberProperty()
   refreshTokenHashVersion: number;
 
-  @Property()
+  @Uint8ArrayProperty()
   refreshTokenSalt: Uint8Array;
 
-  @Property()
+  @Uint8ArrayProperty()
   refreshTokenHash: Uint8Array;
 }
 
 export class NewAuthenticationSession {
-  @Property()
+  @StringProperty()
   subject: string;
 
-  @Property()
+  @NumberProperty()
   begin: number;
 
-  @Property()
+  @NumberProperty()
   end: number;
 
-  @Property()
+  @NumberProperty()
   refreshTokenHashVersion: number;
 
-  @Property()
+  @Uint8ArrayProperty()
   refreshTokenSalt: Uint8Array;
 
-  @Property()
+  @Uint8ArrayProperty()
   refreshTokenHash: Uint8Array;
 }

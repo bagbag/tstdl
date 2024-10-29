@@ -1,32 +1,32 @@
-import { Property } from '#/schema/index.js';
+import { NumberProperty, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
 
 export class AuthenticationCredentials {
-  @Property()
+  @StringProperty()
   id: string;
 
-  @Property()
+  @StringProperty()
   subject: string;
 
-  @Property()
+  @NumberProperty()
   hashVersion: number;
 
-  @Property()
+  @Uint8ArrayProperty()
   salt: Uint8Array;
 
-  @Property()
+  @Uint8ArrayProperty()
   hash: Uint8Array;
 }
 
 export class NewAuthenticationCredentials {
-  @Property()
+  @StringProperty()
   subject: string;
 
-  @Property()
+  @NumberProperty()
   hashVersion: number;
 
-  @Property()
+  @Uint8ArrayProperty()
   salt: Uint8Array;
 
-  @Property()
+  @Uint8ArrayProperty()
   hash: Uint8Array;
 }

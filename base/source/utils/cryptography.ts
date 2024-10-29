@@ -13,9 +13,9 @@ export type HashAlgorithm = 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
 export type SymmetricAlgorithm = `AES-${AesMode}`;
 export type AsymmetricAlgorithm = 'RSASSA-PKCS1-v1_5' | 'RSA-PSS' | 'RSA-OAEP' | 'ECDSA' | 'ECDH' | 'NODE-DSA' | 'NODE-DH' | 'NODE-ED25519' | 'NODE-ED448';
 
-export type CryptionAlgorithm = Parameters<typeof crypto.subtle.encrypt>[0];
-export type SignAlgorithm = Parameters<typeof crypto.subtle.sign>[0];
-export type KeyAlgorithm = Parameters<typeof crypto.subtle.generateKey>[0];
+export type CryptionAlgorithm = Parameters<typeof globalThis.crypto.subtle.encrypt>[0];
+export type SignAlgorithm = Parameters<typeof globalThis.crypto.subtle.sign>[0];
+export type KeyAlgorithm = Parameters<typeof globalThis.crypto.subtle.generateKey>[0];
 export type DeriveAlgorithm = Parameters<typeof globalThis.crypto.subtle.deriveBits>['0'];
 
 export type KeyType = 'raw' | 'pkcs8' | 'spki' | 'jwk';
@@ -44,8 +44,6 @@ export interface DigestResult extends CryptionResult { }
 
 export interface SignResult extends CryptionResult { }
 
-const subtle = globalThis.crypto.subtle;
-
 /**
  * Encrypt data
  * @param algorithm algorithm as supported by Web Crypto API
@@ -54,7 +52,7 @@ const subtle = globalThis.crypto.subtle;
  */
 export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: BinaryData | string): CryptionResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
-  const encryptedBuffer = subtle.encrypt(algorithm, key, bytes);
+  const encryptedBuffer = globalThis.crypto.subtle.encrypt(algorithm, key, bytes);
 
   return {
     toBuffer: async () => encryptedBuffer,
@@ -72,7 +70,7 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
  * @param data data to decrypt
  */
 export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: BinaryData): DecryptionResult {
-  const decryptedBuffer = subtle.decrypt(algorithm, key, bytes);
+  const decryptedBuffer = globalThis.crypto.subtle.decrypt(algorithm, key, bytes);
 
   return {
     toBuffer: async () => decryptedBuffer,
@@ -91,7 +89,7 @@ export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: Bin
  */
 export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | string): DigestResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
-  const arrayBufferPromise = subtle.digest(algorithm, bytes);
+  const arrayBufferPromise = globalThis.crypto.subtle.digest(algorithm, bytes);
 
   const result: DigestResult = {
     toBuffer: async () => arrayBufferPromise,
@@ -113,7 +111,7 @@ export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | st
 export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData | string): SignResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
 
-  const arrayBufferPromise = subtle.sign(algorithm, key, bytes);
+  const arrayBufferPromise = globalThis.crypto.subtle.sign(algorithm, key, bytes);
 
   const result: SignResult = {
     toBuffer: async () => arrayBufferPromise,
@@ -137,7 +135,7 @@ export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature
   const signatureBytes = isString(signature) ? encodeUtf8(signature) : signature;
   const dataBytes = isString(data) ? encodeUtf8(data) : data;
 
-  return subtle.verify(algorithm, key, signatureBytes, dataBytes);
+  return globalThis.crypto.subtle.verify(algorithm, key, signatureBytes, dataBytes);
 }
 
 /**
@@ -150,10 +148,10 @@ export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return subtle.importKey('raw', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+    return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
   }
 
-  return subtle.importKey('jwk', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
 }
 
 /**
@@ -167,10 +165,10 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return subtle.importKey('raw', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+    return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
   }
 
-  return subtle.importKey('jwk', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
 }
 
 /**
@@ -183,10 +181,10 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return subtle.importKey('spki', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+    return globalThis.crypto.subtle.importKey('spki', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
   }
 
-  return subtle.importKey('jwk', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
 }
 
 /**
@@ -206,7 +204,7 @@ export async function importPbkdf2Key(key: BinaryData | string, extractable: boo
  * @param usages whether to generate a key for signing, verifiying or both. Defaults to both
  */
 export async function generateEcdsaKey(curve: EcdsaCurve, extractable: boolean = false, usages: TypedExtract<KeyUsage, 'sign' | 'verify'>[] = ['sign', 'verify']): Promise<CryptoKeyPair> {
-  return subtle.generateKey({ name: 'ECDSA', namedCurve: curve }, extractable, usages);
+  return globalThis.crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: curve }, extractable, usages);
 }
 
 /**

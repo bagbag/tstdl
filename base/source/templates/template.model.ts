@@ -1,4 +1,4 @@
-import { Any, any, Class, object, Optional, Property } from '#/schema/index.js';
+import { Any, any, Class, object, Optional, Property, StringProperty } from '#/schema/index.js';
 import type { PickBy, Record, SimplifyObject } from '#/types.js';
 
 export type TemplateContext<T extends Template> = Parameters<NonNullable<T[typeof templateContext]>>[0];
@@ -9,10 +9,10 @@ declare const templateContext: unique symbol;
 export class TemplateField<Resolver extends string = string, Renderer extends string = string, Options = any, Context extends Record = any> {
   declare readonly [templateContext]?: (context: Context) => void;
 
-  @Property()
+  @StringProperty()
   resolver: Resolver;
 
-  @Property()
+  @StringProperty()
   renderer: Renderer;
 
   @Any()
@@ -28,8 +28,8 @@ export type TemplateFields<Fields extends Record<string, boolean>, Resolver exte
 export abstract class Template<Fields extends Record<string, boolean> = Record<string, boolean>, TemplateOptions = any, Context extends Record = any> {
   declare readonly [templateContext]?: (context: Context) => void;
 
-  /** name of template */
-  @Property()
+  /** Name of template */
+  @StringProperty()
   name: string;
 
   @Property(object({}, { unknownProperties: TemplateField }))

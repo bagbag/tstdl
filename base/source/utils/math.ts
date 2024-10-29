@@ -1,6 +1,6 @@
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { RandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
-import { defaultRandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
+import { defaultRandomNumberGeneratorFn, type RandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
+import { isNull } from './type-guards.js';
 
 /**
  * Generate a random float in interval [min, max).
@@ -124,4 +124,37 @@ export function clamp(value: number, minimum: number, maximum: number): number {
  */
 export function nthRoot(base: number, root: number): number {
   return (base < 0) ? -((-base) ** (1 / root)) : (base ** (1 / root));
+}
+
+/**
+ *
+ * @param t Time in interval [0, 1]
+ * @param attenuationExponentStart Sensible values are between 1 (linear attenuation) and ~10 (no attenuation until t = ~0.9, then sharply increasing attenuation)
+ * @param attenuationExponentEnd Sensible values are between 1 (linear attenuation) and ~10 (no attenuation until t = ~0.9, then sharply increasing attenuation)
+ * @param deadzoneWidthStart Deadzone width to add in front of 0.5. Sensible values are between 0 and 0.5
+ * @param deadzoneWidthEnd Deadzone width to add to interval [0.5, 1]. Sensible values are between 0 and 0.5
+ * @returns Coefficient in interval [0, 1]
+ */
+export function getAttenuationCoefficient(t: number, attenuationExponentStart: number | null, attenuationExponentEnd: number | null, deadzoneWidthStart: number = 0, deadzoneWidthEnd: number = 0): number {
+  if ((t < 0) || (t > 1)) {
+    return 0;
+  }
+
+  if (t <= 0.5) {
+    if (isNull(attenuationExponentStart)) {
+      return 1;
+    }
+
+    if (t >= (0.5 - deadzoneWidthStart)) {
+      return 1;
+    }
+
+    return 1 - (-2 * (t - (0.5 - deadzoneWidthStart)) * (0.5 / (0.5 - deadzoneWidthStart))) ** (attenuationExponentStart ** 1.5);
+  }
+
+  if (isNull(attenuationExponentEnd) || (t <= (0.5 + deadzoneWidthEnd))) {
+    return 1;
+  }
+
+  return 1 - (-2 * (-(t - 1) - (0.5 - deadzoneWidthEnd)) * (0.5 / (0.5 - deadzoneWidthEnd))) ** (attenuationExponentEnd ** 1.5);
 }

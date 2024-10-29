@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { OneOrMany as OneOrManyType } from '#/types.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
@@ -18,7 +19,8 @@ export class OneOrManySchema<T> extends Schema<T | T[]> {
     const oneSchema = schemaTestableToSchema(schema);
 
     this.schema = union(oneSchema, array(oneSchema));
-    this.name = `OneOrMany[${oneSchema.name}]`;
+
+    lazyProperty(this, 'name', () => `OneOrMany[${oneSchema.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | T[]> {

@@ -2,12 +2,12 @@ import { firstValueFrom } from 'rxjs';
 
 import type { ApiClientHttpRequestContext } from '#/api/client/index.js';
 import type { HttpClientMiddleware, HttpClientMiddlewareContext, HttpClientMiddlewareNext } from '#/http/client/middleware.js';
-import { cacheAsyncValueOrProvider, type ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
+import { cacheValueOrAsyncProvider, type ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { dontWaitForValidToken } from '../authentication.api.js';
 import type { AuthenticationClientService } from './authentication.service.js';
 
 export function waitForAuthenticationCredentialsMiddleware(authenticationServiceOrProvider: ValueOrAsyncProvider<AuthenticationClientService>): HttpClientMiddleware {
-  const getAuthenticationService = cacheAsyncValueOrProvider(authenticationServiceOrProvider);
+  const getAuthenticationService = cacheValueOrAsyncProvider(authenticationServiceOrProvider);
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
   async function waitForAuthenticationCredentialsMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {

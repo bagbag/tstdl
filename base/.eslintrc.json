@@ -149,7 +149,11 @@
     "@stylistic/quotes": ["warn", "single"],
     "@stylistic/semi": ["warn", "always"],
     "@stylistic/multiline-ternary":  ["warn", "always-multiline"],
-    "@stylistic/generator-star-spacing": ["warn", { "before": false, "after": true }],
+    "@stylistic/generator-star-spacing":  ["error", {
+      "named": "before",
+      "anonymous": "neither",
+      "method": "before"
+    }],
     "@stylistic/indent": ["off"],
     "@stylistic/max-len": ["off"],
     "@stylistic/object-curly-spacing": ["warn", "always"],

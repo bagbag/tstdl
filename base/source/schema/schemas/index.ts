@@ -4,6 +4,7 @@ export * from './bigint.js';
 export * from './boolean.js';
 export * from './date.js';
 export * from './defaulted.js';
+export * from './deferred.js';
 export * from './enumeration.js';
 export * from './function.js';
 export * from './instance.js';

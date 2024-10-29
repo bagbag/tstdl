@@ -1,5 +1,6 @@
 import type { Enumeration as EnumerationType, EnumerationValue } from '#/types.js';
 import { enumValues } from '#/utils/enum.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray, isString } from '#/utils/type-guards.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
@@ -32,7 +33,8 @@ export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<E
     this.enumeration = enumeration;
 
     this.#allowedValuesSet = new Set(allowedValues);
-    this.name = `Enumeration[${allowedValuesString}]`;
+
+    lazyProperty(this, 'name', () => `Enumeration[${allowedValuesString}]`);
   }
 }
 

@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { TypedOmit } from '#/types.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { type OPTIONAL, Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
@@ -20,7 +21,8 @@ export class OptionalSchema<T> extends Schema<T | undefined> {
     super();
 
     this.schema = schemaTestableToSchema(schema);
-    this.name = `Optional[${this.schema.name}]`;
+
+    lazyProperty(this, 'name', () => `Optional[${this.schema.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | undefined> {

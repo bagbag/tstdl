@@ -1,28 +1,28 @@
-import { Property } from '#/schema/decorators/property.js';
+import { NumberProperty, StringProperty } from '#/schema/index.js';
 
 export class TokenPayloadBase {
-  /** token id */
-  @Property()
+  /** Token id */
+  @StringProperty()
   jti: string;
 
-  /** issue timestamp in seconds */
-  @Property()
+  /** Issue timestamp in seconds */
+  @NumberProperty()
   iat: number;
 
-  /** expiration timestamp in seconds */
-  @Property()
+  /** Expiration timestamp in seconds */
+  @NumberProperty()
   exp: number;
 
-  /** refresh token expiration timestamp in seconds */
-  @Property()
+  /** Refresh token expiration timestamp in seconds */
+  @NumberProperty()
   refreshTokenExp: number;
 
-  @Property()
+  @StringProperty()
   sessionId: string;
 
-  @Property()
+  @StringProperty()
   subject: string;
 
-  @Property({ optional: true })
+  @StringProperty({ optional: true })
   impersonator?: string;
 }

@@ -13,5 +13,6 @@ export type SchemaPropertyReflectionData = {
   schema?: SchemaTestable,
   array?: boolean,
   optional?: boolean,
-  nullable?: boolean
+  nullable?: boolean,
+  data?: Record<PropertyKey, any>
 };

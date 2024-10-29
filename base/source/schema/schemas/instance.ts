@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { AbstractConstructor } from '#/types.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { typeOf } from '#/utils/type-of.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
@@ -13,7 +14,8 @@ export class InstanceSchema<T extends AbstractConstructor> extends Schema<Instan
     super();
 
     this.type = type;
-    this.name = `Instance[${type.name}]`;
+
+    lazyProperty(this, 'name', () => `Instance[${type.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<InstanceType<T>> {

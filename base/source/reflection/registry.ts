@@ -3,9 +3,9 @@ import type { AbstractConstructor, Writable } from '#/types.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property.js';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection.js';
-import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { isDefined, isNotNull, isUndefined } from '#/utils/type-guards.js';
+import { ContextDataMap } from '../data-structures/context-data-map.js';
 import { getDecoratorData } from './decorator-data.js';
-import { ReflectionDataMap } from './reflection-data-map.js';
 import type { DecoratorData } from './types.js';
 
 export type ReflectionMetadata = TypeMetadata | PropertyMetadata | MethodMetadata | ConstructorParameterMetadata | MethodParameterMetadata;
@@ -28,32 +28,34 @@ export type TypeMetadata = MetadataBase<'type'> & {
   readonly methods: ReadonlyMap<string | symbol, MethodMetadata>,
   readonly staticMethods: ReadonlyMap<string | symbol, MethodMetadata>,
 
-  readonly data: ReflectionDataMap
+  readonly data: ContextDataMap
 };
 
 export type PropertyMetadata = MetadataBase<'property'> & {
   key: string | symbol,
   type: AbstractConstructor,
   isAccessor: boolean,
-  data: ReflectionDataMap
+  data: ContextDataMap,
+  inherited: boolean
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
   returnType: AbstractConstructor | undefined,
-  data: ReflectionDataMap
+  data: ContextDataMap,
+  inherited: boolean
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
   type: AbstractConstructor | undefined,
   index: number,
-  data: ReflectionDataMap
+  data: ContextDataMap
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
   type: AbstractConstructor,
   index: number,
-  data: ReflectionDataMap
+  data: ContextDataMap
 };
 
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
@@ -75,12 +77,7 @@ export class ReflectionRegistry {
     const metadata = this.metadataMap.get(type);
 
     if (isDefined(metadata) && !this.finalizedTypesSet.has(type)) {
-      (metadata as Writable<TypeMetadata>).properties = new Map(metadata.properties);
-      (metadata as Writable<TypeMetadata>).staticProperties = new Map(metadata.staticProperties);
-      (metadata as Writable<TypeMetadata>).methods = new Map(metadata.methods);
-      (metadata as Writable<TypeMetadata>).staticMethods = new Map(metadata.staticMethods);
-
-      this.finalizedTypesSet.add(type);
+      this.#finalizeMetadata(metadata);
     }
 
     return metadata;
@@ -144,24 +141,45 @@ export class ReflectionRegistry {
 
     return this.metadataMap.get(type)!;
   }
+
+  #finalizeMetadata(metadata: TypeMetadata): void {
+    const parentMetadata = isNotNull(metadata.parent) ? reflectionRegistry.getMetadata(metadata.parent) : undefined;
+
+    (metadata as Writable<TypeMetadata>).properties = new Map([...getInheritedMetadataEntries(parentMetadata?.properties), ...metadata.properties]);
+    (metadata as Writable<TypeMetadata>).staticProperties = new Map([...getInheritedMetadataEntries(parentMetadata?.staticProperties), ...metadata.staticProperties]);
+    (metadata as Writable<TypeMetadata>).methods = new Map([...getInheritedMetadataEntries(parentMetadata?.methods), ...metadata.methods]);
+    (metadata as Writable<TypeMetadata>).staticMethods = new Map([...getInheritedMetadataEntries(parentMetadata?.staticMethods), ...metadata.staticMethods]);
+
+    this.finalizedTypesSet.add(metadata.constructor);
+  }
+}
+
+function getInheritedMetadataEntries<T extends PropertyMetadata | MethodMetadata>(metadata: ReadonlyMap<string | symbol, T> | undefined): [string | symbol, T][] {
+  return [...(metadata ?? [])].map(([key, value]) => [key, toInheritedMetadata(value)]);
+}
+
+function toInheritedMetadata<T extends PropertyMetadata | MethodMetadata>(metadata: T): T {
+  return { ...metadata, inherited: true };
 }
 
 function initializeType(type: AbstractConstructor): TypeMetadata {
+  const parent = Reflect.getPrototypeOf(type) as AbstractConstructor | null;
+
   return lazyObject<TypeMetadata>({
     metadataType: 'type',
     constructor: lazyObjectValue(type),
-    parent: lazyObjectValue(Reflect.getPrototypeOf(type) as AbstractConstructor | null),
+    parent: lazyObjectValue(parent),
     parameters: {
       initializer() {
         const parametersTypes = getParameterTypes(type);
-        return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ReflectionDataMap() }));
+        return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ContextDataMap() }));
       }
     },
     properties: {
-      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ReflectionDataMap() }))
+      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
     },
     staticProperties: {
-      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ReflectionDataMap() }))
+      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
     },
     methods: {
       initializer: () => new FactoryMap((key): MethodMetadata => {
@@ -172,7 +190,7 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
           throw new Error(`Could not get parameters for method ${key.toString()} of type ${type.name}`);
         }
 
-        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
+        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ContextDataMap() })), returnType, data: new ContextDataMap(), inherited: false };
       })
     },
     staticMethods: {
@@ -184,10 +202,10 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
           throw new Error(`Could not get parameters for static method ${key.toString()} of type ${type.name}`);
         }
 
-        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ReflectionDataMap() })), returnType, data: new ReflectionDataMap() };
+        return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ContextDataMap() })), returnType, data: new ContextDataMap(), inherited: false };
       })
     },
-    data: { initializer: () => new ReflectionDataMap() }
+    data: { initializer: () => new ContextDataMap() }
   });
 }
 

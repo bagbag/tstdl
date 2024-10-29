@@ -1,10 +1,10 @@
-import { Property } from '#/schema/decorators/property.js';
+import { StringProperty } from '#/schema/index.js';
 
 export class InitSecretResetData {
   /** Subject is not checked for existence. */
-  @Property()
+  @StringProperty()
   subject: string;
 
-  @Property()
+  @StringProperty()
   token: string;
 }

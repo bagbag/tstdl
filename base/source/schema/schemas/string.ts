@@ -3,15 +3,17 @@ import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOpt
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type StringSchemaOptions = SimpleSchemaOptions & {
-  pattern?: RegExp | string
+  pattern?: RegExp | string,
+  lowercase?: boolean
 };
 
 export class StringSchema extends SimpleSchema<string> {
-  override readonly name = 'string';
+  override readonly name: string = 'string';
+
+  readonly pattern: RegExp | null;
+  readonly lowercase: boolean;
 
   constructor(options?: StringSchemaOptions) {
-    const pattern = isDefined(options?.pattern) ? isString(options.pattern) ? RegExp(options.pattern, 'u') : isRegExp(options.pattern) ? options.pattern : undefined : undefined;
-
     super('string', isString, options, {
       coercers: {
         number: (value) => ({ success: true, value: globalThis.String(value), valid: true }),
@@ -19,9 +21,15 @@ export class StringSchema extends SimpleSchema<string> {
         bigint: (value) => ({ success: true, value: globalThis.String(value), valid: true })
       },
       constraints: [
-        isDefined(pattern) ? ((value) => pattern.test(value) ? ({ success: true }) : ({ success: false, error: 'Value did not match pattern.' })) : null
+        isDefined(options?.pattern) ? ((value) => this.pattern!.test(value) ? ({ success: true }) : ({ success: false, error: 'Value did not match pattern.' })) : null
       ]
     });
+
+    this.pattern = isString(options?.pattern)
+      ? RegExp(options.pattern, 'u')
+      : isRegExp(options?.pattern)
+        ? options.pattern
+        : null;
   }
 }
 

@@ -1,5 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { TypedOmit } from '#/types.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isNull } from '#/utils/type-guards.js';
 import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
@@ -17,7 +18,8 @@ export class NullableSchema<T> extends Schema<T | null> {
     super();
 
     this.schema = schemaTestableToSchema(schema);
-    this.name = `Nullable[${this.schema.name}]`;
+
+    lazyProperty(this, 'name', () => `Nullable[${this.schema.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<T | null> {

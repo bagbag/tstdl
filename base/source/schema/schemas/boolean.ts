@@ -1,9 +1,5 @@
-import type { JsonPath } from '#/json-path/json-path.js';
-import { SchemaError } from '#/schema/schema.error.js';
 import { isBoolean, isString } from '#/utils/type-guards.js';
-import { typeOf } from '#/utils/type-of.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import type { SchemaTestOptions, SchemaTestResult } from '../schema.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type BooleanSchemaOptions = SimpleSchemaOptions;
@@ -38,14 +34,6 @@ export class BooleanSchema extends SimpleSchema<boolean> {
         }
       }
     });
-  }
-
-  override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<boolean> {
-    if (isBoolean(value)) {
-      return { valid: true, value };
-    }
-
-    return { valid: false, error: SchemaError.expectedButGot('boolean', typeOf(value), path, { fast: options.fastErrors }) };
   }
 }
 

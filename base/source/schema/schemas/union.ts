@@ -1,4 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
@@ -23,7 +24,8 @@ export class UnionSchema<T extends [SchemaTestable, ...SchemaTestable[]]> extend
 
       return schema;
     }) as { [P in keyof T]: T[P] extends Schema ? T[P] : Schema<SchemaOutput<T[P]>> };
-    this.name = `Union[${this.schemas.map((schema) => schema.name).join(', ')}]`;
+
+    lazyProperty(this, 'name', () => `Union[${this.schemas.map((schema) => schema.name).join(', ')}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<UnionSchemaType<T>> {

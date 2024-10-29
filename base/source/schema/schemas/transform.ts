@@ -1,4 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
+import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 
@@ -14,7 +15,7 @@ export class TransformSchema<I, O> extends Schema<O> {
     this.schema = schemaTestableToSchema(schema);
     this.transformFn = transformFn;
 
-    this.name = `Transform[${schema.name}]`;
+    lazyProperty(this, 'name', () => `Transform[${this.schema.name}]`);
   }
 
   override _test(value: any, path: JsonPath, options: SchemaTestOptions): SchemaTestResult<O> {
