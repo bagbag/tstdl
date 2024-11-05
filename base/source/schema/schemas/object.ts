@@ -3,16 +3,16 @@
 import type { EmptyObject, Merge } from 'type-fest';
 
 import type { JsonPath } from '#/json-path/json-path.js';
-import { reflectionRegistry, type TypeMetadata } from '#/reflection/index.js';
+import { createDecorator, type Decorator, reflectionRegistry, type TypeMetadata } from '#/reflection/index.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { AbstractConstructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { filterObject, mapObjectValues, objectKeys } from '#/utils/object/object.js';
 import { assert, isDefined, isFunction, isLiteralObject, isNotNull, isNotNullOrUndefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Property, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import type { SchemaPropertyDecorator, SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
+import { Class, Property, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
 import { type OPTIONAL, Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import { array } from './array.js';
@@ -307,8 +307,17 @@ export function getObjectSchema<T extends Record>(schemaOrType: SchemaTestable<T
   throw new Error('Could not infer ObjectSchema.');
 }
 
-export function Record<K extends PropertyKey, V>(key: Schema<K>, value: Schema<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(record(key, value, options), options);
+export function Record<K extends PropertyKey, V>(key: SchemaTestable<K>, value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'> & SchemaPropertyDecoratorOptions): Decorator<'class' | 'property' | 'accessor'> {
+  const keySchema = schemaTestableToSchema(key);
+  const valueSchema = schemaTestableToSchema(value);
+
+  return createDecorator({ class: true, property: true, accessor: true }, (data, _metadata, args) => {
+    if (data.type == 'class') {
+      return Class({ unknownPropertiesKey: keySchema, unknownProperties: valueSchema })(args[0] as Constructor);
+    }
+
+    return Property(record(keySchema, valueSchema, options), options)(args[0], args[1]!, args[2]!);
+  });
 }
 
 export const emptyObjectSchema = explicitObject<EmptyObject>({} as ObjectSchemaProperties<EmptyObject>);

@@ -39,8 +39,8 @@ export type DecoratorMetadataMap = DecoratorTypeMap<{
 export type DecoratorHandlerReturnTypeMap = DecoratorTypeMap<{
   class: void | undefined | Constructor,
   property: void,
-  accessor: void,
-  method: void | PropertyDescriptor,
+  accessor: void | undefined | TypedPropertyDescriptor<any>,
+  method: void | undefined | PropertyDescriptor,
   parameter: void,
   methodParameter: void,
   constructorParameter: void
