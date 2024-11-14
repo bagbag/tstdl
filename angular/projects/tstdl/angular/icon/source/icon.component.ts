@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, HostBinding, Provider, ViewEncapsulation, computed, inject, input } from '@angular/core';
 
+import { isNullOrUndefined } from '@tstdl/base/utils';
 import { IconName } from './icons';
 
 export type IconSize = '0' | 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
@@ -44,7 +45,13 @@ export class IconComponent {
 
   @HostBinding('class')
   get sizeClass(): string {
-    return sizeMap[this.size() ?? 'base'];
+    const size = this.size();
+
+    if (isNullOrUndefined(size)) {
+      return '';
+    }
+
+    return sizeMap[size];
   }
 }
 

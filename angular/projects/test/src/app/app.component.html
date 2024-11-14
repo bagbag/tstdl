@@ -1,8 +1,10 @@
 <div class="content-grid py-5">
-  <div class="flex flex-wrap gap-6 mb-8">
-    @for (route of routes; track route.label) {
-      <a tslButton #routerLinkActive="routerLinkActive" [routerLink]="route.href" routerLinkActive [color]="routerLinkActive.isActive ? 'amber' : 'sky'">{{ route.label }}</a>
-    }
+  <div>
+    <div class="flex flex-wrap gap-6 mb-8">
+      @for (route of routes; track route.label) {
+        <a tslButton #routerLinkActive="routerLinkActive" [routerLink]="route.href" routerLinkActive [color]="routerLinkActive.isActive ? 'amber' : 'sky'">{{ route.label }}</a>
+      }
+    </div>
   </div>
 
   <main class="full content-grid">

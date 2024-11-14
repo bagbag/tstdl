@@ -1,5 +1,200 @@
+@use "sass:map";
+
+$_colors: (
+  white: (
+    flat: unquote("text-neutral-800 bg-white hover:bg-neutral-200 dark:hover:bg-neutral-200"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-white hover:bg-neutral-200 dark:hover:bg-neutral-200"),
+    outline-text: unquote("text-neutral-800 dark:text-white hover:text-neutral-700 dark:hover:text-neutral-700"),
+  ),
+  transparent: (
+    flat: unquote("bg-transparent hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15"),
+    outline: unquote("hover:bg-neutral-500/10 dark:hover:bg-neutral-200/15"),
+  ),
+  accent: (
+    flat: unquote("bg-accent-400 dark:bg-accent-600 hover:bg-accent-500 dark:hover:bg-accent-500"),
+    flat-text: unquote("text-accent-900 dark:text-accent-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-accent-400 hover:bg-accent-400 dark:hover:bg-accent-600"),
+    outline-text: unquote("text-accent-600 dark:text-accent-600 hover:text-accent-900 dark:hover:text-accent-100"),
+  ),
+  neutral: (
+    flat: unquote("bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-400 dark:hover:bg-neutral-500"),
+    flat-text: unquote("text-neutral-800 dark:text-neutral-200"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-neutral-400 hover:bg-neutral-400 dark:hover:bg-neutral-600"),
+    outline-text: unquote("text-neutral-800 dark:text-neutral-200 hover:text-neutral-800 dark:hover:text-neutral-200"),
+  ),
+  stone: (
+    flat: unquote("bg-stone-300 dark:bg-stone-600 hover:bg-stone-400 dark:hover:bg-stone-500"),
+    flat-text: unquote("text-stone-800 dark:text-stone-200"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-stone-400 hover:bg-stone-400 dark:hover:bg-stone-600"),
+    outline-text: unquote("text-stone-800 dark:text-stone-200 hover:text-stone-800 dark:hover:text-stone-200"),
+  ),
+  red: (
+    flat: unquote("bg-red-400 dark:bg-red-600 hover:bg-red-500 dark:hover:bg-red-500"),
+    flat-text: unquote("text-red-900 dark:text-red-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-red-400 hover:bg-red-400 dark:hover:bg-red-600"),
+    outline-text: unquote("text-red-600 dark:text-red-600 hover:text-red-900 dark:hover:text-red-100"),
+  ),
+  orange: (
+    flat: unquote("bg-orange-400 dark:bg-orange-600 hover:bg-orange-500 dark:hover:bg-orange-500"),
+    flat-text: unquote("text-orange-900 dark:text-orange-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-orange-400 hover:bg-orange-400 dark:hover:bg-orange-600"),
+    outline-text: unquote("text-orange-600 dark:text-orange-600 hover:text-orange-900 dark:hover:text-orange-100"),
+  ),
+  amber: (
+    flat: unquote("bg-amber-400 dark:bg-amber-600 hover:bg-amber-500 dark:hover:bg-amber-500"),
+    flat-text: unquote("text-amber-900 dark:text-amber-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-amber-400 hover:bg-amber-400 dark:hover:bg-amber-600"),
+    outline-text: unquote("text-amber-600 dark:text-amber-600 hover:text-amber-900 dark:hover:text-amber-100"),
+  ),
+  yellow: (
+    flat: unquote("bg-yellow-400 dark:bg-yellow-600 hover:bg-yellow-500 dark:hover:bg-yellow-500"),
+    flat-text: unquote("text-yellow-900 dark:text-yellow-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-yellow-400 hover:bg-yellow-400 dark:hover:bg-yellow-600"),
+    outline-text: unquote("text-yellow-600 dark:text-yellow-600 hover:text-yellow-900 dark:hover:text-yellow-100"),
+  ),
+  lime: (
+    flat: unquote("bg-lime-400 dark:bg-lime-600 hover:bg-lime-500 dark:hover:bg-lime-500"),
+    flat-text: unquote("text-lime-900 dark:text-lime-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-lime-400 hover:bg-lime-400 dark:hover:bg-lime-600"),
+    outline-text: unquote("text-lime-600 dark:text-lime-600 hover:text-lime-900 dark:hover:text-lime-100"),
+  ),
+  green: (
+    flat: unquote("bg-green-400 dark:bg-green-600 hover:bg-green-500 dark:hover:bg-green-500"),
+    flat-text: unquote("text-green-900 dark:text-green-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-green-400 hover:bg-green-400 dark:hover:bg-green-600"),
+    outline-text: unquote("text-green-600 dark:text-green-600 hover:text-green-900 dark:hover:text-green-100"),
+  ),
+  emerald: (
+    flat: unquote("bg-emerald-400 dark:bg-emerald-600 hover:bg-emerald-500 dark:hover:bg-emerald-500"),
+    flat-text: unquote("text-emerald-900 dark:text-emerald-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-emerald-400 hover:bg-emerald-400 dark:hover:bg-emerald-600"),
+    outline-text: unquote("text-emerald-600 dark:text-emerald-600 hover:text-emerald-900 dark:hover:text-emerald-100"),
+  ),
+  teal: (
+    flat: unquote("bg-teal-400 dark:bg-teal-600 hover:bg-teal-500 dark:hover:bg-teal-500"),
+    flat-text: unquote("text-teal-900 dark:text-teal-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-teal-400 hover:bg-teal-400 dark:hover:bg-teal-600"),
+    outline-text: unquote("text-teal-600 dark:text-teal-600 hover:text-teal-900 dark:hover:text-teal-100"),
+  ),
+  cyan: (
+    flat: unquote("bg-cyan-400 dark:bg-cyan-600 hover:bg-cyan-500 dark:hover:bg-cyan-500"),
+    flat-text: unquote("text-cyan-900 dark:text-cyan-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-cyan-400 hover:bg-cyan-400 dark:hover:bg-cyan-600"),
+    outline-text: unquote("text-cyan-600 dark:text-cyan-600 hover:text-cyan-900 dark:hover:text-cyan-100"),
+  ),
+  sky: (
+    flat: unquote("bg-sky-400 dark:bg-sky-600 hover:bg-sky-500 dark:hover:bg-sky-500"),
+    flat-text: unquote("text-sky-900 dark:text-sky-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-sky-400 hover:bg-sky-400 dark:hover:bg-sky-600"),
+    outline-text: unquote("text-sky-600 dark:text-sky-600 hover:text-sky-900 dark:hover:text-sky-100"),
+  ),
+  blue: (
+    flat: unquote("bg-blue-400 dark:bg-blue-600 hover:bg-blue-500 dark:hover:bg-blue-500"),
+    flat-text: unquote("text-blue-900 dark:text-blue-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-blue-400 hover:bg-blue-400 dark:hover:bg-blue-600"),
+    outline-text: unquote("text-blue-600 dark:text-blue-600 hover:text-blue-900 dark:hover:text-blue-100"),
+  ),
+  indigo: (
+    flat: unquote("bg-indigo-400 dark:bg-indigo-600 hover:bg-indigo-500 dark:hover:bg-indigo-500"),
+    flat-text: unquote("text-indigo-900 dark:text-indigo-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-indigo-400 hover:bg-indigo-400 dark:hover:bg-indigo-600"),
+    outline-text: unquote("text-indigo-600 dark:text-indigo-600 hover:text-indigo-900 dark:hover:text-indigo-100"),
+  ),
+  violet: (
+    flat: unquote("bg-violet-400 dark:bg-violet-600 hover:bg-violet-500 dark:hover:bg-violet-500"),
+    flat-text: unquote("text-violet-900 dark:text-violet-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-violet-400 hover:bg-violet-400 dark:hover:bg-violet-600"),
+    outline-text: unquote("text-violet-600 dark:text-violet-600 hover:text-violet-900 dark:hover:text-violet-100"),
+  ),
+  purple: (
+    flat: unquote("bg-purple-400 dark:bg-purple-600 hover:bg-purple-500 dark:hover:bg-purple-500"),
+    flat-text: unquote("text-purple-900 dark:text-purple-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-purple-400 hover:bg-purple-400 dark:hover:bg-purple-600"),
+    outline-text: unquote("text-purple-600 dark:text-purple-600 hover:text-purple-900 dark:hover:text-purple-100"),
+  ),
+  fuchsia: (
+    flat: unquote("bg-fuchsia-400 dark:bg-fuchsia-600 hover:bg-fuchsia-500 dark:hover:bg-fuchsia-500"),
+    flat-text: unquote("text-fuchsia-900 dark:text-fuchsia-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-fuchsia-400 hover:bg-fuchsia-400 dark:hover:bg-fuchsia-600"),
+    outline-text: unquote("text-fuchsia-600 dark:text-fuchsia-600 hover:text-fuchsia-900 dark:hover:text-fuchsia-100"),
+  ),
+  pink: (
+    flat: unquote("bg-pink-400 dark:bg-pink-600 hover:bg-pink-500 dark:hover:bg-pink-500"),
+    flat-text: unquote("text-pink-900 dark:text-pink-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-pink-400 hover:bg-pink-400 dark:hover:bg-pink-600"),
+    outline-text: unquote("text-pink-600 dark:text-pink-600 hover:text-pink-900 dark:hover:text-pink-100"),
+  ),
+  rose: (
+    flat: unquote("bg-rose-400 dark:bg-rose-600 hover:bg-rose-500 dark:hover:bg-rose-500"),
+    flat-text: unquote("text-rose-900 dark:text-rose-100"),
+    outline: unquote("ring-1 focus-visible:ring-2 ring-rose-400 hover:bg-rose-400 dark:hover:bg-rose-600"),
+    outline-text: unquote("text-rose-600 dark:text-rose-600 hover:text-rose-900 dark:hover:text-rose-100"),
+  ),
+);
+
 @layer tstdl.components {
   [tslButton] {
-    @apply relative inline overflow-hidden text-base font-semibold outline-none disabled:opacity-65 disabled:cursor-not-allowed transition-[background,border,opacity,box-shadow,color];
+    @apply relative inline overflow-hidden text-base font-semibold outline-none rounded-lg disabled:opacity-65 disabled:cursor-not-allowed transition-[background,border,opacity,box-shadow,color];
+
+    &:not(.tsl-button-icon):not(.tsl-button-none) {
+      @apply px-4 py-1.5;
+
+      &.tsl-button-small {
+        @apply px-2 py-1 text-sm;
+      }
+    }
+
+    &.tsl-button {
+      &-outline {
+        @apply bg-neutral-400/10 ring-inset;
+      }
+
+      &-icon {
+        @apply p-2.5 aspect-square hover:bg-neutral-800/10 dark:hover:bg-neutral-200/10 rounded-full;
+
+        &.tsl-button-icon-invert-padding {
+          @apply -m-2.5;
+        }
+
+        &.tsl-button-small {
+          @apply p-1.5;
+
+          &.tsl-button-icon-invert-padding {
+            @apply -m-1.5;
+          }
+        }
+      }
+    }
+
+    @each $color, $config in $_colors {
+      $flat: map.get($config, flat);
+      $flat-text: map.get($config, flat-text);
+      $outline: map.get($config, outline);
+      $outline-text: map.get($config, outline-text);
+
+      &.tsl-button {
+        &-#{"" + $color} {
+          &.tsl-button-flat {
+            @apply #{$flat};
+
+            @if $flat-text {
+              &.tsl-button-colored-text {
+                @apply #{$flat-text};
+              }
+            }
+          }
+
+          &.tsl-button-outline {
+            @apply #{$outline};
+
+            @if $outline-text {
+              &.tsl-button-colored-text {
+                @apply #{$outline-text};
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
