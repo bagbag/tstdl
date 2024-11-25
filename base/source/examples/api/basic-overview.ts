@@ -10,7 +10,7 @@ import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
 import { inject } from '#/injector/inject.js';
 import { WebServerModule } from '#/module/modules/web-server.module.js';
-import { NumberProperty, Property, array, boolean, number, object } from '#/schema/index.js';
+import { NumberProperty, StringProperty, array, boolean, number, object } from '#/schema/index.js';
 import { timeout } from '#/utils/timing.js';
 import { Agent } from 'undici';
 
@@ -18,7 +18,7 @@ class User {
   @NumberProperty({ coerce: true })
   id: number;
 
-  @Property()
+  @StringProperty()
   name: string;
 }
 

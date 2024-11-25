@@ -32,12 +32,13 @@ export class NumberSchema extends SimpleSchema<number> {
       constraints: [
         (options?.integer == true) ? (value) => globalThis.Number.isInteger(value) ? ({ success: true }) : ({ success: false, error: 'Value is not an integer.' }) : null,
         isNumber(options?.minimum) ? (value) => (value >= this.minimum!) ? ({ success: true }) : ({ success: false, error: `Value must be more than or equal to ${this.minimum}.` }) : null,
-        isNumber(options?.maximum) ? (value) => (value >= this.maximum!) ? ({ success: true }) : ({ success: false, error: `Value must be less than or equal to ${this.maximum}.` }) : null
+        isNumber(options?.maximum) ? (value) => (value <= this.maximum!) ? ({ success: true }) : ({ success: false, error: `Value must be less than or equal to ${this.maximum}.` }) : null
       ]
     });
 
     this.integer = options?.integer ?? false;
     this.minimum = options?.minimum ?? null;
+    this.maximum = options?.maximum ?? null;
   }
 }
 

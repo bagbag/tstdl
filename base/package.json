@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.91.39",
+  "version": "0.91.43",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -68,6 +68,7 @@
     "./module": "./module/index.js",
     "./object-storage": "./object-storage/index.js",
     "./openid-connect": "./openid-connect/index.js",
+    "./orm": "./orm/index.js",
     "./password": "./password/index.js",
     "./pdf": "./pdf/index.js",
     "./pool": "./pool/index.js",
@@ -114,11 +115,11 @@
     "luxon": "^3.5",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.26"
+    "type-fest": "4.28"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "2.10",
+    "@stylistic/eslint-plugin": "2.11",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -127,19 +128,19 @@
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "7.17",
+    "@typescript-eslint/eslint-plugin": "8.15",
     "concurrently": "9.1",
-    "drizzle-kit": "0.27",
+    "drizzle-kit": "0.28",
     "eslint": "8.57",
     "eslint-import-resolver-typescript": "3.6",
     "eslint-plugin-import": "2.31",
     "tsc-alias": "1.8",
     "typedoc": "0.26",
-    "typedoc-plugin-missing-exports": "3.0",
-    "typescript": "5.5"
+    "typedoc-plugin-missing-exports": "3.1",
+    "typescript": "5.6"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^8.15",
+    "@elastic/elasticsearch": "^8.16",
     "@koa/router": "^13.1",
     "@tstdl/angular": "^0.91",
     "@zxcvbn-ts/core": "^3.0",
@@ -152,13 +153,13 @@
     "koa": "^2.15",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.10",
+    "mongodb": "^6.11",
     "nodemailer": "^6.9",
     "pg": "8.13",
-    "playwright": "^1.48",
-    "preact": "^10.24",
+    "playwright": "^1.49",
+    "preact": "^10.25",
     "preact-render-to-string": "^6.5",
-    "undici": "^6.20",
+    "undici": "^6.21",
     "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {

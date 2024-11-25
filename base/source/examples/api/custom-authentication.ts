@@ -20,7 +20,7 @@ import { Singleton } from '#/injector/decorators.js';
 import { inject, injectAsync } from '#/injector/inject.js';
 import { configureLocalMessageBus } from '#/message-bus/local/module.js';
 import { WebServerModule } from '#/module/modules/index.js';
-import { Property, emptyObjectSchema } from '#/schema/index.js';
+import { StringProperty, emptyObjectSchema } from '#/schema/index.js';
 import { configureDefaultSignalsImplementation } from '#/signals/implementation/configure.js';
 import { first } from '#/utils/iterable-helpers/first.js';
 import { skip } from '#/utils/iterable-helpers/skip.js';
@@ -57,12 +57,12 @@ class LocalStoragePolyfill implements Storage {
 globalThis.localStorage = new LocalStoragePolyfill();
 
 class CustomTokenPaylod {
-  @Property()
+  @StringProperty()
   deviceRegistrationId: string;
 }
 
 class AuthenticationData {
-  @Property()
+  @StringProperty()
   deviceId: string;
 }
 

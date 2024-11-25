@@ -1,5 +1,5 @@
 import type { Signal } from '@angular/core';
-import { Injectable, inject } from '@angular/core';
+import { inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import type { NavigationExtras } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,21 +13,13 @@ export type GetParameterOptions = {
   optional?: boolean
 };
 
-@Injectable({
-  providedIn: 'root'
-})
 export class RoutingService {
-  protected readonly router = inject(Router);
-
-  async navigateByUrl(url: string): Promise<void> {
-    await this.router.navigateByUrl(url);
-  }
+  readonly router = inject(Router);
+  readonly route = inject(ActivatedRoute, { optional: true });
 
   async setQueryParameter(key: string, value: string | null, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
-    const route = inject(ActivatedRoute);
-
     await this.router.navigate([], {
-      relativeTo: route,
+      relativeTo: this.route,
       queryParams: {
         [key]: value
       },
@@ -36,13 +28,15 @@ export class RoutingService {
   }
 
   async setFragment(value: string | null): Promise<void> {
-    const route = inject(ActivatedRoute);
-
     await this.router.navigate([], {
-      relativeTo: route,
+      relativeTo: this.route,
       fragment: value ?? ''
     });
   }
+}
+
+export function injectRoutingService(): RoutingService {
+  return new RoutingService();
 }
 
 export function injectParameter<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Signal<LiteralUnion<T, string> | null>;

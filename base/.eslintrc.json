@@ -149,7 +149,7 @@
     "@stylistic/quotes": ["warn", "single"],
     "@stylistic/semi": ["warn", "always"],
     "@stylistic/multiline-ternary":  ["warn", "always-multiline"],
-    "@stylistic/generator-star-spacing":  ["error", {
+    "@stylistic/generator-star-spacing":  ["warn", {
       "named": "before",
       "anonymous": "neither",
       "method": "before"
