@@ -68,19 +68,19 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
     return this;
   }
 
-  entries(): IterableIterator<[ProviderToken<any>, any]> {
+  entries(): MapIterator<[ProviderToken<any>, any]> {
     return this.records.entries();
   }
 
-  keys(): IterableIterator<ProviderToken<any>> {
+  keys(): MapIterator<ProviderToken<any>> {
     return this.records.keys();
   }
 
-  values(): IterableIterator<any> {
+  values(): MapIterator<any> {
     return this.records.values();
   }
 
-  [Symbol.iterator](): IterableIterator<[ProviderToken<any>, any]> {
+  [Symbol.iterator](): MapIterator<[ProviderToken<any>, any]> {
     return this.records[Symbol.iterator]();
   }
 

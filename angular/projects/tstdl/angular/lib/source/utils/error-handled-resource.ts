@@ -1,7 +1,12 @@
 import { effect, ErrorHandler, inject, resource, ResourceStatus, type ResourceOptions, type ResourceRef } from '@angular/core';
 import { isNotNullOrUndefined } from '@tstdl/base/utils';
 
-export function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T> {
+/**
+ * Wrapper for angulars {@link resource} which raises errors to {@link ErrorHandler}
+ * @param options
+ * @returns
+ */
+function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T> {
   const errorHandler = inject(ErrorHandler);
   const ref = resource(options);
 
@@ -19,3 +24,5 @@ export function errorHandledResource<T, R>(options: ResourceOptions<T, R>): Reso
 
   return ref;
 }
+
+export { errorHandledResource as resource };
