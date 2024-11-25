@@ -116,19 +116,19 @@ export class MultiKeyMap<K extends any[], V> extends Dictionary<K, V, MultiKeyMa
     return clone;
   }
 
-  *keys(): IterableIterator<K> {
+  *keys(): MapIterator<K> {
     for (const item of this) {
       yield item[0];
     }
   }
 
-  *values(): IterableIterator<V> {
+  *values(): MapIterator<V> {
     for (const item of this) {
       yield item[1];
     }
   }
 
-  *items(): IterableIterator<[K, V]> {
+  *items(): MapIterator<[K, V]> {
     const queue = new CircularBuffer<[any[], Node]>();
     queue.add([[], this.rootNode]);
 

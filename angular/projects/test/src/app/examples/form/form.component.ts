@@ -4,7 +4,6 @@ import { InputComponent, InputGroupComponent, InputGroupLabelComponent } from '@
 
 @Component({
   selector: 'app-form',
-  standalone: true,
   imports: [InputGroupComponent, InputComponent, InputGroupLabelComponent],
   templateUrl: './form.component.html',
   styleUrl: './form.component.scss',

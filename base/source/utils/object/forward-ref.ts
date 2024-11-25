@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument, @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { propertyReflectMethods, reflectMethods } from '../proxy.js';
 import { assert, isDefined, isUndefined } from '../type-guards.js';

@@ -1,6 +1,6 @@
 import { Collection } from './collection.js';
 
-export abstract class Dictionary<K, V, TThis extends Dictionary<K, V, TThis> = Dictionary<K, V, any>> extends Collection<[K, V], TThis> {
+export abstract class Dictionary<K, V, TThis extends Dictionary<K, V, TThis> = Dictionary<K, V, any>> extends Collection<[K, V], MapIterator<[K, V]>, TThis> {
   /** Creates a new map and copies the items */
   toMap(): Map<K, V> {
     return new Map(this);
@@ -15,8 +15,8 @@ export abstract class Dictionary<K, V, TThis extends Dictionary<K, V, TThis> = D
   abstract get(key: K): V | undefined;
   abstract set(key: K, value: V): void;
   abstract delete(key: K): boolean;
-  abstract keys(): IterableIterator<K>;
-  abstract values(): IterableIterator<V>;
+  abstract keys(): MapIterator<K>;
+  abstract values(): MapIterator<V>;
 }
 
 export class DictionaryAdapter<K, V> implements Map<K, V> {
@@ -59,19 +59,19 @@ export class DictionaryAdapter<K, V> implements Map<K, V> {
     return this;
   }
 
-  entries(): IterableIterator<[K, V]> {
+  entries(): MapIterator<[K, V]> {
     return this.dictionary.items();
   }
 
-  keys(): IterableIterator<K> {
+  keys(): MapIterator<K> {
     return this.dictionary.keys();
   }
 
-  values(): IterableIterator<V> {
+  values(): MapIterator<V> {
     return this.dictionary.values();
   }
 
-  [Symbol.iterator](): IterableIterator<[K, V]> {
+  [Symbol.iterator](): MapIterator<[K, V]> {
     return this.dictionary[Symbol.iterator]();
   }
 }

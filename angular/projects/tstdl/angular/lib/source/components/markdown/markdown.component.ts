@@ -3,7 +3,6 @@ import { marked } from 'marked';
 
 @Component({
   selector: 'tsl-markdown, [tslMarkdown]',
-  standalone: true,
   imports: [],
   templateUrl: './markdown.component.html',
   styleUrls: ['./markdown.component.scss'],

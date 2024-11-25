@@ -3,7 +3,6 @@ import { DrawerCardComponent, DrawerCardContentComponent, DrawerCardDrawerConten
 
 @Component({
   selector: 'app-drawer-card-example',
-  standalone: true,
   imports: [DrawerCardComponent, DrawerCardContentComponent, DrawerCardDrawerContentComponent],
   templateUrl: './drawer-card-example.component.html',
   styleUrl: './drawer-card-example.component.scss',

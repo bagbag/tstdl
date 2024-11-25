@@ -7,7 +7,7 @@ export class LazyPromise<T> extends CustomPromise<T> {
 
   readonly #executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>);
 
-  readonly [Symbol.toStringTag] = 'LazyPromise';
+  override readonly [Symbol.toStringTag] = 'LazyPromise';
 
   constructor(executorOrPromiseProvider: PromiseExecutor<T> | (() => PromiseLike<T>)) {
     super();

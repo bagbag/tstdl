@@ -102,17 +102,17 @@ export class ArrayDictionary<K, V> extends Dictionary<K, V, ArrayDictionary<K, V
     return arrayDictionary;
   }
 
-  *items(): IterableIterator<[K, V]> {
+  *items(): MapIterator<[K, V]> {
     for (let i = 0; i < this.keyArray.length; i++) {
       yield [this.keyArray[i]!, this.valueArray[i]!];
     }
   }
 
-  keys(): IterableIterator<K> {
+  keys(): MapIterator<K> {
     return this.keyArray[Symbol.iterator]();
   }
 
-  values(): IterableIterator<V> {
+  values(): MapIterator<V> {
     return this.valueArray[Symbol.iterator]();
   }
 

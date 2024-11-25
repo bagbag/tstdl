@@ -58,7 +58,6 @@ const rowSpanClasses: Record<number, string> = {
 
 @Component({
   selector: 'tsl-data-grid',
-  standalone: true,
   imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, GridLabelComponent, GridValueComponent, DynamicTextPipe],
   templateUrl: './data-grid.component.html',
   styleUrls: ['./data-grid.component.scss'],

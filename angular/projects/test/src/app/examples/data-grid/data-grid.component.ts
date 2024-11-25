@@ -10,7 +10,6 @@ enum MyEnum {
 
 @Component({
   selector: 'app-data-grid',
-  standalone: true,
   imports: [TstdlDataGridModule],
   templateUrl: './data-grid.component.html',
   styleUrls: ['./data-grid.component.scss'],

@@ -6,7 +6,6 @@ import { map, startWith, timer } from 'rxjs';
 
 @Component({
   selector: 'app-icon-example',
-  standalone: true,
   imports: [IconComponent],
   templateUrl: './icon-example.component.html',
   styleUrl: './icon-example.component.scss',

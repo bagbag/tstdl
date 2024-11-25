@@ -4,7 +4,7 @@ import type { Entity } from '#/database/index.js';
 import type { ComparisonEqualsQuery, ComparisonExistsQuery, ComparisonGeoDistanceQuery, ComparisonGeoShapeQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, ComparisonTextQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query, TextSpanQuery, TextSpanQueryMode } from '#/database/query.js';
 import { hasOwnProperty, objectEntries, objectValues } from '#/utils/object/object.js';
 import { assertDefinedPass, isPrimitive, isRegExp, isString } from '#/utils/type-guards.js';
-import type { QueryDslRangeQuery, QueryDslRegexpQuery, QueryDslTextQueryType } from '@elastic/elasticsearch/lib/api/types.js';
+import type { estypes } from '@elastic/elasticsearch';
 import type { ElasticExistsQuery, ElasticGeoDistanceQuery, ElasticGeoShapeQuery, ElasticMatchQuery, ElasticMultiMatchQuery, ElasticQuery, ElasticRangeQuery, ElasticRegexQuery, ElasticTermQuery, ElasticTermsQuery } from './model/index.js';
 import { BoolQueryBuilder } from './query-builder/index.js';
 
@@ -18,7 +18,7 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
   for (const [rawProperty, value] of queryEntries) {
     const property = getPropertyName(rawProperty);
     const isPrimitiveValue = isPrimitive(value);
-    const range: QueryDslRangeQuery = {};
+    const range: estypes.QueryDslRangeQuery = {};
 
     let canHandleProperty = false;
 
@@ -135,8 +135,8 @@ export function convertQuery<T extends Entity>(query: Query<T>): ElasticQuery {
       const regexp: ElasticRegexQuery['regexp'][any] = isString(regex)
         ? regex
         : isRegExp(regex)
-          ? ({ flags: regex.flags, value: regex.source } as QueryDslRegexpQuery)
-          : ({ flags: regex.flags, value: regex.pattern } as QueryDslRegexpQuery);
+          ? ({ flags: regex.flags, value: regex.source } as estypes.QueryDslRegexpQuery)
+          : ({ flags: regex.flags, value: regex.pattern } as estypes.QueryDslRegexpQuery);
 
       const termQuery: ElasticRegexQuery = {
         regexp: { property: regexp }
@@ -220,7 +220,7 @@ export function convertLogicalNorQuery<T extends Entity>(norQuery: LogicalNorQue
   return new BoolQueryBuilder().mustNot(...norQuery.map(convertQuery)).build();
 }
 
-export function convertTextSpanQueryMode(mode: TextSpanQueryMode | undefined): QueryDslTextQueryType | undefined {
+export function convertTextSpanQueryMode(mode: TextSpanQueryMode | undefined): estypes.QueryDslTextQueryType | undefined {
   switch (mode) {
     case undefined:
       return undefined;

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import type { Logger } from '#/logger/logger.js';
 import { isArray, isPrimitive, isString } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';

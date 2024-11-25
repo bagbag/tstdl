@@ -52,19 +52,19 @@ export class AwaitableMap<K, V> implements Map<K, V> {
     return awaitableMap;
   }
 
-  [Symbol.iterator](): IterableIterator<[K, V]> {
+  [Symbol.iterator](): MapIterator<[K, V]> {
     return this.backingMap.entries();
   }
 
-  entries(): IterableIterator<[K, V]> {
+  entries(): MapIterator<[K, V]> {
     return this.backingMap.entries();
   }
 
-  keys(): IterableIterator<K> {
+  keys(): MapIterator<K> {
     return this.backingMap.keys();
   }
 
-  values(): IterableIterator<V> {
+  values(): MapIterator<V> {
     return this.backingMap.values();
   }
 

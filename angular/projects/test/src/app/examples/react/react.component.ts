@@ -6,7 +6,6 @@ import { ReactTestComponent } from './react-test.component';
 
 @Component({
   selector: 'app-react',
-  standalone: true,
   imports: [ReactComponent],
   templateUrl: './react.component.html',
   styleUrls: ['./react.component.scss'],

@@ -86,19 +86,19 @@ export class KeyedSet<T> implements Set<T> {
     return this.backingMap.has(key);
   }
 
-  [Symbol.iterator](): IterableIterator<T> {
+  [Symbol.iterator](): SetIterator<T> {
     return this.backingMap.values();
   }
 
-  *entries(): IterableIterator<[T, T]> {
+  *entries(): SetIterator<[T, T]> {
     yield* map(this.backingMap.values(), (value): [T, T] => [value, value]);
   }
 
-  keys(): IterableIterator<T> {
+  keys(): SetIterator<T> {
     return this.backingMap.values();
   }
 
-  values(): IterableIterator<T> {
+  values(): SetIterator<T> {
     return this.backingMap.values();
   }
 }

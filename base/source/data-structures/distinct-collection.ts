@@ -4,7 +4,7 @@ interface BackingSetInternal<T> {
   _backingSet: Set<T> | undefined;
 };
 
-export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, TThis> = DistinctCollection<T, any>> extends Collection<T, TThis> {
+export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, TThis> = DistinctCollection<T, any>> extends Collection<T, SetIterator<T>, TThis> {
   /** Creates a new set and copies the items */
   toSet(): Set<T> {
     return new Set(this);
@@ -89,21 +89,21 @@ export class SetAdapter<T> implements Set<T> {
     return this.collection.has(value);
   }
 
-  *entries(): IterableIterator<[T, T]> {
+  *entries(): SetIterator<[T, T]> {
     for (const item of this.collection) {
       yield [item, item];
     }
   }
 
-  keys(): IterableIterator<T> {
+  keys(): SetIterator<T> {
     return this.collection.items();
   }
 
-  values(): IterableIterator<T> {
+  values(): SetIterator<T> {
     return this.collection.items();
   }
 
-  [Symbol.iterator](): IterableIterator<T> {
+  [Symbol.iterator](): SetIterator<T> {
     return this.collection[Symbol.iterator]();
   }
 }

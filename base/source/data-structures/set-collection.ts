@@ -41,7 +41,7 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
     return new SetCollection(this);
   }
 
-  items(): IterableIterator<T> {
+  items(): SetIterator<T> {
     return this.backingSet.values();
   }
 
@@ -88,15 +88,15 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
     return this.backingSet.has(item);
   }
 
-  entries(): IterableIterator<[T, T]> {
+  entries(): SetIterator<[T, T]> {
     return this.backingSet.entries();
   }
 
-  keys(): IterableIterator<T> {
+  keys(): SetIterator<T> {
     return this.backingSet.keys();
   }
 
-  values(): IterableIterator<T> {
+  values(): SetIterator<T> {
     return this.backingSet.values();
   }
 

@@ -5,7 +5,6 @@ import { IconComponent } from '@tstdl/angular/icon';
 
 @Component({
   selector: 'app-button',
-  standalone: true,
   imports: [TstdlButtonComponent, IconComponent],
   templateUrl: './button.component.html',
   styleUrl: './button.component.scss',

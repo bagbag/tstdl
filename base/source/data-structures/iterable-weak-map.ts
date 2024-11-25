@@ -6,7 +6,7 @@ import { Collection } from './collection.js';
 
 type WeakMapEntry<K extends object, V> = { ref: WeakRef<K>, value: V };
 
-export class IterableWeakMap<K extends object, V> extends Collection<[K, V], IterableWeakMap<K, V>> implements Map<K, V> {
+export class IterableWeakMap<K extends object, V> extends Collection<[K, V], MapIterator<[K, V]>, IterableWeakMap<K, V>> implements Map<K, V> {
   private weakMap: WeakMap<K, WeakMapEntry<K, V>>;
   private refMap: Map<WeakRef<K>, V>;
   private finalizationRegistry: ObservableFinalizationRegistry<WeakRef<K>>;
@@ -126,23 +126,23 @@ export class IterableWeakMap<K extends object, V> extends Collection<[K, V], Ite
     }
   }
 
-  entries(): IterableIterator<[K, V]> {
+  entries(): MapIterator<[K, V]> {
     return this.items();
   }
 
-  *keys(): IterableIterator<K> {
+  *keys(): MapIterator<K> {
     for (const [key] of this) {
       yield key;
     }
   }
 
-  *values(): IterableIterator<V> {
+  *values(): MapIterator<V> {
     for (const [, value] of this) {
       yield value;
     }
   }
 
-  *items(): IterableIterator<[K, V]> {
+  *items(): MapIterator<[K, V]> {
     for (const [ref, value] of this.refMap) {
       const key = ref.deref();
 

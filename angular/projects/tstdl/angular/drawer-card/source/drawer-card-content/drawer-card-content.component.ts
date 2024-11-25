@@ -3,7 +3,6 @@ import { MatRipple } from '@angular/material/core';
 
 @Component({
   selector: 'tsl-drawer-card-content',
-  standalone: true,
   imports: [],
   templateUrl: './drawer-card-content.component.html',
   styleUrl: './drawer-card-content.component.scss',

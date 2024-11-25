@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import type { BinaryData, Record } from '#/types.js';
 import { toArray } from './array/array.js';
 import { toUint8Array } from './binary.js';

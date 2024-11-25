@@ -21,7 +21,6 @@ const timeShort: Intl.DateTimeFormatOptions = {
 
 @Component({
   selector: 'tsl-grid-value',
-  standalone: true,
   imports: [NgIf, NgTemplateOutlet, NgSwitch, NgSwitchCase, DynamicTextPipe, NumberLocalePipe, DateTimeLocalePipe, NumericDateToDateTimePipe, LocalizeEnumPipe, NumericTimeToDateTimePipe],
   templateUrl: './grid-value.component.html',
   styleUrls: ['./grid-value.component.scss'],

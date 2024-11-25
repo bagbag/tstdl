@@ -1,3 +1,5 @@
+import type { Client } from '@elastic/elasticsearch';
+
 /* eslint-disable max-classes-per-file */
 import type { Entity, Query, QueryOptions } from '#/database/index.js';
 import { BadRequestError } from '#/errors/bad-request.error.js';
@@ -11,8 +13,7 @@ import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
 import { filterObject } from '#/utils/object/object.js';
 import { isDefined, isNumber, isString } from '#/utils/type-guards.js';
-import type { Client } from '@elastic/elasticsearch';
-import type { BulkRequest, ErrorCause, IndicesIndexSettings, QueryDslQueryContainer, SearchRequest, SortResults } from '@elastic/elasticsearch/lib/api/types.js';
+import type { estypes } from '@elastic/elasticsearch';
 import type { ElasticSearchIndexConfig } from './config.js';
 import { KeywordRewriter } from './keyword-rewriter.js';
 import type { ElasticIndexMapping, SortCombinations } from './model/index.js';
@@ -20,10 +21,10 @@ import { convertQuery } from './query-converter.js';
 import { convertSort } from './sort-converter.js';
 
 type CursorData<T extends Entity = Entity> = {
-  query: QueryDslQueryContainer,
+  query: estypes.QueryDslQueryContainer,
   sort: SortCombinations<T>[] | undefined,
   options?: QueryOptions<T>,
-  searchAfter: SortResults
+  searchAfter: estypes.SortResults
 };
 
 export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> implements AfterResolve {
@@ -31,11 +32,11 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
 
   readonly client: Client;
   readonly indexName: string;
-  readonly indexSettings: IndicesIndexSettings;
+  readonly indexSettings: estypes.IndicesIndexSettings;
   readonly indexMapping: ElasticIndexMapping<T>;
   readonly keywordRewriter: KeywordRewriter;
 
-  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: IndicesIndexSettings, indexMapping: ElasticIndexMapping<T>, keywordRewrites: Iterable<string>, logger: Logger) {
+  constructor(client: Client, config: ElasticSearchIndexConfig<T>, indexSettings: estypes.IndicesIndexSettings, indexMapping: ElasticIndexMapping<T>, keywordRewrites: Iterable<string>, logger: Logger) {
     super();
 
     this.client = client;
@@ -87,7 +88,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 
   async index(entities: T[]): Promise<void> {
-    const request: BulkRequest<T> = {
+    const request: estypes.BulkRequest<T> = {
       index: this.indexName,
       refresh: false,
       operations: entities.flatMap((entity) => {
@@ -127,7 +128,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   async search(searchQueryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
-    const search: SearchRequest = { index: this.indexName, query: queryBody };
+    const search: estypes.SearchRequest = { index: this.indexName, query: queryBody };
     const windowLimit = this.indexSettings.max_result_window ?? 10000;
 
     if ((options?.skip ?? 0) + (options?.limit ?? 0) > windowLimit) {
@@ -185,7 +186,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 }
 
-function serializeCursor<T extends Entity>(query: QueryDslQueryContainer, sort: SortCombinations<T>[] | undefined, options: QueryOptions | undefined, searchAfter: SortResults): string {
+function serializeCursor<T extends Entity>(query: estypes.QueryDslQueryContainer, sort: SortCombinations<T>[] | undefined, options: QueryOptions | undefined, searchAfter: estypes.SortResults): string {
   const filteredOptions = isDefined(options) ? filterObject(options, isDefined) : undefined;
   const data: CursorData<T> = { query, sort, options: filteredOptions, searchAfter };
   return encodeBase64(encodeUtf8(JSON.stringify(data)));
@@ -195,7 +196,7 @@ function deserializeCursor<T extends Entity>(cursor: string): CursorData<T> {
   return JSON.parse(decodeText(decodeBase64(cursor))) as CursorData<T>;
 }
 
-function convertError(error: ErrorCause, raw?: unknown): SearchIndexError {
+function convertError(error: estypes.ErrorCause, raw?: unknown): SearchIndexError {
   const cause = (isDefined(error.caused_by)) ? convertError(error.caused_by) : undefined;
   return new SearchIndexError(error.type, error.reason ?? 'No error message provided.', { raw, cause });
 }

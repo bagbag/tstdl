@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import { isNull } from './type-guards.js';
 
 export type TypeOfTypes =

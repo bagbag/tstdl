@@ -3,8 +3,8 @@ import { isDefined } from '#/utils/type-guards.js';
 import { Collection } from './collection.js';
 import { IndexOutOfBoundsError } from './index-out-of-bounds.error.js';
 
-export abstract class List<T, TThis extends Collection<T, TThis>> extends Collection<T, TThis> {
-  /** get item at index */
+export abstract class List<T, TThis extends Collection<T, IterableIterator<T>, TThis>> extends Collection<T, IterableIterator<T>, TThis> {
+  /** Get item at index */
   at(index: number): T {
     const normalizedIndex = this.normalizeIndex(index);
     this.ensureBounds(normalizedIndex);
@@ -13,7 +13,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
   }
 
   /**
-   * find index of first occurrence of item
+   * Find index of first occurrence of item
    * @param item item to search for
    * @param fromIndex index to start search at
    */
@@ -21,9 +21,9 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     return this._indexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
   }
 
-  /** index of item (last occurrence) */
+  /** Index of item (last occurrence) */
   /**
-   * find index of last occurrence of item
+   * Find index of last occurrence of item
    * @param item item to search for
    * @param fromIndex index to start from (backwards)
    */
@@ -31,7 +31,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     return this._lastIndexOf(item, isDefined(fromIndex) ? this.normalizeIndex(fromIndex) : fromIndex);
   }
 
-  /** set item at index */
+  /** Set item at index */
   set(index: number, item: T): void {
     const normalizedIndex = this.normalizeIndex(index);
     this.ensureBounds(normalizedIndex);
@@ -39,7 +39,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     this._set(normalizedIndex, item);
   }
 
-  /** remove item at index */
+  /** Remove item at index */
   removeAt(index: number): T {
     const normalizedIndex = this.normalizeIndex(index);
     this.ensureBounds(normalizedIndex);
@@ -47,18 +47,18 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     return this._removeAt(normalizedIndex);
   }
 
-  /** remove first item */
+  /** Remove first item */
   removeFirst(): T {
     return this.removeAt(0);
   }
 
-  /** remove last item */
+  /** Remove last item */
   removeLast(): T {
     return this.removeAt(-1);
   }
 
   /**
-   * remove many items at index
+   * Remove many items at index
    * @param index index to start removing at
    * @param count how many items to remove. If not defined, all items starting at `index` are removed
    */
@@ -70,7 +70,7 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
   }
 
   /**
-   * remove range of items at `fromIndex` to `toIndex`
+   * Remove range of items at `fromIndex` to `toIndex`
    * @param fromIndex index to start removing at
    * @param toIndex index to remove to
    */
@@ -113,50 +113,50 @@ export abstract class List<T, TThis extends Collection<T, TThis>> extends Collec
     return index;
   }
 
-  /** yields all items from the list in reverse */
+  /** Yields all items from the list in reverse */
   abstract itemsReverse(): IterableIterator<T>;
 
-  /** get item at index */
+  /** Get item at index */
   protected abstract _at(index: number): T;
 
   /**
-   * find index of first occurrence of item
+   * Find index of first occurrence of item
    * @param item item to search for
    * @param fromIndex index to start search at
    */
   protected abstract _indexOf(item: T, fromIndex?: number): number | undefined;
 
-  /** index of match (first occurrence) */
+  /** Index of match (first occurrence) */
   protected abstract findIndex(predicate: Predicate<T>): number | undefined;
 
-  /** index of item (last occurrence) */
+  /** Index of item (last occurrence) */
   /**
-   * find index of last occurrence of item
+   * Find index of last occurrence of item
    * @param item item to search for
    * @param fromIndex index to start from (backwards)
    */
   protected abstract _lastIndexOf(item: T, fromIndex?: number): number | undefined;
 
-  /** index of match (last occurrence) */
+  /** Index of match (last occurrence) */
   protected abstract findLastIndex(predicate: Predicate<T>): number | undefined;
 
-  /** set item at index */
+  /** Set item at index */
   protected abstract _set(index: number, item: T): void;
 
-  /** add item to start of list */
+  /** Add item to start of list */
   protected abstract prepend(item: T): void;
 
-  /** add many items to start of list */
+  /** Add many items to start of list */
   protected abstract prependMany(items: Iterable<T>): void;
 
-  /** remove item */
+  /** Remove item */
   protected abstract remove(item: T): boolean;
 
-  /** remove item at index */
+  /** Remove item at index */
   protected abstract _removeAt(index: number): T;
 
   /**
-   * remove many items at index
+   * Remove many items at index
    * @param index index to start removing at
    * @param count how many items to remove. If not defined, all items starting at `index` are removed
    */

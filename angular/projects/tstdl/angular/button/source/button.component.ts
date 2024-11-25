@@ -12,7 +12,6 @@ export type ButtonColor = 'transparent' | 'white' | 'accent' | 'neutral' | 'ston
 
 @Component({
   selector: '[tslButton]',
-  standalone: true,
   imports: [],
   templateUrl: './button.component.html',
   styleUrl: './button.component.scss',

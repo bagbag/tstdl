@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, signal } 
 
 @Component({
   selector: 'tsl-drawer-card-drawer-content',
-  standalone: true,
   imports: [],
   templateUrl: './drawer-card-drawer-content.component.html',
   styleUrl: './drawer-card-drawer-content.component.scss',

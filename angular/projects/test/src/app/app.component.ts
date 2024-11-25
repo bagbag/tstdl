@@ -4,7 +4,6 @@ import { ButtonComponent } from '@tstdl/angular/button';
 
 @Component({
   selector: 'app-root',
-  standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

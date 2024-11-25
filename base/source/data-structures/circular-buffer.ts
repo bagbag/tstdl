@@ -4,7 +4,7 @@ import { type CancellationSignal, CancellationToken } from '#/cancellation/token
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
 import { Collection } from './collection.js';
 
-export class CircularBuffer<T> extends Collection<T, CircularBuffer<T>> {
+export class CircularBuffer<T> extends Collection<T, IterableIterator<T>, CircularBuffer<T>> {
   private readonly maxBufferSizeSubject: BehaviorSubject<number | undefined>;
   private readonly overflowSubject: Subject<T>;
 

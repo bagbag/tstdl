@@ -25,7 +25,6 @@ export abstract class IconComponentConfiguration {
 
 @Component({
   selector: 'tsl-icon',
-  standalone: true,
   imports: [],
   templateUrl: './icon.component.html',
   styleUrls: ['./icon.component.scss'],

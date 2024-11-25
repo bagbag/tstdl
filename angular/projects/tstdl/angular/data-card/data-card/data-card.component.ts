@@ -4,7 +4,6 @@ import type { DynamicText } from '@tstdl/base/text';
 
 @Component({
   selector: 'tsl-data-card',
-  standalone: true,
   imports: [DynamicTextPipe],
   templateUrl: './data-card.component.html',
   styleUrls: ['./data-card.component.scss'],

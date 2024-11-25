@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/ban-types, max-lines-per-function, max-statements, complexity */
+/* eslint-disable @typescript-eslint/no-unsafe-return, max-lines-per-function, max-statements, complexity */
 
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { SortedArrayList } from '#/data-structures/sorted-array-list.js';

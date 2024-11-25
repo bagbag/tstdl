@@ -3,15 +3,15 @@
 import type { Entity } from '#/database/index.js';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types.js';
 import { mergeObjects } from '#/utils/object/merge.js';
-import type { MappingBooleanProperty, MappingByteNumberProperty, MappingDateProperty, MappingDoubleNumberProperty, MappingFloatNumberProperty, MappingGeoPointProperty, MappingHalfFloatNumberProperty, MappingIntegerNumberProperty, MappingKeywordProperty, MappingLongNumberProperty, MappingNestedProperty, MappingObjectProperty, MappingPropertyBase, MappingScaledFloatNumberProperty, MappingShortNumberProperty, MappingTextProperty, MappingTypeMapping, MappingUnsignedLongNumberProperty } from '@elastic/elasticsearch/lib/api/types.js';
+import type { estypes } from '@elastic/elasticsearch';
 
-export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
+export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<estypes.MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 
 export type ElasticNestedIndexMapping<T> = {
   properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> }
 };
 
-type StrippedBaseType<T extends MappingPropertyBase> = TypedOmit<T, 'properties' | 'fields'>;
+type StrippedBaseType<T extends estypes.MappingPropertyBase> = TypedOmit<T, 'properties' | 'fields'>;
 
 type ElasticIndexMappingItemBase = {
   index?: boolean,
@@ -19,31 +19,31 @@ type ElasticIndexMappingItemBase = {
 };
 
 export type MappingNumberProperty =
-  | MappingByteNumberProperty
-  | MappingDoubleNumberProperty
-  | MappingFloatNumberProperty
-  | MappingHalfFloatNumberProperty
-  | MappingIntegerNumberProperty
-  | MappingLongNumberProperty
-  | MappingShortNumberProperty
-  | MappingScaledFloatNumberProperty
-  | MappingUnsignedLongNumberProperty;
+  | estypes.MappingByteNumberProperty
+  | estypes.MappingDoubleNumberProperty
+  | estypes.MappingFloatNumberProperty
+  | estypes.MappingHalfFloatNumberProperty
+  | estypes.MappingIntegerNumberProperty
+  | estypes.MappingLongNumberProperty
+  | estypes.MappingShortNumberProperty
+  | estypes.MappingScaledFloatNumberProperty
+  | estypes.MappingUnsignedLongNumberProperty;
 
-export type ElasticKeywordIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingKeywordProperty>;
+export type ElasticKeywordIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingKeywordProperty>;
 
-export type ElasticTextIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingTextProperty>;
+export type ElasticTextIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingTextProperty>;
 
 export type ElasticNumberIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingNumberProperty>;
 
-export type ElasticBooleanIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingBooleanProperty>;
+export type ElasticBooleanIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingBooleanProperty>;
 
-export type ElasticDateIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingDateProperty>;
+export type ElasticDateIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingDateProperty>;
 
-export type ElasticGeoPointIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<MappingGeoPointProperty>;
+export type ElasticGeoPointIndexMappingItem = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingGeoPointProperty>;
 
-export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase & StrippedBaseType<MappingObjectProperty> & ElasticNestedIndexMapping<T>;
+export type ElasticObjectIndexMappingItem<T> = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingObjectProperty> & ElasticNestedIndexMapping<T>;
 
-export type ElasticNestedIndexMappingItem<T> = ElasticIndexMappingItemBase & StrippedBaseType<MappingNestedProperty> & ElasticNestedIndexMapping<T>;
+export type ElasticNestedIndexMappingItem<T> = ElasticIndexMappingItemBase & StrippedBaseType<estypes.MappingNestedProperty> & ElasticNestedIndexMapping<T>;
 
 export type ElasticIndexMappingItem<T = any> =
   | ElasticKeywordIndexMappingItem

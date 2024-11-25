@@ -81,7 +81,7 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
     const unknownValuePropertyKeys: Set<PropertyKey> = valueKeys.difference(this.propertyKeys);
 
     if ((unknownValuePropertyKeys.size > 0) && !mask && !this.allowUnknownProperties) {
-      return { valid: false, error: new SchemaError('Unexpected property', { path: path.add(unknownValuePropertyKeys.values().next().value), fast: options.fastErrors }) };
+      return { valid: false, error: new SchemaError('Unexpected property', { path: path.add(unknownValuePropertyKeys.values().next().value!), fast: options.fastErrors }) };
     }
 
     for (const key of this.propertyKeys) {

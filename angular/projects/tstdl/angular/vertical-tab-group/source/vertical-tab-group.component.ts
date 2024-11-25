@@ -9,7 +9,6 @@ import { VerticalTabComponent } from './vertical-tab/vertical-tab.component';
 
 @Component({
   selector: 'tsl-vertical-tab-group',
-  standalone: true,
   imports: [NgTemplateOutlet, DynamicTextPipe, NgClass, IconComponent],
   templateUrl: './vertical-tab-group.component.html',
   styleUrl: './vertical-tab-group.component.scss',

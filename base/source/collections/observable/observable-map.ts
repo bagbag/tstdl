@@ -1,5 +1,4 @@
-import type { Observable } from 'rxjs';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, type Observable } from 'rxjs';
 
 export class ObservableMap<K, V> implements Map<K, V> {
   private readonly backingMap: Map<K, V>;
@@ -57,19 +56,19 @@ export class ObservableMap<K, V> implements Map<K, V> {
     return this.backingMap.has(key);
   }
 
-  entries(): IterableIterator<[K, V]> {
+  entries(): MapIterator<[K, V]> {
     return this.backingMap.entries();
   }
 
-  keys(): IterableIterator<K> {
+  keys(): MapIterator<K> {
     return this.backingMap.keys();
   }
 
-  values(): IterableIterator<V> {
+  values(): MapIterator<V> {
     return this.backingMap.values();
   }
 
-  [Symbol.iterator](): IterableIterator<[K, V]> {
+  [Symbol.iterator](): MapIterator<[K, V]> {
     return this.backingMap[Symbol.iterator]();
   }
 

@@ -55,15 +55,15 @@ export class MapDictionary<K, V> extends Dictionary<K, V, MapDictionary<K, V>> {
     return new MapDictionary(this);
   }
 
-  items(): IterableIterator<[K, V]> {
+  items(): MapIterator<[K, V]> {
     return this.backingMap.entries();
   }
 
-  keys(): IterableIterator<K> {
+  keys(): MapIterator<K> {
     return this.backingMap.keys();
   }
 
-  values(): IterableIterator<V> {
+  values(): MapIterator<V> {
     return this.backingMap.values();
   }
 

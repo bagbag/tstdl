@@ -5,7 +5,6 @@ import { VerticalTabLabelDirective } from './vertical-tab-label.directive';
 
 @Component({
   selector: 'tsl-vertical-tab',
-  standalone: true,
   imports: [],
   templateUrl: './vertical-tab.component.html',
   styleUrl: './vertical-tab.component.scss',

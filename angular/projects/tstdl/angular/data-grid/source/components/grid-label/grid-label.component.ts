@@ -7,7 +7,6 @@ import type { Enumeration } from '@tstdl/base/types';
 
 @Component({
   selector: 'tsl-grid-label',
-  standalone: true,
   imports: [NgIf, NgTemplateOutlet, DynamicTextPipe, LocalizeEnumPipe],
   templateUrl: './grid-label.component.html',
   styleUrls: ['./grid-label.component.scss'],

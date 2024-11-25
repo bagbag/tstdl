@@ -7,7 +7,6 @@ import { DrawerCardDrawerContentComponent } from './drawer-card-drawer-content/d
 
 @Component({
   selector: 'tsl-drawer-card',
-  standalone: true,
   imports: [NgClass],
   templateUrl: './drawer-card.component.html',
   styleUrl: './drawer-card.component.scss',

@@ -4,7 +4,7 @@ import type { ToJson } from '#/interfaces.js';
 import { toLazySignal, untracked, type Signal } from '#/signals/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 
-export abstract class Collection<T, TThis extends Collection<T, TThis> = Collection<T, any>> implements Iterable<T>, ToJson {
+export abstract class Collection<T, TItemsIterator extends IterableIterator<any>, TThis extends Collection<T, TItemsIterator, TThis> = Collection<T, TItemsIterator, any>> implements Iterable<T>, ToJson {
   private readonly sizeSubject = new BehaviorSubject(0);
   private readonly changeSubject = new Subject<TThis>();
   private readonly clearSubject = new Subject<TThis>();
@@ -77,7 +77,7 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
     lazyProperty(this, '$hasItems', () => untracked(() => toLazySignal(this.hasItems$, { requireSync: true, manualCleanup: true })));
   }
 
-  [Symbol.iterator](): IterableIterator<T> {
+  [Symbol.iterator](): TItemsIterator {
     return this.items();
   }
 
@@ -130,7 +130,7 @@ export abstract class Collection<T, TThis extends Collection<T, TThis> = Collect
   abstract clone(): TThis;
 
   /** Yields all items from the collection */
-  abstract items(): IterableIterator<T>;
+  abstract items(): TItemsIterator;
 
   /** Clear all data - size is set to 0 automatically */
   protected abstract _clear(): void;

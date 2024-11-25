@@ -3,7 +3,6 @@ import { TstdlMarkdownComponent } from '@tstdl/angular/source/components/markdow
 
 @Component({
   selector: 'app-markdown',
-  standalone: true,
   imports: [TstdlMarkdownComponent],
   templateUrl: './markdown.component.html',
   styleUrls: ['./markdown.component.scss'],

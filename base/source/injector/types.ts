@@ -30,7 +30,7 @@ export type Mapper<T = any, U = unknown> = (value: T) => U;
 
 export type ArgumentProvider<T = unknown, D extends Record = Record> = (context: ResolveContext<D>) => T;
 
-export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>); // eslint-disable-line @typescript-eslint/ban-types
+export type ForwardRefInjectionToken<T = any, A = any> = Exclude<InjectionToken<T, A>, Function> | (() => InjectionToken<T, A>);
 
 export type ResolveOptions<T, A> = {
   optional?: boolean,

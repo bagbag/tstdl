@@ -4,7 +4,6 @@ import { NavTabsComponent } from '../nav-tabs.component';
 
 @Component({
   selector: 'tsl-nav-tab, [tslNavTab]',
-  standalone: true,
   imports: [],
   templateUrl: './nav-tab.component.html',
   styleUrl: './nav-tab.component.scss',

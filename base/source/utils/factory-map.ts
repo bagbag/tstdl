@@ -65,25 +65,25 @@ export class FactoryMap<K, V, I = K> implements Map<K, V> {
     this.backingMap.forEach(({ key, value }) => boundCallback(value, key, this));
   }
 
-  *[Symbol.iterator](): IterableIterator<[K, V]> {
+  *[Symbol.iterator](): MapIterator<[K, V]> {
     for (const [, { key, value }] of this.backingMap) {
       yield [key, value];
     }
   }
 
-  *entries(): IterableIterator<[K, V]> {
+  *entries(): MapIterator<[K, V]> {
     for (const [, { key, value }] of this.backingMap.entries()) {
       yield [key, value];
     }
   }
 
-  *keys(): IterableIterator<K> {
+  *keys(): MapIterator<K> {
     for (const [, { key }] of this.backingMap.entries()) {
       yield key;
     }
   }
 
-  *values(): IterableIterator<V> {
+  *values(): MapIterator<V> {
     for (const [, { value }] of this.backingMap.entries()) {
       yield value;
     }

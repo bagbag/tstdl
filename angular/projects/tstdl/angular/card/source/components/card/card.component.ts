@@ -8,9 +8,8 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
   selector: 'tsl-card, [tslCard]',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  imports: [CommonModule, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeaderDirective, CardSubHeaderDirective],
+  imports: [CommonModule, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
   animations: [
     fadeInOutAnimation({ duration: 100 })
   ],

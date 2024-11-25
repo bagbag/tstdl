@@ -155,7 +155,6 @@ const dotColor: Record<BadgeColor, string> = {
 
 @Component({
   selector: 'tsl-badge',
-  standalone: true,
   imports: [NgClass],
   templateUrl: './badge.component.html',
   styleUrl: './badge.component.scss',

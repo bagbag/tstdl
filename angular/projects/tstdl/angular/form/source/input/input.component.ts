@@ -1,10 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import { NgControl } from '@angular/forms';
 import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-types';
 
 @Component({
   selector: '[tslInput]',
-  standalone: true,
   imports: [],
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss',
@@ -17,10 +15,10 @@ import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-ty
     '[attr.type]': 'this.type()',
     '[attr.inputmode]': 'this.inputmode()',
     '[attr.autocomplete]': 'this.autocomplete()',
-  },
+  }
 })
 export class InputComponent {
-  readonly #control = inject(NgControl, { optional: true });
+  // readonly #control = inject(NgControl, { optional: true });
   readonly #elementRef = inject<ElementRef<HTMLLabelElement>>(ElementRef);
 
   readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });

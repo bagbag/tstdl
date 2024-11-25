@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/consistent-indexed-object-style */
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
 import type { CamelCase, Except } from 'type-fest';

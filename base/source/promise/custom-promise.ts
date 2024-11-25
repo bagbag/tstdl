@@ -1,7 +1,7 @@
 import type { PromiseRejectFunction, PromiseResolveFunction } from './types.js';
 
 export class CustomPromise<T> extends Promise<T> {
-  static readonly [Symbol.species] = Promise;
+  static override readonly [Symbol.species] = Promise;
 
   protected readonly resolve: PromiseResolveFunction<T>;
   protected readonly reject: PromiseRejectFunction;

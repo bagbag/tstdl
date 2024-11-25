@@ -4,7 +4,6 @@ import { VerticalTabLabelDirective } from '@tstdl/angular/vertical-tab-group/sou
 
 @Component({
   selector: 'app-vertical-tab-group-example',
-  standalone: true,
   imports: [VerticalTabComponent, VerticalTabGroupComponent, VerticalTabLabelDirective],
   templateUrl: './vertical-tab-group-example.component.html',
   styleUrl: './vertical-tab-group-example.component.scss',

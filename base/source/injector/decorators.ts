@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types, @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 import { createClassDecorator, createDecorator, type Decorator } from '#/reflection/index.js';
 import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types.js';

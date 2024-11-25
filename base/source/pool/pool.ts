@@ -9,7 +9,7 @@ import { isDefined } from '#/utils/type-guards.js';
 export type PoolOptions = {
 
   /**
-   * maximum number of instances
+   * Maximum number of instances
    * @default number of cpu cores
    */
   size?: number,

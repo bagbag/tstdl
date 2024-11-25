@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
 
 @Component({
   selector: 'tsl-input-group',
-  standalone: true,
   imports: [],
   templateUrl: './input-group.component.html',
   styleUrl: './input-group.component.scss',

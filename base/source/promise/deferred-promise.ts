@@ -13,7 +13,7 @@ export class DeferredPromise<T = void> extends Promise<T> {
 
   private state: PromiseState;
 
-  readonly [Symbol.toStringTag] = 'DeferredPromise';
+  override readonly [Symbol.toStringTag] = 'DeferredPromise';
 
   get resolved(): boolean {
     return this.state == PromiseState.Resolved;

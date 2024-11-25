@@ -46,7 +46,7 @@ export type SerializationOptions = {
    *
    * Only first level of object is referenced. For example for `{ foo: { bar: 'baz' } }` there will be one context entry having { bar: 'baz' }
    */
-  context?: Record, // eslint-disable-line @typescript-eslint/ban-types
+  context?: Record,
 
   /**
    * Disables dereferencing of ForwardRefs. Only useful for debugging (when implementing custom serializers) and curiosity

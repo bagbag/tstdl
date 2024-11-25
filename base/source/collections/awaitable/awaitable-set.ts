@@ -95,19 +95,19 @@ export class AwaitableSet<T> implements Set<T> {
     return this.backingSet.has(value);
   }
 
-  entries(): IterableIterator<[T, T]> {
+  entries(): SetIterator<[T, T]> {
     return this.backingSet.entries();
   }
 
-  keys(): IterableIterator<T> {
+  keys(): SetIterator<T> {
     return this.backingSet.keys();
   }
 
-  values(): IterableIterator<T> {
+  values(): SetIterator<T> {
     return this.backingSet.values();
   }
 
-  [Symbol.iterator](): IterableIterator<T> {
+  [Symbol.iterator](): SetIterator<T> {
     return this.backingSet[Symbol.iterator]();
   }
 }

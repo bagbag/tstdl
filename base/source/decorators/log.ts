@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import type { WrapLogOptions } from '#/function/log.js';
 import { wrapLog } from '#/function/log.js';
 import type { Decorator } from '#/reflection/types.js';

@@ -3,7 +3,7 @@ import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { takeUntil } from 'rxjs';
 import { Collection } from './collection.js';
 
-export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefMap<K, V>> implements Map<K, V> {
+export class WeakRefMap<K, V extends object> extends Collection<[K, V], MapIterator<[K, V]>, WeakRefMap<K, V>> implements Map<K, V> {
   private readonly backingMapProvider: () => Map<K, WeakRef<V>>;
 
   private backingMap: Map<K, WeakRef<V>>;
@@ -130,23 +130,23 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], WeakRefM
     }
   }
 
-  entries(): IterableIterator<[K, V]> {
+  entries(): MapIterator<[K, V]> {
     return this.items();
   }
 
-  *keys(): IterableIterator<K> {
+  *keys(): MapIterator<K> {
     for (const [key] of this) {
       yield key;
     }
   }
 
-  *values(): IterableIterator<V> {
+  *values(): MapIterator<V> {
     for (const [, value] of this) {
       yield value;
     }
   }
 
-  *items(): IterableIterator<[K, V]> {
+  *items(): MapIterator<[K, V]> {
     for (const [key, ref] of this.backingMap) {
       const value = ref.deref();
 

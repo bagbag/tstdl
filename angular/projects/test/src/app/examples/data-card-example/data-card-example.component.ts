@@ -3,7 +3,6 @@ import { DataCardComponent } from '@tstdl/angular/data-card';
 
 @Component({
   selector: 'app-data-card-example',
-  standalone: true,
   imports: [DataCardComponent],
   templateUrl: './data-card-example.component.html',
   styleUrls: ['./data-card-example.component.scss'],

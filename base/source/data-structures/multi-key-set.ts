@@ -63,7 +63,7 @@ export class MultiKeySet<T extends any[]> extends DistinctCollection<T> {
     return clone;
   }
 
-  items(): IterableIterator<T> {
+  items(): SetIterator<T> {
     return this.#map.keys();
   }
 
