@@ -7,7 +7,7 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type EnumerationSchemaOptions = SimpleSchemaOptions;
 
-export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<EnumerationValue<T>> {
+export class EnumerationSchema<const T extends EnumerationType> extends SimpleSchema<EnumerationValue<T>> {
   readonly #allowedValuesSet: Set<EnumerationValue>;
 
   override readonly name: string;
@@ -38,7 +38,7 @@ export class EnumerationSchema<T extends EnumerationType> extends SimpleSchema<E
   }
 }
 
-export function enumeration<T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions): EnumerationSchema<T> {
+export function enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions): EnumerationSchema<T> {
   return new EnumerationSchema(enumeration, options);
 }
 

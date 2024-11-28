@@ -1,6 +1,6 @@
-import type { Signal } from '@angular/core';
+import type { SIGNAL } from '@angular/core/primitives/signals';
 
-declare const SIGNAL: keyof Signal<any>;
+export { SIGNAL };
 
 declare module '@tstdl/base/signals/api' {
   export interface Signal<T> {

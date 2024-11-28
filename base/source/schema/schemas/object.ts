@@ -8,8 +8,8 @@ import { SchemaError } from '#/schema/schema.error.js';
 import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
-import { filterObject, mapObjectValues, objectKeys } from '#/utils/object/object.js';
-import { assert, isDefined, isFunction, isLiteralObject, isNotNull, isNotNullOrUndefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
+import { filterObject, fromEntries, mapObjectValues, objectKeys } from '#/utils/object/object.js';
+import { assert, isArray, isDefined, isFunction, isLiteralObject, isNotNull, isNotNullOrUndefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
 import { Class, Property, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
@@ -29,8 +29,8 @@ export type NormalizedObjectSchemaProperties<T extends Record> = { [P in keyof T
 export type ObjectSchemaOptions<T extends Record = Record, K extends PropertyKey = PropertyKey, V = unknown> = {
   name?: string,
   mask?: boolean | null,
-  unknownProperties?: SchemaTestable<V> | null,
   unknownPropertiesKey?: SchemaTestable<K> | null,
+  unknownProperties?: SchemaTestable<V> | null,
   factory?: ObjectSchemaFactory<T> | null
 };
 
@@ -125,14 +125,14 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
   }
 }
 
-export function object<const K extends PropertyKey, const V>(properties: Record<never>, options: ObjectSchemaOptions<Record<K, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<Record<K, V>>;
-export function object<const K extends PropertyKey>(properties: Record<never>, options: ObjectSchemaOptions<Record<K, unknown>> & { unknownProperties?: undefined, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<Record<K, unknown>>;
-export function object<const V>(properties: Record<never>, options: ObjectSchemaOptions<Record<PropertyKey, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey?: undefined }): ObjectSchema<Record<PropertyKey, V>>;
-export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey, const V>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<K, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Record<K, V>>;
-export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<K, unknown>> & { unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Record<K, unknown>>;
-export function object<const TP extends ObjectSchemaProperties, const V>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<PropertyKey, V>> & { unknownProperties: SchemaTestable<V> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Record<PropertyKey, V>>;
+export function object<const K extends PropertyKey, const V>(properties: Record<never>, options: ObjectSchemaOptions<Record<K, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<Partial<Record<K, V>>>;
+export function object<const K extends PropertyKey>(properties: Record<never>, options: ObjectSchemaOptions<Record<K, unknown>> & { unknownProperties?: undefined, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<Partial<Record<K, unknown>>>;
+export function object<const V>(properties: Record<never>, options: ObjectSchemaOptions<Record<PropertyKey, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey?: undefined }): ObjectSchema<Partial<Record<PropertyKey, V>>>;
+export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey, const V>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<K, V>> & { unknownProperties: SchemaTestable<V>, unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Partial<Record<K, V>>>;
+export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<K, unknown>> & { unknownPropertiesKey: SchemaTestable<K> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Partial<Record<K, unknown>>>;
+export function object<const TP extends ObjectSchemaProperties, const V>(properties: TP, options: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP> & Record<PropertyKey, V>> & { unknownProperties: SchemaTestable<V> }): ObjectSchema<ObjectSchemaPropertiesType<TP> & Partial<Record<PropertyKey, V>>>;
 export function object<const TP extends ObjectSchemaProperties>(properties: TP, options?: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP>> & { unknownProperties?: undefined, unknownPropertiesKey?: undefined }): ObjectSchema<ObjectSchemaPropertiesType<TP>>;
-export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey, const V>(properties: TP, options?: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP>, K, V>): ObjectSchema<ObjectSchemaPropertiesType<TP> & Record<K, V>>;
+export function object<const TP extends ObjectSchemaProperties, const K extends PropertyKey, const V>(properties: TP, options?: ObjectSchemaOptions<ObjectSchemaPropertiesType<TP>, K, V>): ObjectSchema<ObjectSchemaPropertiesType<TP> & Partial<Record<K, V>>>;
 export function object(properties: ObjectSchemaProperties, options?: ObjectSchemaOptions): ObjectSchema {
   return new ObjectSchema(properties, options);
 }
@@ -141,8 +141,17 @@ export function explicitObject<const T extends Record>(properties: ObjectSchemaP
   return object(properties as ObjectSchemaProperties, options) as any as ObjectSchema<T>;
 }
 
-export function record<const K extends PropertyKey, const V>(key: Schema<K>, value: Schema<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'>): ObjectSchema<Record<K, V>> {
-  return object({}, { ...options, unknownPropertiesKey: key, unknownProperties: value });
+export function record<const K extends PropertyKey, const V>(keys: K[], value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'>): ObjectSchema<Record<K, V>>;
+export function record<const K extends PropertyKey, const V>(key: SchemaTestable<K>, value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'>): ObjectSchema<Partial<Record<K, V>>>;
+export function record<const K extends PropertyKey, const V>(keysOrKeySchema: SchemaTestable<K> | K[], value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'>): ObjectSchema<Record<K, V>> | ObjectSchema<Partial<Record<K, V>>> {
+  if (isArray(keysOrKeySchema)) {
+    const entries = keysOrKeySchema.map((key) => [key, value] as const);
+    const properties = fromEntries(entries) as Record<K, SchemaTestable<V>>;
+
+    return new ObjectSchema(properties as ObjectSchemaProperties<Record<K, V>>, options);
+  }
+
+  return new ObjectSchema({}, { ...options, unknownPropertiesKey: keysOrKeySchema, unknownProperties: value as SchemaTestable } as ObjectSchemaOptions) as ObjectSchema<Partial<Record<K, V>>>;
 }
 
 export function assign<const T1 extends Record, const T2 extends Record>(a: ObjectSchemaOrType<T1>, b: ObjectSchemaOrType<T2>): ObjectSchema<Merge<T1, T2>>;

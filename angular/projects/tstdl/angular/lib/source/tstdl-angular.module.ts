@@ -52,16 +52,16 @@ const declarations = [
   imports: declarations,
   exports: declarations,
   providers: [
-    provideAppInitializer(appInitializerFactory())
+    provideAppInitializer(appInitializer)
   ]
 })
 export class TstdlAngularModule { }
 
-export function provideTstdlAngular(): EnvironmentProviders {
-  return importProvidersFrom(TstdlAngularModule);
+function appInitializer(): void {
+  const bridgeService = inject(TstdlBridgeService);
+  bridgeService.initialize();
 }
 
-function appInitializerFactory() {
-  const bridgeService = inject(TstdlBridgeService);
-  return () => bridgeService.initialize();
+export function provideTstdlAngular(): EnvironmentProviders {
+  return importProvidersFrom(TstdlAngularModule);
 }

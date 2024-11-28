@@ -20,7 +20,7 @@ function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef
     if (isNotNullOrUndefined(error)) {
       errorHandler.handleError(error);
     }
-  });
+  }, { injector: options.injector });
 
   return ref;
 }
