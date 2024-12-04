@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
-import type { CamelCase, Except } from 'type-fest';
+import type { CamelCase, Except, IsEqual, LiteralUnion } from 'type-fest';
 
 import type { Signal } from './signals/api.js';
 
@@ -131,6 +131,8 @@ export type SimplifyDeep<T> = T extends BuiltIn ? T
   : T extends readonly any[] ? { [I in keyof T]: SimplifyDeep<T[I]> }
   : T extends Record ? { [K in keyof T]: SimplifyDeep<T[K]> } & {}
   : T;
+
+export type SimplifiedLiteralUnion<Literal extends Primitive, Base extends Primitive = BaseType<Exclude<Literal, null | undefined>>> = If<IsEqual<Literal, Base>, Literal, LiteralUnion<Literal, Base>>;
 
 export type UnionToIntersection<Union> = (Union extends unknown ? (distributedUnion: Union) => void : never) extends ((mergedIntersection: infer Intersection) => void) ? Intersection : never;
 

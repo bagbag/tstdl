@@ -1,36 +1,47 @@
-import type { Signal } from '@angular/core';
-import { inject } from '@angular/core';
+import type { Signal, WritableSignal } from '@angular/core';
+import { effect, ErrorHandler, inject, linkedSignal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import type { NavigationExtras } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
-import type { If, Record } from '@tstdl/base/types';
-import { assertStringPass, isNotNull, isNull } from '@tstdl/base/utils';
+import type { Record, SimplifiedLiteralUnion, TypedOmit } from '@tstdl/base/types';
+import { assertStringPass, isArray, isDefined, isFunction, isNotFunction, isNotNull, isNull } from '@tstdl/base/utils';
 import type { Observable } from 'rxjs';
 import { combineLatest, map } from 'rxjs';
-import type { IsEqual, LiteralUnion } from 'type-fest';
 
-export type GetParameterOptions = {
+export type TransformOptions<T extends string | string[] | null, TTransform> = {
+  transform?: ((value: T) => TTransform) | {
+    fromString: (value: T) => TTransform,
+    toString?: (value: TTransform) => T
+  }
+};
+
+type WithTransformOptions<T extends string | string[] | null, TTransform> = Required<TransformOptions<T, TTransform>>;
+
+type WithoutTransformOptions = TypedOmit<TransformOptions<string, undefined>, 'transform'> & { transform?: undefined };
+
+export type InjectParameterOptions = {
   optional?: boolean
 };
 
 export class RoutingService {
   readonly router = inject(Router);
-  readonly route = inject(ActivatedRoute, { optional: true });
+  readonly route = inject(ActivatedRoute);
 
-  async setQueryParameter(key: string, value: string | null, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
+  async setQueryParameter(key: string, value: string | string[] | null): Promise<void> {
+    return this.setQueryParameters({ [key]: value });
+  }
+
+  async setQueryParameters(parameters: Record<string, string | string[] | null>, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
     await this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        [key]: value
-      },
-      queryParamsHandling: options?.queryParamsHandling
+      queryParams: parameters,
+      queryParamsHandling: options?.queryParamsHandling ?? 'merge'
     });
   }
 
   async setFragment(value: string | null): Promise<void> {
     await this.router.navigate([], {
-      relativeTo: this.route,
-      fragment: value ?? ''
+      fragment: value ?? '',
+      queryParamsHandling: 'preserve'
     });
   }
 }
@@ -39,50 +50,92 @@ export function injectRoutingService(): RoutingService {
   return new RoutingService();
 }
 
-export function injectParameter<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null>;
-export function injectParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>>>;
-export function injectParameter<T extends string>(parameter: string, options?: GetParameterOptions): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null> {
-  return toSignal(injectParameter$(parameter, options), { requireSync: true }) as Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null>;
+export function injectParameter<T extends string>(parameter: string, options: InjectParameterOptions & { optional: true }): Signal<SimplifiedLiteralUnion<T> | null>;
+export function injectParameter<T extends string>(parameter: string, options?: InjectParameterOptions & { optional?: false }): Signal<SimplifiedLiteralUnion<T>>;
+export function injectParameter(parameter: string, options?: InjectParameterOptions): Signal<string | null> {
+  return toSignal(injectParameter$(parameter, options), { requireSync: true });
 }
 
-export function injectParameter$<T extends string>(parameter: string, options: GetParameterOptions & { optional: true }): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null>;
-export function injectParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>>>;
-export function injectParameter$<T extends string>(parameter: string, options?: GetParameterOptions): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null> {
+export function injectParameter$<T extends string>(parameter: string, options: InjectParameterOptions & { optional: true }): Observable<SimplifiedLiteralUnion<T> | null>;
+export function injectParameter$<T extends string>(parameter: string, options?: InjectParameterOptions & { optional?: false }): Observable<SimplifiedLiteralUnion<T>>;
+export function injectParameter$<T extends string>(parameter: string, options?: InjectParameterOptions): Observable<SimplifiedLiteralUnion<T> | null>;
+export function injectParameter$<T extends string>(parameter: string, options?: InjectParameterOptions): Observable<SimplifiedLiteralUnion<T> | null> {
   const observable = getParameterFromAll$(parameter);
 
   const result = (options?.optional == true)
     ? observable
     : observable.pipe(map((value) => assertStringPass(value, `Missing ${parameter} in route parameters.`)));
 
-  return result as Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null>;
+  return result as Observable<SimplifiedLiteralUnion<T> | null>;
 }
 
-export function injectParameters<T extends string>(parameter: string): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]> {
+export function injectParameters<T extends string>(parameter: string): Signal<SimplifiedLiteralUnion<T>[]> {
   return toSignal(injectParameters$(parameter), { requireSync: true });
 }
 
-export function injectParameters$<T extends string>(parameter: string): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]> {
-  return getParametersFromAll$(parameter) as Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]>;
+export function injectParameters$<T extends string>(parameter: string): Observable<SimplifiedLiteralUnion<T>[]> {
+  return getParametersFromAll$(parameter) as Observable<SimplifiedLiteralUnion<T>[]>;
 }
 
-export function injectQueryParameter<T extends string>(parameter: string): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null> {
-  return toSignal(injectQueryParameter$(parameter), { requireSync: true });
+export function injectQueryParameter<T extends string, TTransform>(parameter: string, options: WithTransformOptions<SimplifiedLiteralUnion<T> | null, TTransform>): WritableSignal<TTransform>;
+export function injectQueryParameter<T extends string>(parameter: string, options?: WithoutTransformOptions): WritableSignal<SimplifiedLiteralUnion<T> | null>;
+export function injectQueryParameter<TTransform>(parameter: string, options?: TransformOptions<string | null, TTransform>): WritableSignal<string | TTransform | null> {
+  const routingService = injectRoutingService();
+  const errorHandler = inject(ErrorHandler);
+
+  const transformFromString = isFunction(options?.transform) ? options.transform : options?.transform?.fromString;
+  const transformToString = ((isDefined(options?.transform) && isNotFunction(options.transform)) ? options.transform.toString : undefined) ?? ((value: any) => isNull(value) ? null : String(value));
+  const parameterSignal = toSignal(injectQueryParameter$(parameter), { requireSync: true });
+  const signal = linkedSignal<string | TTransform | null>(isDefined(transformFromString) ? () => transformFromString(parameterSignal()) : parameterSignal);
+
+  if (isNotNull(routingService.route)) {
+    effect(() => {
+      void routingService.setQueryParameter(parameter, transformToString(signal() as TTransform)).catch((error) => errorHandler.handleError(error));
+    });
+  }
+
+  return signal;
 }
 
-export function injectQueryParameter$<T extends string>(parameter: string): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null> {
-  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.get(parameter) as If<IsEqual<T, string>, T, LiteralUnion<T, string>> | null));
+export function injectQueryParameter$<T extends string>(parameter: string): Observable<SimplifiedLiteralUnion<T> | null> {
+  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.get(parameter) as SimplifiedLiteralUnion<T> | null));
 }
 
-export function injectQueryParameters<T extends string>(parameter: string): Signal<If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]> {
-  return toSignal(injectQueryParameters$(parameter), { requireSync: true });
+export function injectQueryParameters<T extends string, TTransform>(parameter: string, options: WithTransformOptions<SimplifiedLiteralUnion<T>[], TTransform>): WritableSignal<TTransform>;
+export function injectQueryParameters<T extends string>(parameter: string, options?: WithoutTransformOptions): WritableSignal<SimplifiedLiteralUnion<T>[]>;
+export function injectQueryParameters<TTransform>(parameter: string, options?: TransformOptions<string[], TTransform>): WritableSignal<string[] | TTransform> {
+  const routingService = injectRoutingService();
+  const errorHandler = inject(ErrorHandler);
+
+  const transformFromString = isFunction(options?.transform) ? options.transform : options?.transform?.fromString;
+  const transformToString = ((isDefined(options?.transform) && isNotFunction(options.transform)) ? options.transform.toString : undefined) ?? ((value: any) => isArray(value) ? value.map(String) : isNull(value) ? null : String(value));
+  const parameterSignal = toSignal(injectQueryParameters$(parameter), { requireSync: true });
+  const signal = linkedSignal<string[] | TTransform>(isDefined(transformFromString) ? () => transformFromString(parameterSignal()) : parameterSignal);
+
+  if (isNotNull(routingService.route)) {
+    effect(() => {
+      const value = signal();
+      void routingService.setQueryParameter(parameter, isArray(value) ? value.map(String) : transformToString(value)).catch((error) => errorHandler.handleError(error));
+    });
+  }
+
+  return signal;
 }
 
-export function injectQueryParameters$<T extends string>(parameter: string): Observable<If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]> {
-  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.getAll(parameter) as If<IsEqual<T, string>, T, LiteralUnion<T, string>>[]));
+export function injectQueryParameters$<T extends string>(parameter: string): Observable<SimplifiedLiteralUnion<T>[]> {
+  return inject(ActivatedRoute).queryParamMap.pipe(map((value) => value.getAll(parameter) as SimplifiedLiteralUnion<T>[]));
 }
 
-export function injectFragmet(): Signal<string | null> {
-  return toSignal(injectFragmet$(), { requireSync: true });
+export function injectFragmet(): WritableSignal<string | null> {
+  const routingService = injectRoutingService();
+  const errorHandler = inject(ErrorHandler);
+
+  const parameterSignal = toSignal(injectFragmet$(), { requireSync: true });
+  const signal = linkedSignal(parameterSignal);
+
+  effect(() => void routingService.setFragment(signal()).catch((error) => errorHandler.handleError(error)));
+
+  return signal;
 }
 
 export function injectFragmet$(): Observable<string | null> {
