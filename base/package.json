@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.1",
+  "version": "0.92.2",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -32,6 +32,7 @@
     "./tokens": "./tokens.js",
     "./types": "./types.js",
     "./web-types": "./web-types.js",
+    "./ai": "./ai/index.js",
     "./api": "./api/index.js",
     "./application": "./application/index.js",
     "./authentication": "./authentication/index.js",
