@@ -1,5 +1,4 @@
-import type { MonoTypeOperatorFunction } from 'rxjs';
-import { Observable } from 'rxjs';
+import { type MonoTypeOperatorFunction, Observable } from 'rxjs';
 
 import { untracked } from '#/signals/api.js';
 

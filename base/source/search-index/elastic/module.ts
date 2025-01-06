@@ -31,7 +31,7 @@ Injector.registerSingleton<Client, ClientOptions, { logger: Logger }>(Client, {
     assertDefined(argument, 'missing elasticsearch client options');
 
     context.data.logger = inject(Logger, elasticsearchModuleConfig.logPrefix);
-    const client: Client = new Client(argument);
+    const client: Client = new Client(argument as ClientOptions);
 
     context.addDisposeHandler(async () => client.close().then(() => context.data.logger.info('closed connection')));
 

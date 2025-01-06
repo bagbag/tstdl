@@ -1,7 +1,9 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { SchemaError } from '#/schema/schema.error.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { Schema, SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+
+export type NeverSchemaOptions = SchemaOptions<never>;
 
 export class NeverSchema extends Schema<never> {
   override readonly name = 'never';
@@ -11,6 +13,6 @@ export class NeverSchema extends Schema<never> {
   }
 }
 
-export function never(): NeverSchema {
-  return new NeverSchema();
+export function never(options?: NeverSchemaOptions): NeverSchema {
+  return new NeverSchema(options);
 }

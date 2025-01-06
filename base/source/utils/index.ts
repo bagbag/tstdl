@@ -49,6 +49,7 @@ export * from './sort.js';
 export * from './throw.js';
 export * from './timer.js';
 export * from './timing.js';
+export * from './try-ignore.js';
 export * from './type-guards.js';
 export * from './type-of.js';
 export * from './type/index.js';

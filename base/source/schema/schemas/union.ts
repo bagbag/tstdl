@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { isSchemaTestable, schemaTestableToSchema } from '../testable.js';
@@ -19,7 +19,7 @@ export class UnionSchema<T extends [SchemaTestable, ...SchemaTestable[]]> extend
       const schema = schemaTestableToSchema(testable);
 
       if (schema instanceof UnionSchema) {
-        return schema.schemas;
+        return schema.schemas as Schema<UnionSchemaType<T>>[];
       }
 
       return schema;
@@ -53,9 +53,9 @@ export function Union(...schemasAndOptions: [SchemaTestable, ...SchemaTestable[]
   const schemaOrOptions = schemasAndOptions.at(-1)!;
 
   if (isSchemaTestable(schemaOrOptions)) {
-    return Property(union(...schemasAndOptions as [SchemaTestable, ...SchemaTestable[]]));
+    return PropertySchema(() => union(...schemasAndOptions as [SchemaTestable, ...SchemaTestable[]]));
   }
 
   const schemas = schemasAndOptions.slice(0, -1);
-  return Property(union(...schemas as [SchemaTestable, ...SchemaTestable[]]), schemaOrOptions);
+  return PropertySchema(() => union(...schemas as [SchemaTestable, ...SchemaTestable[]]), schemaOrOptions);
 }

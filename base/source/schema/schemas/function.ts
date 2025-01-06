@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
+
 import { isFunction } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type FunctionSchemaOptions = SimpleSchemaOptions;
+export type FunctionSchemaOptions = SimpleSchemaOptions<Function>;
 
 export class FunctionSchema extends SimpleSchema<Function> {
   override readonly name = 'function';
@@ -12,10 +14,10 @@ export class FunctionSchema extends SimpleSchema<Function> {
   }
 }
 
-export function func(): FunctionSchema {
-  return new FunctionSchema();
+export function func(options?: FunctionSchemaOptions): FunctionSchema {
+  return new FunctionSchema(options);
 }
 
-export function FunctionProperty(options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(func(), options);
+export function FunctionProperty(options?: FunctionSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => func({ description: data.description, example: data.example, ...options }), options);
 }

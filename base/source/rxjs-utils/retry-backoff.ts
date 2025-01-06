@@ -1,7 +1,5 @@
-import type { BackoffOptions } from '#/utils/backoff.js';
-import { BackoffHelper } from '#/utils/backoff.js';
-import type { MonoTypeOperatorFunction, Observable, ObservableInput } from 'rxjs';
-import { delayWhen, from, of, retryWhen, scan, tap, timer } from 'rxjs';
+import { BackoffHelper, type BackoffOptions } from '#/utils/backoff.js';
+import { delayWhen, from, type MonoTypeOperatorFunction, type Observable, type ObservableInput, of, retryWhen, scan, tap, timer } from 'rxjs';
 
 export function retryBackoff<T>(count: number, options: BackoffOptions): MonoTypeOperatorFunction<T> {
   const helper = new BackoffHelper(options);

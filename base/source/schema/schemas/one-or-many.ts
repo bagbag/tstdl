@@ -1,11 +1,14 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { OneOrMany as OneOrManyType } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import { array } from './array.js';
 import { union } from './union.js';
+
+export type OneOrManySchemaOptions<T> = SchemaOptions<T | T[]>;
+
 
 export type OneOrMany<T> = OneOrManyType<T>;
 
@@ -13,8 +16,8 @@ export class OneOrManySchema<T> extends Schema<T | T[]> {
   override readonly name: string;
   readonly schema: Schema<T | T[]>;
 
-  constructor(schema: SchemaTestable<T>) {
-    super();
+  constructor(schema: SchemaTestable<T>, options?: OneOrManySchemaOptions<T>) {
+    super(options);
 
     const oneSchema = schemaTestableToSchema(schema);
 
@@ -28,10 +31,10 @@ export class OneOrManySchema<T> extends Schema<T | T[]> {
   }
 }
 
-export function oneOrMany<T>(schema: SchemaTestable<T>): OneOrManySchema<T> {
-  return new OneOrManySchema(schema);
+export function oneOrMany<T>(schema: SchemaTestable<T>, options?: OneOrManySchemaOptions<T>): OneOrManySchema<T> {
+  return new OneOrManySchema(schema, options);
 }
 
-export function OneOrMany(schema: SchemaTestable, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(oneOrMany(schema), options);
+export function OneOrMany<T>(schema: SchemaTestable<T>, options?: OneOrManySchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => oneOrMany(schema as SchemaTestable, { description: data.description, example: data.example, ...options }), options);
 }

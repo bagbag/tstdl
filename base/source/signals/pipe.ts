@@ -1,9 +1,7 @@
 import { distinctUntilChanged, type Observable, type OperatorFunction } from 'rxjs';
 
-import { startWithProvider } from '#/rxjs/start-with-provider.js';
-import { untrack } from '#/rxjs/untrack.js';
-import type { Signal } from './api.js';
-import { toObservable, toSignal } from './api.js';
+import { startWithProvider, untrack } from '#/rxjs-utils/index.js';
+import { type Signal, toObservable, toSignal } from './api.js';
 
 /**
  * As we need an synchronous value for the resulting signal and effect scheduling is async, it uses the source signals value as the initial value for the pipe.

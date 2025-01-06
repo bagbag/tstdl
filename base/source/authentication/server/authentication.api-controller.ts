@@ -145,7 +145,7 @@ export function getAuthenticationApiController<AdditionalTokenPayload extends Re
   const apiDefinition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
 
   @apiController(apiDefinition)
-  class KfinAuthenticationApi extends AuthenticationApiController<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData> { }
+  class AuthenticationApi extends AuthenticationApiController<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData> { }
 
-  return KfinAuthenticationApi;
+  return AuthenticationApi;
 }

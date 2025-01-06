@@ -1,25 +1,43 @@
+import type { PgIndexMethod } from 'drizzle-orm/pg-core';
+
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
+import { Property } from '#/schema/index.js';
+import type { AbstractConstructor, TypedOmit } from '#/types.js';
 import { isArray } from '#/utils/type-guards.js';
+import type { EntityType } from './entity.js';
 
 export type OrmTableReflectionData = {
   name?: string,
-  unique?: UniqueReflectionData[]
+  unique?: UniqueReflectionData[],
+  index?: IndexReflectionData[]
 };
 
 export type OrmColumnReflectionData = {
   name?: string,
   primaryKey?: boolean,
   unique?: UniqueReflectionData,
-  uuid?: {
-    defaultRandom?: boolean
-  }
+  index?: IndexReflectionData,
+  uuid?: { defaultRandom?: boolean },
+  embedded?: { type: AbstractConstructor, prefix?: string | null },
+  references?: () => EntityType
 };
 
-type UniqueReflectionData = {
+export type UniqueReflectionData = {
   name?: string,
   columns?: string[],
   options?: {
     nulls?: 'distinct' | 'not distinct'
+  }
+};
+
+export type IndexReflectionData = {
+  name?: string,
+  columns?: (string | [string, 'asc' | 'desc'])[],
+  order?: 'asc' | 'desc',
+  options?: {
+    using?: PgIndexMethod,
+    unique?: boolean,
+    nulls?: 'first' | 'last'
   }
 };
 
@@ -43,6 +61,16 @@ export function PrimaryKey() {
   return createColumnDecorator({ primaryKey: true });
 }
 
+export function References(type: () => EntityType) {
+  return createColumnDecorator({ references: type });
+}
+
+export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNullable<OrmColumnReflectionData['embedded']>, 'type'>) {
+  return createPropertyDecorator({
+    include: [Property(type), createColumnDecorator({ embedded: { type, ...options } })]
+  });
+}
+
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
 export function Unique(name: string | undefined, columns: [string, ...string[]], options?: UniqueReflectionData['options']): ClassDecorator;
 export function Unique(name?: string, columnsOrOptions?: [string, ...string[]] | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
@@ -51,4 +79,14 @@ export function Unique(name?: string, columnsOrOptions?: [string, ...string[]] |
   }
 
   return createColumnDecorator({ unique: { name, options: columnsOrOptions ?? options } });
+}
+
+export function Index(name?: string, options?: IndexReflectionData['options']): PropertyDecorator;
+export function Index(name: string | undefined, columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
+export function Index(name?: string, columnsOrOptions?: [string, ...string[]] | IndexReflectionData['options'], options?: IndexReflectionData['options']) {
+  if (isArray(columnsOrOptions)) {
+    return createTableDecorator({ index: [{ name, columns: columnsOrOptions, options }] });
+  }
+
+  return createColumnDecorator({ index: { name, options: columnsOrOptions ?? options } });
 }

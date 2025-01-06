@@ -4,24 +4,31 @@ import type { TypedOmit } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import type { Coercible } from '../types.js';
 
-export type ArraySchemaOptions = Coercible;
+export type ArraySchemaOptions<T> = SchemaOptions<T[]> & Coercible & {
+  minimum?: number,
+  maximum?: number
+};
 
 export class ArraySchema<T> extends Schema<T[]> {
-  readonly #options: ArraySchemaOptions;
+  readonly #options: ArraySchemaOptions<T>;
 
   override readonly name: string;
   readonly itemSchema: Schema<T>;
+  readonly minimum: number | null;
+  readonly maximum: number | null;
 
-  constructor(itemSchema: SchemaTestable<T>, options: ArraySchemaOptions = {}) {
-    super();
+  constructor(itemSchema: SchemaTestable<T>, options: ArraySchemaOptions<T> = {}) {
+    super(options);
 
     this.#options = options;
     this.itemSchema = schemaTestableToSchema(itemSchema);
+    this.minimum = options.minimum ?? null;
+    this.maximum = options.maximum ?? null;
 
     lazyProperty(this, 'name', () => `Array[${this.itemSchema.name}]`);
   }
@@ -51,10 +58,10 @@ export class ArraySchema<T> extends Schema<T[]> {
   }
 }
 
-export function array<T>(schema: SchemaTestable<T>, options?: ArraySchemaOptions): ArraySchema<T> {
+export function array<T>(schema: SchemaTestable<T>, options?: ArraySchemaOptions<T>): ArraySchema<T> {
   return new ArraySchema(schema, options);
 }
 
-export function Array(schema: SchemaTestable, options?: ArraySchemaOptions & TypedOmit<SchemaPropertyDecoratorOptions, 'array'>): SchemaPropertyDecorator {
-  return Property(array(schema, options), options);
+export function Array(schema: SchemaTestable, options?: ArraySchemaOptions<unknown> & TypedOmit<SchemaPropertyDecoratorOptions, 'array'>): SchemaPropertyDecorator {
+  return PropertySchema((data) => array(schema, { description: data.description, example: data.example, ...options }), options);
 }

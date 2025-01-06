@@ -35,6 +35,6 @@ export function nullable<T>(schema: SchemaTestable<T>): NullableSchema<T> {
   return new NullableSchema(schema);
 }
 
-export function Nullable(schema?: SchemaTestable, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'nullable'>): SchemaPropertyDecorator {
-  return createSchemaPropertyDecorator({ schema, ...options, nullable: true });
+export function Nullable<T>(schema?: SchemaTestable<T>, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'nullable'>): SchemaPropertyDecorator {
+  return createSchemaPropertyDecorator({ schema: () => schema as SchemaTestable, ...options, nullable: true });
 }

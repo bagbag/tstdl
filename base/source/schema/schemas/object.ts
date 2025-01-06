@@ -5,15 +5,15 @@ import type { EmptyObject, Merge } from 'type-fest';
 import type { JsonPath } from '#/json-path/json-path.js';
 import { createDecorator, type Decorator, reflectionRegistry, type TypeMetadata } from '#/reflection/index.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit, Writable } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { filterObject, fromEntries, mapObjectValues, objectKeys } from '#/utils/object/object.js';
 import { assert, isArray, isDefined, isFunction, isLiteralObject, isNotNull, isNotNullOrUndefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Class, Property, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Class, PropertySchema, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
-import { type OPTIONAL, Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { type OPTIONAL, Schema, type SchemaOptions, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import { array } from './array.js';
 import { nullable } from './nullable.js';
@@ -26,7 +26,7 @@ export type ObjectSchemaFactory<T> = { type: Type<T> } | ObjectSchemaFactoryFunc
 export type ObjectSchemaProperties<T extends Record = Record> = { [P in keyof T]-?: SchemaTestable<T[P]> };
 export type NormalizedObjectSchemaProperties<T extends Record> = { [P in keyof T]-?: Schema<T[P]> };
 
-export type ObjectSchemaOptions<T extends Record = Record, K extends PropertyKey = PropertyKey, V = unknown> = {
+export type ObjectSchemaOptions<T extends Record = Record, K extends PropertyKey = PropertyKey, V = unknown> = SchemaOptions<T> & {
   name?: string,
   mask?: boolean | null,
   unknownPropertiesKey?: SchemaTestable<K> | null,
@@ -55,7 +55,7 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
   readonly factory: ObjectSchemaFactory<T> | null;
 
   constructor(properties: ObjectSchemaProperties<T>, options: ObjectSchemaOptions<T> = {}) {
-    super();
+    super(options);
 
     this.properties = mapObjectValues(properties, (value) => schemaTestableToSchema(value)) as NormalizedObjectSchemaProperties<T>;
     this.mask = options.mask ?? null;
@@ -168,7 +168,8 @@ export function assign(...schemasOrTypes: ObjectSchemaOrType[]): ObjectSchema {
       name: schemas.at(-1)?.name,
       mask: schemas.findLast((schema) => isNotNull(schema.mask))?.mask,
       unknownProperties: schemas.findLast((schema) => isNotNull(schema.unknownProperties))?.unknownProperties,
-      unknownPropertiesKey: schemas.findLast((schema) => isNotNull(schema.unknownPropertiesKey))?.unknownPropertiesKey
+      unknownPropertiesKey: schemas.findLast((schema) => isNotNull(schema.unknownPropertiesKey))?.unknownPropertiesKey,
+      description: schemas.findLast((schema) => isNotNull(schema.description))?.description
     }
   );
 }
@@ -254,17 +255,21 @@ function _tryGetSchemaFromReflection<T extends Record>(type: AbstractConstructor
     factory: isDefined(typeData.factory) ? typeData.factory : { type: type as Type },
     mask: typeData.mask,
     unknownProperties: typeData.unknownProperties,
-    unknownPropertiesKey: typeData.unknownPropertiesKey
+    unknownPropertiesKey: typeData.unknownPropertiesKey,
+    description: typeData.description,
+    example: typeData.example
   }) as ObjectSchema<T>;
 
   const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
 
   if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
     const parentSchema = getSchemaFromReflection(prototype);
-
     assert(parentSchema instanceof ObjectSchema, 'Can not infer an ObjectSchema from reflection when parent class has an explicit non-object schema defined.');
 
-    return assign(parentSchema, schema) as ObjectSchema<T>;
+    const extendedSchema = assign(parentSchema, schema) as ObjectSchema<T>;
+    (extendedSchema as Writable<ObjectSchema>).factory = schema.factory;
+
+    return extendedSchema;
   }
 
   return schema;
@@ -280,7 +285,7 @@ function getObjectSchemaPropertiesFromReflection<T extends Record>(metadata: Typ
       throw new Error(`Schema of property "${String(key)}" on type ${type.name} is inferred as Object. This is most likely unwanted and happens if the property is defined as partial or the type is an union. Use an explicit @Property(Object) if this is wanted.`);
     }
 
-    let propertySchema = reflectionData?.schema ?? propertyMetadata.type;
+    let propertySchema = isDefined(reflectionData?.schema) ? reflectionData.schema(reflectionData) : propertyMetadata.type;
 
     if (isUndefined(propertySchema)) {
       throw new Error(`Could not infer schema for property "${String(key)}" on type ${type.name}. This happens if neither explicit @Property(type) is used nor reflection metadata is available.`);
@@ -325,7 +330,7 @@ export function Record<K extends PropertyKey, V>(key: SchemaTestable<K>, value: 
       return Class({ unknownPropertiesKey: keySchema, unknownProperties: valueSchema })(args[0] as Constructor);
     }
 
-    return Property(record(keySchema, valueSchema, options), options)(args[0], args[1]!, args[2]!);
+    return PropertySchema((reflectionData) => record(keySchema, valueSchema, { description: reflectionData.description, example: reflectionData.example, ...options }), options)(args[0], args[1]!, args[2]!);
   });
 }
 

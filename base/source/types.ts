@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
-import type { CamelCase, Except, IsEqual, LiteralUnion } from 'type-fest';
+import type { CamelCase, Except, IsEqual, LiteralUnion, Tagged, UnwrapTagged } from 'type-fest';
 
 import type { Signal } from './signals/api.js';
 
@@ -38,7 +38,7 @@ export type IsPrimitive<T> = [T] extends [Primitive] ? true : false;
 export type Json = JsonPrimitive | JsonObject | JsonArray;
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonObject = { [key: string]: Json };
-export type JsonArray = Json[];
+export type JsonArray = Json[] | readonly Json[];
 
 export type UndefinableJson = JsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
 export type UndefinableJsonInnerNode = UndefinableJsonPrimitive | UndefinableJsonObject | UndefinableJsonArray;
@@ -258,5 +258,14 @@ export type OmitDeep<T, S extends OmitDeepSelection<T>> = T extends Record<any> 
   : S[Extract<P, keyof S>] extends OmitDeepSelection<T[P]> ? OmitDeep<T[P], S[Extract<P, keyof S>]> : never
   : never
 }> : T;
+
+export type Untagged<T> = T extends Tagged<unknown, any, any> ? UnwrapTagged<T> : T;
+export type UntaggedDeep<T> = T extends Tagged<unknown, any, any>
+  ? UnwrapTagged<T>
+  : T extends readonly (infer U)[]
+  ? UntaggedDeep<U>[]
+  : T extends Record
+  ? { [P in keyof T]: UntaggedDeep<T[P]> }
+  : Untagged<T>;
 
 export type AnyFunction = Function;

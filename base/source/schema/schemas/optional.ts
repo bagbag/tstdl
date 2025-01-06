@@ -3,7 +3,7 @@ import type { TypedOmit } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { type OPTIONAL, Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { type OPTIONAL, Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 
 export class OptionalSchema<T> extends Schema<T | undefined> {
@@ -38,6 +38,6 @@ export function optional<T>(schema: SchemaTestable<T>): OptionalSchema<T> {
   return new OptionalSchema(schema);
 }
 
-export function Optional(schema?: SchemaTestable, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'optional'>): SchemaPropertyDecorator {
-  return createSchemaPropertyDecorator({ schema, ...options, optional: true });
+export function Optional<T>(schema?: SchemaTestable<T>, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'optional'>): SchemaPropertyDecorator {
+  return createSchemaPropertyDecorator({ schema: () => schema as SchemaTestable, ...options, optional: true });
 }

@@ -1,30 +1,29 @@
-import type { MonoTypeOperatorFunction, Observable } from 'rxjs';
-import { map, of, switchMap, takeWhile, timer } from 'rxjs';
+import { map, type MonoTypeOperatorFunction, type Observable, of, switchMap, takeWhile, timer } from 'rxjs';
 
 export type SlowArrayOptions = {
   /**
-   * delay before emitting the first array
+   * Delay before emitting the first array
    */
   delay?: number,
 
   /**
-   * initial emitted array size
+   * Initial emitted array size
    */
   initialSize?: number,
 
   /**
-   * interval between each addition of more items
+   * Interval between each addition of more items
    */
   interval: number,
 
   /**
-   * how many items to add each interval
+   * How many items to add each interval
    */
   size: number
 };
 
 /**
- * emits arrays
+ * Emits arrays
  * @param array array to take items from
  * @param options options
  */
@@ -33,7 +32,7 @@ export function slowArray<T>(array: T[], options: SlowArrayOptions): Observable<
 }
 
 /**
- * emits arrays - keeping length when changing source array
+ * Emits arrays - keeping length when changing source array
  * @param array array observable to take items from
  * @param options options
  */

@@ -1,16 +1,17 @@
+import { TypedOmit } from '#/types.js';
 import { isNumber } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type NumberSchemaOptions = SimpleSchemaOptions & {
+export type NumberSchemaOptions = SimpleSchemaOptions<number> & {
   integer?: boolean,
   minimum?: number,
   maximum?: number
 };
 
 export class NumberSchema extends SimpleSchema<number> {
-  override readonly name = 'number';
+  override readonly name: string = 'number';
 
   readonly integer: boolean;
   readonly minimum: number | null;
@@ -46,10 +47,14 @@ export function number(options?: NumberSchemaOptions): NumberSchema {
   return new NumberSchema(options);
 }
 
-export function NumberProperty(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
-  return Property(number(options), options);
+export function integer(options?: TypedOmit<NumberSchemaOptions, 'integer'>): NumberSchema {
+  return number({ ...options, integer: true });
 }
 
-export function Integer(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
-  return Property(number({ ...options, integer: true }), options);
+export function NumberProperty(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => number({ description: data.description, example: data.example, ...options }), options);
+}
+
+export function Integer(options?: SchemaPropertyDecoratorOptions & TypedOmit<NumberSchemaOptions, 'integer'>): SchemaPropertyDecorator {
+  return PropertySchema((data) => number({ description: data.description, example: data.example, ...options, integer: true }), options);
 }

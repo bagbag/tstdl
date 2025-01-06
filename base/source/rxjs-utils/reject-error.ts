@@ -1,5 +1,4 @@
-import type { MonoTypeOperatorFunction } from 'rxjs';
-import { Observable } from 'rxjs';
+import { type MonoTypeOperatorFunction, Observable } from 'rxjs';
 
 export function rejectErrors<T>(): MonoTypeOperatorFunction<T> {
   return function rejectErrors<T>(source: Observable<T>): Observable<T> {

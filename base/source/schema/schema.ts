@@ -16,6 +16,7 @@ export type SchemaTestResult<T> =
   | { valid: true, value: T, error?: undefined }
   | { valid: false, value?: undefined, error: SchemaError };
 
+/* eslint-disable @typescript-eslint/no-wrapper-object-types */
 type NormalizePrimitiveToConstructor<T> =
   Or<IsEqual<T, string>, IsEqual<T, String>> extends true ? typeof String
   : Or<IsEqual<T, number>, IsEqual<T, Number>> extends true ? typeof Number
@@ -31,6 +32,7 @@ type NormalizeConstructorToPrimitve<T> =
   : IsEqual<T, BigInt> extends true ? bigint
   : IsEqual<T, Symbol> extends true ? symbol
   : T;
+/* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
 export type SchemaTestable<T = unknown> = Schema<T> | AbstractConstructor<T> | NormalizePrimitiveToConstructor<T>;
 
@@ -38,10 +40,23 @@ export type SchemaOutput<T extends SchemaTestable> = T extends SchemaTestable<in
 
 export declare const OPTIONAL: unique symbol;
 
+export type SchemaOptions<T> = {
+  description?: string | null,
+  example?: T | undefined
+};
+
 export abstract class Schema<T = unknown> {
   declare readonly [OPTIONAL]: boolean;
 
+  readonly description: string | null;
+  readonly example: T | undefined;
+
   abstract readonly name: string;
+
+  constructor(options?: SchemaOptions<T>) {
+    this.description = options?.description ?? null;
+    this.example = options?.example;
+  }
 
   /**
    * Test an unknown value to see whether it corresponds to the schema.

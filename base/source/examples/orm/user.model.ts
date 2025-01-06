@@ -1,4 +1,4 @@
-import { Array, Entity, Enum, Integer, Text, Unique } from '#/orm/index.js';
+import { Array, Entity, Integer, Unique } from '#/orm/index.js';
 import { BooleanProperty, StringProperty } from '#/schema/index.js';
 
 export enum Foo {
@@ -23,6 +23,4 @@ export class User extends Entity {
 
   @Unique()
   mail: string;
-
-  foo: Enum<typeof Foo>;
 }

@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 
@@ -25,6 +25,6 @@ export function deferred<T extends SchemaTestable>(schema: () => T): DeferredSch
   return new DeferredSchema(schema);
 }
 
-export function Deferred<T extends SchemaTestable>(schema: () => T, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(deferred(schema), options);
+export function Deferred(schema: () => SchemaTestable, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema(() => deferred(schema), options);
 }

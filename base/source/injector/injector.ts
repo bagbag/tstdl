@@ -39,7 +39,7 @@ type InternalResolveContext = {
   resolutions: Resolution<any, any>[],
   resolutionContextData: FactoryMap<ResolutionTag, ResolveContextData<Record>>,
 
-  forwardRefQueue: CircularBuffer<(() => void | Promise<void>)>,
+  forwardRefQueue: CircularBuffer<() => void>,
   forwardRefs: Set<ForwardRef>,
 
   $done: DeferredPromise
@@ -147,7 +147,7 @@ export class Injector implements AsyncDisposable {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  static registerSingleton<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): void {
+  static registerSingleton<T, A = ResolveArgument<T, any>, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): void {
     Injector.register(token, providers, { ...options, lifecycle: 'singleton' });
   }
 
@@ -413,7 +413,7 @@ export class Injector implements AsyncDisposable {
     const injector = (providers.length > 0) ? this.fork('LocalProvidersInjector') : this;
 
     for (const nestedProvider of providers) {
-      injector.register(nestedProvider.provide, nestedProvider, { multi: nestedProvider.multi });
+      injector.registerSingleton(nestedProvider.provide, nestedProvider, { multi: nestedProvider.multi });
     }
 
     const injectionContext = injector.getInjectionContext(context, argument, chain);
@@ -645,6 +645,10 @@ export class Injector implements AsyncDisposable {
   }
 }
 
+export function provide<T = any, A = any, D extends Record = Record>(token: InjectionToken<T, A>, provider: Provider<T, A, D> & { multi?: boolean }): ProvidersItem<T, A, D> {
+  return { provide: token, ...provider };
+}
+
 function addRegistration<T extends GlobalRegistration>(registrations: Map<InjectionToken, WritableOneOrMany<T>>, registration: T): void {
   if (isClassProvider(registration.provider)) {
     const injectable = reflectionRegistry.getMetadata(registration.provider.useClass)?.data.has(injectableMetadataSymbol) ?? false;
@@ -686,7 +690,7 @@ function newInternalResolveContext(): InternalResolveContext {
 
 function postProcess(context: InternalResolveContext): void {
   for (const fn of context.forwardRefQueue.consume()) {
-    (fn as () => void)();
+    fn();
   }
 
   derefForwardRefs(context);
@@ -711,7 +715,7 @@ function postProcess(context: InternalResolveContext): void {
 
 async function postProcessAsync(context: InternalResolveContext): Promise<void> {
   for (const fn of context.forwardRefQueue.consume()) {
-    (fn as () => void)();
+    fn();
   }
 
   derefForwardRefs(context);

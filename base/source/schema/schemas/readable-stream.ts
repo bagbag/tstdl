@@ -1,8 +1,8 @@
 import { isReadableStream } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type ReadableStreamSchemaOptions = SimpleSchemaOptions;
+export type ReadableStreamSchemaOptions = SimpleSchemaOptions<ReadableStream>;
 
 export class ReadableStreamSchema extends SimpleSchema<ReadableStream> {
   override readonly name = 'ReadableStream';
@@ -17,5 +17,5 @@ export function readableStream(options?: ReadableStreamSchemaOptions): ReadableS
 }
 
 export function ReadableStreamProperty(options?: SchemaPropertyDecoratorOptions & ReadableStreamSchemaOptions): SchemaPropertyDecorator {
-  return Property(readableStream(options), options);
+  return PropertySchema((data) => readableStream({ description: data.description, example: data.example, ...options }), options);
 }

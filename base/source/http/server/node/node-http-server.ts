@@ -1,6 +1,8 @@
 import type { ServerResponse } from 'node:http';
 import * as Http from 'node:http';
 import type { Socket } from 'node:net';
+import { Writable } from 'node:stream';
+import { bindNodeCallback, share } from 'rxjs';
 
 import { CancellationToken } from '#/cancellation/index.js';
 import { disposeAsync, type AsyncDisposable } from '#/disposable/index.js';
@@ -11,11 +13,9 @@ import { ResolveArg, Singleton } from '#/injector/index.js';
 import { Logger, type LoggerArgument } from '#/logger/index.js';
 import { encodeUtf8 } from '#/utils/encoding.js';
 import { FeedableAsyncIterable } from '#/utils/feedable-async-iterable.js';
-import { getReadableStreamIterable } from '#/utils/stream/readable-stream-adapter.js';
 import { Timer } from '#/utils/timer.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
-import { bindNodeCallback, share } from 'rxjs';
 import { HttpServerRequest } from '../http-server-request.js';
 import type { HttpServerResponse } from '../http-server-response.js';
 import { HttpServer, type HttpServerRequestContext } from '../http-server.js';
@@ -200,12 +200,13 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
       httpResponse.setHeader('Content-Length', bytes.byteLength);
     }
 
+    (null as any as WritableStream).getWriter().closed
+
     await write(httpResponse, bytes);
   }
   else if (isDefined(streamData)) {
-    for await (const chunk of getReadableStreamIterable<Uint8Array | string>(streamData)) {
-      await write(httpResponse, chunk);
-    }
+    const responseStream = Writable.toWeb(httpResponse);
+    await streamData.pipeTo(responseStream);
   }
 
   return new Promise<void>((resolve) => {

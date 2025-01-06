@@ -1,27 +1,33 @@
-import { NumberProperty, Property, any, record } from '#/schema/index.js';
-import type { Record, Type, TypedOmit } from '#/types.js';
-import { PrimaryKey } from './decorators.js';
-import { type HasDefault, type IsPrimaryKey, Uuid } from './types.js';
+import { Defaulted, Integer, Record } from '#/schema/index.js';
+import { Type, TypedOmit, UntaggedDeep } from '#/types.js';
+import { Index, PrimaryKey } from './decorators.js';
+import { Embedded, type HasDefault, type IsPrimaryKey, Json, Timestamp, Uuid } from './types.js';
 
 export interface EntityType<T extends Entity = Entity> extends Type<T> {
-  readonly entityName: string;
+  readonly entityName?: string;
 }
 
+export type NewEntity<T extends Entity> = UntaggedDeep<TypedOmit<T, 'id' | 'metadata'> & { id?: string, metadata?: Partial<Pick<EntityMetadata, 'attributes'>> }>;
+
+@Json()
+export abstract class EntityMetadataAttributes implements Record { } // eslint-disable-line @typescript-eslint/no-extraneous-class
+
+@Index(undefined, ['revision', 'revisionTimestamp'])
 export abstract class EntityMetadata {
-  @NumberProperty()
+  @Integer()
   revision: number;
 
-  @NumberProperty()
-  revisionTimestamp: number;
+  @Timestamp()
+  revisionTimestamp: Timestamp;
 
-  @NumberProperty()
-  createTimestamp: number;
+  @Timestamp()
+  createTimestamp: Timestamp;
 
-  @NumberProperty({ nullable: true })
-  deleteTimestamp: number | null;
+  @Timestamp({ nullable: true })
+  deleteTimestamp: Timestamp | null;
 
-  @Property(record(any(), any()))
-  attributes: Record;
+  @Defaulted(EntityMetadataAttributes, {})
+  attributes: HasDefault<Json<EntityMetadataAttributes>>;
 }
 
 export abstract class Entity {
@@ -29,8 +35,6 @@ export abstract class Entity {
   @Uuid({ defaultRandom: true })
   id: IsPrimaryKey<HasDefault<Uuid>>;
 
-  // @Property(EntityMetadata)
-  metadata: EntityMetadata;
+  @Embedded(EntityMetadata, { prefix: null })
+  metadata: Embedded<EntityMetadata>;
 }
-
-export type NewEntity<T extends Entity> = TypedOmit<T, 'id' | 'metadata'> & { id?: string, metadata?: Partial<Pick<EntityMetadata, 'attributes'>> };

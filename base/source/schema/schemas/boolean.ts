@@ -1,8 +1,8 @@
 import { isBoolean, isString } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type BooleanSchemaOptions = SimpleSchemaOptions;
+export type BooleanSchemaOptions = SimpleSchemaOptions<boolean>;
 
 export class BooleanSchema extends SimpleSchema<boolean> {
   override readonly name = 'boolean';
@@ -42,5 +42,5 @@ export function boolean(options?: BooleanSchemaOptions): BooleanSchema {
 }
 
 export function BooleanProperty(options?: BooleanSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(boolean(options), options);
+  return PropertySchema((data) => boolean({ description: data.description, example: data.example, ...options }), options);
 }

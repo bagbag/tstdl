@@ -1,3 +1,4 @@
+import { JsonPath, type JsonPathInput } from '#/json-path/json-path.js';
 import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject } from '#/types.js';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
@@ -135,6 +136,31 @@ export function deepObjectEntries(object: ObjectLiteral, keepInnerObjects: boole
   }
 
   return entries;
+}
+
+export function fromDeepObjectEntries(entries: readonly (readonly [JsonPathInput, any])[]): ObjectLiteral {
+  const obj: Record = {};
+
+  for (const [path, value] of entries) {
+    const jsonPath = JsonPath.from(path);
+
+    let target = obj;
+
+    for (let i = 0; i < jsonPath.nodes.length - 1; i++) {
+      if (hasOwnProperty(target, jsonPath.nodes[i]!)) {
+        target = obj[jsonPath.nodes[i]!];
+      }
+      else {
+        const child = {};
+        target[jsonPath.nodes[i]!] = child;
+        target = child;
+      }
+    }
+
+    target[jsonPath.nodes.at(-1)!] = value;
+  }
+
+  return obj;
 }
 
 export function omit<T extends Record, K extends keyof T>(object: T, ...keys: K[]): SimplifyObject<Omit<T, K>> {

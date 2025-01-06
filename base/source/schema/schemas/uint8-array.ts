@@ -1,8 +1,8 @@
 import { isDefined, isUint8Array } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type Uint8ArraySchemaOptions = SimpleSchemaOptions & {
+export type Uint8ArraySchemaOptions = SimpleSchemaOptions<Uint8Array> & {
   /** Minimum byte length */
   minimumLength?: number,
 
@@ -34,5 +34,5 @@ export function uint8Array(options?: Uint8ArraySchemaOptions): Uint8ArraySchema 
 }
 
 export function Uint8ArrayProperty(options?: Uint8ArraySchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(uint8Array(options), options);
+  return PropertySchema((data) => uint8Array({ description: data.description, example: data.example, ...options }), options);
 }

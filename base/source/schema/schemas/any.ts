@@ -1,5 +1,7 @@
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { Schema, type SchemaTestResult } from '../schema.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOptions, type SchemaTestResult } from '../schema.js';
+
+export type AnySchemaOptions = SchemaOptions<any>;
 
 export class AnySchema extends Schema<any> {
   override readonly name = 'any';
@@ -9,10 +11,10 @@ export class AnySchema extends Schema<any> {
   }
 }
 
-export function any(): AnySchema {
-  return new AnySchema();
+export function any(options?: AnySchemaOptions): AnySchema {
+  return new AnySchema(options);
 }
 
-export function Any(options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(any(), options);
+export function Any(options?: AnySchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => any({ description: data.description, example: data.example, ...options }), options);
 }

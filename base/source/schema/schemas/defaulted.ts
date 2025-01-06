@@ -1,17 +1,19 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isNullOrUndefined } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
+
+export type DefaultSchemaOptions<T, D> = SchemaOptions<T | D>;
 
 export class DefaultSchema<T, D> extends Schema<T | D> {
   override readonly name: string;
   readonly schema: Schema<T>;
   readonly defaultValue: D;
 
-  constructor(schema: SchemaTestable<T>, defaultValue: D) {
-    super();
+  constructor(schema: SchemaTestable<T>, defaultValue: D, options?: DefaultSchemaOptions<T, D>) {
+    super(options);
 
     this.schema = schemaTestableToSchema(schema);
     this.defaultValue = defaultValue;
@@ -28,10 +30,10 @@ export class DefaultSchema<T, D> extends Schema<T | D> {
   }
 }
 
-export function defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D): DefaultSchema<T, D> {
-  return new DefaultSchema(schema, defaultValue);
+export function defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: DefaultSchemaOptions<T, D>): DefaultSchema<T, D> {
+  return new DefaultSchema(schema, defaultValue, options);
 }
 
-export function Defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(defaulted(schema, defaultValue), options);
+export function Defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: DefaultSchemaOptions<T, D> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => defaulted(schema, defaultValue, { description: data.description, example: data.example, ...options }), options);
 }

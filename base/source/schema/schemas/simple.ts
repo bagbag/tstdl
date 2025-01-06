@@ -3,10 +3,10 @@ import type { AbstractConstructor, OneOrMany } from '#/types.js';
 import { isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
 import { SchemaError } from '../schema.error.js';
-import { Schema, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { Schema, type SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import type { CoerceResult, Coercible, ConstraintResult } from '../types.js';
 
-export type SimpleSchemaOptions = Coercible;
+export type SimpleSchemaOptions<T> = SchemaOptions<T> & Coercible;
 
 type SimpleSchemaRefinements<T> = {
   coercers?: SimpleSchemaCoercers<T>,
@@ -31,13 +31,13 @@ export type SimpleSchemaGotValueFormatter = (value: unknown) => string;
 export abstract class SimpleSchema<T> extends Schema<T> {
   readonly #guardFn: (value: any) => value is T;
   readonly #expected: OneOrMany<string | AbstractConstructor>;
-  readonly #options: SimpleSchemaOptions;
+  readonly #options: SimpleSchemaOptions<T>;
   readonly #coercers: SimpleSchemaCoercers<T>;
   readonly #constraints: SimpleSchemaConstraint<T>[];
   readonly #gotValueFormatter: SimpleSchemaGotValueFormatter;
 
-  constructor(expected: OneOrMany<string | AbstractConstructor>, guardFn: (value: any) => value is T, options: SimpleSchemaOptions = {}, refinements: SimpleSchemaRefinements<T> = {}) {
-    super();
+  constructor(expected: OneOrMany<string | AbstractConstructor>, guardFn: (value: any) => value is T, options: SimpleSchemaOptions<T> = {}, refinements: SimpleSchemaRefinements<T> = {}) {
+    super(options);
 
     this.#expected = expected;
     this.#guardFn = guardFn;

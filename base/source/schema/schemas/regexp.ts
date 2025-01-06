@@ -1,9 +1,9 @@
 import { isRegExp } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type RegExpSchemaOptions = SimpleSchemaOptions;
+export type RegExpSchemaOptions = SimpleSchemaOptions<RegExp>;
 
 export class RegExpSchema extends SimpleSchema<RegExp> {
   override readonly name = 'RegExp';
@@ -30,5 +30,5 @@ export function regExp(options?: RegExpSchemaOptions): RegExpSchema {
 }
 
 export function RegExpProperty(options?: SchemaPropertyDecoratorOptions & RegExpSchemaOptions): SchemaPropertyDecorator {
-  return Property(regExp(options), options);
+  return PropertySchema((data) => regExp({ description: data.description, example: data.example, ...options }), options);
 }

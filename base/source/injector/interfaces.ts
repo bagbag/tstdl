@@ -8,18 +8,19 @@ export const afterResolve: unique symbol = Symbol('after resolve');
 export type ResolveArgumentType = typeof resolveArgumentType;
 
 export type ResolveArgument<T, Fallback = undefined> = undefined | (
-  T extends Resolvable<infer U> ? U
-  : T extends Type<Resolvable<infer U>> ? U
+  T extends Resolvable<infer U> ? (U | undefined)
+  : T extends Type<Resolvable<infer U>> ? (U | undefined)
   : T extends (ArgumentedInjectionToken<any, any> | ReifyingInjectionToken) ? InjectionTokenArgument<T>
   : Fallback
 );
 
 export interface Resolvable<A = unknown, D extends Record = Record> extends Partial<AfterResolve<A, D>> {
+
   /**
-   * type of resolve argument
+   * Type of resolve argument
    * @deprecated only used for type inference
    */
-  readonly [resolveArgumentType]: A;
+  readonly [resolveArgumentType]?: A;
 }
 
 export interface AfterResolve<A = unknown, D extends Record = Record> {

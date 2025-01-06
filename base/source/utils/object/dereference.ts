@@ -1,8 +1,11 @@
 import { JsonPath, type JsonPathInput } from '#/json-path/index.js';
 import type { Record } from '#/types.js';
 import { memoizeSingle } from '../function/memoize.js';
+import { isNullOrUndefined } from '../type-guards.js';
 
-export type CompiledDereferencer = (object: object) => unknown;
+export type DereferenceOptions = {
+  optional?: boolean
+};
 
 /**
  * Compiles a dereferencer for a specific reference
@@ -10,10 +13,26 @@ export type CompiledDereferencer = (object: object) => unknown;
  * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
-export function compileDereferencer(reference: JsonPathInput): (object: object) => unknown {
+export function compileDereferencer(reference: JsonPathInput, options?: DereferenceOptions): (object: object) => unknown {
   const nodes = JsonPath.from(reference).nodes;
 
-  function dereferencer(object: object): unknown {
+  if (options?.optional == true) {
+    return function optionalDereferencer(object: object): unknown {
+      let target = object;
+
+      for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
+        if (isNullOrUndefined(target)) {
+          return undefined;
+        }
+
+        target = (target as Record)[nodes[i]!];
+      }
+
+      return target;
+    };
+  }
+
+  return function dereferencer(object: object): unknown {
     let target = object;
 
     for (let i = 0; i < nodes.length; i++) { // eslint-disable-line @typescript-eslint/prefer-for-of
@@ -21,9 +40,7 @@ export function compileDereferencer(reference: JsonPathInput): (object: object) 
     }
 
     return target;
-  }
-
-  return dereferencer;
+  };
 }
 
 /**
@@ -36,8 +53,8 @@ export function compileDereferencer(reference: JsonPathInput): (object: object) 
  * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
-export function dereference(object: object, reference: JsonPathInput): unknown {
-  return compileDereferencer(reference)(object);
+export function dereference(object: object, reference: JsonPathInput, options?: DereferenceOptions): unknown {
+  return compileDereferencer(reference, options)(object);
 }
 
 /**
@@ -51,11 +68,11 @@ export function dereference(object: object, reference: JsonPathInput): unknown {
  * @param reference path to property in dot notation or {@link JsonPath}
  * @returns referenced value
  */
-export function getCachedDereference(): typeof dereference {
+export function getCachedDereference(options?: DereferenceOptions): typeof dereference {
   const memoizedDereferencer = memoizeSingle(compileDereferencer);
 
   function cachedDereference(object: object, reference: JsonPathInput): unknown {
-    return memoizedDereferencer(reference)(object);
+    return memoizedDereferencer(reference, options)(object);
   }
 
   return cachedDereference;

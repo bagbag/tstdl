@@ -1,5 +1,7 @@
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import { Schema, type SchemaTestResult } from '../schema.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { Schema, type SchemaOptions, type SchemaTestResult } from '../schema.js';
+
+export type UnknownSchemaOptions = SchemaOptions<unknown>;
 
 export class UnknownSchema extends Schema<unknown> {
   override readonly name = 'unknown';
@@ -9,10 +11,10 @@ export class UnknownSchema extends Schema<unknown> {
   }
 }
 
-export function unknown(): UnknownSchema {
-  return new UnknownSchema();
+export function unknown(options?: UnknownSchemaOptions): UnknownSchema {
+  return new UnknownSchema(options);
 }
 
-export function Unknown(options?: SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(unknown(), options);
+export function Unknown(options?: UnknownSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => unknown({ description: data.description, example: data.example, ...options }), options);
 }

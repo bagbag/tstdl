@@ -1,16 +1,11 @@
-import { NotSupportedError } from '#/errors/not-supported.error.js';
-import { dynamicImport } from '#/import.js';
-import { supportsReadableStream } from '#/supports.js';
-import type { ObjectLiteral } from '#/types.js';
 import type * as NodeStream from 'node:stream';
-import type { Stream, Transform } from 'node:stream';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import type * as NodeZlib from 'node:zlib';
-import { isAsyncIterable } from './async-iterable-helpers/is-async-iterable.js';
+
+import { dynamicImport } from '#/import.js';
 import { encodeBase64, encodeBase64Url } from './base64.js';
 import { decodeText, encodeHex, encodeUtf8 } from './encoding.js';
-import { getReadableStreamFromIterable } from './stream/readable-stream-adapter.js';
-import { isFunction } from './type-guards.js';
+import { readableStreamFromPromise } from './stream/readable-stream-from-promise.js';
+import { assertDefined, isNotNullOrUndefined } from './type-guards.js';
 import { zBase32Encode } from './z-base32.js';
 
 export interface CompressionResult {
@@ -50,23 +45,21 @@ export function compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgor
   };
 }
 
+const compressFunction = {
+  'gzip': 'gzip' satisfies keyof typeof NodeZlib,
+  'brotli': 'brotliCompress' satisfies keyof typeof NodeZlib,
+  'deflate': 'deflate' satisfies keyof typeof NodeZlib,
+  'deflate-raw': 'deflateRaw' satisfies keyof typeof NodeZlib
+} as const;
+
 async function _compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
-  const zlib = await dynamicImport('zlib');
+  const zlib = await dynamicImport<typeof NodeZlib>('zlib');
+  const compressor = zlib[compressFunction[algorithm]];
+  assertDefined(compressor, `Unsupported algorithm ${algorithm}`);
 
   return new Promise<Uint8Array>((resolve, reject) => {
-    const compressor: ((buffer: NodeZlib.InputType, callback: NodeZlib.CompressCallback) => void) | ((buffer: NodeZlib.InputType, options: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions, callback: NodeZlib.CompressCallback) => void) | undefined
-      = algorithm == 'gzip' ? zlib.gzip
-        : algorithm == 'brotli' ? zlib.brotliDecompress
-          : algorithm == 'deflate' ? zlib.deflate
-            : algorithm == 'deflate-raw' ? zlib.deflateRaw // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-              : undefined;
-
-    if (compressor == undefined) {
-      throw new Error(`unsupported algorithm ${algorithm}`);
-    }
-
     const callback: NodeZlib.CompressCallback = (error, result) => {
-      if (error != undefined) {
+      if (isNotNullOrUndefined(error)) {
         reject(error);
       }
       else {
@@ -107,31 +100,29 @@ export function decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlg
   };
 }
 
-export function decompressStream(stream: Stream | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: NodeZlib.ZlibOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: Stream | ReadableStream, algorithm: 'brotli', options?: NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array> {
-  const decompressedStream = _decompressStream(stream, algorithm, options);
-  return getReadableStreamFromIterable(decompressedStream);
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: NodeZlib.ZlibOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'brotli', options?: NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array> {
+  const streamPromise = _decompressStream(stream, algorithm, options);
+  return readableStreamFromPromise(streamPromise);
 }
 
+const decompressFunction = {
+  'gzip': 'gunzip' satisfies keyof typeof NodeZlib,
+  'brotli': 'brotliDecompress' satisfies keyof typeof NodeZlib,
+  'deflate': 'inflate' satisfies keyof typeof NodeZlib,
+  'deflate-raw': 'inflateRaw' satisfies keyof typeof NodeZlib
+} as const;
+
 async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
-  const zlib = await dynamicImport('zlib');
+  const zlib = await dynamicImport<typeof NodeZlib>('zlib');
+  const decompressor = zlib[decompressFunction[algorithm]];
+  assertDefined(decompressor, `Unsupported algorithm ${algorithm}`);
 
   return new Promise<Uint8Array>((resolve, reject) => {
-    const decompressor: ((buffer: NodeZlib.InputType, callback: NodeZlib.CompressCallback) => void) | ((buffer: NodeZlib.InputType, options: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions, callback: NodeZlib.CompressCallback) => void) | undefined
-      = algorithm == 'gzip' ? zlib.gunzip
-        : algorithm == 'brotli' ? zlib.brotliDecompress
-          : algorithm == 'deflate' ? zlib.inflate
-            : algorithm == 'deflate-raw' ? zlib.inflateRaw // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-              : undefined;
-
-    if (decompressor == undefined) {
-      throw new Error(`unsupported algorithm ${algorithm}`);
-    }
-
     const callback: NodeZlib.CompressCallback = (error, result) => {
-      if (error != undefined) {
+      if (isNotNullOrUndefined(error)) {
         reject(error);
       }
       else {
@@ -148,32 +139,25 @@ async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlg
   });
 }
 
-async function* _decompressStream(stream: AsyncIterable<Uint8Array> | Stream | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): AsyncIterable<Uint8Array> {
+const decompressStreamFunction = {
+  'gzip': 'createGunzip' satisfies keyof typeof NodeZlib,
+  'brotli': 'createBrotliDecompress' satisfies keyof typeof NodeZlib,
+  'deflate': 'createInflate' satisfies keyof typeof NodeZlib,
+  'deflate-raw': 'createInflateRaw' satisfies keyof typeof NodeZlib
+} as const;
+
+async function _decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<ReadableStream<Uint8Array>> {
   const zlib = await dynamicImport<typeof NodeZlib>('zlib');
   const nodeStream = await dynamicImport<typeof NodeStream>('stream');
 
-  const decompressor: Transform | undefined
-    = algorithm == 'gzip' ? zlib.createGunzip(options)
-      : algorithm == 'brotli' ? zlib.createBrotliDecompress(options)
-        : algorithm == 'deflate' ? zlib.createInflate(options)
-          : algorithm == 'deflate-raw' ? zlib.createInflateRaw(options) // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-            : undefined;
+  const nodeDecompressor = zlib[decompressStreamFunction[algorithm]](options);
+  assertDefined(nodeDecompressor, `Unsupported algorithm ${algorithm}`);
 
-  if (decompressor == undefined) {
-    throw new Error(`unsupported algorithm ${algorithm}`);
+  const decompressor = nodeStream.Transform.toWeb(nodeDecompressor) as TransformStream<Uint8Array, Uint8Array>;
+
+  if (stream instanceof nodeStream.Readable) {
+    return (nodeStream.Readable.toWeb(stream) as ReadableStream<Uint8Array>).pipeThrough(decompressor);
   }
 
-  if (stream instanceof nodeStream.Stream) {
-    yield* stream.pipe(decompressor);
-  }
-
-  if (isAsyncIterable(stream)) {
-    yield* nodeStream.Readable.from(stream).pipe(decompressor);
-  }
-
-  if (supportsReadableStream && (stream instanceof ReadableStream)) {
-    yield* nodeStream.Readable.fromWeb(stream as NodeReadableStream).pipe(decompressor);
-  }
-
-  throw new NotSupportedError(`Stream type (${(stream as (ObjectLiteral | undefined))?.constructor.name ?? (isFunction(stream) ? stream.name : 'unknown type')}) not supported.`);
+  return stream.pipeThrough(decompressor);
 }

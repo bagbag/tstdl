@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention */
 
-import type { HasDefault as DrizzleHasDefault, IsPrimaryKey as DrizzleIsPrimaryKey } from 'drizzle-orm';
-import type { boolean, doublePrecision, integer, PgColumnBuilder, PgColumnBuilderBase, PgEnumColumnBuilderInitial, text, uuid } from 'drizzle-orm/pg-core';
+import type { $Type, HasDefault as DrizzleHasDefault, IsPrimaryKey as DrizzleIsPrimaryKey } from 'drizzle-orm';
+import type { boolean, date, doublePrecision, integer, jsonb, PgColumnBuilder, PgColumnBuilderBase, PgEnumColumnBuilderInitial, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import type { GetTagMetadata, Tagged, UnwrapTagged } from 'type-fest';
 
 import { Array, Integer } from '#/schema/index.js';
-import type { EnumerationObject, EnumerationValue, ObjectLiteral, Record, UnionToTuple } from '#/types.js';
-import { Uuid } from './schemas/index.js';
+import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
+import { Embedded, Unique } from './decorators.js';
+import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
 
 export type IsPrimaryKey<T> =
   T extends Tagged<unknown, 'column', PgColumnBuilderBase> ? Tagged<UnwrapTagged<T>, 'column', DrizzleIsPrimaryKey<GetTagMetadata<T, 'column'>>>
@@ -15,8 +16,6 @@ export type IsPrimaryKey<T> =
 export type HasDefault<T> =
   T extends Tagged<unknown, 'column', PgColumnBuilderBase> ? Tagged<UnwrapTagged<T>, 'column', DrizzleHasDefault<GetTagMetadata<T, 'column'>>>
   : Tagged<T, 'column', ColumnBuilder<T>>;
-
-export type Nested<T extends Record> = Tagged<T, 'column', { nested: T }>;
 
 type EnumColumn<T extends EnumerationObject, ColumnName extends string = ''> = PgEnumColumnBuilderInitial<ColumnName, UnionToTuple<`${EnumerationValue<T>}`> extends [string, ...string[]] ? UnionToTuple<`${EnumerationValue<T>}`> : ['NO_VALUES_PROVIDED']>;
 
@@ -35,12 +34,19 @@ export type TypeBuilder<T, ColumnName extends string = never> =
   T extends infer U ? Tagged<U, 'column', ColumnBuilder<U>> :
   never : never;
 
+export declare const embedded: unique symbol;
+
+export type Embedded<T = AbstractConstructor, P extends string = ''> = T & { [embedded]: { prefix: P } };
+
 export type Array<T extends Tagged<ObjectLiteral, 'column', PgColumnBuilder<any>>> = Tagged<UnwrapTagged<T>[], 'column', ReturnType<GetTagMetadata<T, 'column'>['array']>>;
+export type Json<T extends ObjectLiteral = ObjectLiteral> = Tagged<T, 'column', $Type<ReturnType<typeof jsonb>, T>>;
 export type Enum<T extends EnumerationObject> = Tagged<EnumerationValue<T>, 'column', EnumColumn<T>>;
 export type Text = Tagged<string, 'column', ReturnType<typeof text<string, [string, ...string[]]>>>;
 export type Uuid = Tagged<string, 'column', ReturnType<typeof uuid>>;
 export type Integer = Tagged<number, 'column', ReturnType<typeof integer>>;
 export type DoublePrecision = Tagged<number, 'column', ReturnType<typeof doublePrecision>>;
 export type Boolean = Tagged<number, 'column', ReturnType<typeof boolean>>;
+export type NumericDate = Tagged<number, 'column', ReturnType<typeof date>>;
+export type Timestamp = Tagged<number, 'column', ReturnType<typeof timestamp>>;
 
-export { Array, Integer, Uuid };
+export { Array, Embedded, Integer, Json, NumericDate, Timestamp, Unique, Uuid };

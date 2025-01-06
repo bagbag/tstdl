@@ -54,6 +54,7 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     }
     else {
       this._options = pathOrNodesOrOptions;
+      this._nodes = [];
     }
   }
 
@@ -67,6 +68,10 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
     return isJsonPath(path);
   }
 
+  toString(): string {
+    return this.path;
+  }
+
   /**
    * Add a property or index to current path
    * @param key
@@ -74,6 +79,10 @@ export class JsonPath<T = any> implements Iterable<JsonPathNode> {
    */
   add<K extends keyof T>(key: K): JsonPath<T[K]> {
     return new JsonPath([...this.nodes, key], this._options);
+  }
+
+  slice(start: number, end?: number): JsonPath {
+    return new JsonPath(this.nodes.slice(start, end), this._options);
   }
 
   /**

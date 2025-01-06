@@ -1,9 +1,9 @@
 import { isValidDate } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type DateSchemaOptions = SimpleSchemaOptions & {
+export type DateSchemaOptions = SimpleSchemaOptions<globalThis.Date> & {
   integer?: boolean
 };
 
@@ -34,5 +34,5 @@ export function date(options?: DateSchemaOptions): DateSchema {
 }
 
 export function DateProperty(options?: SchemaPropertyDecoratorOptions & DateSchemaOptions): SchemaPropertyDecorator {
-  return Property(date(options), options);
+  return PropertySchema((data) => date({ description: data.description, example: data.example, ...options }), options);
 }

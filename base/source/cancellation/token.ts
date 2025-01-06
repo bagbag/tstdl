@@ -1,7 +1,6 @@
-import type { Observable, Observer, Subscribable, Unsubscribable } from 'rxjs';
-import { BehaviorSubject, defer, filter, first, firstValueFrom, from, fromEvent, isObservable, map, skip, take } from 'rxjs';
+import { BehaviorSubject, defer, filter, first, firstValueFrom, from, fromEvent, isObservable, map, type Observable, type Observer, skip, type Subscribable, take, type Unsubscribable } from 'rxjs';
 
-import { noopOperator } from '#/rxjs/noop.js';
+import { noopOperator } from '#/rxjs-utils/noop.js';
 import { noop } from '../utils/noop.js';
 import { isBoolean } from '../utils/type-guards.js';
 

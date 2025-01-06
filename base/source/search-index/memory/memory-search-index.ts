@@ -1,9 +1,9 @@
 import type { ComparisonTextQuery, Entity, Query, QueryOptions } from '#/database/index.js';
 import { compareByValueSelectionOrdered } from '#/utils/comparison.js';
 import { FactoryMap } from '#/utils/factory-map.js';
-import { normalizeText } from '#/utils/helpers.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { intersectSets, unionSets } from '#/utils/set.js';
+import { normalizeText } from '#/utils/string/index.js';
 import { Timer } from '#/utils/timer.js';
 import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
 import { SearchIndex } from '../search-index.js';

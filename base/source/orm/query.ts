@@ -1,4 +1,6 @@
-import type { Flatten, Record } from '#/types.js';
+import type { SQLWrapper } from 'drizzle-orm';
+
+import type { Flatten, Record, Untagged } from '#/types.js';
 import type { Geometry } from '#/types/geo-json.js';
 
 export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
@@ -6,7 +8,7 @@ export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & Logica
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
 export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & Record<ComparisonQueryOrValue>;
-export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | T | Flatten<T>;
+export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | ComparisonValue<T>;
 
 export type ComparisonQuery<T = any> = Partial<
   & ComparisonNotQuery<T>
@@ -34,7 +36,9 @@ export type SpecialQuery<T = any> = Partial<TextSpanQuery<T>>;
 export type SpecialQueryTypes = keyof SpecialQuery;
 export const allSpecialQueryTypes: SpecialQueryTypes[] = ['$textSpan'];
 
-export type Query<T = any> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
+export type Query<T = any> = SQLWrapper | QueryObject<T>;
+
+export type QueryObject<T> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
 export type QueryTypes = LogicalQueryTypes | ComparisonQueryTypes | SpecialQueryTypes;
 export const allQueryTypes = [...allLogicalQueryTypes, ...allComparisonQueryTypes, ...allSpecialQueryTypes];
 
@@ -45,22 +49,22 @@ export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
 export type LogicalAndQuery<T = any> = {
-  $and: Query<T>[]
+  $and: readonly Query<T>[]
 };
 
 export type LogicalOrQuery<T = any> = {
-  $or: Query<T>[]
+  $or: readonly Query<T>[]
 };
 
 export type LogicalNorQuery<T = any> = {
-  $nor: Query<T>[]
+  $nor: readonly Query<T>[]
 };
 
-export type ComparisonValue<T> = T | Flatten<T>;
+export type ComparisonValue<T> = Untagged<T | Flatten<T>>;
 export type ComparisonValueWithRegex<T> = T extends string
   ? ComparisonValue<T | RegExp>
-  : T extends string[]
-  ? ComparisonValue<(Flatten<T> | RegExp)[]>
+  : T extends readonly string[]
+  ? ComparisonValue<readonly (Flatten<T> | RegExp)[]>
   : (T | Flatten<T>);
 
 export type ComparisonNotQuery<T = any> = {
@@ -80,23 +84,23 @@ export type ComparisonExistsQuery = {
 };
 
 export type ComparisonItemQuery<T = any> = {
-  $item: T extends (infer U)[]
-  ? U extends Record<any, any>
+  $item: T extends readonly (infer U)[]
+  ? U extends Record
   ? Query<U>
   : ComparisonQuery<U>
   : never
 };
 
 export type ComparisonInQuery<T = any> = {
-  $in: ComparisonValueWithRegex<T>[]
+  $in: readonly ComparisonValueWithRegex<T>[]
 };
 
 export type ComparisonNotInQuery<T = any> = {
-  $nin: ComparisonValueWithRegex<T>[]
+  $nin: readonly ComparisonValueWithRegex<T>[]
 };
 
 export type ComparisonAllQuery<T = any> = {
-  $all: ComparisonValueWithRegex<T>[]
+  $all: readonly ComparisonValueWithRegex<T>[]
 };
 
 export type ComparisonGreaterThanQuery<T = any> = {
@@ -154,7 +158,7 @@ export const allTextSpanQueryModes: TextSpanQueryMode[] = ['best', 'most', 'cros
 
 export type TextSpanQuery<T = any> = {
   $textSpan: {
-    fields: (Extract<keyof T, string>)[],
+    fields: readonly (Extract<keyof T, string>)[],
     text: string,
     mode?: TextSpanQueryMode,
     operator?: Operator

@@ -25,7 +25,7 @@ let globalInjector: Injector | undefined;
 let _isDevMode = true;
 
 /**
- * @deprecated Should be avoided. Use `Application` scoped injector instead.
+ * @deprecated Usage of `getGlobalInjector` should be avoided. Use `Application` scoped injector instead.
  */
 export function getGlobalInjector(): Injector {
   if (isUndefined(globalInjector)) {

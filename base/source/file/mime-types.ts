@@ -53,14 +53,7 @@ export const mimeTypes: Record<string, string[]> = {
   'application/mp4': ['mp4s'],
   'application/msword': ['doc', 'dot'],
   'application/mxf': ['mxf'],
-  'application/octet-stream': [
-    'bin', 'dms',
-    'lrf', 'mar',
-    'so', 'dist',
-    'distz', 'pkg',
-    'bpk', 'dump',
-    'elc', 'deploy'
-  ],
+  'application/octet-stream': ['bin', 'dms', 'lrf', 'mar', 'so', 'dist', 'distz', 'pkg', 'bpk', 'dump', 'elc', 'deploy'],
   'application/oda': ['oda'],
   'application/oebps-package+xml': ['opf'],
   'application/ogg': ['ogx'],
@@ -501,13 +494,7 @@ export const mimeTypes: Record<string, string[]> = {
   'application/x-csh': ['csh'],
   'application/x-debian-package': ['deb', 'udeb'],
   'application/x-dgc-compressed': ['dgc'],
-  'application/x-director': [
-    'dir', 'dcr',
-    'dxr', 'cst',
-    'cct', 'cxt',
-    'w3d', 'fgd',
-    'swa'
-  ],
+  'application/x-director': ['dir', 'dcr', 'dxr', 'cst', 'cct', 'cxt', 'w3d', 'fgd', 'swa'],
   'application/x-doom': ['wad'],
   'application/x-dtbncx+xml': ['ncx'],
   'application/x-dtbook+xml': ['dtb'],
@@ -585,11 +572,7 @@ export const mimeTypes: Record<string, string[]> = {
   'application/x-xliff+xml': ['xlf'],
   'application/x-xpinstall': ['xpi'],
   'application/x-xz': ['xz'],
-  'application/x-zmachine': [
-    'z1', 'z2', 'z3',
-    'z4', 'z5', 'z6',
-    'z7', 'z8'
-  ],
+  'application/x-zmachine': ['z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7', 'z8'],
   'application/xaml+xml': ['xaml'],
   'application/xcap-diff+xml': ['xdf'],
   'application/xenc+xml': ['xenc'],
@@ -712,12 +695,7 @@ export const mimeTypes: Record<string, string[]> = {
   'text/html': ['html', 'htm'],
   'text/javascript': ['js', 'mjs'],
   'text/n3': ['n3'],
-  'text/plain': [
-    'txt', 'text',
-    'conf', 'def',
-    'list', 'log',
-    'in'
-  ],
+  'text/plain': ['txt', 'text', 'conf', 'def', 'list', 'log', 'in'],
   'text/prs.lines.tag': ['dsc'],
   'text/richtext': ['rtx'],
   'text/sgml': ['sgml', 'sgm'],
@@ -740,12 +718,7 @@ export const mimeTypes: Record<string, string[]> = {
   'text/vnd.wap.wml': ['wml'],
   'text/vnd.wap.wmlscript': ['wmls'],
   'text/x-asm': ['s', 'asm'],
-  'text/x-c': [
-    'c', 'cc',
-    'cxx', 'cpp',
-    'h', 'hh',
-    'dic'
-  ],
+  'text/x-c': ['c', 'cc', 'cxx', 'cpp', 'h', 'hh', 'dic'],
   'text/x-fortran': ['f', 'for', 'f77', 'f90'],
   'text/x-java-source': ['java'],
   'text/x-nfo': ['nfo'],

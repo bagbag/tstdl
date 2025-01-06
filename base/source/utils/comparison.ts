@@ -52,7 +52,9 @@ export function compareByValueToOrder<T>(order: T[]): (a: T, b: T) => number {
   return compareByValueSelectionToOrder(order, (item) => item);
 }
 
-export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], selector: (item: T) => TSelect): (a: T, b: T) => number {
+export const orderRest = Symbol('Order rest');
+
+export function compareByValueSelectionToOrder<T, TSelect>(order: (TSelect | typeof orderRest)[], selector: (item: T) => TSelect): (a: T, b: T) => number {
   const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as const);
   const indexMap = new Map(indexMapEntries);
 
@@ -60,11 +62,11 @@ export function compareByValueSelectionToOrder<T, TSelect>(order: TSelect[], sel
   return function compareByValueSelectionToOrder(a: T, b: T): number {
     const selectedA = selector(a);
     const selectedB = selector(b);
-    const indexA = indexMap.get(selectedA);
-    const indexB = indexMap.get(selectedB);
+    const indexA = indexMap.get(selectedA) ?? indexMap.get(orderRest);
+    const indexB = indexMap.get(selectedB) ?? indexMap.get(orderRest);
 
     if (indexA == undefined || indexB == undefined) {
-      throw new Error('value not defined in order');
+      throw new Error('Value not defined in order.');
     }
 
     return compareByValue(indexA, indexB);

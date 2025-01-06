@@ -2,18 +2,19 @@ import type { Enumeration as EnumerationType, EnumerationValue } from '#/types.j
 import { enumValues } from '#/utils/enum.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray, isString } from '#/utils/type-guards.js';
-import { Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
-export type EnumerationSchemaOptions = SimpleSchemaOptions;
+export type EnumerationSchemaOptions<T extends EnumerationType> = SimpleSchemaOptions<EnumerationValue<T>>;
 
 export class EnumerationSchema<const T extends EnumerationType> extends SimpleSchema<EnumerationValue<T>> {
   readonly #allowedValuesSet: Set<EnumerationValue>;
 
   override readonly name: string;
   readonly enumeration: EnumerationType;
+  readonly allowedValues: readonly EnumerationValue<T>[];
 
-  constructor(enumeration: T, options?: EnumerationSchemaOptions) {
+  constructor(enumeration: T, options?: EnumerationSchemaOptions<T>) {
     const allowedValues = isArray(enumeration) ? enumeration : enumValues(enumeration);
     const allowedValuesString = allowedValues.map((value) => (isString(value) ? `"${value}"` : String(value))).join(', ');
 
@@ -32,17 +33,18 @@ export class EnumerationSchema<const T extends EnumerationType> extends SimpleSc
 
     this.enumeration = enumeration;
 
+    this.allowedValues = allowedValues as EnumerationValue<T>[];
     this.#allowedValuesSet = new Set(allowedValues);
 
     lazyProperty(this, 'name', () => `Enumeration[${allowedValuesString}]`);
   }
 }
 
-export function enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions): EnumerationSchema<T> {
+export function enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions<T>): EnumerationSchema<T> {
   return new EnumerationSchema(enumeration, options);
 }
 
-export function Enumeration(enumeration: EnumerationType, options?: EnumerationSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator;
-export function Enumeration(enums: EnumerationType, options?: EnumerationSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
-  return Property(enumeration(enums, options), options);
+export function Enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator;
+export function Enumeration<const T extends EnumerationType>(enums: T, options?: EnumerationSchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+  return PropertySchema((data) => enumeration(enums, { description: data.description, example: data.example, ...options }), options);
 }
