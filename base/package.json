@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.4",
+  "version": "0.92.7",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -84,6 +84,7 @@
     "./rpc/endpoints": "./rpc/endpoints/index.js",
     "./rxjs": "./rxjs-utils/index.js",
     "./schema": "./schema/index.js",
+    "./schema/converters": "./schema/converters/index.js",
     "./search-index": "./search-index/index.js",
     "./search-index/elastic": "./search-index/elastic/index.js",
     "./search-index/memory": "./search-index/memory/index.js",

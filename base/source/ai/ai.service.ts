@@ -170,8 +170,9 @@ export class AiService implements Resolvable<AiServiceArgument> {
     this.#logger.verbose('Extracting data...');
     const result = await this.getModel(options?.model ?? this.defaultModel).generateContent({
       generationConfig: {
-        maxOutputTokens: 4096,
-        temperature: 0.5,
+        maxOutputTokens: 8192,
+        temperature: 0.75,
+        ...options,
         responseMimeType: 'application/json',
         responseSchema
       },

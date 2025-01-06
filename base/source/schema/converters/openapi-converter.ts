@@ -1,6 +1,6 @@
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { Json, UndefinableJsonObject } from '#/types.js';
-import { fromEntries, objectEntries } from '#/utils/object/object.js';
+import { fromEntries, hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { isDefined, isNotNull, isNumber, isString } from '#/utils/type-guards.js';
 import type { Schema, SchemaTestable } from '../schema.js';
 import { ArraySchema } from '../schemas/array.js';
@@ -19,8 +19,11 @@ import { schemaTestableToSchema } from '../testable.js';
 export function convertToOpenApiSchema(testable: SchemaTestable): UndefinableJsonObject {
   const schema = schemaTestableToSchema(testable);
 
+  const openApiSchema = convertToOpenApiSchemaBase(schema);
+
   return {
-    ...convertToOpenApiSchemaBase(schema),
+    ...openApiSchema,
+    ...(hasOwnProperty(openApiSchema, 'nullable') ? undefined : { nullable: false }),
     ...(isNotNull(schema.description) ? { description: schema.description } : undefined),
     ...(isDefined(schema.example) ? { example: schema.example as Json } : undefined)
   };
@@ -93,6 +96,7 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
 
     return {
       type: hasString ? 'string' : 'number',
+      format: 'enum',
       enum: schema.allowedValues
     };
   }
