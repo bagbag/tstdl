@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.91.53",
+  "version": "0.92.1",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -110,7 +110,7 @@
     "./utils/iterable-helpers": "./utils/iterable-helpers/index.js",
     "./utils/object": "./utils/object/index.js",
     "./utils/stream": "./utils/stream/index.js",
-    "./utils/string": "./utils/object/index.js"
+    "./utils/string": "./utils/string/index.js"
   },
   "dependencies": {
     "disposablestack": "1.1",
