@@ -1,5 +1,5 @@
 import { isBigInt } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions } from '../decorators/index.js';
 import type { SchemaPropertyDecorator } from '../decorators/types.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
@@ -39,6 +39,6 @@ export function bigint(options?: BigIntSchemaOptions): BigIntSchema {
   return new BigIntSchema(options);
 }
 
-export function BigIntProperty(options?: BigIntSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function BigIntProperty(options?: BigIntSchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => bigint({ description: data.description, example: data.example, ...options }), options);
 }

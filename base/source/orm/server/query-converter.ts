@@ -6,8 +6,8 @@ import type { Primitive, Record } from '#/types.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
 import type { ColumnDefinition, PgTableFromType } from './drizzle/schema-converter.js';
-import type { EntityType } from './entity.js';
-import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from './query.js';
+import type { EntityType } from '../entity.js';
+import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';
 
 const sqlTrue = sql`true`;
 

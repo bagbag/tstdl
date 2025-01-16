@@ -1,5 +1,5 @@
 
-import { databaseSchema } from '#/orm/database-schema.js';
+import { databaseSchema } from '#/orm/server/database-schema.js';
 import { DocumentCategory } from './document-category.model.js';
 import { DocumentCollectionDocument } from './document-collection-document.model.js';
 import { DocumentCollection } from './document-collection.model.js';

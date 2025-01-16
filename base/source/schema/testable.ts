@@ -1,6 +1,6 @@
 import type { AbstractConstructor, Record } from '#/types.js';
 import { isFunction } from '#/utils/type-guards.js';
-import { Schema, type SchemaTestable } from './schema.js';
+import { Schema, type SchemaOptions, type SchemaTestable } from './schema.js';
 import { bigint } from './schemas/bigint.js';
 import { boolean } from './schemas/boolean.js';
 import { func } from './schemas/function.js';
@@ -11,35 +11,35 @@ import { string } from './schemas/string.js';
 import { symbol } from './schemas/symbol.js';
 import { uint8Array } from './schemas/uint8-array.js';
 
-export function schemaTestableToSchema<T>(testable: SchemaTestable<T>): Schema<T> {
+export function schemaTestableToSchema<T>(testable: SchemaTestable<T>, options?: SchemaOptions<T>): Schema<T> {
   if (testable instanceof Schema) {
     return testable;
   }
 
   switch (testable) {
     case String:
-      return string() as Schema<any> as Schema<T>;
+      return string(options) as Schema<any> as Schema<T>;
 
     case Number:
-      return number() as Schema<any> as Schema<T>;
+      return number(options) as Schema<any> as Schema<T>;
 
     case Boolean:
-      return boolean() as Schema<any> as Schema<T>;
+      return boolean(options) as Schema<any> as Schema<T>;
 
     case BigInt:
-      return bigint() as Schema<any> as Schema<T>;
+      return bigint(options) as Schema<any> as Schema<T>;
 
     case Symbol:
-      return symbol() as Schema<any> as Schema<T>;
+      return symbol(options) as Schema<any> as Schema<T>;
 
     case Function as AbstractConstructor:
-      return func() as Schema<any> as Schema<T>;
+      return func(null, null) as Schema<any> as Schema<T>;
 
     case Uint8Array as AbstractConstructor:
-      return uint8Array() as Schema<any> as Schema<T>;
+      return uint8Array(options) as Schema<any> as Schema<T>;
 
     case ReadableStream as AbstractConstructor:
-      return readableStream() as Schema<any> as Schema<T>;
+      return readableStream(options) as Schema<any> as Schema<T>;
 
     default:
       return getSchemaFromReflection(testable as AbstractConstructor<Record>);

@@ -1,8 +1,8 @@
 import '#/polyfills.js';
 
 import { Application } from '#/application/application.js';
-import { configureDocumentManagement, migrateDocumentManagementSchema } from '#/document-management/module.js';
-import { DocumentManagementService } from '#/document-management/services/document-management.service.js';
+import { configureDocumentManagement, migrateDocumentManagementSchema } from '#/document-management/server/module.js';
+import { DocumentManagementService } from '#/document-management/server/services/document-management.service.js';
 import { injectAsync } from '#/injector/inject.js';
 import { configureS3ObjectStorage } from '#/object-storage/index.js';
 

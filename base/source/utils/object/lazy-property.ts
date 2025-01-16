@@ -1,4 +1,4 @@
-import type { AnyFunction, IfUnknown } from '#/types.js';
+import type { Function, IfUnknown } from '#/types.js';
 import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards.js';
 import { filterObject, hasOwnProperty, objectEntries } from './object.js';
 
@@ -23,7 +23,7 @@ export type LazyPropertyObjectDefinition<T extends object, P extends keyof T> = 
 export type LazyObjectValue<T> = { [lazyObjectValueSymbol]: typeof lazyObjectValueSymbol, value: T };
 
 export type LazyInitializerItem<T extends object, P extends keyof T> =
-  | Exclude<IfUnknown<T[P], never, T[P]>, AnyFunction | object>
+  | Exclude<IfUnknown<T[P], never, T[P]>, Function | object>
   | LazyPropertyInitializer<T, P>
   | LazyPropertyObjectDefinition<T, P>
   | LazyObjectValue<T[P]>;
@@ -111,9 +111,9 @@ export function lazyObject<T extends object>(initializers: { [P in keyof T]: Laz
       ? { value: value.value }
       : value;
 
-    const hasGetOrSet = hasOwnProperty(definition, 'get') || hasOwnProperty(definition, 'set');
-    const hasInitializer = hasOwnProperty(definition, 'initializer');
-    const hasValue = hasOwnProperty(definition, 'value');
+    const hasGetOrSet = hasOwnProperty<any>(definition, 'get') || hasOwnProperty<any>(definition, 'set');
+    const hasInitializer = hasOwnProperty<any>(definition, 'initializer');
+    const hasValue = hasOwnProperty<any>(definition, 'value');
 
     if ((Number(hasGetOrSet) + Number(hasInitializer) + Number(hasValue)) != 1) {
       throw new Error(`exactly one of value, initializer or get/set must be provided for key "${key as string}", but got none or multiple`);

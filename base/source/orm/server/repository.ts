@@ -16,9 +16,9 @@ import { fromDeepObjectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, assertNotNullPass, isNotNull, isUndefined } from '#/utils/type-guards.js';
 import { Database } from './database.js';
 import { ColumnDefinition, getColumnDefinitions, getDrizzleTableFromType, type PgTableFromType } from './drizzle/schema-converter.js';
-import type { Entity, EntityMetadata, EntityMetadataAttributes, EntityType, NewEntity } from './entity.js';
+import type { Entity, EntityMetadata, EntityMetadataAttributes, EntityType, NewEntity } from '../entity.js';
 import { convertQuery } from './query-converter.js';
-import type { Query } from './query.js';
+import type { Query } from '../query.js';
 import { DrizzleTransaction, Transaction, TransactionConfig } from './transaction.js';
 
 type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;

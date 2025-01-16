@@ -12,7 +12,7 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], MapItera
   readonly [Symbol.toStringTag] = 'WeakRefMap';
 
   /**
-   * provides the real size. This is slow because it requires a cleanup iteration
+   * Provides the real size. This is slow because it requires a cleanup iteration
    */
   get realSize(): number {
     this.cleanup();
@@ -108,10 +108,10 @@ export class WeakRefMap<K, V extends object> extends Collection<[K, V], MapItera
     return deleted;
   }
 
-  /** prune garbage collected entries */
+  /** Prune garbage collected entries */
   cleanup(): void {
     for (const _ of this) {
-      // ignore
+      // Ignore
     }
   }
 

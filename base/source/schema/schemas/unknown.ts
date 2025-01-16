@@ -1,4 +1,4 @@
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestResult } from '../schema.js';
 
 export type UnknownSchemaOptions = SchemaOptions<unknown>;
@@ -15,6 +15,6 @@ export function unknown(options?: UnknownSchemaOptions): UnknownSchema {
   return new UnknownSchema(options);
 }
 
-export function Unknown(options?: UnknownSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Unknown(options?: UnknownSchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => unknown({ description: data.description, example: data.example, ...options }), options);
 }

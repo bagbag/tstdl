@@ -1,5 +1,5 @@
 import { Defaulted, Integer, Record } from '#/schema/index.js';
-import { Type, TypedOmit, UntaggedDeep } from '#/types.js';
+import type { Type, TypedOmit, UntaggedDeep } from '#/types.js';
 import { Index, PrimaryKey } from './decorators.js';
 import { Embedded, type HasDefault, type IsPrimaryKey, Json, Timestamp, Uuid } from './types.js';
 

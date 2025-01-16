@@ -1,229 +1,315 @@
 import '#/polyfills.js';
 
-import { openAsBlob } from 'node:fs';
-import { unlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { FunctionDeclaration, FunctionDeclarationSchema, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part } from '@google/generative-ai';
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { type FileMetadataResponse, FileState, GoogleAIFileManager } from '@google/generative-ai/server';
-import { LiteralUnion } from 'type-fest';
-
-import { DetailsError } from '#/errors/details.error.js';
+import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import { Resolvable, type resolveArgumentType } from '#/injector/interfaces.js';
-import { Logger } from '#/logger/logger.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
-import { array, enumeration, nullable, object, OneOrMany, Schema, SchemaTestable } from '#/schema/index.js';
-import { Enumeration as EnumerationType, EnumerationValue } from '#/types.js';
+import { array, enumeration, nullable, object, OneOrMany, SchemaTestable, string } from '#/schema/index.js';
+import { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
-import { digest } from '#/utils/cryptography.js';
-import { formatBytes } from '#/utils/format.js';
-import { timeout } from '#/utils/timing.js';
-import { tryIgnoreAsync } from '#/utils/try-ignore.js';
-import { isBlob } from '#/utils/type-guards.js';
-import { millisecondsPerSecond } from '#/utils/units.js';
+import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
+import { assertDefinedPass, assertNotNullPass, isDefined } from '#/utils/type-guards.js';
+import { AiFileService } from './ai-file.service.js';
+import { AiSession } from './ai-session.js';
+import { AiModel, Content, ContentPart, ContentRole, FileContentPart, FileInput, FunctionCallingMode, GenerationOptions, GenerationRequest, GenerationResult, isSchemaFunctionDeclarationWithHandler, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';
 
-export type FileInput = { path: string, mimeType: string } | Blob;
-
-export type GenerativeAIModel = LiteralUnion<'gemini-2.0-flash-exp' | 'gemini-exp-1206' | 'gemini-2.0-flash-thinking-exp-1219', string>;
-
-export type GenerationOptions = {
-  model?: GenerativeAIModel,
-  maxOutputTokens?: number,
-  temperature?: number,
-  topP?: number,
-  topK?: number,
-  presencePenalty?: number,
-  frequencyPenalty?: number
-};
-
-export type GenerationResult<T> = {
+export type SpecializedGenerationResult<T> = {
   result: T,
-  usage?: {
-    promptTokenCount: number,
-    candidatesTokenCount: number,
-    totalTokenCount: number
-  }
+  raw: GenerationResult
 };
 
 export type AiServiceOptions = {
   apiKey: string,
-  defaultModel?: GenerativeAIModel
+  defaultModel?: AiModel
 };
 
 export type AiServiceArgument = AiServiceOptions;
 
+const functionCallingModeMap: Record<FunctionCallingMode, GoogleFunctionCallingMode> = {
+  auto: GoogleFunctionCallingMode.AUTO,
+  force: GoogleFunctionCallingMode.ANY,
+  none: GoogleFunctionCallingMode.NONE
+};
+
+export type ClassificationResult<T extends EnumerationType> = { types: { type: EnumerationValue<T>, confidence: 'high' | 'medium' | 'low' }[] | null };
+
+export type AnalyzeContentResult<T extends EnumerationType> = {
+  content: string[],
+  documentTypes: ClassificationResult<T>[],
+  tags: string[]
+};
+
 @Singleton()
 export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this);
-  readonly #fileCache = new Map<string, Promise<FileMetadataResponse>>();
-  readonly #logger = inject(Logger, 'AiService');
+  readonly #fileService = inject(AiFileService, this.#options);
 
-  readonly genAI = new GoogleGenerativeAI(this.#options.apiKey);
-  readonly fileManager = new GoogleAIFileManager(this.#options.apiKey);
-  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash-exp' satisfies GenerativeAIModel;
+  readonly #genAI = new GoogleGenerativeAI(this.#options.apiKey);
+  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash-exp' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
 
-  async getFile(fileInput: FileInput): Promise<FileMetadataResponse> {
-    const path = isBlob(fileInput) ? join(tmpdir(), crypto.randomUUID()) : fileInput.path;
-    const mimeType = isBlob(fileInput) ? fileInput.type : fileInput.mimeType;
-    const blob = isBlob(fileInput) ? fileInput : await openAsBlob(path, { type: mimeType });
-
-    const buffer = await blob.arrayBuffer();
-    const byteArray = new Uint8Array(buffer);
-
-    const fileHash = await digest('SHA-1', byteArray).toBase64();
-    const fileKey = `${fileHash}:${byteArray.length}`;
-
-    if (this.#fileCache.has(fileKey)) {
-      try {
-        this.#logger.verbose(`Fetching file "${fileHash}" from cache...`);
-        const cachedFile = await this.#fileCache.get(fileKey)!;
-        return await this.fileManager.getFile(cachedFile.name);
-      }
-      catch {
-        this.#fileCache.delete(fileKey);
-      }
-    }
-
-    const filePromise = (async () => {
-      try {
-        await using stack = new AsyncDisposableStack();
-
-        if (isBlob(fileInput)) {
-          stack.defer(async () => tryIgnoreAsync(async () => unlink(path)));
-          await writeFile(path, byteArray);
-        }
-
-        this.#logger.verbose(`Uploading file "${fileHash}" (${formatBytes(byteArray.length)})...`);
-        const result = await this.fileManager.uploadFile(path, { mimeType });
-
-        this.#logger.verbose(`Processing file "${fileHash}"...`);
-        return await this.waitForFileActive(result.file);
-      }
-      catch (error) {
-        this.#fileCache.delete(fileKey);
-        throw error;
-      }
-    })();
-
-    this.#fileCache.set(fileKey, filePromise);
-
-    return filePromise;
+  createSession(): AiSession {
+    return new AiSession(this);
   }
 
-  async getFiles(files: readonly FileInput[]): Promise<FileMetadataResponse[]> {
-    return Promise.all(
-      files.map(async (file) => this.getFile(file))
-    );
+  async processFile(fileInput: FileInput): Promise<FileContentPart> {
+    return this.#fileService.processFile(fileInput);
   }
 
-  async classify<T extends EnumerationType>(fileInput: OneOrMany<FileInput>, types: T, options?: GenerationOptions): Promise<GenerationResult<{ types: { type: EnumerationValue<T>, confidence: 'high' | 'medium' | 'low' }[] | null }>> {
-    const files = await this.getFiles(toArray(fileInput));
+  async processFiles(fileInputs: FileInput[]): Promise<FileContentPart[]> {
+    return this.#fileService.processFiles(fileInputs);
+  }
 
-    const resultSchema = object({
+  async classify<T extends EnumerationType>(parts: OneOrMany<ContentPart>, types: T, options?: GenerationOptions & Pick<GenerationRequest, 'model'>): Promise<SpecializedGenerationResult<ClassificationResult<T>>> {
+    const generationSchema = object({
       types: nullable(array(
         object({
           type: enumeration(types, { description: 'Type of document' }),
-          confidence: enumeration(['high', 'medium', 'low'], { description: 'How sure/certain you are about the classficiation.' })
+          confidence: enumeration(['high', 'medium', 'low'], { description: 'How sure/certain you are about the classficiation' })
         }),
         { description: 'One or more document types that matches' }
       ))
     });
 
-    const responseSchema = convertToOpenApiSchema(resultSchema);
-
-    this.#logger.verbose('Classifying...');
-    const result = await this.getModel(options?.model ?? this.defaultModel).generateContent({
-      generationConfig: {
-        maxOutputTokens: 2048,
-        temperature: 0.75,
-        ...options,
-        responseMimeType: 'application/json',
-        responseSchema
+    const generation = await this.generate({
+      model: options?.model,
+      generationOptions: {
+        maxOutputTokens: 1048,
+        temperature: 0.5,
+        ...options
       },
+      generationSchema,
       systemInstruction: 'You are a highly accurate document classification AI. Your task is to analyze the content of a given document and determine its type based on a predefined list of possible document types.',
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            ...files.map((file) => ({ fileData: { mimeType: file.mimeType, fileUri: file.uri } })),
-            { text: `Classify the document. Output as JSON using the following schema:\n${JSON.stringify(responseSchema, null, 2)}\n\nIf none of the provided document types are a suitable match, return null for types.` }
-          ]
-        }
-      ]
+      contents: this.getClassifyConents(parts)
     });
 
     return {
-      usage: result.response.usageMetadata,
-      result: resultSchema.parse(JSON.parse(result.response.text()))
+      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
+      raw: generation
     };
   }
 
-  async extractData<T>(fileInput: OneOrMany<FileInput>, schema: SchemaTestable<T>, options?: GenerationOptions): Promise<GenerationResult<T>> {
-    const files = await this.getFiles(toArray(fileInput));
-    const responseSchema = convertToOpenApiSchema(schema as SchemaTestable);
+  getClassifyConents(parts: OneOrMany<ContentPart>): Content[] {
+    return [{
+      role: 'user',
+      parts: [
+        ...toArray(parts),
+        { text: 'Classify the document. Output as JSON using the provided schema\n\nIf none of the provided document types are a suitable match, return null for types.' }
+      ]
+    }];
+  }
 
-    this.#logger.verbose('Extracting data...');
-    const result = await this.getModel(options?.model ?? this.defaultModel).generateContent({
-      generationConfig: {
-        maxOutputTokens: 8192,
-        temperature: 0.75,
-        ...options,
-        responseMimeType: 'application/json',
-        responseSchema
+  async extractData<T>(parts: OneOrMany<ContentPart>, schema: SchemaTestable<T>, options?: GenerationOptions & Pick<GenerationRequest, 'model'>): Promise<SpecializedGenerationResult<T>> {
+    const generation = await this.generate({
+      model: options?.model,
+      generationOptions: {
+        temperature: 0.5,
+        ...options
       },
+      generationSchema: schema as SchemaTestable,
       systemInstruction: `You are a highly skilled data extraction AI, specializing in accurately identifying and extracting information from unstructured text documents and converting it into a structured JSON format. Your primary goal is to meticulously follow the provided JSON schema and populate it with data extracted from the given document.
 
 **Instructions:**
 Carefully read and analyze the provided document. Identify relevant information that corresponds to each field in the JSON schema. Focus on accuracy and avoid making assumptions. If a field has multiple possible values, extract all relevant ones into the correct array structures ONLY IF the schema defines that field as an array; otherwise, extract only the single most relevant value.`,
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            ...files.map((file) => ({ fileData: { mimeType: file.mimeType, fileUri: file.uri } })),
-            { text: `Classify the document. Output as JSON using the following schema:\n${JSON.stringify(responseSchema, null, 2)}` }
-          ]
-        }
-      ]
+      contents: this.getExtractDataConents(parts)
     });
 
     return {
-      usage: result.response.usageMetadata,
-      result: Schema.parse(schema, JSON.parse(result.response.text()))
+      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
+      raw: generation
     };
   }
 
-  private async waitForFileActive(fileMetadata: FileMetadataResponse): Promise<FileMetadataResponse> {
-    let file = await this.fileManager.getFile(fileMetadata.name);
-
-    while (file.state == FileState.PROCESSING) {
-      await timeout(millisecondsPerSecond);
-      file = await this.fileManager.getFile(fileMetadata.name);
-    }
-
-    if (file.state == FileState.FAILED) {
-      throw new DetailsError(file.error?.message ?? `Failed to process file ${file.name}`, file.error?.details);
-    }
-
-    return file;
+  getExtractDataConents(parts: OneOrMany<ContentPart>): Content[] {
+    return [{
+      role: 'user',
+      parts: [
+        ...toArray(parts),
+        { text: 'Extract the data as specified in the schema. Output as JSON.' }
+      ]
+    }];
   }
 
-  private async waitForFilesActive(...files: FileMetadataResponse[]): Promise<FileMetadataResponse[]> {
-    const responses: FileMetadataResponse[] = [];
+  async analyzeContent<T extends EnumerationType>(parts: OneOrMany<ContentPart>, types: T, options?: GenerationOptions & { targetLanguage?: string, maximumNumberOfTags?: number }): Promise<SpecializedGenerationResult<AnalyzeContentResult<T>>> {
+    const schema = object({
+      content: string({ description: 'Content of the document with important details only' }),
+      types: nullable(array(
+        object({
+          type: enumeration(types, { description: 'Type of document' }),
+          confidence: enumeration(['high', 'medium', 'low'], { description: 'How sure/certain you are about the classficiation' })
+        }),
+        { description: 'One or more document types that matches' }
+      )),
+      tags: array(string({ description: 'Tag which describes the content' }), { description: 'List of tags', maximum: options?.maximumNumberOfTags ?? 5 })
+    });
 
-    for (const file of files) {
-      const respones = await this.waitForFileActive(file);
-      responses.push(respones);
-    }
+    const generation = await this.generate({
+      generationOptions: {
+        maxOutputTokens: 2048,
+        temperature: 0.5,
+        ...options
+      },
+      generationSchema: schema,
+      systemInstruction: `You are a highly skilled data extraction AI, specializing in accurately identifying and extracting information from unstructured content and converting it into a structured JSON format. Your primary goal is to meticulously follow the provided JSON schema and populate it with data extracted from the given document.
 
-    return responses;
+**Instructions:**
+Carefully read and analyze the provided content.
+Identify key points and relevant information that describes the content. Focus on a general overview without providing specific details.
+Classify the content based on the provided list of types.
+Output up to ${options?.maximumNumberOfTags ?? 5} tags.
+Always output the content and tags in ${options?.targetLanguage ?? 'the same language as the content'}.`,
+      contents: this.getAnalyzeContentConents(parts)
+    });
+
+    return {
+      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
+      raw: generation
+    };
   }
 
-  private getModel(model: GenerativeAIModel) {
-    return this.genAI.getGenerativeModel({ model });
+  getAnalyzeContentConents(parts: OneOrMany<ContentPart>): Content[] {
+    return [{
+      role: 'user',
+      parts: [
+        ...toArray(parts),
+        { text: 'Classify the document. Output as JSON.' }
+      ]
+    }];
+  }
+
+  async callFunctions<const T extends SchemaFunctionDeclarations>(functions: T, contents: Content[], options?: Pick<GenerationRequest, 'model' | 'systemInstruction'> & GenerationOptions): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]>> {
+    const generation = await this.generate({
+      model: options?.model,
+      generationOptions: {
+        maxOutputTokens: 4096,
+        temperature: 0.5,
+        ...options
+      },
+      systemInstruction: options?.systemInstruction,
+      functions,
+      functionCallingMode: 'force',
+      contents
+    });
+
+    const result: SchemaFunctionDeclarationsResult<T>[] = [];
+
+    for (const call of generation.functionCalls) {
+      const fn = assertDefinedPass(functions[call.name], 'Function in response not declared.');
+      const parameters = fn.parameters.parse(call.parameters) as Record;
+      const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
+
+      result.push({ functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any });
+    }
+
+    return {
+      result,
+      raw: generation
+    };
+  }
+
+  async generate(request: GenerationRequest): Promise<GenerationResult> {
+    const googleContent = this.convertContents(request.contents);
+    const googleFunctionDeclarations = isDefined(request.functions) ? this.convertFunctions(request.functions) : undefined;
+
+    const generationConfig = isDefined(request.generationSchema)
+      ? { ...request.generationOptions, responseMimeType: 'application/json', responseSchema: convertToOpenApiSchema(request.generationSchema) } satisfies GenerationConfig
+      : request.generationOptions satisfies GenerationConfig | undefined;
+
+    const generation = await this.getModel(request.model ?? this.defaultModel).generateContent({
+      generationConfig,
+      systemInstruction: request.systemInstruction,
+      tools: isDefined(googleFunctionDeclarations) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
+      toolConfig: isDefined(request.functionCallingMode)
+        ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
+        : undefined,
+      contents: googleContent
+    });
+
+    const content = this.convertGoogleContent(generation.response.candidates!.at(0)!.content);
+    const textParts = content.parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
+    const functionCallParts = content.parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
+
+    return {
+      content,
+      text: textParts.length > 0 ? textParts.join('') : null,
+      functionCalls: functionCallParts,
+      usage: {
+        prompt: generation.response.usageMetadata!.promptTokenCount,
+        output: generation.response.usageMetadata!.candidatesTokenCount,
+        total: generation.response.usageMetadata!.totalTokenCount
+      }
+    };
+  }
+
+  private convertContents(contents: readonly Content[]): GoogleContent[] {
+    return contents.map((content) => this.convertContent(content));
+  }
+
+  private convertContent(content: Content): GoogleContent {
+    return {
+      role: content.role,
+      parts: content.parts.map((part): Part => {
+        if (hasOwnProperty(part, 'text')) {
+          return { text: part.text };
+        }
+
+        if (hasOwnProperty(part, 'file')) {
+          const file = assertDefinedPass(this.#fileService.getFileById(part.file), `File ${part.file} not found.`);
+          return { fileData: { fileUri: file.uri, mimeType: file.mimeType } };
+        }
+
+        if (hasOwnProperty(part, 'functionResult')) {
+          return { functionResponse: { name: part.functionResult.name, response: part.functionResult.value } };
+        }
+
+        if (hasOwnProperty(part, 'functionCall')) {
+          return { functionCall: { name: part.functionCall.name, args: part.functionCall.parameters } };
+        }
+
+        throw new NotSupportedError('Unsupported content part.');
+      })
+    };
+  }
+
+  private convertFunctions(functions: SchemaFunctionDeclarations): FunctionDeclaration[] {
+    return objectEntries(functions).map(([name, declaration]): FunctionDeclaration => ({
+      name,
+      description: declaration.description,
+      parameters: convertToOpenApiSchema(declaration.parameters) as any as FunctionDeclarationSchema
+    }));
+  }
+
+  private convertGoogleContent(content: GoogleContent): Content {
+    return {
+      role: content.role as ContentRole,
+      parts: content.parts.map((part): ContentPart => {
+        if (isDefined(part.text)) {
+          return { text: part.text };
+        }
+
+        if (isDefined(part.fileData)) {
+          const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
+          return { file: file.id };
+        };
+
+        if (isDefined(part.functionResponse)) {
+          return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
+        }
+
+        if (isDefined(part.functionCall)) {
+          return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
+        }
+
+        throw new NotSupportedError('Unsupported content part.');
+      })
+    };
+  }
+
+  private getModel(model: AiModel) {
+    return this.#genAI.getGenerativeModel({ model });
   }
 }

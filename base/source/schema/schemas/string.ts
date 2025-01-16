@@ -1,5 +1,5 @@
 import { isDefined, isRegExp, isString } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type StringSchemaOptions = SimpleSchemaOptions<string> & {
@@ -37,6 +37,6 @@ export function string(options?: StringSchemaOptions): StringSchema {
   return new StringSchema(options);
 }
 
-export function StringProperty(options?: SchemaPropertyDecoratorOptions & StringSchemaOptions): SchemaPropertyDecorator {
+export function StringProperty(options?: SchemaDecoratorOptions & StringSchemaOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => string({ description: data.description, example: data.example, ...options }), options);
 }

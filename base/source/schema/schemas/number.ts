@@ -1,6 +1,6 @@
-import { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types.js';
 import { isNumber } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
@@ -51,10 +51,10 @@ export function integer(options?: TypedOmit<NumberSchemaOptions, 'integer'>): Nu
   return number({ ...options, integer: true });
 }
 
-export function NumberProperty(options?: SchemaPropertyDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
+export function NumberProperty(options?: SchemaDecoratorOptions & NumberSchemaOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => number({ description: data.description, example: data.example, ...options }), options);
 }
 
-export function Integer(options?: SchemaPropertyDecoratorOptions & TypedOmit<NumberSchemaOptions, 'integer'>): SchemaPropertyDecorator {
+export function Integer(options?: SchemaDecoratorOptions & TypedOmit<NumberSchemaOptions, 'integer'>): SchemaPropertyDecorator {
   return PropertySchema((data) => number({ description: data.description, example: data.example, ...options, integer: true }), options);
 }

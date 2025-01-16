@@ -1,4 +1,4 @@
-import { Property, StringSchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '#/schema/index.js';
+import { Property, StringSchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '#/schema/index.js';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u;
 
@@ -22,6 +22,6 @@ export function uuid(options?: UuidSchemaOptions): UuidSchema {
   return new UuidSchema(options);
 }
 
-export function Uuid(options?: UuidSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Uuid(options?: UuidSchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return Property(uuid(options), options);
 }

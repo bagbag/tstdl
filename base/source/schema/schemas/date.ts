@@ -1,5 +1,5 @@
 import { isValidDate } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
@@ -33,6 +33,6 @@ export function date(options?: DateSchemaOptions): DateSchema {
   return new DateSchema(options);
 }
 
-export function DateProperty(options?: SchemaPropertyDecoratorOptions & DateSchemaOptions): SchemaPropertyDecorator {
+export function DateProperty(options?: SchemaDecoratorOptions & DateSchemaOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => date({ description: data.description, example: data.example, ...options }), options);
 }

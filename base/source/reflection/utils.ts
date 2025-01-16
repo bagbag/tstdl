@@ -6,7 +6,7 @@ import { getDecoratorData } from './decorator-data.js';
 import { reflectionRegistry } from './registry.js';
 import type { CombinedDecoratorParameters, Decorator, DecoratorData, DecoratorHandler, DecoratorMetadata, DecoratorType, DecoratorUnion } from './types.js';
 
-export type CreateDecoratorTypeOptions = { [P in DecoratorType]?: boolean };
+export type CreateDecoratorTypeOptions = Partial<Record<DecoratorType, boolean>>;
 
 export type CreateDecoratorOptions = {
   data?: Record<string | symbol>,

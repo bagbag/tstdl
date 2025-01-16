@@ -2,7 +2,7 @@ import type { JsonPath } from '#/json-path/json-path.js';
 import type { AbstractConstructor } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { typeOf } from '#/utils/type-of.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
@@ -41,6 +41,6 @@ export function instance<T extends AbstractConstructor>(type: T, options?: Insta
   return new InstanceSchema(type, options);
 }
 
-export function Instance<T extends AbstractConstructor>(type: T, options?: InstanceSchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Instance<T extends AbstractConstructor>(type: T, options?: InstanceSchemaOptions<T> & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => instance(type, { description: data.description, example: data.example, ...options }), options);
 }

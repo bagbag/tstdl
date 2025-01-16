@@ -1,7 +1,7 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isNullOrUndefined } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 
@@ -34,6 +34,6 @@ export function defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, opti
   return new DefaultSchema(schema, defaultValue, options);
 }
 
-export function Defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: DefaultSchemaOptions<T, D> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Defaulted<T, D>(schema: SchemaTestable<T>, defaultValue: D, options?: DefaultSchemaOptions<T, D> & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => defaulted(schema, defaultValue, { description: data.description, example: data.example, ...options }), options);
 }

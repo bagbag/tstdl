@@ -4,17 +4,25 @@ import type { ObjectSchemaFactory, ObjectSchemaOptions } from '../schemas/object
 
 export type SchemaClassDecorator = Decorator<'class'>;
 export type SchemaPropertyDecorator = Decorator<'property' | 'accessor'>;
+export type SchemaMethodDecorator = Decorator<'method'>;
+export type CombinedSchemaDecorator = Decorator<'property' | 'accessor' | 'parameter'>;
 
 export type SchemaTypeReflectionData = Partial<Pick<ObjectSchemaOptions, 'mask' | 'unknownProperties' | 'unknownPropertiesKey' | 'description' | 'example'>> & {
   schema?: SchemaTestable,
   factory?: ObjectSchemaFactory<any>
 };
 
-export type SchemaTestableProvider = (data: SchemaPropertyReflectionData) => SchemaTestable;
+export type SchemaTestableProvider = (data: SchemaReflectionData) => SchemaTestable;
 
-export type SchemaPropertyReflectionData = Partial<Pick<SchemaOptions<any>, 'description' | 'example'>> & {
+export type SchemaReflectionData = Partial<Pick<SchemaOptions<any>, 'description' | 'example'>> & {
   schema?: SchemaTestableProvider,
   array?: boolean,
   optional?: boolean,
-  nullable?: boolean
+  nullable?: boolean,
+  method?: {
+    returnType?: SchemaTestableProvider
+  },
+  parameter?: {
+    name?: string
+  }
 };

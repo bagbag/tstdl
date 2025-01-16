@@ -106,14 +106,14 @@ export class ReflectionRegistry {
       return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
     }
     else if (data.type == 'method-parameter') {
-      return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!;
+      return (data.static ? metadata.staticMethods : metadata.methods).get(data.methodKey)!.parameters.at(data.index)!;
     }
     else if (data.type == 'constructor-parameter') { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       if (isUndefined(metadata.parameters)) {
         throw new Error('Constructor parameters are not available. (missing decoration?)');
       }
 
-      return metadata.parameters[data.index]!;
+      return metadata.parameters.at(data.index)!;
     }
 
     throw new Error(`Unknown DecoratorData type ${(data as DecoratorData).type}`);
@@ -176,13 +176,13 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
       }
     },
     properties: {
-      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
+      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
     },
     staticProperties: {
-      initializer: () => new FactoryMap((key): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
+      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
     },
     methods: {
-      initializer: () => new FactoryMap((key): MethodMetadata => {
+      initializer: () => new FactoryMap((key: string | symbol): MethodMetadata => {
         const parameters = getParameterTypes(type.prototype as object, key);
         const returnType = getReturnType(type.prototype as object, key);
 
@@ -194,7 +194,7 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
       })
     },
     staticMethods: {
-      initializer: () => new FactoryMap((key): MethodMetadata => {
+      initializer: () => new FactoryMap((key: string | symbol): MethodMetadata => {
         const parameters = getParameterTypes(type as object, key);
         const returnType = getReturnType(type as object, key);
 

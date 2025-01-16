@@ -184,7 +184,7 @@ function createProxy<T extends object>(channel: RpcChannel<never, RpcProxyReques
   };
 
   for (const method of reflectMethods) {
-    if (!hasOwnProperty(handlers, method)) {
+    if (!hasOwnProperty<any>(handlers, method)) {
       handlers[method] = deferThrow(() => new NotSupportedError(`${method} not supported on rpc proxies.`));
     }
   }

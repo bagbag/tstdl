@@ -34,15 +34,15 @@ type NormalizeConstructorToPrimitve<T> =
   : T;
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
-export type SchemaTestable<T = unknown> = Schema<T> | AbstractConstructor<T> | NormalizePrimitiveToConstructor<T>;
+export type SchemaTestable<T = any> = Schema<T> | AbstractConstructor<T> | NormalizePrimitiveToConstructor<T>;
 
 export type SchemaOutput<T extends SchemaTestable> = T extends SchemaTestable<infer U> ? U : never;
 
 export declare const OPTIONAL: unique symbol;
 
-export type SchemaOptions<T> = {
+export type SchemaOptions<_T> = {
   description?: string | null,
-  example?: T | undefined
+  example?: any
 };
 
 export abstract class Schema<T = unknown> {

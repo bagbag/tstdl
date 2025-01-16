@@ -2,9 +2,9 @@ import type { JsonPath } from '#/json-path/json-path.js';
 import { SchemaError } from '#/schema/schema.error.js';
 import type { TypedOmit } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { isArray } from '#/utils/type-guards.js';
+import { isArray, isNotNull } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import type { Coercible } from '../types.js';
@@ -42,6 +42,14 @@ export class ArraySchema<T> extends Schema<T[]> {
       return { valid: false, error: SchemaError.expectedButGot('array', typeOf(value), path) };
     }
 
+    if (isNotNull(this.maximum) && (value.length > this.maximum)) {
+      throw new Error(`A maximum of ${this.maximum} items are allowed.`);
+    }
+
+    if (isNotNull(this.minimum) && (value.length < this.minimum)) {
+      throw new Error(`A minimum of ${this.minimum} items are required.`);
+    }
+
     const values: T[] = [];
 
     for (let i = 0; i < value.length; i++) {
@@ -62,6 +70,6 @@ export function array<T>(schema: SchemaTestable<T>, options?: ArraySchemaOptions
   return new ArraySchema(schema, options);
 }
 
-export function Array(schema: SchemaTestable, options?: ArraySchemaOptions<unknown> & TypedOmit<SchemaPropertyDecoratorOptions, 'array'>): SchemaPropertyDecorator {
+export function Array(schema: SchemaTestable, options?: ArraySchemaOptions<unknown> & TypedOmit<SchemaDecoratorOptions, 'array'>): SchemaPropertyDecorator {
   return PropertySchema((data) => array(schema, { description: data.description, example: data.example, ...options }), options);
 }

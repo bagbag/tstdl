@@ -1,10 +1,12 @@
 import { JsonPath, type JsonPathInput } from '#/json-path/json-path.js';
-import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject } from '#/types.js';
+import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject, UnionToIntersection } from '#/types.js';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';
 import { isArray, isDefined, isObject, isSymbol, isUndefined } from '../type-guards.js';
 
+export function hasOwnProperty<T extends Record, K extends keyof UnionToIntersection<T>>(obj: T, key: K): obj is Extract<T, Partial<Record<K>>>;
+export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean;
 export function hasOwnProperty<T extends Record>(obj: T, key: keyof T): boolean {
   return Object.hasOwn(obj, key);
 }
@@ -152,7 +154,7 @@ export function fromDeepObjectEntries(entries: readonly (readonly [JsonPathInput
       }
       else {
         const child = {};
-        target[jsonPath.nodes[i]!] = child;
+        (target as Record)[jsonPath.nodes[i]!] = child;
         target = child;
       }
     }

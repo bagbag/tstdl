@@ -7,6 +7,8 @@ import type { Signal } from './signals/api.js';
 
 export type ObjectLiteral = {};
 
+export type Function<P extends any[] = any[], R = any> = (...params: P) => R;
+
 export type PrimitiveTypeMap = {
   string: string,
   number: number,
@@ -267,5 +269,3 @@ export type UntaggedDeep<T> = T extends Tagged<unknown, any, any>
   : T extends Record
   ? { [P in keyof T]: UntaggedDeep<T[P]> }
   : Untagged<T>;
-
-export type AnyFunction = Function;

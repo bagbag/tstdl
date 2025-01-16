@@ -1,7 +1,7 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { SchemaError } from '#/schema/schema.error.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Schema, SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { Schema, type SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export type NeverSchemaOptions = SchemaOptions<never>;
 

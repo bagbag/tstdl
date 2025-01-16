@@ -200,8 +200,6 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
       httpResponse.setHeader('Content-Length', bytes.byteLength);
     }
 
-    (null as any as WritableStream).getWriter().closed
-
     await write(httpResponse, bytes);
   }
   else if (isDefined(streamData)) {

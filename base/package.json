@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.7",
+  "version": "0.92.14",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -13,8 +13,8 @@
     "build:production:copy-files": "cp package.json .eslintrc.json tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:document-management",
     "build:docs": "typedoc",
     "build:docs:watch": "typedoc --watch",
-    "generate:drizzle": "drizzle-kit generate --config dist/document-management/drizzle.config.js",
-    "copy:document-management": "rm -rf ./dist/document-management/drizzle && cp -r ./source/document-management/drizzle ./dist/document-management/",
+    "generate:drizzle": "drizzle-kit generate --config dist/document-management/server/drizzle.config.js",
+    "copy:document-management": "rm -rf ./dist/document-management/server/drizzle && cp -r ./source/document-management/server/drizzle ./dist/document-management/server/",
     "lint": "eslint --config .eslintrc.json --cache source/",
     "pub": "npm run build:production && rm -vf dist/test* && rm -vrf dist/tools/ && npm publish dist/",
     "tsc:watch": "tsc --watch",
@@ -46,6 +46,7 @@
     "./disposable": "./disposable/index.js",
     "./distributed-loop": "./distributed-loop/index.js",
     "./dom": "./dom/index.js",
+    "./document-management": "./document-management/index.js",
     "./enumerable": "./enumerable/index.js",
     "./errors": "./errors/index.js",
     "./file": "./file/index.js",
@@ -72,6 +73,7 @@
     "./object-storage": "./object-storage/index.js",
     "./openid-connect": "./openid-connect/index.js",
     "./orm": "./orm/index.js",
+    "./orm/server": "./orm/server/index.js",
     "./password": "./password/index.js",
     "./pdf": "./pdf/index.js",
     "./pool": "./pool/index.js",
@@ -119,11 +121,11 @@
     "luxon": "^3.5",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.31"
+    "type-fest": "4.32"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "2.12",
+    "@stylistic/eslint-plugin": "2.13",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -132,7 +134,7 @@
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "8.19",
+    "@typescript-eslint/eslint-plugin": "8.20",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
     "eslint": "8.57",
@@ -148,7 +150,7 @@
     "@elastic/elasticsearch": "^8.17",
     "@google/generative-ai": "^0.21",
     "@koa/router": "^13.1",
-    "@tstdl/angular": "^0.91",
+    "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
     "@zxcvbn-ts/language-de": "^3.0",

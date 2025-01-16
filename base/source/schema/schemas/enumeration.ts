@@ -2,7 +2,7 @@ import type { Enumeration as EnumerationType, EnumerationValue } from '#/types.j
 import { enumValues } from '#/utils/enum.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray, isString } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type EnumerationSchemaOptions<T extends EnumerationType> = SimpleSchemaOptions<EnumerationValue<T>>;
@@ -44,7 +44,7 @@ export function enumeration<const T extends EnumerationType>(enumeration: T, opt
   return new EnumerationSchema(enumeration, options);
 }
 
-export function Enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator;
-export function Enumeration<const T extends EnumerationType>(enums: T, options?: EnumerationSchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Enumeration<const T extends EnumerationType>(enumeration: T, options?: EnumerationSchemaOptions<T> & SchemaDecoratorOptions): SchemaPropertyDecorator;
+export function Enumeration<const T extends EnumerationType>(enums: T, options?: EnumerationSchemaOptions<T> & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => enumeration(enums, { description: data.description, example: data.example, ...options }), options);
 }

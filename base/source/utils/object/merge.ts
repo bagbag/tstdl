@@ -17,13 +17,13 @@ export function mergeObjects<T extends object>(objects: T[], options: MergeObjec
 }
 
 function mergeObjectsInternal(a: Record<string>, b: Record<string>, options: MergeObjectsOptions, path: string = '$'): object {
-  const merged: Record<string> = { ...a };
+  const merged: Record = { ...a };
 
   const bEntries = objectEntries(b);
 
   for (const [key, valueB] of bEntries) {
     if (!hasOwnProperty(merged, key)) {
-      merged[key] = valueB;
+      (merged as Record)[key] = valueB;
       continue;
     }
 

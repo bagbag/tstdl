@@ -1,10 +1,10 @@
-import './models/schemas.js';
+import '../models/schemas.js';
 
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 
 import { inject, Injector, type InjectionToken } from '#/injector/index.js';
-import { Database } from '#/orm/database.js';
-import type { DatabaseConfig } from '#/orm/module.js';
+import { Database } from '#/orm/server/database.js';
+import type { DatabaseConfig } from '#/orm/server/module.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { DocumentManagementService } from './services/document-management.service.js';
 

@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { Schema, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { isSchemaTestable, schemaTestableToSchema } from '../testable.js';
@@ -49,7 +49,7 @@ export function union<T extends [SchemaTestable, ...SchemaTestable[]]>(...schema
   return new UnionSchema(schemas);
 }
 
-export function Union(...schemasAndOptions: [SchemaTestable, ...SchemaTestable[]] | [SchemaTestable, ...SchemaTestable[], options: SchemaPropertyDecoratorOptions]): SchemaPropertyDecorator {
+export function Union(...schemasAndOptions: [SchemaTestable, ...SchemaTestable[]] | [SchemaTestable, ...SchemaTestable[], options: SchemaDecoratorOptions]): SchemaPropertyDecorator {
   const schemaOrOptions = schemasAndOptions.at(-1)!;
 
   if (isSchemaTestable(schemaOrOptions)) {

@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
-import { NumberSchema, type NumberSchemaOptions, Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions, type SchemaTestOptions, type SchemaTestResult, type SimpleSchemaOptions } from '#/schema/index.js';
+import { NumberSchema, type NumberSchemaOptions, Property, type SchemaPropertyDecorator, type SchemaDecoratorOptions, type SchemaTestOptions, type SchemaTestResult, type SimpleSchemaOptions } from '#/schema/index.js';
 import { isDate } from '#/utils/type-guards.js';
 
 export type TimestampSchemaOptions = SimpleSchemaOptions<number> & Pick<NumberSchemaOptions, 'minimum' | 'maximum'>;
@@ -24,6 +24,6 @@ export function timestamp(options?: TimestampSchemaOptions): TimestampSchema {
   return new TimestampSchema(options);
 }
 
-export function Timestamp(options?: TimestampSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Timestamp(options?: TimestampSchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return Property(timestamp(options), options);
 }

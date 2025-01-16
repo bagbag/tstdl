@@ -1,14 +1,13 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { OneOrMany as OneOrManyType } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 import { array } from './array.js';
 import { union } from './union.js';
 
 export type OneOrManySchemaOptions<T> = SchemaOptions<T | T[]>;
-
 
 export type OneOrMany<T> = OneOrManyType<T>;
 
@@ -35,6 +34,6 @@ export function oneOrMany<T>(schema: SchemaTestable<T>, options?: OneOrManySchem
   return new OneOrManySchema(schema, options);
 }
 
-export function OneOrMany<T>(schema: SchemaTestable<T>, options?: OneOrManySchemaOptions<T> & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function OneOrMany<T>(schema: SchemaTestable<T>, options?: OneOrManySchemaOptions<T> & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => oneOrMany(schema as SchemaTestable, { description: data.description, example: data.example, ...options }), options);
 }

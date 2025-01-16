@@ -15,13 +15,13 @@ import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
 import { compileDereferencer } from '#/utils/object/dereference.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
 import { assertDefined, assertDefinedPass, isArray, isDefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
-import type { IndexReflectionData, OrmColumnReflectionData, OrmTableReflectionData } from '../decorators.js';
-import type { EntityType } from '../entity.js';
-import { JsonSchema } from '../schemas/json.js';
-import { NumericDateSchema } from '../schemas/numeric-date.js';
-import { TimestampSchema } from '../schemas/timestamp.js';
-import { UuidSchema } from '../schemas/uuid.js';
-import type { ColumnBuilder, embedded } from '../types.js';
+import type { IndexReflectionData, OrmColumnReflectionData, OrmTableReflectionData } from '../../decorators.js';
+import type { EntityType } from '../../entity.js';
+import { JsonSchema } from '../../schemas/json.js';
+import { NumericDateSchema } from '../../schemas/numeric-date.js';
+import { TimestampSchema } from '../../schemas/timestamp.js';
+import { UuidSchema } from '../../schemas/uuid.js';
+import type { ColumnBuilder, embedded } from '../../types.js';
 
 type Column<Name extends string, T> = null extends T ? ColumnBuilder<T, Name> : NotNull<ColumnBuilder<T, Name>>;
 

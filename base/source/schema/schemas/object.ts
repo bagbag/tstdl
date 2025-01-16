@@ -11,12 +11,12 @@ import { memoizeSingle } from '#/utils/function/memoize.js';
 import { filterObject, fromEntries, mapObjectValues, objectKeys } from '#/utils/object/object.js';
 import { assert, isArray, isDefined, isFunction, isLiteralObject, isNotNull, isNotNullOrUndefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { Class, PropertySchema, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
-import type { SchemaPropertyReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
+import { Class, PropertySchema, type SchemaDecoratorOptions } from '../decorators/index.js';
+import type { SchemaReflectionData, SchemaTypeReflectionData } from '../decorators/types.js';
+import { schemaReflectionDataToSchema } from '../decorators/utils.js';
 import { type OPTIONAL, Schema, type SchemaOptions, type SchemaOutput, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
-import { array } from './array.js';
-import { nullable } from './nullable.js';
+import { getFunctionSchemaFromReflection } from './function.js';
 import { optional } from './optional.js';
 
 export type Record<K extends PropertyKey = PropertyKey, V = any> = RecordType<K, V>;
@@ -279,30 +279,14 @@ function getObjectSchemaPropertiesFromReflection<T extends Record>(metadata: Typ
   const properties: ObjectSchemaProperties<T> = {} as ObjectSchemaProperties<T>;
 
   for (const [key, propertyMetadata] of metadata.properties) {
-    const reflectionData = propertyMetadata.data.tryGet<SchemaPropertyReflectionData>('schema');
+    const reflectionData = propertyMetadata.data.tryGet<SchemaReflectionData>('schema');
+    const propertySchema = schemaReflectionDataToSchema(reflectionData, type, { type, key });
 
-    if (isUndefined(reflectionData?.schema) && (propertyMetadata.type == Object)) {
-      throw new Error(`Schema of property "${String(key)}" on type ${type.name} is inferred as Object. This is most likely unwanted and happens if the property is defined as partial or the type is an union. Use an explicit @Property(Object) if this is wanted.`);
-    }
+    properties[key as keyof T] = propertySchema as SchemaTestable<T[keyof T]>;
+  }
 
-    let propertySchema = isDefined(reflectionData?.schema) ? reflectionData.schema(reflectionData) : propertyMetadata.type;
-
-    if (isUndefined(propertySchema)) {
-      throw new Error(`Could not infer schema for property "${String(key)}" on type ${type.name}. This happens if neither explicit @Property(type) is used nor reflection metadata is available.`);
-    }
-
-    if (reflectionData?.array == true) {
-      propertySchema = array(propertySchema);
-    }
-
-    if (reflectionData?.nullable == true) {
-      propertySchema = nullable(propertySchema);
-    }
-
-    if (reflectionData?.optional == true) {
-      propertySchema = optional(propertySchema);
-    }
-
+  for (const [key] of metadata.methods) {
+    const propertySchema = getFunctionSchemaFromReflection(type, key);
     properties[key as keyof T] = propertySchema as SchemaTestable<T[keyof T]>;
   }
 
@@ -321,7 +305,7 @@ export function getObjectSchema<T extends Record>(schemaOrType: SchemaTestable<T
   throw new Error('Could not infer ObjectSchema.');
 }
 
-export function Record<K extends PropertyKey, V>(key: SchemaTestable<K>, value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'> & SchemaPropertyDecoratorOptions): Decorator<'class' | 'property' | 'accessor'> {
+export function Record<K extends PropertyKey, V>(key: SchemaTestable<K>, value: SchemaTestable<V>, options?: TypedOmit<ObjectSchemaOptions<Record<K, V>>, 'unknownProperties' | 'unknownPropertiesKey'> & SchemaDecoratorOptions): Decorator<'class' | 'property' | 'accessor'> {
   const keySchema = schemaTestableToSchema(key);
   const valueSchema = schemaTestableToSchema(value);
 

@@ -1,7 +1,6 @@
 import { SecretRequirementsError } from '#/authentication/errors/secret-requirements.error.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { CustomError, CustomErrorStatic } from '../errors/index.js';
-import { ApiError, BadRequestError, ForbiddenError, InvalidCredentialsError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../errors/index.js';
+import { ApiError, BadRequestError, type CustomError, type CustomErrorStatic, ForbiddenError, InvalidCredentialsError, InvalidTokenError, MaxBytesExceededError, MethodNotAllowedError, NotFoundError, NotImplementedError, NotSupportedError, UnauthorizedError, UnsupportedMediaTypeError } from '../errors/index.js';
 import type { UndefinableJson } from '../types.js';
 import { assertString, isDefined, isFunction, isObject, isString } from '../utils/type-guards.js';
 import { deserializeSchemaError, serializeSchemaError } from './default-error-handlers.js';
@@ -69,7 +68,7 @@ export function createErrorResponse(errorOrName: Error | string, message: string
   if (errorOrName instanceof Error) {
     const handler = errorHandlers.get(errorOrName.name);
 
-    if (handler != undefined) {
+    if (isDefined(handler)) {
       const data = handler.serializer(errorOrName) as ErrorHandlerData;
 
       response = {

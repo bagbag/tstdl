@@ -1,5 +1,5 @@
 import { isRegExp } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
@@ -29,6 +29,6 @@ export function regExp(options?: RegExpSchemaOptions): RegExpSchema {
   return new RegExpSchema(options);
 }
 
-export function RegExpProperty(options?: SchemaPropertyDecoratorOptions & RegExpSchemaOptions): SchemaPropertyDecorator {
+export function RegExpProperty(options?: SchemaDecoratorOptions & RegExpSchemaOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => regExp({ description: data.description, example: data.example, ...options }), options);
 }

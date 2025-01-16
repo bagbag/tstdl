@@ -2,7 +2,7 @@ import type { JsonPath } from '#/json-path/json-path.js';
 import type { TypedOmit } from '#/types.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isNull } from '#/utils/type-guards.js';
-import { createSchemaPropertyDecorator, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { createSchemaDecorator, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { Schema, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
 
@@ -35,6 +35,6 @@ export function nullable<T>(schema: SchemaTestable<T>): NullableSchema<T> {
   return new NullableSchema(schema);
 }
 
-export function Nullable<T>(schema?: SchemaTestable<T>, options?: TypedOmit<SchemaPropertyDecoratorOptions, 'nullable'>): SchemaPropertyDecorator {
-  return createSchemaPropertyDecorator({ schema: () => schema as SchemaTestable, ...options, nullable: true });
+export function Nullable<T>(schema?: SchemaTestable<T>, options?: TypedOmit<SchemaDecoratorOptions, 'nullable'>): SchemaPropertyDecorator {
+  return createSchemaDecorator({ schema: () => schema as SchemaTestable, ...options, nullable: true });
 }

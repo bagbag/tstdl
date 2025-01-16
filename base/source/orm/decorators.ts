@@ -1,10 +1,12 @@
-import type { PgIndexMethod } from 'drizzle-orm/pg-core';
+import type { LiteralUnion } from 'type-fest';
 
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
 import { isArray } from '#/utils/type-guards.js';
 import type { EntityType } from './entity.js';
+
+type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>
 
 export type OrmTableReflectionData = {
   name?: string,
@@ -35,7 +37,7 @@ export type IndexReflectionData = {
   columns?: (string | [string, 'asc' | 'desc'])[],
   order?: 'asc' | 'desc',
   options?: {
-    using?: PgIndexMethod,
+    using?: IndexMethod,
     unique?: boolean,
     nulls?: 'first' | 'last'
   }

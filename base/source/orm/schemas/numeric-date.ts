@@ -1,4 +1,4 @@
-import { NumberSchema, type NumberSchemaOptions, Property, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions, type SimpleSchemaOptions } from '#/schema/index.js';
+import { NumberSchema, type NumberSchemaOptions, Property, type SchemaPropertyDecorator, type SchemaDecoratorOptions, type SimpleSchemaOptions } from '#/schema/index.js';
 
 export type NumericDateSchemaOptions = SimpleSchemaOptions<number> & Pick<NumberSchemaOptions, 'minimum' | 'maximum'>;
 
@@ -14,6 +14,6 @@ export function numericDate(options?: NumericDateSchemaOptions): NumericDateSche
   return new NumericDateSchema(options);
 }
 
-export function NumericDate(options?: NumericDateSchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function NumericDate(options?: NumericDateSchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return Property(numericDate(options), options);
 }

@@ -1,4 +1,4 @@
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaPropertyDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestResult } from '../schema.js';
 
 export type AnySchemaOptions = SchemaOptions<any>;
@@ -15,6 +15,6 @@ export function any(options?: AnySchemaOptions): AnySchema {
   return new AnySchema(options);
 }
 
-export function Any(options?: AnySchemaOptions & SchemaPropertyDecoratorOptions): SchemaPropertyDecorator {
+export function Any(options?: AnySchemaOptions & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => any({ description: data.description, example: data.example, ...options }), options);
 }
