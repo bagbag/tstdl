@@ -1,9 +1,8 @@
 import { ForbiddenError } from '#/errors/forbidden.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
-import type { AfterResolve } from '#/injector/index.js';
-import { Singleton, afterResolve, inject } from '#/injector/index.js';
-import type { Record } from '#/types.js';
+import { type AfterResolve, Singleton, afterResolve, inject } from '#/injector/index.js';
+import type { BinaryData, Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
 import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time.js';
@@ -15,8 +14,7 @@ import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
 import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
 import { AuthenticationAncillaryService, GetTokenPayloadContextAction } from './authentication-ancillary.service.js';
 import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
-import type { SecretTestResult } from './authentication-secret-requirements.validator.js';
-import { AuthenticationSecretRequirementsValidator } from './authentication-secret-requirements.validator.js';
+import { AuthenticationSecretRequirementsValidator, type SecretTestResult } from './authentication-secret-requirements.validator.js';
 import { AuthenticationSessionRepository } from './authentication-session.repository.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 

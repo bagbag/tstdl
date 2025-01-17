@@ -8,7 +8,7 @@ import { assert, isArrayBuffer, isFunction, isNumber } from './type-guards.js';
  * @param data data to get ArrayBuffer from
  * @param clone force cloning (might still clone if datas underlying buffer is larger than its view)
  */
-export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBuffer {
+export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBufferLike {
   if (isArrayBuffer(data)) {
     return clone ? data.slice(0) : data;
   }
@@ -21,8 +21,7 @@ export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBu
 }
 
 /**
- * eslint-disable-next-line @typescript-eslint/no-shadow
- * convert to Uint8Array
+ * Convert to Uint8Array
  * @param data binary data
  * @param clone whether to clone buffer or not
  */
@@ -40,7 +39,7 @@ export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Arr
     : new Uint8Array(buffer, byteOffset, byteLength);
 }
 
-export function concatArrayBuffers(buffers: ArrayBufferLike[]): ArrayBuffer {
+export function concatArrayBuffers(buffers: ArrayBufferLike[]): ArrayBufferLike {
   const arrays = buffers.map((buffer) => new Uint8Array(buffer));
   const bytes = concatArrayBufferViews(arrays);
 

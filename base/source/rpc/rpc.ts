@@ -5,8 +5,7 @@
 import { NotFoundError } from '#/errors/not-found.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { NonPrimitive, SerializationOptions, SerializationReplacer } from '#/serializer/index.js';
-import { deserialize, registerSerializer, serialize } from '#/serializer/index.js';
+import { deserialize, type NonPrimitive, registerSerializer, type SerializationOptions, type SerializationReplacer, serialize } from '#/serializer/index.js';
 import type { Record, TypedOmit } from '#/types.js';
 import { valueOfType } from '#/utils/helpers.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
@@ -189,7 +188,8 @@ function createProxy<T extends object>(channel: RpcChannel<never, RpcProxyReques
     }
   }
 
-  return new Proxy(RpcProxy as any, handlers) as RpcRemote<T>;
+  proxy = new Proxy(RpcProxy as any, handlers) as RpcRemote<T>;
+  return proxy;
 }
 
 function exposeObject(object: RpcRemoteInput, channel: RpcChannel<never, RpcProxyRequestMessage, RpcValue>): void {

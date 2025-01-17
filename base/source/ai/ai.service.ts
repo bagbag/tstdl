@@ -1,6 +1,4 @@
-import '#/polyfills.js';
-
-import { FunctionDeclaration, FunctionDeclarationSchema, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part } from '@google/generative-ai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
@@ -42,6 +40,10 @@ export type AnalyzeContentResult<T extends EnumerationType> = {
   tags: string[]
 };
 
+export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<GenerationRequest, 'contents' | 'model' | 'systemInstruction'> & GenerationOptions & {
+  functions: T
+};
+
 @Singleton()
 export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this);
@@ -79,7 +81,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
       model: options?.model,
       generationOptions: {
         maxOutputTokens: 1048,
-        temperature: 0.5,
+        temperature: 0.25,
         ...options
       },
       generationSchema,
@@ -107,7 +109,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
     const generation = await this.generate({
       model: options?.model,
       generationOptions: {
-        temperature: 0.5,
+        temperature: 0.25,
         ...options
       },
       generationSchema: schema as SchemaTestable,
@@ -150,7 +152,7 @@ Carefully read and analyze the provided document. Identify relevant information 
     const generation = await this.generate({
       generationOptions: {
         maxOutputTokens: 2048,
-        temperature: 0.5,
+        temperature: 0.25,
         ...options
       },
       generationSchema: schema,
@@ -181,24 +183,23 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     }];
   }
 
-  async callFunctions<const T extends SchemaFunctionDeclarations>(functions: T, contents: Content[], options?: Pick<GenerationRequest, 'model' | 'systemInstruction'> & GenerationOptions): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]>> {
+  async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]>> {
     const generation = await this.generate({
-      model: options?.model,
+      model: options.model,
       generationOptions: {
-        maxOutputTokens: 4096,
-        temperature: 0.5,
+        temperature: 0.25,
         ...options
       },
-      systemInstruction: options?.systemInstruction,
-      functions,
+      systemInstruction: options.systemInstruction,
+      functions: options.functions,
       functionCallingMode: 'force',
-      contents
+      contents: options.contents
     });
 
     const result: SchemaFunctionDeclarationsResult<T>[] = [];
 
     for (const call of generation.functionCalls) {
-      const fn = assertDefinedPass(functions[call.name], 'Function in response not declared.');
+      const fn = assertDefinedPass(options.functions[call.name], 'Function in response not declared.');
       const parameters = fn.parameters.parse(call.parameters) as Record;
       const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
@@ -212,24 +213,60 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 
   async generate(request: GenerationRequest): Promise<GenerationResult> {
-    const googleContent = this.convertContents(request.contents);
     const googleFunctionDeclarations = isDefined(request.functions) ? this.convertFunctions(request.functions) : undefined;
 
-    const generationConfig = isDefined(request.generationSchema)
-      ? { ...request.generationOptions, responseMimeType: 'application/json', responseSchema: convertToOpenApiSchema(request.generationSchema) } satisfies GenerationConfig
-      : request.generationOptions satisfies GenerationConfig | undefined;
+    const generationConfig: GenerationConfig = {
+      maxOutputTokens: request.generationOptions?.maxOutputTokens,
+      temperature: request.generationOptions?.temperature,
+      topP: request.generationOptions?.topP,
+      topK: request.generationOptions?.topK,
+      responseMimeType: isDefined(request.generationSchema) ? 'application/json' : undefined,
+      responseSchema: isDefined(request.generationSchema) ? convertToOpenApiSchema(request.generationSchema) : undefined,
+      presencePenalty: request.generationOptions?.presencePenalty,
+      frequencyPenalty: request.generationOptions?.frequencyPenalty
+    };
 
-    const generation = await this.getModel(request.model ?? this.defaultModel).generateContent({
-      generationConfig,
-      systemInstruction: request.systemInstruction,
-      tools: isDefined(googleFunctionDeclarations) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
-      toolConfig: isDefined(request.functionCallingMode)
-        ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
-        : undefined,
-      contents: googleContent
-    });
+    const googleContent = this.convertContents(request.contents);
+    const generationContent: GoogleContent = { role: 'model', parts: [] };
+    const maxTotalOutputTokens = request.generationOptions?.maxOutputTokens ?? 8192;
 
-    const content = this.convertGoogleContent(generation.response.candidates!.at(0)!.content);
+    let iterations = 0;
+    let totalPromptTokens = 0;
+    let totalOutputTokens = 0;
+    let candidate!: GenerateContentCandidate;
+
+    while (totalOutputTokens < maxTotalOutputTokens) {
+      const generation = await this.getModel(request.model ?? this.defaultModel).generateContent({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: Math.min(8192, maxTotalOutputTokens - totalOutputTokens)
+        },
+        systemInstruction: request.systemInstruction,
+        tools: isDefined(googleFunctionDeclarations) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
+        toolConfig: isDefined(request.functionCallingMode)
+          ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
+          : undefined,
+        contents: googleContent
+      });
+
+      iterations++;
+      candidate = generation.response.candidates!.at(0)!;
+
+      // On first generation only
+      if (generationContent.parts.length == 0) {
+        googleContent.push(generationContent);
+      }
+
+      generationContent.parts.push(...candidate.content.parts);
+      totalPromptTokens += generation.response.usageMetadata!.promptTokenCount;
+      totalOutputTokens += generation.response.usageMetadata!.candidatesTokenCount;
+
+      if (candidate.finishReason != FinishReason.MAX_TOKENS) {
+        break;
+      }
+    }
+
+    const content = this.convertGoogleContent(generationContent);
     const textParts = content.parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
     const functionCallParts = content.parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
 
@@ -237,16 +274,22 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       content,
       text: textParts.length > 0 ? textParts.join('') : null,
       functionCalls: functionCallParts,
+      finishReason: candidate.finishReason == FinishReason.MAX_TOKENS
+        ? 'maxTokens'
+        : candidate.finishReason == FinishReason.STOP
+          ? 'stop'
+          : 'unknown',
       usage: {
-        prompt: generation.response.usageMetadata!.promptTokenCount,
-        output: generation.response.usageMetadata!.candidatesTokenCount,
-        total: generation.response.usageMetadata!.totalTokenCount
+        iterations,
+        prompt: totalPromptTokens,
+        output: totalOutputTokens,
+        total: totalPromptTokens + totalOutputTokens
       }
     };
   }
 
-  private convertContents(contents: readonly Content[]): GoogleContent[] {
-    return contents.map((content) => this.convertContent(content));
+  private convertContents(contents: Content | readonly Content[]): GoogleContent[] {
+    return toArray(contents).map((content) => this.convertContent(content));
   }
 
   private convertContent(content: Content): GoogleContent {

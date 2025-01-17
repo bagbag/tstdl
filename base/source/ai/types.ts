@@ -31,6 +31,8 @@ export type Content = { role: ContentRole, parts: readonly ContentPart[] };
 
 export type FunctionCallingMode = 'auto' | 'force' | 'none';
 
+export type FinishReason = 'stop' | 'maxTokens' | 'unknown';
+
 export type AiModel = LiteralUnion<'gemini-2.0-flash-exp' | 'gemini-exp-1206' | 'gemini-2.0-flash-thinking-exp-1219', string>;
 
 export type GenerationOptions = {
@@ -45,7 +47,7 @@ export type GenerationOptions = {
 export type GenerationRequest = {
   model?: AiModel,
   systemInstruction?: string,
-  contents: readonly Content[],
+  contents: Content | readonly Content[],
   functions?: SchemaFunctionDeclarations,
   functionCallingMode?: FunctionCallingMode,
   generationSchema?: SchemaTestable,
@@ -53,6 +55,7 @@ export type GenerationRequest = {
 };
 
 export type GenerationUsage = {
+  iterations: number,
   prompt: number,
   output: number,
   total: number
@@ -62,6 +65,7 @@ export type GenerationResult = {
   content: Content,
   text: string | null,
   functionCalls: FunctionCall[],
+  finishReason: FinishReason,
   usage: GenerationUsage
 };
 

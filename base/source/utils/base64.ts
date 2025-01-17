@@ -6,7 +6,7 @@ import { toUint8Array } from './binary.js';
 import { isArrayBuffer, isDefined } from './type-guards.js';
 
 export function encodeBase64(array: BinaryData, bytesOffset?: number, bytesLength?: number): string {
-  let arrayBuffer: ArrayBuffer;
+  let arrayBuffer: ArrayBufferLike;
   let offset: number | undefined;
   let length: number | undefined;
 

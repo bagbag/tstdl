@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
-import type { AbstractConstructor, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';
+import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';
 import { AssertionError } from '../errors/assertion.error.js';
 
 export type AssertionMessage = string | (() => string);
@@ -16,12 +16,12 @@ export type AssertPassFunction<T> = <U extends T = T>(value: any, message?: Asse
 export type AssertNotPassFunction<T> = <V>(value: V, message?: AssertionMessage) => Exclude<V, T>;
 
 export type GuardFunctions<N extends string, T> =
-  & { [P in `is${PascalCase<N>}`]: IsFunction<T> }
-  & { [P in `isNot${PascalCase<N>}`]: IsNotFunction<T> }
-  & { [P in `assert${PascalCase<N>}`]: AssertFunction<T> }
-  & { [P in `assertNot${PascalCase<N>}`]: AssertNotFunction<T> }
-  & { [P in `assert${PascalCase<N>}Pass`]: AssertPassFunction<T> }
-  & { [P in `assertNot${PascalCase<N>}Pass`]: AssertNotPassFunction<T> };
+  & Record<`is${PascalCase<N>}`, IsFunction<T>>
+  & Record<`isNot${PascalCase<N>}`, IsNotFunction<T>>
+  & Record<`assert${PascalCase<N>}`, AssertFunction<T>>
+  & Record<`assertNot${PascalCase<N>}`, AssertNotFunction<T>>
+  & Record<`assert${PascalCase<N>}Pass`, AssertPassFunction<T>>
+  & Record<`assertNot${PascalCase<N>}Pass`, AssertNotPassFunction<T>>;
 
 export function assert(condition: boolean, message: AssertionMessage = 'assertion failed'): asserts condition {
   if (!condition) {

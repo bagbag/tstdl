@@ -13,7 +13,7 @@ export function serializeArrayBuffer(buffer: ArrayBuffer): string {
   return encodeBase64(buffer);
 }
 
-export function deserializeArrayBuffer(data: string): ArrayBuffer {
+export function deserializeArrayBuffer(data: string): ArrayBufferLike {
   const uint8Array = decodeBase64(data);
   return toArrayBuffer(uint8Array);
 }
