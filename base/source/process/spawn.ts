@@ -13,12 +13,12 @@ export type SpawnCommandResult = TransformStream<Uint8Array, Uint8Array> & {
   write(chunk: ReadableStream<Uint8Array> | Uint8Array | string): Promise<void>,
   readOutputBytes(): Promise<Uint8Array>,
   readOutput(): Promise<string>,
-  readErrBytes(): Promise<Uint8Array>,
-  readErr(): Promise<string>,
+  readErrorBytes(): Promise<Uint8Array>,
+  readError(): Promise<string>,
   wait(): Promise<{ code: number | null, signal: string | null }>
 };
 
-export async function spawnCommand(command: string, args: string[]): Promise<SpawnCommandResult> {
+export async function spawnCommand(command: string, args?: string[], options?: { stdinPipeOptions?: StreamPipeOptions }): Promise<SpawnCommandResult> {
   const { spawn } = await dynamicImport<typeof import('node:child_process')>('node:child_process');
   const { Readable, Writable } = await dynamicImport<typeof import('node:stream')>('node:stream');
 
@@ -35,13 +35,13 @@ export async function spawnCommand(command: string, args: string[]): Promise<Spa
 
   async function write(data: ReadableStream<Uint8Array> | Uint8Array | string): Promise<void> {
     if (isReadableStream(data)) {
-      await data.pipeTo(writable);
+      await data.pipeTo(writable, options?.stdinPipeOptions);
     }
     else if (isUint8Array(data)) {
-      await toReadableStream(data).pipeTo(writable);
+      await toReadableStream(data).pipeTo(writable, options?.stdinPipeOptions);
     }
     else if (isString(data)) {
-      await toReadableStream(data).pipeThrough(encodeUtf8Stream()).pipeTo(writable);
+      await toReadableStream(data).pipeThrough(encodeUtf8Stream()).pipeTo(writable, options?.stdinPipeOptions);
     }
   }
 
@@ -71,10 +71,10 @@ export async function spawnCommand(command: string, args: string[]): Promise<Spa
     write,
     readOutputBytes,
     readOutput,
-    readErrBytes,
-    readErr,
+    readErrorBytes: readErrBytes,
+    readError: readErr,
     async wait() {
       return signalPromise;
-    },
+    }
   };
 }

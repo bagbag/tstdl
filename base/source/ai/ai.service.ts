@@ -81,7 +81,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
       model: options?.model,
       generationOptions: {
         maxOutputTokens: 1048,
-        temperature: 0.25,
+        temperature: 0.5,
         ...options
       },
       generationSchema,
@@ -109,7 +109,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
     const generation = await this.generate({
       model: options?.model,
       generationOptions: {
-        temperature: 0.25,
+        temperature: 0.5,
         ...options
       },
       generationSchema: schema as SchemaTestable,
@@ -152,7 +152,7 @@ Carefully read and analyze the provided document. Identify relevant information 
     const generation = await this.generate({
       generationOptions: {
         maxOutputTokens: 2048,
-        temperature: 0.25,
+        temperature: 0.5,
         ...options
       },
       generationSchema: schema,
@@ -187,7 +187,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     const generation = await this.generate({
       model: options.model,
       generationOptions: {
-        temperature: 0.25,
+        temperature: 0.5,
         ...options
       },
       systemInstruction: options.systemInstruction,

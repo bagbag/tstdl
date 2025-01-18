@@ -1,4 +1,4 @@
-import { Subject, concatAll, exhaustAll, isObservable, mergeAll, of, switchAll, takeUntil, type Observable } from 'rxjs';
+import { Subject, concatAll, exhaustAll, from, isObservable, mergeAll, of, switchAll, takeUntil, type Observable } from 'rxjs';
 
 import { registerFinalization } from '#/memory/finalization.js';
 import { isPromise } from '#/utils/type-guards.js';
@@ -25,7 +25,19 @@ export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: D
 export function deriveAsync<T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue?: undefined, requireSync: true }): Signal<T>;
 export function deriveAsync<T, const U extends T>(source: DeriveAsyncSourceParameter<T>, options: DeriveAsyncOptions<T> & { initialValue: U, requireSync?: false }): Signal<T | U>;
 export function deriveAsync<T, I>(source: () => (T | Promise<T> | Observable<T>), options?: DeriveAsyncOptions<T>): Signal<T | I> {
-  const outerSource = computed(source);
+  const outerSource = computed(() => {
+    const rawSource = source();
+
+    if (isPromise(rawSource)) {
+      return from(rawSource);
+    }
+
+    if (isObservable(rawSource)) {
+      return rawSource;
+    }
+
+    return of(rawSource);
+  });
 
   const source$ = new Subject<Promise<T | I> | Observable<T | I>>();
   const destroy$ = new Subject<void>();
@@ -39,8 +51,7 @@ export function deriveAsync<T, I>(source: () => (T | Promise<T> | Observable<T>)
   const result = toSignal(valueSource$, options as any) as Signal<T | I>;
 
   const effectRef = effect(() => {
-    const rawSource = outerSource();
-    const observableInput = (isPromise(rawSource) || isObservable(rawSource)) ? rawSource : of(rawSource);
+    const observableInput = outerSource();
     untracked(() => source$.next(observableInput));
   });
 

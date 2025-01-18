@@ -1,7 +1,5 @@
-import { dynamicImport } from '#/import.js';
-import { decodeTextStream } from '#/utils/encoding.js';
-import { readTextStream } from '#/utils/stream/stream-reader.js';
-import { isReadableStream, isString, isUint8Array } from '#/utils/type-guards.js';
+import { spawnCommand } from '#/process/spawn.js';
+import { isDefined, isString } from '#/utils/type-guards.js';
 import { mimeTypesMap } from './mime-types.js';
 
 export async function getMimeType(file: string | Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
@@ -16,26 +14,24 @@ export function getMimeTypeExtensions(mimeType: string): string[] {
 }
 
 async function spawnFileCommand(args: string[], file?: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
-  const { spawn } = await dynamicImport<typeof import('node:child_process')>('node:child_process');
-  const { Readable, Writable } = await dynamicImport<typeof import('node:stream')>('node:stream');
+  const process = await spawnCommand('file', args, { stdinPipeOptions: { preventCancel: true } });
 
-  const process = spawn('file', args, { stdio: 'pipe' });
+  const { code } = await process.wait();
 
-  const stdin = Writable.toWeb(process.stdin);
-  const stdout = (Readable.toWeb(process.stdout) as ReadableStream<Uint8Array>).pipeThrough(decodeTextStream());
-
-  if (isReadableStream(file)) {
-    await file.pipeTo(stdin);
-  }
-  else if (isUint8Array(file)) {
-    const writer = stdin.getWriter();
-    try {
-      await writer.write(file);
-      await writer.close();
-    }
-    catch { /* File command closes stream as soon as it has the required data */ }
+  if (isDefined(file)) {
+    await process.write(file);
   }
 
-  const output = await readTextStream(stdout);
+  if (code != 0) {
+    const errorOutput = await process.readError();
+    throw new Error(errorOutput.trim());
+  }
+
+  const output = await process.readOutput();
+
+  if (output.includes('file or directory')) {
+    throw new Error(output.trim());
+  }
+
   return output.trim();
 }
