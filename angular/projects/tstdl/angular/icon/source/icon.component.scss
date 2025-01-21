@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-icon {
-    @apply contents text-base;
+    @apply contents text-base text-inherit;
 
     svg {
       width: 1em;

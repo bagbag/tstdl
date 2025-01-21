@@ -1,7 +1,7 @@
 @layer tstdl.components {
   tsl-nav-tabs,
   [tslNavTabs] {
-    @apply flex;
+    @apply flex bg-transparent;
 
     &.design-underline {
       @apply gap-2;

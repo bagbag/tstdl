@@ -21,6 +21,9 @@
       "@tstdl/angular": [
         "projects/tstdl/angular/lib",
       ],
+      "@tstdl/angular/animations": [
+        "projects/tstdl/angular/animations",
+      ],
       "@tstdl/angular/badge/*": [
         "projects/tstdl/angular/badge/*",
       ],
@@ -44,6 +47,12 @@
       ],
       "@tstdl/angular/data-grid": [
         "projects/tstdl/angular/data-grid",
+      ],
+      "@tstdl/angular/document-management/*": [
+        "projects/tstdl/angular/document-management/*",
+      ],
+      "@tstdl/angular/document-management": [
+        "projects/tstdl/angular/document-management",
       ],
       "@tstdl/angular/drawer-card/*": [
         "projects/tstdl/angular/drawer-card/*",
@@ -69,11 +78,17 @@
       "@tstdl/angular/form": [
         "projects/tstdl/angular/form",
       ],
+      "@tstdl/angular/host-class": [
+        "projects/tstdl/angular/host-class",
+      ],
       "@tstdl/angular/nav-tabs/*": [
         "projects/tstdl/angular/nav-tabs/*",
       ],
       "@tstdl/angular/nav-tabs": [
         "projects/tstdl/angular/nav-tabs",
+      ],
+      "@tstdl/angular/pdf-viewer": [
+        "projects/tstdl/angular/pdf-viewer",
       ],
       "@tstdl/angular/react/*": [
         "projects/tstdl/angular/react/*",

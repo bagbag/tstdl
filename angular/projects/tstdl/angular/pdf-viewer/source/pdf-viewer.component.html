@@ -1,0 +1,16 @@
+@if (url(); as url) {
+  <ngx-extended-pdf-viewer
+    class="contain-strict"
+    [src]="url"
+    [authorization]="true"
+    zoom="auto"
+    [theme]="darkMode() ? 'dark' : 'light'"
+    [handTool]="false"
+    [showOpenFileButton]="false"
+    [showDrawEditor]="false"
+    [showTextEditor]="false"
+    [showInfiniteScrollButton]="false"
+    [showRotateButton]="false"
+    [showStampEditor]="false"
+    [showHighlightEditor]="false"></ngx-extended-pdf-viewer>
+}

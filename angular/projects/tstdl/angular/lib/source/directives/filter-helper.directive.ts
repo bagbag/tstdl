@@ -1,6 +1,7 @@
 import { Directive, computed, input, model } from '@angular/core';
 import { PropertiesOfType } from '@tstdl/base/types';
-import { isFunction, isNull, isString, normalizeText } from '@tstdl/base/utils';
+import { isFunction, isNull, isString } from '@tstdl/base/utils';
+import { normalizeText } from '@tstdl/base/utils/string';
 
 @Directive({
   selector: '[tslFilterHelper]',
