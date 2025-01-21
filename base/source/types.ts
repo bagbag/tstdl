@@ -52,7 +52,7 @@ export type ArrayItem<T extends readonly any[]> = T extends readonly (infer U)[]
 
 export type Enumeration = EnumerationArray | EnumerationObject;
 export type EnumerationArray = readonly [string | number, ...(string | number)[]];
-export type EnumerationObject = Record<string, string | number>;
+export type EnumerationObject<V extends string | number = string | number> = Record<string, V>;
 export type EnumerationKey<T extends EnumerationObject = EnumerationObject> = Extract<keyof T, string>;
 export type EnumerationMap<T extends EnumerationObject = EnumerationObject> = SimplifyObject<{ [P in EnumerationKey<T>]: (T[P] extends number ? (`${T[P]}` extends `${infer U extends number}` ? U : never) : `${T[P]}`) | T[P] }>;
 export type EnumerationValue<T extends Enumeration = Enumeration> = T extends EnumerationObject ? SimplifyDeep<EnumerationMap<T>[keyof EnumerationMap<T>]> : T extends EnumerationArray ? T[number] : never;

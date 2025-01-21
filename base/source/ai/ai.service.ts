@@ -19,9 +19,9 @@ export type SpecializedGenerationResult<T> = {
   raw: GenerationResult
 };
 
-export type AiServiceOptions = {
-  apiKey: string,
-  defaultModel?: AiModel
+export class AiServiceOptions {
+  apiKey: string;
+  defaultModel?: AiModel;
 };
 
 export type AiServiceArgument = AiServiceOptions;
@@ -46,7 +46,7 @@ export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<Ge
 
 @Singleton()
 export class AiService implements Resolvable<AiServiceArgument> {
-  readonly #options = injectArgument(this);
+  readonly #options = injectArgument(this, { optional: true }) ?? inject(AiServiceOptions);
   readonly #fileService = inject(AiFileService, this.#options);
 
   readonly #genAI = new GoogleGenerativeAI(this.#options.apiKey);
@@ -64,6 +64,10 @@ export class AiService implements Resolvable<AiServiceArgument> {
 
   async processFiles(fileInputs: FileInput[]): Promise<FileContentPart[]> {
     return this.#fileService.processFiles(fileInputs);
+  }
+
+  getFileById(id: string): FileContentPart {
+    return { file: id };
   }
 
   async classify<T extends EnumerationType>(parts: OneOrMany<ContentPart>, types: T, options?: GenerationOptions & Pick<GenerationRequest, 'model'>): Promise<SpecializedGenerationResult<ClassificationResult<T>>> {
