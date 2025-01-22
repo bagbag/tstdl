@@ -1,9 +1,7 @@
 import type { TypedOmit } from '#/types.js';
 import { isString } from '#/utils/type-guards.js';
-import type { HttpBodySource } from '../http-body.js';
-import { HttpBody } from '../http-body.js';
-import type { HttpHeadersObject } from '../http-headers.js';
-import { HttpHeaders } from '../http-headers.js';
+import { HttpBody, type HttpBodySource } from '../http-body.js';
+import { HttpHeaders, type HttpHeadersObject } from '../http-headers.js';
 import type { HttpClientRequest, HttpClientRequestObject } from './http-client-request.js';
 
 export type HttpClientResponseObject = TypedOmit<HttpClientResponse, 'hasBody' | 'request' | 'headers' | 'close' | 'asObject'> & {

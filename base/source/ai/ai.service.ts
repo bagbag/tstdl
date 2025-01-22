@@ -8,8 +8,11 @@ import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js
 import { array, enumeration, nullable, object, OneOrMany, SchemaTestable, string } from '#/schema/index.js';
 import { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, assertNotNullPass, isDefined } from '#/utils/type-guards.js';
+import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
 import { AiModel, Content, ContentPart, ContentRole, FileContentPart, FileInput, FunctionCallingMode, GenerationOptions, GenerationRequest, GenerationResult, isSchemaFunctionDeclarationWithHandler, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';
@@ -204,7 +207,8 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
 
     for (const call of generation.functionCalls) {
       const fn = assertDefinedPass(options.functions[call.name], 'Function in response not declared.');
-      const parameters = fn.parameters.parse(call.parameters) as Record;
+      const parametersSchema = await resolveValueOrAsyncProvider(fn.parameters);
+      const parameters = parametersSchema.parse(call.parameters) as Record;
       const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
       result.push({ functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any });
@@ -217,7 +221,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 
   async generate(request: GenerationRequest): Promise<GenerationResult> {
-    const googleFunctionDeclarations = isDefined(request.functions) ? this.convertFunctions(request.functions) : undefined;
+    const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
     const generationConfig: GenerationConfig = {
       maxOutputTokens: request.generationOptions?.maxOutputTokens,
@@ -322,12 +326,18 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     };
   }
 
-  private convertFunctions(functions: SchemaFunctionDeclarations): FunctionDeclaration[] {
-    return objectEntries(functions).map(([name, declaration]): FunctionDeclaration => ({
-      name,
-      description: declaration.description,
-      parameters: convertToOpenApiSchema(declaration.parameters) as any as FunctionDeclarationSchema
-    }));
+  private async convertFunctions(functions: SchemaFunctionDeclarations): Promise<FunctionDeclaration[]> {
+    const mapped = mapAsync(objectEntries(functions), async ([name, declaration]): Promise<FunctionDeclaration> => {
+      const parametersSchema = await resolveValueOrAsyncProvider(declaration.parameters);
+
+      return {
+        name,
+        description: declaration.description,
+        parameters: convertToOpenApiSchema(parametersSchema) as any as FunctionDeclarationSchema
+      };
+    });
+
+    return toArrayAsync(mapped);
   }
 
   private convertGoogleContent(content: GoogleContent): Content {

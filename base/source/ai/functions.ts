@@ -5,16 +5,6 @@ import { FunctionSchema, getObjectSchema, object } from '#/schema/index.js';
 import type { AbstractConstructor } from '#/types.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
 import { isNotNull, isNull, isString } from '#/utils/type-guards.js';
-import type { SchemaFunctionDeclarations } from './types.js';
-
-export function convertFunctionDeclarations(declarations: SchemaFunctionDeclarations): FunctionDeclaration[] {
-  return objectEntries(declarations)
-    .map(([name, declaration]): FunctionDeclaration => ({
-      name,
-      description: declaration.description,
-      parameters: convertToOpenApiSchema(declaration.parameters) as any as FunctionDeclarationSchema
-    }));
-}
 
 export function getFunctionDeclarations(type: AbstractConstructor): FunctionDeclaration[] {
   const objectSchema = getObjectSchema(type);
