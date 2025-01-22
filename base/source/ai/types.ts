@@ -3,14 +3,13 @@ import type { LiteralUnion } from 'type-fest';
 import type { ObjectSchema, SchemaOutput, SchemaTestable } from '#/schema/index.js';
 import type { Record, UndefinableJsonObject } from '#/types.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
-import { isDefined } from '#/utils/type-guards.js';
 import type { ResolvedValueOrProvider, ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 
 export type FileInput = { path: string, mimeType: string } | Blob;
 
 export type SchemaFunctionDeclarations = Record<string, SchemaFunctionDeclaration<any>>;
 
-export type SchemaFunctionDeclarationWithoutHandler<T extends Record = Record> = { description: string, parameters: ValueOrAsyncProvider<ObjectSchema<T>> };
+export type SchemaFunctionDeclarationWithoutHandler<T extends Record = Record> = { description: string, parameters: ValueOrAsyncProvider<ObjectSchema<T>>, enabled?: ValueOrAsyncProvider<boolean> };
 export type SchemaFunctionDeclarationWithHandler<T extends Record = Record, R = unknown> = SchemaFunctionDeclarationWithoutHandler<T> & { handler: (parameters: T) => R | Promise<R> };
 export type SchemaFunctionDeclaration<T extends Record = Record, R = unknown> = SchemaFunctionDeclarationWithoutHandler<T> | SchemaFunctionDeclarationWithHandler<T, R>;
 
@@ -70,18 +69,12 @@ export type GenerationResult = {
   usage: GenerationUsage
 };
 
-export function declareFunctions<T extends SchemaFunctionDeclarations>(declarations: T): T {
+export function defineFunctions<T extends SchemaFunctionDeclarations>(declarations: T): T {
   return declarations;
 }
 
-export function declareFunction<T extends Record = Record>(description: string, parameters: ObjectSchema<T>): SchemaFunctionDeclaration<T, never>;
-export function declareFunction<T extends Record = Record, R = never>(description: string, parameters: ObjectSchema<T>, handler: (parameters: T) => R | Promise<R>): SchemaFunctionDeclaration<T, R>;
-export function declareFunction<T extends Record = Record, R = never>(description: string, parameters: ObjectSchema<T>, handler?: (parameters: T) => R | Promise<R>): SchemaFunctionDeclaration<T, R> {
-  if (isDefined(handler)) {
-    return { description, parameters, handler };
-  }
-
-  return { description, parameters };
+export function defineFunction<P extends Record, T extends SchemaFunctionDeclaration<P>>(declaration: T & Pick<SchemaFunctionDeclaration<P>, 'parameters'>): T {
+  return declaration;
 }
 
 export function isSchemaFunctionDeclarationWithHandler(declaration: SchemaFunctionDeclaration): declaration is SchemaFunctionDeclarationWithHandler {

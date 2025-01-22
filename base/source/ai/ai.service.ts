@@ -327,7 +327,13 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 
   private async convertFunctions(functions: SchemaFunctionDeclarations): Promise<FunctionDeclaration[]> {
-    const mapped = mapAsync(objectEntries(functions), async ([name, declaration]): Promise<FunctionDeclaration> => {
+    const mapped = mapAsync(objectEntries(functions), async ([name, declaration]): Promise<FunctionDeclaration | undefined> => {
+      const enabled = await resolveValueOrAsyncProvider(declaration.enabled);
+
+      if (enabled == false) {
+        return undefined;
+      }
+
       const parametersSchema = await resolveValueOrAsyncProvider(declaration.parameters);
 
       return {
@@ -337,7 +343,8 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       };
     });
 
-    return toArrayAsync(mapped);
+    const functionsArray = await toArrayAsync(mapped);
+    return functionsArray.filter(isDefined);
   }
 
   private convertGoogleContent(content: GoogleContent): Content {

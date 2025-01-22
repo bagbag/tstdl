@@ -90,7 +90,7 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
     const hasString = schema.allowedValues.some(isString);
     const hasNumber = schema.allowedValues.some(isNumber);
 
-    if (hasString && hasNumber) {
+    if (!hasString && !hasNumber) {
       throw new NotSupportedError('Enum must be either string or number but not both.');
     }
 
