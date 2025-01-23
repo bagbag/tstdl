@@ -1,15 +1,14 @@
-import type { Tagged } from 'type-fest';
 
-import type { EnumerationObject, SimplifyObject } from '#/types.js';
+import type { EnumerationObject } from '#/types.js';
 import { isUndefined } from '#/utils/type-guards.js';
 
 const registry = new WeakMap<object, string>();
 
 export type EnumType<T extends EnumerationObject> = T[keyof T];
 
-export function defineEnum<const Name extends string, const T extends EnumerationObject>(name: Name, enumObject: T): SimplifyObject<{ [P in keyof T]: Tagged<T[P], Name> }> {
+export function defineEnum<const T extends EnumerationObject>(name: string, enumObject: T): T {
   registry.set(enumObject, name);
-  return enumObject as { [P in keyof T]: Tagged<T[P], Name> };
+  return enumObject;
 }
 
 export function tryGetEnumName(enumeration: EnumerationObject): string | undefined {

@@ -1,9 +1,11 @@
-import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part, UsageMetadata } from '@google/generative-ai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import { Resolvable, type resolveArgumentType } from '#/injector/interfaces.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
+import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
 import { array, enumeration, nullable, object, OneOrMany, SchemaTestable, string } from '#/schema/index.js';
 import { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
@@ -11,15 +13,19 @@ import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, assertNotNullPass, isDefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, assertNotNullPass, isDefined, isUndefined } from '#/utils/type-guards.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
-import { AiModel, Content, ContentPart, ContentRole, FileContentPart, FileInput, FunctionCallingMode, GenerationOptions, GenerationRequest, GenerationResult, isSchemaFunctionDeclarationWithHandler, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';
+import { AiModel, Content, ContentPart, ContentRole, FileContentPart, FileInput, FunctionCall, FunctionCallingMode, GenerationOptions, GenerationRequest, GenerationResult, isSchemaFunctionDeclarationWithHandler, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';
 
 export type SpecializedGenerationResult<T> = {
   result: T,
   raw: GenerationResult
+};
+
+export type SpecializedGenerationResultGenerator<T> = AsyncGenerator<T> & {
+  raw: Promise<GenerationResult>
 };
 
 export class AiServiceOptions {
@@ -220,7 +226,24 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     };
   }
 
+  callFunctionsStream<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): SpecializedGenerationResultGenerator<SchemaFunctionDeclarationsResult<T>> {
+    const itemsPromise = new DeferredPromise<GenerationResult[]>();
+    const generator = this._callFunctionsStream(options, itemsPromise) as SpecializedGenerationResultGenerator<SchemaFunctionDeclarationsResult<T>>;
+
+    generator.raw = new LazyPromise(async () => {
+      const items = await itemsPromise;
+      return mergeGenerationStreamItems(items);
+    });
+
+    return generator;
+  }
+
   async generate(request: GenerationRequest): Promise<GenerationResult> {
+    const items = await toArrayAsync(this.generateStream(request));
+    return mergeGenerationStreamItems(items);
+  }
+
+  async *generateStream(request: GenerationRequest): AsyncGenerator<GenerationResult> {
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
     const generationConfig: GenerationConfig = {
@@ -234,17 +257,16 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       frequencyPenalty: request.generationOptions?.frequencyPenalty
     };
 
-    const googleContent = this.convertContents(request.contents);
-    const generationContent: GoogleContent = { role: 'model', parts: [] };
+    const inputContent = this.convertContents(request.contents);
     const maxTotalOutputTokens = request.generationOptions?.maxOutputTokens ?? 8192;
 
     let iterations = 0;
     let totalPromptTokens = 0;
     let totalOutputTokens = 0;
-    let candidate!: GenerateContentCandidate;
+    let totalTokens = 0;
 
     while (totalOutputTokens < maxTotalOutputTokens) {
-      const generation = await this.getModel(request.model ?? this.defaultModel).generateContent({
+      const generation = await this.getModel(request.model ?? this.defaultModel).generateContentStream({
         generationConfig: {
           ...generationConfig,
           maxOutputTokens: Math.min(8192, maxTotalOutputTokens - totalOutputTokens)
@@ -254,46 +276,97 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         toolConfig: isDefined(request.functionCallingMode)
           ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
           : undefined,
-        contents: googleContent
+        contents: inputContent
       });
 
       iterations++;
-      candidate = generation.response.candidates!.at(0)!;
 
-      // On first generation only
-      if (generationContent.parts.length == 0) {
-        googleContent.push(generationContent);
+      let lastUsageMetadata: UsageMetadata | undefined;
+      let candidate: GenerateContentCandidate | undefined;
+
+      for await (const generationResponse of generation.stream) {
+        candidate = generationResponse.candidates!.at(0)!;
+        inputContent.push(candidate.content);
+
+        const { promptTokenCount = 0, candidatesTokenCount = 0 } = generationResponse.usageMetadata as (Partial<UsageMetadata> | undefined) ?? {};
+        lastUsageMetadata = generationResponse.usageMetadata;
+
+        const content = this.convertGoogleContent(candidate.content);
+        let text: string | null;
+        let functionCallParts: FunctionCall[] | undefined;
+
+        const result: GenerationResult = {
+          content,
+          get text() {
+            if (isUndefined(text)) {
+              const textParts = content.parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
+              text = (textParts.length > 0) ? textParts.join('') : null;
+            }
+
+            return text;
+          },
+          get functionCalls() {
+            if (isUndefined(functionCallParts)) {
+              functionCallParts = content.parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
+            }
+
+            return functionCallParts;
+          },
+          finishReason: candidate.finishReason == FinishReason.MAX_TOKENS
+            ? 'maxTokens'
+            : candidate.finishReason == FinishReason.STOP
+              ? 'stop'
+              : 'unknown',
+          usage: {
+            iterations,
+            prompt: totalPromptTokens + promptTokenCount,
+            output: totalOutputTokens + candidatesTokenCount,
+            total: totalTokens + promptTokenCount + candidatesTokenCount
+          }
+        };
+
+        yield result;
       }
 
-      generationContent.parts.push(...candidate.content.parts);
-      totalPromptTokens += generation.response.usageMetadata!.promptTokenCount;
-      totalOutputTokens += generation.response.usageMetadata!.candidatesTokenCount;
+      totalPromptTokens += lastUsageMetadata?.promptTokenCount ?? 0;
+      totalOutputTokens += lastUsageMetadata?.candidatesTokenCount ?? 0;
+      totalTokens += lastUsageMetadata?.totalTokenCount ?? 0;
 
-      if (candidate.finishReason != FinishReason.MAX_TOKENS) {
+      if (candidate?.finishReason != FinishReason.MAX_TOKENS) {
         break;
       }
     }
+  }
 
-    const content = this.convertGoogleContent(generationContent);
-    const textParts = content.parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
-    const functionCallParts = content.parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
+  private async *_callFunctionsStream<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>, itemsPromise: DeferredPromise<GenerationResult[]>): AsyncGenerator<SchemaFunctionDeclarationsResult<T>> {
+    const generationStream = this.generateStream({
+      model: options.model,
+      generationOptions: {
+        temperature: 0.5,
+        ...options
+      },
+      systemInstruction: options.systemInstruction,
+      functions: options.functions,
+      functionCallingMode: 'force',
+      contents: options.contents
+    });
 
-    return {
-      content,
-      text: textParts.length > 0 ? textParts.join('') : null,
-      functionCalls: functionCallParts,
-      finishReason: candidate.finishReason == FinishReason.MAX_TOKENS
-        ? 'maxTokens'
-        : candidate.finishReason == FinishReason.STOP
-          ? 'stop'
-          : 'unknown',
-      usage: {
-        iterations,
-        prompt: totalPromptTokens,
-        output: totalOutputTokens,
-        total: totalPromptTokens + totalOutputTokens
+    const items: GenerationResult[] = [];
+
+    for await (const generation of generationStream) {
+      items.push(generation);
+
+      for (const call of generation.functionCalls) {
+        const fn = assertDefinedPass(options.functions[call.name], 'Function in response not declared.');
+        const parametersSchema = await resolveValueOrAsyncProvider(fn.parameters);
+        const parameters = parametersSchema.parse(call.parameters) as Record;
+        const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
+
+        yield { functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any };
       }
-    };
+    }
+
+    itemsPromise.resolve(items);
   }
 
   private convertContents(contents: Content | readonly Content[]): GoogleContent[] {
@@ -376,4 +449,32 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   private getModel(model: AiModel) {
     return this.#genAI.getGenerativeModel({ model });
   }
+}
+
+export function mergeGenerationStreamItems(items: GenerationResult[]): GenerationResult {
+  const parts = items.flatMap((item) => item.content.parts);
+
+  let text: string | null;
+  let functionCallParts: FunctionCall[] | undefined;
+
+  return {
+    content: { role: 'model', parts },
+    get text() {
+      if (isUndefined(text)) {
+        const textParts = parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
+        text = (textParts.length > 0) ? textParts.join('') : null;
+      }
+
+      return text;
+    },
+    get functionCalls() {
+      if (isUndefined(functionCallParts)) {
+        functionCallParts = parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
+      }
+
+      return functionCallParts;
+    },
+    finishReason: items.at(-1)!.finishReason,
+    usage: items.at(-1)!.usage
+  };
 }
