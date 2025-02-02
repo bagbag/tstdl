@@ -40,7 +40,6 @@ export type GenerationOptions = {
   temperature?: number,
   topP?: number,
   topK?: number,
-  presencePenalty?: number,
   frequencyPenalty?: number
 };
 

@@ -1,4 +1,5 @@
-import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, GoogleGenerativeAI, Part, UsageMetadata } from '@google/generative-ai';
+import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, Part, UsageMetadata, VertexAI } from '@google-cloud/vertexai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
@@ -13,7 +14,7 @@ import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, assertNotNullPass, isDefined, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, assertNotNullPass, isDefined, isNotNull, isUndefined } from '#/utils/type-guards.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
@@ -29,7 +30,9 @@ export type SpecializedGenerationResultGenerator<T> = AsyncGenerator<T> & {
 };
 
 export class AiServiceOptions {
-  apiKey: string;
+  apiKey?: string;
+  keyFile?: string;
+  vertex?: { project: string, location: string, bucket?: string };
   defaultModel?: AiModel;
 };
 
@@ -58,7 +61,12 @@ export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this, { optional: true }) ?? inject(AiServiceOptions);
   readonly #fileService = inject(AiFileService, this.#options);
 
-  readonly #genAI = new GoogleGenerativeAI(this.#options.apiKey);
+  readonly #genAI = (
+    isDefined(this.#options.vertex)
+      ? new VertexAI({ project: this.#options.vertex.project, location: this.#options.vertex.location, googleAuthOptions: { apiKey: this.#options.apiKey, keyFile: this.#options.keyFile } })
+      : new GoogleGenerativeAI(assertDefinedPass(this.#options.apiKey, 'Api key not defined'))
+  ) as VertexAI;
+
   readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash-exp' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
@@ -253,12 +261,13 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       topK: request.generationOptions?.topK,
       responseMimeType: isDefined(request.generationSchema) ? 'application/json' : undefined,
       responseSchema: isDefined(request.generationSchema) ? convertToOpenApiSchema(request.generationSchema) : undefined,
-      presencePenalty: request.generationOptions?.presencePenalty,
       frequencyPenalty: request.generationOptions?.frequencyPenalty
     };
 
+    const model = request.model ?? this.defaultModel;
+    const maxModelTokens = model.includes('thinking') ? 65536 : 8192;
+    const maxTotalOutputTokens = request.generationOptions?.maxOutputTokens ?? maxModelTokens;
     const inputContent = this.convertContents(request.contents);
-    const maxTotalOutputTokens = request.generationOptions?.maxOutputTokens ?? 8192;
 
     let iterations = 0;
     let totalPromptTokens = 0;
@@ -266,13 +275,13 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     let totalTokens = 0;
 
     while (totalOutputTokens < maxTotalOutputTokens) {
-      const generation = await this.getModel(request.model ?? this.defaultModel).generateContentStream({
+      const generation = await this.getModel(model).generateContentStream({
         generationConfig: {
           ...generationConfig,
-          maxOutputTokens: Math.min(8192, maxTotalOutputTokens - totalOutputTokens)
+          maxOutputTokens: Math.min(maxModelTokens, maxTotalOutputTokens - totalOutputTokens)
         },
         systemInstruction: request.systemInstruction,
-        tools: isDefined(googleFunctionDeclarations) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
+        tools: (isDefined(googleFunctionDeclarations) && (googleFunctionDeclarations.length > 0)) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
         toolConfig: isDefined(request.functionCallingMode)
           ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
           : undefined,
@@ -423,26 +432,32 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   private convertGoogleContent(content: GoogleContent): Content {
     return {
       role: content.role as ContentRole,
-      parts: content.parts.map((part): ContentPart => {
-        if (isDefined(part.text)) {
-          return { text: part.text };
-        }
+      parts: content.parts
+        .map((part): ContentPart | null => {
+          if (isDefined(part.text)) {
+            if (part.text.length == 0) {
+              return null;
+            }
 
-        if (isDefined(part.fileData)) {
-          const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
-          return { file: file.id };
-        };
+            return { text: part.text };
+          }
 
-        if (isDefined(part.functionResponse)) {
-          return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
-        }
+          if (isDefined(part.fileData)) {
+            const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
+            return { file: file.id };
+          }
 
-        if (isDefined(part.functionCall)) {
-          return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
-        }
+          if (isDefined(part.functionResponse)) {
+            return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
+          }
 
-        throw new NotSupportedError('Unsupported content part.');
-      })
+          if (isDefined(part.functionCall)) {
+            return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
+          }
+
+          throw new NotSupportedError('Unsupported content part.');
+        })
+        .filter(isNotNull)
     };
   }
 

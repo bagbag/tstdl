@@ -73,7 +73,7 @@ export function compareByValueSelectionToOrder<T, TSelect>(order: (TSelect | typ
   };
 }
 
-export function compareByValue<T>(a: T, b: T): number {
+export function compareByValue<T>(a: T, b: T, strict: boolean = true): number {
   if (a === b) {
     return 0;
   }
@@ -84,10 +84,14 @@ export function compareByValue<T>(a: T, b: T): number {
     return -1;
   }
 
-  throw new Error('objects not comparable');
+  if (!strict) {
+    return 0;
+  }
+
+  throw new Error('Objects not comparable');
 }
 
-export function compareByValueDescending<T>(a: T, b: T): number {
+export function compareByValueDescending<T>(a: T, b: T, strict: boolean = true): number {
   if (a === b) {
     return 0;
   }
@@ -98,5 +102,9 @@ export function compareByValueDescending<T>(a: T, b: T): number {
     return 1;
   }
 
-  throw new Error('objects not comparable');
+  if (!strict) {
+    return 0;
+  }
+
+  throw new Error('Objects not comparable');
 }

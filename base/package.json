@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.31",
+  "version": "0.92.41",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -85,7 +85,7 @@
     "./reflection": "./reflection/index.js",
     "./rpc": "./rpc/index.js",
     "./rpc/endpoints": "./rpc/endpoints/index.js",
-    "./rxjs": "./rxjs-utils/index.js",
+    "./rxjs-utils": "./rxjs-utils/index.js",
     "./schema": "./schema/index.js",
     "./schema/converters": "./schema/converters/index.js",
     "./search-index": "./search-index/index.js",
@@ -118,6 +118,8 @@
     "./utils/string": "./utils/string/index.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "7.15",
+    "@google-cloud/vertexai": "1.9",
     "disposablestack": "1.1",
     "luxon": "^3.5",
     "reflect-metadata": "^0.2",
@@ -126,7 +128,7 @@
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "2.13",
+    "@stylistic/eslint-plugin": "3.0",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -135,7 +137,7 @@
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "8.21",
+    "@typescript-eslint/eslint-plugin": "8.22",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
     "eslint": "8.57",
@@ -157,14 +159,14 @@
     "@zxcvbn-ts/language-de": "^3.0",
     "@zxcvbn-ts/language-en": "^3.0",
     "chroma-js": "^2.6",
-    "drizzle-orm": "^0.38",
+    "drizzle-orm": "^0.39",
     "handlebars": "^4.7",
     "koa": "^2.15",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.12",
+    "mongodb": "^6.13",
     "nodemailer": "^6.10",
-    "pg": "8.13",
+    "pg": "^8.13",
     "playwright": "^1.50",
     "preact": "^10.25",
     "preact-render-to-string": "^6.5",

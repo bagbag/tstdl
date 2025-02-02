@@ -16,11 +16,11 @@ export function getMimeTypeExtensions(mimeType: string): string[] {
 async function spawnFileCommand(args: string[], file?: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
   const process = await spawnCommand('file', args, { stdinPipeOptions: { preventCancel: true } });
 
-  const { code } = await process.wait();
-
   if (isDefined(file)) {
     await process.write(file);
   }
+
+  const { code } = await process.wait();
 
   if (code != 0) {
     const errorOutput = await process.readError();

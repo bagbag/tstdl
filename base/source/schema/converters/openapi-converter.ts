@@ -107,7 +107,6 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
 
       return {
         ...enumSchema,
-        enum: [...(enumSchema as { enum: any[] }).enum, null],
         nullable: true
       };
     }
