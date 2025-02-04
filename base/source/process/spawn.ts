@@ -10,7 +10,7 @@ import { isReadableStream, isString, isUint8Array } from '#/utils/type-guards.js
 export type SpawnCommandResult = TransformStream<Uint8Array, Uint8Array> & {
   process: ChildProcessWithoutNullStreams,
   stderr: ReadableStream<Uint8Array>,
-  write(chunk: ReadableStream<Uint8Array> | Uint8Array | string): Promise<void>,
+  write(chunk: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): Promise<void>,
   readOutputBytes(): Promise<Uint8Array>,
   readOutput(): Promise<string>,
   readErrorBytes(): Promise<Uint8Array>,
@@ -18,7 +18,7 @@ export type SpawnCommandResult = TransformStream<Uint8Array, Uint8Array> & {
   wait(): Promise<{ code: number | null, signal: string | null }>
 };
 
-export async function spawnCommand(command: string, args?: string[], options?: { stdinPipeOptions?: StreamPipeOptions }): Promise<SpawnCommandResult> {
+export async function spawnCommand(command: string, args?: string[]): Promise<SpawnCommandResult> {
   const { spawn } = await dynamicImport<typeof import('node:child_process')>('node:child_process');
   const { Readable, Writable } = await dynamicImport<typeof import('node:stream')>('node:stream');
 
@@ -33,15 +33,15 @@ export async function spawnCommand(command: string, args?: string[], options?: {
   const writable = Writable.toWeb(process.stdin) as WritableStream<Uint8Array>;
   const stderr = Readable.toWeb(process.stderr) as ReadableStream<Uint8Array>;
 
-  async function write(data: ReadableStream<Uint8Array> | Uint8Array | string): Promise<void> {
+  async function write(data: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): Promise<void> {
     if (isReadableStream(data)) {
-      await data.pipeTo(writable, options?.stdinPipeOptions);
+      await data.pipeTo(writable, options);
     }
     else if (isUint8Array(data)) {
-      await toReadableStream(data).pipeTo(writable, options?.stdinPipeOptions);
+      await toReadableStream(data).pipeTo(writable, options);
     }
     else if (isString(data)) {
-      await toReadableStream(data).pipeThrough(encodeUtf8Stream()).pipeTo(writable, options?.stdinPipeOptions);
+      await toReadableStream(data).pipeThrough(encodeUtf8Stream()).pipeTo(writable, options);
     }
   }
 
@@ -53,11 +53,11 @@ export async function spawnCommand(command: string, args?: string[], options?: {
     return readTextStream(readable.pipeThrough(decodeTextStream()));
   }
 
-  async function readErrBytes(): Promise<Uint8Array> {
+  async function readErrorBytes(): Promise<Uint8Array> {
     return readBinaryStream(stderr);
   }
 
-  async function readErr(): Promise<string> {
+  async function readError(): Promise<string> {
     return readTextStream(stderr.pipeThrough(decodeTextStream()));
   }
 
@@ -71,8 +71,8 @@ export async function spawnCommand(command: string, args?: string[], options?: {
     write,
     readOutputBytes,
     readOutput,
-    readErrorBytes: readErrBytes,
-    readError: readErr,
+    readErrorBytes,
+    readError,
     async wait() {
       return signalPromise;
     }

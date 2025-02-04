@@ -14,10 +14,13 @@ export function getMimeTypeExtensions(mimeType: string): string[] {
 }
 
 async function spawnFileCommand(args: string[], file?: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
-  const process = await spawnCommand('file', args, { stdinPipeOptions: { preventCancel: true } });
+  const process = await spawnCommand('file', args);
 
   if (isDefined(file)) {
-    await process.write(file);
+    try {
+      await process.write(file);
+    }
+    catch { /* ignore as file command closes stdin early */ }
   }
 
   const { code } = await process.wait();
