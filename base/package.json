@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.42",
+  "version": "0.92.45",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -124,7 +124,7 @@
     "luxon": "^3.5",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "type-fest": "4.34"
+    "type-fest": "4.35"
   },
   "devDependencies": {
     "@mxssfd/typedoc-theme": "1.1",
@@ -141,10 +141,9 @@
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
     "eslint": "8.57",
-    "eslint-import-resolver-typescript": "3.7",
+    "eslint-import-resolver-typescript": "3.8",
     "eslint-plugin-import": "2.31",
     "tsc-alias": "1.8",
-    "tsx": "^4.19.2",
     "typedoc": "0.27",
     "typedoc-plugin-missing-exports": "3.1",
     "typescript": "5.7"
@@ -152,7 +151,6 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.17",
     "@google/generative-ai": "^0.21",
-    "@koa/router": "^13.1",
     "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
@@ -161,14 +159,13 @@
     "chroma-js": "^2.6",
     "drizzle-orm": "^0.39",
     "handlebars": "^4.7",
-    "koa": "^2.15",
     "minio": "^8.0",
     "mjml": "^4.15",
     "mongodb": "^6.13",
     "nodemailer": "^6.10",
     "pg": "^8.13",
     "playwright": "^1.50",
-    "preact": "^10.25",
+    "preact": "^10.26",
     "preact-render-to-string": "^6.5",
     "undici": "^7.3",
     "urlpattern-polyfill": "^10.0"

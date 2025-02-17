@@ -8,7 +8,7 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, type Record, type Schema } from '#/schema/index.js';
-import type { AbstractConstructor, Enumeration, Type } from '#/types.js';
+import type { AbstractConstructor, Enumeration, Type, UnionToIntersection } from '#/types.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
 import { enumValues } from '#/utils/enum.js';
 import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
@@ -39,7 +39,7 @@ const getDbSchema = memoizeSingle(pgSchema);
 
 export const getDrizzleTableFromType = memoize(_getDrizzleTableFromType);
 
-export type ColumnPrefix<T> = T extends { prefix: infer Prefix } ? Prefix extends string ? Prefix : '' : '';
+export type ColumnPrefix<T> = T extends { [embedded]?: { prefix: infer Prefix } } ? Prefix extends string ? Prefix : '' : '';
 
 export type PgTableFromType<S extends string, T extends AbstractConstructor, TableName extends string = T extends Required<EntityType> ? SnakeCase<T['entityName']> : string> = PgTableWithColumns<{
   name: TableName,
@@ -47,12 +47,12 @@ export type PgTableFromType<S extends string, T extends AbstractConstructor, Tab
   columns: BuildColumns<
     TableName,
     { [P in Exclude<keyof InstanceType<T>, keyof EmbeddedProperties<InstanceType<T>>>]: Column<CamelCase<Extract<P, string>>, InstanceType<T>[P]>; }
-    & { [P in keyof EmbeddedProperties<InstanceType<T>>]: EmbeddedColumns<InstanceType<T>[P], ColumnPrefix<InstanceType<T>[P]>>; }[keyof EmbeddedProperties<InstanceType<T>>],
+    & UnionToIntersection<{ [P in keyof EmbeddedProperties<InstanceType<T>>]: EmbeddedColumns<InstanceType<T>[P], ColumnPrefix<InstanceType<T>[P]>>; }[keyof EmbeddedProperties<InstanceType<T>>]>,
     'pg'>,
   dialect: 'pg'
 }>;
 
-export type EmbeddedProperties<T> = ConditionalPick<T, { [embedded]: { prefix: any } }>;
+export type EmbeddedProperties<T> = ConditionalPick<T, { [embedded]?: { prefix: any } }>;
 export type EmbeddedColumns<T, Prefix extends string> = { [P in keyof T as CamelCase<`${Prefix}${Extract<P, string>}`>]: Column<CamelCase<`${Prefix}${Extract<P, string>}`>, T[P]> };
 
 const columnDefinitionsSymbol = Symbol('columnDefinitions');
@@ -95,7 +95,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
     const indexFn = (data.options?.unique == true) ? uniqueIndex : index;
 
-    return indexFn().using(data.options?.using ?? 'btree', ...columns);
+    return indexFn(data.name).using(data.options?.using ?? 'btree', ...columns);
   }
 
   const columnEntries = columnDefinitions.map((entry) => [entry.name, entry.type]);

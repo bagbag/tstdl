@@ -6,7 +6,7 @@ import type { GetTagMetadata, Tagged, UnwrapTagged } from 'type-fest';
 
 import { Array, Integer } from '#/schema/index.js';
 import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
-import { Embedded, Unique } from './decorators.js';
+import { Column, Embedded, Index, PrimaryKey, References, Unique } from './decorators.js';
 import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
 
 export type IsPrimaryKey<T> =
@@ -36,7 +36,7 @@ export type TypeBuilder<T, ColumnName extends string = never> =
 
 export declare const embedded: unique symbol;
 
-export type Embedded<T = AbstractConstructor, P extends string = ''> = T & { [embedded]: { prefix: P } };
+export type Embedded<T = AbstractConstructor, P extends string = ''> = T & { [embedded]?: { prefix: P } };
 
 export type Array<T extends Tagged<ObjectLiteral, 'column', PgColumnBuilder<any>>> = Tagged<UnwrapTagged<T>[], 'column', ReturnType<GetTagMetadata<T, 'column'>['array']>>;
 export type Json<T extends ObjectLiteral = ObjectLiteral> = Tagged<T, 'column', $Type<ReturnType<typeof jsonb>, T>>;
@@ -49,4 +49,4 @@ export type Boolean = Tagged<number, 'column', ReturnType<typeof boolean>>;
 export type NumericDate = Tagged<number, 'column', ReturnType<typeof date>>;
 export type Timestamp = Tagged<number, 'column', ReturnType<typeof timestamp>>;
 
-export { Array, Embedded, Integer, Json, NumericDate, Timestamp, Unique, Uuid };
+export { Array, Column, Embedded, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };

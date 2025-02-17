@@ -3,7 +3,7 @@ import type { LiteralUnion } from 'type-fest';
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
-import { isArray } from '#/utils/type-guards.js';
+import { assertNotArrayPass, isArray } from '#/utils/type-guards.js';
 import type { EntityType } from './entity.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>
@@ -75,20 +75,30 @@ export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNulla
 
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
 export function Unique(name: string | undefined, columns: [string, ...string[]], options?: UniqueReflectionData['options']): ClassDecorator;
-export function Unique(name?: string, columnsOrOptions?: [string, ...string[]] | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
-  if (isArray(columnsOrOptions)) {
-    return createTableDecorator({ unique: [{ name, columns: columnsOrOptions, options }] });
+export function Unique(columns: [string, ...string[]], options?: UniqueReflectionData['options']): ClassDecorator;
+export function Unique(nameOrColumns?: string | [string, ...string[]], columnsOrOptions?: [string, ...string[]] | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
+  if (isArray(nameOrColumns)) {
+    return createTableDecorator({ unique: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
   }
 
-  return createColumnDecorator({ unique: { name, options: columnsOrOptions ?? options } });
+  if (isArray(columnsOrOptions)) {
+    return createTableDecorator({ unique: [{ name: nameOrColumns, columns: columnsOrOptions, options }] });
+  }
+
+  return createColumnDecorator({ unique: { name: nameOrColumns, options: columnsOrOptions ?? options } });
 }
 
 export function Index(name?: string, options?: IndexReflectionData['options']): PropertyDecorator;
 export function Index(name: string | undefined, columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
-export function Index(name?: string, columnsOrOptions?: [string, ...string[]] | IndexReflectionData['options'], options?: IndexReflectionData['options']) {
-  if (isArray(columnsOrOptions)) {
-    return createTableDecorator({ index: [{ name, columns: columnsOrOptions, options }] });
+export function Index(columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
+export function Index(nameOrColumns?: string | [string, ...string[]], columnsOrOptions?: [string, ...string[]] | IndexReflectionData['options'], options?: IndexReflectionData['options']) {
+  if (isArray(nameOrColumns)) {
+    return createTableDecorator({ index: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
   }
 
-  return createColumnDecorator({ index: { name, options: columnsOrOptions ?? options } });
+  if (isArray(columnsOrOptions)) {
+    return createTableDecorator({ index: [{ name: nameOrColumns, columns: columnsOrOptions, options }] });
+  }
+
+  return createColumnDecorator({ index: { name: nameOrColumns, options: columnsOrOptions ?? options } });
 }
