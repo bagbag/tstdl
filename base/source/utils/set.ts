@@ -1,5 +1,3 @@
-/* eslint-disable max-statements */
-
 import { compareByValueSelectionDescending } from './comparison.js';
 
 export function intersectSets<T>(...sets: Set<T>[]): T[] {
@@ -31,7 +29,6 @@ export function symmetricDifferenceSets<T>(...sets: Set<T>[]): Set<T> {
   }
 
   const [first, second, ...others] = sets;
-
 
   return symmetricDifferenceSets(simpleSymmetricDifference(first!, second!), ...others);
 }

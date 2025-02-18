@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-magic-numbers */
-
 import type { BinaryData } from '#/types.js';
 import { Alphabet } from './alphabet.js';
 import { toUint8Array } from './binary.js';
@@ -21,13 +19,13 @@ export function zBase32Encode(buffer: BinaryData): string {
 
     while (bits >= 5) {
       const quantum = (value >>> (bits - 5)) & 31;
-      result += alphabet[quantum];
+      result += alphabet[quantum]!;
       bits -= 5;
     }
   }
 
   if (bits > 0) {
-    result += alphabet[(value << (5 - bits)) & 31];
+    result += alphabet[(value << (5 - bits)) & 31]!;
   }
 
   return result;

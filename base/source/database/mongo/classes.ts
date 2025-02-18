@@ -1,8 +1,6 @@
-/* eslint-disable max-classes-per-file */
-import { resolveArgumentType } from '#/injector/interfaces.js';
 import type { Entity } from '#/database/index.js';
 import { ReplaceClass } from '#/injector/decorators.js';
-import type { Resolvable } from '#/injector/interfaces.js';
+import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { Db, Collection as MongoCollection, MongoClient as MongoMongoClient } from 'mongodb';
 import type { MongoDocument } from './model/document.js';
 import type { MongoConnection, MongoRepositoryConfig } from './types.js';

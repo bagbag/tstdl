@@ -9,8 +9,7 @@ export function multiplexAsync<T>(iterable: AnyIterable<T>, count: number, buffe
 
   const feedableIterables: FeedableAsyncIterable<T>[] = createArray(count, () => new FeedableAsyncIterable());
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  multiplexTo(iterable, feedableIterables, bufferSize);
+  void multiplexTo(iterable, feedableIterables, bufferSize);
 
   return feedableIterables;
 }

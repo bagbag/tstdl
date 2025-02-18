@@ -25,6 +25,7 @@ type NormalizePrimitiveToConstructor<T> =
   : Or<IsEqual<T, symbol>, IsEqual<T, Symbol>> extends true ? typeof Symbol
   : never;
 
+/*
 type NormalizeConstructorToPrimitve<T> =
   | IsEqual<T, String> extends true ? string
   : IsEqual<T, Number> extends true ? number
@@ -32,6 +33,7 @@ type NormalizeConstructorToPrimitve<T> =
   : IsEqual<T, BigInt> extends true ? bigint
   : IsEqual<T, Symbol> extends true ? symbol
   : T;
+*/
 /* eslint-enable @typescript-eslint/no-wrapper-object-types */
 
 export type SchemaTestable<T = any> = Schema<T> | AbstractConstructor<T> | NormalizePrimitiveToConstructor<T>;

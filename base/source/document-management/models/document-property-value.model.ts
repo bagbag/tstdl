@@ -1,7 +1,7 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { Uuid } from '#/orm/types.js';
-import { BooleanProperty, Integer, NumberProperty, SchemaOutput, StringProperty, union } from '#/schema/index.js';
+import { BooleanProperty, Integer, NumberProperty, type SchemaOutput, StringProperty, union } from '#/schema/index.js';
 import { DocumentProperty } from './document-property.model.js';
 import { Document } from './document.model.js';
 

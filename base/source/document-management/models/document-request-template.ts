@@ -2,8 +2,8 @@ import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { Uuid } from '#/orm/types.js';
 import { Integer, StringProperty } from '#/schema/index.js';
-import { TypedOmit } from '#/types.js';
-import { DocumentRequest } from './document-request.model.js';
+import type { TypedOmit } from '#/types.js';
+import type { DocumentRequest } from './document-request.model.js';
 import { DocumentRequestsTemplate } from './document-requests-template.js';
 import { DocumentType } from './document-type.model.js';
 

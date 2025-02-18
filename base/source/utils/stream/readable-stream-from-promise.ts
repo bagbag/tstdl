@@ -5,7 +5,7 @@ export function readableStreamFromPromise<T>(promiseOrProvider: ValueOrProvider<
 
   resolveValueOrProvider(promiseOrProvider)
     .then(async (readable) => readable.pipeTo(stream.writable))
-    .catch(async (error) => stream.writable.abort(error));
+    .catch(async (error: unknown) => stream.writable.abort(error));
 
   return stream.readable;
 }

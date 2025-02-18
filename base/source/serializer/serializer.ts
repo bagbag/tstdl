@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return, max-lines-per-function, max-statements, complexity */
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-deprecated */
 
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { SortedArrayList } from '#/data-structures/sorted-array-list.js';
-import type { Constructor, Record, StringMap } from '#/types.js';
+import type { Constructor, Function, Record, StringMap } from '#/types.js';
 import { compareByValueSelection } from '#/utils/comparison.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -37,7 +37,7 @@ export function stringSerialize<T>(value: T, options?: SerializationOptions): St
   return JSON.stringify(serialized) as StringSerialized<T>;
 }
 
-export function stringDeserialize<T = unknown>(serialized: string, options?: SerializationOptions): T {
+export function stringDeserialize<T = unknown>(serialized: string, options?: SerializationOptions): T { // eslint-disable-line @typescript-eslint/no-unnecessary-type-parameters
   const parsedStringSerialized = JSON.parse(serialized) as Serialized<T>;
   return deserialize(parsedStringSerialized, options);
 }
@@ -246,7 +246,7 @@ function _deserialize(serialized: unknown, context: DeserializeContext, path: st
             throw new Error('functions are only allowed if allowUnsafe option is true');
           }
 
-          const fn = eval(nonPrimitiveData as FunctionNonPrimitive['<function>']); // eslint-disable-line no-eval
+          const fn = eval(nonPrimitiveData as FunctionNonPrimitive['<function>']);
           context.references.set(path, fn);
 
           return fn;

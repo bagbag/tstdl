@@ -58,7 +58,6 @@ export function compareByValueSelectionToOrder<T, TSelect>(order: (TSelect | typ
   const indexMapEntries = order.map((orderItem, index) => [orderItem, index] as const);
   const indexMap = new Map(indexMapEntries);
 
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   return function compareByValueSelectionToOrder(a: T, b: T): number {
     const selectedA = selector(a);
     const selectedB = selector(b);

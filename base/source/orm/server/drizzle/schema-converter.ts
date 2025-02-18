@@ -9,6 +9,7 @@ import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, type Record, type Schema } from '#/schema/index.js';
 import type { AbstractConstructor, Enumeration, Type, UnionToIntersection } from '#/types.js';
+import type { Tagged } from '#/types/index.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
 import { enumValues } from '#/utils/enum.js';
 import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
@@ -21,7 +22,7 @@ import { JsonSchema } from '../../schemas/json.js';
 import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
-import type { ColumnBuilder, embedded } from '../../types.js';
+import type { ColumnBuilder, EmbeddedConfigTag } from '../../types.js';
 
 type Column<Name extends string, T> = null extends T ? ColumnBuilder<T, Name> : NotNull<ColumnBuilder<T, Name>>;
 
@@ -39,7 +40,7 @@ const getDbSchema = memoizeSingle(pgSchema);
 
 export const getDrizzleTableFromType = memoize(_getDrizzleTableFromType);
 
-export type ColumnPrefix<T> = T extends { [embedded]?: { prefix: infer Prefix } } ? Prefix extends string ? Prefix : '' : '';
+export type ColumnPrefix<T> = T extends Tagged<unknown, EmbeddedConfigTag, { prefix: infer Prefix }> ? Prefix extends string ? Prefix : '' : '';
 
 export type PgTableFromType<S extends string, T extends AbstractConstructor, TableName extends string = T extends Required<EntityType> ? SnakeCase<T['entityName']> : string> = PgTableWithColumns<{
   name: TableName,
@@ -52,7 +53,7 @@ export type PgTableFromType<S extends string, T extends AbstractConstructor, Tab
   dialect: 'pg'
 }>;
 
-export type EmbeddedProperties<T> = ConditionalPick<T, { [embedded]?: { prefix: any } }>;
+export type EmbeddedProperties<T> = ConditionalPick<T, Tagged<unknown, EmbeddedConfigTag, { prefix: any }>>;
 export type EmbeddedColumns<T, Prefix extends string> = { [P in keyof T as CamelCase<`${Prefix}${Extract<P, string>}`>]: Column<CamelCase<`${Prefix}${Extract<P, string>}`>, T[P]> };
 
 const columnDefinitionsSymbol = Symbol('columnDefinitions');
@@ -133,7 +134,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
   (drizzleSchema as Record)[columnDefinitionsSymbol] = columnDefinitions;
 
-  return drizzleSchema as any; // eslint-disable-line @typescript-eslint/no-unsafe-return
+  return drizzleSchema as any;
 }
 
 function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, dbSchema: PgSchema, path = new JsonPath({ dollar: false }), prefix: string = ''): ColumnDefinition[] {

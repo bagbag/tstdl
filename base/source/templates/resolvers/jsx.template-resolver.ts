@@ -2,7 +2,7 @@ import { Singleton } from '#/injector/decorators.js';
 import { Method } from '#/schema/index.js';
 import type { PartialProperty, Record, TypedOmit } from '#/types.js';
 import type { ComponentClass, FunctionComponent } from 'preact';
-import { Template, TemplateField, simpleTemplate } from '../template.model.js';
+import { type Template, TemplateField, simpleTemplate } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';
 

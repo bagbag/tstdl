@@ -42,8 +42,7 @@ export class PeriodicReporter {
 
     this.running = true;
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async () => {
+    void (async () => {
       this.counter = 0;
       this.stopRequested = false;
       this.stopToken.unset();

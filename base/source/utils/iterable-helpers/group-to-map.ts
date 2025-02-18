@@ -26,7 +26,7 @@ export function groupToMap<TIn, TGroup extends [any, ...any[]]>(iterable: Iterab
   const map = new MultiKeyMap<TGroup, TIn[]>();
 
   for (const item of iterable) {
-    const groupKeys = selectors.map((selector): any => selector(item, index)) as TGroup; // eslint-disable-line @typescript-eslint/no-loop-func
+    const groupKeys = selectors.map((selector): any => selector(item, index)) as TGroup;
     index++;
 
     if (!map.has(groupKeys)) {

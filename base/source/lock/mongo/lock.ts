@@ -38,14 +38,14 @@ export class MongoLock extends Lock {
     this.#logger = logger;
   }
 
-  async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> { // eslint-disable-line max-lines-per-function, max-statements
+  async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> {
     const key = getRandomString(15, Alphabet.LowerUpperCaseNumbers);
     const timeoutDuration = Math.max(50, Math.min(1000, (timeout ?? 0) / 10));
 
     let result: boolean | Date = false;
 
     const timer = new Timer(true);
-    while ((result == false) && (isUndefined(timeout) || (timer.milliseconds < timeout))) { // eslint-disable-line no-unmodified-loop-condition
+    while ((result == false) && (isUndefined(timeout) || (timer.milliseconds < timeout))) {
       result = await this.tryAcquireOrRefresh(this.resource, key);
 
       if ((result == false) && isUndefined(timeout)) {
@@ -78,14 +78,13 @@ export class MongoLock extends Lock {
       }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    (async () => {
+    void (async () => {
       await cancelableTimeoutUntil(expiration.valueOf() - renewBuffer, releaseToken);
 
       while (!releaseToken.isSet && !controller.lost) {
         try {
           const refreshResult = await this.tryRefresh(this.resource, key);
-          expiration = (refreshResult == false) ? new Date(0) : refreshResult; // eslint-disable-line require-atomic-updates
+          expiration = (refreshResult == false) ? new Date(0) : refreshResult;
         }
         catch (error: unknown) {
           this.#logger.error(error as Error);

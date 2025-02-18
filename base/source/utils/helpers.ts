@@ -2,7 +2,6 @@ import { supportsNotification } from '#/supports.js';
 import { DetailsError } from '../errors/details.error.js';
 import type { DeepArray, Record } from '../types.js';
 import { decycle } from './object/decycle.js';
-import { isDefined } from './type-guards.js';
 
 /**
  * Create an structured clone of an value using Notification if available, otherwise history state (may alters history)

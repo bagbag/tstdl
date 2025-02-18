@@ -11,12 +11,12 @@
 import type { Observable, Subscribable } from 'rxjs';
 
 import { registerFinalization } from '#/memory/finalization.js';
-import { SignalsInjector } from '../api.js';
+import type { SignalsInjector } from '../api.js';
 import type { Signal } from './api.js';
 import { assertNotInReactiveContext } from './asserts.js';
 import { computed } from './computed.js';
-import { ValueEqualityFn } from './equality.js';
-import { signal, WritableSignal } from './writable-signal.js';
+import type { ValueEqualityFn } from './equality.js';
+import { signal, type WritableSignal } from './writable-signal.js';
 
 export interface ToSignalOptions<T> {
   /**

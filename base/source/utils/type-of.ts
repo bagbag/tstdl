@@ -1,3 +1,4 @@
+import type { Function } from '#/types.js';
 import { isNull } from './type-guards.js';
 
 export type TypeOfTypes =

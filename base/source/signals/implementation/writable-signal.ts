@@ -1,9 +1,7 @@
-/* eslint-disable */
-
 import { SIGNAL } from '../symbol.js';
-import { isSignal, Signal } from './api.js';
-import { ValueEqualityFn } from './equality.js';
-import { createSignal, SignalGetter, SignalNode, signalSetFn, signalUpdateFn } from './signal.js';
+import { isSignal, type Signal } from './api.js';
+import type { ValueEqualityFn } from './equality.js';
+import { createSignal, type SignalGetter, type SignalNode, signalSetFn, signalUpdateFn } from './signal.js';
 
 /**
  * @license

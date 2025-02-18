@@ -13,7 +13,7 @@ export function lastOrDefault<T, D, TPredicate extends T = T>(iterable: Iterable
   }
 
   if (hasLastItem) {
-    return lastItem! as T as TPredicate; // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    return lastItem! as T as TPredicate;
   }
 
   return defaultValue;

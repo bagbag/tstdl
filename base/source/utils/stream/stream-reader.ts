@@ -18,14 +18,12 @@ export type ReadBinaryStreamOptions = {
   onLengthSubceed?: 'error' | 'close' | 'leave-open'
 };
 
-// eslint-disable-next-line max-statements
 export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array> {
   const stream = isReadableStream(iterableOrStream)
     ? isDefined(length)
       ? toBytesStream(iterableOrStream)
       : iterableOrStream
     : getReadableStreamFromIterable(iterableOrStream);
-
 
   if (isDefined(length)) {
     const reader = stream.getReader({ mode: 'byob' });

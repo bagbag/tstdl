@@ -2,12 +2,11 @@ import type { JsonPath } from '#/json-path/json-path.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isPrimitive } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { SchemaError } from '../schema.error.js';
-import { Schema, SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
+import { Schema, type SchemaOptions, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 
 export type LiteralSchemaOptions<T> = SchemaOptions<T>;
-
 
 export class LiteralSchema<const T> extends Schema<T> {
   override readonly name: string;
@@ -41,7 +40,6 @@ export class LiteralSchema<const T> extends Schema<T> {
 export function literal<const T>(value: T, options?: LiteralSchemaOptions<T>): LiteralSchema<T> {
   return new LiteralSchema(value, options);
 }
-
 
 export function Literal<const T>(value: T, options?: LiteralSchemaOptions<T> & SchemaDecoratorOptions): SchemaPropertyDecorator {
   return PropertySchema((data) => literal(value, { description: data.description, example: data.example, ...options }), options);

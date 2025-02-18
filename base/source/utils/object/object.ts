@@ -76,13 +76,13 @@ export function filterUndefinedObjectProperties<T extends ObjectLiteral>(object:
   return filterObject(object, isDefined) as T;
 }
 
-export function copyObjectProperties<T extends ObjectLiteral, U extends T>(source: T, target: U): void {
+export function copyObjectProperties<T extends ObjectLiteral>(source: T, target: T): void {
   for (const key of objectKeys(source)) {
     target[key] = source[key] as any;
   }
 }
 
-export function getGetter<T extends ObjectLiteral, U extends keyof T>(obj: T, property: keyof T, bind: boolean): () => T[U] {
+export function getGetter<T extends ObjectLiteral, U extends keyof T>(obj: T, property: U, bind: boolean): () => T[U] {
   if (!(property in obj)) {
     throw new Error(`Property ${property as string} does not exist.`);
   }

@@ -1,9 +1,9 @@
-export function _throw(value: any): never { // eslint-disable-line no-underscore-dangle
+export function _throw(value: any): never {
   throw value;
 }
 
 export function deferThrow(valueProvider: () => any): () => never {
-  return function deferThrow() { // eslint-disable-line @typescript-eslint/no-shadow
+  return function deferThrow() {
     throw valueProvider();
   };
 }

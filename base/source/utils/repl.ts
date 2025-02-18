@@ -1,5 +1,3 @@
-/* eslint-disable import/no-nodejs-modules */
-
 import type { ReplOptions } from 'node:repl';
 
 import { dynamicImport } from '#/import.js';
@@ -11,7 +9,7 @@ import { isDefined } from './type-guards.js';
  * Starts an interactive (repl) session (node only)
  * @param context context to set the repl context to
  */
-export async function repl(options?: ReplOptions & { context?: Record<string> }): Promise<void> {
+export async function repl(options?: ReplOptions & { context?: Record<string, unknown> }): Promise<void> {
   const { start: startRepl } = await dynamicImport<typeof import('node:repl')>('node:repl');
   const replServer = startRepl(options);
 

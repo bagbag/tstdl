@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-parameters */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
 import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';

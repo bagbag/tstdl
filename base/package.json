@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.45",
+  "version": "0.92.47",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,12 +10,12 @@
     "build": "tsc && tsc-alias",
     "build:watch": "concurrently --raw --kill-others npm:tsc:watch npm:tsc-alias:watch",
     "build:production": "rm -rf dist && npm run build && npm run build:production:copy-files",
-    "build:production:copy-files": "cp package.json .eslintrc.json tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:document-management",
+    "build:production:copy-files": "cp package.json eslint.config.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:document-management",
     "build:docs": "typedoc",
     "build:docs:watch": "typedoc --watch",
     "generate:drizzle": "drizzle-kit generate --config dist/document-management/server/drizzle.config.js",
     "copy:document-management": "rm -rf ./dist/document-management/server/drizzle && cp -r ./source/document-management/server/drizzle ./dist/document-management/server/",
-    "lint": "eslint --config .eslintrc.json --cache source/",
+    "lint": "eslint --cache source/",
     "pub": "npm run build:production && rm -vf dist/test* && rm -vrf dist/tools/ && npm publish dist/",
     "tsc:watch": "tsc --watch",
     "tsc-alias:watch": "tsc-alias --watch"
@@ -127,8 +127,7 @@
     "type-fest": "4.35"
   },
   "devDependencies": {
-    "@mxssfd/typedoc-theme": "1.1",
-    "@stylistic/eslint-plugin": "3.1",
+    "@stylistic/eslint-plugin": "4.0",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -140,12 +139,9 @@
     "@typescript-eslint/eslint-plugin": "8.24",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
-    "eslint": "8.57",
-    "eslint-import-resolver-typescript": "3.8",
-    "eslint-plugin-import": "2.31",
+    "eslint": "9.20",
+    "globals": "15.15",
     "tsc-alias": "1.8",
-    "typedoc": "0.27",
-    "typedoc-plugin-missing-exports": "3.1",
     "typescript": "5.7"
   },
   "peerDependencies": {

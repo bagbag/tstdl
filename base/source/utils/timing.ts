@@ -28,8 +28,8 @@ export async function timeoutUntil(timestamp: number | Date): Promise<void> {
 /** Timeout for specified duration */
 export async function cancelableTimeout(milliseconds: number, cancelSignal: CancellationSignal): Promise<boolean> {
   return firstValueFrom(race([
-    timer(milliseconds).pipe(map(() => false)), // eslint-disable-line @typescript-eslint/no-unsafe-argument
-    cancelSignal.set$.pipe(map(() => true)) // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    timer(milliseconds).pipe(map(() => false)),
+    cancelSignal.set$.pipe(map(() => true))
   ]));
 }
 
@@ -63,6 +63,6 @@ export async function animationFrame(): Promise<number> {
   return new Promise<number>(requestAnimationFrame);
 }
 
-export async function idle(timeout?: number): Promise<IdleDeadline> { // eslint-disable-line @typescript-eslint/no-shadow
+export async function idle(timeout?: number): Promise<IdleDeadline> {
   return new Promise<IdleDeadline>((resolve) => requestIdleCallback(resolve, { timeout }));
 }

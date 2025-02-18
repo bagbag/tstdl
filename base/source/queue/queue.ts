@@ -1,6 +1,5 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
 import { QueueEnqueueBatch } from './enqueue-batch.js';
 

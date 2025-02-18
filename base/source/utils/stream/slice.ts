@@ -53,7 +53,7 @@ export function sliceStream<T>(stream: ReadableStream<T>, offset: number, length
 
   return new ReadableStream({
     type: 'bytes',
-    autoAllocateChunkSize: 100 * kibibyte, // eslint-disable-line @typescript-eslint/no-magic-numbers
+    autoAllocateChunkSize: 100 * kibibyte,
     async pull(controller) {
       while (bytesRead < offset) {
         const readResult = await byobReader.read(new Uint8Array(offsetBuffer!, 0, Math.min(offsetBuffer!.byteLength, offset - bytesRead)));
@@ -67,7 +67,7 @@ export function sliceStream<T>(stream: ReadableStream<T>, offset: number, length
         bytesRead += readResult.value.byteLength;
 
         if (bytesRead == offset) {
-          offsetBuffer = null; // eslint-disable-line require-atomic-updates
+          offsetBuffer = null;
         }
       }
 

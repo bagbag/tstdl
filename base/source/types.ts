@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style */
 
 import type { Observable } from 'rxjs';
-import type { CamelCase, Except, IsEqual, LiteralUnion, Tagged, UnwrapTagged } from 'type-fest';
+import type { CamelCase, Except, IsEqual, LiteralUnion } from 'type-fest';
 
 import type { Signal } from './signals/api.js';
 
-export type ObjectLiteral = {};
+export type ObjectLiteral = {}; // eslint-disable-line @typescript-eslint/no-empty-object-type
 
 export type Function<P extends any[] = any[], R = any> = (...params: P) => R;
 
@@ -85,8 +85,8 @@ export type FromEntries<T> = T extends readonly (readonly [infer Key, any])[]
 export type Writable<T> = T extends readonly (infer U)[] ? U[] : { -readonly [P in keyof T]: T[P] };
 export type DeepWritable<T> = T extends readonly (infer U)[] ? DeepWritable<U>[] : { -readonly [P in keyof T]: DeepWritable<T[P]> };
 
-export type RequiredKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? never : K }[keyof T];
-export type OptionalKeys<T> = { [K in keyof T]-?: {} extends Pick<T, K> ? K : never }[keyof T];
+export type RequiredKeys<T> = { [K in keyof T]-?: ObjectLiteral extends Pick<T, K> ? never : K }[keyof T];
+export type OptionalKeys<T> = { [K in keyof T]-?: ObjectLiteral extends Pick<T, K> ? K : never }[keyof T];
 
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type TypedExtract<T, U extends T> = T extends U ? T : never;
@@ -96,11 +96,14 @@ export type ReplaceIfUnknown<T, U> = IfUnknown<T, U, T>;
 export type OmitNever<T extends Record> = { [K in keyof T as T[K] extends never ? never : K]: T[K] };
 
 export type BaseType<T extends Exclude<Primitive, null | undefined>> =
-  | T extends string ? string : never
-  | T extends number ? number : never
-  | T extends boolean ? boolean : never
-  | T extends bigint ? bigint : never
-  | T extends symbol ? symbol : never;
+  T extends string ? string
+  : T extends number ? number
+  : T extends boolean ? boolean
+  : T extends bigint ? bigint
+  : T extends symbol ? symbol
+  : T extends null ? null
+  : T extends undefined ? undefined
+  : never;
 
 export type SharedProperties<A, B, C = unknown, D = unknown, E = unknown, F = unknown, G = unknown, H = unknown, I = unknown, J = unknown> = OmitNever<Pick<
   A & B & C & D & E & F & G & H & I & J,
@@ -162,7 +165,7 @@ export type IfUnknown<T, Then, Else = never> = unknown extends T ? Then : Else;
 export type IsAny<T> = IfAny<T, true, false>;
 export type IsUnknown<T> = IfUnknown<T, true, false>;
 
-export type If<B extends Boolean, Then, Else> = B extends true ? Then : Else;
+export type If<B extends boolean, Then, Else> = B extends true ? Then : Else;
 export type Not<T extends boolean> = T extends true ? false : true;
 
 export type Fallback<T, F> = [T] extends [never] ? F : T;
@@ -225,7 +228,7 @@ export type TypeFromPath<T extends Record, Path extends Paths<T> | string> = {
   : never;
 }[Path];
 
-export type ConstructorParameterDecorator = (target: Object, propertyKey: undefined, parameterIndex: number) => void;
+export type ConstructorParameterDecorator = (target: object, propertyKey: undefined, parameterIndex: number) => void;
 
 export type ReactiveValue<T> = T | Signal<T> | Observable<T>;
 
@@ -260,12 +263,3 @@ export type OmitDeep<T, S extends OmitDeepSelection<T>> = T extends Record<any> 
   : S[Extract<P, keyof S>] extends OmitDeepSelection<T[P]> ? OmitDeep<T[P], S[Extract<P, keyof S>]> : never
   : never
 }> : T;
-
-export type Untagged<T> = T extends Tagged<unknown, any, any> ? UnwrapTagged<T> : T;
-export type UntaggedDeep<T> = T extends Tagged<unknown, any, any>
-  ? UnwrapTagged<T>
-  : T extends readonly (infer U)[]
-  ? UntaggedDeep<U>[]
-  : T extends Record
-  ? { [P in keyof T]: UntaggedDeep<T[P]> }
-  : Untagged<T>;

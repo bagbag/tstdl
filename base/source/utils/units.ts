@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-magic-numbers */
-
 /* Data sizes */
 export const kilobyte = 1000;
 export const megabyte = 1000 * kilobyte;

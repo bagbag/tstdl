@@ -22,7 +22,7 @@ function mergeObjectsInternal(a: Record<string>, b: Record<string>, options: Mer
   const bEntries = objectEntries(b);
 
   for (const [key, valueB] of bEntries) {
-    if (!hasOwnProperty(merged, key)) {
+    if (!hasOwnProperty(merged, key)) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
       (merged as Record)[key] = valueB;
       continue;
     }
@@ -55,7 +55,7 @@ function mergeValues(a: any, b: any, options: MergeObjectsOptions, path: string)
       throw new Error(`Property type mismatch at ${path}.`);
     }
 
-    return mergeArray(a, b, options, path); // eslint-disable-line @typescript-eslint/no-unsafe-return
+    return mergeArray(a, b, options, path);
   }
 
   return mergeObjectsInternal(a as object, b as object, options, path);

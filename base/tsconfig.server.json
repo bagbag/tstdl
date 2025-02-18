@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json", // in dist tsconfig.base.json is renamed to tsconfig.json
   "compilerOptions": {
-    "target": "es2023"
+    "target": "es2024"
   }
 }

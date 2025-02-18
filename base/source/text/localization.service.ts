@@ -27,10 +27,9 @@ export type LocalizeFunction<Parameters = void> = (parameters: Parameters, conte
 
 export type LocalizeItem<Parameters = void> = string | LocalizeFunction<Parameters>;
 
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 type LocalizationTemplate = { [key: string]: LocalizeItem<any> | LocalizationTemplate };
 
-export type EnumerationLocalization<T extends Enumeration = Enumeration> = { [P in EnumerationValue<T>]: LocalizeItem<any> };
+export type EnumerationLocalization<T extends Enumeration = Enumeration> = Record<EnumerationValue<T>, LocalizeItem<any>>;
 
 export type EnumerationLocalizationEntry<T extends Enumeration = Enumeration> = [enumType: T, enumName: LocalizeItem<any> | undefined, enumValues: EnumerationLocalization<T>];
 

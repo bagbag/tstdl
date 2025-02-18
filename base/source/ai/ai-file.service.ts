@@ -5,14 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
-import { Bucket, Storage } from '@google-cloud/storage';
+import { type Bucket, Storage } from '@google-cloud/storage';
 import { FileState, GoogleAIFileManager } from '@google/generative-ai/server';
 
 import { AsyncEnumerable } from '#/enumerable/async-enumerable.js';
 import { DetailsError } from '#/errors/details.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
-import { Resolvable, type resolveArgumentType } from '#/injector/interfaces.js';
+import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/logger.js';
 import { createArray } from '#/utils/array/array.js';
 import { formatBytes } from '#/utils/format.js';
@@ -20,8 +20,8 @@ import { timeout } from '#/utils/timing.js';
 import { tryIgnoreAsync } from '#/utils/try-ignore.js';
 import { assertDefinedPass, isBlob, isDefined, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
-import { AiServiceOptions } from './ai.service.js';
-import { FileContentPart, FileInput } from './types.js';
+import type { AiServiceOptions } from './ai.service.js';
+import type { FileContentPart, FileInput } from './types.js';
 
 export type AiFileServiceOptions = Pick<AiServiceOptions, 'apiKey' | 'keyFile' | 'vertex'>;
 

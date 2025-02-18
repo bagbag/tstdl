@@ -11,7 +11,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
 
     return new ReadableStream({
       type: 'bytes',
-      autoAllocateChunkSize: 100 * kibibyte, // eslint-disable-line @typescript-eslint/no-magic-numbers
+      autoAllocateChunkSize: 100 * kibibyte,
       start() {
         byobReader = stream.getReader({ mode: 'byob' });
       },
@@ -64,7 +64,7 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
           return;
         }
 
-        buffer = readResult.value; // eslint-disable-line require-atomic-updates
+        buffer = readResult.value;
       }
 
       if (!isByobRequest) {

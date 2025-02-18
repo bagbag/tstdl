@@ -13,5 +13,4 @@ const x = pgSchema('').table('test', {
 
 await db.insert(x).values({});
 
-
 const user = await db.select().from(schema.user);

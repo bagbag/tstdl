@@ -1,8 +1,8 @@
-import { ApiClient, compileClient } from '#/api/client/index.js';
+import { type ApiClient, compileClient } from '#/api/client/index.js';
 import { ReplaceClass, Singleton } from '#/injector/index.js';
-import { emptyObjectSchema, ObjectSchemaOrType, SchemaTestable, unknown } from '#/schema/index.js';
+import { emptyObjectSchema, type ObjectSchemaOrType, type SchemaTestable, unknown } from '#/schema/index.js';
 import type { Record } from '#/types.js';
-import { AuthenticationApiDefinition, getAuthenticationApiDefinition } from '../authentication.api.js';
+import { type AuthenticationApiDefinition, getAuthenticationApiDefinition } from '../authentication.api.js';
 
 export function getAuthenticationApiClient<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,

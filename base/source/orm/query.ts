@@ -1,7 +1,8 @@
 import type { SQLWrapper } from 'drizzle-orm';
 
-import type { Flatten, Record, Untagged } from '#/types.js';
+import type { Flatten, Record } from '#/types.js';
 import type { Geometry } from '#/types/geo-json.js';
+import type { Untagged } from '#/types/tagged.js';
 
 export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);

@@ -2,7 +2,7 @@
 import '#/polyfills.js';
 
 import { compileClient } from '#/api/client/index.js';
-import { ApiController, ApiRequestContext, ApiServerResult, defineApi } from '#/api/index.js';
+import { type ApiController, type ApiRequestContext, type ApiServerResult, defineApi } from '#/api/index.js';
 import { apiController, configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';

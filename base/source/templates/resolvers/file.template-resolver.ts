@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InjectArg, Singleton } from '#/injector/decorators.js';
-import { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { StringProperty } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
 import { TemplateField } from '../template.model.js';

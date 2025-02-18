@@ -2,8 +2,7 @@ import * as path from 'node:path';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InjectArg, Singleton } from '#/injector/decorators.js';
-import type { Resolvable } from '#/injector/interfaces.js';
-import { resolveArgumentType } from '#/injector/interfaces.js';
+import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
 import { Template } from '../template.model.js';
 import { TemplateProvider } from '../template.provider.js';

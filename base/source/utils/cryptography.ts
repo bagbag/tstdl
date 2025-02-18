@@ -40,9 +40,9 @@ export interface DecryptionResult extends CryptionResult {
   toUtf8(): Promise<string>;
 }
 
-export interface DigestResult extends CryptionResult { }
+export type DigestResult = CryptionResult;
 
-export interface SignResult extends CryptionResult { }
+export type SignResult = CryptionResult;
 
 /**
  * Encrypt data
@@ -255,5 +255,5 @@ export async function deriveBytesMultiple(algorithm: DeriveAlgorithm, baseKey: C
 }
 
 function isBinaryKey(key: Key): key is BinaryData {
-  return isDefined((key as BinaryData).byteLength);
+  return isDefined((key as Partial<BinaryData & JsonWebKey>).byteLength);
 }

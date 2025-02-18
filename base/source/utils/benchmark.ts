@@ -34,7 +34,7 @@ export function measureBenchmarkOverhead(duration: number = 250): void {
     warmupFunction();
     operations++;
   }
-  while (timer.milliseconds < testDuration || warmupPhase);
+  while (timer.milliseconds < testDuration || warmupPhase); // eslint-disable-line @typescript-eslint/no-unnecessary-condition
   timer.stop();
 
   microsecondsPerTimerRead = timer.microseconds / operations;

@@ -1,4 +1,4 @@
-import { Accessor, Class, Method, Parameter, printType, Property, reflectionRegistry, ReflectionRegistry } from '#/reflection/index.js';
+import { Accessor, Class, Method, Parameter, printType, Property, reflectionRegistry, type ReflectionRegistry } from '#/reflection/index.js';
 
 @Class({ data: { tableName: 'foos' } })
 export class Foo {

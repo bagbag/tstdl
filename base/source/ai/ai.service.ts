@@ -1,15 +1,15 @@
-import { FinishReason, FunctionDeclaration, FunctionDeclarationSchema, GenerateContentCandidate, GenerationConfig, Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, Part, UsageMetadata, VertexAI } from '@google-cloud/vertexai';
+import { FinishReason, type FunctionDeclaration, type FunctionDeclarationSchema, type GenerateContentCandidate, type GenerationConfig, type Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, type Part, type UsageMetadata, VertexAI } from '@google-cloud/vertexai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
-import { Resolvable, type resolveArgumentType } from '#/injector/interfaces.js';
+import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
-import { array, enumeration, nullable, object, OneOrMany, SchemaTestable, string } from '#/schema/index.js';
-import { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
+import { array, enumeration, nullable, object, type OneOrMany, type SchemaTestable, string } from '#/schema/index.js';
+import type { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
@@ -18,7 +18,7 @@ import { assertDefinedPass, assertNotNullPass, isDefined, isNotNull, isUndefined
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
-import { AiModel, Content, ContentPart, ContentRole, FileContentPart, FileInput, FunctionCall, FunctionCallingMode, GenerationOptions, GenerationRequest, GenerationResult, isSchemaFunctionDeclarationWithHandler, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';
+import { type AiModel, type Content, type ContentPart, type ContentRole, type FileContentPart, type FileInput, type FunctionCall, type FunctionCallingMode, type GenerationOptions, type GenerationRequest, type GenerationResult, isSchemaFunctionDeclarationWithHandler, type SchemaFunctionDeclarations, type SchemaFunctionDeclarationsResult } from './types.js';
 
 export type SpecializedGenerationResult<T> = {
   result: T,
