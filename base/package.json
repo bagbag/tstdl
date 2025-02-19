@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.53",
+  "version": "0.92.55",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -17,12 +17,14 @@
     "pub": "npm run build:production && rm -vf dist/test* && rm -vrf dist/tools/ && npm publish dist/",
     "tsc:watch": "tsc --watch",
     "tsc-alias:watch": "tsc-alias --watch",
-    "generate:orm": "npm run generate:drizzle:document-management && npm run generate:drizzle:authentication",
+    "generate:orm": "npm run generate:drizzle:document-management && npm run generate:drizzle:authentication && npm run generate:drizzle:mail",
     "generate:drizzle:document-management": "drizzle-kit generate --config dist/document-management/server/drizzle.config.js",
     "generate:drizzle:authentication": "drizzle-kit generate --config dist/authentication/server/drizzle.config.js",
-    "copy:orm": "npm run copy:document-management && npm run copy:authentication",
+    "generate:drizzle:mail": "drizzle-kit generate --config dist/mail/drizzle.config.js",
+    "copy:orm": "npm run copy:document-management && npm run copy:authentication && npm run copy:mail",
     "copy:document-management": "rm -rf ./dist/document-management/server/drizzle && cp -r ./source/document-management/server/drizzle ./dist/document-management/server/",
-    "copy:authentication": "rm -rf ./dist/authentication/server/drizzle && cp -r ./source/authentication/server/drizzle ./dist/authentication/server/"
+    "copy:authentication": "rm -rf ./dist/authentication/server/drizzle && cp -r ./source/authentication/server/drizzle ./dist/authentication/server/",
+    "copy:mail": "rm -rf ./dist/mail/drizzle && cp -r ./source/mail/drizzle ./dist/mail/"
   },
   "exports": {
     "./tsconfig.json": "./tsconfig.json",

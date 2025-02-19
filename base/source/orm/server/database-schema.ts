@@ -1,8 +1,9 @@
 import type { PgEnum } from 'drizzle-orm/pg-core';
 
-import type { Enumeration, EnumerationValue, UnionToTuple } from '#/types.js';
-import { getDrizzleTableFromType, getPgEnum, registerEnum, type PgTableFromType } from './drizzle/schema-converter.js';
+import { getEnumName } from '#/enumeration/enumeration.js';
+import type { Enumeration, EnumerationObject, EnumerationValue, UnionToTuple } from '#/types.js';
 import type { EntityType } from '../entity.js';
+import { getDrizzleTableFromType, getPgEnum, registerEnum, type PgTableFromType } from './drizzle/schema-converter.js';
 
 export class DatabaseSchema<Name extends string> {
   readonly name: Name;
@@ -15,7 +16,7 @@ export class DatabaseSchema<Name extends string> {
     return getDrizzleTableFromType(type, this.name);
   }
 
-  getEnum<T extends Enumeration>(enumeration: T, name: string): PgEnum<UnionToTuple<`${EnumerationValue<T>}`> extends [string, ...string[]] ? UnionToTuple<`${EnumerationValue<T>}`> : never> {
+  getEnum<T extends Enumeration>(enumeration: T, name: string = getEnumName(enumeration as EnumerationObject)): PgEnum<UnionToTuple<`${EnumerationValue<T>}`> extends [string, ...string[]] ? UnionToTuple<`${EnumerationValue<T>}`> : never> {
     registerEnum(enumeration, name);
     return getPgEnum(this.name, enumeration) as any; // eslint-disable-line @typescript-eslint/no-unsafe-return
   }

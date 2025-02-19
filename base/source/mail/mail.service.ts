@@ -1,20 +1,26 @@
-import { Singleton, inject } from '#/injector/index.js';
+import { Singleton, inject, provide } from '#/injector/index.js';
 import { Logger } from '#/logger/index.js';
+import { DatabaseConfig, EntityRepositoryConfig, injectRepository } from '#/orm/server/index.js';
 import { TemplateService } from '#/templates/template.service.js';
 import type { TypedOmit } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
-import { assertDefined, isDefined } from '#/utils/type-guards.js';
+import { assertDefined } from '#/utils/type-guards.js';
 import { MailClient, MailClientConfig } from './mail.client.js';
-import type { MailData, MailLog, MailSendResult, MailTemplate, NewMailLog } from './models/index.js';
-import { MailLogRepository } from './repositories/mail-log.repository.js';
+import { MailLog, type MailData, type MailSendResult, type MailTemplate } from './models/index.js';
+import { MailModuleConfig } from './module.js';
 import { MAIL_DEFAULT_DATA } from './tokens.js';
 
-@Singleton()
+@Singleton({
+  providers: [
+    provide(EntityRepositoryConfig, { useValue: { schema: 'mail' } }),
+    provide(DatabaseConfig, { useFactory: (_, context) => context.resolve(MailModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) })
+  ]
+})
 export class MailService {
   readonly #mailClient = inject(MailClient);
   readonly #templateService = inject(TemplateService);
-  readonly #mailLogRepository = inject(MailLogRepository, undefined, { optional: true });
+  readonly #mailLogRepository = injectRepository(MailLog);
   readonly #defaultClientConfig = inject(MailClientConfig, undefined, { optional: true });
   readonly #defaultData = inject(MAIL_DEFAULT_DATA, undefined, { optional: true });
   readonly #logger = inject(Logger, 'MailService');
@@ -31,32 +37,23 @@ export class MailService {
 
     let mailLog: MailLog | undefined;
 
-    if (isDefined(this.#mailLogRepository)) {
-      const log: NewMailLog = {
-        timestamp: currentTimestamp(),
-        template: templateName ?? null,
-        data,
-        sendResult: null,
-        errors: null
-      };
-
-      mailLog = await this.#mailLogRepository.insert(log);
-    }
+    mailLog = await this.#mailLogRepository.insert({
+      timestamp: currentTimestamp(),
+      template: templateName ?? null,
+      data,
+      sendResult: null,
+      errors: null
+    });
 
     try {
       const result = await this.#mailClient.send(data, clientConfig);
-
-      if (isDefined(mailLog)) {
-        await this.#mailLogRepository!.patch(mailLog, { sendResult: result });
-      }
+      await this.#mailLogRepository.update(mailLog.id, { sendResult: result });
 
       return result;
     }
     catch (error) {
       try {
-        if (isDefined(mailLog)) {
-          await this.#mailLogRepository!.patch(mailLog, { errors: [formatError(error)] });
-        }
+        await this.#mailLogRepository.update(mailLog.id, { errors: [formatError(error)] });
       }
       catch (logError) {
         this.#logger.error(logError as Error);

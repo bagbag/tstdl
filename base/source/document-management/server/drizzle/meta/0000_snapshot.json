@@ -1,5 +1,5 @@
 {
-  "id": "dc8f7b3d-dc7e-4e13-b4f0-239d726d3307",
+  "id": "8b44dbd1-5662-4e8f-9a42-3057c61bdaa3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1518,10 +1518,10 @@
       "name": "document_property_data_type",
       "schema": "document_management",
       "values": [
-        "0",
-        "1",
-        "2",
-        "3"
+        "text",
+        "integer",
+        "decimal",
+        "boolean"
       ]
     }
   },

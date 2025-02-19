@@ -467,6 +467,6 @@ function validatePropertyValue(propertyId: string, dataType: DocumentPropertyDat
   const valid = validators[dataType](value);
 
   if (!valid) {
-    throw new BadRequestError(`Invalid value for data type ${DocumentPropertyDataType[dataType]} for property ${propertyId}.`);
+    throw new BadRequestError(`Invalid value for data type ${dataType} for property ${propertyId}.`);
   }
 }

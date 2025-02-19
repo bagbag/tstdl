@@ -1,13 +1,21 @@
-import type { Entity, NewEntity } from '#/database/index.js';
+import { Entity, Json, Timestamp } from '#/orm/index.js';
+import { StringProperty } from '#/schema/index.js';
 import type { MailData } from './mail-data.model.js';
 import type { MailSendResult } from './mail-send-result.model.js';
 
-export type MailLog = Entity & {
-  timestamp: number,
-  template: string | null,
-  data: MailData,
-  sendResult: MailSendResult | null,
-  errors: string[] | null
-};
+export class MailLog extends Entity {
+  @Timestamp()
+  timestamp: Timestamp;
 
-export type NewMailLog = NewEntity<MailLog>;
+  @StringProperty({ nullable: true })
+  template: string | null;
+
+  @Json()
+  data: Json<MailData>;
+
+  @Json({ nullable: true })
+  sendResult: Json<MailSendResult> | null;
+
+  @StringProperty({ array: true, nullable: true })
+  errors: string[] | null;
+}

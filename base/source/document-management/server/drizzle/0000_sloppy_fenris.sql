@@ -1,4 +1,4 @@
-CREATE TYPE "document_management"."document_property_data_type" AS ENUM('0', '1', '2', '3');--> statement-breakpoint
+CREATE TYPE "document_management"."document_property_data_type" AS ENUM('text', 'integer', 'decimal', 'boolean');--> statement-breakpoint
 CREATE TABLE "document_management"."document" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"file_id" uuid NOT NULL,

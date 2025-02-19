@@ -66,10 +66,6 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   readonly session: Database | PgTransaction;
   readonly isInTransaction: boolean;
 
-  get tx(): PgTransaction {
-    return (this.session as PgTransaction);
-  }
-
   declare readonly [resolveArgumentType]: EntityType<T>;
 
   constructor(type?: EntityType<T>, table?: PgTableFromType<string, EntityType>, columnDefinitions?: ColumnDefinition[], columnDefinitionsMap?: Map<string, ColumnDefinition>, session?: Database | PgTransaction) {
@@ -167,7 +163,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.loadManyByQuery(inArray(this.table.id, ids), options);
   }
 
-  async * loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async* loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadMany(ids, options);
     yield* entities;
   }
@@ -184,7 +180,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return rows.map((entity) => this.mapToEntity(entity));
   }
 
-  async * loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async* loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadManyByQuery(query, options);
     yield* entities;
   }
@@ -193,7 +189,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.loadManyByQuery({}, options);
   }
 
-  async * loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async* loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadAll(options);
     yield* entities;
   }
