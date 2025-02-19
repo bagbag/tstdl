@@ -215,7 +215,7 @@ export type TypedArray =
 export type BinaryData = ArrayBuffer | ArrayBufferView;
 
 export type Paths<T extends Record> = T extends object
-  ? { [K in keyof T]-?: K extends string | number ? K | `${K}.${Paths<T[K]>}` : never }[keyof T]
+  ? { [K in keyof T]-?: K extends string | number ? `${K}` | `${K}.${Paths<T[K]>}` : never }[keyof T]
   : never;
 
 export type TypeFromPath<T extends Record, Path extends Paths<T> | string> = {

@@ -17,10 +17,7 @@ export type UnwrapTagged<TaggedType extends Tag<unknown, PropertyKey, any>> = Ta
 
 export type Untagged<T> = T extends Tagged ? UnwrapTagged<T> : T;
 
-export type UntaggedDeep<T> = T extends Tagged
-  ? UnwrapTagged<T>
-  : T extends readonly (infer U)[]
-  ? UntaggedDeep<U>[]
-  : T extends Record
-  ? { [P in keyof T]: UntaggedDeep<T[P]> }
+export type UntaggedDeep<T> =
+  Untagged<T> extends any[] | Record
+  ? { [P in keyof Untagged<T>]: UntaggedDeep<Untagged<T>[P]> }
   : Untagged<T>;

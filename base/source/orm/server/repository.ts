@@ -26,7 +26,7 @@ type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;
 
 export const repositoryType: unique symbol = Symbol('repositoryType');
 
-export type OrderOptions<T extends Entity> = { order?: Partial<Record<Paths<T>, 1 | -1 | 'asc' | 'desc'>> };
+export type OrderOptions<T extends Entity> = { order?: Partial<Record<Paths<UntaggedDeep<T>>, 1 | -1 | 'asc' | 'desc'>> };
 
 export type LoadOptions<T extends Entity> = OrderOptions<T> & { offset?: number, withDeleted?: boolean };
 export type LoadManyOptions<T extends Entity> = LoadOptions<T> & { limit?: number };
@@ -257,7 +257,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return rows.map((row) => this.mapToEntity(row));
   }
 
-  async upsert(target: OneOrMany<Extract<keyof T, string>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
+  async upsert(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
     const targetColumns = toArray(target).map((path) => {
       const columnName = assertDefinedPass(this.columnDefinitionsMap.get(path), `Could not map ${path} to column.`).name;
       return this.table[columnName as keyof PgTableFromType<string, EntityType>] as PgColumn;
@@ -278,7 +278,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.mapToEntity(row!);
   }
 
-  async upsertMany(target: OneOrMany<Extract<keyof T, string>>, entities: NewEntity<T>[], update: EntityUpdate<T>): Promise<T[]> {
+  async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update: EntityUpdate<T>): Promise<T[]> {
     const targetColumns = toArray(target).map((path) => {
       const columnName = assertDefinedPass(this.columnDefinitionsMap.get(path), `Could not map ${path} to column.`).name;
       return this.table[columnName as keyof PgTableFromType<string, EntityType>] as PgColumn;
