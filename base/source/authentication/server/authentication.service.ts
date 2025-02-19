@@ -171,27 +171,29 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const now = currentTimestamp();
     const end = now + this.refreshTokenTimeToLive;
 
-    const session = await this.sessionRepository.insert({
-      subject: actualSubject,
-      begin: now,
-      end,
-      refreshTokenHashVersion: 0,
-      refreshTokenSalt: new Uint8Array(),
-      refreshTokenHash: new Uint8Array()
+    return this.sessionRepository.transaction(async (sessionRepository) => {
+      const session = await sessionRepository.insert({
+        subject: actualSubject,
+        begin: now,
+        end,
+        refreshTokenHashVersion: 0,
+        refreshTokenSalt: new Uint8Array(),
+        refreshTokenHash: new Uint8Array()
+      });
+
+      const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
+      const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
+      const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
+
+      await sessionRepository.update(session.id, {
+        end,
+        refreshTokenHashVersion: 1,
+        refreshTokenSalt: refreshToken.salt,
+        refreshTokenHash: refreshToken.hash
+      });
+
+      return { token, jsonToken, refreshToken: refreshToken.token };
     });
-
-    const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
-    const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
-    const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
-
-    await this.sessionRepository.update(session.id, {
-      end,
-      refreshTokenHashVersion: 1,
-      refreshTokenSalt: refreshToken.salt,
-      refreshTokenHash: refreshToken.hash
-    });
-
-    return { token, jsonToken, refreshToken: refreshToken.token };
   }
 
   async endSession(sessionId: string): Promise<void> {

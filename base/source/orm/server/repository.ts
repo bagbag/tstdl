@@ -9,6 +9,7 @@ import { NotFoundError } from '#/errors/not-found.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import { injectionToken } from '#/injector/token.js';
 import { Schema } from '#/schema/schema.js';
 import type { DeepPartial, OneOrMany, Paths, Record, Type, TypedOmit } from '#/types.js';
 import type { UntaggedDeep } from '#/types/index.js';
@@ -45,6 +46,8 @@ export type TransactionHandler<T extends Entity, R> = (repository: EntityReposit
 
 type RepositoryConstructor<T extends Entity> = new (...repository: ConstructorParameters<typeof EntityRepository<T>>) => EntityRepository<T>;
 
+export const ENTITY_TYPE = injectionToken<EntityType<any>>('EntityType');
+
 const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
 
 @Singleton({
@@ -72,7 +75,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   constructor(type?: EntityType<T>, table?: PgTableFromType<string, EntityType>, columnDefinitions?: ColumnDefinition[], columnDefinitionsMap?: Map<string, ColumnDefinition>, session?: Database | PgTransaction) {
     this.#repositoryConstructor = new.target as RepositoryConstructor<T>;
 
-    this.type = type ?? injectArgument(this);
+    this.type = type ?? injectArgument(this, { optional: true }) ?? inject(ENTITY_TYPE);
     this.table = table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig).schema);
     this.columnDefinitions = columnDefinitions ?? getColumnDefinitions(this.table);
     this.columnDefinitionsMap = columnDefinitionsMap ?? new Map(this.columnDefinitions.map((column) => [column.objectPath.path, column]));
@@ -561,15 +564,14 @@ export function injectRepository<T extends Entity>(type: EntityType<T>): EntityR
   return inject(EntityRepository<T>, type);
 }
 
-export function getRepository<T extends Entity>(type: EntityType<T>, config: EntityRepositoryConfig): Type<EntityRepository<T>> {
+export function getRepository<T extends Entity>(type: EntityType<T>, config?: EntityRepositoryConfig): Type<EntityRepository<T>> {
   const className = `${type.name}Service`;
 
   const entityRepositoryClass = {
     [className]: class extends EntityRepository<T> { }
   }[className]!;
 
-  const injectorDecorator = Singleton({ providers: [{ provide: EntityRepositoryConfig, useValue: config }] });
-
+  const injectorDecorator = Singleton({ providers: [{ provide: ENTITY_TYPE, useValue: type }, { provide: EntityRepositoryConfig, useValue: config }] });
   injectorDecorator(entityRepositoryClass);
 
   return entityRepositoryClass;
