@@ -1,25 +1,18 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
 import type { PoolConfig } from 'pg';
 
-import { inject, injectionToken } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
-import { isUndefined } from '#/utils/type-guards.js';
-import { Database } from './database.js';
+import { isDefined } from '#/utils/type-guards.js';
+import { EntityRepositoryConfig } from './repository.js';
 
-export type DatabaseConfig = { connection: DatabaseArgument };
-export type DatabaseArgument = string | PoolConfig;
+export abstract class OrmModuleOptions {
+  connection?: string | PoolConfig;
+  repositoryConfig?: EntityRepositoryConfig;
+}
 
-export const DATABASE_CONFIG = injectionToken<DatabaseConfig>('EntityRepositoryConfig');
+export function configureOrm(options: OrmModuleOptions): void {
+  Injector.register(OrmModuleOptions, { useValue: options });
 
-
-Injector.registerSingleton(Database, {
-  useFactory: (argument) => {
-    const connection = argument ?? inject(DATABASE_CONFIG, undefined, { optional: true })?.connection;
-
-    if (isUndefined(connection)) {
-      throw new Error('Missing postgres connection. Provide it either via injection argument or provider.');
-    }
-
-    return drizzle({ connection });
+  if (isDefined(options.repositoryConfig)) {
+    Injector.register(EntityRepositoryConfig, { useValue: options.repositoryConfig });
   }
-});
+}

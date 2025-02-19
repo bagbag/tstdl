@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.47",
+  "version": "0.92.49",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -22,6 +22,7 @@
   },
   "exports": {
     "./tsconfig.json": "./tsconfig.json",
+    "./eslint.config.js": "./eslint.config.js",
     ".": "./index.js",
     "./environment": "./environment.js",
     "./formats": "./formats.js",

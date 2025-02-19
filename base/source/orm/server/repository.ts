@@ -533,7 +533,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       ...mappedUpdate,
       attributes: this.getAttributesUpdate((update as EntityUpdate<Entity>).metadata?.attributes),
       revision: sql<number>`${this.table.revision} + 1`,
-      revisionTimestamp: sql<Date>`transaction_timestamp()`
+      revisionTimestamp: TRANSACTION_TIMESTAMP
     } satisfies PgUpdateSetSource<PgTableFromType<string, EntityType>>;
   }
 

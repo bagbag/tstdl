@@ -134,7 +134,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
   (drizzleSchema as Record)[columnDefinitionsSymbol] = columnDefinitions;
 
-  return drizzleSchema as any;
+  return drizzleSchema as any as PgTableFromType<S, T>;
 }
 
 function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, dbSchema: PgSchema, path = new JsonPath({ dollar: false }), prefix: string = ''): ColumnDefinition[] {
