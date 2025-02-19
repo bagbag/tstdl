@@ -5,7 +5,7 @@ import { getMimeType, getMimeTypeExtensions } from '#/file/index.js';
 import { type Resolvable, Singleton, inject, injectArgument, provide, resolveArgumentType } from '#/injector/index.js';
 import { ObjectStorage } from '#/object-storage/index.js';
 import type { NewEntity, Query } from '#/orm/index.js';
-import { DATABASE_CONFIG, EntityRepositoryConfig, type Transaction, injectRepository } from '#/orm/server/index.js';
+import { DatabaseConfig, EntityRepositoryConfig, type Transaction, injectRepository } from '#/orm/server/index.js';
 import type { OneOrMany, Record } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertDefinedPass, compareByValueSelectionToOrder, currentTimestamp, digest, isBoolean, isDefined, isNotNull, isNull, isNumber, isString, isUint8Array, millisecondsPerMinute } from '#/utils/index.js';
@@ -19,7 +19,7 @@ export type DocumentServiceArgument = DocumentManagementConfig;
 @Singleton({
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'document_management' } }),
-    { provide: DATABASE_CONFIG, useFactory: (_, context) => context.resolve(DocumentManagementConfig).database }
+    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(DocumentManagementConfig).database }
   ]
 })
 export class DocumentManagementService implements Resolvable<DocumentServiceArgument> {
