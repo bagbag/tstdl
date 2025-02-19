@@ -1,27 +1,12 @@
-import { NumberProperty, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
+import { Entity, Unique } from '#/orm/index.js';
+import { Integer, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
 
-export class AuthenticationCredentials {
+export class AuthenticationCredentials extends Entity {
   @StringProperty()
-  id: string;
-
-  @StringProperty()
+  @Unique()
   subject: string;
 
-  @NumberProperty()
-  hashVersion: number;
-
-  @Uint8ArrayProperty()
-  salt: Uint8Array;
-
-  @Uint8ArrayProperty()
-  hash: Uint8Array;
-}
-
-export class NewAuthenticationCredentials {
-  @StringProperty()
-  subject: string;
-
-  @NumberProperty()
+  @Integer()
   hashVersion: number;
 
   @Uint8ArrayProperty()

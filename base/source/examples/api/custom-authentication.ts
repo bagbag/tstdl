@@ -11,8 +11,6 @@ import { AuthenticationAncillaryService } from '#/authentication/index.js';
 import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller.js';
 import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service.js';
 import { configureAuthenticationServer } from '#/authentication/server/module.js';
-import { MongoAuthenticationCredentialsRepository, configureMongoAuthenticationCredentialsRepository } from '#/authentication/server/mongo/mongo-authentication-credentials.repository.js';
-import { MongoAuthenticationSessionRepository, configureMongoAuthenticationSessionRepository } from '#/authentication/server/mongo/mongo-authentication-session.repository.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
@@ -70,7 +68,7 @@ const CustomAuthenticationApiClient = getAuthenticationApiClient(CustomTokenPayl
 
 @Singleton()
 class CustomAuthenticationAncillaryService extends AuthenticationAncillaryService<CustomTokenPaylod, AuthenticationData> {
-  override  getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
+  override getTokenPayload(_subject: string, authenticationData: AuthenticationData): CustomTokenPaylod | Promise<CustomTokenPaylod> {
     return { deviceRegistrationId: `registration:${authenticationData.deviceId}` };
   }
 
@@ -119,13 +117,8 @@ function bootstrap(): void {
 
   configureAuthenticationServer({
     serviceOptions: { secret: 'djp0fq23576aq' },
-    credentialsRepository: MongoAuthenticationCredentialsRepository,
-    sessionRepository: MongoAuthenticationSessionRepository,
     authenticationAncillaryService: CustomAuthenticationAncillaryService
   });
-
-  configureMongoAuthenticationCredentialsRepository({ collection: 'credentials' });
-  configureMongoAuthenticationSessionRepository({ collection: 'sessions' });
 
   configureLocalMessageBus();
 

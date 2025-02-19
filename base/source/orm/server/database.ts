@@ -1,4 +1,5 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import type { PoolConfig } from 'pg';
 
 import { inject, Injector, ReplaceClass } from '#/injector/index.js';
@@ -24,3 +25,5 @@ Injector.registerSingleton(Database, {
     return drizzle({ connection });
   }
 });
+
+export { migrate };

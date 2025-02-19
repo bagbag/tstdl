@@ -1,41 +1,18 @@
-import { NumberProperty, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
+import { Entity } from '#/orm/entity.js';
+import { Timestamp } from '#/orm/types.js';
+import { Integer, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
 
-export class AuthenticationSession {
-  @StringProperty()
-  id: string;
-
-  @StringProperty()
-  subject: string;
-
-  /** Timestamp */
-  @NumberProperty()
-  begin: number;
-
-  /** Timestamp */
-  @NumberProperty()
-  end: number;
-
-  @NumberProperty()
-  refreshTokenHashVersion: number;
-
-  @Uint8ArrayProperty()
-  refreshTokenSalt: Uint8Array;
-
-  @Uint8ArrayProperty()
-  refreshTokenHash: Uint8Array;
-}
-
-export class NewAuthenticationSession {
+export class AuthenticationSession extends Entity {
   @StringProperty()
   subject: string;
 
-  @NumberProperty()
-  begin: number;
+  @Timestamp()
+  begin: Timestamp;
 
-  @NumberProperty()
-  end: number;
+  @Timestamp()
+  end: Timestamp;
 
-  @NumberProperty()
+  @Integer()
   refreshTokenHashVersion: number;
 
   @Uint8ArrayProperty()

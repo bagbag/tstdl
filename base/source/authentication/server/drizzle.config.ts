@@ -7,7 +7,7 @@ export default defineConfig({
   out: relative('./', resolve(__dirname, './drizzle/').replace('dist', 'source')),
   schema: resolve(__dirname, '../models/schemas.js'),
   migrations: {
-    schema: 'document_management',
+    schema: 'authentication',
     table: '_migrations'
   }
 });

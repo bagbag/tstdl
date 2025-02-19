@@ -1,7 +1,9 @@
 import { ForbiddenError } from '#/errors/forbidden.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
-import { type AfterResolve, Singleton, afterResolve, inject } from '#/injector/index.js';
+import { type AfterResolve, Singleton, afterResolve, inject, provide } from '#/injector/index.js';
+import { DatabaseConfig } from '#/orm/server/index.js';
+import { EntityRepositoryConfig, injectRepository } from '#/orm/server/repository.js';
 import type { BinaryData, Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
@@ -11,12 +13,11 @@ import { createJwtTokenString } from '#/utils/jwt.js';
 import { getRandomBytes, getRandomString } from '#/utils/random.js';
 import { isBinaryData, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerDay, millisecondsPerMinute } from '#/utils/units.js';
-import type { InitSecretResetData, NewAuthenticationCredentials, RefreshToken, SecretCheckResult, SecretResetToken, Token } from '../models/index.js';
+import { AuthenticationCredentials, AuthenticationSession, type InitSecretResetData, type RefreshToken, type SecretCheckResult, type SecretResetToken, type Token } from '../models/index.js';
 import { AuthenticationAncillaryService, GetTokenPayloadContextAction } from './authentication-ancillary.service.js';
-import { AuthenticationCredentialsRepository } from './authentication-credentials.repository.js';
 import { AuthenticationSecretRequirementsValidator, type SecretTestResult } from './authentication-secret-requirements.validator.js';
-import { AuthenticationSessionRepository } from './authentication-session.repository.js';
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
+import { AuthenticationModuleConfig } from './module.js';
 
 export type CreateTokenData<AdditionalTokenPayload extends Record> = {
   tokenVersion?: number,
@@ -92,10 +93,15 @@ type CreateSecretResetTokenResult = {
 
 const SIGNING_SECRETS_LENGTH = 64;
 
-@Singleton()
+@Singleton({
+  providers: [
+    provide(EntityRepositoryConfig, { useValue: { schema: 'authentication' } }),
+    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(AuthenticationModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }
+  ]
+})
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> implements AfterResolve {
-  private readonly credentialsRepository = inject(AuthenticationCredentialsRepository);
-  private readonly sessionRepository = inject(AuthenticationSessionRepository);
+  private readonly credentialsRepository = injectRepository(AuthenticationCredentials);
+  private readonly sessionRepository = injectRepository(AuthenticationSession);
   private readonly authenticationSecretRequirementsValidator = inject(AuthenticationSecretRequirementsValidator);
   private readonly authenticationAncillaryService = inject<AuthenticationAncillaryService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>(AuthenticationAncillaryService, undefined, { optional: true });
   private readonly options = inject(AuthenticationServiceOptions);
@@ -134,19 +140,17 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
 
-    const credentials: NewAuthenticationCredentials = {
+    await this.credentialsRepository.upsert('subject', {
       subject: actualSubject,
       hashVersion: 1,
       salt,
       hash
-    };
-
-    await this.credentialsRepository.save(credentials);
+    });
   }
 
   async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
     const actualSubject = await this.resolveSubject(subject);
-    const credentials = await this.credentialsRepository.tryLoadBySubject(actualSubject);
+    const credentials = await this.credentialsRepository.tryLoadByQuery({ subject: actualSubject });
 
     if (isUndefined(credentials)) {
       return { success: false };
@@ -180,7 +184,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
     const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
 
-    await this.sessionRepository.extend(session.id, {
+    await this.sessionRepository.update(session.id, {
       end,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: refreshToken.salt,
@@ -192,7 +196,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   async endSession(sessionId: string): Promise<void> {
     const now = currentTimestamp();
-    await this.sessionRepository.end(sessionId, now);
+    await this.sessionRepository.update(sessionId, { end: now });
   }
 
   async refresh(refreshToken: string, authenticationData: AuthenticationData, { omitImpersonator = false }: { omitImpersonator?: boolean } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
@@ -217,7 +221,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: session.subject, sessionId, refreshTokenExpiration: newEnd, impersonator, timestamp: now });
     const newRefreshToken = await this.createRefreshToken(validatedRefreshToken.payload.subject, sessionId, newEnd, { impersonator });
 
-    await this.sessionRepository.extend(sessionId, {
+    await this.sessionRepository.update(sessionId, {
       end: newEnd,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: newRefreshToken.salt,

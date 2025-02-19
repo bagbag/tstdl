@@ -19,7 +19,7 @@ export type DocumentServiceArgument = DocumentManagementConfig;
 @Singleton({
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'document_management' } }),
-    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(DocumentManagementConfig).database }
+    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(DocumentManagementConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }
   ]
 })
 export class DocumentManagementService implements Resolvable<DocumentServiceArgument> {

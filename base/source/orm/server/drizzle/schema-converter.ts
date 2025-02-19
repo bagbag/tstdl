@@ -7,7 +7,7 @@ import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
-import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, type Record, type Schema } from '#/schema/index.js';
+import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, Uint8ArraySchema, type Record, type Schema } from '#/schema/index.js';
 import type { AbstractConstructor, Enumeration, Type, UnionToIntersection } from '#/types.js';
 import type { Tagged } from '#/types/index.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
@@ -23,6 +23,7 @@ import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
 import type { ColumnBuilder, EmbeddedConfigTag } from '../../types.js';
+import { bytea } from '../data-types/bytea.js';
 
 type Column<Name extends string, T> = null extends T ? ColumnBuilder<T, Name> : NotNull<ColumnBuilder<T, Name>>;
 
@@ -262,6 +263,10 @@ function getPostgresBaseColumn(columnName: string, dbSchema: PgSchema, schema: S
 
   if (schema instanceof JsonSchema) {
     return jsonb(columnName);
+  }
+
+  if (schema instanceof Uint8ArraySchema) {
+    return bytea(columnName);
   }
 
   throw new NotSupportedError(`Schema "${schema.constructor.name}" not supported on type "${context.type.name}" for property "${context.property}"`);

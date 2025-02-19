@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.50",
+  "version": "0.92.52",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -10,15 +10,19 @@
     "build": "tsc && tsc-alias",
     "build:watch": "concurrently --raw --kill-others npm:tsc:watch npm:tsc-alias:watch",
     "build:production": "rm -rf dist && npm run build && npm run build:production:copy-files",
-    "build:production:copy-files": "cp package.json eslint.config.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:document-management",
+    "build:production:copy-files": "cp package.json eslint.config.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:orm",
     "build:docs": "typedoc",
     "build:docs:watch": "typedoc --watch",
-    "generate:drizzle": "drizzle-kit generate --config dist/document-management/server/drizzle.config.js",
-    "copy:document-management": "rm -rf ./dist/document-management/server/drizzle && cp -r ./source/document-management/server/drizzle ./dist/document-management/server/",
     "lint": "eslint --cache source/",
     "pub": "npm run build:production && rm -vf dist/test* && rm -vrf dist/tools/ && npm publish dist/",
     "tsc:watch": "tsc --watch",
-    "tsc-alias:watch": "tsc-alias --watch"
+    "tsc-alias:watch": "tsc-alias --watch",
+    "generate:orm": "npm run generate:drizzle:document-management && npm run generate:drizzle:authentication",
+    "generate:drizzle:document-management": "drizzle-kit generate --config dist/document-management/server/drizzle.config.js",
+    "generate:drizzle:authentication": "drizzle-kit generate --config dist/authentication/server/drizzle.config.js",
+    "copy:orm": "npm run copy:document-management && npm run copy:authentication",
+    "copy:document-management": "rm -rf ./dist/document-management/server/drizzle && cp -r ./source/document-management/server/drizzle ./dist/document-management/server/",
+    "copy:authentication": "rm -rf ./dist/authentication/server/drizzle && cp -r ./source/authentication/server/drizzle ./dist/authentication/server/"
   },
   "exports": {
     "./tsconfig.json": "./tsconfig.json",

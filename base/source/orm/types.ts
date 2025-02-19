@@ -6,6 +6,7 @@ import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLi
 import type { GetTagMetadata, HasTag, Tagged, UnwrapTagged } from '#/types/index.js';
 import { Column, Embedded, Index, PrimaryKey, References, Unique } from './decorators.js';
 import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
+import type { bytea } from './server/data-types/index.js';
 
 export type ColumnTypeTag = 'column';
 export type EmbeddedConfigTag = 'embedded';
@@ -27,6 +28,7 @@ export type ColumnBuilder<T, ColumnName extends string = never> =
   : T extends string ? string extends ColumnName ? ReturnType<typeof text<ColumnName, string, [string, ...string[]]>> : ReturnType<typeof text<string, [string, ...string[]]>>
   : T extends number ? string extends ColumnName ? ReturnType<typeof doublePrecision<ColumnName>> : ReturnType<typeof doublePrecision>
   : T extends boolean ? string extends ColumnName ? ReturnType<typeof boolean<ColumnName>> : ReturnType<typeof boolean>
+  : T extends Uint8Array ? string extends ColumnName ? ReturnType<typeof bytea<ColumnName>> : ReturnType<typeof bytea>
   : T extends EnumerationObject ? string extends ColumnName ? EnumColumn<T, ColumnName> : EnumColumn<T>
   : T extends (infer U)[] ? string extends ColumnName ? ReturnType<ColumnBuilder<U, ColumnName>['array']> : ReturnType<ColumnBuilder<U>['array']>
   : never;
@@ -43,5 +45,6 @@ export type DoublePrecision = Tagged<number, ColumnTypeTag, ReturnType<typeof do
 export type Boolean = Tagged<number, ColumnTypeTag, ReturnType<typeof boolean>>;
 export type NumericDate = Tagged<number, ColumnTypeTag, ReturnType<typeof date>>;
 export type Timestamp = Tagged<number, ColumnTypeTag, ReturnType<typeof timestamp>>;
+export type Bytea = Tagged<number, ColumnTypeTag, ReturnType<typeof bytea>>;
 
 export { Array, Column, Embedded, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };
