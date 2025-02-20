@@ -504,20 +504,28 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   }
 
   async tryHardDelete(id: string): Promise<boolean> {
-    const result = await (this.session as NodePgDatabase).delete(this.table).where(eq(this.table.id, id));
+    const result = await (this.session as NodePgDatabase)
+      .delete(this.table)
+      .where(eq(this.table.id, id));
 
-    console.log({ deleteResult: result });
     return isNotNull(result.rowCount) && (result.rowCount > 0);
   }
 
-  async hardDeleteByQuery(query: Query<T>): Promise<boolean> {
+  async hardDeleteByQuery(query: Query<T>): Promise<void> {
+    const result = await this.tryHardDeleteByQuery(query);
+
+    if (!result) {
+      throw new NotFoundError(`${this.type.entityName} not found.`);
+    }
+  }
+
+  async tryHardDeleteByQuery(query: Query<T>): Promise<boolean> {
     const idQuery = this.getIdLimitQuery(query);
 
     const result = await (this.session as NodePgDatabase)
       .delete(this.table)
       .where(inArray(this.table.id, idQuery));
 
-    console.log({ deleteResult: result });
     return isNotNull(result.rowCount) && (result.rowCount > 0);
   }
 
@@ -527,9 +535,11 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
 
   async hardDeleteManyByQuery(query: Query<T>): Promise<number> {
     const sqlQuery = this.convertQuery(query);
-    const result = await (this.session as NodePgDatabase).delete(this.table).where(sqlQuery);
 
-    console.log({ deleteResult: result });
+    const result = await (this.session as NodePgDatabase)
+      .delete(this.table)
+      .where(sqlQuery);
+
     return assertNotNullPass(result.rowCount);
   }
 
@@ -620,7 +630,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return sql`${this.table.attributes} || '${JSON.stringify(attributes)}'::jsonb`;
+    return sql`${this.table.attributes} || ${JSON.stringify(attributes)}::jsonb`;
   }
 
   protected async getTransformContext(): Promise<TransformContext> {
