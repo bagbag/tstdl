@@ -5,13 +5,13 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { Primitive, Record } from '#/types.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
-import type { ColumnDefinition, PgTableFromType } from './drizzle/schema-converter.js';
 import type { EntityType } from '../entity.js';
 import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';
+import type { ColumnDefinition, PgTableFromType } from './types.js';
 
 const sqlTrue = sql`true`;
 
-export function convertQuery(query: Query, table: PgTableFromType<string, EntityType>, columnDefinitionsMap: Map<string, ColumnDefinition>): SQL { // eslint-disable-line max-lines-per-function
+export function convertQuery(query: Query, table: PgTableFromType<string, EntityType>, columnDefinitionsMap: Map<string, ColumnDefinition>): SQL {
   if (query instanceof SQL) {
     return query;
   }
@@ -26,7 +26,6 @@ export function convertQuery(query: Query, table: PgTableFromType<string, Entity
     return sqlTrue;
   }
 
-  // eslint-disable-next-line no-unreachable-loop
   for (const [property, value] of queryEntries) {
     const isPrimitiveValue = isPrimitive(value);
 

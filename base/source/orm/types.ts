@@ -34,7 +34,6 @@ export type ColumnBuilder<T, ColumnName extends string = never> =
   : never;
 
 export type Embedded<T = AbstractConstructor, P extends string = ''> = Tagged<T, EmbeddedConfigTag, { prefix: P }>;
-
 export type Array<T extends Tagged<ObjectLiteral, ColumnTypeTag, PgColumnBuilder<any>>> = Tagged<UnwrapTagged<T>[], ColumnTypeTag, ReturnType<GetTagMetadata<T, ColumnTypeTag>['array']>>;
 export type Json<T extends ObjectLiteral = ObjectLiteral> = Tagged<T, ColumnTypeTag, $Type<ReturnType<typeof jsonb>, T>>;
 export type Enum<T extends EnumerationObject> = Tagged<EnumerationValue<T>, ColumnTypeTag, EnumColumn<T>>;
@@ -45,6 +44,7 @@ export type DoublePrecision = Tagged<number, ColumnTypeTag, ReturnType<typeof do
 export type Boolean = Tagged<number, ColumnTypeTag, ReturnType<typeof boolean>>;
 export type NumericDate = Tagged<number, ColumnTypeTag, ReturnType<typeof date>>;
 export type Timestamp = Tagged<number, ColumnTypeTag, ReturnType<typeof timestamp>>;
-export type Bytea = Tagged<number, ColumnTypeTag, ReturnType<typeof bytea>>;
+export type Bytea = Tagged<Uint8Array, ColumnTypeTag, ReturnType<typeof bytea>>;
+export type Encrypted<T> = Tagged<T, ColumnTypeTag, ReturnType<typeof bytea>>;
 
 export { Array, Column, Embedded, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };

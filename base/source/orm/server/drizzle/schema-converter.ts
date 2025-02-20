@@ -1,16 +1,14 @@
-import type { BuildColumns, NotNull } from 'drizzle-orm';
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
 import { boolean, date, doublePrecision, index, integer, jsonb, pgSchema, text, timestamp, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
-import type { CamelCase, ConditionalPick, SnakeCase } from 'type-fest';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, Uint8ArraySchema, type Record, type Schema } from '#/schema/index.js';
-import type { AbstractConstructor, Enumeration, Type, UnionToIntersection } from '#/types.js';
-import type { Tagged } from '#/types/index.js';
+import type { AbstractConstructor, Enumeration, Type } from '#/types.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
+import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
 import { enumValues } from '#/utils/enum.js';
 import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
 import { compileDereferencer } from '#/utils/object/dereference.js';
@@ -22,40 +20,15 @@ import { JsonSchema } from '../../schemas/json.js';
 import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
-import type { ColumnBuilder, EmbeddedConfigTag } from '../../types.js';
 import { bytea } from '../data-types/bytea.js';
-
-type Column<Name extends string, T> = null extends T ? ColumnBuilder<T, Name> : NotNull<ColumnBuilder<T, Name>>;
+import { decryptBytes, encryptBytes } from '../encryption.js';
+import type { ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
 
 type ConverterContext = { type: AbstractConstructor, property: string };
-
-export type ColumnDefinition = {
-  name: string,
-  objectPath: JsonPath,
-  type: PgColumnBuilder<any, any, any, any>,
-  reflectionData: OrmColumnReflectionData | undefined,
-  dereferenceObjectPath: (obj: Record) => any
-};
 
 const getDbSchema = memoizeSingle(pgSchema);
 
 export const getDrizzleTableFromType = memoize(_getDrizzleTableFromType);
-
-export type ColumnPrefix<T> = T extends Tagged<unknown, EmbeddedConfigTag, { prefix: infer Prefix }> ? Prefix extends string ? Prefix : '' : '';
-
-export type PgTableFromType<S extends string, T extends AbstractConstructor, TableName extends string = T extends Required<EntityType> ? SnakeCase<T['entityName']> : string> = PgTableWithColumns<{
-  name: TableName,
-  schema: S,
-  columns: BuildColumns<
-    TableName,
-    { [P in Exclude<keyof InstanceType<T>, keyof EmbeddedProperties<InstanceType<T>>>]: Column<CamelCase<Extract<P, string>>, InstanceType<T>[P]>; }
-    & UnionToIntersection<{ [P in keyof EmbeddedProperties<InstanceType<T>>]: EmbeddedColumns<InstanceType<T>[P], ColumnPrefix<InstanceType<T>[P]>>; }[keyof EmbeddedProperties<InstanceType<T>>]>,
-    'pg'>,
-  dialect: 'pg'
-}>;
-
-export type EmbeddedProperties<T> = ConditionalPick<T, Tagged<unknown, EmbeddedConfigTag, { prefix: any }>>;
-export type EmbeddedColumns<T, Prefix extends string> = { [P in keyof T as CamelCase<`${Prefix}${Extract<P, string>}`>]: Column<CamelCase<`${Prefix}${Extract<P, string>}`>, T[P]> };
 
 const columnDefinitionsSymbol = Symbol('columnDefinitions');
 
@@ -160,13 +133,31 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
 
     const objectPath = path.add(property);
 
+    const encrypted = columnReflectionData?.encrypted == true;
+
+    const toDatabase = encrypted
+      ? async (value: unknown, context: TransformContext) => {
+        const bytes = encodeUtf8(value as string);
+        return encryptBytes(bytes, context.encryptionKey!);
+      }
+      : (value: unknown) => value;
+
+    const fromDatabase = encrypted
+      ? async (value: unknown, context: TransformContext) => {
+        const decrypted = await decryptBytes(value as Uint8Array, context.encryptionKey!);
+        return decodeText(decrypted);
+      }
+      : (value: unknown) => value;
+
     return [
       {
         name: toCamelCase([prefix, columnName].join('')),
         objectPath,
         type: getPostgresColumn(columnName, dbSchema, schema, columnReflectionData ?? {}, { type, property }),
         reflectionData: columnReflectionData,
-        dereferenceObjectPath: compileDereferencer(objectPath, { optional: true })
+        dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
+        toDatabase,
+        fromDatabase
       }
     ];
   });

@@ -21,7 +21,8 @@ export type OrmColumnReflectionData = {
   index?: IndexReflectionData,
   uuid?: { defaultRandom?: boolean },
   embedded?: { type: AbstractConstructor, prefix?: string | null },
-  references?: () => EntityType
+  references?: () => EntityType,
+  encrypted?: boolean
 };
 
 export type UniqueReflectionData = {
@@ -65,6 +66,10 @@ export function PrimaryKey() {
 
 export function References(type: () => EntityType) {
   return createColumnDecorator({ references: type });
+}
+
+export function Encrypted() {
+  return createColumnDecorator({ encrypted: true });
 }
 
 export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNullable<OrmColumnReflectionData['embedded']>, 'type'>) {

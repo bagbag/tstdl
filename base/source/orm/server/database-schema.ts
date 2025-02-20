@@ -3,7 +3,8 @@ import type { PgEnum } from 'drizzle-orm/pg-core';
 import { getEnumName } from '#/enumeration/enumeration.js';
 import type { Enumeration, EnumerationObject, EnumerationValue, UnionToTuple } from '#/types.js';
 import type { EntityType } from '../entity.js';
-import { getDrizzleTableFromType, getPgEnum, registerEnum, type PgTableFromType } from './drizzle/schema-converter.js';
+import { getDrizzleTableFromType, getPgEnum, registerEnum } from './drizzle/schema-converter.js';
+import type { PgTableFromType } from './types.js';
 
 export class DatabaseSchema<Name extends string> {
   readonly name: Name;

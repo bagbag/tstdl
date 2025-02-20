@@ -10,18 +10,24 @@ import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { injectionToken } from '#/injector/token.js';
+import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
 import type { DeepPartial, OneOrMany, Paths, Record, Type, TypedOmit } from '#/types.js';
 import type { UntaggedDeep } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
+import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
+import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { importSymmetricKey } from '#/utils/cryptography.js';
 import { fromDeepObjectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, assertNotNullPass, isNotNull, isUndefined } from '#/utils/type-guards.js';
+import { assertDefined, assertDefinedPass, assertNotNullPass, isNotNull, isUndefined } from '#/utils/type-guards.js';
 import type { Entity, EntityMetadata, EntityMetadataAttributes, EntityType, NewEntity } from '../entity.js';
 import type { Query } from '../query.js';
 import { Database } from './database.js';
-import { type ColumnDefinition, getColumnDefinitions, getDrizzleTableFromType, type PgTableFromType } from './drizzle/schema-converter.js';
+import { getColumnDefinitions, getDrizzleTableFromType } from './drizzle/schema-converter.js';
 import { convertQuery } from './query-converter.js';
+import { ENCRYPTION_SECRET } from './tokens.js';
 import { DrizzleTransaction, type Transaction, type TransactionConfig } from './transaction.js';
+import type { ColumnDefinition, PgTableFromType, TransformContext } from './types.js';
 
 type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;
 
@@ -58,6 +64,9 @@ const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
 export class EntityRepository<T extends Entity = Entity> implements Resolvable<EntityType<T>> {
   readonly #repositoryConstructor: RepositoryConstructor<T>;
   readonly #withTransactionCache = new WeakMap<Transaction, EntityRepository<T>>();
+  readonly #encryptionSecret = inject(ENCRYPTION_SECRET, undefined, { optional: true });
+
+  #transformContext: TransformContext | Promise<TransformContext> | undefined;
 
   readonly type: EntityType<T>;
   readonly table: PgTableFromType<string, EntityType>;
@@ -156,7 +165,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    const transformContext = await this.getTransformContext();
+    return this.mapToEntity(row, transformContext);
   }
 
   async loadMany(ids: string[], options?: LoadManyOptions<T>): Promise<T[]> {
@@ -177,7 +187,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       .offset(options?.offset!)
       .limit(options?.limit!);
 
-    return rows.map((entity) => this.mapToEntity(entity));
+    const transformContext = await this.getTransformContext();
+    return this.mapManyToEntity(rows, transformContext);
   }
 
   async* loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
@@ -239,31 +250,35 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   }
 
   async insert(entity: NewEntity<T>): Promise<T> {
-    const columns = this.mapToInsertColumns(entity);
+    const transformContext = await this.getTransformContext();
+    const columns = await this.mapToInsertColumns(entity, transformContext);
 
     const [row] = await this.session
       .insert(this.table)
       .values(columns)
       .returning();
 
-    return this.mapToEntity(row!);
+    return this.mapToEntity(row!, transformContext);
   }
 
   async insertMany(entities: NewEntity<T>[]): Promise<T[]> {
-    const columns = entities.map((entity) => this.mapToInsertColumns(entity));
+    const transformContext = await this.getTransformContext();
+    const columns = await this.mapManyToInsertColumns(entities, transformContext);
     const rows = await this.session.insert(this.table).values(columns).returning();
 
-    return rows.map((row) => this.mapToEntity(row));
+    return this.mapManyToEntity(rows, transformContext);
   }
 
   async upsert(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
+    const transformContext = await this.getTransformContext();
+
     const targetColumns = toArray(target).map((path) => {
       const columnName = assertDefinedPass(this.columnDefinitionsMap.get(path), `Could not map ${path} to column.`).name;
       return this.table[columnName as keyof PgTableFromType<string, EntityType>] as PgColumn;
     });
 
-    const columns = this.mapToInsertColumns(entity);
-    const mappedUpdate = this.mapUpdate(update ?? (entity as EntityUpdate<T>));
+    const columns = await this.mapToInsertColumns(entity, transformContext);
+    const mappedUpdate = await this.mapUpdate(update ?? (entity as EntityUpdate<T>), transformContext);
 
     const [row] = await this.session
       .insert(this.table)
@@ -274,17 +289,19 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       })
       .returning();
 
-    return this.mapToEntity(row!);
+    return this.mapToEntity(row!, transformContext);
   }
 
   async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update: EntityUpdate<T>): Promise<T[]> {
+    const transformContext = await this.getTransformContext();
+
     const targetColumns = toArray(target).map((path) => {
       const columnName = assertDefinedPass(this.columnDefinitionsMap.get(path), `Could not map ${path} to column.`).name;
       return this.table[columnName as keyof PgTableFromType<string, EntityType>] as PgColumn;
     });
 
-    const columns = entities.map((entity) => this.mapToColumns(entity));
-    const mappedUpdate = this.mapUpdate(update);
+    const columns = await this.mapManyToColumns(entities, transformContext);
+    const mappedUpdate = await this.mapUpdate(update, transformContext);
 
     const rows = await this.session
       .insert(this.table)
@@ -295,7 +312,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       })
       .returning();
 
-    return rows.map((row) => this.mapToEntity(row));
+    return this.mapManyToEntity(rows, transformContext);
   }
 
   async update(id: string, update: EntityUpdate<T>): Promise<T> {
@@ -309,7 +326,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   }
 
   async tryUpdate(id: string, update: EntityUpdate<T>): Promise<T | undefined> {
-    const mappedUpdate = this.mapUpdate(update);
+    const transformContext = await this.getTransformContext();
+    const mappedUpdate = await this.mapUpdate(update, transformContext);
 
     const [row] = await this.session
       .update(this.table)
@@ -321,7 +339,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return this.mapToEntity(row, transformContext);
   }
 
   async updateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T> {
@@ -335,7 +353,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   }
 
   async tryUpdateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T | undefined> {
-    const mappedUpdate = this.mapUpdate(update);
+    const transformContext = await this.getTransformContext();
+    const mappedUpdate = await this.mapUpdate(update, transformContext);
     const idQuery = this.getIdLimitQuery(query);
 
     const [row] = await this.session
@@ -349,7 +368,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return this.mapToEntity(row, transformContext);
   }
 
   async updateMany(ids: string[], update: EntityUpdate<T>): Promise<T[]> {
@@ -357,8 +376,9 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   }
 
   async updateManyByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T[]> {
+    const transformContext = await this.getTransformContext();
     const sqlQuery = this.convertQuery(query);
-    const mappedUpdate = this.mapUpdate(update);
+    const mappedUpdate = await this.mapUpdate(update, transformContext);
 
     const rows = await this.session
       .update(this.table)
@@ -366,7 +386,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       .where(sqlQuery)
       .returning();
 
-    return rows.map((entity) => this.mapToEntity(entity));
+    return this.mapManyToEntity(rows, transformContext);
   }
 
   async delete(id: string, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
@@ -393,7 +413,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    const transformContext = await this.getTransformContext();
+    return this.mapToEntity(row, transformContext);
   }
 
   async deleteByQuery(query: Query<T>, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
@@ -422,7 +443,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    const transformContext = await this.getTransformContext();
+    return this.mapToEntity(row, transformContext);
   }
 
   async deleteMany(ids: string[], metadataUpdate?: EntityMetadataUpdate): Promise<T[]> {
@@ -441,7 +463,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       .where(sqlQuery)
       .returning();
 
-    return rows.map((row) => this.mapToEntity(row));
+    const transformContext = await this.getTransformContext();
+    return this.mapManyToEntity(rows, transformContext);
   }
 
   async hardDelete(id: string): Promise<void> {
@@ -487,25 +510,45 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return convertQuery(query, this.table, this.columnDefinitionsMap);
   }
 
-  protected mapToEntity(columns: this['table']['$inferSelect']): T {
-    const entries = this.columnDefinitions.map((def) => [def.objectPath, columns[def.name as keyof this['table']['$inferSelect']]] as const);
-    const obj = fromDeepObjectEntries(entries);
+  protected async mapManyToEntity(columns: this['table']['$inferSelect'][], transformContext: TransformContext): Promise<T[]> {
+    return toArrayAsync(mapAsync(columns, async (column) => this.mapToEntity(column, transformContext)));
+  }
 
+  protected async mapToEntity(columns: this['table']['$inferSelect'], transformContext: TransformContext): Promise<T> {
+    const entries: [JsonPath, this['table']['$inferSelect'][keyof this['table']['$inferSelect']]][] = [];
+
+    for (const def of this.columnDefinitions) {
+      const rawValue = columns[def.name as keyof this['table']['$inferSelect']];
+      const transformed = await def.fromDatabase(rawValue, transformContext);
+
+      entries.push([def.objectPath, transformed] as const); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    }
+
+    const obj = fromDeepObjectEntries(entries);
     return Schema.parse(this.type, obj);
   }
 
-  protected mapToColumns(obj: DeepPartial<T> | NewEntity<T>): PgInsertValue<PgTableFromType<string, EntityType>> {
+  protected async mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType<string, EntityType>>[]> {
+    return toArrayAsync(mapAsync(objects, async (obj) => this.mapToColumns(obj, transformContext)));
+  }
+
+  protected async mapToColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType<string, EntityType>>> {
     const columns: Record = {};
 
     for (const def of this.columnDefinitions) {
-      columns[def.name] = def.dereferenceObjectPath(obj as Record);
+      const rawValue = def.dereferenceObjectPath(obj as Record);
+      columns[def.name] = await def.toDatabase(rawValue, transformContext);
     }
 
     return columns as PgInsertValue<PgTableFromType<string, EntityType>>;
   }
 
-  protected mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>): PgInsertValue<PgTableFromType<string, EntityType>> {
-    const mapped = this.mapToColumns(obj);
+  protected async mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType<string, EntityType>>[]> {
+    return toArrayAsync(mapAsync(objects, async (obj) => this.mapToInsertColumns(obj, transformContext)));
+  }
+
+  protected async mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType<string, EntityType>>> {
+    const mapped = await this.mapToColumns(obj, transformContext);
 
     return {
       ...mapped,
@@ -515,7 +558,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     };
   }
 
-  protected mapUpdate(update: EntityUpdate<T>): PgUpdateSetSource<PgTableFromType<string, EntityType>> {
+  protected async mapUpdate(update: EntityUpdate<T>, transformContext: TransformContext): Promise<PgUpdateSetSource<PgTableFromType<string, EntityType>>> {
     const mappedUpdate: PgUpdateSetSource<PgTableFromType<string, EntityType>> = {};
 
     for (const column of this.columnDefinitions) {
@@ -525,7 +568,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
         continue;
       }
 
-      mappedUpdate[column.name as keyof PgUpdateSetSource<PgTableFromType<string, EntityType>>] = value;
+      mappedUpdate[column.name as keyof PgUpdateSetSource<PgTableFromType<string, EntityType>>] = await column.toDatabase(value, transformContext);
     }
 
     return {
@@ -553,6 +596,18 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     }
 
     return sql`${this.table.attributes} || '${JSON.stringify(attributes)}'::jsonb`;
+  }
+
+  protected async getTransformContext(): Promise<TransformContext> {
+    if (isUndefined(this.#transformContext)) {
+      assertDefined(this.#encryptionSecret, 'Missing database encryption secret');
+      this.#transformContext = importSymmetricKey('AES-GCM', 256, this.#encryptionSecret, false).then((encryptionKey) => ({ encryptionKey }));
+
+      const transformContext = await this.#transformContext;
+      this.#transformContext = transformContext;
+    }
+
+    return this.#transformContext;
   }
 }
 
