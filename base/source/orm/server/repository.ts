@@ -387,7 +387,6 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     const idQuery = this.getIdLimitQuery(query);
 
     const [row] = await this.session
-      .with(idQuery)
       .update(this.table)
       .set(mappedUpdate)
       .where(inArray(this.table.id, idQuery))
@@ -515,7 +514,6 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     const idQuery = this.getIdLimitQuery(query);
 
     const result = await (this.session as NodePgDatabase)
-      .with(idQuery)
       .delete(this.table)
       .where(inArray(this.table.id, idQuery));
 
@@ -611,12 +609,10 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   protected getIdLimitQuery(query: Query<T>) {
     const sqlQuery = this.convertQuery(query);
 
-    return this.session.$with('id').as(
-      this.session.select({ id: this.table.id })
-        .from(this.table)
-        .where(sqlQuery)
-        .limit(1)
-    );
+    return this.session.select({ id: this.table.id })
+      .from(this.table)
+      .where(sqlQuery)
+      .limit(1);
   }
 
   protected getAttributesUpdate(attributes: EntityMetadataAttributes | undefined) {
