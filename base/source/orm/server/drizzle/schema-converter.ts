@@ -1,5 +1,5 @@
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
-import { boolean, date, doublePrecision, index, integer, jsonb, pgSchema, text, timestamp, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, index, integer, jsonb, pgSchema, text, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { tryGetEnumName } from '#/enumeration/enumeration.js';
@@ -21,7 +21,7 @@ import { JsonSchema } from '../../schemas/json.js';
 import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
-import { bytea } from '../data-types/bytea.js';
+import { bytea, numericDate, timestamp } from '../data-types/index.js';
 import { decryptBytes, encryptBytes } from '../encryption.js';
 import type { ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
 
@@ -230,11 +230,11 @@ function getPostgresBaseColumn(columnName: string, dbSchema: PgSchema, schema: S
   }
 
   if (schema instanceof TimestampSchema) {
-    return timestamp(columnName, { withTimezone: true });
+    return timestamp(columnName);
   }
 
   if (schema instanceof NumericDateSchema) {
-    return date(columnName);
+    return numericDate(columnName);
   }
 
   if (schema instanceof NumberSchema) {

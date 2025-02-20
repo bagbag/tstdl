@@ -5,6 +5,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { PgTransaction as DrizzlePgTransaction, type PgColumn, type PgInsertValue, type PgQueryResultHKT, type PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { PartialDeep } from 'type-fest';
 
+import { createContextProvider } from '#/context/context.js';
 import { NotFoundError } from '#/errors/not-found.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
@@ -54,17 +55,28 @@ type RepositoryConstructor<T extends Entity> = new (...repository: ConstructorPa
 
 export const ENTITY_TYPE = injectionToken<EntityType<any>>('EntityType');
 
+const entityTypeToken = Symbol('EntityType');
+const entityRepositoryConfigToken = Symbol('EntityRepositoryConfig');
+
 const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
 
-@Singleton({
-  provider: {
-    useFactory: () => new EntityRepository()
-  }
-})
+type EntityRepositoryContext = {
+  type: EntityType,
+  table: PgTableFromType<string, EntityType>,
+  columnDefinitions: ColumnDefinition[],
+  columnDefinitionsMap: Map<string, ColumnDefinition>,
+  session: Database | PgTransaction,
+  encryptionSecret: Uint8Array | undefined,
+  transformContext: TransformContext | Promise<TransformContext> | undefined
+};
+
+const { getCurrentEntityRepositoryContext, runInEntityRepositoryContext, isInEntityRepositoryContext } = createContextProvider<EntityRepositoryContext, 'EntityRepository'>('EntityRepository');
+
+@Singleton()
 export class EntityRepository<T extends Entity = Entity> implements Resolvable<EntityType<T>> {
   readonly #repositoryConstructor: RepositoryConstructor<T>;
   readonly #withTransactionCache = new WeakMap<Transaction, EntityRepository<T>>();
-  readonly #encryptionSecret = inject(ENCRYPTION_SECRET, undefined, { optional: true });
+  readonly #encryptionSecret = isInEntityRepositoryContext() ? getCurrentEntityRepositoryContext()?.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
 
   #transformContext: TransformContext | Promise<TransformContext> | undefined;
 
@@ -77,15 +89,27 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
 
   declare readonly [resolveArgumentType]: EntityType<T>;
 
-  constructor(type?: EntityType<T>, table?: PgTableFromType<string, EntityType>, columnDefinitions?: ColumnDefinition[], columnDefinitionsMap?: Map<string, ColumnDefinition>, session?: Database | PgTransaction) {
+  constructor() {
     this.#repositoryConstructor = new.target as RepositoryConstructor<T>;
 
-    this.type = type ?? injectArgument(this, { optional: true }) ?? inject(ENTITY_TYPE);
-    this.table = table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig).schema);
+    const entityRepositoryConfig = ((new.target as Record)[entityRepositoryConfigToken] as EntityRepositoryConfig | undefined) ?? inject(EntityRepositoryConfig);
+
+    const {
+      type,
+      table,
+      columnDefinitions,
+      columnDefinitionsMap,
+      session,
+      transformContext
+    } = getCurrentEntityRepositoryContext() ?? {};
+
+    this.type = type ?? injectArgument(this, { optional: true }) ?? assertDefinedPass((new.target as Record)[entityTypeToken], 'Missing entity type.');
+    this.table = table ?? getDrizzleTableFromType(this.type as EntityType, entityRepositoryConfig.schema);
     this.columnDefinitions = columnDefinitions ?? getColumnDefinitions(this.table);
     this.columnDefinitionsMap = columnDefinitionsMap ?? new Map(this.columnDefinitions.map((column) => [column.objectPath.path, column]));
     this.session = session ?? inject(Database);
     this.isInTransaction = this.session instanceof DrizzlePgTransaction;
+    this.#transformContext = transformContext;
   }
 
   withOptionalTransaction(transaction: Transaction | undefined): EntityRepository<T> {
@@ -101,7 +125,18 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       return this.#withTransactionCache.get(transaction)!;
     }
 
-    const repositoryWithTransaction = new this.#repositoryConstructor(this.type, this.table, this.columnDefinitions, this.columnDefinitionsMap, (transaction as DrizzleTransaction).transaction);
+    const context: EntityRepositoryContext = {
+      type: this.type,
+      table: this.table,
+      columnDefinitions: this.columnDefinitions,
+      columnDefinitionsMap: this.columnDefinitionsMap,
+      session: (transaction as DrizzleTransaction).transaction,
+      encryptionSecret: this.#encryptionSecret,
+      transformContext: this.#transformContext
+    };
+
+    const repositoryWithTransaction = runInEntityRepositoryContext(context, () => new this.#repositoryConstructor());
+
     this.#withTransactionCache.set(transaction, repositoryWithTransaction);
 
     return repositoryWithTransaction;
@@ -173,7 +208,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.loadManyByQuery(inArray(this.table.id, ids), options);
   }
 
-  async* loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async * loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadMany(ids, options);
     yield* entities;
   }
@@ -191,7 +226,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.mapManyToEntity(rows, transformContext);
   }
 
-  async* loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async * loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadManyByQuery(query, options);
     yield* entities;
   }
@@ -200,7 +235,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return this.loadManyByQuery({}, options);
   }
 
-  async* loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async * loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadAll(options);
     yield* entities;
   }
@@ -619,11 +654,13 @@ export function getRepository<T extends Entity>(type: EntityType<T>, config?: En
   const className = `${type.name}Service`;
 
   const entityRepositoryClass = {
-    [className]: class extends EntityRepository<T> { }
+    [className]: class extends EntityRepository<T> {
+      static [entityTypeToken] = type;
+      static [entityRepositoryConfigToken] = config;
+    }
   }[className]!;
 
-  const injectorDecorator = Singleton({ providers: [{ provide: ENTITY_TYPE, useValue: type }, { provide: EntityRepositoryConfig, useValue: config }] });
-  injectorDecorator(entityRepositoryClass);
+  Singleton()(entityRepositoryClass);
 
   return entityRepositoryClass;
 }

@@ -1,11 +1,11 @@
-import type { SimplifyObject } from '#/types.js';
+import type { Function, SimplifyObject } from '#/types.js';
 import { isNotNull } from '#/utils/type-guards.js';
 
 /**
  * Creates a new context provider
  * @param name name of of the context used for function names
  */
-export function createContextProvider<Context, const Name extends string>(name: Name) { // eslint-disable-line @typescript-eslint/explicit-function-return-type
+export function createContextProvider<Context, const Name extends string>(name: Name) {
   let currentContext: Context | null = null;
 
   /**
@@ -14,7 +14,7 @@ export function createContextProvider<Context, const Name extends string>(name: 
    * @param required if a context is required. If true, throws if no context is available
    */
   function getCurrentContext(required: true, debugFn: Function): Context;
-  function getCurrentContext(required?: false | undefined, debugFn?: Function): Context | null;
+  function getCurrentContext(required?: false, debugFn?: Function): Context | null;
   function getCurrentContext(required: boolean, debugFn: Function): Context | null;
   function getCurrentContext(required: boolean = false, debugFn?: Function): Context | null {
     if (required) {
@@ -79,10 +79,10 @@ export function createContextProvider<Context, const Name extends string>(name: 
     [`isIn${name}Context`]: getCurrentContext,
     [`assertIn${name}Context`]: getCurrentContext
   } as SimplifyObject<
-    { [P in `getCurrent${Name}Context`]: typeof getCurrentContext }
-    & { [P in `setCurrent${Name}Context`]: typeof setCurrentContext }
-    & { [P in `runIn${Name}Context`]: typeof runInContext }
-    & { [P in `isIn${Name}Context`]: typeof getCurrentContext }
-    & { [P in `assertIn${Name}Context`]: typeof getCurrentContext }
+    Record<`getCurrent${Name}Context`, typeof getCurrentContext>
+    & Record<`setCurrent${Name}Context`, typeof setCurrentContext>
+    & Record<`runIn${Name}Context`, typeof runInContext>
+    & Record<`isIn${Name}Context`, typeof getCurrentContext>
+    & Record<`assertIn${Name}Context`, typeof getCurrentContext>
   >;
 }

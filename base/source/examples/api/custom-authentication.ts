@@ -6,11 +6,8 @@ import { Agent } from 'undici';
 
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
-import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/client/index.js';
-import { AuthenticationAncillaryService } from '#/authentication/index.js';
-import { AuthenticationApiController } from '#/authentication/server/authentication.api-controller.js';
-import { AuthenticationService as AuthenticationServerService } from '#/authentication/server/authentication.service.js';
-import { configureAuthenticationServer } from '#/authentication/server/module.js';
+import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/index.js';
+import { AuthenticationAncillaryService, AuthenticationApiController, AuthenticationService as AuthenticationServerService, configureAuthenticationServer } from '#/authentication/server/index.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';

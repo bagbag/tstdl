@@ -7,7 +7,7 @@ import { filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import { assertNotArrayPass, isArray, isString } from '#/utils/type-guards.js';
 import type { EntityType } from './entity.js';
 
-type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>
+type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
 
 export type OrmTableReflectionData = {
   name?: string,
