@@ -6,11 +6,11 @@ import { EntityRepositoryConfig } from './repository.js';
 import { ENCRYPTION_SECRET } from './tokens.js';
 
 export class DatabaseConfig {
-  connection?: string | PoolConfig;
+  connection?: PoolConfig;
 }
 
 export type OrmModuleOptions = {
-  connection?: string | PoolConfig,
+  connection?: PoolConfig,
   repositoryConfig?: EntityRepositoryConfig
 };
 
