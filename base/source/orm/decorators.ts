@@ -3,7 +3,6 @@ import type { LiteralUnion } from 'type-fest';
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
-import { filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import { assertNotArrayPass, isArray, isString } from '#/utils/type-guards.js';
 import type { EntityType } from './entity.js';
 
@@ -11,6 +10,7 @@ type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | '
 
 export type OrmTableReflectionData = {
   name?: string,
+  schema?: string,
   unique?: UniqueReflectionData[],
   index?: IndexReflectionData[]
 };
@@ -79,8 +79,14 @@ export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNulla
   });
 }
 
-export function Table(options?: string | { name: string }): ClassDecorator {
-  return createTableDecorator(filterUndefinedObjectProperties({ name: isString(options) ? options : options?.name }));
+type TableOptions = Partial<Pick<OrmTableReflectionData, 'name' | 'schema'>>;
+export function Table(name?: string, options?: TypedOmit<TableOptions, 'schema'>): ClassDecorator;
+export function Table(options?: TableOptions): ClassDecorator;
+export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: TableOptions): ClassDecorator {
+  const name = isString(nameOrOptions) ? nameOrOptions : nameOrOptions?.name;
+  const schema = isString(nameOrOptions) ? optionsOrNothing?.schema : nameOrOptions?.schema;
+
+  return createTableDecorator({ name, schema });
 }
 
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;

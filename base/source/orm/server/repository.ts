@@ -10,7 +10,6 @@ import { NotFoundError } from '#/errors/not-found.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
-import { injectionToken } from '#/injector/token.js';
 import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
 import type { DeepPartial, OneOrMany, Paths, Record, Type, TypedOmit } from '#/types.js';
@@ -53,10 +52,7 @@ export type TransactionHandler<T extends Entity, R> = (repository: EntityReposit
 
 type RepositoryConstructor<T extends Entity> = new (...repository: ConstructorParameters<typeof EntityRepository<T>>) => EntityRepository<T>;
 
-export const ENTITY_TYPE = injectionToken<EntityType<any>>('EntityType');
-
 const entityTypeToken = Symbol('EntityType');
-const entityRepositoryConfigToken = Symbol('EntityRepositoryConfig');
 
 const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
 
@@ -92,8 +88,6 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
   constructor() {
     this.#repositoryConstructor = new.target as RepositoryConstructor<T>;
 
-    const entityRepositoryConfig = ((new.target as Record)[entityRepositoryConfigToken] as EntityRepositoryConfig | undefined) ?? inject(EntityRepositoryConfig);
-
     const {
       type,
       table,
@@ -103,8 +97,8 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       transformContext
     } = getCurrentEntityRepositoryContext() ?? {};
 
-    this.type = type ?? injectArgument(this, { optional: true }) ?? assertDefinedPass((new.target as Record)[entityTypeToken], 'Missing entity type.');
-    this.table = table ?? getDrizzleTableFromType(this.type as EntityType, entityRepositoryConfig.schema);
+    this.type = (type as EntityType<T> | undefined) ?? injectArgument(this, { optional: true }) ?? assertDefinedPass((new.target as Record)[entityTypeToken], 'Missing entity type.');
+    this.table = table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig).schema);
     this.columnDefinitions = columnDefinitions ?? getColumnDefinitions(this.table);
     this.columnDefinitionsMap = columnDefinitionsMap ?? new Map(this.columnDefinitions.map((column) => [column.objectPath.path, column]));
     this.session = session ?? inject(Database);
@@ -650,13 +644,12 @@ export function injectRepository<T extends Entity>(type: EntityType<T>): EntityR
   return inject(EntityRepository<T>, type);
 }
 
-export function getRepository<T extends Entity>(type: EntityType<T>, config?: EntityRepositoryConfig): Type<EntityRepository<T>> {
+export function getRepository<T extends Entity>(type: EntityType<T>): Type<EntityRepository<T>> {
   const className = `${type.name}Service`;
 
   const entityRepositoryClass = {
     [className]: class extends EntityRepository<T> {
       static [entityTypeToken] = type;
-      static [entityRepositoryConfigToken] = config;
     }
   }[className]!;
 

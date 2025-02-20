@@ -37,13 +37,15 @@ export function getColumnDefinitions(table: PgTableWithColumns<any>): ColumnDefi
   return (table as PgTableWithColumns<any> & { [columnDefinitionsSymbol]: ColumnDefinition[] })[columnDefinitionsSymbol];
 }
 
-export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName: S): PgTableFromType<S, T> {
+export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName?: S): PgTableFromType<S, T> {
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata.`);
 
-  const dbSchema = getDbSchema(schemaName);
   const tableReflectionData = metadata.data.tryGet<OrmTableReflectionData>('orm');
+  const schema = assertDefinedPass(schemaName ?? tableReflectionData?.schema, 'Table schema not provided');
   const tableName = tableReflectionData?.name ?? getDefaultTableName(type);
+
+  const dbSchema = getDbSchema(schema);
   const columnDefinitions = getPostgresColumnEntries(type, tableName, dbSchema);
 
   function getColumn(table: Record<string, ExtraConfigColumn>, propertyName: string): ExtraConfigColumn {
@@ -188,7 +190,7 @@ function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchem
     }
   }
 
-  let column = getPostgresBaseColumn(columnName, dbSchema, baseSchema, context);
+  let column = getPostgresBaseColumn(columnName, dbSchema, baseSchema, reflectionData, context);
 
   if (array) {
     column = column.array();
@@ -213,10 +215,14 @@ function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchem
   return column;
 }
 
-function getPostgresBaseColumn(columnName: string, dbSchema: PgSchema, schema: Schema, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
+function getPostgresBaseColumn(columnName: string, dbSchema: PgSchema, schema: Schema, reflectionData: OrmColumnReflectionData, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
   if (schema instanceof DefaultSchema) {
-    const column = getPostgresBaseColumn(columnName, dbSchema, schema.schema, context);
+    const column = getPostgresBaseColumn(columnName, dbSchema, schema.schema, reflectionData, context);
     return column.default(schema.defaultValue);
+  }
+
+  if (reflectionData.encrypted) {
+    return bytea(columnName);
   }
 
   if (schema instanceof UuidSchema) {
