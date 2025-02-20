@@ -1,4 +1,4 @@
-CREATE TABLE "authentication"."authentication_credentials" (
+CREATE TABLE "authentication"."credentials" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"subject" text NOT NULL,
 	"hash_version" integer NOT NULL,
@@ -9,10 +9,10 @@ CREATE TABLE "authentication"."authentication_credentials" (
 	"create_timestamp" timestamp with time zone NOT NULL,
 	"delete_timestamp" timestamp with time zone,
 	"attributes" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	CONSTRAINT "authentication_credentials_subject_unique" UNIQUE("subject")
+	CONSTRAINT "credentials_subject_unique" UNIQUE("subject")
 );
 --> statement-breakpoint
-CREATE TABLE "authentication"."authentication_session" (
+CREATE TABLE "authentication"."session" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"subject" text NOT NULL,
 	"begin" timestamp with time zone NOT NULL,

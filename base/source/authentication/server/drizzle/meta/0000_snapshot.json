@@ -1,11 +1,11 @@
 {
-  "id": "ffcce2f4-34e6-4887-8c9c-0c1a9e07a3b8",
+  "id": "b41cc4f0-eadb-406c-a969-a21f01b60268",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "authentication.authentication_credentials": {
-      "name": "authentication_credentials",
+    "authentication.credentials": {
+      "name": "credentials",
       "schema": "authentication",
       "columns": {
         "id": {
@@ -75,8 +75,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "authentication_credentials_subject_unique": {
-          "name": "authentication_credentials_subject_unique",
+        "credentials_subject_unique": {
+          "name": "credentials_subject_unique",
           "nullsNotDistinct": false,
           "columns": [
             "subject"
@@ -87,8 +87,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "authentication.authentication_session": {
-      "name": "authentication_session",
+    "authentication.session": {
+      "name": "session",
       "schema": "authentication",
       "columns": {
         "id": {

@@ -2,11 +2,12 @@ import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
 import { boolean, date, doublePrecision, index, integer, jsonb, pgSchema, text, timestamp, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
+import { tryGetEnumName } from '#/enumeration/enumeration.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, Uint8ArraySchema, type Record, type Schema } from '#/schema/index.js';
-import type { AbstractConstructor, Enumeration, Type } from '#/types.js';
+import type { AbstractConstructor, Enumeration, EnumerationObject, Type } from '#/types.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
 import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
 import { enumValues } from '#/utils/enum.js';
@@ -36,12 +37,13 @@ export function getColumnDefinitions(table: PgTableWithColumns<any>): ColumnDefi
   return (table as PgTableWithColumns<any> & { [columnDefinitionsSymbol]: ColumnDefinition[] })[columnDefinitionsSymbol];
 }
 
-export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName: S, tableName: string = getDefaultTableName(type)): PgTableFromType<S, T> {
+export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName: S): PgTableFromType<S, T> {
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata.`);
 
   const dbSchema = getDbSchema(schemaName);
   const tableReflectionData = metadata.data.tryGet<OrmTableReflectionData>('orm');
+  const tableName = tableReflectionData?.name ?? getDefaultTableName(type);
   const columnDefinitions = getPostgresColumnEntries(type, tableName, dbSchema);
 
   function getColumn(table: Record<string, ExtraConfigColumn>, propertyName: string): ExtraConfigColumn {
@@ -149,11 +151,13 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
       }
       : (value: unknown) => value;
 
+    const prefixedColumnName = [prefix, columnName].join('');
+
     return [
       {
-        name: toCamelCase([prefix, columnName].join('')),
+        name: toCamelCase(prefixedColumnName),
         objectPath,
-        type: getPostgresColumn(columnName, dbSchema, schema, columnReflectionData ?? {}, { type, property }),
+        type: getPostgresColumn(toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, { type, property }),
         reflectionData: columnReflectionData,
         dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
         toDatabase,
@@ -272,7 +276,7 @@ export function registerEnum(enumeration: Enumeration, name: string): void {
 
 export function getPgEnum(schema: string | PgSchema, enumeration: Enumeration, context?: ConverterContext): PgEnum<[string, ...string[]]> {
   const dbSchema = isString(schema) ? getDbSchema(schema) : schema;
-  const enumName = enumNames.get(enumeration)!;
+  const enumName = enumNames.get(enumeration) ?? tryGetEnumName(enumeration as EnumerationObject);
 
   if (isUndefined(enumName)) {
     if (isDefined(context)) {
@@ -285,7 +289,7 @@ export function getPgEnum(schema: string | PgSchema, enumeration: Enumeration, c
   const values = (isArray(enumeration) ? enumeration : enumValues(enumeration))
     .map((value) => value.toString()) as [string, ...string[]];
 
-  const dbEnum = dbSchema.enum(enumName, values);
+  const dbEnum = dbSchema.enum(toSnakeCase(enumName), values);
 
   if (enums.has([dbSchema.schemaName, enumeration])) {
     enums.set([dbSchema.schemaName, enumeration], dbEnum);

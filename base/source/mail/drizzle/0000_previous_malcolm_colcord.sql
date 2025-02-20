@@ -1,4 +1,4 @@
-CREATE TABLE "mail"."mail_log" (
+CREATE TABLE "mail"."log" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"timestamp" timestamp with time zone NOT NULL,
 	"template" text,

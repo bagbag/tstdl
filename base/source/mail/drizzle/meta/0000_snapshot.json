@@ -1,11 +1,11 @@
 {
-  "id": "a6ce7d17-ce0b-4511-b503-b2ac69ff8923",
+  "id": "f8cdba37-11b9-477a-9f5a-5ef4b5026011",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "mail.mail_log": {
-      "name": "mail_log",
+    "mail.log": {
+      "name": "log",
       "schema": "mail",
       "columns": {
         "id": {

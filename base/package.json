@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.56",
+  "version": "0.92.62",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -147,7 +147,7 @@
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
     "eslint": "9.20",
-    "globals": "15.15",
+    "globals": "16.0",
     "tsc-alias": "1.8",
     "typescript": "5.7"
   },

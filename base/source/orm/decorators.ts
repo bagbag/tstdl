@@ -3,7 +3,8 @@ import type { LiteralUnion } from 'type-fest';
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
-import { assertNotArrayPass, isArray } from '#/utils/type-guards.js';
+import { filterUndefinedObjectProperties } from '#/utils/object/object.js';
+import { assertNotArrayPass, isArray, isString } from '#/utils/type-guards.js';
 import type { EntityType } from './entity.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>
@@ -76,6 +77,10 @@ export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNulla
   return createPropertyDecorator({
     include: [Property(type), createColumnDecorator({ embedded: { type, ...options } })]
   });
+}
+
+export function Table(options?: string | { name: string }): ClassDecorator {
+  return createTableDecorator(filterUndefinedObjectProperties({ name: isString(options) ? options : options?.name }));
 }
 
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;

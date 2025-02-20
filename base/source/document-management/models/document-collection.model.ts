@@ -1,6 +1,5 @@
+import { Table } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Class } from '#/schema/index.js';
 
-@Class()
-export class DocumentCollection extends Entity {
-}
+@Table()
+export class DocumentCollection extends Entity { }

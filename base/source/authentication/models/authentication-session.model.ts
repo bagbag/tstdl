@@ -1,7 +1,9 @@
+import { Table } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { Timestamp } from '#/orm/types.js';
 import { Integer, StringProperty, Uint8ArrayProperty } from '#/schema/index.js';
 
+@Table('session')
 export class AuthenticationSession extends Entity {
   @StringProperty()
   subject: string;

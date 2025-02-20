@@ -1,4 +1,3 @@
-
 import { databaseSchema } from '#/orm/server/database-schema.js';
 import { AuthenticationCredentials } from './authentication-credentials.model.js';
 import { AuthenticationSession } from './authentication-session.model.js';

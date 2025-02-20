@@ -4,7 +4,7 @@ import type { boolean, date, doublePrecision, integer, jsonb, PgColumnBuilder, P
 import { Array, Integer } from '#/schema/index.js';
 import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
 import type { GetTagMetadata, HasTag, Tagged, UnwrapTagged } from '#/types/index.js';
-import { Column, Embedded, Index, PrimaryKey, References, Unique } from './decorators.js';
+import { Column, Embedded, Encrypted, Index, PrimaryKey, References, Unique } from './decorators.js';
 import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
 import type { bytea } from './server/data-types/index.js';
 
@@ -47,4 +47,4 @@ export type Timestamp = Tagged<number, ColumnTypeTag, ReturnType<typeof timestam
 export type Bytea = Tagged<Uint8Array, ColumnTypeTag, ReturnType<typeof bytea>>;
 export type Encrypted<T> = Tagged<T, ColumnTypeTag, ReturnType<typeof bytea>>;
 
-export { Array, Column, Embedded, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };
+export { Array, Column, Embedded, Encrypted, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };
