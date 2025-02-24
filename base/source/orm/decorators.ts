@@ -4,7 +4,8 @@ import type { LiteralUnion } from 'type-fest';
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/index.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
-import { assertNotArrayPass, isArray, isString } from '#/utils/type-guards.js';
+import { objectEntries } from '#/utils/object/object.js';
+import { assertNotArrayPass, isArray, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Entity, EntityType } from './entity.js';
 import type { PgTableFromType } from './server/types.js';
 
@@ -23,7 +24,7 @@ export type OrmTableReflectionData = {
 export type OrmColumnReflectionData = {
   name?: string,
   primaryKey?: boolean,
-  unique?: UniqueReflectionData,
+  unique?: TypedOmit<UniqueReflectionData, 'columns'>,
   index?: IndexReflectionData,
   uuid?: { defaultRandom?: boolean },
   embedded?: { type: AbstractConstructor, prefix?: string | null },
@@ -50,8 +51,25 @@ export type IndexReflectionData = {
   }
 };
 
-export function createTableDecorator(data?: OrmTableReflectionData) {
-  return createClassDecorator({ data: { orm: data }, mergeData: true });
+export function createTableDecorator(data: OrmTableReflectionData = {}) {
+  return createClassDecorator({
+    handler: (_, metadata) => {
+      const reflectionData = metadata.data.tryGet<OrmTableReflectionData>('orm') ?? {};
+
+      const dataEntries = objectEntries(data);
+
+      for (const [key, value] of dataEntries) {
+        const existingValue = reflectionData[key];
+
+        if (isUndefined(existingValue)) {
+          reflectionData[key] = value as any;
+        }
+        else if (isArray(existingValue)) {
+          reflectionData[key] = [...existingValue, ...(value as any[])] as any;
+        }
+      }
+    }
+  });
 }
 
 export function createColumnDecorator(data?: OrmColumnReflectionData) {
@@ -75,13 +93,7 @@ export function References(type: () => EntityType) {
 }
 
 export function Check<T extends Entity>(name: string, builder: CheckBuilder<T>) {
-  return createClassDecorator({
-    handler: (_, metadata) => {
-      const checks = metadata.data.tryGet<OrmTableReflectionData>('orm')?.checks ?? [];
-      checks.push({ name, builder });
-      metadata.data.set('orm', { checks }, true);
-    }
-  });
+  return createTableDecorator({ checks: [{ name, builder }] });
 }
 
 export function Encrypted() {
