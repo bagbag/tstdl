@@ -37,12 +37,9 @@ export async function migrateMailSchema(): Promise<void> {
   const connection = inject(MailModuleConfig, undefined, { optional: true })?.database?.connection;
   const database = inject(Database, connection);
 
-  await migrate(
-    database,
-    {
-      migrationsSchema: 'mail',
-      migrationsTable: '_migrations',
-      migrationsFolder: import.meta.resolve('./drizzle').replace('file://', '')
-    }
-  );
+  await migrate(database, {
+    migrationsSchema: 'mail',
+    migrationsTable: '_migrations',
+    migrationsFolder: import.meta.resolve('./drizzle').replace('file://', '')
+  });
 }

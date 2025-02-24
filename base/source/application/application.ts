@@ -97,7 +97,7 @@ export class Application implements Resolvable<ApplicationArgument> {
       throw new Error('Application was shut down.');
     }
 
-    const options = ((optionsFunctionsAndModules.length > 0) && isObject(optionsFunctionsAndModules[0])) ? optionsFunctionsAndModules[0]! as RunOptions : undefined;
+    const options = ((optionsFunctionsAndModules.length > 0) && isObject(optionsFunctionsAndModules[0])) ? optionsFunctionsAndModules[0] as RunOptions : undefined;
     const functionsAndModules = (isUndefined(options) ? optionsFunctionsAndModules : optionsFunctionsAndModules.slice(1)) as OneOrMany<FunctionModuleFunction | Type<Module>>[];
 
     void this._run(functionsAndModules, options);
@@ -121,24 +121,26 @@ export class Application implements Resolvable<ApplicationArgument> {
   }
 
   private async _run(functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[], options: RunOptions = {}): Promise<void> {
-    for (const fnOrModule of functionsAndModules.flatMap((fns) => fns)) {
-      if (fnOrModule.prototype instanceof ModuleBase) {
-        this.registerModule(fnOrModule as Type<Module>);
-      }
-      else {
-        this.registerModuleFunction(fnOrModule as FunctionModuleFunction);
-      }
-    }
-
-    if (isDefined(options.bootstrap)) {
-      for (const fn of toArray(options.bootstrap)) {
-        await runInInjectionContext(this.#injector, fn);
-      }
-    }
-
-    const modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
+    let modules: Module[] | undefined;
 
     try {
+      for (const fnOrModule of functionsAndModules.flatMap((fns) => fns)) {
+        if (fnOrModule.prototype instanceof ModuleBase) {
+          this.registerModule(fnOrModule as Type<Module>);
+        }
+        else {
+          this.registerModuleFunction(fnOrModule as FunctionModuleFunction);
+        }
+      }
+
+      if (isDefined(options.bootstrap)) {
+        for (const fn of toArray(options.bootstrap)) {
+          await runInInjectionContext(this.#injector, fn);
+        }
+      }
+
+      modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
+
       await Promise.race([
         this.runModules(modules),
         this.shutdownSignal
@@ -152,7 +154,10 @@ export class Application implements Resolvable<ApplicationArgument> {
 
       this.#logger.info('Shutting down');
 
-      await this.stopModules(modules);
+      if (isDefined(modules)) {
+        await this.stopModules(modules);
+      }
+
       await this.#injector.dispose();
 
       this.#logger.info('Bye');
