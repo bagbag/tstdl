@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.76",
+  "version": "0.92.77",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -148,14 +148,14 @@
     "@typescript-eslint/eslint-plugin": "8.24",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
-    "eslint": "9.20",
+    "eslint": "9.21",
     "globals": "16.0",
     "tsc-alias": "1.8",
     "typescript": "5.7"
   },
   "peerDependencies": {
     "@elastic/elasticsearch": "^8.17",
-    "@google/generative-ai": "^0.21",
+    "@google/generative-ai": "^0.22",
     "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",

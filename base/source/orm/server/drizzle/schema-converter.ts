@@ -1,5 +1,5 @@
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
-import { boolean, doublePrecision, index, integer, jsonb, pgSchema, text, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type AnyPgColumn, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { tryGetEnumName } from '#/enumeration/enumeration.js';
@@ -23,7 +23,7 @@ import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
 import { bytea, numericDate, timestamp } from '../data-types/index.js';
 import { decryptBytes, encryptBytes } from '../encryption.js';
-import type { ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
+import type { BuildTypeOptions, ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
 
 type ConverterContext = { type: AbstractConstructor, property: string };
 
@@ -77,12 +77,20 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
     return indexFn(data.name).using(data.options?.using ?? 'btree', ...columns);
   }
 
-  const columnEntries = columnDefinitions.map((entry) => [entry.name, entry.type]);
+  const primaryKeyColumns = columnDefinitions.filter((columnDefinition) => columnDefinition.reflectionData?.primaryKey == true);
+
+  const skipPrimaryKey = primaryKeyColumns.length > 1;
+  const columnEntries = columnDefinitions.map((entry) => [entry.name, entry.buildType({ skipPrimaryKey })]);
 
   const drizzleSchema = dbSchema.table(
     tableName,
     fromEntries(columnEntries) as any,
     (table) => [
+      ...(
+        (primaryKeyColumns.length > 1)
+          ? [primaryKey({ columns: primaryKeyColumns.map((columnDefinition) => getColumn(table, columnDefinition.name)) as unknown as [AnyPgColumn, ...AnyPgColumn[]] })]
+          : []
+      ),
       ...(
         columnDefinitions.map((columnDefinition) => {
           const indexData = columnDefinition.reflectionData?.index;
@@ -155,23 +163,21 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
 
     const prefixedColumnName = [prefix, columnName].join('');
 
-    return [
-      {
-        name: toCamelCase(prefixedColumnName),
-        objectPath,
-        type: getPostgresColumn(toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, { type, property }),
-        reflectionData: columnReflectionData,
-        dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
-        toDatabase,
-        fromDatabase
-      }
-    ];
+    return [{
+      name: toCamelCase(prefixedColumnName),
+      objectPath,
+      reflectionData: columnReflectionData,
+      buildType: (options: BuildTypeOptions) => getPostgresColumn(toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, options, { type, property }),
+      dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
+      toDatabase,
+      fromDatabase
+    }];
   });
 
   return entries;
 }
 
-function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchema: Schema, reflectionData: OrmColumnReflectionData, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
+function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchema: Schema, reflectionData: OrmColumnReflectionData, options: BuildTypeOptions, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
   let nullable = false;
   let array = false;
 
@@ -204,7 +210,7 @@ function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchem
     column = column.unique(reflectionData.unique.name, isString(reflectionData.unique.options?.nulls) ? { nulls: reflectionData.unique.options.nulls } : undefined);
   }
 
-  if (reflectionData.primaryKey == true) {
+  if ((reflectionData.primaryKey == true) && (options.skipPrimaryKey != true)) {
     column = column.primaryKey();
   }
 

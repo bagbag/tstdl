@@ -10,11 +10,15 @@ import type { OrmColumnReflectionData } from '../decorators.js';
 import type { EntityType } from '../entity.js';
 import type { ColumnBuilder, EmbeddedConfigTag } from '../types.js';
 
+export type BuildTypeOptions = {
+  skipPrimaryKey?: boolean
+};
+
 export type ColumnDefinition = {
   name: string,
   objectPath: JsonPath,
-  type: PgColumnBuilder<any, any, any, any>,
   reflectionData: OrmColumnReflectionData | undefined,
+  buildType: (options: BuildTypeOptions) => PgColumnBuilder<any, any, any, any>,
   dereferenceObjectPath: (obj: Record) => any,
   toDatabase: (value: unknown, context: TransformContext) => any,
   fromDatabase: (value: unknown, context: TransformContext) => any

@@ -278,6 +278,28 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
     return assertDefinedPass(result[0]).contains;
   }
 
+  /**
+   * Tries to insert using ON CONFLICT DO NOTHING
+   * @param entity entity to insert
+   * @returns entity if inserted, undefined on conflict
+   */
+  async tryInsert(entity: NewEntity<T>): Promise<T | undefined> {
+    const transformContext = await this.getTransformContext();
+    const columns = await this.mapToInsertColumns(entity, transformContext);
+
+    const [row] = await this.session
+      .insert(this.table)
+      .values(columns)
+      .onConflictDoNothing()
+      .returning();
+
+    if (isUndefined(row)) {
+      return undefined;
+    }
+
+    return this.mapToEntity(row, transformContext);
+  }
+
   async insert(entity: NewEntity<T>): Promise<T> {
     const transformContext = await this.getTransformContext();
     const columns = await this.mapToInsertColumns(entity, transformContext);
