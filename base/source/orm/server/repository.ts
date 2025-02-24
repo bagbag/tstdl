@@ -8,7 +8,8 @@ import type { PartialDeep } from 'type-fest';
 import { createContextProvider } from '#/context/context.js';
 import { NotFoundError } from '#/errors/not-found.error.js';
 import { Singleton } from '#/injector/decorators.js';
-import { inject, injectArgument } from '#/injector/inject.js';
+import { Injector } from '#/injector/index.js';
+import { inject, injectArgument, runInInjectionContext } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
@@ -70,6 +71,7 @@ const { getCurrentEntityRepositoryContext, runInEntityRepositoryContext, isInEnt
 
 @Singleton()
 export class EntityRepository<T extends Entity = Entity> implements Resolvable<EntityType<T>> {
+  readonly #injector = inject(Injector);
   readonly #repositoryConstructor: RepositoryConstructor<T>;
   readonly #withTransactionCache = new WeakMap<Transaction, EntityRepository<T>>();
   readonly #encryptionSecret = isInEntityRepositoryContext() ? getCurrentEntityRepositoryContext()?.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
@@ -129,7 +131,7 @@ export class EntityRepository<T extends Entity = Entity> implements Resolvable<E
       transformContext: this.#transformContext
     };
 
-    const repositoryWithTransaction = runInEntityRepositoryContext(context, () => new this.#repositoryConstructor());
+    const repositoryWithTransaction = runInInjectionContext(this.#injector, () => runInEntityRepositoryContext(context, () => new this.#repositoryConstructor()));
 
     this.#withTransactionCache.set(transaction, repositoryWithTransaction);
 
