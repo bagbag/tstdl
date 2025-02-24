@@ -1,18 +1,23 @@
+import type { SQL } from 'drizzle-orm';
 import type { LiteralUnion } from 'type-fest';
 
-import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/utils.js';
+import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/index.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
 import { assertNotArrayPass, isArray, isString } from '#/utils/type-guards.js';
-import type { EntityType } from './entity.js';
+import type { Entity, EntityType } from './entity.js';
+import type { PgTableFromType } from './server/types.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
+
+export type CheckBuilder<T extends Entity = any> = (table: PgTableFromType<string, EntityType<T>>) => SQL;
 
 export type OrmTableReflectionData = {
   name?: string,
   schema?: string,
   unique?: UniqueReflectionData[],
-  index?: IndexReflectionData[]
+  index?: IndexReflectionData[],
+  checks?: { name: string, builder: CheckBuilder }[]
 };
 
 export type OrmColumnReflectionData = {
@@ -67,6 +72,16 @@ export function PrimaryKey() {
 
 export function References(type: () => EntityType) {
   return createColumnDecorator({ references: type });
+}
+
+export function Check<T extends Entity>(name: string, builder: CheckBuilder<T>) {
+  return createClassDecorator({
+    handler: (_, metadata) => {
+      const checks = metadata.data.tryGet<OrmTableReflectionData>('orm')?.checks ?? [];
+      checks.push({ name, builder });
+      metadata.data.set('orm', { checks }, true);
+    }
+  });
 }
 
 export function Encrypted() {

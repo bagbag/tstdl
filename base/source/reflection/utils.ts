@@ -29,9 +29,7 @@ export type WrapDecoratorOptions = CreateDecoratorOptions & {
 
 type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
 
-// eslint-disable-next-line max-lines-per-function
 export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDecoratorOptions>(options: T, handler: DecoratorHandler<CreateDecoratorType<T>> = noop): Decorator<CreateDecoratorType<T>> {
-  // eslint-disable-next-line max-statements, max-lines-per-function
   function decoratorWrapper(...args: CombinedDecoratorParameters): ReturnType<Decorator> {
     const data = getDecoratorData(...args);
     const optionsType: keyof CreateDecoratorTypeOptions =

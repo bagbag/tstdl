@@ -432,32 +432,34 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   private convertGoogleContent(content: GoogleContent): Content {
     return {
       role: content.role as ContentRole,
-      parts: content.parts
-        .map((part): ContentPart | null => {
-          if (isDefined(part.text)) {
-            if (part.text.length == 0) {
-              return null;
+      parts: isUndefined(content.parts)
+        ? []
+        : content.parts
+          .map((part): ContentPart | null => {
+            if (isDefined(part.text)) {
+              if (part.text.length == 0) {
+                return null;
+              }
+
+              return { text: part.text };
             }
 
-            return { text: part.text };
-          }
+            if (isDefined(part.fileData)) {
+              const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
+              return { file: file.id };
+            }
 
-          if (isDefined(part.fileData)) {
-            const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
-            return { file: file.id };
-          }
+            if (isDefined(part.functionResponse)) {
+              return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
+            }
 
-          if (isDefined(part.functionResponse)) {
-            return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
-          }
+            if (isDefined(part.functionCall)) {
+              return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
+            }
 
-          if (isDefined(part.functionCall)) {
-            return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
-          }
-
-          throw new NotSupportedError('Unsupported content part.');
-        })
-        .filter(isNotNull)
+            throw new NotSupportedError('Unsupported content part.');
+          })
+          .filter(isNotNull)
     };
   }
 

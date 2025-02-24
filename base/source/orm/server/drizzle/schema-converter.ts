@@ -1,5 +1,5 @@
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
-import { boolean, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type AnyPgColumn, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { boolean, check, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type AnyPgColumn, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { tryGetEnumName } from '#/enumeration/enumeration.js';
@@ -114,7 +114,8 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
           return constraint;
         }) ?? []
       ),
-      ...(tableReflectionData?.index?.map((data) => buildIndex(table, data)) ?? [])
+      ...(tableReflectionData?.index?.map((data) => buildIndex(table, data)) ?? []),
+      ...(tableReflectionData?.checks?.map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<string, EntityType<any>>))) ?? [])
     ]
   );
 
