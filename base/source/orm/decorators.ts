@@ -68,6 +68,8 @@ export function createTableDecorator(data: OrmTableReflectionData = {}) {
           reflectionData[key] = [...existingValue, ...(value as any[])] as any;
         }
       }
+
+      metadata.data.set('orm', reflectionData, true);
     }
   });
 }
