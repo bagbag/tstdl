@@ -27,7 +27,6 @@ export function getShutdownSignal(): CancellationSignal {
 
 let logger: Logger;
 
-// eslint-disable-next-line no-shadow
 export function setProcessShutdownLogger(shutdownLogger: Logger): void {
   logger = shutdownLogger;
 }
@@ -74,7 +73,6 @@ export function initializeSignals(): void {
   });
 
   for (const event of quitEvents) {
-    // eslint-disable-next-line @typescript-eslint/no-loop-func
     process.on(event, (...args: any[]) => {
       console.error(event, ...args);
       quitReason = args;
@@ -83,7 +81,6 @@ export function initializeSignals(): void {
   }
 
   for (const quitSignal of quitSignals) {
-    // eslint-disable-next-line @typescript-eslint/no-loop-func
     process.on(quitSignal, (signal) => {
       logger.info(`${signal} received, quitting.`);
       requestShutdown();

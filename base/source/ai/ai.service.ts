@@ -1,10 +1,11 @@
-import { FinishReason, type FunctionDeclaration, type FunctionDeclarationSchema, type GenerateContentCandidate, type GenerationConfig, type Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, type Part, type UsageMetadata, VertexAI } from '@google-cloud/vertexai';
+import { FinishReason, type FunctionDeclaration, type FunctionDeclarationSchema, type GenerateContentCandidate, type GenerationConfig, type Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, type Part, type StreamGenerateContentResult, type UsageMetadata, VertexAI } from '@google-cloud/vertexai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import { getShutdownSignal } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
@@ -14,7 +15,9 @@ import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, assertNotNullPass, isDefined, isNotNull, isUndefined } from '#/utils/type-guards.js';
+import { cancelableTimeout } from '#/utils/timing.js';
+import { assertDefinedPass, assertNotNullPass, isDefined, isError, isNotNull, isUndefined } from '#/utils/type-guards.js';
+import { millisecondsPerSecond } from '#/utils/units.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
@@ -275,18 +278,37 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     let totalTokens = 0;
 
     while (totalOutputTokens < maxTotalOutputTokens) {
-      const generation = await this.getModel(model).generateContentStream({
-        generationConfig: {
-          ...generationConfig,
-          maxOutputTokens: Math.min(maxModelTokens, maxTotalOutputTokens - totalOutputTokens)
-        },
-        systemInstruction: request.systemInstruction,
-        tools: (isDefined(googleFunctionDeclarations) && (googleFunctionDeclarations.length > 0)) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
-        toolConfig: isDefined(request.functionCallingMode)
-          ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
-          : undefined,
-        contents: inputContent
-      });
+      let generation: StreamGenerateContentResult;
+
+      for (let i = 0; ; i++) {
+        try {
+          generation = await this.getModel(model).generateContentStream({
+            generationConfig: {
+              ...generationConfig,
+              maxOutputTokens: Math.min(maxModelTokens, maxTotalOutputTokens - totalOutputTokens)
+            },
+            systemInstruction: request.systemInstruction,
+            tools: (isDefined(googleFunctionDeclarations) && (googleFunctionDeclarations.length > 0)) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
+            toolConfig: isDefined(request.functionCallingMode)
+              ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
+              : undefined,
+            contents: inputContent
+          });
+
+          break;
+        }
+        catch (error) {
+          if ((i < 20) && isError(error) && ((error as Record)['status'] == 429)) {
+            const canceled = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
+
+            if (!canceled) {
+              continue;
+            }
+          }
+
+          throw error;
+        }
+      }
 
       iterations++;
 

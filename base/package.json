@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.84",
+  "version": "0.92.85",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -136,7 +136,7 @@
     "type-fest": "4.35"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "4.0",
+    "@stylistic/eslint-plugin": "4.1",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.4",
@@ -162,7 +162,7 @@
     "@zxcvbn-ts/language-de": "^3.0",
     "@zxcvbn-ts/language-en": "^3.0",
     "chroma-js": "^2.6",
-    "drizzle-orm": "^0.39",
+    "drizzle-orm": "^0.40",
     "handlebars": "^4.7",
     "minio": "^8.0",
     "mjml": "^4.15",
