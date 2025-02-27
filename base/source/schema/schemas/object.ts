@@ -38,7 +38,7 @@ export type ObjectSchemaOrType<T extends Record = any> = ObjectSchema<T> | Abstr
 
 export type OptionalProperties<T> = { [P in keyof T]: T[P] extends { [OPTIONAL]: true } ? P : never }[keyof T];
 
-export type ObjectSchemaPropertiesType<TP extends ObjectSchemaProperties> = SimplifyObject<{ [P in keyof PartialProperty<TP, OptionalProperties<TP>>]: SchemaOutput<TP[P]> }>;
+export type ObjectSchemaPropertiesType<TP extends ObjectSchemaProperties> = SimplifyObject<{ -readonly [P in keyof PartialProperty<TP, OptionalProperties<TP>>]: SchemaOutput<TP[P]> }>;
 
 export const tryGetSchemaFromReflection = memoizeSingle(_tryGetSchemaFromReflection, { weak: true });
 

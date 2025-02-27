@@ -35,7 +35,7 @@ export type ColumnBuilder<T, ColumnName extends string = never> =
 
 export type Embedded<T = AbstractConstructor, P extends string = ''> = Tagged<T, EmbeddedConfigTag, { prefix: P }>;
 export type Array<T extends Tagged<ObjectLiteral, ColumnTypeTag, PgColumnBuilder<any>>> = Tagged<UnwrapTagged<T>[], ColumnTypeTag, ReturnType<GetTagMetadata<T, ColumnTypeTag>['array']>>;
-export type Json<T extends ObjectLiteral = ObjectLiteral> = Tagged<T, ColumnTypeTag, $Type<ReturnType<typeof jsonb>, T>>;
+export type Json<T> = Tagged<T, ColumnTypeTag, $Type<ReturnType<typeof jsonb>, T>>;
 export type Enum<T extends EnumerationObject> = Tagged<EnumerationValue<T>, ColumnTypeTag, EnumColumn<T>>;
 export type Text = Tagged<string, ColumnTypeTag, ReturnType<typeof text<string, [string, ...string[]]>>>;
 export type Uuid = Tagged<string, ColumnTypeTag, ReturnType<typeof uuid>>;

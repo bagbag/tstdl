@@ -24,7 +24,7 @@ export const setDocumentPropertyParametersSchema = assign(
 );
 
 export const createDocumentParametersSchema = assign(
-  pick(Document, ['typeId', 'addition', 'date', 'expiration']),
+  pick(Document, ['typeId', 'title', 'date', 'expiration']),
   pick(DocumentFile, ['originalFileName']),
   object({
     collectionIds: oneOrMany(string()),
@@ -113,7 +113,7 @@ export const createCollectionParametersSchema = metadataParameterObjectSchema;
 export const setDocumentPropertiesParametersSchema = array(setDocumentPropertyParametersSchema);
 export const createDocumentCategoryParametersSchema = assign(pick(DocumentCategory, ['label']), metadataParameterObjectSchema);
 export const createDocumentTypeParametersSchema = assign(pick(DocumentType, ['categoryId', 'group', 'label']), metadataParameterObjectSchema);
-export const createDocumentRequestFileParametersSchema = assign(object({ requestId: string() }), pick(DocumentRequestFile, ['addition']), pick(DocumentFile, ['originalFileName']), metadataParameterObjectSchema);
+export const createDocumentRequestFileParametersSchema = assign(object({ requestId: string() }), pick(DocumentRequestFile, ['title']), pick(DocumentFile, ['originalFileName']), metadataParameterObjectSchema);
 export const approveDocumentRequestFileParametersSchema = assign(pick(DocumentRequestFile, ['id', 'approvalComment']), object({
   documentMetadata: metadataParameterSchema,
   requestFileMetadata: metadataParameterSchema

@@ -25,11 +25,12 @@ export class QueueEnqueueBatch<T> implements QueueEnqueueBatchMethods<T> {
   /** enqueues all added items */
   async enqueue(returnJobs?: false): Promise<void>;
   async enqueue(returnJobs: true): Promise<Job<T>[]>;
-  async enqueue(returnJobs?: boolean): Promise<void | Job<T>[]> {
+  async enqueue(returnJobs?: boolean): Promise<Job<T>[] | undefined>;
+  async enqueue(returnJobs?: boolean): Promise<Job<T>[] | void> {
     const items = this.items;
     this.items = [];
 
-    const result = await this.queue.enqueueMany(items, returnJobs);
+    const result = await this.queue.enqueueMany(items, { returnJobs });
     return result;
   }
 }

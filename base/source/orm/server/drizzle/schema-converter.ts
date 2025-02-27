@@ -37,7 +37,7 @@ export function getColumnDefinitions(table: PgTableWithColumns<any>): ColumnDefi
   return (table as PgTableWithColumns<any> & { [columnDefinitionsSymbol]: ColumnDefinition[] })[columnDefinitionsSymbol];
 }
 
-export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName?: S): PgTableFromType<S, T> {
+export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName?: S): PgTableFromType<T, S> {
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata.`);
 
@@ -115,13 +115,13 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
         }) ?? []
       ),
       ...(tableReflectionData?.index?.map((data) => buildIndex(table, data)) ?? []),
-      ...(tableReflectionData?.checks?.map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<string, EntityType<any>>))) ?? [])
+      ...(tableReflectionData?.checks?.map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>))) ?? [])
     ]
   );
 
   (drizzleSchema as Record)[columnDefinitionsSymbol] = columnDefinitions;
 
-  return drizzleSchema as any as PgTableFromType<S, T>;
+  return drizzleSchema as any as PgTableFromType<T, S>;
 }
 
 function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, dbSchema: PgSchema, path = new JsonPath({ dollar: false }), prefix: string = ''): ColumnDefinition[] {

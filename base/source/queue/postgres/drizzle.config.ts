@@ -5,9 +5,9 @@ import { defineConfig } from 'drizzle-kit';
 export default defineConfig({
   dialect: 'postgresql',
   out: relative('./', resolve(__dirname, './drizzle/').replace('dist', 'source')),
-  schema: resolve(__dirname, './models/schemas.js'),
+  schema: resolve(__dirname, './schemas.js'),
   migrations: {
-    schema: 'mail',
+    schema: 'queue',
     table: '_migrations'
   }
 });

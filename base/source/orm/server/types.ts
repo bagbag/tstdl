@@ -4,7 +4,7 @@ import type { CamelCase, ConditionalPick, SnakeCase } from 'type-fest';
 
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { Record } from '#/schema/index.js';
-import type { AbstractConstructor, UnionToIntersection } from '#/types.js';
+import type { UnionToIntersection } from '#/types.js';
 import type { Tagged } from '#/types/index.js';
 import type { OrmColumnReflectionData } from '../decorators.js';
 import type { EntityType } from '../entity.js';
@@ -28,11 +28,11 @@ export type TransformContext = {
   encryptionKey?: CryptoKey
 };
 
-type Column<Name extends string, T> = null extends T ? ColumnBuilder<T, Name> : NotNull<ColumnBuilder<T, Name>>;
+type Column<Name extends string, T> = null extends T ? ColumnBuilder<Exclude<T, null>, Name> : NotNull<ColumnBuilder<T, Name>>;
 
 export type ColumnPrefix<T> = T extends Tagged<unknown, EmbeddedConfigTag, { prefix: infer Prefix }> ? Prefix extends string ? Prefix : '' : '';
 
-export type PgTableFromType<S extends string, T extends AbstractConstructor, TableName extends string = T extends Required<EntityType> ? SnakeCase<T['entityName']> : string> = PgTableWithColumns<{
+export type PgTableFromType<T extends EntityType = EntityType, S extends string = string, TableName extends string = T extends Required<EntityType> ? SnakeCase<T['entityName']> : string> = PgTableWithColumns<{
   name: TableName,
   schema: S,
   columns: BuildColumns<

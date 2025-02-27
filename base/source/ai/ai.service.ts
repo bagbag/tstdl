@@ -70,7 +70,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
       : new GoogleGenerativeAI(assertDefinedPass(this.#options.apiKey, 'Api key not defined'))
   ) as VertexAI;
 
-  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash-exp' satisfies AiModel;
+  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
 
@@ -110,7 +110,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
       },
       generationSchema,
       systemInstruction: 'You are a highly accurate document classification AI. Your task is to analyze the content of a given document and determine its type based on a predefined list of possible document types.',
-      contents: this.getClassifyConents(parts)
+      contents: this.getClassifyContents(parts)
     });
 
     return {
@@ -119,7 +119,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
     };
   }
 
-  getClassifyConents(parts: OneOrMany<ContentPart>): Content[] {
+  getClassifyContents(parts: OneOrMany<ContentPart>): Content[] {
     return [{
       role: 'user',
       parts: [

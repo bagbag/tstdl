@@ -6,14 +6,14 @@ import type { EntityType } from '../entity.js';
 import { getDrizzleTableFromType, getPgEnum, registerEnum } from './drizzle/schema-converter.js';
 import type { PgTableFromType } from './types.js';
 
-export class DatabaseSchema<Name extends string> {
-  readonly name: Name;
+export class DatabaseSchema<SchemaName extends string> {
+  readonly name: SchemaName;
 
-  constructor(name: Name) {
+  constructor(name: SchemaName) {
     this.name = name;
   }
 
-  getTable<T extends EntityType>(type: T): PgTableFromType<Name, T> {
+  getTable<T extends EntityType>(type: T): PgTableFromType<T, SchemaName> {
     return getDrizzleTableFromType(type, this.name);
   }
 

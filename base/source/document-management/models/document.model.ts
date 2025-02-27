@@ -15,7 +15,7 @@ export class Document extends Entity {
   typeId: Uuid | null;
 
   @StringProperty({ nullable: true })
-  addition: string | null;
+  title: string | null;
 
   @NumericDate({ nullable: true })
   date: NumericDate | null;

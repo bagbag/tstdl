@@ -1,19 +1,19 @@
 
 import { databaseSchema } from '#/orm/server/database-schema.js';
-import { DocumentCategory } from './document-category.model.js';
-import { DocumentCollectionDocument } from './document-collection-document.model.js';
-import { DocumentCollection } from './document-collection.model.js';
-import { DocumentFile } from './document-file.model.js';
-import { DocumentPropertyBooleanValue, DocumentPropertyDecimalValue, DocumentPropertyIntegerValue, DocumentPropertyTextValue } from './document-property-value.model.js';
-import { DocumentProperty, DocumentPropertyDataType } from './document-property.model.js';
-import { DocumentRequestCollection } from './document-request-collection.model.js';
-import { DocumentRequestFile } from './document-request-file.model.js';
-import { DocumentRequestTemplate } from './document-request-template.js';
-import { DocumentRequest } from './document-request.model.js';
-import { DocumentRequestsTemplate } from './document-requests-template.js';
-import { DocumentTypeProperty } from './document-type-property.model.js';
-import { DocumentType } from './document-type.model.js';
-import { Document } from './document.model.js';
+import { DocumentCategory } from '../models/document-category.model.js';
+import { DocumentCollectionDocument } from '../models/document-collection-document.model.js';
+import { DocumentCollection } from '../models/document-collection.model.js';
+import { DocumentFile } from '../models/document-file.model.js';
+import { DocumentPropertyBooleanValue, DocumentPropertyDecimalValue, DocumentPropertyIntegerValue, DocumentPropertyTextValue } from '../models/document-property-value.model.js';
+import { DocumentProperty, DocumentPropertyDataType } from '../models/document-property.model.js';
+import { DocumentRequestCollection } from '../models/document-request-collection.model.js';
+import { DocumentRequestFile } from '../models/document-request-file.model.js';
+import { DocumentRequestTemplate } from '../models/document-request-template.js';
+import { DocumentRequest } from '../models/document-request.model.js';
+import { DocumentRequestsTemplate } from '../models/document-requests-template.js';
+import { DocumentTypeProperty } from '../models/document-type-property.model.js';
+import { DocumentType } from '../models/document-type.model.js';
+import { Document } from '../models/document.model.js';
 
 export const documentManagementSchema = databaseSchema('document_management');
 

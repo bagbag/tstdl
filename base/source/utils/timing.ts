@@ -1,6 +1,6 @@
-import { firstValueFrom, map, race, timer } from 'rxjs';
+import { firstValueFrom, map, race, timer, type Observable } from 'rxjs';
 
-import type { CancellationSignal } from '#/cancellation/token.js';
+import { CancellationSignal } from '#/cancellation/token.js';
 import { TimeoutError } from '#/errors/timeout.error.js';
 import { _throw } from './throw.js';
 import { resolveValueOrProvider, type ValueOrProvider } from './value-or-provider.js';
@@ -26,15 +26,17 @@ export async function timeoutUntil(timestamp: number | Date): Promise<void> {
 }
 
 /** Timeout for specified duration */
-export async function cancelableTimeout(milliseconds: number, cancelSignal: CancellationSignal): Promise<boolean> {
+export async function cancelableTimeout(milliseconds: number, cancelSignal: Observable<void> | CancellationSignal): Promise<boolean> {
+  const observable = (cancelSignal instanceof CancellationSignal) ? cancelSignal.set$ : cancelSignal;
+
   return firstValueFrom(race([
     timer(milliseconds).pipe(map(() => false)),
-    cancelSignal.set$.pipe(map(() => true))
+    observable.pipe(map(() => true))
   ]));
 }
 
 /** Timeout until specified time */
-export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: CancellationSignal): Promise<boolean> {
+export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: Observable<void> | CancellationSignal): Promise<boolean> {
   const left = timestamp.valueOf() - Date.now();
   return cancelableTimeout(left, cancelSignal);
 }

@@ -133,7 +133,7 @@ export class CancellationSignal implements PromiseLike<void>, Subscribable<void>
     CancellationToken.connect(this.state$, target, config); // eslint-disable-line @typescript-eslint/no-use-before-define
   }
 
-  async then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | undefined | null): Promise<TResult> {
+  async then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | null): Promise<TResult> {
     await this.$set;
     return onfulfilled?.() as TResult;
   }

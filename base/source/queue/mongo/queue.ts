@@ -6,7 +6,7 @@ import { Singleton } from '#/injector/decorators.js';
 import { Lock } from '#/lock/index.js';
 import type { MessageBus } from '#/message-bus/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
-import type { EnqueueManyItem, EnqueueOptions, Job, JobTag, QueueArgument } from '#/queue/index.js';
+import type { EnqueueManyItem, EnqueueManyOptions, EnqueueOneOptions, Job, JobTag, QueueArgument } from '#/queue/index.js';
 import { Queue, UniqueTagStrategy, defaultJobPriority, defaultQueueConfig, type QueueConfig } from '#/queue/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import type { BackoffOptions } from '#/utils/backoff.js';
@@ -43,7 +43,7 @@ const backoffOptions: BackoffOptions = {
         return provider.get(argument, defaultQueueConfig);
       }
 
-      return provider.get(argument.key, { ...defaultQueueConfig, ...argument });
+      return provider.get(argument.name, { ...defaultQueueConfig, ...argument });
     }
   }
 })
@@ -67,7 +67,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     this.messageBus = messageBusProvider.get(`MongoQueue:${repository.collection.collectionName}:${key}`);
   }
 
-  async enqueue(data: T, options: EnqueueOptions = {}): Promise<Job<T>> {
+  async enqueue(data: T, options: EnqueueOneOptions = {}): Promise<Job<T>> {
     const { tag = null, uniqueTag, priority = defaultJobPriority } = options;
 
     const newJob: NewMongoJob<T> = {
@@ -89,16 +89,17 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     return toModelJob(job);
   }
 
-  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
-  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
-  async enqueueMany(items: EnqueueManyItem<T>[], returnJobs: boolean = false): Promise<void | Job<T>[]> { // eslint-disable-line max-lines-per-function
+  override async enqueueMany(items: EnqueueManyItem<T>[], options?: EnqueueManyOptions & { returnJobs?: false }): Promise<void>;
+  override async enqueueMany(items: EnqueueManyItem<T>[], options: EnqueueManyOptions & { returnJobs: true }): Promise<Job<T>[]>;
+  override async enqueueMany(items: EnqueueManyItem<T>[], options?: EnqueueManyOptions): Promise<void | Job<T>[]>;
+  async enqueueMany(items: EnqueueManyItem<T>[], options?: EnqueueManyOptions): Promise<void | Job<T>[]> {
     const now = currentTimestamp();
 
     const nonUnique: NewMongoJob<T>[] = [];
     const keepOld: NewMongoJob<T>[] = [];
     const takeNew: NewMongoJob<T>[] = [];
 
-    for (const { data, tag = null, uniqueTag, priority = defaultJobPriority } of items) {
+    for (const { data, tag = null, priority = defaultJobPriority } of items) {
       const newMongoJob: NewMongoJob<T> = {
         queue: this.queueKey,
         jobId: getNewId(),
@@ -111,7 +112,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
         batch: null
       };
 
-      switch (uniqueTag) {
+      switch (options?.uniqueTag) {
         case undefined:
           nonUnique.push(newMongoJob);
           break;
@@ -135,7 +136,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
       (takeNew.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(takeNew, UniqueTagStrategy.TakeNew) : undefined
     ]);
 
-    if (returnJobs) {
+    if (options?.returnJobs == true) {
       const keepOldTags = keepOld.map((job) => job.tag);
       const takeNewTags = takeNew.map((job) => job.tag);
 
@@ -293,7 +294,6 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
   return job;
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 function getDequeueFindParameters(queueKey: string, maxTries: number, processTimeout: number, batch: null | string = null) {
   const now = currentTimestamp();
   const maximumLastDequeueTimestamp = now - processTimeout;

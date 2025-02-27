@@ -3,7 +3,7 @@ import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
 import { QueueEnqueueBatch } from './enqueue-batch.js';
 
-export type JobTag = string | number | null;
+export type JobTag = string | null;
 
 export type Job<T> = {
   id: string,
@@ -27,6 +27,11 @@ export enum UniqueTagStrategy {
 
 export type EnqueueOptions = {
   tag?: JobTag,
+  priority?: number
+};
+
+export type EnqueueOneOptions = {
+  tag?: JobTag,
   uniqueTag?: UniqueTagStrategy,
   priority?: number
 };
@@ -35,12 +40,17 @@ export type EnqueueManyItem<T> = EnqueueOptions & {
   data: T
 };
 
+export type EnqueueManyOptions = {
+  uniqueTag?: UniqueTagStrategy,
+  returnJobs?: boolean
+};
+
 export type QueueConfig = {
   processTimeout?: number,
   maxTries?: number
 };
 
-export type QueueArgument = string | (QueueConfig & { key: string });
+export type QueueArgument = string | (QueueConfig & { name: string });
 
 export const defaultQueueConfig: Required<QueueConfig> = {
   processTimeout: millisecondsPerMinute,
@@ -54,10 +64,11 @@ export abstract class Queue<T> implements Resolvable<QueueArgument> {
     return new QueueEnqueueBatch(this);
   }
 
-  abstract enqueue(data: T, options?: EnqueueOptions): Promise<Job<T>>;
-  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: false): Promise<void>;
-  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs: true): Promise<Job<T>[]>;
-  abstract enqueueMany(items: EnqueueManyItem<T>[], returnJobs?: boolean): Promise<void | Job<T>[]>;
+  abstract enqueue(data: T, options?: EnqueueOneOptions): Promise<Job<T>>;
+
+  abstract enqueueMany(items: EnqueueManyItem<T>[], options?: EnqueueManyOptions & { returnJobs?: false }): Promise<void>;
+  abstract enqueueMany(items: EnqueueManyItem<T>[], options: EnqueueManyOptions & { returnJobs: true }): Promise<Job<T>[]>;
+  abstract enqueueMany(items: EnqueueManyItem<T>[], options?: EnqueueManyOptions): Promise<Job<T>[] | undefined>;
 
   abstract has(id: string): Promise<boolean>;
 

@@ -43,9 +43,6 @@ export type QueryObject<T> = LogicalQuery<T> | (ComparisonQueryBody<T> & Special
 export type QueryTypes = LogicalQueryTypes | ComparisonQueryTypes | SpecialQueryTypes;
 export const allQueryTypes = [...allLogicalQueryTypes, ...allComparisonQueryTypes, ...allSpecialQueryTypes];
 
-export type Order = 'asc' | 'desc';
-export const allOrders: Order[] = ['asc', 'desc'];
-
 export type Operator = 'and' | 'or';
 export const allOperators: Operator[] = ['and', 'or'];
 
@@ -61,7 +58,7 @@ export type LogicalNorQuery<T = any> = {
   $nor: readonly Query<T>[]
 };
 
-export type ComparisonValue<T> = Untagged<T | Flatten<T>>;
+export type ComparisonValue<T> = Untagged<T | Flatten<T>> | SQLWrapper;
 export type ComparisonValueWithRegex<T> = T extends string
   ? ComparisonValue<T | RegExp>
   : T extends readonly string[]

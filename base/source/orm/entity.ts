@@ -1,21 +1,18 @@
 import { Defaulted, Integer } from '#/schema/index.js';
-import type { Type, TypedOmit } from '#/types.js';
-import type { UntaggedDeep } from '#/types/index.js';
+import type { Type } from '#/types.js';
 import { Index, PrimaryKey } from './decorators.js';
 import { Embedded, type HasDefault, type IsPrimaryKey, Json, Timestamp, Uuid } from './types.js';
 
-export interface EntityType<T extends Entity = Entity> extends Type<T> {
+export interface EntityType<T extends Entity | EntityWithoutMetadata = Entity | EntityWithoutMetadata> extends Type<T> {
   readonly entityName?: string;
 }
-
-export type NewEntity<T extends Entity> = UntaggedDeep<TypedOmit<T, 'id' | 'metadata'> & { id?: string, metadata?: Partial<Pick<EntityMetadata, 'attributes'>> }>;
 
 @Json()
 export abstract class EntityMetadataAttributes { // eslint-disable-line @typescript-eslint/no-extraneous-class
   [key: string]: unknown;
 }
 
-@Index(undefined, ['revision', 'revisionTimestamp'])
+@Index(['revision', 'revisionTimestamp'])
 export abstract class EntityMetadata {
   @Integer()
   revision: number;
@@ -40,4 +37,10 @@ export abstract class Entity {
 
   @Embedded(EntityMetadata, { prefix: null })
   metadata: Embedded<EntityMetadata>;
+}
+
+export abstract class EntityWithoutMetadata {
+  @PrimaryKey()
+  @Uuid({ defaultRandom: true })
+  id: IsPrimaryKey<HasDefault<Uuid>>;
 }

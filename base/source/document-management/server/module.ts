@@ -1,4 +1,4 @@
-import '../models/schemas.js';
+import './schemas.js';
 
 import { inject, Injector, type InjectionToken } from '#/injector/index.js';
 import { Database, migrate } from '#/orm/server/database.js';

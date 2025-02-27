@@ -11,7 +11,7 @@ import type { PgTableFromType } from './server/types.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
 
-export type CheckBuilder<T extends Entity = any> = (table: PgTableFromType<string, EntityType<T>>) => SQL;
+export type CheckBuilder<T extends Entity = any> = (table: PgTableFromType<EntityType<T>>) => SQL;
 
 export type OrmTableReflectionData = {
   name?: string,
@@ -119,9 +119,9 @@ export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: 
 }
 
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
-export function Unique(name: string | undefined, columns: [string, ...string[]], options?: UniqueReflectionData['options']): ClassDecorator;
-export function Unique(columns: [string, ...string[]], options?: UniqueReflectionData['options']): ClassDecorator;
-export function Unique(nameOrColumns?: string | [string, ...string[]], columnsOrOptions?: [string, ...string[]] | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
+export function Unique<T>(name: string | undefined, columns: [Extract<keyof T, string>, ...Extract<keyof T, string>[]], options?: UniqueReflectionData['options']): ClassDecorator;
+export function Unique<T>(columns: [Extract<keyof T, string>, ...Extract<keyof T, string>[]], options?: UniqueReflectionData['options']): ClassDecorator;
+export function Unique<T>(nameOrColumns?: string | [Extract<keyof T, string>, ...Extract<keyof T, string>[]], columnsOrOptions?: [Extract<keyof T, string>, ...Extract<keyof T, string>[]] | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
   if (isArray(nameOrColumns)) {
     return createTableDecorator({ unique: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
   }
@@ -134,7 +134,7 @@ export function Unique(nameOrColumns?: string | [string, ...string[]], columnsOr
 }
 
 export function Index(name?: string, options?: IndexReflectionData['options']): PropertyDecorator;
-export function Index(name: string | undefined, columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
+export function Index(name: string, columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
 export function Index(columns: [string, ...string[]], options?: IndexReflectionData['options']): ClassDecorator;
 export function Index(nameOrColumns?: string | [string, ...string[]], columnsOrOptions?: [string, ...string[]] | IndexReflectionData['options'], options?: IndexReflectionData['options']) {
   if (isArray(nameOrColumns)) {

@@ -5,6 +5,8 @@ import { StringProperty } from '#/schema/index.js';
 import { DocumentCategory } from './document-category.model.js';
 
 export class DocumentType extends Entity {
+  declare static entityName: 'DocumentType';
+
   @Uuid()
   @References(() => DocumentCategory)
   categoryId: Uuid;

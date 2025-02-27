@@ -16,7 +16,7 @@ export class DocumentRequestFile extends Entity {
   fileId: Uuid;
 
   @StringProperty({ nullable: true })
-  addition: string | null;
+  title: string | null;
 
   @Uuid({ nullable: true })
   @References(() => Document)

@@ -1,3 +1,4 @@
+import { AiService } from '#/ai/ai.service.js';
 import { getEntityMap } from '#/database/index.js';
 import { Enumerable } from '#/enumerable/index.js';
 import { BadRequestError } from '#/errors/index.js';
@@ -6,15 +7,25 @@ import { type Resolvable, Singleton, inject, injectArgument, provide, resolveArg
 import { ObjectStorage } from '#/object-storage/index.js';
 import type { NewEntity, Query } from '#/orm/index.js';
 import { DatabaseConfig, EntityRepositoryConfig, type Transaction, injectRepository } from '#/orm/server/index.js';
+import { array, enumeration, integer, nullable, object, string } from '#/schema/index.js';
 import type { OneOrMany, Record } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
-import { assertDefinedPass, compareByValueSelectionToOrder, currentTimestamp, digest, isBoolean, isDefined, isNotNull, isNull, isNumber, isString, isUint8Array, millisecondsPerMinute } from '#/utils/index.js';
+import { assertDefinedPass, assertStringPass, compareByValueSelectionToOrder, currentTimestamp, digest, isBoolean, isDefined, isNotNull, isNull, isNumber, isString, isUint8Array, millisecondsPerMinute } from '#/utils/index.js';
 import { groupToMap } from '#/utils/iterable-helpers/index.js';
 import { readBinaryStream } from '#/utils/stream/index.js';
 import { type AddOrArchiveDocumentToOrFromCollectionParameters, type ApplyDocumentRequestsTemplateParameters, type ApproveDocumentRequestFileParameters, type AssignPropertyToTypeParameters, type CategoryAndTypesView, type CreateCollectionParameters, type CreateDocumentCategoryParameters, type CreateDocumentParameters, type CreateDocumentPropertyParameters, type CreateDocumentRequestFileParameters, type CreateDocumentRequestParameters, type CreateDocumentRequestTemplateParameters, type CreateDocumentRequestsTemplateParameters, type CreateDocumentTypeParameters, type DeleteDocumentRequestFileParameters, type DeleteDocumentRequestParameters, type DeleteDocumentRequestTemplateParameters, type DeleteDocumentRequestsTemplateParameters, Document, DocumentCategory, DocumentCollection, DocumentCollectionDocument, DocumentFile, type DocumentManagementData, DocumentProperty, DocumentPropertyBooleanValue, DocumentPropertyDataType, DocumentPropertyDecimalValue, DocumentPropertyIntegerValue, DocumentPropertyTextValue, DocumentRequest, DocumentRequestCollection, DocumentRequestFile, DocumentRequestTemplate, type DocumentRequestView, DocumentRequestsTemplate, type DocumentRequestsTemplateData, type DocumentRequestsTemplateView, DocumentType, DocumentTypeProperty, type DocumentView, type LoadDataCollectionsMetadataParameters, type RejectDocumentRequestFileParameters, type RequestFilesStats, type SetDocumentPropertiesParameters, type SetDocumentPropertyParameters, type UpdateDocumentParameters, type UpdateDocumentRequestFileParameters, type UpdateDocumentRequestParameters, type UpdateDocumentRequestTemplateParameters, type UpdateDocumentRequestsTemplateParameters } from '../../models/index.js';
 import { DocumentManagementConfig } from '../module.js';
 
 export type DocumentServiceArgument = DocumentManagementConfig;
+
+export type DocumentInformationExtractionResult = {
+  title: string,
+  subtitle: string | null,
+  types: DocumentType[],
+  summary: string,
+  tags: string[],
+  date: { year: number, month: number, day: number } | null
+};
 
 @Singleton({
   providers: [
@@ -23,6 +34,8 @@ export type DocumentServiceArgument = DocumentManagementConfig;
   ]
 })
 export class DocumentManagementService implements Resolvable<DocumentServiceArgument> {
+  readonly #aiService = inject(AiService);
+
   protected readonly documentService = injectRepository(Document);
   protected readonly documentFileService = injectRepository(DocumentFile);
   protected readonly documentCollectionService = injectRepository(DocumentCollection);
@@ -50,8 +63,8 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
         this.documentCollectionService.withTransaction(transaction).loadMany(collectionIds),
         this.documentCollectionDocumentService.withTransaction(transaction).loadManyByQuery({ collectionId: { $in: collectionIds } }),
         this.documentRequestCollectionService.withTransaction(transaction).loadManyByQuery({ collectionId: { $in: collectionIds } }),
-        this.documentCategoryService.withTransaction(transaction).loadManyByQuery({}, { order: { label: 1 } }),
-        this.documentTypeService.withTransaction(transaction).loadManyByQuery({}, { order: { label: 1 } })
+        this.documentCategoryService.withTransaction(transaction).loadManyByQuery({}, { order: 'label' }),
+        this.documentTypeService.withTransaction(transaction).loadManyByQuery({}, { order: 'label' })
       ]);
 
       const documentIds = collectionDocuments.map((document) => document.documentId);
@@ -106,7 +119,7 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
 
   async loadDocumentRequestsTemplateData(): Promise<DocumentRequestsTemplateData> {
     const [requestsTemplates, requestTemplates] = await Promise.all([
-      this.documentRequestsTemplateService.loadManyByQuery({}, { order: { label: 'asc' } }),
+      this.documentRequestsTemplateService.loadManyByQuery({}, { order: 'label' }),
       this.documentRequestTemplateService.loadManyByQuery({})
     ]);
 
@@ -120,8 +133,8 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
 
   async loadCategoriesAndTypes(): Promise<CategoryAndTypesView> {
     const [categories, types] = await Promise.all([
-      this.documentCategoryService.loadManyByQuery({}, { order: { label: 1 } }),
-      this.documentTypeService.loadManyByQuery({}, { order: { label: 1 } })
+      this.documentCategoryService.loadManyByQuery({}, { order: 'label' }),
+      this.documentTypeService.loadManyByQuery({}, { order: 'label' })
     ]);
 
     return { categories, types };
@@ -213,15 +226,13 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
     return this.documentRequestTemplateService.delete(parameters.id);
   }
 
-  async createDocument({ typeId, addition, date, expiration, originalFileName, collectionIds, properties, metadata }: CreateDocumentParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<Document> {
+  async createDocument({ typeId, title, date, expiration, originalFileName, collectionIds, properties, metadata }: CreateDocumentParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<Document> {
     return this.documentService.transaction(async (_, transaction) => {
       const documentFile = await this.createDocumentFile(content, originalFileName, transaction);
-      const document = await this.documentService.withTransaction(transaction).insert({ fileId: documentFile.id, typeId, addition, date, expiration, metadata });
+      const document = await this.documentService.withTransaction(transaction).insert({ fileId: documentFile.id, typeId, title, date, expiration, metadata });
 
-      if (isDefined(collectionIds)) {
-        for (const collectionId of toArray(collectionIds)) {
-          await this.documentCollectionDocumentService.withTransaction(transaction).insert({ collectionId, documentId: document.id, archiveTimestamp: null });
-        }
+      for (const collectionId of toArray(collectionIds)) {
+        await this.documentCollectionDocumentService.withTransaction(transaction).insert({ collectionId, documentId: document.id, archiveTimestamp: null });
       }
 
       if (isDefined(properties)) {
@@ -247,7 +258,7 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
       const document = await this.documentService.withTransaction(transaction).insert({
         fileId: requestFile.fileId,
         typeId: request.typeId,
-        addition: requestFile.addition,
+        title: requestFile.title,
         date: null,
         expiration: null,
         metadata: documentMetadata
@@ -275,8 +286,8 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
     });
   }
 
-  async updateDocumentRequestFile({ id, addition, approvalComment, metadata }: UpdateDocumentRequestFileParameters): Promise<DocumentRequestFile> {
-    return this.documentRequestFileService.update(id, { addition, approvalComment, metadata });
+  async updateDocumentRequestFile({ id, title, approvalComment, metadata }: UpdateDocumentRequestFileParameters): Promise<DocumentRequestFile> {
+    return this.documentRequestFileService.update(id, { title, approvalComment, metadata });
   }
 
   async deleteDocumentRequestFile({ id, metadata }: DeleteDocumentRequestFileParameters): Promise<void> {
@@ -309,7 +320,7 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
     });
   }
 
-  async createDocumentRequestFile({ requestId, addition, originalFileName, metadata }: CreateDocumentRequestFileParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<DocumentRequestFile> {
+  async createDocumentRequestFile({ requestId, title, originalFileName, metadata }: CreateDocumentRequestFileParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<DocumentRequestFile> {
     return this.documentRequestFileService.transaction(async (_, transaction) => {
       const [request, existingRequestFiles] = await Promise.all([
         this.documentRequestService.withTransaction(transaction).load(requestId),
@@ -323,7 +334,7 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
       }
 
       const file = await this.createDocumentFile(content, originalFileName, transaction);
-      return this.documentRequestFileService.withTransaction(transaction).insert({ requestId, fileId: file.id, addition, createdDocumentId: null, approval: null, approvalComment: null, approvalTimestamp: null, metadata });
+      return this.documentRequestFileService.withTransaction(transaction).insert({ requestId, fileId: file.id, title, createdDocumentId: null, approval: null, approvalComment: null, approvalTimestamp: null, metadata });
     });
   }
 
@@ -418,6 +429,60 @@ export class DocumentManagementService implements Resolvable<DocumentServiceArgu
 
   async assignPropertyToType(parameters: AssignPropertyToTypeParameters): Promise<void> {
     await this.documentTypePropertyService.insert(parameters);
+  }
+
+  protected async extractDocumentInformation(): Promise<DocumentInformationExtractionResult> {
+    const file = await this.#aiService.processFile({ path: '', mimeType: '' });
+    const types = await this.documentTypeService.loadAll();
+
+    const typeLabels = types.map((type) => type.label);
+
+    const generationSchema = object({
+      documentTitle: string(),
+      documentSubtitle: nullable(string()),
+      documentTypes: array(enumeration(typeLabels as [string, ...string[]])),
+      documentSummary: string(),
+      documentTags: array(string()),
+      documentDate: nullable(object({ year: integer(), month: integer(), day: integer() }))
+    });
+
+    const generation = await this.#aiService.generate({
+      model: 'gemini-2.0-flash',
+      generationOptions: {
+        maxOutputTokens: 2048,
+        temperature: 0.2,
+        topP: 0.2
+      },
+      generationSchema,
+      contents: [
+        {
+          role: 'user', parts: [
+            { file: file.file },
+            {
+              text: `Extrahiere den Inhalt des Dokuments in das angegebenen JSON Schema.
+
+Gib in der summary ausführlich an, welche Informationen in dem Dokument vorkommen (ohne konkrete Werte).
+Erstelle bis zu 7 möglichst spezifische Tags ohne allgemeinen Worte.
+Antworte auf deutsch.`
+            }
+          ]
+        }
+      ]
+    });
+
+    const resultJson = JSON.parse(assertStringPass(generation.text, 'No text generated.'));
+    const result = generationSchema.parse(resultJson);
+
+    result.documentTags = result.documentTags.filter((tag) => (tag != result.documentTitle) && (tag != result.documentSubtitle));
+
+    return {
+      title: result.documentTitle,
+      subtitle: result.documentSubtitle,
+      types: result.documentTypes.map((typeLabel) => types.find((type) => type.label == typeLabel)).filter(isDefined),
+      summary: result.documentSummary,
+      tags: result.documentTags,
+      date: result.documentDate
+    };
   }
 
   protected getDocumentPropertyValueService(dataType: DocumentPropertyDataType) {

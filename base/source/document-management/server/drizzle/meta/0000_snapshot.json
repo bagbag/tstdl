@@ -1,5 +1,5 @@
 {
-  "id": "8b44dbd1-5662-4e8f-9a42-3057c61bdaa3",
+  "id": "5bbb423e-43f3-4595-912c-b8bb87b136d8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -27,8 +27,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "addition": {
-          "name": "addition",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1056,8 +1056,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "addition": {
-          "name": "addition",
+        "title": {
+          "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": false
