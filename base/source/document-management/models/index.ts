@@ -4,6 +4,8 @@ export * from './document-collection.model.js';
 export * from './document-file.model.js';
 export * from './document-property-value.model.js';
 export * from './document-property.model.js';
+export * from './document-request-assignment-task-collection.model.js';
+export * from './document-request-assignment-task.model.js';
 export * from './document-request-collection.model.js';
 export * from './document-request-file.model.js';
 export * from './document-request-template.js';

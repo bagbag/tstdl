@@ -15,17 +15,17 @@ export class LazyPromise<T> extends CustomPromise<T> {
     this.#executorOrPromiseProvider = executorOrPromiseProvider;
   }
 
-  override async then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined): Promise<TResult1 | TResult2> {
+  override async then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null): Promise<TResult1 | TResult2> {
     this.execute();
     return super.then(onfulfilled, onrejected);
   }
 
-  override async catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined): Promise<T | TResult> {
+  override async catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null): Promise<T | TResult> {
     this.execute();
     return super.catch(onrejected);
   }
 
-  override async finally(onfinally?: (() => void) | null | undefined): Promise<T> {
+  override async finally(onfinally?: (() => void) | null): Promise<T> {
     this.execute();
     return super.finally(onfinally);
   }

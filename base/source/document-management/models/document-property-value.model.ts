@@ -1,40 +1,54 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Uuid } from '#/orm/types.js';
-import { BooleanProperty, Integer, NumberProperty, type SchemaOutput, StringProperty, union } from '#/schema/index.js';
+import { Check, NumericDate, Unique, Uuid } from '#/orm/types.js';
+import { BooleanProperty, Integer, NumberProperty, StringProperty } from '#/schema/index.js';
+import { sql } from 'drizzle-orm';
 import { DocumentProperty } from './document-property.model.js';
+import { DocumentRequestAssignmentTask } from './document-request-assignment-task.model.js';
+import { DocumentRequestFile } from './document-request-file.model.js';
 import { Document } from './document.model.js';
 
+@Check<DocumentPropertyValueBase>('only_one_value', (table) => sql`num_nonnulls(${table.text}, ${table.integer}, ${table.decimal}, ${table.boolean}, ${table.date}) = 1`)
 export abstract class DocumentPropertyValueBase extends Entity {
-  @Uuid()
-  @References(() => Document)
-  documentId: Uuid;
-
   @Uuid()
   @References(() => DocumentProperty)
   propertyId: Uuid;
-}
 
-export class DocumentPropertyTextValue extends DocumentPropertyValueBase {
   @StringProperty({ nullable: true })
-  value: string | null;
-}
+  text: string | null;
 
-export class DocumentPropertyIntegerValue extends DocumentPropertyValueBase {
   @Integer({ nullable: true })
-  value: number | null;
-}
+  integer: number | null;
 
-export class DocumentPropertyDecimalValue extends DocumentPropertyValueBase {
   @NumberProperty({ nullable: true })
-  value: number | null;
-}
+  decimal: number | null;
 
-export class DocumentPropertyBooleanValue extends DocumentPropertyValueBase {
   @BooleanProperty({ nullable: true })
-  value: boolean | null;
+  boolean: boolean | null;
+
+  @NumericDate({ nullable: true })
+  date: NumericDate | null;
 }
 
-export const documentPropertyValueSchema = union(DocumentPropertyTextValue, DocumentPropertyIntegerValue, DocumentPropertyDecimalValue, DocumentPropertyBooleanValue);
+@Unique<DocumentPropertyValue>(['documentId', 'propertyId'])
+export class DocumentPropertyValue extends DocumentPropertyValueBase {
+  @Uuid()
+  @References(() => Document)
+  documentId: Uuid;
+}
 
-export type DocumentPropertyValue = SchemaOutput<typeof documentPropertyValueSchema>;
+@Unique<DocumentRequestFilePropertyValue>(['requestFileId', 'propertyId'], { naming: 'abbreviated-table' })
+export class DocumentRequestFilePropertyValue extends DocumentPropertyValueBase {
+  @Uuid()
+  @References(() => DocumentRequestFile)
+  requestFileId: Uuid;
+}
+
+@Unique<DocumentRequestAssignmentTaskPropertyValue>(['requestAssignmentTaskId', 'propertyId'], { naming: 'abbreviated-table' })
+export class DocumentRequestAssignmentTaskPropertyValue extends DocumentPropertyValueBase {
+  declare static readonly entityName: 'DocumentRequestAssignmentTaskPropertyValue';
+
+  @Uuid()
+  @References(() => DocumentRequestAssignmentTask)
+  requestAssignmentTaskId: Uuid;
+}

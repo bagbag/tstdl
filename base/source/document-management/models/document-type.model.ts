@@ -1,11 +1,12 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Uuid } from '#/orm/types.js';
+import { Unique, Uuid } from '#/orm/types.js';
 import { StringProperty } from '#/schema/index.js';
 import { DocumentCategory } from './document-category.model.js';
 
+@Unique<DocumentType>(['categoryId', 'label'])
 export class DocumentType extends Entity {
-  declare static entityName: 'DocumentType';
+  declare static readonly entityName: 'DocumentType';
 
   @Uuid()
   @References(() => DocumentCategory)

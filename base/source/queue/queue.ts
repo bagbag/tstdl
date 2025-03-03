@@ -1,7 +1,12 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import type { Logger } from '#/logger/logger.js';
+import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
 import { QueueEnqueueBatch } from './enqueue-batch.js';
+
+export type ProcessWorker<T> = (job: Job<T>) => void | Promise<void>;
+export type ProcessBatchWorker<T> = (jobs: Job<T>[]) => void | Promise<void>;
 
 export type JobTag = string | null;
 
@@ -90,4 +95,52 @@ export abstract class Queue<T> implements Resolvable<QueueArgument> {
 
   abstract getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>>;
   abstract getBatchConsumer(size: number, cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>[]>;
+
+  process({ concurrency = 1, cancellationSignal }: { concurrency?: number, cancellationSignal: CancellationSignal }, handler: ProcessWorker<T>, errorHandler?: Logger | ((error: unknown) => void | Promise<void>)): void {
+    const handleError = isFunction(errorHandler)
+      ? errorHandler
+      : isDefined(errorHandler)
+        ? (error: unknown) => errorHandler.error(error)
+        : undefined;
+
+    for (let i = 0; i < concurrency; i++) {
+      void this.processWorker(cancellationSignal, handler, handleError);
+    }
+  }
+
+  processBatch({ batchSize = 10, concurrency = 1, cancellationSignal }: { batchSize?: number, concurrency?: number, cancellationSignal: CancellationSignal }, handler: ProcessBatchWorker<T>, errorHandler?: Logger | ((error: unknown) => void | Promise<void>)): void {
+    const handleError = isFunction(errorHandler)
+      ? errorHandler
+      : isDefined(errorHandler)
+        ? (error: unknown) => errorHandler.error(error)
+        : undefined;
+
+    for (let i = 0; i < concurrency; i++) {
+      void this.processBatchWorker(batchSize, cancellationSignal, handler, handleError);
+    }
+  }
+
+  private async processWorker(cancellationSignal: CancellationSignal, handler: ProcessWorker<T>, errorHandler: ((error: unknown) => void | Promise<void>) | undefined) {
+    for await (const job of this.getConsumer(cancellationSignal)) {
+      try {
+        await handler(job);
+        await this.acknowledge(job);
+      }
+      catch (error) {
+        await errorHandler?.(error);
+      }
+    }
+  }
+
+  private async processBatchWorker(size: number, cancellationSignal: CancellationSignal, handler: ProcessBatchWorker<T>, errorHandler: ((error: unknown) => void | Promise<void>) | undefined) {
+    for await (const jobs of this.getBatchConsumer(size, cancellationSignal)) {
+      try {
+        await handler(jobs);
+        await this.acknowledgeMany(jobs);
+      }
+      catch (error) {
+        await errorHandler?.(error);
+      }
+    }
+  }
 }

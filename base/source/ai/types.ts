@@ -43,13 +43,13 @@ export type GenerationOptions = {
   frequencyPenalty?: number
 };
 
-export type GenerationRequest = {
+export type GenerationRequest<S = unknown> = {
   model?: AiModel,
   systemInstruction?: string,
   contents: Content | readonly Content[],
   functions?: SchemaFunctionDeclarations,
   functionCallingMode?: FunctionCallingMode,
-  generationSchema?: SchemaTestable,
+  generationSchema?: SchemaTestable<S>,
   generationOptions?: GenerationOptions
 };
 
@@ -60,9 +60,10 @@ export type GenerationUsage = {
   total: number
 };
 
-export type GenerationResult = {
+export type GenerationResult<S = unknown> = {
   content: Content,
   text: string | null,
+  json: S,
   functionCalls: FunctionCall[],
   finishReason: FinishReason,
   usage: GenerationUsage

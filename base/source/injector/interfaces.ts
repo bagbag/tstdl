@@ -2,8 +2,8 @@ import type { Record, Type } from '#/types.js';
 import type { ArgumentedInjectionToken, InjectionTokenArgument, ReifyingInjectionToken } from './token.js';
 import type { AfterResolveContext } from './types.js';
 
-export const resolveArgumentType: unique symbol = Symbol('resolveArgumentType');
-export const afterResolve: unique symbol = Symbol('after resolve');
+export const resolveArgumentType = Symbol('resolveArgumentType');
+export const afterResolve = Symbol('afterResolve');
 
 export type ResolveArgumentType = typeof resolveArgumentType;
 
@@ -24,5 +24,5 @@ export interface Resolvable<A = unknown, D extends Record = Record> extends Part
 }
 
 export interface AfterResolve<A = unknown, D extends Record = Record> {
-  [afterResolve](argument: A, context: AfterResolveContext<D>): void | Promise<void>;
+  [afterResolve](argument: NoInfer<A>, context: AfterResolveContext<NoInfer<D>>): void | Promise<void>;
 }

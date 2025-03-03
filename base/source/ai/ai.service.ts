@@ -9,14 +9,15 @@ import { getShutdownSignal } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
-import { array, enumeration, nullable, object, type OneOrMany, type SchemaTestable, string } from '#/schema/index.js';
+import { array, enumeration, nullable, object, type OneOrMany, Schema, type SchemaTestable, string } from '#/schema/index.js';
 import type { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { lazyObject } from '#/utils/object/lazy-property.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { cancelableTimeout } from '#/utils/timing.js';
-import { assertDefinedPass, assertNotNullPass, isDefined, isError, isNotNull, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, assertNotNullPass, isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
@@ -249,12 +250,12 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     return generator;
   }
 
-  async generate(request: GenerationRequest): Promise<GenerationResult> {
+  async generate<S>(request: GenerationRequest<S>): Promise<GenerationResult<S>> {
     const items = await toArrayAsync(this.generateStream(request));
-    return mergeGenerationStreamItems(items);
+    return mergeGenerationStreamItems(items, request.generationSchema);
   }
 
-  async *generateStream(request: GenerationRequest): AsyncGenerator<GenerationResult> {
+  async *generateStream<S>(request: GenerationRequest<S>): AsyncGenerator<GenerationResult<S>> {
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
     const generationConfig: GenerationConfig = {
@@ -326,7 +327,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         let text: string | null;
         let functionCallParts: FunctionCall[] | undefined;
 
-        const result: GenerationResult = {
+        const result: GenerationResult<S> = {
           content,
           get text() {
             if (isUndefined(text)) {
@@ -335,6 +336,9 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
             }
 
             return text;
+          },
+          get json(): any {
+            throw new NotSupportedError('JSON not supported in streamed items. Use mergeGenerationStreamItems to combine all streamed items.');
           },
           get functionCalls() {
             if (isUndefined(functionCallParts)) {
@@ -490,15 +494,15 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 }
 
-export function mergeGenerationStreamItems(items: GenerationResult[]): GenerationResult {
+export function mergeGenerationStreamItems<S>(items: GenerationResult<S>[], schema?: SchemaTestable<S>): GenerationResult<S> {
   const parts = items.flatMap((item) => item.content.parts);
 
   let text: string | null;
   let functionCallParts: FunctionCall[] | undefined;
 
-  return {
-    content: { role: 'model', parts },
-    get text() {
+  return lazyObject<GenerationResult<S>>({
+    content: { value: { role: 'model', parts } },
+    text() {
       if (isUndefined(text)) {
         const textParts = parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
         text = (textParts.length > 0) ? textParts.join('') : null;
@@ -506,14 +510,25 @@ export function mergeGenerationStreamItems(items: GenerationResult[]): Generatio
 
       return text;
     },
-    get functionCalls() {
+    json() {
+      if (isUndefined(schema)) {
+        return undefined as any;
+      }
+
+      if (isNull(this.text)) {
+        throw new Error('No text to parse available.');
+      }
+
+      return Schema.parse(schema, JSON.parse(this.text));
+    },
+    functionCalls() {
       if (isUndefined(functionCallParts)) {
         functionCallParts = parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
       }
 
       return functionCallParts;
     },
-    finishReason: items.at(-1)!.finishReason,
-    usage: items.at(-1)!.usage
-  };
+    finishReason: { value: items.at(-1)!.finishReason },
+    usage: { value: items.at(-1)!.usage }
+  });
 }

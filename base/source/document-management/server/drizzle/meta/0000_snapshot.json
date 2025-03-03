@@ -1,5 +1,5 @@
 {
-  "id": "5bbb423e-43f3-4595-912c-b8bb87b136d8",
+  "id": "2ad29e58-dbc7-4a44-bc99-11a437139566",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -33,15 +33,33 @@
           "primaryKey": false,
           "notNull": false
         },
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pages": {
+          "name": "pages",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "date": {
           "name": "date",
           "type": "date",
           "primaryKey": false,
           "notNull": false
         },
-        "expiration": {
-          "name": "expiration",
-          "type": "date",
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -166,7 +184,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_category_label_unique": {
+          "name": "document_category_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "label"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -315,7 +341,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_collection_document_collection_id_document_id_unique": {
+          "name": "document_collection_document_collection_id_document_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "collection_id",
+            "document_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -454,13 +489,21 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_property_label_unique": {
+          "name": "document_property_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "label"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_property_boolean_value": {
-      "name": "document_property_boolean_value",
+    "document_management.document_property_value": {
+      "name": "document_property_value",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -470,318 +513,48 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "document_id": {
-          "name": "document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "property_id": {
           "name": "property_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "value": {
-          "name": "value",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revision": {
-          "name": "revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revision_timestamp": {
-          "name": "revision_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "create_timestamp": {
-          "name": "create_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "delete_timestamp": {
-          "name": "delete_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attributes": {
-          "name": "attributes",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "document_property_boolean_value_document_id_document_id_fk": {
-          "name": "document_property_boolean_value_document_id_document_id_fk",
-          "tableFrom": "document_property_boolean_value",
-          "tableTo": "document",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "document_property_boolean_value_property_id_document_property_id_fk": {
-          "name": "document_property_boolean_value_property_id_document_property_id_fk",
-          "tableFrom": "document_property_boolean_value",
-          "tableTo": "document_property",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "property_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "document_management.document_property_decimal_value": {
-      "name": "document_property_decimal_value",
-      "schema": "document_management",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revision": {
-          "name": "revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revision_timestamp": {
-          "name": "revision_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "create_timestamp": {
-          "name": "create_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "delete_timestamp": {
-          "name": "delete_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attributes": {
-          "name": "attributes",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "document_property_decimal_value_document_id_document_id_fk": {
-          "name": "document_property_decimal_value_document_id_document_id_fk",
-          "tableFrom": "document_property_decimal_value",
-          "tableTo": "document",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "document_property_decimal_value_property_id_document_property_id_fk": {
-          "name": "document_property_decimal_value_property_id_document_property_id_fk",
-          "tableFrom": "document_property_decimal_value",
-          "tableTo": "document_property",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "property_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "document_management.document_property_integer_value": {
-      "name": "document_property_integer_value",
-      "schema": "document_management",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revision": {
-          "name": "revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revision_timestamp": {
-          "name": "revision_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "create_timestamp": {
-          "name": "create_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "delete_timestamp": {
-          "name": "delete_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attributes": {
-          "name": "attributes",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "document_property_integer_value_document_id_document_id_fk": {
-          "name": "document_property_integer_value_document_id_document_id_fk",
-          "tableFrom": "document_property_integer_value",
-          "tableTo": "document",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "document_property_integer_value_property_id_document_property_id_fk": {
-          "name": "document_property_integer_value_property_id_document_property_id_fk",
-          "tableFrom": "document_property_integer_value",
-          "tableTo": "document_property",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "property_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "document_management.document_property_text_value": {
-      "name": "document_property_text_value",
-      "schema": "document_management",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
+        "text": {
+          "name": "text",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
+        "integer": {
+          "name": "integer",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decimal": {
+          "name": "decimal",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boolean": {
+          "name": "boolean",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "revision": {
           "name": "revision",
           "type": "integer",
@@ -816,23 +589,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_property_text_value_document_id_document_id_fk": {
-          "name": "document_property_text_value_document_id_document_id_fk",
-          "tableFrom": "document_property_text_value",
-          "tableTo": "document",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "document_property_text_value_property_id_document_property_id_fk": {
-          "name": "document_property_text_value_property_id_document_property_id_fk",
-          "tableFrom": "document_property_text_value",
+        "document_property_value_property_id_document_property_id_fk": {
+          "name": "document_property_value_property_id_document_property_id_fk",
+          "tableFrom": "document_property_value",
           "tableTo": "document_property",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -843,12 +602,40 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "document_property_value_document_id_document_id_fk": {
+          "name": "document_property_value_document_id_document_id_fk",
+          "tableFrom": "document_property_value",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_property_value_document_id_property_id_unique": {
+          "name": "document_property_value_document_id_property_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "document_id",
+            "property_id"
+          ]
+        }
+      },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "only_one_value": {
+          "name": "only_one_value",
+          "value": "num_nonnulls(\"document_management\".\"document_property_value\".\"text\", \"document_management\".\"document_property_value\".\"integer\", \"document_management\".\"document_property_value\".\"decimal\", \"document_management\".\"document_property_value\".\"boolean\", \"document_management\".\"document_property_value\".\"date\") = 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "document_management.document_request": {
@@ -941,6 +728,405 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "document_management.document_request_assignment_task": {
+      "name": "document_request_assignment_task",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assigned_request_file_id": {
+          "name": "assigned_request_file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type_id": {
+          "name": "type_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pages": {
+          "name": "pages",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assignment_tries": {
+          "name": "assignment_tries",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "document_request_assignment_task_file_id_document_file_id_fk": {
+          "name": "document_request_assignment_task_file_id_document_file_id_fk",
+          "tableFrom": "document_request_assignment_task",
+          "tableTo": "document_file",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_request_assignment_task_assigned_request_file_id_document_request_file_id_fk": {
+          "name": "document_request_assignment_task_assigned_request_file_id_document_request_file_id_fk",
+          "tableFrom": "document_request_assignment_task",
+          "tableTo": "document_request_file",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "assigned_request_file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_request_assignment_task_type_id_document_type_id_fk": {
+          "name": "document_request_assignment_task_type_id_document_type_id_fk",
+          "tableFrom": "document_request_assignment_task",
+          "tableTo": "document_type",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "drat_file_id_unique": {
+          "name": "drat_file_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "file_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "document_management.document_request_assignment_task_collection": {
+      "name": "document_request_assignment_task_collection",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "request_assignment_task_id": {
+          "name": "request_assignment_task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "collection_id": {
+          "name": "collection_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "document_request_assignment_task_collection_request_assignment_task_id_document_request_assignment_task_id_fk": {
+          "name": "document_request_assignment_task_collection_request_assignment_task_id_document_request_assignment_task_id_fk",
+          "tableFrom": "document_request_assignment_task_collection",
+          "tableTo": "document_request_assignment_task",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "request_assignment_task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_request_assignment_task_collection_collection_id_document_collection_id_fk": {
+          "name": "document_request_assignment_task_collection_collection_id_document_collection_id_fk",
+          "tableFrom": "document_request_assignment_task_collection",
+          "tableTo": "document_collection",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "collection_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dratc_request_assignment_task_id_collection_id_unique": {
+          "name": "dratc_request_assignment_task_id_collection_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "request_assignment_task_id",
+            "collection_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "document_management.document_request_assignment_task_property_value": {
+      "name": "document_request_assignment_task_property_value",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "property_id": {
+          "name": "property_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "integer": {
+          "name": "integer",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decimal": {
+          "name": "decimal",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boolean": {
+          "name": "boolean",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_assignment_task_id": {
+          "name": "request_assignment_task_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "document_request_assignment_task_property_value_property_id_document_property_id_fk": {
+          "name": "document_request_assignment_task_property_value_property_id_document_property_id_fk",
+          "tableFrom": "document_request_assignment_task_property_value",
+          "tableTo": "document_property",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "property_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_request_assignment_task_property_value_request_assignment_task_id_document_request_assignment_task_id_fk": {
+          "name": "document_request_assignment_task_property_value_request_assignment_task_id_document_request_assignment_task_id_fk",
+          "tableFrom": "document_request_assignment_task_property_value",
+          "tableTo": "document_request_assignment_task",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "request_assignment_task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "dratpv_request_assignment_task_id_property_id_unique": {
+          "name": "dratpv_request_assignment_task_id_property_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "request_assignment_task_id",
+            "property_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "only_one_value": {
+          "name": "only_one_value",
+          "value": "num_nonnulls(\"document_management\".\"document_request_assignment_task_property_value\".\"text\", \"document_management\".\"document_request_assignment_task_property_value\".\"integer\", \"document_management\".\"document_request_assignment_task_property_value\".\"decimal\", \"document_management\".\"document_request_assignment_task_property_value\".\"boolean\", \"document_management\".\"document_request_assignment_task_property_value\".\"date\") = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "document_management.document_request_collection": {
       "name": "document_request_collection",
       "schema": "document_management",
@@ -1028,7 +1214,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_request_collection_request_id_collection_id_unique": {
+          "name": "document_request_collection_request_id_collection_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "request_id",
+            "collection_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1059,6 +1254,36 @@
         "title": {
           "name": "title",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pages": {
+          "name": "pages",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "name": "tags",
+          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -1167,6 +1392,142 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "document_management.document_request_file_property_value": {
+      "name": "document_request_file_property_value",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "property_id": {
+          "name": "property_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "text": {
+          "name": "text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "integer": {
+          "name": "integer",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decimal": {
+          "name": "decimal",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "boolean": {
+          "name": "boolean",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "request_file_id": {
+          "name": "request_file_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "document_request_file_property_value_property_id_document_property_id_fk": {
+          "name": "document_request_file_property_value_property_id_document_property_id_fk",
+          "tableFrom": "document_request_file_property_value",
+          "tableTo": "document_property",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "property_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "document_request_file_property_value_request_file_id_document_request_file_id_fk": {
+          "name": "document_request_file_property_value_request_file_id_document_request_file_id_fk",
+          "tableFrom": "document_request_file_property_value",
+          "tableTo": "document_request_file",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "request_file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "drfpv_request_file_id_property_id_unique": {
+          "name": "drfpv_request_file_id_property_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "request_file_id",
+            "property_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "only_one_value": {
+          "name": "only_one_value",
+          "value": "num_nonnulls(\"document_management\".\"document_request_file_property_value\".\"text\", \"document_management\".\"document_request_file_property_value\".\"integer\", \"document_management\".\"document_request_file_property_value\".\"decimal\", \"document_management\".\"document_request_file_property_value\".\"boolean\", \"document_management\".\"document_request_file_property_value\".\"date\") = 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "document_management.document_request_template": {
@@ -1331,7 +1692,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_requests_template_label_unique": {
+          "name": "document_requests_template_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "label"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1415,7 +1784,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_type_category_id_label_unique": {
+          "name": "document_type_category_id_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "category_id",
+            "label"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1507,7 +1885,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_type_property_type_id_property_id_unique": {
+          "name": "document_type_property_type_id_property_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "type_id",
+            "property_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1521,7 +1908,8 @@
         "text",
         "integer",
         "decimal",
-        "boolean"
+        "boolean",
+        "date"
       ]
     }
   },

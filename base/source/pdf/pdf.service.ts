@@ -4,11 +4,6 @@
  * @module PDF
  */
 
-import { execFile as execFileCallback } from 'node:child_process';
-import { access, readFile, unlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { promisify } from 'node:util';
-
 import { BrowserContextController } from '#/browser/browser-context-controller.js';
 import type { BrowserControllerArgument } from '#/browser/browser-controller.js';
 import { BrowserController } from '#/browser/browser-controller.js';
@@ -25,9 +20,7 @@ import { finalizeStream } from '#/utils/stream/finalize-stream.js';
 import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { timeout } from '#/utils/timing.js';
-import { isDefined, isString } from '#/utils/type-guards.js';
-
-const execFile = promisify(execFileCallback);
+import { isDefined } from '#/utils/type-guards.js';
 
 export class PdfServiceRenderOptions extends PdfRenderOptions {
   @Optional()
@@ -155,43 +148,6 @@ export class PdfService implements Resolvable<PdfServiceArgument> {
     return readBinaryStream(stream);
   }
 
-  async merge(pdfs: (string | Uint8Array)[]): Promise<Uint8Array> {
-    await using stack = new AsyncDisposableStack();
-
-    const tmp = tmpdir();
-
-    const sourceFiles = await Promise.all(
-      pdfs.map(async (pdf) => {
-        if (isString(pdf)) {
-          return pdf;
-        }
-
-        const file = `${tmp}/${crypto.randomUUID()}.pdf`;
-        await writeFile(file, pdf);
-        stack.defer(async () => unlink(file));
-
-        return file;
-      })
-    );
-
-    const resultFile = `${tmp}/${crypto.randomUUID()}.pdf`;
-
-    const resultPromise = execFile('pdfunite', [...sourceFiles, resultFile]);
-    const result = await resultPromise;
-
-    try {
-      await access(resultFile);
-      stack.defer(async () => unlink(resultFile));
-    }
-    catch { /* ignore */ }
-
-    if (resultPromise.child.exitCode != 0) {
-      throw new Error(result.stderr);
-    }
-
-    return readFile(resultFile);
-  }
-
   private renderStream(handler: (page: PageController) => Promise<PdfServiceRenderOptions | undefined | void>, options: PdfServiceRenderOptions = {}): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
       const context = options.browserContext ?? await this.browserController.newContext({ locale: options.locale ?? this.defaultLocale });
@@ -231,7 +187,6 @@ export class PdfService implements Resolvable<PdfServiceArgument> {
     });
   }
 }
-
 
 export function pdfTemplate(name: string, fields: { body: TemplateField, header?: TemplateField, footer?: TemplateField }, options?: PdfTemplateOptions): PdfTemplate {
   return {

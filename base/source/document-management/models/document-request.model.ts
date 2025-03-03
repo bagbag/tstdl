@@ -6,6 +6,8 @@ import { DocumentType } from './document-type.model.js';
 import { Document } from './document.model.js';
 
 export class DocumentRequest extends Entity implements Pick<Document, 'typeId'> {
+  declare static readonly entityName: 'DocumentRequest';
+
   @Uuid({ nullable: true })
   @References(() => DocumentType)
   typeId: Uuid | null;

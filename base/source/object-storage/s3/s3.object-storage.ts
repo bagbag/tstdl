@@ -83,10 +83,6 @@ export class S3ObjectStorage extends ObjectStorage {
     }
   }
 
-  async uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void> {
-    return this.uploadObject(key, stream, options);
-  }
-
   async getContent(key: string): Promise<Uint8Array> {
     const bucketKey = this.getBucketKey(key);
     const result = await this.client.getObject(this.bucket, bucketKey);

@@ -89,7 +89,6 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
   });
 }
 
-// eslint-disable-next-line max-statements, max-lines-per-function
 export function lazyObject<T extends object>(initializers: { [P in keyof T]: LazyInitializerItem<T, P> }): T {
   const object = {} as unknown as T;
 

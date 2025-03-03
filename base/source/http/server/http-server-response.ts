@@ -45,6 +45,17 @@ export class HttpServerResponse {
     return new HttpServerResponse(options);
   }
 
+  static redirect(url: string, options?: HttpServerResponseOptions) {
+    return new HttpServerResponse({
+      statusCode: 303,
+      ...options,
+      headers: {
+        Location: url,
+        ...options?.headers
+      }
+    });
+  }
+
   update(options: HttpServerResponseOptions): void {
     this.statusCode = options.statusCode;
     this.statusMessage = options.statusMessage;
@@ -57,4 +68,8 @@ export class HttpServerResponse {
       }
     }
   }
+}
+
+export function redirect(url: string, options?: HttpServerResponseOptions): HttpServerResponse {
+  return HttpServerResponse.redirect(url, options);
 }

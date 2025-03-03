@@ -4,7 +4,7 @@ import { Array, StringProperty } from '#/schema/index.js';
 import { DocumentCategory } from '../document-category.model.js';
 import { DocumentCollection } from '../document-collection.model.js';
 import { DocumentFile } from '../document-file.model.js';
-import { type DocumentPropertyValue, documentPropertyValueSchema } from '../document-property-value.model.js';
+import { DocumentPropertyValue } from '../document-property-value.model.js';
 import { DocumentRequestFile } from '../document-request-file.model.js';
 import { DocumentRequest } from '../document-request.model.js';
 import { DocumentType } from '../document-type.model.js';
@@ -30,7 +30,7 @@ export class DocumentView extends Document {
   @Array(DocumentViewCollectionAssignment)
   collectionAssignments: DocumentViewCollectionAssignment[];
 
-  @Array(documentPropertyValueSchema)
+  @Array(DocumentPropertyValue)
   properties: DocumentPropertyValue[];
 }
 

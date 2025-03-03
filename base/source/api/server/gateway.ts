@@ -1,4 +1,4 @@
-import 'urlpattern-polyfill'; // eslint-disable-line import/no-unassigned-import
+import 'urlpattern-polyfill';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { NotFoundError } from '#/errors/not-found.error.js';

@@ -55,7 +55,7 @@ export class ConsoleLogger extends Logger {
     return new ConsoleLogger(this.level, this.module, `${prefix}${this.logPrefix}`);
   }
 
-  protected log(level: LogLevel, entryOrError: string | Error, errorOptions?: LogErrorOptions): void {
+  protected log(level: LogLevel, entryOrError: string | unknown, errorOptions?: LogErrorOptions): void {
     const entry = isString(entryOrError) ? entryOrError : formatError(entryOrError, errorOptions);
 
     const dateString = now().toISOString();

@@ -1,4 +1,5 @@
-import { sql, type SQL } from 'drizzle-orm';
+import { sql, type Column, type SQL } from 'drizzle-orm';
+import type { GetSelectTableSelection, SelectResultField, TableLike } from 'drizzle-orm/query-builders/select.types';
 import type { Uuid } from '../types.js';
 
 export const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
@@ -18,4 +19,22 @@ type IntervalUnit =
 
 export function interval(value: number, unit: IntervalUnit): SQL {
   return sql`(${value} ||' ${sql.raw(unit)}')::interval`;
+}
+
+export function arrayAgg<T extends Column>(column: T): SQL<SelectResultField<T>[]> {
+  return sql`array_agg(${column})`;
+}
+
+export function jsonAgg<T extends TableLike>(tableOrColumn: T): SQL<SelectResultField<GetSelectTableSelection<T>>[]> {
+  return sql`json_agg(${tableOrColumn})`;
+}
+
+jsonAgg.withNull = (jsonAgg as <T extends TableLike>(tableOrColumn: T) => SQL<(SelectResultField<GetSelectTableSelection<T>> | null)[]>);
+
+export function coalesce<T extends (Column | SQL)[]>(...columns: T): SQL<SelectResultField<T>[number]> {
+  return sql`coalesce(${sql.join(columns, sql.raw(', '))})`;
+}
+
+export function toJsonb<T extends (Column | SQL)>(column: T): SQL<SelectResultField<T>> {
+  return sql`to_jsonb(${column})`;
 }

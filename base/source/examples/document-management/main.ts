@@ -1,21 +1,32 @@
 import '#/polyfills.js';
 
 import { Application } from '#/application/application.js';
+import type { DocumentCollection } from '#/document-management/index.js';
+import { DocumentManagementAncillaryService } from '#/document-management/server/index.js';
 import { configureDocumentManagement, migrateDocumentManagementSchema } from '#/document-management/server/module.js';
 import { DocumentManagementService } from '#/document-management/server/services/document-management.service.js';
+import { Singleton } from '#/injector/index.js';
 import { injectAsync } from '#/injector/inject.js';
 import { configureS3ObjectStorage } from '#/object-storage/index.js';
 
+@Singleton()
+export class TestDocumentManagementAncillaryService extends DocumentManagementAncillaryService {
+  override async resolveNames(collections: DocumentCollection[]): Promise<string[]> {
+    return collections.map((collection) => collection.metadata.attributes['name'] as string);
+  }
+}
+
 async function bootstrap(): Promise<void> {
   configureDocumentManagement({
+    ancillaryService: TestDocumentManagementAncillaryService,
+    fileObjectStorageModule: 'documents',
     database: {
       connection: {
         database: 'xxx',
         user: 'xxx',
         password: 'xxx'
       }
-    },
-    fileObjectStorageModule: 'documents'
+    }
   });
 
   configureS3ObjectStorage({ endpoint: 'http://localhost:10000', accessKey: 'tstdl-dev', secretKey: 'tstdl-dev', bucketPerModule: true });

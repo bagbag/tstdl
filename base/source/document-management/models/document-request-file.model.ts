@@ -1,7 +1,7 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Timestamp, Uuid } from '#/orm/types.js';
-import { BooleanProperty, StringProperty } from '#/schema/index.js';
+import { NumericDate, Timestamp, Uuid } from '#/orm/types.js';
+import { Array, BooleanProperty, Integer, string, StringProperty } from '#/schema/index.js';
 import { DocumentFile } from './document-file.model.js';
 import { DocumentRequest } from './document-request.model.js';
 import { Document } from './document.model.js';
@@ -17,6 +17,21 @@ export class DocumentRequestFile extends Entity {
 
   @StringProperty({ nullable: true })
   title: string | null;
+
+  @StringProperty({ nullable: true })
+  subtitle: string | null;
+
+  @Integer({ nullable: true })
+  pages: number | null;
+
+  @NumericDate({ nullable: true })
+  date: NumericDate | null;
+
+  @StringProperty({ nullable: true })
+  summary: string | null;
+
+  @Array(string(), { nullable: true })
+  tags: string[] | null;
 
   @Uuid({ nullable: true })
   @References(() => Document)

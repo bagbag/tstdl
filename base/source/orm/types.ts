@@ -1,12 +1,12 @@
 import type { $Type, HasDefault as DrizzleHasDefault, IsPrimaryKey as DrizzleIsPrimaryKey } from 'drizzle-orm';
-import type { boolean, date, doublePrecision, integer, jsonb, PgColumnBuilder, PgColumnBuilderBase, PgEnumColumnBuilderInitial, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import type { boolean, doublePrecision, integer, jsonb, PgColumnBuilder, PgColumnBuilderBase, PgEnumColumnBuilderInitial, text, uuid } from 'drizzle-orm/pg-core';
 
 import { Array, Integer } from '#/schema/index.js';
 import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
 import type { GetTagMetadata, HasTag, Tagged, UnwrapTagged } from '#/types/index.js';
+import type { bytea, numericDate, timestamp } from './data-types/index.js';
 import { Check, Column, Embedded, Encrypted, Index, PrimaryKey, References, Unique } from './decorators.js';
 import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
-import type { bytea } from './server/data-types/index.js';
 
 export type ColumnTypeTag = 'column';
 export type EmbeddedConfigTag = 'embedded';
@@ -42,7 +42,7 @@ export type Uuid = Tagged<string, ColumnTypeTag, ReturnType<typeof uuid>>;
 export type Integer = Tagged<number, ColumnTypeTag, ReturnType<typeof integer>>;
 export type DoublePrecision = Tagged<number, ColumnTypeTag, ReturnType<typeof doublePrecision>>;
 export type Boolean = Tagged<number, ColumnTypeTag, ReturnType<typeof boolean>>;
-export type NumericDate = Tagged<number, ColumnTypeTag, ReturnType<typeof date>>;
+export type NumericDate = Tagged<number, ColumnTypeTag, ReturnType<typeof numericDate>>;
 export type Timestamp = Tagged<number, ColumnTypeTag, ReturnType<typeof timestamp>>;
 export type Bytea = Tagged<Uint8Array, ColumnTypeTag, ReturnType<typeof bytea>>;
 export type Encrypted<T> = Tagged<T, ColumnTypeTag, ReturnType<typeof bytea>>;

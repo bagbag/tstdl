@@ -1,5 +1,5 @@
 import type { Function, SimplifyObject } from '#/types.js';
-import { isNotNull } from '#/utils/type-guards.js';
+import { isNotNull, isString } from '#/utils/type-guards.js';
 
 /**
  * Creates a new context provider
@@ -66,9 +66,13 @@ export function createContextProvider<Context, const Name extends string>(name: 
    *
    * @param debugFn a reference to the function making the assertion (used for the error message).
    */
-  function assertInContext(debugFn: Function): void {
+  function assertInContext(debugFnOrMessage: Function | string): void {
     if (!isInContext()) {
-      throw new Error(`${debugFn.name}() can only be used within an ${name}Context via \`runIn${name}Context\`.`);
+      const message = isString(debugFnOrMessage)
+        ? debugFnOrMessage
+        : `${debugFnOrMessage.name}() can only be used within an ${name}Context via \`runIn${name}Context\`.`;
+
+      throw new Error(message);
     }
   }
 
@@ -76,13 +80,13 @@ export function createContextProvider<Context, const Name extends string>(name: 
     [`getCurrent${name}Context`]: getCurrentContext,
     [`setCurrent${name}Context`]: setCurrentContext,
     [`runIn${name}Context`]: runInContext,
-    [`isIn${name}Context`]: getCurrentContext,
-    [`assertIn${name}Context`]: getCurrentContext
+    [`isIn${name}Context`]: isInContext,
+    [`assertIn${name}Context`]: assertInContext
   } as SimplifyObject<
     Record<`getCurrent${Name}Context`, typeof getCurrentContext>
     & Record<`setCurrent${Name}Context`, typeof setCurrentContext>
     & Record<`runIn${Name}Context`, typeof runInContext>
-    & Record<`isIn${Name}Context`, typeof getCurrentContext>
-    & Record<`assertIn${Name}Context`, typeof getCurrentContext>
+    & Record<`isIn${Name}Context`, typeof isInContext>
+    & Record<`assertIn${Name}Context`, typeof assertInContext>
   >;
 }

@@ -4,21 +4,24 @@ import type { LiteralUnion } from 'type-fest';
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/index.js';
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
-import { objectEntries } from '#/utils/object/object.js';
+import { filterUndefinedObjectProperties, objectEntries } from '#/utils/object/object.js';
 import { assertNotArrayPass, isArray, isString, isUndefined } from '#/utils/type-guards.js';
 import type { Entity, EntityType } from './entity.js';
 import type { PgTableFromType } from './server/types.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
+type NamingStrategy = 'abbreviated-table';
 
 export type CheckBuilder<T extends Entity = any> = (table: PgTableFromType<EntityType<T>>) => SQL;
 
 export type OrmTableReflectionData = {
   name?: string,
   schema?: string,
+  compundPrimaryKeyName?: string,
+  compundPrimaryKeyNaming?: NamingStrategy,
   unique?: UniqueReflectionData[],
   index?: IndexReflectionData[],
-  checks?: { name: string, builder: CheckBuilder }[]
+  checks?: CheckReflectionData[]
 };
 
 export type OrmColumnReflectionData = {
@@ -36,7 +39,8 @@ export type UniqueReflectionData = {
   name?: string,
   columns?: string[],
   options?: {
-    nulls?: 'distinct' | 'not distinct'
+    nulls?: 'distinct' | 'not distinct',
+    naming?: NamingStrategy
   }
 };
 
@@ -47,7 +51,16 @@ export type IndexReflectionData = {
   options?: {
     using?: IndexMethod,
     unique?: boolean,
-    nulls?: 'first' | 'last'
+    nulls?: 'first' | 'last',
+    naming?: NamingStrategy
+  }
+};
+
+type CheckReflectionData = {
+  name: string,
+  builder: CheckBuilder,
+  options?: {
+    naming?: NamingStrategy
   }
 };
 
@@ -55,17 +68,20 @@ export function createTableDecorator(data: OrmTableReflectionData = {}) {
   return createClassDecorator({
     handler: (_, metadata) => {
       const reflectionData = metadata.data.tryGet<OrmTableReflectionData>('orm') ?? {};
-
       const dataEntries = objectEntries(data);
+
+      if (dataEntries.length == 0) {
+        return;
+      }
 
       for (const [key, value] of dataEntries) {
         const existingValue = reflectionData[key];
 
-        if (isUndefined(existingValue)) {
-          reflectionData[key] = value as any;
-        }
-        else if (isArray(existingValue)) {
+        if (isArray(existingValue)) {
           reflectionData[key] = [...existingValue, ...(value as any[])] as any;
+        }
+        else {
+          reflectionData[key] = value as any;
         }
       }
 
@@ -115,7 +131,11 @@ export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: 
   const name = isString(nameOrOptions) ? nameOrOptions : nameOrOptions?.name;
   const schema = isString(nameOrOptions) ? optionsOrNothing?.schema : nameOrOptions?.schema;
 
-  return createTableDecorator({ name, schema });
+  const data: OrmTableReflectionData | undefined = (isUndefined(name) && isUndefined(schema))
+    ? undefined
+    : filterUndefinedObjectProperties({ name, schema });
+
+  return createTableDecorator(data);
 }
 
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
@@ -130,7 +150,7 @@ export function Unique<T>(nameOrColumns?: string | [Extract<keyof T, string>, ..
     return createTableDecorator({ unique: [{ name: nameOrColumns, columns: columnsOrOptions, options }] });
   }
 
-  return createColumnDecorator({ unique: { name: nameOrColumns, options: columnsOrOptions ?? options } });
+  return createColumnDecorator({ unique: { name: nameOrColumns, options: columnsOrOptions } });
 }
 
 export function Index(name?: string, options?: IndexReflectionData['options']): PropertyDecorator;

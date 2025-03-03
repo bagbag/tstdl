@@ -1,9 +1,10 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Uuid } from '#/orm/types.js';
+import { Unique, Uuid } from '#/orm/types.js';
 import { DocumentProperty } from './document-property.model.js';
 import { DocumentType } from './document-type.model.js';
 
+@Unique<DocumentTypeProperty>(['typeId', 'propertyId'])
 export class DocumentTypeProperty extends Entity {
   @Uuid()
   @References(() => DocumentType)

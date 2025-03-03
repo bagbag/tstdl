@@ -39,10 +39,10 @@ export abstract class Logger implements Resolvable<LoggerArgument> {
     this.logPrefix = prefix;
   }
 
-  error(error: Error, options?: LogErrorOptions): void;
   error(entry: LogEntryOrProvider): void;
-  error(errorOrEntry: Error | LogEntryOrProvider, options?: LogErrorOptions): void {
-    this._log(LogLevel.Error, errorOrEntry, options);
+  error(error: unknown, options?: LogErrorOptions): void;
+  error(errorOrEntry: unknown, options?: LogErrorOptions): void {
+    this._log(LogLevel.Error, errorOrEntry as LogEntryOrProvider | Error, options);
   }
 
   warn(entry: LogEntryOrProvider): void {

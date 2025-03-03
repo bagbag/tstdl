@@ -13,7 +13,7 @@ export class PostgresQueueModuleConfig {
 /**
  * configure mail module
  */
-export function configurePostgresQueue(config: PostgresQueueModuleConfig, register: boolean = true): void {
+export function configurePostgresQueue(config?: PostgresQueueModuleConfig, register: boolean = true): void {
   Injector.register(PostgresQueueModuleConfig, { useValue: config });
 
   if (register) {

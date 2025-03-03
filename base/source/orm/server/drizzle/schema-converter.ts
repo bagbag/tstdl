@@ -1,11 +1,11 @@
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
-import { boolean, check, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type AnyPgColumn, type ExtraConfigColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { boolean, check, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { tryGetEnumName } from '#/enumeration/enumeration.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
-import { reflectionRegistry } from '#/reflection/registry.js';
+import { reflectionRegistry, type TypeMetadata } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, Uint8ArraySchema, type Record, type Schema } from '#/schema/index.js';
 import type { AbstractConstructor, Enumeration, EnumerationObject, Type } from '#/types.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
@@ -14,14 +14,14 @@ import { enumValues } from '#/utils/enum.js';
 import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
 import { compileDereferencer } from '#/utils/object/dereference.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
-import { assertDefined, assertDefinedPass, isArray, isDefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
+import { assertDefined, assertDefinedPass, isArray, isDefined, isNotNullOrUndefined, isNull, isString, isUndefined } from '#/utils/type-guards.js';
+import { bytea, numericDate, timestamp } from '../../data-types/index.js';
 import type { IndexReflectionData, OrmColumnReflectionData, OrmTableReflectionData } from '../../decorators.js';
 import type { EntityType } from '../../entity.js';
 import { JsonSchema } from '../../schemas/json.js';
 import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
-import { bytea, numericDate, timestamp } from '../data-types/index.js';
 import { decryptBytes, encryptBytes } from '../encryption.js';
 import type { BuildTypeOptions, ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
 
@@ -41,12 +41,22 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata.`);
 
-  const tableReflectionData = metadata.data.tryGet<OrmTableReflectionData>('orm');
+  const tableReflectionDatas: OrmTableReflectionData[] = [];
+
+  for (let currentMetadata: TypeMetadata | undefined = metadata; isNotNullOrUndefined(currentMetadata?.parent); currentMetadata = reflectionRegistry.getMetadata(currentMetadata.parent)) {
+    const tableReflectionData = currentMetadata.data.tryGet<OrmTableReflectionData>('orm');
+
+    if (isDefined(tableReflectionData)) {
+      tableReflectionDatas.push(tableReflectionData);
+    }
+  }
+
+  const tableReflectionData = tableReflectionDatas[0];
   const schema = assertDefinedPass(schemaName ?? tableReflectionData?.schema, 'Table schema not provided');
   const tableName = tableReflectionData?.name ?? getDefaultTableName(type);
 
   const dbSchema = getDbSchema(schema);
-  const columnDefinitions = getPostgresColumnEntries(type, tableName, dbSchema);
+  const columnDefinitions = getPostgresColumnEntries(type, dbSchema, tableName);
 
   function getColumn(table: Record<string, ExtraConfigColumn>, propertyName: string): ExtraConfigColumn {
     return assertDefinedPass(table[propertyName], `Property "${propertyName}" does not exist on ${type.name}`);
@@ -74,12 +84,21 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
     const indexFn = (data.options?.unique == true) ? uniqueIndex : index;
 
-    return indexFn(data.name).using(data.options?.using ?? 'btree', ...columns);
+    return indexFn(data.name ?? getIndexName(tableName, columns, { naming: data.options?.naming })).using(data.options?.using ?? 'btree', ...columns);
   }
 
-  const primaryKeyColumns = columnDefinitions.filter((columnDefinition) => columnDefinition.reflectionData?.primaryKey == true);
+  function buildPrimaryKey(table: Record<string, ExtraConfigColumn>) {
+    const columns = primaryKeyColumnDefinitions.map((columnDefinition) => getColumn(table, columnDefinition.name)) as unknown as [PgColumn, ...PgColumn[]];
 
-  const skipPrimaryKey = primaryKeyColumns.length > 1;
+    return primaryKey({
+      name: tableReflectionData?.compundPrimaryKeyName ?? getPrimaryKeyName(tableName, columns, { naming: tableReflectionData?.compundPrimaryKeyNaming }),
+      columns
+    });
+  }
+
+  const primaryKeyColumnDefinitions = columnDefinitions.filter((columnDefinition) => columnDefinition.reflectionData?.primaryKey == true);
+
+  const skipPrimaryKey = primaryKeyColumnDefinitions.length > 1;
   const columnEntries = columnDefinitions.map((entry) => [entry.name, entry.buildType({ skipPrimaryKey })]);
 
   const drizzleSchema = dbSchema.table(
@@ -87,8 +106,8 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
     fromEntries(columnEntries) as any,
     (table) => [
       ...(
-        (primaryKeyColumns.length > 1)
-          ? [primaryKey({ columns: primaryKeyColumns.map((columnDefinition) => getColumn(table, columnDefinition.name)) as unknown as [AnyPgColumn, ...AnyPgColumn[]] })]
+        (primaryKeyColumnDefinitions.length > 1)
+          ? [buildPrimaryKey(table)]
           : []
       ),
       ...(
@@ -102,20 +121,19 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
           return buildIndex(table, indexData, columnDefinition.name);
         }).filter(isDefined)
       ),
-      ...(
-        tableReflectionData?.unique?.map((data) => {
-          const columns = data.columns?.map((column) => getColumn(table, column)) as [ExtraConfigColumn, ...ExtraConfigColumn[]];
-          let constraint = unique(isDefined(data.name) ? toSnakeCase(data.name) : undefined).on(...columns);
+      ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.unique).filter(isDefined).map((data) => {
+        const columns = data.columns?.map((column) => getColumn(table, column)) as [ExtraConfigColumn, ...ExtraConfigColumn[]];
 
-          if (data.options?.nulls == 'not distinct') {
-            constraint = constraint.nullsNotDistinct();
-          }
+        let constraint = unique(data.name ?? getUniqueName(tableName, columns, { naming: data.options?.naming })).on(...columns);
 
-          return constraint;
-        }) ?? []
-      ),
-      ...(tableReflectionData?.index?.map((data) => buildIndex(table, data)) ?? []),
-      ...(tableReflectionData?.checks?.map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>))) ?? [])
+        if (data.options?.nulls == 'not distinct') {
+          constraint = constraint.nullsNotDistinct();
+        }
+
+        return constraint;
+      }),
+      ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.index).filter(isDefined).map((data) => buildIndex(table, data)),
+      ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.checks).filter(isDefined).map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>)))
     ]
   );
 
@@ -124,7 +142,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
   return drizzleSchema as any as PgTableFromType<T, S>;
 }
 
-function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, dbSchema: PgSchema, path = new JsonPath({ dollar: false }), prefix: string = ''): ColumnDefinition[] {
+function getPostgresColumnEntries(type: AbstractConstructor, dbSchema: PgSchema, tableName: string, path = new JsonPath({ dollar: false }), prefix: string = ''): ColumnDefinition[] {
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata (path: ${path.toString()}).`);
 
@@ -141,7 +159,7 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
       const propertyPrefix = columnReflectionData?.embedded?.prefix;
       const nestedPrefix = [prefix, isNull(propertyPrefix) ? '' : propertyPrefix ?? `${columnName}_`].join('');
 
-      return getPostgresColumnEntries(columnReflectionData?.embedded?.type ?? propertyMetadata.type, tableName, dbSchema, path.add(property), nestedPrefix);
+      return getPostgresColumnEntries(columnReflectionData?.embedded?.type ?? propertyMetadata.type, dbSchema, tableName, path.add(property), nestedPrefix);
     }
 
     const objectPath = path.add(property);
@@ -168,7 +186,7 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
       name: toCamelCase(prefixedColumnName),
       objectPath,
       reflectionData: columnReflectionData,
-      buildType: (options: BuildTypeOptions) => getPostgresColumn(toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, options, { type, property }),
+      buildType: (options: BuildTypeOptions) => getPostgresColumn(tableName, toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, options, { type, property }),
       dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
       toDatabase,
       fromDatabase
@@ -178,7 +196,7 @@ function getPostgresColumnEntries(type: AbstractConstructor, tableName: string, 
   return entries;
 }
 
-function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchema: Schema, reflectionData: OrmColumnReflectionData, options: BuildTypeOptions, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
+function getPostgresColumn(tableName: string, columnName: string, dbSchema: PgSchema, propertySchema: Schema, reflectionData: OrmColumnReflectionData, options: BuildTypeOptions, context: ConverterContext): PgColumnBuilder<any, any, any, any> {
   let nullable = false;
   let array = false;
 
@@ -208,7 +226,7 @@ function getPostgresColumn(columnName: string, dbSchema: PgSchema, propertySchem
   }
 
   if (isDefined(reflectionData.unique)) {
-    column = column.unique(reflectionData.unique.name, isString(reflectionData.unique.options?.nulls) ? { nulls: reflectionData.unique.options.nulls } : undefined);
+    column = column.unique(reflectionData.unique.name ?? getUniqueName(tableName, [columnName], { naming: reflectionData.unique.options?.naming }), isString(reflectionData.unique.options?.nulls) ? { nulls: reflectionData.unique.options.nulls } : undefined);
   }
 
   if ((reflectionData.primaryKey == true) && (options.skipPrimaryKey != true)) {
@@ -313,4 +331,24 @@ export function getPgEnum(schema: string | PgSchema, enumeration: Enumeration, c
 
 function getDefaultTableName(type: Type & Partial<Pick<EntityType, 'entityName'>>): string {
   return toSnakeCase(isString(type.entityName) ? type.entityName : type.name.replace(/\d+$/u, ''));
+}
+
+function getPrimaryKeyName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
+  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_pk`;
+}
+
+function getIndexName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
+  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_idx`;
+}
+
+function getUniqueName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
+  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_unique`;
+}
+
+function getTablePrefix(tableName: string, naming?: 'abbreviated-table'): string {
+  return (naming == 'abbreviated-table') ? tableName.split('_').map((part) => part[0]).join('') : tableName;
+}
+
+function getColumnNames(columns: (string | PgColumn)[]): string[] {
+  return columns.map((column) => isString(column) ? column : column.name);
 }

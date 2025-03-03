@@ -19,8 +19,8 @@ import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { importSymmetricKey } from '#/utils/cryptography.js';
 import { typeExtends } from '#/utils/index.js';
-import { fromDeepObjectEntries, objectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
+import { fromDeepObjectEntries, fromEntries, objectEntries } from '#/utils/object/object.js';
+import { assertDefinedPass, isArray, isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import { Entity, type EntityMetadataAttributes, type EntityType, type EntityWithoutMetadata } from '../entity.js';
 import type { Query } from '../query.js';
 import type { EntityMetadataUpdate, EntityUpdate, LoadManyOptions, LoadOptions, NewEntity, Order } from '../repository.types.js';
@@ -338,13 +338,18 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
   }
 
-  async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update: EntityUpdate<T>): Promise<T[]> {
+  async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update?: EntityUpdate<T>): Promise<T[]> {
     const transformContext = await this.getTransformContext();
 
     const targetColumns = toArray(target).map((path) => this.$getColumn(path));
 
-    const columns = await this.mapManyToColumns(entities, transformContext);
-    const mappedUpdate = await this.mapUpdate(update, transformContext);
+    const columns = await this.mapManyToInsertColumns(entities, transformContext);
+    const mappedUpdate = isDefined(update)
+      ? await this.mapUpdate(update, transformContext)
+      : {
+        ...fromEntries(this.#columnDefinitions.map((column) => [column.name, sql`excluded.${sql.identifier(this.$getColumn(column).name)}`] as const)),
+        ...this.getMetadataUpdate(update)
+      };
 
     const rows = await this.session
       .insert(this.#table)
@@ -587,9 +592,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
   }
 
-  $getColumn(path: Paths<UntaggedDeep<T>>): PgColumn {
-    const columnName = assertDefinedPass(this.#columnDefinitionsMap.get(path), `Could not map ${path} to column.`).name;
-    return this.#table[columnName as keyof PgTableFromType] as PgColumn;
+  $getColumn(pathOrColumn: Paths<UntaggedDeep<T>> | ColumnDefinition): PgColumn {
+    if (isString(pathOrColumn)) {
+      const columnName = assertDefinedPass(this.#columnDefinitionsMap.get(pathOrColumn), `Could not map ${pathOrColumn} to column.`).name;
+      return this.#table[columnName as keyof PgTableFromType] as PgColumn;
+    }
+
+    return this.#table[pathOrColumn.name as keyof PgTableFromType] as PgColumn;
   }
 
   $convertOrderBy(orderBy: Order<T>) {
@@ -727,17 +736,19 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     return {
       ...mappedUpdate,
-      ...(
-        this.hasMetadata
-          ? {
-            attributes: this.getAttributesUpdate((update as EntityUpdate<Entity> | undefined)?.metadata?.attributes),
-            revision: sql<number>`${this.#tableWithMetadata.revision} + 1`,
-            revisionTimestamp: TRANSACTION_TIMESTAMP
-          } satisfies PgUpdateSetSource<PgTableFromType<EntityType<Entity>>>
-          : undefined
-      )
+      ...this.getMetadataUpdate(update)
 
     } satisfies PgUpdateSetSource<PgTableFromType>;
+  }
+
+  protected getMetadataUpdate(update?: EntityUpdate<T>): PgUpdateSetSource<PgTableFromType<EntityType<Entity>>> | undefined {
+    return this.hasMetadata
+      ? {
+        attributes: this.getAttributesUpdate((update as EntityUpdate<Entity> | undefined)?.metadata?.attributes),
+        revision: sql<number>`${this.#tableWithMetadata.revision} + 1`,
+        revisionTimestamp: TRANSACTION_TIMESTAMP
+      } satisfies PgUpdateSetSource<PgTableFromType<EntityType<Entity>>>
+      : undefined;
   }
 
   protected getIdLimitQuery(query: Query<T>) {

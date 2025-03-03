@@ -31,7 +31,6 @@ export interface ErrorExtraInfo {
   getExtraInfo(): UndefinableJson | undefined;
 }
 
-// eslint-disable-next-line max-statements, complexity
 export function formatError(error: any, options: FormatErrorOptions = {}): string {
   const { includeRest = 'if-no-extra-info', includeExtraInfo = true, includeStack = true } = options;
 

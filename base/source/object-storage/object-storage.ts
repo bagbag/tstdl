@@ -31,14 +31,6 @@ export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument>
   abstract uploadObject(key: string, content: Uint8Array | ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
 
   /**
-   * Uploads an object stream
-   * @param key object key
-   * @param stream stream of object
-   * @deprecated use {@link uploadObject} instead
-   */
-  abstract uploadObjectStream(key: string, stream: ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
-
-  /**
    * Get an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
@@ -66,6 +58,12 @@ export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument>
    * @param key object key
    */
   abstract getResourceUri(key: string): Promise<string>;
+
+  /**
+   * Get object content
+   * @param key object key
+   */
+  abstract getContent(key: string): Promise<Uint8Array>;
 
   /**
    * Get stream of object content

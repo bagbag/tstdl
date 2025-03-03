@@ -222,7 +222,6 @@ export function omit<const T extends Record, const K extends keyof T>(schemaOrTy
   ) as ObjectSchema<Omit<T, K>>;
 }
 
-
 export function getSchemaFromReflection<T extends Record>(type: AbstractConstructor<T>): Schema<T> {
   const schema = tryGetSchemaFromReflection(type);
 

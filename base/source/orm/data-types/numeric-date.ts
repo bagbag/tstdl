@@ -9,8 +9,7 @@ export const numericDate = customType<Config>({
     return 'date';
   },
   toDriver(value: number): string {
-    const { year, month, day } = numericDateToDate(value);
-    return new Date(year, month - 1, day).toISOString();
+    return numericDateToDate(value).toISOString();
   },
   fromDriver(value: string): number {
     const date = new Date(value);

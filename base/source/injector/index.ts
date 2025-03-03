@@ -9,6 +9,7 @@ export * from './inject.js';
 export * from './injector.js';
 export * from './interfaces.js';
 export * from './provider.js';
+export * from './resolution.js';
 export * from './resolve-chain.js';
 export * from './resolve.error.js';
 export * from './symbols.js';

@@ -45,7 +45,10 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
   readonly #dequeueQuery = and(
     eq(job.queue, this.#queueName),
     lt(job.tries, this.#maxTries),
-    or(isSqlNull(job.lastDequeueTimestamp), lte(job.lastDequeueTimestamp, sql`${job.lastDequeueTimestamp} + ${interval(this.#processTimeout, 'milliseconds')}`))
+    or(
+      isSqlNull(job.lastDequeueTimestamp),
+      lte(sql`${TRANSACTION_TIMESTAMP} + ${interval(this.#processTimeout, 'milliseconds')}`, job.lastDequeueTimestamp)
+    )
   );
 
   readonly #dequeueUpdate = {
@@ -129,13 +132,17 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
       .update(job)
       .set(this.#dequeueUpdate)
       .where(
-        inArray(
-          job.id,
-          this.#repository.session.select({ id: job.id })
-            .from(job)
-            .where(this.#dequeueQuery)
-            .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
-            .limit(count)
+        and(
+          this.#dequeueQuery,
+          inArray(
+            job.id,
+            this.#repository.session
+              .select({ id: job.id })
+              .from(job)
+              .where(this.#dequeueQuery)
+              .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
+              .limit(count)
+          )
         )
       )
       .returning();

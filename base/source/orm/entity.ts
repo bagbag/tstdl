@@ -1,6 +1,6 @@
 import { Defaulted, Integer } from '#/schema/index.js';
 import type { Type } from '#/types.js';
-import { Index, PrimaryKey } from './decorators.js';
+import { PrimaryKey } from './decorators.js';
 import { Embedded, type HasDefault, type IsPrimaryKey, Json, Timestamp, Uuid } from './types.js';
 
 export interface EntityType<T extends Entity | EntityWithoutMetadata = Entity | EntityWithoutMetadata> extends Type<T> {
@@ -12,7 +12,6 @@ export abstract class EntityMetadataAttributes { // eslint-disable-line @typescr
   [key: string]: unknown;
 }
 
-@Index(['revision', 'revisionTimestamp'])
 export abstract class EntityMetadata {
   @Integer()
   revision: number;

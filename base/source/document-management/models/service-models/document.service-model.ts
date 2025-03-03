@@ -18,17 +18,17 @@ export const metadataParameterSchema = optional(partial(pick(EntityMetadata, 'at
 export const metadataParameterObjectSchema = object({ metadata: metadataParameterSchema });
 
 export const setDocumentPropertyParametersSchema = assign(
-  pick(DocumentPropertyValueBase, ['documentId', 'propertyId']),
+  pick(DocumentPropertyValueBase, ['propertyId']),
   object({ value: unknown() }),
   metadataParameterObjectSchema
 );
 
 export const createDocumentParametersSchema = assign(
-  pick(Document, ['typeId', 'title', 'date', 'expiration']),
+  pick(Document, ['typeId', 'title', 'subtitle', 'pages', 'date', 'summary', 'tags']),
   pick(DocumentFile, ['originalFileName']),
   object({
     collectionIds: oneOrMany(string()),
-    properties: optional(array(omit(setDocumentPropertyParametersSchema, ['documentId'])))
+    properties: optional(array(setDocumentPropertyParametersSchema))
   }),
   metadataParameterObjectSchema
 );
@@ -36,7 +36,7 @@ export const createDocumentParametersSchema = assign(
 export const updateDocumentParametersSchema = assign(
   pick(Document, ['id']),
   partial(omit(Document, ['id', 'metadata'])),
-  object({ properties: optional(array(omit(setDocumentPropertyParametersSchema, ['documentId']))) }),
+  object({ properties: optional(array(setDocumentPropertyParametersSchema)) }),
   metadataParameterObjectSchema
 );
 
@@ -110,10 +110,15 @@ export const loadDataCollectionMetadataParametersSchema = object({ name: optiona
 export const loadDataCollectionsMetadataParametersSchema = record(string(), loadDataCollectionMetadataParametersSchema);
 export const loadDataParametersSchema = object({ collectionIds: oneOrMany(string()), collectionsMetadata: loadDataCollectionsMetadataParametersSchema });
 export const createCollectionParametersSchema = metadataParameterObjectSchema;
-export const setDocumentPropertiesParametersSchema = array(setDocumentPropertyParametersSchema);
+export const setDocumentPropertiesParametersSchema = object({
+  documentId: optional(string()),
+  requestFileId: optional(string()),
+  requestAssignmentTaskId: optional(string()),
+  properties: array(setDocumentPropertyParametersSchema)
+});
 export const createDocumentCategoryParametersSchema = assign(pick(DocumentCategory, ['label']), metadataParameterObjectSchema);
 export const createDocumentTypeParametersSchema = assign(pick(DocumentType, ['categoryId', 'group', 'label']), metadataParameterObjectSchema);
-export const createDocumentRequestFileParametersSchema = assign(object({ requestId: string() }), pick(DocumentRequestFile, ['title']), pick(DocumentFile, ['originalFileName']), metadataParameterObjectSchema);
+export const createDocumentRequestFileParametersSchema = assign(object({ requestId: string() }), pick(DocumentRequestFile, ['title', 'subtitle', 'pages', 'date', 'summary', 'tags']), pick(DocumentFile, ['originalFileName']), metadataParameterObjectSchema);
 export const approveDocumentRequestFileParametersSchema = assign(pick(DocumentRequestFile, ['id', 'approvalComment']), object({
   documentMetadata: metadataParameterSchema,
   requestFileMetadata: metadataParameterSchema

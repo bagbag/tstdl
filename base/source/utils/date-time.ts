@@ -122,9 +122,13 @@ export function numericDateToTimestamp(numericDate: number): number {
   return numericDate * millisecondsPerDay;
 }
 
-export function numericDateToDate(numericDate: number): { year: number, month: number, day: number } {
+export function numericDateToDate(numericDate: number): Date {
   const timestamp = numericDateToTimestamp(numericDate);
-  const date = new Date(timestamp);
+  return new Date(timestamp);
+}
+
+export function numericDateToDateObject(numericDate: number): { year: number, month: number, day: number } {
+  const date = numericDateToDate(numericDate);
 
   return {
     year: date.getUTCFullYear(),
@@ -137,8 +141,13 @@ export function numericDateTimeToTimestamp({ date, time }: NumericDateTime): num
   return numericDateToTimestamp(date) + time;
 }
 
-export function zonedDateObjectToDateTime(zonedDate: ZonedDateObject, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
-  return DateTime.fromObject({ ...zonedDate, ...units }, options);
+export function dateObjectToDateTime(dateObject: ZonedDateObject, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
+  return DateTime.fromObject({ ...dateObject, ...units }, options);
+}
+
+export function dateObjectToNumericDate(dateObject: DateObject): number {
+  const dateTime = DateTime.fromObject({ ...dateObject }, { zone: 'UTC' });
+  return dateTimeToNumericDate(dateTime);
 }
 
 export function dateTimeToNumericDate(dateTime: DateTime): number {

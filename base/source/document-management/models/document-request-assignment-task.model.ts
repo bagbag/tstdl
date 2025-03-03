@@ -1,14 +1,20 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { NumericDate, Uuid } from '#/orm/types.js';
+import { NumericDate, Unique, Uuid } from '#/orm/types.js';
 import { Array, Integer, string, StringProperty } from '#/schema/index.js';
 import { DocumentFile } from './document-file.model.js';
+import { DocumentRequestFile } from './document-request-file.model.js';
 import { DocumentType } from './document-type.model.js';
 
-export class Document extends Entity {
+export class DocumentRequestAssignmentTask extends Entity {
   @Uuid()
   @References(() => DocumentFile)
+  @Unique(undefined, { naming: 'abbreviated-table' })
   fileId: Uuid;
+
+  @Uuid({ nullable: true })
+  @References(() => DocumentRequestFile)
+  assignedRequestFileId: Uuid | null;
 
   @Uuid({ nullable: true })
   @References(() => DocumentType)
@@ -31,4 +37,7 @@ export class Document extends Entity {
 
   @Array(string(), { nullable: true })
   tags: string[] | null;
+
+  @Integer()
+  assignmentTries: number;
 }

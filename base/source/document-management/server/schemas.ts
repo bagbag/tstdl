@@ -1,11 +1,12 @@
-
 import { databaseSchema } from '#/orm/server/database-schema.js';
 import { DocumentCategory } from '../models/document-category.model.js';
 import { DocumentCollectionDocument } from '../models/document-collection-document.model.js';
 import { DocumentCollection } from '../models/document-collection.model.js';
 import { DocumentFile } from '../models/document-file.model.js';
-import { DocumentPropertyBooleanValue, DocumentPropertyDecimalValue, DocumentPropertyIntegerValue, DocumentPropertyTextValue } from '../models/document-property-value.model.js';
+import { DocumentPropertyValue, DocumentRequestAssignmentTaskPropertyValue, DocumentRequestFilePropertyValue } from '../models/document-property-value.model.js';
 import { DocumentProperty, DocumentPropertyDataType } from '../models/document-property.model.js';
+import { DocumentRequestAssignmentTaskCollection } from '../models/document-request-assignment-task-collection.model.js';
+import { DocumentRequestAssignmentTask } from '../models/document-request-assignment-task.model.js';
 import { DocumentRequestCollection } from '../models/document-request-collection.model.js';
 import { DocumentRequestFile } from '../models/document-request-file.model.js';
 import { DocumentRequestTemplate } from '../models/document-request-template.js';
@@ -19,20 +20,21 @@ export const documentManagementSchema = databaseSchema('document_management');
 
 export const dataType = documentManagementSchema.getEnum(DocumentPropertyDataType, 'DocumentPropertyDataType');
 
+export const document = documentManagementSchema.getTable(Document);
 export const documentCategory = documentManagementSchema.getTable(DocumentCategory);
-export const documentCollectionDocument = documentManagementSchema.getTable(DocumentCollectionDocument);
 export const documentCollection = documentManagementSchema.getTable(DocumentCollection);
+export const documentCollectionDocument = documentManagementSchema.getTable(DocumentCollectionDocument);
 export const documentFile = documentManagementSchema.getTable(DocumentFile);
-export const documentPropertyTextValue = documentManagementSchema.getTable(DocumentPropertyTextValue);
-export const documentPropertyIntegerValue = documentManagementSchema.getTable(DocumentPropertyIntegerValue);
-export const documentPropertyDecimalValue = documentManagementSchema.getTable(DocumentPropertyDecimalValue);
-export const documentPropertyBooleanValue = documentManagementSchema.getTable(DocumentPropertyBooleanValue);
 export const documentProperty = documentManagementSchema.getTable(DocumentProperty);
+export const documentPropertyValue = documentManagementSchema.getTable(DocumentPropertyValue);
+export const documentRequest = documentManagementSchema.getTable(DocumentRequest);
+export const documentRequestAssignmentTask = documentManagementSchema.getTable(DocumentRequestAssignmentTask);
+export const documentRequestAssignmentTaskCollection = documentManagementSchema.getTable(DocumentRequestAssignmentTaskCollection);
+export const documentRequestAssignmentTaskPropertyValue = documentManagementSchema.getTable(DocumentRequestAssignmentTaskPropertyValue);
 export const documentRequestCollection = documentManagementSchema.getTable(DocumentRequestCollection);
 export const documentRequestFile = documentManagementSchema.getTable(DocumentRequestFile);
-export const documentRequestTemplate = documentManagementSchema.getTable(DocumentRequestTemplate);
-export const documentRequest = documentManagementSchema.getTable(DocumentRequest);
+export const documentRequestFilePropertyValue = documentManagementSchema.getTable(DocumentRequestFilePropertyValue);
 export const documentRequestsTemplate = documentManagementSchema.getTable(DocumentRequestsTemplate);
-export const documentTypeProperty = documentManagementSchema.getTable(DocumentTypeProperty);
+export const documentRequestTemplate = documentManagementSchema.getTable(DocumentRequestTemplate);
 export const documentType = documentManagementSchema.getTable(DocumentType);
-export const document = documentManagementSchema.getTable(Document);
+export const documentTypeProperty = documentManagementSchema.getTable(DocumentTypeProperty);

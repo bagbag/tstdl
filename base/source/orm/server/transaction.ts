@@ -82,9 +82,9 @@ export class DrizzleTransaction extends Transaction {
       config
     );
 
-    pgTransactionPromise.catch((error: Error) => {
+    pgTransactionPromise.catch((error: unknown) => {
       if (transactionPromise.pending) {
-        transactionPromise.reject(error);
+        transactionPromise.reject(error as Error);
       }
     });
 
@@ -101,7 +101,7 @@ export class DrizzleTransaction extends Transaction {
       this.transaction.rollback();
     }
     catch (error) {
-      this.deferPromise.reject(error);
+      this.deferPromise.reject(error as Error);
     }
   }
 }
