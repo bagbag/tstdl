@@ -403,12 +403,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   async tryUpdateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T | undefined> {
     const transformContext = await this.getTransformContext();
     const mappedUpdate = await this.mapUpdate(update, transformContext);
-    const idQuery = this.getIdLimitQuery(query);
+    const idQuery = this.getIdLimitSelect(query);
 
     const [row] = await this.session
       .update(this.#table)
       .set(mappedUpdate)
-      .where(inArray(this.#table.id, idQuery))
+      .where(inArray(this.#table.id, idQuery.for('update')))
       .returning();
 
     if (isUndefined(row)) {
@@ -483,7 +483,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return this.tryHardDeleteByQuery(query);
     }
 
-    const idQuery = this.getIdLimitQuery(query);
+    const idQuery = this.getIdLimitSelect(query);
 
     const [row] = await this.session
       .update(this.#tableWithMetadata)
@@ -491,7 +491,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
         deleteTimestamp: TRANSACTION_TIMESTAMP,
         attributes: this.getAttributesUpdate(metadataUpdate?.attributes)
       })
-      .where(inArray(this.#table.id, idQuery))
+      .where(inArray(this.#table.id, idQuery.for('update')))
       .returning();
 
     if (isUndefined(row)) {
@@ -561,11 +561,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryHardDeleteByQuery(query: Query<T>): Promise<T | undefined> {
-    const idQuery = this.getIdLimitQuery(query);
+    const idQuery = this.getIdLimitSelect(query);
 
     const [row] = await (this.session as NodePgDatabase)
       .delete(this.#table)
-      .where(inArray(this.#table.id, idQuery))
+      .where(inArray(this.#table.id, idQuery.for('update')))
       .returning();
 
     if (isUndefined(row)) {
@@ -660,7 +660,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   $getIdLimitQuery(query: Query<T>) {
-    return this.getIdLimitQuery(query);
+    return this.getIdLimitSelect(query);
   }
 
   $getAttributesUpdate(attributes: SQL | EntityMetadataAttributes | undefined) {
@@ -751,7 +751,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       : undefined;
   }
 
-  protected getIdLimitQuery(query: Query<T>) {
+  protected getIdLimitSelect(query: Query<T>) {
     const sqlQuery = this.$convertQuery(query);
 
     return this.session.select({ id: this.#table.id })

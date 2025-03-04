@@ -8,7 +8,7 @@ import type { EntityUpdate, NewEntity } from '#/orm/index.js';
 import { DatabaseConfig, EntityRepositoryConfig, injectRepository, interval, RANDOM_UUID, TRANSACTION_TIMESTAMP } from '#/orm/server/index.js';
 import type { ObjectLiteral } from '#/types.js';
 import { cancelableTimeout } from '#/utils/timing.js';
-import { isString } from '#/utils/type-guards.js';
+import { isDefined, isString } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import { defaultQueueConfig, Queue, UniqueTagStrategy, type EnqueueManyItem, type EnqueueManyOptions, type EnqueueOneOptions, type Job, type JobTag } from '../queue.js';
 import { PostgresJob } from './job.model.js';
@@ -47,7 +47,7 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
     lt(job.tries, this.#maxTries),
     or(
       isSqlNull(job.lastDequeueTimestamp),
-      lte(sql`${TRANSACTION_TIMESTAMP} + ${interval(this.#processTimeout, 'milliseconds')}`, job.lastDequeueTimestamp)
+      lte(sql`${job.lastDequeueTimestamp} + ${interval(this.#processTimeout, 'milliseconds')}`, TRANSACTION_TIMESTAMP)
     )
   );
 
@@ -132,17 +132,15 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
       .update(job)
       .set(this.#dequeueUpdate)
       .where(
-        and(
-          this.#dequeueQuery,
-          inArray(
-            job.id,
-            this.#repository.session
-              .select({ id: job.id })
-              .from(job)
-              .where(this.#dequeueQuery)
-              .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
-              .limit(count)
-          )
+        inArray(
+          job.id,
+          this.#repository.session
+            .select({ id: job.id })
+            .from(job)
+            .where(this.#dequeueQuery)
+            .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
+            .limit(count)
+            .for('update')
         )
       )
       .returning();
@@ -165,16 +163,12 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
     while (cancellationSignal.isUnset) {
       const job = await this.dequeue();
 
-      if (job != undefined) {
+      if (isDefined(job)) {
         yield job;
+        continue;
       }
-      else {
-        const cancelled = await cancelableTimeout(5 * millisecondsPerSecond, continue$);
 
-        if (cancelled) {
-          break;
-        }
-      }
+      await cancelableTimeout(5 * millisecondsPerSecond, continue$);
     }
   }
 

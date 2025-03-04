@@ -1,8 +1,11 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "erasableSyntaxOnly": false,
     "paths": {
-      "#/*": ["./*"]
+      "#/*": [
+        "./*"
+      ]
     }
   },
   "tsc-alias": {

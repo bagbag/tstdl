@@ -1,11 +1,14 @@
+import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import type { Record } from '#/types.js';
 import type { TokenPayload } from '../index.js';
 import type { InitSecretResetData } from '../models/init-secret-reset-data.model.js';
 
-export enum GetTokenPayloadContextAction {
-  GetToken = 0,
-  Refresh = 1
-}
+export const GetTokenPayloadContextAction = defineEnum('GetTokenPayloadContextAction', {
+  GetToken: 'get-token',
+  Refresh: 'refresh'
+});
+
+export type GetTokenPayloadContextAction = EnumType<typeof GetTokenPayloadContextAction>;
 
 export type GetTokenPayloadContext = {
   action: GetTokenPayloadContextAction
