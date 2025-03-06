@@ -24,10 +24,10 @@ import { assertDefinedPass, isArray, isDefined, isString, isUndefined } from '#/
 import { Entity, type EntityMetadataAttributes, type EntityType, type EntityWithoutMetadata } from '../entity.js';
 import type { Query } from '../query.js';
 import type { EntityMetadataUpdate, EntityUpdate, LoadManyOptions, LoadOptions, NewEntity, Order } from '../repository.types.js';
+import { TRANSACTION_TIMESTAMP } from '../sqls.js';
 import { Database } from './database.js';
 import { getColumnDefinitions, getDrizzleTableFromType } from './drizzle/schema-converter.js';
 import { convertQuery } from './query-converter.js';
-import { TRANSACTION_TIMESTAMP } from './sqls.js';
 import { ENCRYPTION_SECRET } from './tokens.js';
 import { DrizzleTransaction, type Transaction, type TransactionConfig } from './transaction.js';
 import type { ColumnDefinition, PgTableFromType, TransformContext } from './types.js';
@@ -51,20 +51,22 @@ type EntityRepositoryContext = {
   table: PgTableFromType,
   columnDefinitions: ColumnDefinition[],
   columnDefinitionsMap: Map<string, ColumnDefinition>,
-  session: Database | PgTransaction,
+  session: PgTransaction,
   encryptionSecret: Uint8Array | undefined,
   transformContext: TransformContext | Promise<TransformContext> | undefined
 };
+
+type InferSelect<T extends Entity | EntityWithoutMetadata = Entity | EntityWithoutMetadata> = PgTableFromType<EntityType<T>>['$inferSelect'];
 
 const { getCurrentEntityRepositoryContext, runInEntityRepositoryContext, isInEntityRepositoryContext } = createContextProvider<EntityRepositoryContext, 'EntityRepository'>('EntityRepository');
 
 @Singleton()
 export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityWithoutMetadata> implements Resolvable<EntityType<T>> {
+  readonly #context = getCurrentEntityRepositoryContext() ?? {} as Partial<EntityRepositoryContext>;
   readonly #injector = inject(Injector);
   readonly #repositoryConstructor: RepositoryConstructor<T>;
   readonly #withTransactionCache = new WeakMap<Transaction, EntityRepository<T>>();
-  readonly #encryptionSecret = isInEntityRepositoryContext() ? getCurrentEntityRepositoryContext()?.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
-  readonly #context = getCurrentEntityRepositoryContext() ?? {} as Partial<EntityRepositoryContext>;
+  readonly #encryptionSecret = isInEntityRepositoryContext() ? this.#context.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
 
   #transformContext: TransformContext | Promise<TransformContext> | undefined = this.#context.transformContext;
 
@@ -82,10 +84,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.#table as PgTableFromType<EntityType<T>>;
   }
 
-  declare readonly [resolveArgumentType]: EntityType<T>;
+  protected get isFork(): boolean {
+    return this.isInTransaction;
+  }
 
-  declare readonly _anyInferSelect: PgTableFromType<EntityType<Entity>>['$inferSelect'];
-  declare readonly _inferSelect: PgTableFromType<EntityType<T>>['$inferSelect'];
+  declare readonly [resolveArgumentType]: EntityType<T>;
 
   constructor() {
     this.#repositoryConstructor = new.target as RepositoryConstructor<T>;
@@ -166,7 +169,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryLoadByQuery(query: Query<T>, options?: LoadOptions<T>): Promise<T | undefined> {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     let dbQuery = this.session.select()
       .from(this.#table)
@@ -184,21 +187,20 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    const transformContext = await this.getTransformContext();
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async loadMany(ids: string[], options?: LoadManyOptions<T>): Promise<T[]> {
     return this.loadManyByQuery(inArray(this.#table.id, ids), options);
   }
 
-  async * loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async *loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadMany(ids, options);
     yield* entities;
   }
 
   async loadManyByQuery(query: Query<T>, options?: LoadManyOptions<T>): Promise<T[]> {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     let dbQuery = this.session.select()
       .from(this.#table)
@@ -214,11 +216,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     const rows = await dbQuery;
 
-    const transformContext = await this.getTransformContext();
-    return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
+    return this.mapManyToEntity(rows);
   }
 
-  async * loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async *loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadManyByQuery(query, options);
     yield* entities;
   }
@@ -227,7 +228,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.loadManyByQuery({}, options);
   }
 
-  async * loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
+  async *loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadAll(options);
     yield* entities;
   }
@@ -242,7 +243,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async countByQuery(query: Query<T>): Promise<number> {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     const dbQuery = this.session
       .select({ count: count() })
@@ -258,7 +259,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async hasByQuery(query: Query<T>): Promise<boolean> {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     const dbQuery = this.session
       .select({ exists: sql<boolean>`SELECT EXISTS(SELECT 1 FROM ${this.#table} WHERE ${sqlQuery})` })
@@ -282,8 +283,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns entity if inserted, undefined on conflict
    */
   async tryInsert(entity: NewEntity<T>): Promise<T | undefined> {
-    const transformContext = await this.getTransformContext();
-    const columns = await this.mapToInsertColumns(entity, transformContext);
+    const columns = await this.mapToInsertColumns(entity);
 
     const [row] = await this.session
       .insert(this.#table)
@@ -295,36 +295,32 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async insert(entity: NewEntity<T>): Promise<T> {
-    const transformContext = await this.getTransformContext();
-    const columns = await this.mapToInsertColumns(entity, transformContext);
+    const columns = await this.mapToInsertColumns(entity);
 
     const [row] = await this.session
       .insert(this.#table)
       .values(columns)
       .returning();
 
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row!);
   }
 
   async insertMany(entities: NewEntity<T>[]): Promise<T[]> {
-    const transformContext = await this.getTransformContext();
-    const columns = await this.mapManyToInsertColumns(entities, transformContext);
+    const columns = await this.mapManyToInsertColumns(entities);
     const rows = await this.session.insert(this.#table).values(columns).returning();
 
-    return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
+    return this.mapManyToEntity(rows);
   }
 
   async upsert(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
-    const transformContext = await this.getTransformContext();
-
     const targetColumns = toArray(target).map((path) => this.$getColumn(path));
 
-    const columns = await this.mapToInsertColumns(entity, transformContext);
-    const mappedUpdate = await this.mapUpdate(update ?? (entity as EntityUpdate<T>), transformContext);
+    const columns = await this.mapToInsertColumns(entity);
+    const mappedUpdate = await this.mapUpdate(update ?? (entity as EntityUpdate<T>));
 
     const [row] = await this.session
       .insert(this.#table)
@@ -335,20 +331,18 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       })
       .returning();
 
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row!);
   }
 
   async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update?: EntityUpdate<T>): Promise<T[]> {
-    const transformContext = await this.getTransformContext();
-
     const targetColumns = toArray(target).map((path) => this.$getColumn(path));
 
-    const columns = await this.mapManyToInsertColumns(entities, transformContext);
+    const columns = await this.mapManyToInsertColumns(entities);
     const mappedUpdate = isDefined(update)
-      ? await this.mapUpdate(update, transformContext)
+      ? await this.mapUpdate(update)
       : {
         ...fromEntries(this.#columnDefinitions.map((column) => [column.name, sql`excluded.${sql.identifier(this.$getColumn(column).name)}`] as const)),
-        ...this.getMetadataUpdate(update)
+        ...this._getMetadataUpdate(update)
       };
 
     const rows = await this.session
@@ -360,7 +354,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       })
       .returning();
 
-    return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
+    return this.mapManyToEntity(rows);
   }
 
   async update(id: string, update: EntityUpdate<T>): Promise<T> {
@@ -374,8 +368,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryUpdate(id: string, update: EntityUpdate<T>): Promise<T | undefined> {
-    const transformContext = await this.getTransformContext();
-    const mappedUpdate = await this.mapUpdate(update, transformContext);
+    const mappedUpdate = await this.mapUpdate(update);
 
     const [row] = await this.session
       .update(this.#table)
@@ -387,7 +380,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async updateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T> {
@@ -401,8 +394,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryUpdateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T | undefined> {
-    const transformContext = await this.getTransformContext();
-    const mappedUpdate = await this.mapUpdate(update, transformContext);
+    const mappedUpdate = await this.mapUpdate(update);
     const idQuery = this.getIdLimitSelect(query);
 
     const [row] = await this.session
@@ -415,7 +407,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async updateMany(ids: string[], update: EntityUpdate<T>): Promise<T[]> {
@@ -423,9 +415,8 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async updateManyByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T[]> {
-    const transformContext = await this.getTransformContext();
-    const sqlQuery = this.$convertQuery(query);
-    const mappedUpdate = await this.mapUpdate(update, transformContext);
+    const sqlQuery = this.convertQuery(query);
+    const mappedUpdate = await this.mapUpdate(update);
 
     const rows = await this.session
       .update(this.#table)
@@ -433,7 +424,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .where(sqlQuery)
       .returning();
 
-    return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
+    return this.mapManyToEntity(rows);
   }
 
   async delete(id: string, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
@@ -464,8 +455,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    const transformContext = await this.getTransformContext();
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async deleteByQuery(query: Query<T>, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
@@ -498,8 +488,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    const transformContext = await this.getTransformContext();
-    return this.mapToEntity(row, transformContext);
+    return this.mapToEntity(row);
   }
 
   async deleteMany(ids: string[], metadataUpdate?: EntityMetadataUpdate): Promise<T[]> {
@@ -511,7 +500,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return this.hardDeleteManyByQuery(query);
     }
 
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     const rows = await this.session
       .update(this.#tableWithMetadata)
@@ -522,8 +511,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .where(sqlQuery)
       .returning();
 
-    const transformContext = await this.getTransformContext();
-    return this.mapManyToEntity(rows, transformContext);
+    return this.mapManyToEntity(rows);
   }
 
   async hardDelete(id: string): Promise<T> {
@@ -546,8 +534,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    const transformContext = await this.getTransformContext();
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async hardDeleteByQuery(query: Query<T>): Promise<T> {
@@ -572,8 +559,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    const transformContext = await this.getTransformContext();
-    return this.mapToEntity(row as this['_anyInferSelect'], transformContext);
+    return this.mapToEntity(row);
   }
 
   async hardDeleteMany(ids: string[]): Promise<T[]> {
@@ -581,15 +567,14 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async hardDeleteManyByQuery(query: Query<T>): Promise<T[]> {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     const rows = await (this.session as NodePgDatabase)
       .delete(this.#table)
       .where(sqlQuery)
       .returning();
 
-    const transformContext = await this.getTransformContext();
-    return this.mapManyToEntity(rows as this['_anyInferSelect'][], transformContext);
+    return this.mapManyToEntity(rows);
   }
 
   $getColumn(pathOrColumn: Paths<UntaggedDeep<T>> | ColumnDefinition): PgColumn {
@@ -620,62 +605,70 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       });
   }
 
-  $convertQuery(query: Query<T>): SQL {
+  convertQuery(query: Query<T>): SQL {
     return convertQuery(query, this.#table, this.#columnDefinitionsMap);
   }
 
-  async $mapManyToEntity(columns: this['_inferSelect'][]): Promise<T[]> {
+  async mapManyToEntity(columns: InferSelect[]): Promise<T[]> {
     const transformContext = await this.getTransformContext();
-    return this.mapManyToEntity(columns as any as this['_anyInferSelect'][], transformContext);
+    return this._mapManyToEntity(columns as any as InferSelect[], transformContext);
   }
 
-  async $mapToEntity(columns: this['_inferSelect']): Promise<T> {
+  async mapToEntity(columns: InferSelect): Promise<T> {
     const transformContext = await this.getTransformContext();
-    return this.mapToEntity(columns as any as this['_anyInferSelect'], transformContext);
+    return this._mapToEntity(columns as any as InferSelect, transformContext);
   }
 
-  async $mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
+  async mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
     const transformContext = await this.getTransformContext();
-    return this.mapManyToColumns(objects, transformContext);
+    return this._mapManyToColumns(objects, transformContext);
   }
 
-  async $mapToColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
+  async mapToColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this.mapToColumns(obj, transformContext);
+    return this._mapToColumns(obj, transformContext);
   }
 
-  async $mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
+  async mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
     const transformContext = await this.getTransformContext();
-    return this.mapManyToInsertColumns(objects, transformContext);
+    return this._mapManyToInsertColumns(objects, transformContext);
   }
 
-  async $mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
+  async mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this.mapToInsertColumns(obj, transformContext);
+    return this._mapToInsertColumns(obj, transformContext);
   }
 
-  async $mapUpdate(update: EntityUpdate<T>): Promise<PgUpdateSetSource<PgTableFromType>> {
+  async mapUpdate(update: EntityUpdate<T>): Promise<PgUpdateSetSource<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this.mapUpdate(update, transformContext);
+    return this._mapUpdate(update, transformContext);
   }
 
-  $getIdLimitQuery(query: Query<T>) {
+  getIdLimitQuery(query: Query<T>) {
     return this.getIdLimitSelect(query);
   }
 
-  $getAttributesUpdate(attributes: SQL | EntityMetadataAttributes | undefined) {
-    return this.getAttributesUpdate(attributes);
+  protected getAttributesUpdate(attributes: SQL | EntityMetadataAttributes | undefined) {
+    if (isUndefined(attributes)) {
+      return undefined;
+    }
+
+    if (attributes instanceof SQL) {
+      return attributes;
+    }
+
+    return sql`${this.#tableWithMetadata.attributes} || ${JSON.stringify(attributes)}::jsonb`;
   }
 
-  protected async mapManyToEntity(columns: this['_anyInferSelect'][], transformContext: TransformContext): Promise<T[]> {
-    return toArrayAsync(mapAsync(columns, async (column) => this.mapToEntity(column, transformContext)));
+  protected async _mapManyToEntity(columns: InferSelect[], transformContext: TransformContext): Promise<T[]> {
+    return toArrayAsync(mapAsync(columns, async (column) => this._mapToEntity(column, transformContext)));
   }
 
-  protected async mapToEntity(columns: this['_anyInferSelect'], transformContext: TransformContext): Promise<T> {
-    const entries: [JsonPath, this['_anyInferSelect'][keyof this['_anyInferSelect']]][] = [];
+  protected async _mapToEntity(columns: InferSelect, transformContext: TransformContext): Promise<T> {
+    const entries: [JsonPath, InferSelect[keyof InferSelect]][] = [];
 
     for (const def of this.#columnDefinitions) {
-      const rawValue = columns[def.name as keyof this['_anyInferSelect']];
+      const rawValue = columns[def.name as keyof InferSelect];
       const transformed = await def.fromDatabase(rawValue, transformContext);
 
       entries.push([def.objectPath, transformed] as const); // eslint-disable-line @typescript-eslint/no-unsafe-argument
@@ -685,11 +678,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return Schema.parse(this.type, obj);
   }
 
-  protected async mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
-    return toArrayAsync(mapAsync(objects, async (obj) => this.mapToColumns(obj, transformContext)));
+  protected async _mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
+    return toArrayAsync(mapAsync(objects, async (obj) => this._mapToColumns(obj, transformContext)));
   }
 
-  protected async mapToColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
+  protected async _mapToColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
     const columns: Record = {};
 
     for (const def of this.#columnDefinitions) {
@@ -700,12 +693,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return columns as PgInsertValue<PgTableFromType>;
   }
 
-  protected async mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
-    return toArrayAsync(mapAsync(objects, async (obj) => this.mapToInsertColumns(obj, transformContext)));
+  protected async _mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
+    return toArrayAsync(mapAsync(objects, async (obj) => this._mapToInsertColumns(obj, transformContext)));
   }
 
-  protected async mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
-    const mapped = await this.mapToColumns(obj, transformContext);
+  protected async _mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
+    const mapped = await this._mapToColumns(obj, transformContext);
 
     return {
       ...mapped,
@@ -721,7 +714,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     };
   }
 
-  protected async mapUpdate(update: EntityUpdate<T>, transformContext: TransformContext): Promise<PgUpdateSetSource<PgTableFromType>> {
+  protected async _mapUpdate(update: EntityUpdate<T>, transformContext: TransformContext): Promise<PgUpdateSetSource<PgTableFromType>> {
     const mappedUpdate: PgUpdateSetSource<PgTableFromType> = {};
 
     for (const column of this.#columnDefinitions) {
@@ -736,12 +729,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     return {
       ...mappedUpdate,
-      ...this.getMetadataUpdate(update)
+      ...this._getMetadataUpdate(update)
 
     } satisfies PgUpdateSetSource<PgTableFromType>;
   }
 
-  protected getMetadataUpdate(update?: EntityUpdate<T>): PgUpdateSetSource<PgTableFromType<EntityType<Entity>>> | undefined {
+  protected _getMetadataUpdate(update?: EntityUpdate<T>): PgUpdateSetSource<PgTableFromType<EntityType<Entity>>> | undefined {
     return this.hasMetadata
       ? {
         attributes: this.getAttributesUpdate((update as EntityUpdate<Entity> | undefined)?.metadata?.attributes),
@@ -752,24 +745,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   protected getIdLimitSelect(query: Query<T>) {
-    const sqlQuery = this.$convertQuery(query);
+    const sqlQuery = this.convertQuery(query);
 
     return this.session.select({ id: this.#table.id })
       .from(this.#table)
       .where(sqlQuery)
       .limit(1);
-  }
-
-  protected getAttributesUpdate(attributes: SQL | EntityMetadataAttributes | undefined) {
-    if (isUndefined(attributes)) {
-      return undefined;
-    }
-
-    if (attributes instanceof SQL) {
-      return attributes;
-    }
-
-    return sql`${this.#tableWithMetadata.attributes} || ${JSON.stringify(attributes)}::jsonb`;
   }
 
   protected async getTransformContext(): Promise<TransformContext> {

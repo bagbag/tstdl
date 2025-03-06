@@ -1,14 +1,16 @@
+import { eq } from 'drizzle-orm';
+
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
+import { numNonNulls } from '#/orm/sqls.js';
 import { Check, NumericDate, Unique, Uuid } from '#/orm/types.js';
 import { BooleanProperty, Integer, NumberProperty, StringProperty } from '#/schema/index.js';
-import { sql } from 'drizzle-orm';
 import { DocumentProperty } from './document-property.model.js';
 import { DocumentRequestAssignmentTask } from './document-request-assignment-task.model.js';
 import { DocumentRequestFile } from './document-request-file.model.js';
 import { Document } from './document.model.js';
 
-@Check<DocumentPropertyValueBase>('only_one_value', (table) => sql`num_nonnulls(${table.text}, ${table.integer}, ${table.decimal}, ${table.boolean}, ${table.date}) = 1`)
+@Check<DocumentPropertyValueBase>('only_one_value', (table) => eq(numNonNulls(table.text, table.integer, table.decimal, table.boolean, table.date), 1))
 export abstract class DocumentPropertyValueBase extends Entity {
   @Uuid()
   @References(() => DocumentProperty)

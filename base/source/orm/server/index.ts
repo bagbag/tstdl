@@ -3,5 +3,4 @@ export * from './database.js';
 export * from './module.js';
 export * from './query-converter.js';
 export * from './repository.js';
-export * from './sqls.js';
 export * from './transaction.js';

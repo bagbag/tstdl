@@ -63,7 +63,8 @@ export default [
           }
         }
       }],
-      '@stylistic/yield-star-spacing': ['error', 'after'],
+      '@stylistic/yield-star-spacing': ['warn', 'after'],
+      '@stylistic/generator-star-spacing': ['warn', 'before'],
       '@stylistic/indent': 'off'
     }
   }

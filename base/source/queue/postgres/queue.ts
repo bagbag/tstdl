@@ -5,7 +5,8 @@ import { CancellationSignal } from '#/cancellation/index.js';
 import { inject, injectArgument, provide, Singleton } from '#/injector/index.js';
 import { MessageBus } from '#/message-bus/index.js';
 import type { EntityUpdate, NewEntity } from '#/orm/index.js';
-import { DatabaseConfig, EntityRepositoryConfig, injectRepository, interval, RANDOM_UUID, TRANSACTION_TIMESTAMP } from '#/orm/server/index.js';
+import { interval, RANDOM_UUID, TRANSACTION_TIMESTAMP } from '#/orm/index.js';
+import { DatabaseConfig, EntityRepositoryConfig, injectRepository } from '#/orm/server/index.js';
 import type { ObjectLiteral } from '#/types.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import { isDefined, isString } from '#/utils/type-guards.js';
@@ -140,12 +141,12 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
             .where(this.#dequeueQuery)
             .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
             .limit(count)
-            .for('update')
+            .for('update', { skipLocked: true })
         )
       )
       .returning();
 
-    return this.#repository.$mapManyToEntity(rows as any[]); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    return this.#repository.mapManyToEntity(rows);
   }
 
   override async acknowledge(job: Job<T>): Promise<void> {

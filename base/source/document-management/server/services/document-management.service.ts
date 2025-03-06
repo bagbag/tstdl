@@ -9,12 +9,12 @@ import type { CancellationSignal } from '#/cancellation/token.js';
 import { Enumerable } from '#/enumerable/index.js';
 import { BadRequestError } from '#/errors/index.js';
 import { TemporaryFile, getMimeType, getMimeTypeExtensions } from '#/file/index.js';
-import { type AfterResolve, type AfterResolveContext, Singleton, afterResolve, inject, injectArgument, provide, resolveArgumentType } from '#/injector/index.js';
+import { type AfterResolveContext, Singleton, afterResolve, inject, provide } from '#/injector/index.js';
 import { Logger } from '#/logger/logger.js';
 import { ObjectStorage } from '#/object-storage/index.js';
 import type { NewEntity, Query } from '#/orm/index.js';
-import { getEntityMap } from '#/orm/index.js';
-import { DatabaseConfig, EntityRepositoryConfig, TRANSACTION_TIMESTAMP, type Transaction, arrayAgg, coalesce, injectRepository, jsonAgg, toJsonb } from '#/orm/server/index.js';
+import { TRANSACTION_TIMESTAMP, arrayAgg, coalesce, getEntityMap, jsonAgg, toJsonb } from '#/orm/index.js';
+import { DatabaseConfig, EntityRepositoryConfig, type Transaction, getRepository, injectRepository } from '#/orm/server/index.js';
 import { getPdfPageCount } from '#/pdf/index.js';
 import { Queue } from '#/queue/queue.js';
 import { array, boolean, enumeration, integer, nullable, number, object, string } from '#/schema/index.js';
@@ -33,8 +33,6 @@ import { type AddOrArchiveDocumentToOrFromCollectionParameters, type ApplyDocume
 import { DocumentManagementConfig } from '../module.js';
 import { documentCategory, documentProperty, documentRequest, documentRequestAssignmentTask, documentRequestAssignmentTaskCollection, documentRequestAssignmentTaskPropertyValue, documentRequestCollection, documentRequestFile, documentType } from '../schemas.js';
 import { DocumentManagementAncillaryService } from './document-management-ancillary.service.js';
-
-export type DocumentServiceArgument = DocumentManagementConfig;
 
 type DocumentInformationExtractionPropertyResult = { propertyId: string, dataType: DocumentPropertyDataType, value: string | number | boolean };
 
@@ -67,13 +65,12 @@ const defaultGenerationOptions = {
     { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(DocumentManagementConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }
   ]
 })
-export class DocumentManagementService implements AfterResolve<DocumentServiceArgument, any> {
+export class DocumentManagementService extends getRepository(DocumentCollection) {
   readonly #aiService = inject(AiService);
 
   protected readonly ancillaryService = inject(DocumentManagementAncillaryService);
   protected readonly documentCategoryService = injectRepository(DocumentCategory);
   protected readonly documentCollectionDocumentService = injectRepository(DocumentCollectionDocument);
-  protected readonly documentCollectionService = injectRepository(DocumentCollection);
   protected readonly documentFileService = injectRepository(DocumentFile);
   protected readonly documentPropertyService = injectRepository(DocumentProperty);
   protected readonly documentPropertyValueService = injectRepository(DocumentPropertyValue);
@@ -89,14 +86,16 @@ export class DocumentManagementService implements AfterResolve<DocumentServiceAr
   protected readonly documentService = injectRepository(Document);
   protected readonly documentTypePropertyService = injectRepository(DocumentTypeProperty);
   protected readonly documentTypeService = injectRepository(DocumentType);
-  protected readonly fileObjectStorage = inject(ObjectStorage, (injectArgument(this, { optional: true }) ?? inject(DocumentManagementConfig)).fileObjectStorageModule);
+  protected readonly fileObjectStorage = inject(ObjectStorage, inject(DocumentManagementConfig).fileObjectStorageModule);
   protected readonly extractionQueue = inject(Queue<ExtractionJobData>, { name: 'DocumentManagement:extraction', processTimeout: 15 * millisecondsPerMinute });
   protected readonly assignmentQueue = inject(Queue<AssignmentJobData>, { name: 'DocumentManagement:assignment', processTimeout: 15 * millisecondsPerMinute });
   protected readonly logger = inject(Logger, DocumentManagementService.name);
 
-  declare readonly [resolveArgumentType]: DocumentServiceArgument;
-
   [afterResolve](_: unknown, { cancellationSignal }: AfterResolveContext<any>): void {
+    if (this.isFork) {
+      return;
+    }
+
     this.processQueues(cancellationSignal);
   }
 
@@ -137,7 +136,7 @@ export class DocumentManagementService implements AfterResolve<DocumentServiceAr
       return this.ancillaryService.resolveNames(collectionsOrIds as DocumentCollection[]) as Stringified<T>;
     }
 
-    const loadedCollections = await this.documentCollectionService.loadManyByQuery({ id: { $in: loadIds } });
+    const loadedCollections = await this.loadManyByQuery({ id: { $in: loadIds } });
 
     const collections = collectionsOrIds.map(
       (collectionOrId) => isString(collectionOrId)
@@ -156,9 +155,9 @@ export class DocumentManagementService implements AfterResolve<DocumentServiceAr
   }
 
   async loadData(collectionIds: string[], collectionsMetadata?: LoadDataCollectionsMetadataParameters): Promise<DocumentManagementData> {
-    return this.documentCollectionService.transaction(async (_, transaction) => {
+    return this.transaction(async (_, transaction) => {
       const [collections, collectionDocuments, requestCollections, categories, types] = await Promise.all([
-        this.documentCollectionService.withTransaction(transaction).loadMany(collectionIds),
+        this.withTransaction(transaction).loadMany(collectionIds),
         this.documentCollectionDocumentService.withTransaction(transaction).loadManyByQuery({ collectionId: { $in: collectionIds } }),
         this.documentRequestCollectionService.withTransaction(transaction).loadManyByQuery({ collectionId: { $in: collectionIds } }),
         this.documentCategoryService.withTransaction(transaction).loadManyByQuery({}, { order: 'label' }),
@@ -261,7 +260,7 @@ export class DocumentManagementService implements AfterResolve<DocumentServiceAr
   }
 
   async createCollection(parameters?: CreateCollectionParameters): Promise<DocumentCollection> {
-    return this.documentCollectionService.insert(parameters ?? {});
+    return this.insert(parameters ?? {});
   }
 
   async collectionHasDocumentByFilter(collectionId: string, filter: Query<Document>): Promise<boolean> {

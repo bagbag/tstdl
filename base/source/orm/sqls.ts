@@ -1,11 +1,11 @@
 import { sql, type Column, type SQL } from 'drizzle-orm';
 import type { GetSelectTableSelection, SelectResultField, TableLike } from 'drizzle-orm/query-builders/select.types';
-import type { Uuid } from '../types.js';
+import type { Uuid } from './types.js';
 
 export const TRANSACTION_TIMESTAMP = sql<Date>`transaction_timestamp()`;
 export const RANDOM_UUID = sql<Uuid>`gen_random_uuid()`;
 
-type IntervalUnit =
+export type IntervalUnit =
   | 'millennium' | 'millenniums' | 'millennia'
   | 'century' | 'centuries'
   | 'decade' | 'decades'
@@ -37,4 +37,12 @@ export function coalesce<T extends (Column | SQL)[]>(...columns: T): SQL<SelectR
 
 export function toJsonb<T extends (Column | SQL)>(column: T): SQL<SelectResultField<T>> {
   return sql`to_jsonb(${column})`;
+}
+
+export function numNulls(...columns: Column[]): SQL<number> {
+  return sql`num_nulls(${sql.join(columns, sql.raw(', '))})`;
+}
+
+export function numNonNulls(...columns: Column[]): SQL<number> {
+  return sql`num_nonnulls(${sql.join(columns, sql.raw(', '))})`;
 }
