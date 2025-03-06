@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { readFile, unlink, writeFile } from 'node:fs/promises';
+import { readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { Readable } from 'node:stream';
 
@@ -51,6 +51,11 @@ export class TemporaryFile implements AsyncDisposable {
 
   async delete(): Promise<void> {
     await unlink(this.#path);
+  }
+
+  async size(): Promise<number> {
+    const result = await stat(this.#path);
+    return result.size;
   }
 
   async [Symbol.asyncDispose](): Promise<void> {

@@ -1,15 +1,11 @@
 import '#/polyfills.js';
 
-import { stat, unlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-
 import { type Bucket, Storage } from '@google-cloud/storage';
 import { FileState, GoogleAIFileManager } from '@google/generative-ai/server';
 
 import { AsyncEnumerable } from '#/enumerable/async-enumerable.js';
 import { DetailsError } from '#/errors/details.error.js';
+import { TemporaryFile } from '#/file/temporary-file.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
@@ -17,7 +13,6 @@ import { Logger } from '#/logger/logger.js';
 import { createArray } from '#/utils/array/array.js';
 import { formatBytes } from '#/utils/format.js';
 import { timeout } from '#/utils/timing.js';
-import { tryIgnoreAsync } from '#/utils/try-ignore.js';
 import { assertDefinedPass, isBlob, isDefined, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import type { AiServiceOptions } from './ai.service.js';
@@ -98,18 +93,15 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   }
 
   private async uploadFile(fileInput: FileInput, id: string): Promise<File> {
-    const path = isBlob(fileInput) ? join(tmpdir(), crypto.randomUUID()) : fileInput.path;
-    const mimeType = isBlob(fileInput) ? fileInput.type : fileInput.mimeType;
+    const inputIsBlob = isBlob(fileInput);
 
-    await using stack = new AsyncDisposableStack();
+    await using tmpFile = inputIsBlob
+      ? await TemporaryFile.from(fileInput.stream())
+      : undefined;
 
-    if (isBlob(fileInput)) {
-      this.#logger.verbose(`Preparing file "${id}"...`);
-      stack.defer(async () => tryIgnoreAsync(async () => unlink(path)));
-      await writeFile(path, fileInput.stream() as NodeReadableStream);
-    }
-
-    const fileSize = isBlob(fileInput) ? fileInput.size : (await stat(path)).size;
+    const path = inputIsBlob ? tmpFile!.path : fileInput.path;
+    const mimeType = inputIsBlob ? fileInput.type : fileInput.mimeType;
+    const fileSize = inputIsBlob ? fileInput.size : await tmpFile!.size();
 
     this.#logger.verbose(`Uploading file "${id}" (${formatBytes(fileSize)})...`);
 
