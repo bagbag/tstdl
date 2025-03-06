@@ -40,9 +40,7 @@ export class EntityRepositoryConfig {
   schema: string;
 }
 
-export type TransactionHandler<T extends EntityWithoutMetadata, R> = (repository: EntityRepository<T>, transaction: Transaction) => Promise<R>;
-
-type RepositoryConstructor<T extends Entity | EntityWithoutMetadata> = new (...repository: ConstructorParameters<typeof EntityRepository<T>>) => EntityRepository<T>;
+export type TransactionHandler<T extends EntityRepository<any>, R> = (repository: T, transaction: Transaction) => Promise<R>;
 
 const entityTypeToken = Symbol('EntityType');
 
@@ -64,8 +62,8 @@ const { getCurrentEntityRepositoryContext, runInEntityRepositoryContext, isInEnt
 export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityWithoutMetadata> implements Resolvable<EntityType<T>> {
   readonly #context = getCurrentEntityRepositoryContext() ?? {} as Partial<EntityRepositoryContext>;
   readonly #injector = inject(Injector);
-  readonly #repositoryConstructor: RepositoryConstructor<T>;
-  readonly #withTransactionCache = new WeakMap<Transaction, EntityRepository<T>>();
+  readonly #repositoryConstructor: Type<this, []>;
+  readonly #withTransactionCache = new WeakMap<Transaction, this>();
   readonly #encryptionSecret = isInEntityRepositoryContext() ? this.#context.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
 
   #transformContext: TransformContext | Promise<TransformContext> | undefined = this.#context.transformContext;
@@ -91,10 +89,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   declare readonly [resolveArgumentType]: EntityType<T>;
 
   constructor() {
-    this.#repositoryConstructor = new.target as RepositoryConstructor<T>;
+    this.#repositoryConstructor = new.target as Type<this, []>;
   }
 
-  withOptionalTransaction(transaction: Transaction | undefined): EntityRepository<T> {
+  withOptionalTransaction(transaction: Transaction | undefined): this {
     if (isUndefined(transaction)) {
       return this;
     }
@@ -102,7 +100,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.withTransaction(transaction);
   }
 
-  withTransaction(transaction: Transaction): EntityRepository<T> {
+  withTransaction(transaction: Transaction): this {
     if (this.#withTransactionCache.has(transaction)) {
       return this.#withTransactionCache.get(transaction)!;
     }
@@ -128,7 +126,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return DrizzleTransaction.create(this.session, config);
   }
 
-  async useTransaction<R>(transaction: Transaction | undefined, handler: TransactionHandler<T, R>): Promise<R> {
+  async useTransaction<R>(transaction: Transaction | undefined, handler: TransactionHandler<this, R>): Promise<R> {
     if (isUndefined(transaction)) {
       return this.transaction(handler);
     }
@@ -137,7 +135,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return (transaction as DrizzleTransaction).use(async () => handler(repository, transaction));
   }
 
-  async transaction<R>(handler: TransactionHandler<T, R>, config?: TransactionConfig): Promise<R> {
+  async transaction<R>(handler: TransactionHandler<this, R>, config?: TransactionConfig): Promise<R> {
     const transaction = await DrizzleTransaction.create(this.session, config);
     const repository = this.withTransaction(transaction);
 
@@ -178,7 +176,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .$dynamic();
 
     if (isDefined(options?.order)) {
-      dbQuery = dbQuery.orderBy(...this.$convertOrderBy(options.order));
+      dbQuery = dbQuery.orderBy(...this.convertOrderBy(options.order));
     }
 
     const [row] = await dbQuery;
@@ -211,7 +209,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .$dynamic();
 
     if (isDefined(options?.order)) {
-      dbQuery = dbQuery.orderBy(...this.$convertOrderBy(options.order));
+      dbQuery = dbQuery.orderBy(...this.convertOrderBy(options.order));
     }
 
     const rows = await dbQuery;
@@ -317,7 +315,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async upsert(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
-    const targetColumns = toArray(target).map((path) => this.$getColumn(path));
+    const targetColumns = toArray(target).map((path) => this.getColumn(path));
 
     const columns = await this.mapToInsertColumns(entity);
     const mappedUpdate = await this.mapUpdate(update ?? (entity as EntityUpdate<T>));
@@ -335,13 +333,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update?: EntityUpdate<T>): Promise<T[]> {
-    const targetColumns = toArray(target).map((path) => this.$getColumn(path));
+    const targetColumns = toArray(target).map((path) => this.getColumn(path));
 
     const columns = await this.mapManyToInsertColumns(entities);
     const mappedUpdate = isDefined(update)
       ? await this.mapUpdate(update)
       : {
-        ...fromEntries(this.#columnDefinitions.map((column) => [column.name, sql`excluded.${sql.identifier(this.$getColumn(column).name)}`] as const)),
+        ...fromEntries(this.#columnDefinitions.map((column) => [column.name, sql`excluded.${sql.identifier(this.getColumn(column).name)}`] as const)),
         ...this._getMetadataUpdate(update)
       };
 
@@ -577,7 +575,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.mapManyToEntity(rows);
   }
 
-  $getColumn(pathOrColumn: Paths<UntaggedDeep<T>> | ColumnDefinition): PgColumn {
+  getColumn(pathOrColumn: Paths<UntaggedDeep<T>> | ColumnDefinition): PgColumn {
     if (isString(pathOrColumn)) {
       const columnName = assertDefinedPass(this.#columnDefinitionsMap.get(pathOrColumn), `Could not map ${pathOrColumn} to column.`).name;
       return this.#table[columnName as keyof PgTableFromType] as PgColumn;
@@ -586,12 +584,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.#table[pathOrColumn.name as keyof PgTableFromType] as PgColumn;
   }
 
-  $convertOrderBy(orderBy: Order<T>) {
+  convertOrderBy(orderBy: Order<T>) {
     if (isArray(orderBy)) {
       return orderBy.map((item) => {
         const itemIsArray = isArray(item);
         const target = itemIsArray ? item[0] : item;
-        const column = isSQLWrapper(target) ? target : this.$getColumn(target);
+        const column = isSQLWrapper(target) ? target : this.getColumn(target);
         const direction = itemIsArray ? item[1] : 'asc';
 
         return direction == 'asc' ? asc(column) : desc(column);
@@ -600,7 +598,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     return objectEntries(orderBy)
       .map(([path, direction]) => {
-        const column = this.$getColumn(path);
+        const column = this.getColumn(path);
         return direction == 'asc' ? asc(column) : desc(column);
       });
   }

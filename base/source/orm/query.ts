@@ -2,13 +2,13 @@ import type { SQLWrapper } from 'drizzle-orm';
 
 import type { Flatten, Record } from '#/types.js';
 import type { Geometry } from '#/types/geo-json.js';
-import type { Untagged } from '#/types/tagged.js';
+import type { UntaggedDeep } from '#/types/tagged.js';
 
 export type LogicalQuery<T = any> = LogicalAndQuery<T> | LogicalOrQuery<T> | LogicalNorQuery<T>;
 export type LogicalQueryTypes = keyof (LogicalAndQuery & LogicalOrQuery & LogicalNorQuery);
 export const allLogicalQueryTypes: LogicalQueryTypes[] = ['$and', '$or', '$nor'];
 
-export type ComparisonQueryBody<T = any> = { [P in keyof T]?: ComparisonQueryOrValue<T[P]> } & Record<ComparisonQueryOrValue>;
+export type ComparisonQueryBody<T = any> = { [P in keyof T]?: T[P] extends Record ? ComparisonQueryBody<T[P]> : ComparisonQueryOrValue<T[P]> } & Record<ComparisonQueryOrValue>;
 export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | ComparisonValue<T>;
 
 export type ComparisonQuery<T = any> = Partial<
@@ -37,7 +37,7 @@ export type SpecialQuery<T = any> = Partial<TextSpanQuery<T>>;
 export type SpecialQueryTypes = keyof SpecialQuery;
 export const allSpecialQueryTypes: SpecialQueryTypes[] = ['$textSpan'];
 
-export type Query<T = any> = SQLWrapper | QueryObject<T>;
+export type Query<T = any> = SQLWrapper | QueryObject<UntaggedDeep<T>>;
 
 export type QueryObject<T> = LogicalQuery<T> | (ComparisonQueryBody<T> & SpecialQuery<T>);
 export type QueryTypes = LogicalQueryTypes | ComparisonQueryTypes | SpecialQueryTypes;
@@ -58,7 +58,7 @@ export type LogicalNorQuery<T = any> = {
   $nor: readonly Query<T>[]
 };
 
-export type ComparisonValue<T> = Untagged<T | Flatten<T>> | SQLWrapper;
+export type ComparisonValue<T> = T | Flatten<T> | SQLWrapper;
 export type ComparisonValueWithRegex<T> = T extends string
   ? ComparisonValue<T | RegExp>
   : T extends readonly string[]
