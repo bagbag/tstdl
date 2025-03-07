@@ -234,7 +234,7 @@ function getPostgresColumn(tableName: string, columnName: string, dbSchema: PgSc
   }
 
   if (isDefined(reflectionData.references)) {
-    column = column.references(() => getDrizzleTableFromType(reflectionData.references!(), dbSchema.schemaName).id);
+    column = column.references(() => getDrizzleTableFromType(reflectionData.references!()).id);
   }
 
   return column;
