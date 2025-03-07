@@ -584,9 +584,9 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.#table[pathOrColumn.name as keyof PgTableFromType] as PgColumn;
   }
 
-  convertOrderBy(orderBy: Order<T>) {
-    if (isArray(orderBy)) {
-      return orderBy.map((item) => {
+  convertOrderBy(order: Order<T>): SQL[] {
+    if (isArray(order)) {
+      return order.map((item) => {
         const itemIsArray = isArray(item);
         const target = itemIsArray ? item[0] : item;
         const column = isSQLWrapper(target) ? target : this.getColumn(target);
@@ -596,11 +596,15 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       });
     }
 
-    return objectEntries(orderBy)
-      .map(([path, direction]) => {
-        const column = this.getColumn(path);
-        return direction == 'asc' ? asc(column) : desc(column);
-      });
+    if (isString(order)) {
+      const column = this.getColumn(order);
+      return [asc(column)];
+    }
+
+    return objectEntries(order).map(([path, direction]) => {
+      const column = this.getColumn(path);
+      return direction == 'asc' ? asc(column) : desc(column);
+    });
   }
 
   convertQuery(query: Query<T>): SQL {

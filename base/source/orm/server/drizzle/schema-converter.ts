@@ -37,7 +37,7 @@ export function getColumnDefinitions(table: PgTableWithColumns<any>): ColumnDefi
   return (table as PgTableWithColumns<any> & { [columnDefinitionsSymbol]: ColumnDefinition[] })[columnDefinitionsSymbol];
 }
 
-export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, schemaName?: S): PgTableFromType<T, S> {
+export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, fallbackSchemaName?: S): PgTableFromType<T, S> {
   const metadata = reflectionRegistry.getMetadata(type);
   assertDefined(metadata, `Type ${type.name} does not have reflection metadata.`);
 
@@ -52,7 +52,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
   }
 
   const tableReflectionData = tableReflectionDatas[0];
-  const schema = assertDefinedPass(schemaName ?? tableReflectionData?.schema, 'Table schema not provided');
+  const schema = assertDefinedPass(tableReflectionData?.schema ?? fallbackSchemaName, 'Table schema not provided');
   const tableName = tableReflectionData?.name ?? getDefaultTableName(type);
 
   const dbSchema = getDbSchema(schema);
@@ -234,7 +234,7 @@ function getPostgresColumn(tableName: string, columnName: string, dbSchema: PgSc
   }
 
   if (isDefined(reflectionData.references)) {
-    column = column.references(() => getDrizzleTableFromType(reflectionData.references!()).id);
+    column = column.references(() => getDrizzleTableFromType(reflectionData.references!(), dbSchema.schemaName).id);
   }
 
   return column;
