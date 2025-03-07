@@ -1,11 +1,13 @@
 import '#/polyfills.js';
 
+import { readFile } from 'node:fs/promises';
+
 import { type Bucket, Storage } from '@google-cloud/storage';
 import { FileState, GoogleAIFileManager } from '@google/generative-ai/server';
 
 import { AsyncEnumerable } from '#/enumerable/async-enumerable.js';
 import { DetailsError } from '#/errors/details.error.js';
-import { TemporaryFile } from '#/file/temporary-file.js';
+import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
@@ -95,17 +97,17 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   private async uploadFile(fileInput: FileInput, id: string): Promise<File> {
     const inputIsBlob = isBlob(fileInput);
 
-    await using tmpFile = inputIsBlob
-      ? await TemporaryFile.from(fileInput.stream())
-      : undefined;
+    const buffer = inputIsBlob
+      ? await fileInput.bytes() as Buffer
+      : await readFile(fileInput.path);
 
-    const path = inputIsBlob ? tmpFile!.path : fileInput.path;
     const mimeType = inputIsBlob ? fileInput.type : fileInput.mimeType;
-    const fileSize = inputIsBlob ? fileInput.size : await tmpFile!.size();
 
-    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(fileSize)})...`);
+    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(buffer.length)})...`);
 
     if (isDefined(this.#storage)) {
+      throw new NotImplementedError();
+      /*
       const bucket = await this.getBucket();
       const [file] = await bucket.upload(path, { destination: id, contentType: mimeType });
 
@@ -115,9 +117,10 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
         uri: file.cloudStorageURI.toString(),
         mimeType
       };
+      */
     }
 
-    const response = await this.#fileManager!.uploadFile(path, { mimeType });
+    const response = await this.#fileManager!.uploadFile(buffer, { mimeType });
 
     return {
       id,

@@ -17,6 +17,7 @@ import { PostgresQueueModuleConfig } from './module.js';
 import { job } from './schemas.js';
 
 @Singleton({
+  argumentIdentityProvider: JSON.stringify,
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'queue' } }),
     provide(DatabaseConfig, { useFactory: (_, context) => context.resolve(PostgresQueueModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) })
