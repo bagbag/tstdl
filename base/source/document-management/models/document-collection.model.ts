@@ -1,5 +1,5 @@
-import { Table } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
+import { DocumentManagementTable } from './document-management-table.js';
 
-@Table()
+@DocumentManagementTable()
 export class DocumentCollection extends Entity { }

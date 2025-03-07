@@ -2,6 +2,7 @@ import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { Entity } from '#/orm/entity.js';
 import { Unique } from '#/orm/types.js';
 import { Enumeration, StringProperty } from '#/schema/index.js';
+import { DocumentManagementTable } from './document-management-table.js';
 
 export const DocumentPropertyDataType = defineEnum('DocumentPropertyDataType', {
   Text: 'text',
@@ -13,6 +14,7 @@ export const DocumentPropertyDataType = defineEnum('DocumentPropertyDataType', {
 
 export type DocumentPropertyDataType = EnumType<typeof DocumentPropertyDataType>;
 
+@DocumentManagementTable()
 export class DocumentProperty extends Entity {
   declare static readonly entityName: 'DocumentProperty';
 

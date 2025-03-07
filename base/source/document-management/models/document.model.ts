@@ -3,8 +3,10 @@ import { Entity } from '#/orm/entity.js';
 import { NumericDate, Uuid } from '#/orm/types.js';
 import { Array, Integer, string, StringProperty } from '#/schema/index.js';
 import { DocumentFile } from './document-file.model.js';
+import { DocumentManagementTable } from './document-management-table.js';
 import { DocumentType } from './document-type.model.js';
 
+@DocumentManagementTable()
 export class Document extends Entity {
   @Uuid()
   @References(() => DocumentFile)

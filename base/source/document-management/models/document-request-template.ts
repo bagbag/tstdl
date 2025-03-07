@@ -3,10 +3,12 @@ import { Entity } from '#/orm/entity.js';
 import { Uuid } from '#/orm/types.js';
 import { Integer, StringProperty } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
+import { DocumentManagementTable } from './document-management-table.js';
 import type { DocumentRequest } from './document-request.model.js';
 import { DocumentRequestsTemplate } from './document-requests-template.js';
 import { DocumentType } from './document-type.model.js';
 
+@DocumentManagementTable()
 export class DocumentRequestTemplate extends Entity implements TypedOmit<DocumentRequest, 'completed'> {
   @Uuid()
   @References(() => DocumentRequestsTemplate)

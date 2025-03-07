@@ -3,9 +3,11 @@ import { Entity } from '#/orm/entity.js';
 import { NumericDate, Unique, Uuid } from '#/orm/types.js';
 import { Array, Integer, string, StringProperty } from '#/schema/index.js';
 import { DocumentFile } from './document-file.model.js';
+import { DocumentManagementTable } from './document-management-table.js';
 import { DocumentRequestFile } from './document-request-file.model.js';
 import { DocumentType } from './document-type.model.js';
 
+@DocumentManagementTable()
 export class DocumentRequestAssignmentTask extends Entity {
   @Uuid()
   @References(() => DocumentFile)
