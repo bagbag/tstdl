@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.96",
+  "version": "0.92.98",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -153,7 +153,7 @@
     "@typescript-eslint/eslint-plugin": "8.26",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
-    "eslint": "9.21",
+    "eslint": "9.22",
     "globals": "16.0",
     "tsc-alias": "1.8",
     "typescript": "5.8"
@@ -173,7 +173,7 @@
     "mjml": "^4.15",
     "mongodb": "^6.14",
     "nodemailer": "^6.10",
-    "pg": "^8.13",
+    "pg": "^8.14",
     "playwright": "^1.51",
     "preact": "^10.26",
     "preact-render-to-string": "^6.5",

@@ -12,6 +12,7 @@ export type SetCookieOptions = {
   partitioned?: boolean,
   path?: string,
   sameSite?: 'strict' | 'lax' | 'none',
+  priority?: 'low' | 'medium' | 'high',
   secure?: boolean
 };
 
@@ -21,10 +22,14 @@ const sameSiteMap = {
   strict: 'Strict'
 } as const;
 
-export function formatSetCookie(name: string, value: string, options: SetCookieOptions = {}): string {
-  const encodedValue = encodeURIComponent(value);
+const priorityMap = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High'
+} as const;
 
-  let cookie = `${name}="${encodedValue}"`;
+export function formatSetCookie(name: string, value: string, options: SetCookieOptions = {}): string {
+  let cookie = `${name}=${encodeURIComponent(value)}`;
 
   if (isDefined(options.domain)) {
     cookie = `${cookie}; Domain=${options.domain}`;
@@ -55,10 +60,20 @@ export function formatSetCookie(name: string, value: string, options: SetCookieO
     const sameSiteValue = sameSiteMap[options.sameSite];
 
     if (isUndefined(sameSiteValue)) {
-      throw new NotSupportedError(`Unknown option SameSite "${options.sameSite}".`);
+      throw new NotSupportedError(`Unknown option sameSite "${options.sameSite}".`);
     }
 
     cookie = `${cookie}; SameSite=${sameSiteValue}`;
+  }
+
+  if (isDefined(options.priority)) {
+    const priorityValue = priorityMap[options.priority];
+
+    if (isUndefined(priorityValue)) {
+      throw new NotSupportedError(`Unknown option priority "${options.priority}".`);
+    }
+
+    cookie = `${cookie}; Priority=${priorityValue}`;
   }
 
   if (isDefined(options.secure) && options.secure) {

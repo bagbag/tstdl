@@ -5,7 +5,7 @@ import { Array, Integer } from '#/schema/index.js';
 import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
 import type { GetTagMetadata, HasTag, Tagged, UnwrapTagged } from '#/types/index.js';
 import type { bytea, numericDate, timestamp } from './data-types/index.js';
-import { Check, Column, Embedded, Encrypted, Index, PrimaryKey, References, Unique } from './decorators.js';
+import { Check, Column, Embedded, Encrypted, Index, PrimaryKey, References, Table, Unique } from './decorators.js';
 import { Json, NumericDate, Timestamp, Uuid } from './schemas/index.js';
 
 export type ColumnTypeTag = 'column';
@@ -47,4 +47,4 @@ export type Timestamp = Tagged<number, ColumnTypeTag, ReturnType<typeof timestam
 export type Bytea = Tagged<Uint8Array, ColumnTypeTag, ReturnType<typeof bytea>>;
 export type Encrypted<T> = Tagged<T, ColumnTypeTag, ReturnType<typeof bytea>>;
 
-export { Array, Check, Column, Embedded, Encrypted, Index, Integer, Json, NumericDate, PrimaryKey, References, Timestamp, Unique, Uuid };
+export { Array, Check, Column, Embedded, Encrypted, Index, Integer, Json, NumericDate, PrimaryKey, References, Table, Timestamp, Unique, Uuid };

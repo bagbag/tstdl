@@ -70,7 +70,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
   readonly type = (this.#context.type as EntityType<T> | undefined) ?? injectArgument(this, { optional: true }) ?? assertDefinedPass((this.constructor as Record)[entityTypeToken] as EntityType<T>, 'Missing entity type.');
   readonly typeName = this.type.entityName ?? this.type.name;
-  readonly #table = this.#context.table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig).schema);
+  readonly #table = this.#context.table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig, undefined, { optional: true })?.schema);
   readonly #tableWithMetadata = this.#table as PgTableFromType<EntityType<Entity>>;
   readonly #columnDefinitions = this.#context.columnDefinitions ?? getColumnDefinitions(this.#table);
   readonly #columnDefinitionsMap = this.#context.columnDefinitionsMap ?? new Map(this.#columnDefinitions.map((column) => [column.objectPath.path, column]));
