@@ -51,8 +51,10 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
     }
   }
 
+  const mergedTableReflectionData = tableReflectionDatas.reduceRight((merged, data) => ({ ...merged, ...data }), {});
+
   const tableReflectionData = tableReflectionDatas[0];
-  const schema = assertDefinedPass(tableReflectionData?.schema ?? fallbackSchemaName, 'Table schema not provided');
+  const schema = assertDefinedPass(mergedTableReflectionData.schema ?? fallbackSchemaName, 'Table schema not provided');
   const tableName = tableReflectionData?.name ?? getDefaultTableName(type);
 
   const dbSchema = getDbSchema(schema);
@@ -91,7 +93,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
     const columns = primaryKeyColumnDefinitions.map((columnDefinition) => getColumn(table, columnDefinition.name)) as unknown as [PgColumn, ...PgColumn[]];
 
     return primaryKey({
-      name: tableReflectionData?.compundPrimaryKeyName ?? getPrimaryKeyName(tableName, columns, { naming: tableReflectionData?.compundPrimaryKeyNaming }),
+      name: mergedTableReflectionData.compundPrimaryKeyName ?? getPrimaryKeyName(tableName, columns, { naming: mergedTableReflectionData.compundPrimaryKeyNaming }),
       columns
     });
   }
