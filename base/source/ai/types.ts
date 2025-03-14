@@ -9,12 +9,12 @@ export type FileInput = { path: string, mimeType: string } | Blob;
 
 export type SchemaFunctionDeclarations = Record<string, SchemaFunctionDeclaration<any>>;
 
-export type SchemaFunctionDeclarationWithoutHandler<T extends Record = Record> = { description: string, parameters: ValueOrAsyncProvider<ObjectSchema<T>>, enabled?: ValueOrAsyncProvider<boolean> };
+export type SchemaFunctionDeclarationWithoutHandler<T extends Record = Record> = { description: string, parameters?: ValueOrAsyncProvider<ObjectSchema<T>>, enabled?: ValueOrAsyncProvider<boolean> };
 export type SchemaFunctionDeclarationWithHandler<T extends Record = Record, R = unknown> = SchemaFunctionDeclarationWithoutHandler<T> & { handler: (parameters: T) => R | Promise<R> };
 export type SchemaFunctionDeclaration<T extends Record = Record, R = unknown> = SchemaFunctionDeclarationWithoutHandler<T> | SchemaFunctionDeclarationWithHandler<T, R>;
 
 export type SchemaFunctionDeclarationHandlerResult<T extends SchemaFunctionDeclaration> = T extends SchemaFunctionDeclarationWithHandler<any, infer R> ? R : never;
-export type SchemaFunctionDeclarationsResult<T extends SchemaFunctionDeclarations = SchemaFunctionDeclarations> = { [P in keyof T]: { functionName: P, parameters: SchemaOutput<ResolvedValueOrProvider<T[P]['parameters']>>, handlerResult: SchemaFunctionDeclarationHandlerResult<T[P]> } }[keyof T];
+export type SchemaFunctionDeclarationsResult<T extends SchemaFunctionDeclarations = SchemaFunctionDeclarations> = { [P in keyof T]: { functionName: P, parameters: SchemaOutput<NonNullable<ResolvedValueOrProvider<T[P]['parameters']>>>, handlerResult: SchemaFunctionDeclarationHandlerResult<T[P]> } }[keyof T];
 
 export type ContentRole = 'user' | 'model';
 

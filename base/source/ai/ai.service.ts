@@ -228,7 +228,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     for (const call of generation.functionCalls) {
       const fn = assertDefinedPass(options.functions[call.name], 'Function in response not declared.');
       const parametersSchema = await resolveValueOrAsyncProvider(fn.parameters);
-      const parameters = parametersSchema.parse(call.parameters) as Record;
+      const parameters = isDefined(parametersSchema) ? parametersSchema.parse(call.parameters) as Record : call.parameters;
       const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
       result.push({ functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any });
@@ -321,7 +321,6 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       let candidate: GenerateContentCandidate | undefined;
 
       for await (const generationResponse of generation.stream) {
-        this.#logger.trace('Handling generation stream response');
         candidate = generationResponse.candidates!.at(0)!;
         inputContent.push(candidate.content);
 
@@ -399,7 +398,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       for (const call of generation.functionCalls) {
         const fn = assertDefinedPass(options.functions[call.name], 'Function in response not declared.');
         const parametersSchema = await resolveValueOrAsyncProvider(fn.parameters);
-        const parameters = parametersSchema.parse(call.parameters) as Record;
+        const parameters = isDefined(parametersSchema) ? parametersSchema.parse(call.parameters) as Record : call.parameters;
         const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
         yield { functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any };
@@ -452,7 +451,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       return {
         name,
         description: declaration.description,
-        parameters: convertToOpenApiSchema(parametersSchema) as any as FunctionDeclarationSchema
+        parameters: isDefined(parametersSchema) ? convertToOpenApiSchema(parametersSchema) as any as FunctionDeclarationSchema : undefined
       };
     });
 

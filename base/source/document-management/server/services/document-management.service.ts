@@ -271,6 +271,16 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     return this.documentTypeService.load(id);
   }
 
+  async getFileContent(fileId: string): Promise<Uint8Array> {
+    const key = getDocumentFileKey(fileId);
+    return this.fileObjectStorage.getContent(key);
+  }
+
+  getFileContentStream(fileId: string): ReadableStream<Uint8Array> {
+    const key = getDocumentFileKey(fileId);
+    return this.fileObjectStorage.getContentStream(key);
+  }
+
   async getFileContentUrl(fileId: string, title: string | null, download: boolean = false): Promise<string> {
     const file = await this.documentFileService.load(fileId);
     return this.getDocumentFileContentObjectUrl(title ?? fileId, file, download);
@@ -668,6 +678,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
 
     const { properties, ...extractionResult } = await this.extractFileInformation(document.fileId, document.typeId);
 
+    this.logger.trace(`Applying extraction to document ${document.id}`);
     await this.documentService.transaction(async (documentService, transaction) => {
       await documentService.update(document.id, { ...extractionResult, validated: false });
       await this.setPropertyValues({ documentId, properties: properties }, transaction);
@@ -921,6 +932,7 @@ Ordne die Datei unter "file" der passenden Anforderungen unter "requests" zu. Gi
     const typeLabelEntries = types.map((type) => ({ id: type.typeId, label: `${type.categoryLabel} | ${type.typeGroup} | ${type.typeLabel}` }));
     const typeLabels = typeLabelEntries.map(({ label }) => label);
 
+    this.logger.trace(`Classifying document file ${fileId}`);
     const documentTypeGeneration = await this.#aiService.generate({
       ...defaultGenerationOptions,
       generationSchema: object({
@@ -968,6 +980,7 @@ Ordne die Datei unter "file" der passenden Anforderungen unter "requests" zu. Gi
       )
     });
 
+    this.logger.trace(`Extracting document file ${fileId}`);
     const { json: extraction } = await this.#aiService.generate({
       model: 'gemini-2.0-flash',
       generationOptions: {
