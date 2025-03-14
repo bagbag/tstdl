@@ -23,9 +23,9 @@ export async function tryIgnoreAsync<R, F>(fn: () => Promise<R>, fallback?: F): 
   }
 }
 
-export function tryIgnoreLog<R>(fn: () => R, logger: Logger): R;
-export function tryIgnoreLog<R, F>(fn: () => R, logger: Logger, fallback: F): R | F;
-export function tryIgnoreLog<R, F>(fn: () => R, logger: Logger, fallback?: F): R | F {
+export function tryIgnoreLog<R>(logger: Logger, fn: () => R): R;
+export function tryIgnoreLog<R, F>(logger: Logger, fn: () => R, fallback: F): R | F;
+export function tryIgnoreLog<R, F>(logger: Logger, fn: () => R, fallback?: F): R | F {
   try {
     return fn();
   }
@@ -35,9 +35,9 @@ export function tryIgnoreLog<R, F>(fn: () => R, logger: Logger, fallback?: F): R
   }
 }
 
-export async function tryIgnoreLogAsync<R>(fn: () => Promise<R>, logger: Logger): Promise<R>;
-export async function tryIgnoreLogAsync<R, F>(fn: () => Promise<R>, logger: Logger, fallback: F): Promise<F>;
-export async function tryIgnoreLogAsync<R, F>(fn: () => Promise<R>, logger: Logger, fallback?: F): Promise<R | F> {
+export async function tryIgnoreLogAsync<R>(logger: Logger, fn: () => Promise<R>): Promise<R>;
+export async function tryIgnoreLogAsync<R, F>(logger: Logger, fn: () => Promise<R>, fallback: F): Promise<F>;
+export async function tryIgnoreLogAsync<R, F>(logger: Logger, fn: () => Promise<R>, fallback?: F): Promise<R | F> {
   try {
     const value = await fn();
     return value;

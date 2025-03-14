@@ -51,9 +51,10 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   private readonly repository: MongoJobRepository<T>;
   private readonly lock: Lock;
   private readonly queueKey: string;
-  private readonly processTimeout: number;
-  private readonly maxTries: number;
   private readonly messageBus: MessageBus<void>;
+
+  readonly processTimeout: number;
+  readonly maxTries: number;
 
   constructor(repository: MongoJobRepository<T>, lock: Lock, messageBusProvider: MessageBusProvider, key: string, config?: QueueConfig) {
     super();
@@ -162,6 +163,10 @@ export class MongoQueue<T = unknown> extends Queue<T> {
 
   async getByTag(tag: JobTag): Promise<Job<T>[]> {
     return this.repository.loadManyByFilter({ queue: this.queueKey, tag });
+  }
+
+  async getByTags(tags: JobTag[]): Promise<Job<T>[]> {
+    return this.repository.loadManyByFilter({ queue: this.queueKey, tag: { $in: tags } });
   }
 
   async cancel(id: string): Promise<void> {
@@ -288,7 +293,10 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
     id: mongoJob.jobId,
     priority: mongoJob.priority,
     tag: mongoJob.tag,
-    data: mongoJob.data
+    data: mongoJob.data,
+    enqueueTimestamp: mongoJob.enqueueTimestamp,
+    lastDequeueTimestamp: mongoJob.lastDequeueTimestamp,
+    tries: mongoJob.tries
   };
 
   return job;

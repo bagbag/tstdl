@@ -1,0 +1,1 @@
+ALTER TABLE "document_management"."document" ADD COLUMN "validated" boolean NOT NULL;

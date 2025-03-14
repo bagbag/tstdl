@@ -1,7 +1,7 @@
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { NumericDate, Uuid } from '#/orm/types.js';
-import { Array, Integer, string, StringProperty } from '#/schema/index.js';
+import { Array, BooleanProperty, Integer, string, StringProperty } from '#/schema/index.js';
 import { DocumentFile } from './document-file.model.js';
 import { DocumentManagementTable } from './document-management-table.js';
 import { DocumentType } from './document-type.model.js';
@@ -33,4 +33,7 @@ export class Document extends Entity {
 
   @Array(string(), { nullable: true })
   tags: string[] | null;
+
+  @BooleanProperty()
+  validated: boolean;
 }

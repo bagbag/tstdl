@@ -2,6 +2,7 @@ import type { Observable } from 'rxjs';
 import { defer, merge, share, Subject, takeUntil } from 'rxjs';
 
 import type { Logger } from '#/logger/index.js';
+import { tryIgnoreLogAsync } from '#/utils/try-ignore.js';
 import { CancellationToken } from '../cancellation/token.js';
 import { disposeAsync } from '../disposable/disposable.js';
 import { MessageBus } from './message-bus.js';
@@ -32,7 +33,7 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
   }
 
   publishAndForget(message: T): void {
-    void this._publishAndForget(message);
+    void tryIgnoreLogAsync(this.logger, async () => this.publish(message));
   }
 
   async publish(message: T): Promise<void> {
@@ -53,15 +54,6 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
     this.publishSubject.complete();
 
     return this._dispose();
-  }
-
-  private async _publishAndForget(message: T): Promise<void> {
-    try {
-      await this.publish(message);
-    }
-    catch (error: unknown) {
-      this.logger.error(error as Error);
-    }
   }
 
   /**

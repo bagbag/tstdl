@@ -20,7 +20,10 @@ export type Job<T> = {
   priority: number,
 
   tag: JobTag,
-  data: T
+  data: T,
+  enqueueTimestamp: number,
+  lastDequeueTimestamp: number | null,
+  tries: number
 };
 
 export const defaultJobPriority = 1000;
@@ -65,6 +68,9 @@ export const defaultQueueConfig: Required<QueueConfig> = {
 export abstract class Queue<T> implements Resolvable<QueueArgument> {
   declare readonly [resolveArgumentType]: QueueArgument;
 
+  abstract readonly processTimeout: number;
+  abstract readonly maxTries: number;
+
   batch(): QueueEnqueueBatch<T> {
     return new QueueEnqueueBatch(this);
   }
@@ -81,6 +87,7 @@ export abstract class Queue<T> implements Resolvable<QueueArgument> {
 
   abstract get(id: string): Promise<Job<T> | undefined>;
   abstract getByTag(tag: JobTag): Promise<Job<T>[]>;
+  abstract getByTags(tags: JobTag[]): Promise<Job<T>[]>;
 
   abstract cancel(id: string): Promise<void>;
   abstract cancelMany(ids: string[]): Promise<void>;

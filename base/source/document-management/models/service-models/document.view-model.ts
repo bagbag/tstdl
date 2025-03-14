@@ -1,6 +1,6 @@
+import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { Timestamp } from '#/orm/types.js';
-import { Array, StringProperty } from '#/schema/index.js';
-
+import { Array, Enumeration, StringProperty } from '#/schema/index.js';
 import { DocumentCategory } from '../document-category.model.js';
 import { DocumentCollection } from '../document-collection.model.js';
 import { DocumentFile } from '../document-file.model.js';
@@ -9,6 +9,14 @@ import { DocumentRequestFile } from '../document-request-file.model.js';
 import { DocumentRequest } from '../document-request.model.js';
 import { DocumentType } from '../document-type.model.js';
 import { Document } from '../document.model.js';
+
+export const ExtractionStatus = defineEnum('ExtractionStatus', {
+  Pending: 'pending',
+  Extracting: 'extracting',
+  Error: 'error'
+});
+
+export type ExtractionStatus = EnumType<typeof ExtractionStatus>;
 
 export class DocumentCollectionView extends DocumentCollection {
   @StringProperty({ nullable: true })
@@ -32,6 +40,9 @@ export class DocumentView extends Document {
 
   @Array(DocumentPropertyValue)
   properties: DocumentPropertyValue[];
+
+  @Enumeration(ExtractionStatus, { nullable: true })
+  extractionStatus: ExtractionStatus | null;
 }
 
 export class DocumentRequestView extends DocumentRequest {

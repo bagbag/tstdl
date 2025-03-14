@@ -9,7 +9,7 @@ import { interval, RANDOM_UUID, TRANSACTION_TIMESTAMP } from '#/orm/index.js';
 import { DatabaseConfig, EntityRepositoryConfig, injectRepository } from '#/orm/server/index.js';
 import type { ObjectLiteral } from '#/types.js';
 import { cancelableTimeout } from '#/utils/timing.js';
-import { isDefined, isString } from '#/utils/type-guards.js';
+import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import { defaultQueueConfig, Queue, UniqueTagStrategy, type EnqueueManyItem, type EnqueueManyOptions, type EnqueueOneOptions, type Job, type JobTag } from '../queue.js';
 import { PostgresJob } from './job.model.js';
@@ -26,12 +26,12 @@ import { job } from './schemas.js';
 export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
   readonly #repository = injectRepository(PostgresJob);
   readonly #config = injectArgument(this);
-  readonly #processTimeout = (isString(this.#config) ? undefined : this.#config.processTimeout) ?? defaultQueueConfig.processTimeout;
-  readonly #maxTries = (isString(this.#config) ? undefined : this.#config.maxTries) ?? defaultQueueConfig.maxTries;
   readonly #queueName = isString(this.#config) ? this.#config : this.#config.name;
   readonly #messageBus = inject(MessageBus<void>, `PostgresQueue:${this.#queueName}`);
-
   readonly #keepOldUpdate = { id: sql`${job.id}` } satisfies EntityUpdate<PostgresJob>;
+
+  readonly processTimeout = (isString(this.#config) ? undefined : this.#config.processTimeout) ?? defaultQueueConfig.processTimeout;
+  readonly maxTries = (isString(this.#config) ? undefined : this.#config.maxTries) ?? defaultQueueConfig.maxTries;
 
   readonly #takeNewUpdate = {
     id: RANDOM_UUID,
@@ -46,10 +46,10 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
 
   readonly #dequeueQuery = and(
     eq(job.queue, this.#queueName),
-    lt(job.tries, this.#maxTries),
+    lt(job.tries, this.maxTries),
     or(
       isSqlNull(job.lastDequeueTimestamp),
-      lte(sql`${job.lastDequeueTimestamp} + ${interval(this.#processTimeout, 'milliseconds')}`, TRANSACTION_TIMESTAMP)
+      lte(sql`${job.lastDequeueTimestamp} + ${interval(this.processTimeout, 'milliseconds')}`, TRANSACTION_TIMESTAMP)
     )
   );
 
@@ -79,9 +79,14 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
 
     const update = (options?.uniqueTag == UniqueTagStrategy.TakeNew)
       ? this.#takeNewUpdate
-      : this.#keepOldUpdate;
+      : (options?.uniqueTag == UniqueTagStrategy.KeepOld)
+        ? this.#keepOldUpdate
+        : undefined;
 
-    const jobs = await this.#repository.upsertMany(['queue', 'tag'], newEntities, update);
+    const jobs = isUndefined(update)
+      ? await this.#repository.insertMany(newEntities)
+      : await this.#repository.upsertMany(['queue', 'tag'], newEntities, update);
+
     this.#messageBus.publishAndForget();
 
     return jobs;
@@ -101,6 +106,10 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
 
   override async getByTag(tag: JobTag): Promise<Job<T>[]> {
     return this.#repository.loadManyByQuery({ queue: this.#queueName, tag });
+  }
+
+  override async getByTags(tags: JobTag[]): Promise<Job<T>[]> {
+    return this.#repository.loadManyByQuery({ queue: this.#queueName, tag: { $in: tags } });
   }
 
   override async cancel(id: string): Promise<void> {

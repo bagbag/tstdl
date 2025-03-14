@@ -1,12 +1,12 @@
-import { Table } from '#/orm/decorators.js';
+import { Index, Table } from '#/orm/decorators.js';
 import { EntityWithoutMetadata } from '#/orm/entity.js';
-import { Integer, Json, Timestamp, Unique } from '#/orm/index.js';
+import { Integer, Json, Timestamp } from '#/orm/index.js';
 import { StringProperty } from '#/schema/index.js';
 import type { ObjectLiteral } from '#/types.js';
 import type { Job } from '../queue.js';
 
 @Table('job')
-@Unique<PostgresJob>(['queue', 'tag'])
+@Index<PostgresJob>(['queue', 'tag'])
 export class PostgresJob<T extends ObjectLiteral = ObjectLiteral> extends EntityWithoutMetadata implements Job<T> {
   @StringProperty()
   queue: string;

@@ -24,7 +24,7 @@ export const setDocumentPropertyParametersSchema = assign(
 );
 
 export const createDocumentParametersSchema = assign(
-  pick(Document, ['typeId', 'title', 'subtitle', 'pages', 'date', 'summary', 'tags']),
+  pick(Document, ['typeId', 'title', 'subtitle', 'pages', 'date', 'summary', 'tags', 'validated']),
   pick(DocumentFile, ['originalFileName']),
   object({
     collectionIds: oneOrMany(string()),

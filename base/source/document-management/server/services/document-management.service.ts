@@ -9,12 +9,13 @@ import type { CancellationSignal } from '#/cancellation/token.js';
 import { Enumerable } from '#/enumerable/index.js';
 import { BadRequestError } from '#/errors/index.js';
 import { TemporaryFile, getMimeType, getMimeTypeExtensions } from '#/file/index.js';
-import { type AfterResolveContext, Singleton, afterResolve, inject, provide } from '#/injector/index.js';
+import { type AfterResolveContext, Singleton, afterResolve, inject } from '#/injector/index.js';
 import { Logger } from '#/logger/logger.js';
+import { MessageBus } from '#/message-bus/message-bus.js';
 import { ObjectStorage } from '#/object-storage/index.js';
 import type { NewEntity, Query } from '#/orm/index.js';
 import { TRANSACTION_TIMESTAMP, arrayAgg, coalesce, getEntityMap, jsonAgg, toJsonb } from '#/orm/index.js';
-import { DatabaseConfig, EntityRepositoryConfig, type Transaction, getRepository, injectRepository } from '#/orm/server/index.js';
+import { DatabaseConfig, type Transaction, getRepository, injectRepository } from '#/orm/server/index.js';
 import { getPdfPageCount } from '#/pdf/index.js';
 import { Queue } from '#/queue/queue.js';
 import { array, boolean, enumeration, integer, nullable, number, object, string } from '#/schema/index.js';
@@ -29,9 +30,11 @@ import { readBinaryStream } from '#/utils/stream/index.js';
 import { tryIgnoreLogAsync } from '#/utils/try-ignore.js';
 import { assertBooleanPass, assertDefined, assertDefinedPass, assertNotNullPass, assertNumberPass, assertStringPass, isBoolean, isDefined, isNotNull, isNull, isNumber, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
+import { union } from 'drizzle-orm/pg-core';
+import { type Observable, debounceTime, filter, map } from 'rxjs';
 import { type AddOrArchiveDocumentToOrFromCollectionParameters, type ApplyDocumentRequestsTemplateParameters, type ApproveDocumentRequestFileParameters, type AssignPropertyToTypeParameters, type CategoryAndTypesView, type CreateCollectionParameters, type CreateDocumentCategoryParameters, type CreateDocumentParameters, type CreateDocumentPropertyParameters, type CreateDocumentRequestFileParameters, type CreateDocumentRequestParameters, type CreateDocumentRequestTemplateParameters, type CreateDocumentRequestsTemplateParameters, type CreateDocumentTypeParameters, type DeleteDocumentRequestFileParameters, type DeleteDocumentRequestParameters, type DeleteDocumentRequestTemplateParameters, type DeleteDocumentRequestsTemplateParameters, Document, DocumentCategory, DocumentCollection, DocumentCollectionDocument, DocumentFile, type DocumentManagementData, DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, type DocumentPropertyValueBase, DocumentRequest, DocumentRequestAssignmentTask, DocumentRequestAssignmentTaskCollection, DocumentRequestAssignmentTaskPropertyValue, DocumentRequestCollection, DocumentRequestFile, DocumentRequestFilePropertyValue, DocumentRequestTemplate, type DocumentRequestView, DocumentRequestsTemplate, type DocumentRequestsTemplateData, type DocumentRequestsTemplateView, DocumentType, DocumentTypeProperty, type DocumentView, type LoadDataCollectionsMetadataParameters, type RejectDocumentRequestFileParameters, type RequestFilesStats, type SetDocumentPropertiesParameters, type UpdateDocumentParameters, type UpdateDocumentRequestFileParameters, type UpdateDocumentRequestParameters, type UpdateDocumentRequestTemplateParameters, type UpdateDocumentRequestsTemplateParameters } from '../../models/index.js';
 import { DocumentManagementConfig } from '../module.js';
-import { documentCategory, documentProperty, documentRequest, documentRequestAssignmentTask, documentRequestAssignmentTaskCollection, documentRequestAssignmentTaskPropertyValue, documentRequestCollection, documentRequestFile, documentType } from '../schemas.js';
+import { documentCategory, documentCollectionDocument, documentProperty, documentRequest, documentRequestAssignmentTask, documentRequestAssignmentTaskCollection, documentRequestAssignmentTaskPropertyValue, documentRequestCollection, documentRequestFile, documentType } from '../schemas.js';
 import { DocumentManagementAncillaryService } from './document-management-ancillary.service.js';
 
 type DocumentInformationExtractionPropertyResult = { propertyId: string, dataType: DocumentPropertyDataType, value: string | number | boolean };
@@ -88,6 +91,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
   protected readonly fileObjectStorage = inject(ObjectStorage, inject(DocumentManagementConfig).fileObjectStorageModule);
   protected readonly extractionQueue = inject(Queue<ExtractionJobData>, { name: 'DocumentManagement:extraction', processTimeout: 15 * millisecondsPerMinute });
   protected readonly assignmentQueue = inject(Queue<AssignmentJobData>, { name: 'DocumentManagement:assignment', processTimeout: 15 * millisecondsPerMinute });
+  protected readonly collectionChangeMessageBus = inject(MessageBus<undefined | string[]>, 'DocumentManagement:collectionChange');
   protected readonly logger = inject(Logger, DocumentManagementService.name);
 
   [afterResolve](_: unknown, { cancellationSignal }: AfterResolveContext<any>): void {
@@ -96,6 +100,16 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     }
 
     this.processQueues(cancellationSignal);
+  }
+
+  changes$(collectionIds: OneOrMany<string>): Observable<void> {
+    const collectionIdsArray = toArray(collectionIds);
+
+    return this.collectionChangeMessageBus.allMessages$.pipe(
+      filter((message) => isUndefined(message) || collectionIdsArray.some((id) => message.includes(id))),
+      debounceTime(250),
+      map(() => undefined)
+    );
   }
 
   processQueues(cancellationSignal: CancellationSignal): void {
@@ -166,11 +180,12 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       const documentIds = collectionDocuments.map((document) => document.documentId);
       const requestIds = requestCollections.map((requestCollection) => requestCollection.requestId);
 
-      const [documents, requests, requestFiles, propertyValues] = await Promise.all([
+      const [documents, requests, requestFiles, propertyValues, extractionJobs] = await Promise.all([
         this.documentService.withTransaction(transaction).loadManyByQuery({ id: { $in: documentIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
         this.documentRequestService.withTransaction(transaction).loadManyByQuery({ id: { $in: requestIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
         this.documentRequestFileService.withTransaction(transaction).loadManyByQuery({ requestId: { $in: requestIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
-        this.documentPropertyValueService.withTransaction(transaction).loadManyByQuery({ documentId: { $in: documentIds } })
+        this.documentPropertyValueService.withTransaction(transaction).loadManyByQuery({ documentId: { $in: documentIds } }),
+        this.extractionQueue.getByTags(documentIds)
       ]);
 
       const documentFileIds = documents.map((document) => document.fileId);
@@ -187,11 +202,22 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
         group: collectionsMetadata?.[collection.id]?.group ?? null
       }));
 
-      const documentViews = documents.map((document): DocumentView => ({
-        ...document,
-        collectionAssignments: collectionDocuments.filter((collectionDocument) => collectionDocument.documentId == document.id).map(({ collectionId, archiveTimestamp }) => ({ collectionId, archiveTimestamp })),
-        properties: valuesMap.get(document.id) ?? []
-      }));
+      const documentViews = documents.map((document): DocumentView => {
+        const job = extractionJobs.find((job) => job.tag == document.id);
+
+        return {
+          ...document,
+          collectionAssignments: collectionDocuments.filter((collectionDocument) => collectionDocument.documentId == document.id).map(({ collectionId, archiveTimestamp }) => ({ collectionId, archiveTimestamp })),
+          properties: valuesMap.get(document.id) ?? [],
+          extractionStatus: isUndefined(job)
+            ? null
+            : isNull(job.lastDequeueTimestamp)
+              ? 'pending'
+              : (job.tries >= this.extractionQueue.maxTries) && (job.lastDequeueTimestamp >= (currentTimestamp() + this.extractionQueue.processTimeout))
+                ? 'error'
+                : 'extracting'
+        };
+      });
 
       const requestViews = requests.map((request): DocumentRequestView => ({
         ...request,
@@ -319,12 +345,14 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     return this.documentRequestTemplateService.delete(parameters.id);
   }
 
-  async createDocument({ typeId, title, subtitle, pages, date, summary, tags, originalFileName, collectionIds, properties, metadata }: CreateDocumentParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<Document> {
+  async createDocument({ typeId, title, subtitle, pages, date, summary, tags, validated, originalFileName, collectionIds, properties, metadata }: CreateDocumentParameters, content: Uint8Array | ReadableStream<Uint8Array>): Promise<Document> {
+    const collectionIdsArray = toArray(collectionIds);
+
     const document = await this.documentService.transaction(async (_, transaction) => {
       const documentFile = await this.createDocumentFile(content, originalFileName, transaction);
-      const document = await this.documentService.withTransaction(transaction).insert({ fileId: documentFile.id, typeId, title, subtitle, pages, date, summary, tags, metadata });
+      const document = await this.documentService.withTransaction(transaction).insert({ fileId: documentFile.id, typeId, title, subtitle, pages, date, summary, tags, metadata, validated });
 
-      for (const collectionId of toArray(collectionIds)) {
+      for (const collectionId of collectionIdsArray) {
         await this.documentCollectionDocumentService.withTransaction(transaction).insert({ collectionId, documentId: document.id, archiveTimestamp: null });
       }
 
@@ -335,7 +363,8 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       return document;
     });
 
-    void tryIgnoreLogAsync(async () => this.extractionQueue.enqueue({ documentId: document.id }), this.logger);
+    void tryIgnoreLogAsync(this.logger, async () => this.extractionQueue.enqueue({ documentId: document.id }, { tag: document.id }));
+    this.publishChange({ collectionIds: collectionIdsArray });
 
     return document;
   }
@@ -360,6 +389,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
         date: requestFile.date,
         summary: requestFile.summary,
         tags: requestFile.tags,
+        validated: true,
         metadata: documentMetadata
       });
 
@@ -374,19 +404,24 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
   }
 
   async rejectDocumentRequestFile({ id, approvalComment, metadata }: RejectDocumentRequestFileParameters): Promise<void> {
-    return this.documentRequestFileService.transaction(async (_, transaction) => {
+    const requestFile = await this.documentRequestFileService.transaction(async (_, transaction) => {
       const requestFile = await this.documentRequestFileService.withTransaction(transaction).load(id);
 
       if (requestFile.approval == true) {
         throw new BadRequestError('Document request file already accepted.');
       }
 
-      await this.documentRequestFileService.withTransaction(transaction).update(id, { approval: false, approvalComment, approvalTimestamp: TRANSACTION_TIMESTAMP, metadata });
+      return this.documentRequestFileService.withTransaction(transaction).update(id, { approval: false, approvalComment, approvalTimestamp: TRANSACTION_TIMESTAMP, metadata });
     });
+
+    this.publishChange({ requestIds: [requestFile.requestId] });
   }
 
   async updateDocumentRequestFile({ id, title, approvalComment, metadata }: UpdateDocumentRequestFileParameters): Promise<DocumentRequestFile> {
-    return this.documentRequestFileService.update(id, { title, approvalComment, metadata });
+    const result = await this.documentRequestFileService.update(id, { title, approvalComment, metadata });
+    this.publishChange({ requestIds: [result.requestId] });
+
+    return result;
   }
 
   async deleteDocumentRequestFile({ id, metadata }: DeleteDocumentRequestFileParameters): Promise<void> {
@@ -397,6 +432,8 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     }
 
     await this.documentRequestFileService.delete(id, metadata);
+
+    this.publishChange({ requestIds: [requestFile.requestId] });
   }
 
   async createDocumentFile(content: Uint8Array | ReadableStream<Uint8Array>, originalFileName: string | null, transaction?: Transaction): Promise<DocumentFile> {
@@ -436,7 +473,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
 
       const file = await this.createDocumentFile(content, originalFileName, transaction);
 
-      return await this.documentRequestFileService
+      const result = await this.documentRequestFileService
         .withTransaction(transaction)
         .insert({
           requestId,
@@ -453,9 +490,12 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
           approvalTimestamp: null,
           metadata
         });
+
+      return result;
     });
 
-    void tryIgnoreLogAsync(async () => this.extractionQueue.enqueue({ requestFileId: documentRequestFile.id }), this.logger);
+    void tryIgnoreLogAsync(this.logger, async () => this.extractionQueue.enqueue({ requestFileId: documentRequestFile.id }));
+    this.publishChange({ requestIds: [documentRequestFile.requestId] });
 
     return documentRequestFile;
   }
@@ -465,7 +505,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       throw new BadRequestError('No target collectionId specified.');
     }
 
-    return this.documentRequestService.useTransaction(transaction, async (_, tx) => {
+    const result = await this.documentRequestService.useTransaction(transaction, async (_, tx) => {
       const request = await this.documentRequestService.withTransaction(tx).insert({ ...parameters, completed: false });
 
       const newDocumentRequestCollections = parameters.collectionIds.map((collectionId): NewEntity<DocumentRequestCollection> => ({ requestId: request.id, collectionId }));
@@ -473,6 +513,10 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
 
       return request;
     });
+
+    this.publishChange({ collectionIds: parameters.collectionIds });
+
+    return result;
   }
 
   async createDocumentRequestAssignmentTask({ originalFileName, collectionIds }: { originalFileName: string, collectionIds: string[] }, content: Uint8Array | ReadableStream<Uint8Array>): Promise<DocumentRequestAssignmentTask> {
@@ -498,7 +542,9 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
 
       const newTaksCollections = collectionIds.map((collectionId): NewEntity<DocumentRequestAssignmentTaskCollection> => ({ requestAssignmentTaskId: task.id, collectionId }));
       await this.documentRequestAssignmentTaskCollectionService.withTransaction(transaction).insertMany(newTaksCollections);
-      void tryIgnoreLogAsync(async () => this.extractionQueue.enqueue({ requestAssignmentTaskId: task.id }), this.logger);
+
+      void tryIgnoreLogAsync(this.logger, async () => this.extractionQueue.enqueue({ requestAssignmentTaskId: task.id }));
+      this.publishChange({ collectionIds });
 
       return task;
     });
@@ -514,6 +560,8 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
         await this.setPropertyValues({ documentId, properties: propertyUpdates }, tx);
       }
     });
+
+    this.publishChange({ documentIds: [documentId] });
   }
 
   async updateDocumentRequest(parameters: UpdateDocumentRequestParameters, transaction?: Transaction): Promise<void> {
@@ -530,6 +578,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     }
 
     await this.documentRequestService.withOptionalTransaction(transaction).update(documentRequestId, update);
+    this.publishChange({ requestIds: [documentRequestId] });
   }
 
   async deleteDocumentRequest({ id, metadata }: DeleteDocumentRequestParameters, transaction?: Transaction): Promise<void> {
@@ -541,6 +590,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     }
 
     await this.documentRequestService.withOptionalTransaction(transaction).delete(id, metadata);
+    this.publishChange({ requestIds: [id] });
   }
 
   async setPropertyValues({ documentId, requestFileId, requestAssignmentTaskId, properties: items }: SetDocumentPropertiesParameters, transaction?: Transaction): Promise<void> {
@@ -587,14 +637,22 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
           .upsertMany(['requestAssignmentTaskId', 'propertyId'], propertyItems.map((propertyItem) => ({ ...propertyItem, requestAssignmentTaskId })));
       }
     });
+
+    this.publishChange({
+      documentIds: isDefined(documentId) ? [documentId] : undefined,
+      requestFileIds: isDefined(requestFileId) ? [requestFileId] : undefined,
+      requestAssignmentTaskIds: isDefined(requestAssignmentTaskId) ? [requestAssignmentTaskId] : undefined
+    });
   }
 
   async addDocumentToCollection(parameters: AddOrArchiveDocumentToOrFromCollectionParameters, transaction?: Transaction): Promise<void> {
     await this.documentCollectionDocumentService.withOptionalTransaction(transaction).upsert(['collectionId', 'documentId'], { ...parameters, archiveTimestamp: null });
+    this.publishChange({ documentIds: [parameters.documentId] });
   }
 
   async archiveDocument({ collectionId, documentId, metadata }: AddOrArchiveDocumentToOrFromCollectionParameters): Promise<void> {
     await this.documentCollectionDocumentService.updateByQuery({ collectionId, documentId }, { archiveTimestamp: TRANSACTION_TIMESTAMP, metadata });
+    this.publishChange({ documentIds: [documentId] });
   }
 
   async createProperty(parameters: CreateDocumentPropertyParameters): Promise<DocumentProperty> {
@@ -611,9 +669,11 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     const { properties, ...extractionResult } = await this.extractFileInformation(document.fileId, document.typeId);
 
     await this.documentService.transaction(async (documentService, transaction) => {
-      await documentService.update(document.id, extractionResult);
+      await documentService.update(document.id, { ...extractionResult, validated: false });
       await this.setPropertyValues({ documentId, properties: properties }, transaction);
     });
+
+    this.publishChange({ documentIds: [documentId] });
   }
 
   protected async enrichDocumentRequestFile(requestFileId: string): Promise<void> {
@@ -626,6 +686,8 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       await documentRequestFileService.update(requestFile.id, extractionResult);
       await this.setPropertyValues({ requestFileId, properties: properties }, transaction);
     });
+
+    this.publishChange({ requestIds: [request.id] });
   }
 
   protected async enrichDocumentRequestAssignmentTask(requestAssignmentTaskId: string): Promise<void> {
@@ -638,7 +700,8 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       await this.setPropertyValues({ requestAssignmentTaskId, properties: properties }, transaction);
     });
 
-    void tryIgnoreLogAsync(async () => this.assignmentQueue.enqueue({ requestAssignmentTaskId }), this.logger);
+    void tryIgnoreLogAsync(this.logger, async () => this.assignmentQueue.enqueue({ requestAssignmentTaskId }));
+    this.publishChange({ requestAssignmentTaskIds: [requestAssignmentTaskId] });
   }
 
   protected async assignDocumentRequest(requestAssignmentTaskId: string): Promise<void> {
@@ -826,6 +889,8 @@ Ordne die Datei unter "file" der passenden Anforderungen unter "requests" zu. Gi
 
       await this.setPropertyValues({ requestFileId: requestFile.id, properties: task.properties }, transaction);
     });
+
+    this.publishChange({ collectionIds: requestsCollectionIds });
   }
 
   protected async extractFileInformation(fileId: string, assumeTypeId?: string | null): Promise<DocumentInformationExtractionResult> {
@@ -836,7 +901,7 @@ Ordne die Datei unter "file" der passenden Anforderungen unter "requests" zu. Gi
     const filePart = await this.#aiService.processFile({ path: tmpFile.path, mimeType: file.mimeType });
 
     const pages = file.mimeType.includes('pdf')
-      ? await tryIgnoreLogAsync(async () => getPdfPageCount(tmpFile.path), this.logger, null)
+      ? await tryIgnoreLogAsync(this.logger, async () => getPdfPageCount(tmpFile.path), null)
       : null;
 
     const types = await this.documentTypeService.session
@@ -976,6 +1041,60 @@ Antworte auf deutsch.`
     return this.fileObjectStorage.getDownloadUrl(key, currentTimestamp() + (5 * millisecondsPerMinute), {
       'Response-Content-Type': file.mimeType,
       'Response-Content-Disposition': `${disposition}; filename = "${encodeURIComponent(filename)}"`
+    });
+  }
+
+  protected publishChange({ collectionIds, documentIds, requestIds, requestFileIds, requestAssignmentTaskIds: requestAssignmentTasksIds }: { collectionIds?: string[], documentIds?: string[], requestIds?: string[], requestFileIds?: string[], requestAssignmentTaskIds?: string[] }): void {
+    void tryIgnoreLogAsync(this.logger, async () => {
+      const queries = [
+        isUndefined(documentIds)
+          ? undefined
+          : this.session
+            .selectDistinct({ collectionId: documentCollectionDocument.collectionId })
+            .from(documentCollectionDocument)
+            .where(inArray(documentCollectionDocument.documentId, documentIds)),
+
+        isUndefined(requestIds)
+          ? undefined
+          : this.session
+            .selectDistinct({ collectionId: documentRequestCollection.collectionId })
+            .from(documentRequestCollection)
+            .where(inArray(documentRequestCollection.requestId, requestIds)),
+
+        isUndefined(requestFileIds)
+          ? undefined
+          : this.session
+            .selectDistinct({ collectionId: documentRequestCollection.collectionId })
+            .from(documentRequestFile)
+            .innerJoin(documentRequestCollection, eq(documentRequestCollection.requestId, documentRequestFile.requestId))
+            .where(inArray(documentRequestFile.requestId, requestFileIds)),
+
+        isUndefined(requestAssignmentTasksIds)
+          ? undefined
+          : this.session
+            .selectDistinct({ collectionId: documentRequestAssignmentTaskCollection.collectionId })
+            .from(documentRequestAssignmentTaskCollection)
+            .where(inArray(documentRequestAssignmentTaskCollection.requestAssignmentTaskId, requestAssignmentTasksIds))
+      ] as const;
+
+      const filteredQueries = queries.filter(isDefined) as NonNullable<typeof queries[0]>[];
+
+      const mappings = (filteredQueries.length == 1)
+        ? await filteredQueries[0]!
+        : (filteredQueries.length > 1)
+          ? await union(filteredQueries[0]!, filteredQueries[1]!, ...filteredQueries.slice(2))
+          : [];
+
+      const allCollectionIds = distinct([
+        ...(collectionIds ?? []),
+        ...mappings.map((mapping) => mapping.collectionId)
+      ]);
+
+      if (allCollectionIds.length == 0) {
+        return;
+      }
+
+      this.collectionChangeMessageBus.publishAndForget(allCollectionIds);
     });
   }
 }
