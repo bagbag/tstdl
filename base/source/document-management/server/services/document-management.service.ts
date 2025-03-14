@@ -114,7 +114,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
 
   processQueues(cancellationSignal: CancellationSignal): void {
     this.extractionQueue.process(
-      { concurrency: 1, cancellationSignal },
+      { concurrency: 5, cancellationSignal },
       async (job) => {
         const [entry] = objectEntries(job.data);
         this.logger.verbose(`Processing extraction job for ${entry?.[0]} ${entry?.[1]}`);
@@ -129,7 +129,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     );
 
     this.assignmentQueue.process(
-      { concurrency: 1, cancellationSignal },
+      { concurrency: 5, cancellationSignal },
       async (job) => {
         this.logger.verbose(`Processing assignment job "${job.data.requestAssignmentTaskId}"`);
         await this.assignDocumentRequest(job.data.requestAssignmentTaskId);

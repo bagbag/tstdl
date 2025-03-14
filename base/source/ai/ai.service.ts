@@ -23,7 +23,7 @@ import { millisecondsPerSecond } from '#/utils/units.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
-import { type AiModel, type Content, type ContentPart, type ContentRole, type FileContentPart, type FileInput, type FunctionCall, type FunctionCallingMode, type GenerationOptions, type GenerationRequest, type GenerationResult, isSchemaFunctionDeclarationWithHandler, type SchemaFunctionDeclarations, type SchemaFunctionDeclarationsResult } from './types.js';
+import { type AiModel, type Content, type ContentPart, type ContentRole, type FileContentPart, type FileInput, type FunctionCall, type FunctionCallingMode, type FunctionResultContentPart, type GenerationOptions, type GenerationRequest, type GenerationResult, isSchemaFunctionDeclarationWithHandler, type SchemaFunctionDeclarations, type SchemaFunctionDeclarationsResult } from './types.js';
 
 export type SpecializedGenerationResult<T> = {
   result: T,
@@ -57,7 +57,7 @@ export type AnalyzeContentResult<T extends EnumerationType> = {
   tags: string[]
 };
 
-export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<GenerationRequest, 'contents' | 'model' | 'systemInstruction'> & GenerationOptions & {
+export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<GenerationRequest, 'contents' | 'model' | 'systemInstruction' | 'functionCallingMode'> & GenerationOptions & {
   functions: T
 };
 
@@ -210,7 +210,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     }];
   }
 
-  async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]>> {
+  async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]> & { getFunctionResultContentParts: () => FunctionResultContentPart[] }> {
     const generation = await this.generate({
       model: options.model,
       generationOptions: {
@@ -219,7 +219,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       },
       systemInstruction: options.systemInstruction,
       functions: options.functions,
-      functionCallingMode: 'force',
+      functionCallingMode: options.functionCallingMode ?? 'force',
       contents: options.contents
     });
 
@@ -231,12 +231,18 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       const parameters = isDefined(parametersSchema) ? parametersSchema.parse(call.parameters) as Record : call.parameters;
       const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
-      result.push({ functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any });
+      result.push({
+        functionName: call.name,
+        parameters: parameters as any,
+        handlerResult: handlerResult as any,
+        getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } })
+      });
     }
 
     return {
       result,
-      raw: generation
+      raw: generation,
+      getFunctionResultContentParts: () => result.map((result) => result.getFunctionResultContentPart())
     };
   }
 
@@ -386,7 +392,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       },
       systemInstruction: options.systemInstruction,
       functions: options.functions,
-      functionCallingMode: 'force',
+      functionCallingMode: options.functionCallingMode ?? 'force',
       contents: options.contents
     });
 
@@ -401,7 +407,12 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         const parameters = isDefined(parametersSchema) ? parametersSchema.parse(call.parameters) as Record : call.parameters;
         const handlerResult = isSchemaFunctionDeclarationWithHandler(fn) ? await fn.handler(parameters) : undefined;
 
-        yield { functionName: call.name, parameters: parameters as any, handlerResult: handlerResult as any };
+        yield {
+          functionName: call.name,
+          parameters: parameters as any,
+          handlerResult: handlerResult as any,
+          getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } })
+        };
       }
     }
 

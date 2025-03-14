@@ -14,7 +14,14 @@ export type SchemaFunctionDeclarationWithHandler<T extends Record = Record, R = 
 export type SchemaFunctionDeclaration<T extends Record = Record, R = unknown> = SchemaFunctionDeclarationWithoutHandler<T> | SchemaFunctionDeclarationWithHandler<T, R>;
 
 export type SchemaFunctionDeclarationHandlerResult<T extends SchemaFunctionDeclaration> = T extends SchemaFunctionDeclarationWithHandler<any, infer R> ? R : never;
-export type SchemaFunctionDeclarationsResult<T extends SchemaFunctionDeclarations = SchemaFunctionDeclarations> = { [P in keyof T]: { functionName: P, parameters: SchemaOutput<NonNullable<ResolvedValueOrProvider<T[P]['parameters']>>>, handlerResult: SchemaFunctionDeclarationHandlerResult<T[P]> } }[keyof T];
+export type SchemaFunctionDeclarationsResult<T extends SchemaFunctionDeclarations = SchemaFunctionDeclarations> = {
+  [P in keyof T]: {
+    functionName: P,
+    parameters: SchemaOutput<NonNullable<ResolvedValueOrProvider<T[P]['parameters']>>>,
+    handlerResult: SchemaFunctionDeclarationHandlerResult<T[P]>,
+    getFunctionResultContentPart: () => FunctionResultContentPart
+  }
+}[keyof T];
 
 export type ContentRole = 'user' | 'model';
 

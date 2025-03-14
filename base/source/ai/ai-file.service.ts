@@ -98,7 +98,7 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
     const inputIsBlob = isBlob(fileInput);
 
     const buffer = inputIsBlob
-      ? await fileInput.bytes() as Buffer
+      ? Buffer.from(await fileInput.arrayBuffer())
       : await readFile(fileInput.path);
 
     const mimeType = inputIsBlob ? fileInput.type : fileInput.mimeType;
