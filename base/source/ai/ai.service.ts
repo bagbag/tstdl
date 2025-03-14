@@ -5,6 +5,7 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
+import { Logger } from '#/logger/logger.js';
 import { getShutdownSignal } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
@@ -64,6 +65,7 @@ export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<Ge
 export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this, { optional: true }) ?? inject(AiServiceOptions);
   readonly #fileService = inject(AiFileService, this.#options);
+  readonly #logger = inject(Logger, AiService.name);
 
   readonly #genAI = (
     isDefined(this.#options.vertex)
@@ -256,6 +258,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 
   async *generateStream<S>(request: GenerationRequest<S>): AsyncGenerator<GenerationResult<S>> {
+    this.#logger.verbose('Generating...');
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
     const generationConfig: GenerationConfig = {
@@ -300,6 +303,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         }
         catch (error) {
           if ((i < 20) && isError(error) && ((error as Record)['status'] == 429)) {
+            this.#logger.verbose('429 Too Many Requests - trying again in 15 seconds');
             const canceled = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
 
             if (!canceled) {
@@ -317,6 +321,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       let candidate: GenerateContentCandidate | undefined;
 
       for await (const generationResponse of generation.stream) {
+        this.#logger.trace('Handling generation stream response');
         candidate = generationResponse.candidates!.at(0)!;
         inputContent.push(candidate.content);
 

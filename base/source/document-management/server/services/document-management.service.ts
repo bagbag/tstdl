@@ -117,7 +117,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
       { concurrency: 1, cancellationSignal },
       async (job) => {
         const [entry] = objectEntries(job.data);
-        this.logger.info(`Processing extraction job for ${entry?.[0]} "${entry?.[1]}"`);
+        this.logger.verbose(`Processing extraction job for ${entry?.[0]} ${entry?.[1]}`);
 
         await match(job.data)
           .with({ documentId: P.string.select() }, async (documentId) => this.enrichDocument(documentId))
@@ -131,7 +131,7 @@ export class DocumentManagementService extends getRepository(DocumentCollection)
     this.assignmentQueue.process(
       { concurrency: 1, cancellationSignal },
       async (job) => {
-        this.logger.info(`Processing assignment job "${job.data.requestAssignmentTaskId}"`);
+        this.logger.verbose(`Processing assignment job "${job.data.requestAssignmentTaskId}"`);
         await this.assignDocumentRequest(job.data.requestAssignmentTaskId);
       },
       this.logger
@@ -901,7 +901,10 @@ Ordne die Datei unter "file" der passenden Anforderungen unter "requests" zu. Gi
     const filePart = await this.#aiService.processFile({ path: tmpFile.path, mimeType: file.mimeType });
 
     const pages = file.mimeType.includes('pdf')
-      ? await tryIgnoreLogAsync(this.logger, async () => getPdfPageCount(tmpFile.path), null)
+      ? await tryIgnoreLogAsync(this.logger, async () => {
+        this.logger.trace(`Extracting pdf page count for file ${fileId}`);
+        return getPdfPageCount(tmpFile.path);
+      }, null)
       : null;
 
     const types = await this.documentTypeService.session

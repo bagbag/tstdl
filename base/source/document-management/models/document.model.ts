@@ -22,10 +22,10 @@ export class Document extends Entity {
   @StringProperty({ nullable: true })
   subtitle: string | null;
 
-  @Integer({ nullable: true })
+  @Integer({ nullable: true, coerce: true })
   pages: number | null;
 
-  @NumericDate({ nullable: true })
+  @NumericDate({ nullable: true, coerce: true })
   date: NumericDate | null;
 
   @StringProperty({ nullable: true })
@@ -34,6 +34,6 @@ export class Document extends Entity {
   @Array(string(), { nullable: true })
   tags: string[] | null;
 
-  @BooleanProperty()
+  @BooleanProperty({ coerce: true })
   validated: boolean;
 }
