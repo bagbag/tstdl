@@ -139,21 +139,29 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
   }
 
   override async dequeueMany(count: number): Promise<Job<T>[]> {
+    /*
+     * Materialization required for LIMIT clause
+     * https://stackoverflow.com/questions/73966670/select-for-update-subquery-not-respecting-limit-clause-under-load
+     * https://dba.stackexchange.com/questions/69471/postgres-update-limit-1
+     */
+
+    const selection = this.#repository.session.$with('selection').as((qb) => qb
+      .select({ id: job.id })
+      .from(job)
+      .where(and(
+        this.#dequeueQuery,
+        sql`pg_sleep(0) IS NOT NULL` // workaround to force materialization until drizzle implements https://github.com/drizzle-team/drizzle-orm/issues/2318
+      ))
+      .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
+      .limit(count)
+      .for('update', { skipLocked: true })
+    );
+
     const rows = await this.#repository.session
+      .with(selection)
       .update(job)
       .set(this.#dequeueUpdate)
-      .where(
-        inArray(
-          job.id,
-          this.#repository.session
-            .select({ id: job.id })
-            .from(job)
-            .where(this.#dequeueQuery)
-            .orderBy(asc(job.priority), asc(job.enqueueTimestamp), asc(job.lastDequeueTimestamp), asc(job.tries))
-            .limit(count)
-            .for('update', { skipLocked: true })
-        )
-      )
+      .where(inArray(job.id, selection))
       .returning();
 
     return this.#repository.mapManyToEntity(rows);

@@ -61,6 +61,8 @@ export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<Ge
   functions: T
 };
 
+let generationCounter = 0;
+
 @Singleton()
 export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this, { optional: true }) ?? inject(AiServiceOptions);
@@ -264,7 +266,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
   }
 
   async *generateStream<S>(request: GenerationRequest<S>): AsyncGenerator<GenerationResult<S>> {
-    this.#logger.verbose('Generating...');
+    const generationNumber = ++generationCounter;
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
     const generationConfig: GenerationConfig = {
@@ -292,6 +294,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
 
       for (let i = 0; ; i++) {
         try {
+          this.#logger.verbose(`[C:${generationNumber}] [I:${iterations + 1}] Generating...`);
           generation = await this.getModel(model).generateContentStream({
             generationConfig: {
               ...generationConfig,
