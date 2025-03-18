@@ -161,7 +161,7 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
       .with(selection)
       .update(job)
       .set(this.#dequeueUpdate)
-      .where(inArray(job.id, selection))
+      .where(inArray(job.id, this.#repository.session.select().from(selection)))
       .returning();
 
     return this.#repository.mapManyToEntity(rows);
