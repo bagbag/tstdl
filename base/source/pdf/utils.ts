@@ -1,4 +1,4 @@
-import { TemporaryFile } from '#/file/temporary-file.js';
+import { TemporaryFile } from '#/file/server/temporary-file.js';
 import { spawnCommand } from '#/process/spawn.js';
 import { isString } from '#/utils/type-guards.js';
 

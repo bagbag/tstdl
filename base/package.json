@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.111",
+  "version": "0.92.112",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -62,6 +62,7 @@
     "./enumeration": "./enumeration/index.js",
     "./errors": "./errors/index.js",
     "./file": "./file/index.js",
+    "./file/server": "./file/server/index.js",
     "./function": "./function/index.js",
     "./http": "./http/index.js",
     "./http/node": "./http/server/node/index.js",
