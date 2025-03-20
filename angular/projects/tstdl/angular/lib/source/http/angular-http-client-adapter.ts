@@ -4,7 +4,7 @@ import type { ApiClientHttpRequestContext } from '@tstdl/base/api';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
-import { ServerSentEvents } from '@tstdl/base/sse/server-sent-events';
+import { ServerSentEvents } from '@tstdl/base/sse';
 import type { StringMap } from '@tstdl/base/types';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
