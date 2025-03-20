@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
+import { type AfterViewInit, ChangeDetectorRef, Directive, ElementRef, Input } from '@angular/core';
 import { observeIntersection$, observeResize$ } from '@tstdl/base/dom';
 import { isDefined, isUndefined, timeout } from '@tstdl/base/utils';
 import { BehaviorSubject, EMPTY, Observable, combineLatest, filter, fromEvent, interval, map, merge, shareReplay, switchMap, take, takeUntil } from 'rxjs';

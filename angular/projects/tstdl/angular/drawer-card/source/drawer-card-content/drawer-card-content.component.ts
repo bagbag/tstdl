@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, OnInit, ViewEncapsulation, effect, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, type OnDestroy, type OnInit, ViewEncapsulation, effect, inject, output, signal } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
 
 @Component({

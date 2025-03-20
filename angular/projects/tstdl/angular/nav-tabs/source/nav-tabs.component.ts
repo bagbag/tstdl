@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Signal, ViewEncapsulation, contentChildren, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, type Signal, ViewEncapsulation, contentChildren, input, output } from '@angular/core';
 
 import { NavTabComponent } from './tab/nav-tab.component';
 

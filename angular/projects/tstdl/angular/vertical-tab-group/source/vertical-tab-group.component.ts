@@ -2,7 +2,7 @@ import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, computed, contentChildren, effect, input, model, viewChildren } from '@angular/core';
 import { DynamicTextPipe } from '@tstdl/angular';
 import { IconComponent } from '@tstdl/angular/icon';
-import { DynamicText } from '@tstdl/base/text';
+import type { DynamicText } from '@tstdl/base/text';
 import { isNull } from '@tstdl/base/utils';
 
 import { VerticalTabComponent } from './vertical-tab/vertical-tab.component';

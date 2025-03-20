@@ -1,6 +1,6 @@
 import type { PipeTransform } from '@angular/core';
 import { Pipe } from '@angular/core';
-import { isNullOrUndefined, numericDateToDate } from '@tstdl/base/utils';
+import { isNullOrUndefined, numericDateToDateTime } from '@tstdl/base/utils';
 import type { DateTimeJSOptions } from 'luxon';
 import { DateTime } from 'luxon';
 
@@ -14,12 +14,6 @@ export class NumericDateToDateTimePipe implements PipeTransform {
       return null;
     }
 
-    const dateObject = numericDateToDate(value);
-
-    if (Number.isNaN(dateObject.year)) {
-      return DateTime.invalid('NaN date');
-    }
-
-    return DateTime.fromObject(dateObject, options);
+    return numericDateToDateTime(value, undefined, options);
   }
 }

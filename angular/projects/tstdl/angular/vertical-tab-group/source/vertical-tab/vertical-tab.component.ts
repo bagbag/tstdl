@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, TemplateRef, ViewEncapsulation, computed, contentChild, input, viewChild } from '@angular/core';
-import { IconName } from '@tstdl/angular/icon';
-import { DynamicText } from '@tstdl/base/text';
+import type { IconName } from '@tstdl/angular/icon';
+import type { DynamicText } from '@tstdl/base/text';
 import { VerticalTabLabelDirective } from './vertical-tab-label.directive';
 
 @Component({

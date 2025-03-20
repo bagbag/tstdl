@@ -1,11 +1,14 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector as AngularInjector, inject } from '@angular/core';
+import type { ApiClientHttpRequestContext } from '@tstdl/base/api';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
+import { ServerSentEvents } from '@tstdl/base/sse/server-sent-events';
 import type { StringMap } from '@tstdl/base/types';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
+import { hasOwnProperty } from '@tstdl/base/utils/object';
 import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
@@ -17,11 +20,17 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
   // eslint-disable-next-line max-lines-per-function
   async call(request: HttpClientRequest): Promise<HttpClientResponse> {
     try {
+      const requestHeaders = new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>);
+
+      if (isApiClientHttpRequestContext(request.context) && (request.context.endpoint.result == ServerSentEvents)) {
+        requestHeaders.set('ngsw-bypass', '');
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const angularResponse = await firstValueFrom(
         race(
           this.angularHttpClient.request(request.method, request.url, {
-            headers: new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>),
+            headers: requestHeaders,
             responseType: 'blob',
             observe: 'response',
             body: getAngularBody(request.body),
@@ -132,6 +141,10 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   }
 
   throw new Error('Unsupported body.');
+}
+
+function isApiClientHttpRequestContext(context: HttpClientRequest['context']): context is ApiClientHttpRequestContext {
+  return hasOwnProperty(context, 'endpoint');
 }
 
 export function configureAngularHttpClientAdapter(): void {

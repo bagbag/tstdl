@@ -6,9 +6,9 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import { HttpClientAdapter } from '@tstdl/base/http';
 import { Injector as TstdlInjector, isInInjectionContext, isInInjectionContext as isInTstdlInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
-import { CreateEffectOptions as TstdlCreateEffectOptions, ToObservableOptions as TstdlToObservableOptions, ToSignalOptions as TstdlToSignalOptions, configureSignals } from '@tstdl/base/signals';
+import { type CreateEffectOptions as TstdlCreateEffectOptions, type ToObservableOptions as TstdlToObservableOptions, type ToSignalOptions as TstdlToSignalOptions, configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
-import { Observable, Subscribable } from 'rxjs';
+import { Observable, type Subscribable } from 'rxjs';
 
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
 import { type R3Injector, WrappedR3InjectorRecordsMap } from './wrapped-r3-injector-records-map';

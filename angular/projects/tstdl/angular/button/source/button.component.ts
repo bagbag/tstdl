@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
 import { resolveValueOrProvider } from '@tstdl/base/utils';
 import { fromEntries, objectEntries } from '@tstdl/base/utils/object';

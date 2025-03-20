@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Provider, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, type Provider, ViewEncapsulation, computed, inject, input } from '@angular/core';
 
 import { isNullOrUndefined } from '@tstdl/base/utils';
-import { IconName } from './icons';
+import type { IconName } from './icons';
 
 export type IconSize = '0' | 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
 

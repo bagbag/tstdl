@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/angular",
-  "version": "0.92.1",
+  "version": "0.92.2",
   "dependencies": {
     "tslib": "^2.8"
   },
@@ -13,7 +13,7 @@
     "chroma-js": "^2.6",
     "luxon": "^3.5",
     "marked": "^15.0",
-    "ngx-extended-pdf-viewer": "22.2"
+    "ngx-extended-pdf-viewer": "22.3"
   },
   "sideEffects": false
 }

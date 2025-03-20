@@ -1,7 +1,7 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectorRef, Directive, DoCheck, ElementRef, Input, Renderer2, Signal, computed, effect, inject, isSignal, signal } from '@angular/core';
-import { Record } from '@tstdl/base/types';
-import { ValueOrProvider, resolveValueOrProvider } from '@tstdl/base/utils';
+import { ChangeDetectorRef, Directive, type DoCheck, ElementRef, Input, Renderer2, type Signal, computed, effect, inject, isSignal, signal } from '@angular/core';
+import type { Record } from '@tstdl/base/types';
+import { type ValueOrProvider, resolveValueOrProvider } from '@tstdl/base/utils';
 
 export type HostClassInput = string | string[] | Set<string> | Record<string> | null | undefined;
 
