@@ -149,12 +149,14 @@ export function fromDeepObjectEntries(entries: readonly (readonly [JsonPathInput
     let target = obj;
 
     for (let i = 0; i < jsonPath.nodes.length - 1; i++) {
-      if (hasOwnProperty(target, jsonPath.nodes[i]!)) {
-        target = obj[jsonPath.nodes[i]!];
+      const key = jsonPath.nodes[i]!;
+
+      if (hasOwnProperty(target, key)) {
+        target = target[key];
       }
       else {
         const child = {};
-        (target as Record)[jsonPath.nodes[i]!] = child;
+        (target as Record)[key] = child;
         target = child;
       }
     }

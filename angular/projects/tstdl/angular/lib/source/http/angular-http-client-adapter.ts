@@ -4,7 +4,6 @@ import type { ApiClientHttpRequestContext } from '@tstdl/base/api';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
-import { ServerSentEvents } from '@tstdl/base/sse';
 import type { StringMap } from '@tstdl/base/types';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
@@ -17,20 +16,12 @@ const aborted = Symbol('aborted');
 export class AngularHttpClientAdapter implements HttpClientAdapter {
   private readonly angularHttpClient = inject(AngularHttpClient);
 
-  // eslint-disable-next-line max-lines-per-function
   async call(request: HttpClientRequest): Promise<HttpClientResponse> {
     try {
-      const requestHeaders = new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>);
-
-      if (isApiClientHttpRequestContext(request.context) && (request.context.endpoint.result == ServerSentEvents)) {
-        requestHeaders.set('ngsw-bypass', '');
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const angularResponse = await firstValueFrom(
         race(
           this.angularHttpClient.request(request.method, request.url, {
-            headers: requestHeaders,
+            headers: new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>),
             responseType: 'blob',
             observe: 'response',
             body: getAngularBody(request.body),

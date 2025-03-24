@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.112",
+  "version": "0.92.113",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -138,7 +138,7 @@
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
     "ts-pattern": "^5.6",
-    "type-fest": "^4.37"
+    "type-fest": "^4.38"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9",
@@ -151,10 +151,10 @@
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "8.26",
+    "@typescript-eslint/eslint-plugin": "8.27",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
-    "eslint": "9.22",
+    "eslint": "9.23",
     "globals": "16.0",
     "tsc-alias": "1.8",
     "typescript": "5.8"
@@ -168,11 +168,11 @@
     "@zxcvbn-ts/language-de": "^3.0",
     "@zxcvbn-ts/language-en": "^3.0",
     "chroma-js": "^2.6",
-    "drizzle-orm": "^0.40",
+    "drizzle-orm": "^0.41",
     "handlebars": "^4.7",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.14",
+    "mongodb": "^6.15",
     "nodemailer": "^6.10",
     "pg": "^8.14",
     "playwright": "^1.51",
