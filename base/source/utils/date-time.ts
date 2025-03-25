@@ -156,7 +156,7 @@ export function dateTimeToNumericDate(dateTime: DateTime): number {
 }
 
 export function numericDateToDateTime(numericDate: number, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
-  const date = numericDateToDate(numericDate);
+  const date = numericDateToDateObject(numericDate);
   return DateTime.fromObject({ ...date, ...units }, options);
 }
 
