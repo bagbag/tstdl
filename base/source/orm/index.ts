@@ -1,3 +1,4 @@
+export * from './data-types/index.js';
 export * from './entity.js';
 export * from './query.js';
 export * from './repository.types.js';
