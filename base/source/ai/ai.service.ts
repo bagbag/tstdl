@@ -311,7 +311,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
           break;
         }
         catch (error) {
-          if ((i < 20) && isError(error) && ((error as Record)['status'] == 429)) {
+          if ((i < 20) && isError(error) && (((error as Record)['status'] == 429) || ((error as Record)['status'] == 503))) {
             this.#logger.verbose('429 Too Many Requests - trying again in 15 seconds');
             const canceled = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
 
