@@ -7,7 +7,7 @@ export const routes: Routes = [
   { path: 'nav-tabs', loadComponent: () => import('./examples/nav-tabs/nav-tabs.component').then((module) => module.NavTabsExampleComponent) },
   { path: 'card', loadComponent: () => import('./examples/card/card.component') },
   { path: 'drawer-card', loadComponent: () => import('./examples/drawer-card-example/drawer-card-example.component').then((module) => module.DrawerCardExampleComponent) },
-  { path: 'data-card', loadComponent: () => import('./examples/data-card-example/data-card-example.component') },
+  { path: 'dialog', loadComponent: () => import('./examples/dialog-example/dialog-example.component').then((module) => module.DialogExampleComponent) },
   { path: 'data-grid', loadComponent: () => import('./examples/data-grid/data-grid.component') },
   { path: 'vertical-tab-group', loadComponent: () => import('./examples/vertical-tab-group-example/vertical-tab-group-example.component').then((module) => module.VerticalTabGroupExampleComponent) },
   { path: 'react', loadComponent: () => import('./examples/react/react.component') },

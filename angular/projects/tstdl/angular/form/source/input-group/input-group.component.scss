@@ -1,17 +1,17 @@
 @layer tstdl.components {
   tsl-input-group {
-    @apply flex w-full sm:text-sm sm:leading-6 bg-neutral-100 dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-neutral-100 border border-neutral-500/50 dark:border-neutral-300/50 rounded-md;
+    @apply flex w-full sm:text-sm bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 outline outline-[1.5px] outline-neutral-300 dark:outline-neutral-500 rounded-md transition-[outline];
 
-    &:focus-within {
-      @apply border-accent-600;
+    &:is(:focus-within, :hover) {
+      @apply outline-accent-600;
     }
 
     & > * {
-      @apply border-0 [&:not(:last-child)]:border-r border-neutral-500/50 dark:border-neutral-300/50;
+      @apply outline-none;
     }
 
-    & > * {
-      @apply rounded-none;
+    & > *:not(:last-child) {
+      @apply border-r-[1.5px] border-neutral-300 dark:border-neutral-500;
     }
 
     & > :first-child {

@@ -1,21 +1,17 @@
 @layer tstdl.components {
   [tslInput] {
-    @apply bg-white dark:bg-neutral-800/50 placeholder:text-neutral-400;
+    @apply sm:text-sm sm:leading-6 bg-white dark:bg-neutral-800 placeholder:text-neutral-400;
 
     :not(tsl-input-group) > & {
-      @apply shadow-sm sm:text-sm sm:leading-6;
+      @apply shadow-sm;
     }
 
     &.input-text {
-      @apply block w-full px-2 py-1.5;
-      @apply bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 outline-none ring-inset;
-
-      &:focus {
-        @apply outline outline-accent-600 -outline-offset-[1.5px];
-      }
+      @apply block w-full px-2;
+      @apply bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100;
 
       :not(tsl-input-group) > & {
-        @apply rounded-md ring-1 ring-inset ring-neutral-300 dark:ring-neutral-400 border-none;
+        @apply min-h-[2.5em] rounded-md outline-1 outline-neutral-300 dark:outline-neutral-500 border-none;
       }
     }
 

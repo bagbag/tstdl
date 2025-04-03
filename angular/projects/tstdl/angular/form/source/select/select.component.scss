@@ -1,0 +1,14 @@
+@layer tstdl.components {
+  [tslSelect] {
+    @apply flex justify-between items-center px-2.5 sm:text-sm sm:leading-6;
+    @apply bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100;
+
+    :not(tsl-input-group) > & {
+      @apply pl-3 min-h-[2.5em] sm:text-sm sm:leading-6 rounded-md outline outline-[1.5px] outline-neutral-300 dark:outline-neutral-500 transition-[outline];
+
+      &:is(:focus, :hover) {
+        @apply outline outline-accent-600;
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { ButtonColor, ButtonComponent as TstdlButtonComponent } from '@tstdl/angular/button';
+import { type ButtonColor, ButtonComponent as TstdlButtonComponent } from '@tstdl/angular/button';
 import { IconComponent } from '@tstdl/angular/icon';
 
 @Component({

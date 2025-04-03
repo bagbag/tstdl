@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonComponent } from '@tstdl/angular/button';
+import { englishTstdlCommonLocalization, germanTstdlCommonLocalization, LocalizationService } from '@tstdl/base/text';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,8 @@ import { ButtonComponent } from '@tstdl/angular/button';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
+  readonly #localizationService = inject(LocalizationService);
+
   readonly routes = [
     { href: '/button', label: 'Button' },
     { href: '/icon', label: 'Icon' },
@@ -17,6 +20,7 @@ export class AppComponent {
     { href: '/nav-tabs', label: 'Nav Tabs' },
     { href: '/card', label: 'Card' },
     { href: '/drawer-card', label: 'Drawer Card' },
+    { href: '/dialog', label: 'Dialog' },
     { href: '/data-card', label: 'Data Card' },
     { href: '/data-grid', label: 'Data Grid' },
     { href: '/vertical-tab-group', label: 'Vertical Tab Group' },
@@ -24,4 +28,8 @@ export class AppComponent {
     { href: '/markdown', label: 'Markdown' },
     { href: '/misc', label: 'Miscellaneous' }
   ];
+
+  constructor() {
+    this.#localizationService.registerLocalization(germanTstdlCommonLocalization, englishTstdlCommonLocalization);
+  }
 }

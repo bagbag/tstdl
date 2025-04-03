@@ -1,0 +1,9 @@
+@if (labelEnum(); as labelEnum) {
+  <span>{{ $any(value) | localizeEnum: labelEnum }}</span>
+} @else {
+  @if (label(); as label) {
+    <span>{{ label | dynamicText }}</span>
+  }
+}
+
+<ng-content></ng-content>

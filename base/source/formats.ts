@@ -154,9 +154,9 @@ export type FormatPersonNameOptions<F = unknown> = { lastNameFirst?: boolean, fa
 
 export function formatPersonName<F>(person: { firstName?: string | null, lastName?: string | null } | null | undefined, options: FormatPersonNameOptions<F> & { fallback: F }): string | F;
 export function formatPersonName(person: { firstName?: string | null, lastName?: string | null } | null | undefined, options?: FormatPersonNameOptions & { fallback?: undefined }): string;
-export function formatPersonName<F>(person: { firstName?: string | null, lastName?: string | null } | null | undefined, { lastNameFirst = false, fallback = '-' }: FormatPersonNameOptions<F> = {}): string | F {
+export function formatPersonName<F>(person: { firstName?: string | null, lastName?: string | null } | null | undefined, { lastNameFirst = false, fallback }: FormatPersonNameOptions<F> = {}): string | F {
   if (isNullOrUndefined(person?.firstName) || isNullOrUndefined(person.lastName)) {
-    return person?.firstName ?? person?.lastName ?? fallback;
+    return person?.firstName ?? person?.lastName ?? fallback ?? '-';
   }
 
   if (lastNameFirst) {

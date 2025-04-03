@@ -1,0 +1,21 @@
+@if (selectedOption(); as selectedOption) {
+  <span>{{ selectedOption.optionText() | dynamicText }}</span>
+} @else {
+  <span>{{ commonLocalizationKeys.select | localize }}</span>
+}
+
+<tsl-icon icon="chevron-down"></tsl-icon>
+
+<ng-template
+  cdk-connected-overlay
+  [cdkConnectedOverlayOrigin]="overlayTrigger"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayWidth]="overlayWidth"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  [cdkConnectedOverlayBackdropClass]="['opacity-0', 'visible']"
+  (backdropClick)="open.set(false)">
+  <div
+    class="relative top-1 flex flex-col w-full max-h-96 overflow-y-auto overflow-hidden bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-50 rounded-md shadow-lg border border-neutral-300 dark:border-neutral-500 focus:outline-none">
+    <ng-content></ng-content>
+  </div>
+</ng-template>

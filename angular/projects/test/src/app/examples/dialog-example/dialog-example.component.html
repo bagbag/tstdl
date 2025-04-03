@@ -1,0 +1,38 @@
+<tsl-dialog header="Einheit bearbeiten" subHeader="Ergänzen oder korrigieren Sie die Daten zur Einheit">
+  <h2 class="text-lg font-semibold">Einheitdaten</h2>
+  <p class="text-sm opacity-75">Geben Sie die Flächen der Einheit an</p>
+
+  <div class="grid grid-cols-[auto_1fr_auto] gap-y-4 mt-4">
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Einheitennummer</label>
+      <input tslInput placeholder="123" class="col-span-2" />
+    </tsl-input-group>
+
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Geschoss</label>
+      <input tslInput placeholder="EG, OG, ..." class="col-span-2" />
+    </tsl-input-group>
+
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Lage</label>
+      <input tslInput placeholder="links, rechts, ..." class="col-span-2" />
+    </tsl-input-group>
+
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Wohnfläche</label>
+      <input tslInput placeholder="123" type="number" />
+      <label tslInputGroupLabel>m²</label>
+    </tsl-input-group>
+
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Heizfläche</label>
+      <input tslInput placeholder="123" type="number" />
+      <label tslInputGroupLabel>m²</label>
+    </tsl-input-group>
+
+    <tsl-input-group class="col-span-full grid grid-cols-subgrid">
+      <label tslInputGroupLabel>Miteigentumsanteile</label>
+      <input tslInput placeholder="123" type="number" class="col-span-2" />
+    </tsl-input-group>
+  </div>
+</tsl-dialog>

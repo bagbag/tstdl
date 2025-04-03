@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, bool
 import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-types';
 
 @Component({
-  selector: '[tslInput]',
+  selector: 'input[tslInput]',
   imports: [],
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss',
@@ -19,7 +19,7 @@ import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-ty
 })
 export class InputComponent {
   // readonly #control = inject(NgControl, { optional: true });
-  readonly #elementRef = inject<ElementRef<HTMLLabelElement>>(ElementRef);
+  readonly #elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
 
   readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
   readonly type = input<InputType>('text');

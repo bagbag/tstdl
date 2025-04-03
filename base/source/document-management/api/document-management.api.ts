@@ -1,4 +1,5 @@
-import { compileClient, defineApi } from '#/api/index.js';
+import { compileClient } from '#/api/client/index.js';
+import { defineApi } from '#/api/index.js';
 import { ReplaceClass } from '#/injector/decorators.js';
 import { boolean, literal, nullable, object, optional, string } from '#/schema/index.js';
 import { megabyte } from '#/utils/units.js';

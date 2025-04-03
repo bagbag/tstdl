@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-input-group-label,
   [tslInputGroupLabel] {
-    @apply flex items-center px-2 font-semibold border-solid;
+    @apply flex items-center px-2 min-h-[2.5em] font-semibold border-solid;
   }
 }

@@ -36,6 +36,12 @@
       "@tstdl/angular/button": [
         "projects/tstdl/angular/button",
       ],
+      "@tstdl/angular/dialog/*": [
+        "projects/tstdl/angular/dialog/*",
+      ],
+      "@tstdl/angular/dialog": [
+        "projects/tstdl/angular/dialog",
+      ],
       "@tstdl/angular/data-card/*": [
         "projects/tstdl/angular/data-card/*",
       ],

@@ -1,5 +1,5 @@
-import { Signal } from '@angular/core';
-import { Component, ComponentChild } from 'preact';
+import type { Signal } from '@angular/core';
+import { Component, type ComponentChild } from 'preact';
 
 export type ReactTestComponentProperties = {
   counter: Signal<number>,

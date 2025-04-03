@@ -1,6 +1,21 @@
-<tsl-input-group class="w-96">
-  <tsl-input-group-label>https://</tsl-input-group-label>
-  <input tslInput placeholder="Portal" />
-  <tsl-input-group-label>.mydomain.tld</tsl-input-group-label>
-  <input tslInput />
-</tsl-input-group>
+<div class="grid grid-cols-[repeat(4,auto)] grid-flow-col gap-y-4 max-w-96">
+  <tsl-input-group class="col-span-full grid grid-cols-subgrid max-w-96">
+    <tsl-input-group-label>https://</tsl-input-group-label>
+    <input tslInput placeholder="Portal" />
+    <tsl-input-group-label>.mydomain.tld</tsl-input-group-label>
+    <input tslInput />
+  </tsl-input-group>
+
+  <tsl-input-group class="col-span-full grid grid-cols-subgrid max-w-96">
+    <tsl-input-group-label>Select</tsl-input-group-label>
+    <button tslSelect class="col-span-3">
+      <button tslSelectOption value="male">Male</button>
+      <button tslSelectOption value="female">Female</button>
+    </button>
+  </tsl-input-group>
+
+  <button tslSelect class="col-span-full">
+    <button tslSelectOption value="male">Male</button>
+    <button tslSelectOption value="female">Female</button>
+  </button>
+</div>

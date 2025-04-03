@@ -1,6 +1,6 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector as AngularInjector, inject } from '@angular/core';
-import type { ApiClientHttpRequestContext } from '@tstdl/base/api';
+import type { ApiClientHttpRequestContext } from '@tstdl/base/api/client';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http/client';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';

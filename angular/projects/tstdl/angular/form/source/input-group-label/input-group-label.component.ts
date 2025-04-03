@@ -6,10 +6,7 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   templateUrl: './input-group-label.component.html',
   styleUrl: './input-group-label.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
-  host: {
-    class: 'tsl-tw'
-  }
+  encapsulation: ViewEncapsulation.None
 })
 export class InputGroupLabelComponent {
 

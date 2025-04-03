@@ -1,0 +1,13 @@
+@if (header(); as header) {
+  <div>
+    <div class="text-xl font-semibold">{{ header | dynamicText }}</div>
+
+    @if (subHeader(); as subHeader) {
+      <div class="mt-1 text-sm opacity-75">{{ subHeader | dynamicText }}</div>
+    }
+  </div>
+
+  <hr class="my-6" />
+}
+
+<ng-content></ng-content>

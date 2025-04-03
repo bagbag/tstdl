@@ -12,8 +12,6 @@
  * @module API
  */
 
-export * from './client/index.js';
 export * from './default-error-handlers.js';
 export * from './response.js';
-export * from './server/index.js';
 export * from './types.js';
