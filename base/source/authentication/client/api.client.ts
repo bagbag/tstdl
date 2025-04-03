@@ -4,10 +4,10 @@ import { emptyObjectSchema, type ObjectSchemaOrType, type SchemaTestable, unknow
 import type { Record } from '#/types.js';
 import { type AuthenticationApiDefinition, getAuthenticationApiDefinition } from '../authentication.api.js';
 
-export function getAuthenticationApiClient<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>(
+export function getAuthenticationApiClient<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
-  additionalInitSecretResetData: ObjectSchemaOrType<AdditionalInitSecretResetData>
+  additionalInitSecretResetData: SchemaTestable<AdditionalInitSecretResetData>
 ): ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
   const definition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
 

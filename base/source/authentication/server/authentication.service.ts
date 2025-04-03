@@ -99,7 +99,7 @@ const SIGNING_SECRETS_LENGTH = 64;
     { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(AuthenticationModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }
   ]
 })
-export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> implements AfterResolve {
+export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> implements AfterResolve {
   private readonly credentialsRepository = injectRepository(AuthenticationCredentials);
   private readonly sessionRepository = injectRepository(AuthenticationSession);
   private readonly authenticationSecretRequirementsValidator = inject(AuthenticationSecretRequirementsValidator);

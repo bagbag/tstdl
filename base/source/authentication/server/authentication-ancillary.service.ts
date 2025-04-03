@@ -14,7 +14,7 @@ export type GetTokenPayloadContext = {
   action: GetTokenPayloadContextAction
 };
 
-export abstract class AuthenticationAncillaryService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> {
+export abstract class AuthenticationAncillaryService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> {
   /**
    * Resolve a provided subject to the actual subject used for authentication.
    * Useful for example if you want to be able to login via mail but actual subject is the user id.

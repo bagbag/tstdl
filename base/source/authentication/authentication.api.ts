@@ -8,12 +8,12 @@ import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
 export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
 
-type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> =
+type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> =
   typeof getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>;
 
-type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
+type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
-export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> =
+export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
 export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, optional(never()), optional(never()));
