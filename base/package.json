@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.116",
+  "version": "0.92.118",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -131,27 +131,27 @@
     "./utils/string": "./utils/string/index.js"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.15",
+    "@google-cloud/storage": "^7.16",
     "@google-cloud/vertexai": "^1.9",
     "disposablestack": "^1.1",
     "luxon": "^3.6",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
     "ts-pattern": "^5.7",
-    "type-fest": "4.37"
+    "type-fest": "4.39"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9",
     "@stylistic/eslint-plugin": "4.2",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
-    "@types/luxon": "3.4",
+    "@types/luxon": "3.6",
     "@types/minio": "7.1",
     "@types/mjml": "4.7",
     "@types/node": "22",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "8.28",
+    "@typescript-eslint/eslint-plugin": "8.29",
     "concurrently": "9.1",
     "drizzle-kit": "0.30",
     "eslint": "9.23",
@@ -178,7 +178,7 @@
     "playwright": "^1.51",
     "preact": "^10.26",
     "preact-render-to-string": "^6.5",
-    "undici": "^7.6",
+    "undici": "^7.7",
     "urlpattern-polyfill": "^10.0"
   },
   "peerDependenciesMeta": {

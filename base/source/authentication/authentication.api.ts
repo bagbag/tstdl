@@ -1,5 +1,5 @@
 import { type ApiDefinition, type ApiEndpointsDefinition, defineApi } from '#/api/types.js';
-import { assign, emptyObjectSchema, explicitObject, literal, number, object, type ObjectSchema, type ObjectSchemaOrType, string, unknown } from '#/schema/index.js';
+import { assign, emptyObjectSchema, explicitObject, literal, never, number, object, type ObjectSchema, type ObjectSchemaOrType, optional, string } from '#/schema/index.js';
 import type { SchemaTestable } from '#/schema/schema.js';
 import type { Record } from '#/types.js';
 import type { TokenPayload } from './index.js';
@@ -16,13 +16,12 @@ type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record 
 export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData extends Record = Record<never>> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
-export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, unknown(), emptyObjectSchema);
+export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, optional(never()), optional(never()));
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record, AdditionalEndpoints>(
+export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData, AdditionalEndpoints extends ApiEndpointsDefinition>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
-  initSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>,
+  initSecretResetDataSchema: SchemaTestable<AdditionalInitSecretResetData>,
   resource?: string,
   additionalEndpoints?: AdditionalEndpoints
 ) {
@@ -35,11 +34,10 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Re
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>(
+export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
-  additionalInitSecretResetDataSchema: ObjectSchemaOrType<AdditionalInitSecretResetData>
+  additionalInitSecretResetDataSchema: SchemaTestable<AdditionalInitSecretResetData>
 ) {
   const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema) as unknown as ObjectSchema<TokenPayload<AdditionalTokenPayload>>;
 

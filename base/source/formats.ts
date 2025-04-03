@@ -150,25 +150,30 @@ export function formatPercent(value: number): string {
   return percentFormatter(locale).format(value);
 }
 
-export type FormatUserNameOptions = { lastNameFirst?: boolean, nullOnMissing?: boolean };
+export type FormatPersonNameOptions = { lastNameFirst?: boolean, nullOnMissing?: boolean };
 
-export function formatUserName(user: { firstName: string, lastName: string | null } | null | undefined, options: FormatUserNameOptions & { nullOnMissing: true }): string | null;
-export function formatUserName(user: { firstName: string, lastName: string | null } | null | undefined, options?: FormatUserNameOptions): string;
-export function formatUserName(user: { firstName: string, lastName: string | null } | null | undefined, { lastNameFirst = false, nullOnMissing = false }: FormatUserNameOptions = {}): string | null {
-  if (isNullOrUndefined(user)) {
+export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, options: FormatPersonNameOptions & { nullOnMissing: true }): string | null;
+export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, options?: FormatPersonNameOptions): string;
+export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, { lastNameFirst = false, nullOnMissing = false }: FormatPersonNameOptions = {}): string | null {
+  if (isNullOrUndefined(person)) {
     return nullOnMissing ? null : '-';
   }
 
-  if (isNull(user.lastName)) {
-    return user.firstName;
+  if (isNull(person.lastName)) {
+    return person.firstName;
   }
 
   if (lastNameFirst) {
-    return `${user.lastName}, ${user.firstName}`;
+    return `${person.lastName}, ${person.firstName}`;
   }
 
-  return `${user.firstName} ${user.lastName}`;
+  return `${person.firstName} ${person.lastName}`;
 }
+
+/**
+ * @deprecated use {@link formatPersonName} instead
+ */
+export const formatUserName = formatPersonName;
 
 function _getDecimalFormatter(minimumFractionDigits = 2, maximumFractionDigits = 2): Intl.NumberFormat {
   return Intl.NumberFormat(locale, {
