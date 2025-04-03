@@ -17,7 +17,7 @@ const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', http
 const deleteCookie = { value: '', ...cookieBaseOptions, expires: -1 };
 
 @apiController(authenticationApiDefinition)
-export class AuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
+export class AuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
   readonly authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>;
 
   constructor(authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>) {
@@ -137,10 +137,10 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
   }
 }
 
-export function getAuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData extends Record>( // eslint-disable-line @typescript-eslint/explicit-function-return-type
+export function getAuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData = void>( // eslint-disable-line @typescript-eslint/explicit-function-return-type
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
-  additionalInitSecretResetData: ObjectSchemaOrType<AdditionalInitSecretResetData>
+  additionalInitSecretResetData: SchemaTestable<AdditionalInitSecretResetData>
 ): Type<AuthenticationApiController<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
   const apiDefinition = getAuthenticationApiDefinition(additionalTokenPayloadSchema, authenticationDataSchema, additionalInitSecretResetData);
 

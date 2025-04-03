@@ -34,7 +34,7 @@ const refreshLockResource = 'AuthenticationService:refresh';
 const localStorage = globalThis.localStorage as Storage | undefined;
 
 @Singleton()
-export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any, AdditionalInitSecretResetData extends Record = Record> implements AfterResolve, AsyncDisposable {
+export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any, AdditionalInitSecretResetData = void> implements AfterResolve, AsyncDisposable {
   private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>>;
   private readonly errorSubject = new Subject<Error>();
   private readonly tokenUpdateBus = inject(MessageBus<TokenPayload<AdditionalTokenPayload> | undefined>, tokenUpdateBusName);
