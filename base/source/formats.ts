@@ -1,6 +1,6 @@
 import { numericDateToTimestamp } from './utils/date-time.js';
 import { memoize, memoizeSingle } from './utils/function/memoize.js';
-import { isNull, isNullOrUndefined, isUndefined } from './utils/type-guards.js';
+import { isNullOrUndefined, isUndefined } from './utils/type-guards.js';
 
 export let locale = 'de-DE';
 
@@ -150,17 +150,13 @@ export function formatPercent(value: number): string {
   return percentFormatter(locale).format(value);
 }
 
-export type FormatPersonNameOptions = { lastNameFirst?: boolean, nullOnMissing?: boolean };
+export type FormatPersonNameOptions<F = unknown> = { lastNameFirst?: boolean, fallback?: F };
 
-export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, options: FormatPersonNameOptions & { nullOnMissing: true }): string | null;
-export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, options?: FormatPersonNameOptions): string;
-export function formatPersonName(person: { firstName: string, lastName: string | null } | null | undefined, { lastNameFirst = false, nullOnMissing = false }: FormatPersonNameOptions = {}): string | null {
-  if (isNullOrUndefined(person)) {
-    return nullOnMissing ? null : '-';
-  }
-
-  if (isNull(person.lastName)) {
-    return person.firstName;
+export function formatPersonName<F>(person: { firstName?: string | null, lastName?: string | null } | null | undefined, options: FormatPersonNameOptions<F> & { fallback: F }): string | F;
+export function formatPersonName(person: { firstName?: string | null, lastName?: string | null } | null | undefined, options?: FormatPersonNameOptions & { fallback?: undefined }): string;
+export function formatPersonName<F>(person: { firstName?: string | null, lastName?: string | null } | null | undefined, { lastNameFirst = false, fallback = '-' }: FormatPersonNameOptions<F> = {}): string | F {
+  if (isNullOrUndefined(person?.firstName) || isNullOrUndefined(person.lastName)) {
+    return person?.firstName ?? person?.lastName ?? fallback;
   }
 
   if (lastNameFirst) {
