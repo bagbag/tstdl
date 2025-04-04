@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 
-import { asc, count, desc, eq, inArray, isSQLWrapper, SQL, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, isNull, isSQLWrapper, SQL, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { PgTransaction as DrizzlePgTransaction, type PgColumn, type PgInsertValue, type PgQueryResultHKT, type PgUpdateSetSource } from 'drizzle-orm/pg-core';
 
@@ -232,9 +232,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async count(): Promise<number> {
+    const sqlQuery = this.convertQuery({});
+
     const dbQuery = this.session
       .select({ count: count() })
-      .from(this.#table);
+      .from(this.#table)
+      .where(sqlQuery);
 
     const [result] = await dbQuery;
     return assertDefinedPass(result).count;
@@ -268,9 +271,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async hasAll(ids: string[]): Promise<boolean> {
+    const sqlQuery = this.convertQuery({});
+
     const result = await this.session
       .select({ contains: sql<boolean>`array_agg(${this.#table.id}) @> ${ids}`.as('contains') })
-      .from(this.#table);
+      .from(this.#table)
+      .where(sqlQuery);
 
     return assertDefinedPass(result[0]).contains;
   }
@@ -366,12 +372,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryUpdate(id: string, update: EntityUpdate<T>): Promise<T | undefined> {
+    const sqlQuery = this.convertQuery(eq(this.#table.id, id));
     const mappedUpdate = await this.mapUpdate(update);
 
     const [row] = await this.session
       .update(this.#table)
       .set(mappedUpdate)
-      .where(eq(this.#table.id, id))
+      .where(sqlQuery)
       .returning();
 
     if (isUndefined(row)) {
@@ -440,13 +447,15 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return this.tryHardDelete(id);
     }
 
+    const sqlQuery = this.convertQuery(eq(this.#table.id, id));
+
     const [row] = await this.session
       .update(this.#tableWithMetadata)
       .set({
         deleteTimestamp: TRANSACTION_TIMESTAMP,
         attributes: this.getAttributesUpdate(metadataUpdate?.attributes)
       })
-      .where(eq(this.#table.id, id))
+      .where(sqlQuery)
       .returning();
 
     if (isUndefined(row)) {
@@ -523,9 +532,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   async tryHardDelete(id: string): Promise<T | undefined> {
+    const sqlQuery = this.convertQuery(eq(this.#table.id, id));
+
     const [row] = await (this.session as NodePgDatabase)
       .delete(this.#table)
-      .where(eq(this.#table.id, id))
+      .where(sqlQuery)
       .returning();
 
     if (isUndefined(row)) {
@@ -607,8 +618,14 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     });
   }
 
-  convertQuery(query: Query<T>): SQL {
-    return convertQuery(query, this.#table, this.#columnDefinitionsMap);
+  convertQuery(query: Query<T>, options?: { withDeleted?: boolean }): SQL {
+    let sql = convertQuery(query, this.#table, this.#columnDefinitionsMap);
+
+    if (!this.hasMetadata || (options?.withDeleted == true)) {
+      return sql;
+    }
+
+    return and(isNull(this.#tableWithMetadata.deleteTimestamp), sql)!;
   }
 
   async mapManyToEntity(columns: InferSelect[]): Promise<T[]> {
