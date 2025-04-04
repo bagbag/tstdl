@@ -1,8 +1,11 @@
 import { CdkOverlayOrigin, OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewEncapsulation, booleanAttribute, computed, contentChildren, inject, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, ViewEncapsulation, computed, contentChildren, forwardRef, inject, model } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { DynamicTextPipe, LocalizePipe } from '@tstdl/angular';
 import { IconComponent } from "@tstdl/angular/icon";
 import { tstdlCommonLocalizationKeys } from '@tstdl/base/text';
+import { Subject } from 'rxjs';
 
 import { SelectOptionComponent } from './select-option/select-option.component';
 
@@ -12,15 +15,21 @@ import { SelectOptionComponent } from './select-option/select-option.component';
   templateUrl: './select.component.html',
   styleUrl: './select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  providers: [
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => SelectComponent), multi: true }
+  ]
 })
-export class SelectComponent<T> {
+export class SelectComponent<T> implements ControlValueAccessor {
   readonly #elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
+  readonly #changeDetector = inject(ChangeDetectorRef);
   readonly overlayTrigger = new CdkOverlayOrigin();
+  readonly #touchedSubject = new Subject<void>();
+  readonly #touched$ = this.#touchedSubject.pipe(takeUntilDestroyed());
 
   readonly value = model<T | null>(null);
   readonly open = model(false);
-  readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
+  readonly disabled = model<boolean | `${boolean}`>(false);
 
   readonly options = contentChildren<SelectOptionComponent<T>>(SelectOptionComponent);
 
@@ -41,6 +50,16 @@ export class SelectComponent<T> {
   }
 
   @HostListener('click')
+  onClick(): void {
+    let isOpen = this.open();
+
+    if (isOpen) {
+      this.#touchedSubject.next();
+    }
+
+    this.toggle();
+  }
+
   toggle(): void {
     this.open.update((open) => !open);
   }
@@ -48,10 +67,26 @@ export class SelectComponent<T> {
   select(value: T | null): void {
     this.value.set(value);
     this.open.set(false);
+    this.#changeDetector.markForCheck();
   }
 
   selectOption(option: SelectOptionComponent<T>): void {
-    this.value.set(option.value() ?? null);
-    this.open.set(false);
+    this.select(option.value());
+  }
+
+  writeValue(obj: any): void {
+    this.select(obj);
+  }
+
+  registerOnChange(fn: any): void {
+    this.value.subscribe(fn);
+  }
+
+  registerOnTouched(fn: any): void {
+    this.#touched$.subscribe(fn);
+  }
+
+  setDisabledState?(isDisabled: boolean): void {
+    this.disabled.set(isDisabled);
   }
 }
