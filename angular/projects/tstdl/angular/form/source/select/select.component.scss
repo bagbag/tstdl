@@ -6,9 +6,13 @@
     :not(tsl-input-group) > & {
       @apply pl-3 min-h-[2.5em] sm:text-sm sm:leading-6 rounded-md outline outline-[1.5px] outline-neutral-300 dark:outline-neutral-500 transition-[outline];
 
-      &:is(:focus, :hover) {
+      &:is(:focus, :hover):not([disabled]) {
         @apply outline outline-accent-600;
       }
+    }
+
+    &[disabled] {
+      @apply bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500 cursor-not-allowed;
     }
   }
 }

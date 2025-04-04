@@ -5,6 +5,7 @@ import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { DynamicTextPipe, LocalizePipe } from '@tstdl/angular';
 import { IconComponent } from "@tstdl/angular/icon";
 import { tstdlCommonLocalizationKeys } from '@tstdl/base/text';
+import { isString } from '@tstdl/base/utils';
 import { Subject } from 'rxjs';
 
 import { SelectOptionComponent } from './select-option/select-option.component';
@@ -18,7 +19,10 @@ import { SelectOptionComponent } from './select-option/select-option.component';
   encapsulation: ViewEncapsulation.None,
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => SelectComponent), multi: true }
-  ]
+  ],
+  host: {
+    '[attr.disabled]': '(disabled()?.toString() == "true") ? true : null'
+  }
 })
 export class SelectComponent<T> implements ControlValueAccessor {
   readonly #elementRef = inject<ElementRef<HTMLButtonElement>>(ElementRef);
@@ -29,7 +33,18 @@ export class SelectComponent<T> implements ControlValueAccessor {
 
   readonly value = model<T | null>(null);
   readonly open = model(false);
-  readonly disabled = model<boolean | `${boolean}`>(false);
+  readonly disabledInput = model<boolean | `${boolean}` | '' | null>(false, { alias: 'disabled' });
+
+  readonly disabled = computed(() => {
+    const disabledInput = this.disabledInput();
+
+    if (isString(disabledInput)) {
+      return (disabledInput == 'true') || (disabledInput === '');
+    }
+
+    return disabledInput == true;
+  });
+
 
   readonly options = contentChildren<SelectOptionComponent<T>>(SelectOptionComponent);
 
@@ -87,6 +102,6 @@ export class SelectComponent<T> implements ControlValueAccessor {
   }
 
   setDisabledState?(isDisabled: boolean): void {
-    this.disabled.set(isDisabled);
+    this.disabledInput.set(isDisabled);
   }
 }
