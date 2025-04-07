@@ -18,10 +18,10 @@ export type ButtonColor = 'transparent' | 'white' | 'accent' | 'neutral' | 'ston
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [MatRipple],
+  hostDirectives: [NgClass],
   host: {
     '[attr.disabled]': 'disabledAttribute()'
-  },
-  hostDirectives: [NgClass]
+  }
 })
 export class ButtonComponent implements OnInit, OnDestroy {
   readonly #ngClass = inject(NgClass);

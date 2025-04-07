@@ -4,6 +4,7 @@ export const routes: Routes = [
   { path: 'button', loadComponent: () => import('./examples/button/button.component').then((module) => module.ButtonComponent) },
   { path: 'icon', loadComponent: () => import('./examples/icon-example/icon-example.component').then((module) => module.IconExampleComponent) },
   { path: 'form', loadComponent: () => import('./examples/form/form.component').then((module) => module.FormComponent) },
+  { path: 'menu', loadComponent: () => import('./examples/menu/menu.component').then((module) => module.MenuExampleComponent) },
   { path: 'nav-tabs', loadComponent: () => import('./examples/nav-tabs/nav-tabs.component').then((module) => module.NavTabsExampleComponent) },
   { path: 'card', loadComponent: () => import('./examples/card/card.component') },
   { path: 'drawer-card', loadComponent: () => import('./examples/drawer-card-example/drawer-card-example.component').then((module) => module.DrawerCardExampleComponent) },

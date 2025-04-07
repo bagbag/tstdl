@@ -87,6 +87,12 @@
       "@tstdl/angular/host-class": [
         "projects/tstdl/angular/host-class",
       ],
+      "@tstdl/angular/menu/*": [
+        "projects/tstdl/angular/menu/*",
+      ],
+      "@tstdl/angular/menu": [
+        "projects/tstdl/angular/menu",
+      ],
       "@tstdl/angular/nav-tabs/*": [
         "projects/tstdl/angular/nav-tabs/*",
       ],

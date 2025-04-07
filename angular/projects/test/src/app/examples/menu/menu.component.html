@@ -1,0 +1,8 @@
+<button tslButton tslMenuOrigin #menuTrigger="tslMenuOrigin" design="outline">Aktionen</button>
+
+<ng-template tslMenuOverlay [tslMenuOverlayOrigin]="menuTrigger">
+  <tsl-menu>
+    <button tslMenuOption>Zähler austauschen</button>
+    <button tslMenuOption>Zähler löschen</button>
+  </tsl-menu>
+</ng-template>
