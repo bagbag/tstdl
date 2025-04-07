@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, HostListener, inject, ViewEncapsulation } from '@angular/core';
 
 import { TslMenu } from '../menu/menu.component';
+import { TslMenuOverlay } from '../menu-overlay.directive';
 
 @Component({
   selector: '[tslMenuOption]',
@@ -11,10 +12,10 @@ import { TslMenu } from '../menu/menu.component';
   encapsulation: ViewEncapsulation.None
 })
 export class TslMenuOption {
-  readonly #menu = inject(TslMenu);
+  readonly #menuOverlay = inject(TslMenuOverlay);
 
   @HostListener('click')
   onClick() {
-    this.#menu.open.set(false);
+    this.#menuOverlay.tslMenuOverlayOrigin()?.isOpen.set(false);
   }
 }

@@ -27,8 +27,8 @@ export class DrawerCardComponent {
   readonly interactive = input<boolean, boolean | `${boolean}`>(true, { transform: booleanAttribute });
 
   constructor() {
-    effect(() => this.drawerContentComponent()?.open.set(this.open()), { allowSignalWrites: true });
-    effect(() => this.contentComponent()?.interactive.set(this.interactive()), { allowSignalWrites: true });
+    effect(() => this.drawerContentComponent()?.open.set(this.open()));
+    effect(() => this.contentComponent()?.interactive.set(this.interactive()));
 
     afterNextRender({
       read: () => this.contentComponent()?.clicked.subscribe(() => {

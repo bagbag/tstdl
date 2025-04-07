@@ -12,8 +12,6 @@ export class TslMenuOverlay implements OnInit {
   readonly tslMenuOverlayOrigin = input<TslMenuOrigin>();
 
   constructor() {
-    console.log(CdkConnectedOverlay)
-
     this.#cdkConnectedOverlay.hasBackdrop = true;
     this.#cdkConnectedOverlay.growAfterOpen = true;
     this.#cdkConnectedOverlay.push = true;

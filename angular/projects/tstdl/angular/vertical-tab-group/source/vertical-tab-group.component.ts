@@ -37,6 +37,6 @@ export class VerticalTabGroupComponent {
       if (isNull(currentIndex) || (currentIndex >= this.tabs().length)) {
         this.selectedTabIndex.set(0);
       }
-    }, { allowSignalWrites: true });
+    });
   }
 }
