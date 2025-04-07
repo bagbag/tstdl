@@ -27,7 +27,8 @@ export function collapseAnimation(options: CollapseAnimationOptions = {}): Anima
     width: (options.width == true) ? '0px' : undefined,
     opacity: (options.opacity == true) ? 0 : undefined,
     scale: (options.scale == true) ? 0 : undefined,
-    visibility: 'hidden'
+    visibility: 'hidden',
+    overflow: 'hidden'
   });
 
   const targetStyle = mapObjectValues(voidStyle, () => AUTO_STYLE);

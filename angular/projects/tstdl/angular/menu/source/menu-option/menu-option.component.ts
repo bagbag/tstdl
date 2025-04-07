@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, ViewEncapsulation } from '@angular/core';
+
+import { TslMenu } from '../menu/menu.component';
 
 @Component({
   selector: '[tslMenuOption]',
@@ -8,4 +10,11 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })
-export class TslMenuOption { }
+export class TslMenuOption {
+  readonly #menu = inject(TslMenu);
+
+  @HostListener('click')
+  onClick() {
+    this.#menu.open.set(false);
+  }
+}
