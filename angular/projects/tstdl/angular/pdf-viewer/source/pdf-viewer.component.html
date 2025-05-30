@@ -2,15 +2,15 @@
   <ngx-extended-pdf-viewer
     class="contain-strict"
     [src]="url"
-    [authorization]="true"
+    [authorization]="authorization()"
     zoom="auto"
-    [theme]="darkMode() ? 'dark' : 'light'"
-    [handTool]="false"
+    [theme]="useDarkMode() ? 'dark' : 'light'"
+    [handTool]="true"
     [showOpenFileButton]="false"
     [showDrawEditor]="false"
     [showTextEditor]="false"
     [showInfiniteScrollButton]="false"
-    [showRotateButton]="false"
+    [showRotateButton]="true"
     [showStampEditor]="false"
     [showHighlightEditor]="false"></ngx-extended-pdf-viewer>
 }

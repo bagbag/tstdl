@@ -55,11 +55,11 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
   const encryptedBuffer = globalThis.crypto.subtle.encrypt(algorithm, key, bytes);
 
   return {
-    toBuffer: async () => encryptedBuffer,
+    toBuffer: async () => await encryptedBuffer,
     toHex: async () => encodeHex(await encryptedBuffer),
     toBase64: async () => encodeBase64(await encryptedBuffer),
     toBase64Url: async () => encodeBase64Url(await encryptedBuffer),
-    toZBase32: async () => zBase32Encode(await encryptedBuffer)
+    toZBase32: async () => zBase32Encode(await encryptedBuffer),
   };
 }
 
@@ -73,12 +73,12 @@ export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: Bin
   const decryptedBuffer = globalThis.crypto.subtle.decrypt(algorithm, key, bytes);
 
   return {
-    toBuffer: async () => decryptedBuffer,
+    toBuffer: async () => await decryptedBuffer,
     toHex: async () => encodeHex(await decryptedBuffer),
     toBase64: async () => encodeBase64(await decryptedBuffer),
     toBase64Url: async () => encodeBase64Url(await decryptedBuffer),
     toZBase32: async () => zBase32Encode(await decryptedBuffer),
-    toUtf8: async () => decodeText(await decryptedBuffer)
+    toUtf8: async () => decodeText(await decryptedBuffer),
   };
 }
 
@@ -92,11 +92,11 @@ export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | st
   const arrayBufferPromise = globalThis.crypto.subtle.digest(algorithm, bytes);
 
   const result: DigestResult = {
-    toBuffer: async () => arrayBufferPromise,
+    toBuffer: async () => await arrayBufferPromise,
     toHex: async () => encodeHex(await arrayBufferPromise),
     toBase64: async () => encodeBase64(await arrayBufferPromise),
     toBase64Url: async () => encodeBase64Url(await arrayBufferPromise),
-    toZBase32: async () => zBase32Encode(await arrayBufferPromise)
+    toZBase32: async () => zBase32Encode(await arrayBufferPromise),
   };
 
   return result;
@@ -114,11 +114,11 @@ export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData 
   const arrayBufferPromise = globalThis.crypto.subtle.sign(algorithm, key, bytes);
 
   const result: SignResult = {
-    toBuffer: async () => arrayBufferPromise,
+    toBuffer: async () => await arrayBufferPromise,
     toHex: async () => encodeHex(await arrayBufferPromise),
     toBase64: async () => encodeBase64(await arrayBufferPromise),
     toBase64Url: async () => encodeBase64Url(await arrayBufferPromise),
-    toZBase32: async () => zBase32Encode(await arrayBufferPromise)
+    toZBase32: async () => zBase32Encode(await arrayBufferPromise),
   };
 
   return result;
@@ -135,7 +135,7 @@ export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature
   const signatureBytes = isString(signature) ? encodeUtf8(signature) : signature;
   const dataBytes = isString(data) ? encodeUtf8(data) : data;
 
-  return globalThis.crypto.subtle.verify(algorithm, key, signatureBytes, dataBytes);
+  return await globalThis.crypto.subtle.verify(algorithm, key, signatureBytes, dataBytes);
 }
 
 /**
@@ -148,10 +148,10 @@ export async function importHmacKey(algorithm: HashAlgorithmIdentifier, key: Key
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+    return await globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
   }
 
-  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
+  return await globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'HMAC', hash: algorithm }, extractable, ['sign', 'verify']);
 }
 
 /**
@@ -165,10 +165,10 @@ export async function importSymmetricKey(algorithm: SymmetricAlgorithm, length: 
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+    return await globalThis.crypto.subtle.importKey('raw', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
   }
 
-  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
+  return await globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: algorithm, length }, extractable, ['encrypt', 'decrypt']);
 }
 
 /**
@@ -181,10 +181,10 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
 
   if (isBinaryKey(binaryKey)) {
-    return globalThis.crypto.subtle.importKey('spki', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+    return await globalThis.crypto.subtle.importKey('spki', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
   }
 
-  return globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
+  return await globalThis.crypto.subtle.importKey('jwk', binaryKey, { name: 'ECDSA', namedCurve: curve }, extractable, ['verify']);
 }
 
 /**
@@ -194,7 +194,7 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
  */
 export async function importPbkdf2Key(key: BinaryData | string, extractable: boolean = false): Promise<CryptoKey> {
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
-  return globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
+  return await globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
 }
 
 /**
@@ -204,7 +204,7 @@ export async function importPbkdf2Key(key: BinaryData | string, extractable: boo
  * @param usages whether to generate a key for signing, verifiying or both. Defaults to both
  */
 export async function generateEcdsaKey(curve: EcdsaCurve, extractable: boolean = false, usages: TypedExtract<KeyUsage, 'sign' | 'verify'>[] = ['sign', 'verify']): Promise<CryptoKeyPair> {
-  return globalThis.crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: curve }, extractable, usages);
+  return await globalThis.crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: curve }, extractable, usages);
 }
 
 /**
@@ -213,7 +213,7 @@ export async function generateEcdsaKey(curve: EcdsaCurve, extractable: boolean =
  */
 export async function generatePbkdf2Key(extractable: boolean = false): Promise<CryptoKey> {
   const key = getRandomBytes(16);
-  return importPbkdf2Key(key, extractable);
+  return await importPbkdf2Key(key, extractable);
 }
 
 /**

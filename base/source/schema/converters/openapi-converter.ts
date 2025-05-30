@@ -25,7 +25,7 @@ export function convertToOpenApiSchema(testable: SchemaTestable): UndefinableJso
     ...openApiSchema,
     ...(hasOwnProperty(openApiSchema, 'nullable') ? undefined : { nullable: false }),
     ...(isNotNull(schema.description) ? { description: schema.description } : undefined),
-    ...(isDefined(schema.example) ? { example: schema.example as Json } : undefined)
+    ...(isDefined(schema.example) ? { example: schema.example as Json } : undefined),
   };
 }
 
@@ -39,20 +39,20 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
       properties: fromEntries(convertedEntries),
       required: entries
         .filter(([, propertySchema]) => !(propertySchema instanceof OptionalSchema) && !((propertySchema instanceof NullableSchema) && (propertySchema.schema instanceof OptionalSchema)))
-        .map(([property]) => property as string)
+        .map(([property]) => property as string),
     };
   }
 
   if (schema instanceof StringSchema) {
     return {
-      type: 'string'
+      type: 'string',
     };
   }
 
   if (schema instanceof DateSchema) {
     return {
       type: 'string',
-      format: 'date-time'
+      format: 'date-time',
     };
   }
 
@@ -60,20 +60,20 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
     return {
       type: schema.integer ? 'integer' : 'number',
       ...(isNumber(schema.minimum) ? { minimum: schema.minimum } : undefined),
-      ...(isNumber(schema.maximum) ? { maximum: schema.maximum } : undefined)
+      ...(isNumber(schema.maximum) ? { maximum: schema.maximum } : undefined),
     };
   }
 
   if (schema instanceof BooleanSchema) {
     return {
-      type: 'boolean'
+      type: 'boolean',
     };
   }
 
   if (schema instanceof LiteralSchema) {
     return {
       type: typeof schema.value,
-      enum: [schema.value]
+      enum: [schema.value],
     };
   }
 
@@ -82,13 +82,17 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
       type: 'array',
       items: convertToOpenApiSchema(schema.itemSchema),
       ...(isNumber(schema.minimum) ? { minItems: schema.minimum } : undefined),
-      ...(isNumber(schema.maximum) ? { maxItems: schema.maximum } : undefined)
+      ...(isNumber(schema.maximum) ? { maxItems: schema.maximum } : undefined),
     };
   }
 
   if (schema instanceof EnumerationSchema) {
     const hasString = schema.allowedValues.some(isString);
     const hasNumber = schema.allowedValues.some(isNumber);
+
+    if (schema.allowedValues.length === 0) {
+      throw new NotSupportedError('Enum must have at least one value.');
+    }
 
     if (!hasString && !hasNumber) {
       throw new NotSupportedError('Enum must be either string or number but not both.');
@@ -97,7 +101,7 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
     return {
       type: hasString ? 'string' : 'number',
       format: 'enum',
-      enum: schema.allowedValues
+      enum: schema.allowedValues,
     };
   }
 
@@ -107,19 +111,19 @@ function convertToOpenApiSchemaBase(schema: Schema): UndefinableJsonObject {
 
       return {
         ...enumSchema,
-        nullable: true
+        nullable: true,
       };
     }
 
     return {
       ...convertToOpenApiSchema(schema.schema),
-      nullable: true
+      nullable: true,
     };
   }
 
   if (schema instanceof UnionSchema) {
     return {
-      oneOf: schema.schemas.map((innerSchema) => convertToOpenApiSchema(innerSchema as SchemaTestable))
+      oneOf: schema.schemas.map((innerSchema) => convertToOpenApiSchema(innerSchema as SchemaTestable)),
     };
   }
 

@@ -23,7 +23,10 @@ export class ServerSentEventsSource {
 
     this.#writer.closed
       .then(() => (this.#closed.set(true)))
-      .catch((error) => this.#error.set(error as Error));
+      .catch((error) => {
+        this.#error.set(error as Error);
+        this.#closed.set(true);
+      });
   }
 
   async close(): Promise<void> {
@@ -60,11 +63,11 @@ export class ServerSentEventsSource {
   }
 
   async sendJson({ name, data, id, retry }: ServerSentJsonEvent): Promise<void> {
-    return this.sendText({
+    await this.sendText({
       name,
       data: JSON.stringify(data),
       id,
-      retry
+      retry,
     });
   }
 }

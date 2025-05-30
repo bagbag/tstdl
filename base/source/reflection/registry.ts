@@ -13,7 +13,7 @@ export type ReflectionMetadata = TypeMetadata | PropertyMetadata | MethodMetadat
 export type MetadataType = 'type' | 'property' | 'method' | 'method-parameter' | 'constructor-parameter';
 
 export type MetadataBase<T extends MetadataType> = {
-  metadataType: T
+  metadataType: T,
 };
 
 export type TypeMetadata = MetadataBase<'type'> & {
@@ -28,7 +28,7 @@ export type TypeMetadata = MetadataBase<'type'> & {
   readonly methods: ReadonlyMap<string | symbol, MethodMetadata>,
   readonly staticMethods: ReadonlyMap<string | symbol, MethodMetadata>,
 
-  readonly data: ContextDataMap
+  readonly data: ContextDataMap,
 };
 
 export type PropertyMetadata = MetadataBase<'property'> & {
@@ -36,26 +36,26 @@ export type PropertyMetadata = MetadataBase<'property'> & {
   type: AbstractConstructor,
   isAccessor: boolean,
   data: ContextDataMap,
-  inherited: boolean
+  inherited: boolean,
 };
 
 export type MethodMetadata = MetadataBase<'method'> & {
   parameters: MethodParameterMetadata[],
   returnType: AbstractConstructor | undefined,
   data: ContextDataMap,
-  inherited: boolean
+  inherited: boolean,
 };
 
 export type ConstructorParameterMetadata = MetadataBase<'constructor-parameter'> & {
   type: AbstractConstructor | undefined,
   index: number,
-  data: ContextDataMap
+  data: ContextDataMap,
 };
 
 export type MethodParameterMetadata = MetadataBase<'method-parameter'> & {
   type: AbstractConstructor,
   index: number,
-  data: ContextDataMap
+  data: ContextDataMap,
 };
 
 export type ParameterMetadata = ConstructorParameterMetadata | MethodParameterMetadata;
@@ -173,13 +173,13 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
       initializer() {
         const parametersTypes = getParameterTypes(type);
         return parametersTypes?.map((parameterType, index): ConstructorParameterMetadata => ({ metadataType: 'constructor-parameter', index, type: parameterType, data: new ContextDataMap() }));
-      }
+      },
     },
     properties: {
-      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
+      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type.prototype as object, key), isAccessor: false, data: new ContextDataMap(), inherited: false })),
     },
     staticProperties: {
-      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ContextDataMap(), inherited: false }))
+      initializer: () => new FactoryMap((key: string | symbol): PropertyMetadata => ({ metadataType: 'property', key, type: getDesignType(type, key), isAccessor: false, data: new ContextDataMap(), inherited: false })),
     },
     methods: {
       initializer: () => new FactoryMap((key: string | symbol): MethodMetadata => {
@@ -191,7 +191,7 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
         }
 
         return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ContextDataMap() })), returnType, data: new ContextDataMap(), inherited: false };
-      })
+      }),
     },
     staticMethods: {
       initializer: () => new FactoryMap((key: string | symbol): MethodMetadata => {
@@ -203,9 +203,9 @@ function initializeType(type: AbstractConstructor): TypeMetadata {
         }
 
         return { metadataType: 'method', parameters: parameters.map((parameter, index): MethodParameterMetadata => ({ metadataType: 'method-parameter', index, type: parameter, data: new ContextDataMap() })), returnType, data: new ContextDataMap(), inherited: false };
-      })
+      }),
     },
-    data: { initializer: () => new ContextDataMap() }
+    data: { initializer: () => new ContextDataMap() },
   });
 }
 

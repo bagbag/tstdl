@@ -11,7 +11,7 @@ import type { Coercible } from '../types.js';
 
 export type ArraySchemaOptions<T> = SchemaOptions<T[]> & Coercible & {
   minimum?: number,
-  maximum?: number
+  maximum?: number,
 };
 
 export class ArraySchema<T> extends Schema<T[]> {

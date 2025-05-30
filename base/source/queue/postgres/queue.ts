@@ -20,8 +20,8 @@ import { job } from './schemas.js';
   argumentIdentityProvider: JSON.stringify,
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'queue' } }),
-    provide(DatabaseConfig, { useFactory: (_, context) => context.resolve(PostgresQueueModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) })
-  ]
+    provide(DatabaseConfig, { useFactory: (_, context) => context.resolve(PostgresQueueModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }),
+  ],
 })
 export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
   readonly #repository = injectRepository(PostgresJob);
@@ -41,7 +41,7 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
     tries: 0,
     enqueueTimestamp: TRANSACTION_TIMESTAMP,
     lastDequeueTimestamp: null,
-    data: sql`excluded.data`
+    data: sql`excluded.data`,
   } satisfies EntityUpdate<PostgresJob>;
 
   readonly #dequeueQuery = and(
@@ -55,7 +55,7 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
 
   readonly #dequeueUpdate = {
     tries: sql`${job.tries} + 1`,
-    lastDequeueTimestamp: TRANSACTION_TIMESTAMP
+    lastDequeueTimestamp: TRANSACTION_TIMESTAMP,
   };
 
   override async enqueue(data: T, options?: EnqueueOneOptions): Promise<Job<T>> {
@@ -74,7 +74,7 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
       tries: 0,
       enqueueTimestamp: TRANSACTION_TIMESTAMP,
       lastDequeueTimestamp: null,
-      data: item.data
+      data: item.data,
     } satisfies NewEntity<PostgresJob>));
 
     const update = (options?.uniqueTag == UniqueTagStrategy.TakeNew)
@@ -93,23 +93,23 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
   }
 
   override async has(id: string): Promise<boolean> {
-    return this.#repository.hasByQuery({ queue: this.#queueName, id });
+    return await this.#repository.hasByQuery({ queue: this.#queueName, id });
   }
 
   override async countByTag(tag: JobTag): Promise<number> {
-    return this.#repository.countByQuery({ queue: this.#queueName, tag });
+    return await this.#repository.countByQuery({ queue: this.#queueName, tag });
   }
 
   override async get(id: string): Promise<Job<T> | undefined> {
-    return this.#repository.tryLoadByQuery({ queue: this.#queueName, id });
+    return await this.#repository.tryLoadByQuery({ queue: this.#queueName, id });
   }
 
   override async getByTag(tag: JobTag): Promise<Job<T>[]> {
-    return this.#repository.loadManyByQuery({ queue: this.#queueName, tag });
+    return await this.#repository.loadManyByQuery({ queue: this.#queueName, tag });
   }
 
   override async getByTags(tags: JobTag[]): Promise<Job<T>[]> {
-    return this.#repository.loadManyByQuery({ queue: this.#queueName, tag: { $in: tags } });
+    return await this.#repository.loadManyByQuery({ queue: this.#queueName, tag: { $in: tags } });
   }
 
   override async cancel(id: string): Promise<void> {
@@ -164,16 +164,16 @@ export class PostgresQueue<T extends ObjectLiteral> extends Queue<T> {
       .where(inArray(job.id, this.#repository.session.select().from(selection)))
       .returning();
 
-    return this.#repository.mapManyToEntity(rows);
+    return await this.#repository.mapManyToEntity(rows);
   }
 
   override async acknowledge(job: Job<T>): Promise<void> {
-    return this.cancel(job.id);
+    await this.cancel(job.id);
   }
 
   override async acknowledgeMany(jobs: Job<T>[]): Promise<void> {
     const ids = jobs.map((job) => job.id);
-    return this.cancelMany(ids);
+    await this.cancelMany(ids);
   }
 
   override async *getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>> {

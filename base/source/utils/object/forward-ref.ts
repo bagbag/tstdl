@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
+import type { AbstractConstructor, Function } from '#/types.js';
+import { getClassOfName } from '../function/index.js';
 import { propertyReflectMethods, reflectMethods } from '../proxy.js';
-import { assert, isDefined, isUndefined } from '../type-guards.js';
-import { lazyObject, type LazyInitializerItem } from './lazy-property.js';
+import { assert, isDefined, isFunction, isUndefined } from '../type-guards.js';
+import { lazyObject, lazyObjectValue, type LazyInitializerItem } from './lazy-property.js';
 
 declare const isForwardRef: unique symbol;
 
-export type ForwardRefTypeHint = 'object' | 'function';
+export type ForwardRefTypeHint = 'object' | 'function' | AbstractConstructor;
 
 type ForwardRefContext<T extends object = object> = {
   reference: T | undefined,
-  typeHint?: ForwardRefTypeHint
+  typeHint?: ForwardRefTypeHint,
 };
 
 const contexts = new WeakMap<any, ForwardRefContext>();
@@ -19,13 +21,12 @@ export type ForwardRefOptions<T extends object = object> = {
   reference?: T,
   initializer?: () => T,
 
-  /** Due to limitations of Proxy, there can be some issues if proxy is created with a target of the "wrong" type. If possible, you should specify the type is forward ref is going to forward to. */
-  typeHint?: ForwardRefTypeHint
+  /** Due to limitations of Proxy, there can be some issues if proxy is created with a target of the "wrong" type. If possible, you should specify the type the forward ref is going to forward to. */
+  typeHint?: ForwardRefTypeHint,
 };
 
 export type ForwardRef<T extends object = object> = T & { [isForwardRef]: true };
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
 export const ForwardRef = {
   create<T extends object>(options?: ForwardRefOptions<T>): ForwardRef<T> {
     const context = getContext(options);
@@ -61,29 +62,31 @@ export const ForwardRef = {
     assert(ForwardRef.isForwardRef(forwardRef), 'provided value is not a ForwardRef');
 
     contexts.get(forwardRef)!.reference = reference;
-  }
+  },
 };
 
 function getForwardRefProxy<T extends object>(context: ForwardRefContext): ForwardRef<T> {
-  const target = (context.typeHint == 'function')
-    ? function forwardRef(): void { /* noop */ } as T
-    : { forwardRef: true } as T;
+  const target = isFunction(context.typeHint)
+    ? new (getClassOfName(`${context.typeHint.name}ForwardRef`))()
+    : (context.typeHint == 'function')
+      ? function forwardRef(): void { /* noop */ } as T
+      : { forwardRef: true } as T;
 
   const handler: ProxyHandler<T> = {};
 
   for (const method of reflectMethods) {
     handler[method] = {
-      [method](_originalTarget: T, ...args: any[]): any { // eslint-disable-line @typescript-eslint/no-loop-func
+      [method](_originalTarget: T, ...args: any[]): any {
         if (isUndefined(context.reference)) {
           const message = propertyReflectMethods.has(method)
-            ? `cannot forward "${method}" to property "${(args[0] as PropertyKey).toString()}" on a ForwardRef which has no reference`
+            ? `cannot forward "${method}" to property "${String(args[0] as PropertyKey)}" on a ForwardRef which has no reference`
             : `cannot forward "${method}" on a ForwardRef which has no reference`;
 
           throw new Error(message);
         }
 
         return (Reflect[method] as Function)(context.reference, ...args);
-      }
+      },
     }[method];
   }
 
@@ -98,7 +101,5 @@ function getContext(options?: ForwardRefOptions): ForwardRefContext {
         ? { initializer: options.initializer }
         : { value: undefined };
 
-  return lazyObject<ForwardRefContext>({
-    reference
-  });
+  return lazyObject<ForwardRefContext>({ reference, typeHint: lazyObjectValue(options?.typeHint) });
 }

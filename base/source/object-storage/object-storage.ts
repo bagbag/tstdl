@@ -3,10 +3,37 @@ import type { ObjectMetadata, ObjectStorageObject } from './object.js';
 
 export type UploadObjectOptions = {
   contentLength?: number,
-  metadata?: ObjectMetadata
+  contentType?: string,
+  metadata?: ObjectMetadata,
 };
 
-export type ObjectStorageArgument = string;
+export type UploadUrlOptions = {
+  contentLength?: number,
+  contentType?: string,
+  metadata?: ObjectMetadata,
+};
+
+export type CopyObjectOptions = {
+  metadata?: ObjectMetadata,
+};
+
+export type MoveObjectOptions = {
+  metadata?: ObjectMetadata,
+};
+
+export type ObjectStorageConfiguration = {
+  lifecycle?: {
+    expiration?: {
+      /** Expire (delete) objects after a certain number of seconds. Implementations may round up to supported intervals. */
+      after?: number,
+    },
+  },
+};
+
+export type ObjectStorageArgument = string | {
+  module: string,
+  configuration?: ObjectStorageConfiguration,
+};
 
 export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument> {
   /** Object storage module */
@@ -27,15 +54,32 @@ export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument>
    * Uploads an object
    * @param key object key
    * @param content content of object
+   * @param options options
    */
   abstract uploadObject(key: string, content: Uint8Array | ReadableStream<Uint8Array>, options?: UploadObjectOptions): Promise<void>;
+
+  /**
+   * Copies an object
+   * @param sourceKey source object key
+   * @param destinationKey destination object key or destination storage and key
+   * @param options options
+   */
+  abstract copyObject(sourceKey: string, destinationKey: string | [ObjectStorage, string], options?: CopyObjectOptions): Promise<void>;
+
+  /**
+   * Moves an object
+   * @param sourceKey source object key
+   * @param destinationKey destination object key or destination storage and key
+   * @param options options
+   */
+  abstract moveObject(sourceKey: string, destinationKey: string | [ObjectStorage, string], options?: MoveObjectOptions): Promise<void>;
 
   /**
    * Get an url which can be used to upload the object without further authorization
    * @param key object key
    * @param expirationTimestamp timestamp when the url expires and can no longer be used
    */
-  abstract getUploadUrl(key: string, expirationTimestamp: number): Promise<string>;
+  abstract getUploadUrl(key: string, expirationTimestamp: number, options?: UploadUrlOptions): Promise<string>;
 
   /**
    * Get all objects

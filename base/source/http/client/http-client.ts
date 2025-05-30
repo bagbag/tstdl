@@ -7,7 +7,7 @@ import { encodeBase64 } from '#/utils/base64.js';
 import { encodeUtf8 } from '#/utils/encoding.js';
 import { composeAsyncMiddleware } from '#/utils/middleware.js';
 import { objectEntries } from '#/utils/object/object.js';
-import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
+import { readableStreamFromPromise } from '#/utils/stream/from-promise.js';
 import { assertDefined, isArray, isBlob, isDefined, isObject, isUndefined } from '#/utils/type-guards.js';
 import { buildUrl } from '#/utils/url-builder.js';
 import { HttpHeaders } from '../http-headers.js';
@@ -41,12 +41,12 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   constructor() {
     this.internalStartMiddleware = [
       getBuildRequestUrlMiddleware(this.options.baseUrl),
-      ...((this.options.enableErrorHandling ?? true) ? [errorMiddleware] : [])
+      ...((this.options.enableErrorHandling ?? true) ? [errorMiddleware] : []),
     ];
 
     this.internalEndMiddleware = [
       getAddRequestHeadersMiddleware(this.headers),
-      getAdapterCallMiddleware(this.adapter)
+      getAdapterCallMiddleware(this.adapter),
     ];
 
     this.updateMiddleware();
@@ -66,26 +66,26 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async head(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('HEAD', url, { ...options });
+    return await this.request('HEAD', url, { ...options });
   }
 
   async get(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('GET', url, options);
+    return await this.request('GET', url, options);
   }
 
   async getText(url: string, options?: HttpClientRequestOptions): Promise<string> {
     const response = await this.request('GET', url, { ...options });
-    return response.body.readAsText();
+    return await response.body.readAsText();
   }
 
   async getJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('GET', url, { ...options });
-    return response.body.readAsJson();
+    return await response.body.readAsJson();
   }
 
   async getBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('GET', url, { ...options });
-    return response.body.readAsBuffer();
+    return await response.body.readAsBuffer();
   }
 
   getStream(url: string, options?: HttpClientRequestOptions): ReadableStream<string> | ReadableStream<Uint8Array> {
@@ -110,22 +110,22 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async post(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('POST', url, options);
+    return await this.request('POST', url, options);
   }
 
   async postText(url: string, options?: HttpClientRequestOptions): Promise<string> {
     const response = await this.request('POST', url, { ...options });
-    return response.body.readAsText();
+    return await response.body.readAsText();
   }
 
   async postJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('POST', url, { ...options });
-    return response.body.readAsJson();
+    return await response.body.readAsJson();
   }
 
   async postBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('POST', url, { ...options });
-    return response.body.readAsBuffer();
+    return await response.body.readAsBuffer();
   }
 
   postStream(url: string, options?: HttpClientRequestOptions): ReadableStream<Uint8Array> {
@@ -136,22 +136,22 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async put(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('PUT', url, options);
+    return await this.request('PUT', url, options);
   }
 
   async putText(url: string, options?: HttpClientRequestOptions): Promise<string> {
     const response = await this.request('PUT', url, { ...options });
-    return response.body.readAsText();
+    return await response.body.readAsText();
   }
 
   async putJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('PUT', url, { ...options });
-    return response.body.readAsJson();
+    return await response.body.readAsJson();
   }
 
   async putBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('PUT', url, { ...options });
-    return response.body.readAsBuffer();
+    return await response.body.readAsBuffer();
   }
 
   putStream(url: string, options?: HttpClientRequestOptions): ReadableStream<Uint8Array> {
@@ -162,22 +162,22 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async patch(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('PATCH', url, options);
+    return await this.request('PATCH', url, options);
   }
 
   async patchText(url: string, options?: HttpClientRequestOptions): Promise<string> {
     const response = await this.request('PATCH', url, { ...options });
-    return response.body.readAsText();
+    return await response.body.readAsText();
   }
 
   async patchJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('PATCH', url, { ...options });
-    return response.body.readAsJson();
+    return await response.body.readAsJson();
   }
 
   async patchBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('PATCH', url, { ...options });
-    return response.body.readAsBuffer();
+    return await response.body.readAsBuffer();
   }
 
   patchStream(url: string, options?: HttpClientRequestOptions): ReadableStream<Uint8Array> {
@@ -188,22 +188,22 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
   }
 
   async delete(url: string, options?: HttpClientRequestOptions): Promise<HttpClientResponse> {
-    return this.request('DELETE', url, options);
+    return await this.request('DELETE', url, options);
   }
 
   async deleteText(url: string, options?: HttpClientRequestOptions): Promise<string> {
     const response = await this.request('DELETE', url, { ...options });
-    return response.body.readAsText();
+    return await response.body.readAsText();
   }
 
   async deleteJson<T = UndefinableJson>(url: string, options?: HttpClientRequestOptions): Promise<T> {
     const response = await this.request('DELETE', url, { ...options });
-    return response.body.readAsJson<T>();
+    return await response.body.readAsJson<T>();
   }
 
   async deleteBuffer(url: string, options?: HttpClientRequestOptions): Promise<Uint8Array> {
     const response = await this.request('DELETE', url, { ...options });
-    return response.body.readAsBuffer();
+    return await response.body.readAsBuffer();
   }
 
   deleteStream(url: string, options?: HttpClientRequestOptions): ReadableStream<Uint8Array> {
@@ -215,7 +215,7 @@ export class HttpClient implements Resolvable<HttpClientArgument> {
 
   async request(method: HttpMethod, url: string, options: HttpClientRequestOptions = {}): Promise<HttpClientResponse> {
     const request = new HttpClientRequest(url, method, options);
-    return this.rawRequest(request);
+    return await this.rawRequest(request);
   }
 
   async rawRequest(request: HttpClientRequest): Promise<HttpClientResponse> {
@@ -238,7 +238,7 @@ function getBuildRequestUrlMiddleware(baseUrl: string | undefined): HttpClientMi
       mapParameters(request, baseUrl);
     }
 
-    return next();
+    await next();
   }
 
   return buildUrlParametersMiddleware;
@@ -285,7 +285,7 @@ function getAddRequestHeadersMiddleware(defaultHeaders: HttpHeaders): HttpClient
       }
     }
 
-    return next();
+    await next();
   }
 
   return addRequestHeadersMiddleware;
@@ -323,7 +323,6 @@ async function errorMiddleware(context: HttpClientMiddlewareContext, next: HttpC
   }
 }
 
-// eslint-disable-next-line max-statements, max-lines-per-function, complexity
 function mapParameters(request: HttpClientRequest, baseUrl?: string): void {
   const isGetOrHead = (request.method == 'GET') || (request.method == 'HEAD');
 
@@ -364,7 +363,7 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): void {
   }
 
   if (parameterEntries.size > 0) {
-    throw new HttpError(HttpErrorReason.InvalidRequest, request, undefined, 'Not all parameters could be mapped to url, query and body because request is either GET/HEAD or body is already defined');
+    throw new HttpError(HttpErrorReason.InvalidRequest, request, { cause: 'Not all parameters could be mapped to url, query and body because request is either GET/HEAD or body is already defined' });
   }
 
   if (isDefined(request.query)) {
@@ -384,8 +383,8 @@ function mapParameters(request: HttpClientRequest, baseUrl?: string): void {
 
 function getAdapterCallMiddleware(adapter: HttpClientAdapter): HttpClientMiddleware {
   async function adapterCallMiddleware(context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
-    context.response = await adapter.call(context.request); // eslint-disable-line require-atomic-updates
-    return next();
+    context.response = await adapter.call(context.request);
+    await next();
   }
 
   return adapterCallMiddleware;

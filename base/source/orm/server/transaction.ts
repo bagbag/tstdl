@@ -1,13 +1,15 @@
-import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { PgTransaction as DrizzlePgTransaction, PgTransactionConfig } from 'drizzle-orm/pg-core';
+import type { PgTransaction as DrizzlePgTransaction, PgQueryResultHKT, PgTransactionConfig } from 'drizzle-orm/pg-core';
 import { Subject } from 'rxjs';
+
+import { DeferredPromise } from '#/promise/deferred-promise.js';
+import type { Record } from '#/types.js';
 import type { Database } from './database.js';
 
-type PgTransaction = DrizzlePgTransaction<any, any, any>;
+export type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;
 
 export type TransactionConfig = PgTransactionConfig;
 
-export abstract class Transaction {
+export abstract class Transaction implements AsyncDisposable {
   readonly #afterCommitSubject = new Subject<void>();
 
   #useCounter = 0;
@@ -16,6 +18,12 @@ export abstract class Transaction {
   readonly afterCommit$ = this.#afterCommitSubject.asObservable();
 
   manualCommit: boolean = false;
+
+  async [Symbol.asyncDispose](): Promise<void> {
+    if (!this.#done) {
+      await this.rollback();
+    }
+  }
 
   withManualCommit(): void {
     this.manualCommit = true;
@@ -41,31 +49,30 @@ export abstract class Transaction {
 
   async commit(): Promise<void> {
     this.#done = true;
-
     await this._commit();
 
     this.#afterCommitSubject.next();
     this.#afterCommitSubject.complete();
   }
 
-  rollback(): void {
+  async rollback(): Promise<void> {
     this.#done = true;
-    this._rollback();
+    await this._rollback();
   }
 
-  protected abstract _commit(): Promise<void>;
-  protected abstract _rollback(): void;
+  protected abstract _commit(): void | Promise<void>;
+  protected abstract _rollback(): void | Promise<void>;
 }
 
 export class DrizzleTransaction extends Transaction {
-  readonly transaction: PgTransaction;
+  readonly pgTransaction: PgTransaction;
   readonly deferPromise = new DeferredPromise();
   readonly pgTransactionPromise: Promise<void>;
 
-  constructor(transaction: PgTransaction, pgTransactionPromise: Promise<void>) {
+  constructor(pgTransaction: PgTransaction, pgTransactionPromise: Promise<void>) {
     super();
 
-    this.transaction = transaction;
+    this.pgTransaction = pgTransaction;
     this.pgTransactionPromise = pgTransactionPromise;
   }
 
@@ -79,7 +86,7 @@ export class DrizzleTransaction extends Transaction {
 
         await transaction.deferPromise;
       },
-      config
+      config,
     );
 
     pgTransactionPromise.catch((error: unknown) => {
@@ -88,7 +95,7 @@ export class DrizzleTransaction extends Transaction {
       }
     });
 
-    return transactionPromise;
+    return await transactionPromise;
   }
 
   protected async _commit(): Promise<void> {
@@ -98,7 +105,7 @@ export class DrizzleTransaction extends Transaction {
 
   protected _rollback(): void {
     try {
-      this.transaction.rollback();
+      this.pgTransaction.rollback();
     }
     catch (error) {
       this.deferPromise.reject(error as Error);

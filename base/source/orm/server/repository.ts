@@ -2,13 +2,12 @@
 
 import { and, asc, count, desc, eq, inArray, isNull, isSQLWrapper, SQL, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { PgTransaction as DrizzlePgTransaction, type PgColumn, type PgInsertValue, type PgQueryResultHKT, type PgUpdateSetSource } from 'drizzle-orm/pg-core';
+import type { PgColumn, PgInsertValue, PgUpdateSetSource } from 'drizzle-orm/pg-core';
+import { match } from 'ts-pattern';
 
-import { createContextProvider } from '#/context/context.js';
 import { NotFoundError } from '#/errors/not-found.error.js';
 import { Singleton } from '#/injector/decorators.js';
-import { Injector } from '#/injector/index.js';
-import { inject, injectArgument, runInInjectionContext } from '#/injector/inject.js';
+import { inject, injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
@@ -23,24 +22,26 @@ import { fromDeepObjectEntries, fromEntries, objectEntries } from '#/utils/objec
 import { assertDefinedPass, isArray, isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import { Entity, type EntityMetadataAttributes, type EntityType, type EntityWithoutMetadata } from '../entity.js';
 import type { Query } from '../query.js';
-import type { EntityMetadataUpdate, EntityUpdate, LoadManyOptions, LoadOptions, NewEntity, Order } from '../repository.types.js';
+import type { EntityMetadataUpdate, EntityUpdate, LoadManyOptions, LoadOptions, NewEntity, Order, TargetColumnPaths } from '../repository.types.js';
 import { TRANSACTION_TIMESTAMP } from '../sqls.js';
-import { Database } from './database.js';
-import { getColumnDefinitions, getDrizzleTableFromType } from './drizzle/schema-converter.js';
+import type { Database } from './database.js';
+import { getColumnDefinitions, getColumnDefinitionsMap, getDrizzleTableFromType } from './drizzle/schema-converter.js';
 import { convertQuery } from './query-converter.js';
 import { ENCRYPTION_SECRET } from './tokens.js';
-import { DrizzleTransaction, type Transaction, type TransactionConfig } from './transaction.js';
+import type { PgTransaction } from './transaction.js';
+import { getTransactionalContextData, injectTransactional, isInTransactionalContext, Transactional } from './transactional.js';
 import type { ColumnDefinition, PgTableFromType, TransformContext } from './types.js';
-
-type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;
 
 export const repositoryType: unique symbol = Symbol('repositoryType');
 
+/**
+ * Configuration class for EntityRepository.
+ * Specifies the database schema to be used.
+ */
 export class EntityRepositoryConfig {
+  /** The name of the database schema. */
   schema: string;
 }
-
-export type TransactionHandler<T extends EntityRepository<any>, R> = (repository: T, transaction: Transaction) => Promise<R>;
 
 const entityTypeToken = Symbol('EntityType');
 
@@ -49,22 +50,16 @@ type EntityRepositoryContext = {
   table: PgTableFromType,
   columnDefinitions: ColumnDefinition[],
   columnDefinitionsMap: Map<string, ColumnDefinition>,
-  session: PgTransaction,
   encryptionSecret: Uint8Array | undefined,
   transformContext: TransformContext | Promise<TransformContext> | undefined
 };
 
 type InferSelect<T extends Entity | EntityWithoutMetadata = Entity | EntityWithoutMetadata> = PgTableFromType<EntityType<T>>['$inferSelect'];
 
-const { getCurrentEntityRepositoryContext, runInEntityRepositoryContext, isInEntityRepositoryContext } = createContextProvider<EntityRepositoryContext, 'EntityRepository'>('EntityRepository');
-
 @Singleton()
-export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityWithoutMetadata> implements Resolvable<EntityType<T>> {
-  readonly #context = getCurrentEntityRepositoryContext() ?? {} as Partial<EntityRepositoryContext>;
-  readonly #injector = inject(Injector);
-  readonly #repositoryConstructor: Type<this, []>;
-  readonly #withTransactionCache = new WeakMap<Transaction, this>();
-  readonly #encryptionSecret = isInEntityRepositoryContext() ? this.#context.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
+export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityWithoutMetadata> extends Transactional<EntityRepositoryContext> implements Resolvable<EntityType<T>> {
+  readonly #context = isInTransactionalContext() ? getTransactionalContextData(this) : {} as Partial<EntityRepositoryContext>;
+  readonly #encryptionSecret = isInTransactionalContext() ? this.#context.encryptionSecret : inject(ENCRYPTION_SECRET, undefined, { optional: true });
 
   #transformContext: TransformContext | Promise<TransformContext> | undefined = this.#context.transformContext;
 
@@ -73,75 +68,38 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   readonly #table = this.#context.table ?? getDrizzleTableFromType(this.type as EntityType, inject(EntityRepositoryConfig, undefined, { optional: true })?.schema);
   readonly #tableWithMetadata = this.#table as PgTableFromType<EntityType<Entity>>;
   readonly #columnDefinitions = this.#context.columnDefinitions ?? getColumnDefinitions(this.#table);
-  readonly #columnDefinitionsMap = this.#context.columnDefinitionsMap ?? new Map(this.#columnDefinitions.map((column) => [column.objectPath.path, column]));
-  readonly session = this.#context.session ?? inject(Database);
-  readonly isInTransaction = this.session instanceof DrizzlePgTransaction;
+  readonly #columnDefinitionsMap = this.#context.columnDefinitionsMap ?? getColumnDefinitionsMap(this.#table);
   readonly hasMetadata = typeExtends(this.type, Entity);
 
+  /**
+   * Gets the Drizzle table definition for the entity type.
+   */
   get table(): PgTableFromType<EntityType<T>> {
     return this.#table as PgTableFromType<EntityType<T>>;
   }
 
-  protected get isFork(): boolean {
-    return this.isInTransaction;
-  }
-
   declare readonly [resolveArgumentType]: EntityType<T>;
 
-  constructor() {
-    this.#repositoryConstructor = new.target as Type<this, []>;
-  }
-
-  withOptionalTransaction(transaction: Transaction | undefined): this {
-    if (isUndefined(transaction)) {
-      return this;
-    }
-
-    return this.withTransaction(transaction);
-  }
-
-  withTransaction(transaction: Transaction): this {
-    if (this.#withTransactionCache.has(transaction)) {
-      return this.#withTransactionCache.get(transaction)!;
-    }
-
+  protected override getTransactionalContextData() {
     const context: EntityRepositoryContext = {
       type: this.type,
       table: this.#table,
       columnDefinitions: this.#columnDefinitions,
       columnDefinitionsMap: this.#columnDefinitionsMap,
-      session: (transaction as DrizzleTransaction).transaction,
       encryptionSecret: this.#encryptionSecret,
-      transformContext: this.#transformContext
+      transformContext: this.#transformContext,
     };
 
-    const repositoryWithTransaction = runInInjectionContext(this.#injector, () => runInEntityRepositoryContext(context, () => new this.#repositoryConstructor()));
-
-    this.#withTransactionCache.set(transaction, repositoryWithTransaction);
-
-    return repositoryWithTransaction;
+    return context;
   }
 
-  async startTransaction(config?: TransactionConfig): Promise<Transaction> {
-    return DrizzleTransaction.create(this.session, config);
-  }
-
-  async useTransaction<R>(transaction: Transaction | undefined, handler: TransactionHandler<this, R>): Promise<R> {
-    if (isUndefined(transaction)) {
-      return this.transaction(handler);
-    }
-
-    const repository = this.withTransaction(transaction);
-    return (transaction as DrizzleTransaction).use(async () => handler(repository, transaction));
-  }
-
-  async transaction<R>(handler: TransactionHandler<this, R>, config?: TransactionConfig): Promise<R> {
-    const transaction = await DrizzleTransaction.create(this.session, config);
-    const repository = this.withTransaction(transaction);
-
-    return transaction.use(async () => handler(repository, transaction));
-  }
-
+  /**
+   * Loads a single entity by its ID.
+   * Throws `NotFoundError` if the entity is not found.
+   * @param id The ID of the entity to load.
+   * @returns A promise that resolves to the loaded entity.
+   * @throws {NotFoundError} If the entity with the given ID is not found.
+   */
   async load(id: string): Promise<T> {
     const entity = await this.tryLoad(id);
 
@@ -152,10 +110,24 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to load a single entity by its ID.
+   * Returns `undefined` if the entity is not found.
+   * @param id The ID of the entity to load.
+   * @returns A promise that resolves to the loaded entity or `undefined` if not found.
+   */
   async tryLoad(id: string): Promise<T | undefined> {
-    return this.tryLoadByQuery(eq(this.#table.id, id));
+    return await this.tryLoadByQuery(eq(this.#table.id, id));
   }
 
+  /**
+   * Loads a single entity based on a query.
+   * Throws `NotFoundError` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param options Optional loading options (e.g., offset, order).
+   * @returns A promise that resolves to the loaded entity.
+   * @throws {NotFoundError} If no entity matches the query.
+   */
   async loadByQuery(query: Query<T>, options?: LoadOptions<T>): Promise<T> {
     const entity = await this.tryLoadByQuery(query, options);
 
@@ -166,6 +138,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to load a single entity based on a query.
+   * Returns `undefined` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param options Optional loading options (e.g., offset, order).
+   * @returns A promise that resolves to the loaded entity or `undefined` if not found.
+   */
   async tryLoadByQuery(query: Query<T>, options?: LoadOptions<T>): Promise<T | undefined> {
     const sqlQuery = this.convertQuery(query);
 
@@ -185,28 +164,53 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Loads multiple entities by their IDs.
+   * @param ids An array of entity IDs to load.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns A promise that resolves to an array of loaded entities.
+   */
   async loadMany(ids: string[], options?: LoadManyOptions<T>): Promise<T[]> {
-    return this.loadManyByQuery(inArray(this.#table.id, ids), options);
+    return await this.loadManyByQuery(inArray(this.#table.id, ids), options);
   }
 
+  /**
+   * Loads multiple entities by their IDs and returns them as an async iterable cursor.
+   * @param ids An array of entity IDs to load.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns An async iterable iterator of loaded entities.
+   */
   async *loadManyCursor(ids: string[], options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadMany(ids, options);
     yield* entities;
   }
 
+  /**
+   * Loads multiple entities based on a query.
+   * @param query The query to filter entities.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns A promise that resolves to an array of loaded entities.
+   */
   async loadManyByQuery(query: Query<T>, options?: LoadManyOptions<T>): Promise<T[]> {
     const sqlQuery = this.convertQuery(query);
 
-    let dbQuery = this.session.select()
+    let dbQuery = match(options?.distinct ?? false)
+      .with(false, () => this.session.select())
+      .with(true, () => this.session.selectDistinct())
+      .otherwise((targets) => {
+        const ons = targets.map((target) => isString(target) ? this.getColumn(target) : target);
+        return this.session.selectDistinctOn(ons);
+      })
       .from(this.#table)
-      .where(sqlQuery)
-      .orderBy()
-      .offset(options?.offset!)
-      .limit(options?.limit!)
       .$dynamic();
+
+    dbQuery = dbQuery
+      .where(sqlQuery)
+      .offset(options?.offset!)
+      .limit(options?.limit!);
 
     if (isDefined(options?.order)) {
       dbQuery = dbQuery.orderBy(...this.convertOrderBy(options.order));
@@ -214,23 +218,43 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     const rows = await dbQuery;
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
+  /**
+   * Loads multiple entities based on a query and returns them as an async iterable cursor.
+   * @param query The query to filter entities.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns An async iterable iterator of loaded entities.
+   */
   async *loadManyByQueryCursor(query: Query<T>, options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadManyByQuery(query, options);
     yield* entities;
   }
 
+  /**
+   * Loads all entities of the repository's type.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns A promise that resolves to an array of all entities.
+   */
   async loadAll(options?: LoadManyOptions<T>): Promise<T[]> {
-    return this.loadManyByQuery({}, options);
+    return await this.loadManyByQuery({}, options);
   }
 
+  /**
+   * Loads all entities of the repository's type and returns them as an async iterable cursor.
+   * @param options Optional loading options (e.g., offset, limit, order).
+   * @returns An async iterable iterator of all entities.
+   */
   async *loadAllCursor(options?: LoadManyOptions<T>): AsyncIterableIterator<T> {
     const entities = await this.loadAll(options);
     yield* entities;
   }
 
+  /**
+   * Counts the total number of entities of the repository's type.
+   * @returns A promise that resolves to the total count.
+   */
   async count(): Promise<number> {
     const sqlQuery = this.convertQuery({});
 
@@ -243,6 +267,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return assertDefinedPass(result).count;
   }
 
+  /**
+   * Counts the number of entities matching a query.
+   * @param query The query to filter entities.
+   * @returns A promise that resolves to the count of matching entities.
+   */
   async countByQuery(query: Query<T>): Promise<number> {
     const sqlQuery = this.convertQuery(query);
 
@@ -255,10 +284,20 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return assertDefinedPass(result).count;
   }
 
+  /**
+   * Checks if an entity with the given ID exists.
+   * @param id The ID of the entity to check.
+   * @returns A promise that resolves to `true` if the entity exists, `false` otherwise.
+   */
   async has(id: string): Promise<boolean> {
-    return this.hasByQuery(eq(this.#table.id, id));
+    return await this.hasByQuery(eq(this.#table.id, id));
   }
 
+  /**
+   * Checks if any entity matches the given query.
+   * @param query The query to filter entities.
+   * @returns A promise that resolves to `true` if at least one entity matches the query, `false` otherwise.
+   */
   async hasByQuery(query: Query<T>): Promise<boolean> {
     const sqlQuery = this.convertQuery(query);
 
@@ -270,6 +309,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return assertDefinedPass(result).exists;
   }
 
+  /**
+   * Checks if all entities with the given IDs exist.
+   * @param ids An array of entity IDs to check.
+   * @returns A promise that resolves to `true` if all entities exist, `false` otherwise.
+   */
   async hasAll(ids: string[]): Promise<boolean> {
     const sqlQuery = this.convertQuery({});
 
@@ -299,9 +343,14 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Inserts a new entity into the database.
+   * @param entity The entity to insert.
+   * @returns A promise that resolves to the inserted entity.
+   */
   async insert(entity: NewEntity<T>): Promise<T> {
     const columns = await this.mapToInsertColumns(entity);
 
@@ -310,16 +359,28 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .values(columns)
       .returning();
 
-    return this.mapToEntity(row!);
+    return await this.mapToEntity(row!);
   }
 
+  /**
+   * Inserts multiple new entities into the database.
+   * @param entities An array of entities to insert.
+   * @returns A promise that resolves to an array of the inserted entities.
+   */
   async insertMany(entities: NewEntity<T>[]): Promise<T[]> {
     const columns = await this.mapManyToInsertColumns(entities);
     const rows = await this.session.insert(this.#table).values(columns).returning();
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
+  /**
+   * Inserts an entity or updates it if a conflict occurs based on the target columns.
+   * @param target The column(s) to use for conflict detection.
+   * @param entity The entity to insert.
+   * @param update Optional update to apply if a conflict occurs. Defaults to the inserted entity's values.
+   * @returns A promise that resolves to the inserted or updated entity.
+   */
   async upsert(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>, update?: EntityUpdate<T>): Promise<T> {
     const targetColumns = toArray(target).map((path) => this.getColumn(path));
 
@@ -331,13 +392,20 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .values(columns)
       .onConflictDoUpdate({
         target: targetColumns,
-        set: mappedUpdate
+        set: mappedUpdate,
       })
       .returning();
 
-    return this.mapToEntity(row!);
+    return await this.mapToEntity(row!);
   }
 
+  /**
+   * Inserts multiple entities or updates them if a conflict occurs based on the target columns.
+   * @param target The column(s) to use for conflict detection.
+   * @param entities An array of entities to insert.
+   * @param update Optional update to apply if a conflict occurs. Defaults to the inserted entity's values.
+   * @returns A promise that resolves to an array of the inserted or updated entities.
+   */
   async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update?: EntityUpdate<T>): Promise<T[]> {
     const targetColumns = toArray(target).map((path) => this.getColumn(path));
 
@@ -346,7 +414,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       ? await this.mapUpdate(update)
       : {
         ...fromEntries(this.#columnDefinitions.map((column) => [column.name, sql`excluded.${sql.identifier(this.getColumn(column).name)}`] as const)),
-        ...this._getMetadataUpdate(update)
+        ...this._getMetadataUpdate(update),
       };
 
     const rows = await this.session
@@ -354,13 +422,21 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .values(columns)
       .onConflictDoUpdate({
         target: targetColumns,
-        set: mappedUpdate
+        set: mappedUpdate,
       })
       .returning();
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
+  /**
+   * Updates an entity by its ID.
+   * Throws `NotFoundError` if the entity is not found.
+   * @param id The ID of the entity to update.
+   * @param update The update to apply to the entity.
+   * @returns A promise that resolves to the updated entity.
+   * @throws {NotFoundError} If the entity with the given ID is not found.
+   */
   async update(id: string, update: EntityUpdate<T>): Promise<T> {
     const entity = await this.tryUpdate(id, update);
 
@@ -371,6 +447,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to update an entity by its ID.
+   * Returns `undefined` if the entity is not found.
+   * @param id The ID of the entity to update.
+   * @param update The update to apply to the entity.
+   * @returns A promise that resolves to the updated entity or `undefined` if not found.
+   */
   async tryUpdate(id: string, update: EntityUpdate<T>): Promise<T | undefined> {
     const sqlQuery = this.convertQuery(eq(this.#table.id, id));
     const mappedUpdate = await this.mapUpdate(update);
@@ -385,9 +468,17 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Updates a single entity matching a query.
+   * Throws `NotFoundError` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param update The update to apply to the entity.
+   * @returns A promise that resolves to the updated entity.
+   * @throws {NotFoundError} If no entity matches the query.
+   */
   async updateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T> {
     const entity = await this.tryUpdateByQuery(query, update);
 
@@ -398,6 +489,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to update a single entity matching a query.
+   * Returns `undefined` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param update The update to apply to the entity.
+   * @returns A promise that resolves to the updated entity or `undefined` if not found.
+   */
   async tryUpdateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T | undefined> {
     const mappedUpdate = await this.mapUpdate(update);
     const idQuery = this.getIdLimitSelect(query);
@@ -412,13 +510,25 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Updates multiple entities by their IDs.
+   * @param ids An array of entity IDs to update.
+   * @param update The update to apply to the entities.
+   * @returns A promise that resolves to an array of the updated entities.
+   */
   async updateMany(ids: string[], update: EntityUpdate<T>): Promise<T[]> {
-    return this.updateManyByQuery(inArray(this.#table.id, ids), update);
+    return await this.updateManyByQuery(inArray(this.#table.id, ids), update);
   }
 
+  /**
+   * Updates multiple entities matching a query.
+   * @param query The query to filter entities.
+   * @param update The update to apply to the entities.
+   * @returns A promise that resolves to an array of the updated entities.
+   */
   async updateManyByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T[]> {
     const sqlQuery = this.convertQuery(query);
     const mappedUpdate = await this.mapUpdate(update);
@@ -429,9 +539,17 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .where(sqlQuery)
       .returning();
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
+  /**
+   * Deletes an entity by its ID (soft delete if metadata is available).
+   * Throws `NotFoundError` if the entity is not found.
+   * @param id The ID of the entity to delete.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to the deleted entity.
+   * @throws {NotFoundError} If the entity with the given ID is not found.
+   */
   async delete(id: string, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
     const entity = await this.tryDelete(id, metadataUpdate);
 
@@ -442,9 +560,16 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to delete an entity by its ID (soft delete if metadata is available).
+   * Returns `undefined` if the entity is not found.
+   * @param id The ID of the entity to delete.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to the deleted entity or `undefined` if not found.
+   */
   async tryDelete(id: string, metadataUpdate?: EntityMetadataUpdate): Promise<T | undefined> {
     if (!this.hasMetadata) {
-      return this.tryHardDelete(id);
+      return await this.tryHardDelete(id);
     }
 
     const sqlQuery = this.convertQuery(eq(this.#table.id, id));
@@ -453,7 +578,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .update(this.#tableWithMetadata)
       .set({
         deleteTimestamp: TRANSACTION_TIMESTAMP,
-        attributes: this.getAttributesUpdate(metadataUpdate?.attributes)
+        attributes: this.getAttributesUpdate(metadataUpdate?.attributes),
       })
       .where(sqlQuery)
       .returning();
@@ -462,9 +587,17 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Deletes a single entity matching a query (soft delete if metadata is available).
+   * Throws `NotFoundError` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to the deleted entity.
+   * @throws {NotFoundError} If no entity matches the query.
+   */
   async deleteByQuery(query: Query<T>, metadataUpdate?: EntityMetadataUpdate): Promise<T> {
     const entity = await this.tryDeleteByQuery(query, metadataUpdate);
 
@@ -475,9 +608,16 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return entity;
   }
 
+  /**
+   * Tries to delete a single entity matching a query (soft delete if metadata is available).
+   * Returns `undefined` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to the deleted entity or `undefined` if not found.
+   */
   async tryDeleteByQuery(query: Query<T>, metadataUpdate?: EntityMetadataUpdate): Promise<T | undefined> {
     if (!this.hasMetadata) {
-      return this.tryHardDeleteByQuery(query);
+      return await this.tryHardDeleteByQuery(query);
     }
 
     const idQuery = this.getIdLimitSelect(query);
@@ -486,7 +626,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .update(this.#tableWithMetadata)
       .set({
         deleteTimestamp: TRANSACTION_TIMESTAMP,
-        attributes: this.getAttributesUpdate(metadataUpdate?.attributes)
+        attributes: this.getAttributesUpdate(metadataUpdate?.attributes),
       })
       .where(inArray(this.#table.id, idQuery.for('update')))
       .returning();
@@ -495,16 +635,28 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Deletes multiple entities by their IDs (soft delete if metadata is available).
+   * @param ids An array of entity IDs to delete.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to an array of the deleted entities.
+   */
   async deleteMany(ids: string[], metadataUpdate?: EntityMetadataUpdate): Promise<T[]> {
-    return this.deleteManyByQuery(inArray(this.#table.id, ids), metadataUpdate);
+    return await this.deleteManyByQuery(inArray(this.#table.id, ids), metadataUpdate);
   }
 
+  /**
+   * Deletes multiple entities matching a query (soft delete if metadata is available).
+   * @param query The query to filter entities.
+   * @param metadataUpdate Optional metadata update to apply during soft delete.
+   * @returns A promise that resolves to an array of the deleted entities.
+   */
   async deleteManyByQuery(query: Query<T>, metadataUpdate?: EntityMetadataUpdate): Promise<T[]> {
     if (!this.hasMetadata) {
-      return this.hardDeleteManyByQuery(query);
+      return await this.hardDeleteManyByQuery(query);
     }
 
     const sqlQuery = this.convertQuery(query);
@@ -513,14 +665,21 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .update(this.#tableWithMetadata)
       .set({
         deleteTimestamp: TRANSACTION_TIMESTAMP,
-        attributes: this.getAttributesUpdate(metadataUpdate?.attributes)
+        attributes: this.getAttributesUpdate(metadataUpdate?.attributes),
       })
       .where(sqlQuery)
       .returning();
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
+  /**
+   * Hard deletes an entity by its ID (removes from the database).
+   * Throws `NotFoundError` if the entity is not found.
+   * @param id The ID of the entity to hard delete.
+   * @returns A promise that resolves to the hard deleted entity.
+   * @throws {NotFoundError} If the entity with the given ID is not found.
+   */
   async hardDelete(id: string): Promise<T> {
     const result = await this.tryHardDelete(id);
 
@@ -531,6 +690,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return result;
   }
 
+  /**
+   * Tries to hard delete an entity by its ID (removes from the database).
+   * Returns `undefined` if the entity is not found.
+   * @param id The ID of the entity to hard delete.
+   * @returns A promise that resolves to the hard deleted entity or `undefined` if not found.
+   */
   async tryHardDelete(id: string): Promise<T | undefined> {
     const sqlQuery = this.convertQuery(eq(this.#table.id, id));
 
@@ -543,9 +708,16 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Hard deletes a single entity matching a query (removes from the database).
+   * Throws `NotFoundError` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @returns A promise that resolves to the hard deleted entity.
+   * @throws {NotFoundError} If no entity matches the query.
+   */
   async hardDeleteByQuery(query: Query<T>): Promise<T> {
     const result = await this.tryHardDeleteByQuery(query);
 
@@ -556,6 +728,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return result;
   }
 
+  /**
+   * Tries to hard delete a single entity matching a query (removes from the database).
+   * Returns `undefined` if no entity matches the query.
+   * @param query The query to filter entities.
+   * @returns A promise that resolves to the hard deleted entity or `undefined` if not found.
+   */
   async tryHardDeleteByQuery(query: Query<T>): Promise<T | undefined> {
     const idQuery = this.getIdLimitSelect(query);
 
@@ -568,13 +746,23 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return undefined;
     }
 
-    return this.mapToEntity(row);
+    return await this.mapToEntity(row);
   }
 
+  /**
+   * Hard deletes multiple entities by their IDs (removes from the database).
+   * @param ids An array of entity IDs to hard delete.
+   * @returns A promise that resolves to an array of the hard deleted entities.
+   */
   async hardDeleteMany(ids: string[]): Promise<T[]> {
-    return this.hardDeleteManyByQuery(inArray(this.#table.id, ids));
+    return await this.hardDeleteManyByQuery(inArray(this.#table.id, ids));
   }
 
+  /**
+   * Hard deletes multiple entities matching a query (removes from the database).
+   * @param query The query to filter entities.
+   * @returns A promise that resolves to an array of the hard deleted entities.
+   */
   async hardDeleteManyByQuery(query: Query<T>): Promise<T[]> {
     const sqlQuery = this.convertQuery(query);
 
@@ -583,10 +771,15 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       .where(sqlQuery)
       .returning();
 
-    return this.mapManyToEntity(rows);
+    return await this.mapManyToEntity(rows);
   }
 
-  getColumn(pathOrColumn: Paths<UntaggedDeep<T>> | ColumnDefinition): PgColumn {
+  /**
+   * Retrieves the Drizzle PgColumn for a given object path or column definition.
+   * @param pathOrColumn The object path or column definition.
+   * @returns The corresponding PgColumn.
+   */
+  getColumn(pathOrColumn: TargetColumnPaths<T> | ColumnDefinition): PgColumn {
     if (isString(pathOrColumn)) {
       const columnName = assertDefinedPass(this.#columnDefinitionsMap.get(pathOrColumn), `Could not map ${pathOrColumn} to column.`).name;
       return this.#table[columnName as keyof PgTableFromType] as PgColumn;
@@ -595,6 +788,15 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return this.#table[pathOrColumn.name as keyof PgTableFromType] as PgColumn;
   }
 
+  getColumns(pathOrColumns: (TargetColumnPaths<T> | ColumnDefinition)[]): PgColumn[] {
+    return pathOrColumns.map((column) => this.getColumn(column));
+  }
+
+  /**
+   * Converts an Order object to an array of Drizzle SQL order expressions.
+   * @param order The order object.
+   * @returns An array of SQL order expressions.
+   */
   convertOrderBy(order: Order<T>): SQL[] {
     if (isArray(order)) {
       return order.map((item) => {
@@ -618,6 +820,13 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     });
   }
 
+  /**
+   * Converts a Query object to a Drizzle SQL where clause.
+   * Automatically filters out soft-deleted entities unless `withDeleted` is true.
+   * @param query The query object.
+   * @param options Optional options, including `withDeleted` to include soft-deleted entities.
+   * @returns A Drizzle SQL condition.
+   */
   convertQuery(query: Query<T>, options?: { withDeleted?: boolean }): SQL {
     let sql = convertQuery(query, this.#table, this.#columnDefinitionsMap);
 
@@ -628,41 +837,82 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     return and(isNull(this.#tableWithMetadata.deleteTimestamp), sql)!;
   }
 
+  /**
+   * Maps multiple database rows to an array of entities.
+   * @param columns An array of database rows.
+   * @returns A promise that resolves to an array of entities.
+   */
   async mapManyToEntity(columns: InferSelect[]): Promise<T[]> {
     const transformContext = await this.getTransformContext();
-    return this._mapManyToEntity(columns as any as InferSelect[], transformContext);
+    return await this._mapManyToEntity(columns as any as InferSelect[], transformContext);
   }
 
+  /**
+   * Maps a single database row to an entity.
+   * @param columns A database row.
+   * @returns A promise that resolves to an entity.
+   */
   async mapToEntity(columns: InferSelect): Promise<T> {
     const transformContext = await this.getTransformContext();
-    return this._mapToEntity(columns as any as InferSelect, transformContext);
+    return await this._mapToEntity(columns as any as InferSelect, transformContext);
   }
 
+  /**
+   * Maps multiple entity-like objects to database column values for insertion or update.
+   * @param objects An array of entity-like objects.
+   * @returns A promise that resolves to an array of database column values.
+   */
   async mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
     const transformContext = await this.getTransformContext();
-    return this._mapManyToColumns(objects, transformContext);
+    return await this._mapManyToColumns(objects, transformContext);
   }
 
+  /**
+   * Maps a single entity-like object to database column values for insertion or update.
+   * @param obj An entity-like object.
+   * @returns A promise that resolves to database column values.
+   */
   async mapToColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this._mapToColumns(obj, transformContext);
+    return await this._mapToColumns(obj, transformContext);
   }
 
+  /**
+   * Maps multiple new entity objects to database column values for insertion.
+   * @param objects An array of new entity objects.
+   * @returns A promise that resolves to an array of database column values for insertion.
+   */
   async mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[]): Promise<PgInsertValue<PgTableFromType>[]> {
     const transformContext = await this.getTransformContext();
-    return this._mapManyToInsertColumns(objects, transformContext);
+    return await this._mapManyToInsertColumns(objects, transformContext);
   }
 
+  /**
+   * Maps a new entity object to database column values for insertion.
+   * @param obj A new entity object.
+   * @returns A promise that resolves to database column values for insertion.
+   */
   async mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>): Promise<PgInsertValue<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this._mapToInsertColumns(obj, transformContext);
+    return await this._mapToInsertColumns(obj, transformContext);
   }
 
+  /**
+   * Maps an entity update object to database column values for updating.
+   * @param update The entity update object.
+   * @returns A promise that resolves to database column values for updating.
+   */
   async mapUpdate(update: EntityUpdate<T>): Promise<PgUpdateSetSource<PgTableFromType>> {
     const transformContext = await this.getTransformContext();
-    return this._mapUpdate(update, transformContext);
+    return await this._mapUpdate(update, transformContext);
   }
 
+  /**
+   * Gets a Drizzle select query for the ID of a single entity matching the provided query, limited to 1 result.
+   * Useful for subqueries in update/delete operations targeting a single entity.
+   * @param query The query to filter entities.
+   * @returns A Drizzle select query for the entity ID.
+   */
   getIdLimitQuery(query: Query<T>) {
     return this.getIdLimitSelect(query);
   }
@@ -680,7 +930,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   protected async _mapManyToEntity(columns: InferSelect[], transformContext: TransformContext): Promise<T[]> {
-    return toArrayAsync(mapAsync(columns, async (column) => this._mapToEntity(column, transformContext)));
+    return await toArrayAsync(mapAsync(columns, async (column) => await this._mapToEntity(column, transformContext)));
   }
 
   protected async _mapToEntity(columns: InferSelect, transformContext: TransformContext): Promise<T> {
@@ -698,7 +948,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   protected async _mapManyToColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
-    return toArrayAsync(mapAsync(objects, async (obj) => this._mapToColumns(obj, transformContext)));
+    return await toArrayAsync(mapAsync(objects, async (obj) => await this._mapToColumns(obj, transformContext)));
   }
 
   protected async _mapToColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
@@ -713,7 +963,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   }
 
   protected async _mapManyToInsertColumns(objects: (DeepPartial<T> | NewEntity<T>)[], transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>[]> {
-    return toArrayAsync(mapAsync(objects, async (obj) => this._mapToInsertColumns(obj, transformContext)));
+    return await toArrayAsync(mapAsync(objects, async (obj) => await this._mapToInsertColumns(obj, transformContext)));
   }
 
   protected async _mapToInsertColumns(obj: DeepPartial<T> | NewEntity<T>, transformContext: TransformContext): Promise<PgInsertValue<PgTableFromType>> {
@@ -726,10 +976,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
           ? {
             revision: 1,
             revisionTimestamp: TRANSACTION_TIMESTAMP,
-            createTimestamp: TRANSACTION_TIMESTAMP
+            createTimestamp: TRANSACTION_TIMESTAMP,
           } satisfies PgUpdateSetSource<PgTableFromType<EntityType<Entity>>>
           : undefined
-      )
+      ),
     };
   }
 
@@ -748,7 +998,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
 
     return {
       ...mappedUpdate,
-      ...this._getMetadataUpdate(update)
+      ...this._getMetadataUpdate(update),
 
     } satisfies PgUpdateSetSource<PgTableFromType>;
   }
@@ -758,7 +1008,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       ? {
         attributes: this.getAttributesUpdate((update as EntityUpdate<Entity> | undefined)?.metadata?.attributes),
         revision: sql<number>`${this.#tableWithMetadata.revision} + 1`,
-        revisionTimestamp: TRANSACTION_TIMESTAMP
+        revisionTimestamp: TRANSACTION_TIMESTAMP,
       } satisfies PgUpdateSetSource<PgTableFromType<EntityType<Entity>>>
       : undefined;
   }
@@ -785,21 +1035,33 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       this.#transformContext = transformContext;
     }
 
-    return this.#transformContext;
+    return await this.#transformContext;
   }
 }
 
-export function injectRepository<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>): EntityRepository<T> {
-  return inject(EntityRepository<T>, type);
+/**
+ * Injects an EntityRepository instance for the specified entity type.
+ * @template T The entity type.
+ * @param type The entity type.
+ * @returns An EntityRepository instance for the specified type.
+ */
+export function injectRepository<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>, session?: Database | PgTransaction | null): EntityRepository<T> {
+  return injectTransactional(EntityRepository<T>, session, type);
 }
 
+/**
+ * Gets or creates a singleton EntityRepository class for the specified entity type.
+ * @template T The entity type.
+ * @param type The entity type.
+ * @returns A singleton EntityRepository class for the specified type.
+ */
 export function getRepository<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>): Type<EntityRepository<T>> {
   const className = `${type.name}Service`;
 
   const entityRepositoryClass = {
     [className]: class extends EntityRepository<T> {
       static [entityTypeToken] = type;
-    }
+    },
   }[className]!;
 
   Singleton()(entityRepositoryClass);

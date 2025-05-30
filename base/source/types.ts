@@ -17,7 +17,7 @@ export type PrimitiveTypeMap = {
   symbol: symbol,
   object: object,
   function: Function,
-  undefined: undefined
+  undefined: undefined,
 };
 
 export type PrimitiveTypeString<T extends PrimitiveTypeMap[keyof PrimitiveTypeMap] = PrimitiveTypeMap[keyof PrimitiveTypeMap]> = Simplify<keyof PickBy<PrimitiveTypeMap, T>>;
@@ -89,6 +89,7 @@ export type RequiredKeys<T> = { [K in keyof T]-?: ObjectLiteral extends Pick<T, 
 export type OptionalKeys<T> = { [K in keyof T]-?: ObjectLiteral extends Pick<T, K> ? K : never }[keyof T];
 
 export type TypedOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+export type TypedExclude<T, U extends T> = T extends U ? never : T;
 export type TypedExtract<T, U extends T> = T extends U ? T : never;
 
 export type ReplaceIfUnknown<T, U> = IfUnknown<T, U, T>;

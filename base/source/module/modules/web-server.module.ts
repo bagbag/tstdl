@@ -10,15 +10,15 @@ import type { Module } from '../module.js';
 import { ModuleMetricType } from '../module.js';
 
 export type WebServerModuleConfiguration = {
-  port: number
+  port: number,
 };
 
 export const webServerModuleConfiguration: WebServerModuleConfiguration = {
-  port: 8000
+  port: 8000,
 };
 
 @Singleton({
-  defaultArgumentProvider: () => webServerModuleConfiguration
+  defaultArgumentProvider: () => webServerModuleConfiguration,
 })
 export class WebServerModule extends ModuleBase implements Module, Resolvable<WebServerModuleConfiguration> {
   private readonly config = injectArgument(this);
@@ -31,8 +31,8 @@ export class WebServerModule extends ModuleBase implements Module, Resolvable<We
   readonly metrics = {
     connectedSockets: {
       type: ModuleMetricType.Gauge,
-      getValue: () => this.httpServer.connectedSocketsCount
-    }
+      getValue: () => this.httpServer.connectedSocketsCount,
+    },
   };
 
   declare readonly [resolveArgumentType]: WebServerModuleConfiguration;

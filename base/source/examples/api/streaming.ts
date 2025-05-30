@@ -36,7 +36,7 @@ const streamingApiDefinition = defineApi({
       method: 'POST',
       resource: 'echo',
       body: ReadableStream,
-      result: ReadableStream
+      result: ReadableStream,
     },
     events: {
       method: 'GET',
@@ -44,10 +44,10 @@ const streamingApiDefinition = defineApi({
       result: ServerSentEvents,
       cors: {
         accessControlAllowOrigin: '*',
-        accessControlAllowMethods: 'GET'
-      }
-    }
-  }
+        accessControlAllowMethods: 'GET',
+      },
+    },
+  },
 });
 
 @apiController(streamingApiDefinition)
@@ -56,11 +56,11 @@ class StreamingApi implements ApiController<StreamingApiDefinition> {
     return HttpServerResponse.fromObject({
       headers: {
         'Content-Type': request.headers.contentType,
-        'Content-Length': request.headers.contentLength
+        'Content-Length': request.headers.contentLength,
       },
       body: {
-        stream: body
-      }
+        stream: body,
+      },
     });
   }
 

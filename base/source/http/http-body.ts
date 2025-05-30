@@ -30,22 +30,22 @@ export class HttpBody {
 
   async readAsBuffer(options?: ReadBodyOptions): Promise<Uint8Array> {
     this.prepareBodyRead();
-    return readBodyAsBuffer(this.body!, this.headers, options);
+    return await readBodyAsBuffer(this.body!, this.headers, options);
   }
 
   async readAsText(options?: ReadBodyOptions): Promise<string> {
     this.prepareBodyRead();
-    return readBodyAsText(this.body!, this.headers, options);
+    return await readBodyAsText(this.body!, this.headers, options);
   }
 
   async readAsJson<T = UndefinableJson>(options?: ReadBodyOptions): Promise<T> {
     this.prepareBodyRead();
-    return readBodyAsJson(this.body!, this.headers, options) as Promise<T>;
+    return await (readBodyAsJson(this.body!, this.headers, options) as Promise<T>);
   }
 
   async read(options?: ReadBodyOptions): Promise<string | UndefinableJson | Uint8Array> {
     this.prepareBodyRead();
-    return readBody(this.body!, this.headers, options);
+    return await readBody(this.body!, this.headers, options);
   }
 
   readAsBinaryStream(options?: ReadBodyOptions): ReadableStream<Uint8Array> {

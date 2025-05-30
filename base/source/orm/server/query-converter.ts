@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Converts a generic query object structure into a Drizzle ORM SQL condition.
+ * Supports logical operators ($and, $or, $nor) and various comparison operators
+ * ($eq, $neq, $in, $nin, $lt, $lte, $gt, $gte, $regex).
+ */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, isSQLWrapper, lt, lte, ne, not, notInArray, or, SQL, sql } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 
@@ -10,6 +16,17 @@ import type { ColumnDefinition, PgTableFromType } from './types.js';
 
 const sqlTrue = sql`true`;
 
+/**
+ * Converts a query object into a Drizzle SQL condition.
+ * Recursively handles nested logical operators and maps property names to database columns.
+ * @param query The query object to convert. Can be a Drizzle SQL object, SQLWrapper, or a custom query object.
+ * @param table The Drizzle table object.
+ * @param columnDefinitionsMap A map from property names to column definitions.
+ * @returns A Drizzle SQL condition representing the query.
+ * @throws {Error} If multiple logical operators are used at the same level.
+ * @throws {Error} If a property cannot be mapped to a column.
+ * @throws {Error} If an unsupported query type is encountered.
+ */
 export function convertQuery(query: Query, table: PgTableFromType, columnDefinitionsMap: Map<string, ColumnDefinition>): SQL {
   if (query instanceof SQL) {
     return query;
@@ -80,6 +97,16 @@ export function convertQuery(query: Query, table: PgTableFromType, columnDefinit
   return and(...conditions)!;
 }
 
+/**
+ * Generates a Drizzle SQL condition based on a property, its value, and the corresponding column.
+ * Handles various comparison operators.
+ * @param property The property name (used for error messages).
+ * @param value The value or comparison object for the property.
+ * @param column The Drizzle column object.
+ * @returns A Drizzle SQL condition.
+ * @throws {NotSupportedError} If an unsupported operator like $exists, $text, $geoShape, or $geoDistance is used.
+ * @throws {Error} If the value structure is not a recognized comparison operator.
+ */
 function getCondition(property: string, value: Primitive | Record, column: PgColumn): SQL {
   const isPrimitiveValue = isPrimitive(value);
 
@@ -103,6 +130,7 @@ function getCondition(property: string, value: Primitive | Record, column: PgCol
     return ne(column, queryValue);
   }
 
+  // $exists is not supported
   if (hasOwnProperty(value, '$exists')) {
     throw new NotSupportedError('$exists is not supported.');
   }

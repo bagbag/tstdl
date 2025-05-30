@@ -6,11 +6,11 @@ export type WrapLogOptions = {
   fnName?: string,
   logResult?: boolean,
   logger?: Logger,
-  trace?: boolean
+  trace?: boolean,
 };
 
 export function wrapLog(fn: Function, { fnName = fn.name, logResult = true, logger, trace = false }: WrapLogOptions = {}): Function {
-  const log = logger?.trace.bind(logger) ?? console.log.bind(console); // eslint-disable-line no-console
+  const log = logger?.trace.bind(logger) ?? console.log.bind(console);
 
   const wrapped = {
     [fnName](...args: any[]): unknown {
@@ -30,7 +30,7 @@ export function wrapLog(fn: Function, { fnName = fn.name, logResult = true, logg
       }
 
       return result;
-    }
+    },
   };
 
   return wrapped[fnName]!;

@@ -4,3 +4,5 @@ dist/
 /angular-test
 /base/doc
 .eslintcache
+.volumes
+.repomix

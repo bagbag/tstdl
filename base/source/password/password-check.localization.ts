@@ -34,7 +34,7 @@ export const germanPasswordCheckLocalization: PasswordCheckLocalization = {
           namesByThemselves: 'Einzelne Namen oder Nachnamen sind leicht zu erraten.',
           commonNames: 'Vornamen und Nachnamen sind leicht zu erraten.',
           userInputs: 'Es sollten keine persönlichen oder Seiten relevanten Daten vorkommen.',
-          pwned: 'Ihr Kennwort wurde durch eine Datenpanne im Internet offengelegt (https://haveibeenpwned.com/passwords).'
+          pwned: 'Ihr Kennwort wurde durch eine Datenpanne im Internet offengelegt (https://haveibeenpwned.com/passwords).',
         },
         suggestions: {
           l33t: 'Vorhersehbare Buchstabenersetzungen wie \'@\' für \'a\' vermeiden.',
@@ -50,12 +50,12 @@ export const germanPasswordCheckLocalization: PasswordCheckLocalization = {
           anotherWord: 'Weitere Wörter, die weniger häufig vorkommen, hinzufügen.',
           useWords: 'Mehrere Wörter verwenden, aber allgemeine Phrasen vermeiden.',
           noNeed: 'Es ist möglich, starke Passwörter zu erstellen, ohne Symbole, Zahlen oder Großbuchstaben zu verwenden.',
-          pwned: 'Wenn Sie dieses Kennwort an anderer Stelle verwenden, sollten Sie es ändern.'
-        }
-      }
-    }
+          pwned: 'Wenn Sie dieses Kennwort an anderer Stelle verwenden, sollten Sie es ändern.',
+        },
+      },
+    },
   },
-  enums: []
+  enums: [],
 };
 
 export const englishPasswordCheckLocalization: PasswordCheckLocalization = {
@@ -79,7 +79,7 @@ export const englishPasswordCheckLocalization: PasswordCheckLocalization = {
           namesByThemselves: 'Single names or surnames are easy to guess.',
           commonNames: 'Common names and surnames are easy to guess.',
           userInputs: 'There should not be any personal or page related data.',
-          pwned: 'Your password was exposed by a data breach on the Internet (https://haveibeenpwned.com/passwords).'
+          pwned: 'Your password was exposed by a data breach on the Internet (https://haveibeenpwned.com/passwords).',
         },
         suggestions: {
           l33t: 'Avoid predictable letter substitutions like \'@\' for \'a\'.',
@@ -95,10 +95,10 @@ export const englishPasswordCheckLocalization: PasswordCheckLocalization = {
           anotherWord: 'Add more words that are less common.',
           useWords: 'Use multiple words, but avoid common phrases.',
           noNeed: 'You can create strong passwords without using symbols, numbers, or uppercase letters.',
-          pwned: 'If you use this password elsewhere, you should change it.'
-        }
-      }
-    }
+          pwned: 'If you use this password elsewhere, you should change it.',
+        },
+      },
+    },
   },
-  enums: []
+  enums: [],
 };

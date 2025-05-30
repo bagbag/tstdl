@@ -36,14 +36,14 @@ export function fromEntries<K extends PropertyKey, T>(entries: Iterable<readonly
   return Object.fromEntries(entries) as Record<K, T>;
 }
 
-export function mapObject<T extends ObjectLiteral, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => [key: K, value: V]): Record<K, V> {
+export function mapObject<T extends ObjectLiteral, K extends PropertyKey, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => [key: K, value: V]): Record<K, V> {
   const mappedEntries = objectKeys(object).map((key) => mapper(object[key], key));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
-export async function mapObjectAsync<T extends ObjectLiteral, K extends string | number | symbol, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<[key: K, value: V]>): Promise<Record<K, V>> {
+export async function mapObjectAsync<T extends ObjectLiteral, K extends PropertyKey, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<[key: K, value: V]>): Promise<Record<K, V>> {
   const entries = objectKeys(object);
-  const mappedEntries = await toArrayAsync(mapAsync(entries, async (key) => mapper(object[key], key)));
+  const mappedEntries = await toArrayAsync(mapAsync(entries, async (key) => await mapper(object[key], key)));
   return Object.fromEntries(mappedEntries) as Record<K, V>;
 }
 
@@ -51,8 +51,12 @@ export function mapObjectValues<T extends ObjectLiteral, V>(object: T, mapper: (
   return mapObject(object, (value, key) => [key, mapper(value, key)]);
 }
 
+export function mapObjectKeys<T extends ObjectLiteral, K extends PropertyKey>(object: T, mapper: (key: keyof T, value: T[keyof T]) => K): Record<K, T[keyof T]> {
+  return mapObject(object, (value, key) => [mapper(key, value), value]);
+}
+
 export async function mapObjectValuesAsync<T extends ObjectLiteral, V>(object: T, mapper: (value: T[keyof T], key: keyof T) => Promise<V>): Promise<Record<keyof T, V>> {
-  return mapObjectAsync(object, async (value, key) => [key, await mapper(value, key)]);
+  return await mapObjectAsync(object, async (value, key) => [key, await mapper(value, key)]);
 }
 
 export function filterObject<T extends ObjectLiteral, U extends T[keyof T]>(object: T, predicate: (value: T[keyof T], key: keyof T) => value is U): PickBy<T, U>;
@@ -64,7 +68,7 @@ export function filterObject<T extends ObjectLiteral>(object: T, predicate: (val
 
 export async function filterObjectAsync<T extends ObjectLiteral>(object: T, predicate: (value: T[keyof T], key: keyof T) => Promise<boolean>): Promise<Partial<T>> {
   const entries = objectEntries(object);
-  const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => predicate(value, key)));
+  const mappedEntries = await toArrayAsync(filterAsync(entries, async ([key, value]) => await predicate(value, key)));
   return Object.fromEntries(mappedEntries) as Partial<T>;
 }
 

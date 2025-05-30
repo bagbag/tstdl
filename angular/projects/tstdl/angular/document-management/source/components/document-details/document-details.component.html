@@ -1,0 +1,58 @@
+<div class="feature-xl grid grid-cols-[1fr,auto] bg-neutral-100 dark:bg-neutral-800 border-2 border-neutral-800/60 dark:border-neutral-200/60 rounded-md overflow-clip">
+  <div class="flex flex-col">
+    <div class="flex justify-end p-4">
+      <button tslButton>Do something</button>
+    </div>
+
+    <div class="border-t-4 border-r-4 dark:border-neutral-500/60">
+      <tsl-pdf-viewer [source]="contentUrl()" class="w-full h-full"></tsl-pdf-viewer>
+    </div>
+  </div>
+
+  <div class="relative min-w-24 max-w-[45ch] p-4 overflow-y-auto flex flex-col gap-4">
+    <button tslButton design="icon" class="absolute top-2 right-2" (click)="close()">
+      <tsl-icon icon="x-lg"></tsl-icon>
+    </button>
+
+    <div>
+      <div class="text-xl font-semibold">{{ document().title }}</div>
+      <div class="text-lg">{{ document().subtitle }}</div>
+    </div>
+
+    <div>
+      <input tslInput class="h-auto text-xl font-semibold" [value]="document().title" />
+      <input tslInput class="h-auto text-lg" [value]="document().subtitle" />
+    </div>
+
+    <div class="mt-8 text-lg font-semibold">Eigenschaften</div>
+
+    <div class="grid grid-cols-[auto,1fr] gap-y-2">
+      @for (property of properties(); track property.id) {
+        <tsl-input-group class="col-span-2 grid grid-cols-subgrid">
+          <label for="" tslInputGroupLabel>{{ property.label }}</label>
+          <input tslInput [value]="property.value" readonly />
+        </tsl-input-group>
+      }
+    </div>
+
+    <div class="grow mt-8">
+      <div class="text-lg font-semibold">Kommentar</div>
+      <tsl-input-group class="w-full h-auto">
+        <textarea tslInput [value]="document().comment" rows="5" class="resize-none" readonly></textarea>
+      </tsl-input-group>
+    </div>
+
+    <div class="grow mt-8">
+      <div class="text-lg font-semibold">Tags</div>
+      <div class="flex flex-wrap gap-2 mt-2">
+        @for (tag of document().tags; track tag) {
+          <tsl-badge design="flat-with-outline" color="emerald">
+            <span class="truncate">{{ tag }}</span>
+          </tsl-badge>
+        }
+      </div>
+    </div>
+
+    <button tslButton (click)="download()">Herunterladen</button>
+  </div>
+</div>

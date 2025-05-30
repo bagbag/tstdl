@@ -8,7 +8,7 @@ import { englishTstdlCommonLocalization, germanTstdlCommonLocalization, Localiza
   imports: [RouterOutlet, RouterLink, RouterLinkActive, ButtonComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent {
   readonly #localizationService = inject(LocalizationService);
@@ -27,7 +27,8 @@ export class AppComponent {
     { href: '/vertical-tab-group', label: 'Vertical Tab Group' },
     { href: '/react', label: 'React' },
     { href: '/markdown', label: 'Markdown' },
-    { href: '/misc', label: 'Miscellaneous' }
+    { href: '/document-management', label: 'Document Management' },
+    { href: '/misc', label: 'Miscellaneous' },
   ];
 
   constructor() {

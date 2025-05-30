@@ -24,11 +24,11 @@ export type ClientOptions = {
    */
   prefix?: string | null,
 
-  defaultHttpClientOptions?: HttpClientOptions | null
+  defaultHttpClientOptions?: HttpClientOptions | null,
 };
 
 export type ApiClientHttpRequestContext = {
-  endpoint: ApiEndpointDefinition
+  endpoint: ApiEndpointDefinition,
 };
 
 export const httpClientSymbol = Symbol('ApiTransport');
@@ -58,7 +58,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
       }
 
       getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string {
-        const resource = getFullApiEndpointResource({ api: definition, endpoint: resolveValueOrProvider(definition.endpoints[endpoint as any]!), defaultPrefix: options.prefix });
+        const resource = getFullApiEndpointResource({ api: definition, endpoint: resolveValueOrProvider(definition.endpoints[endpoint]!), defaultPrefix: options.prefix });
 
         if (isUndefined(parameters)) {
           return resource;
@@ -71,14 +71,14 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         const url = this.getEndpointResource(endpoint, parameters);
         return new URL(url, this[httpClientSymbol].options.baseUrl);
       }
-    }
+    },
   }[apiName]!;
 
   Injector.registerSingleton(api, {
     useFactory: (argument, context) => {
       const httpClient = (argument instanceof HttpClient) ? argument : context.resolve(HttpClient, argument ?? options.defaultHttpClientOptions ?? undefined);
       return new api(httpClient);
-    }
+    },
   });
 
   const endpointsEntries = normalizedApiDefinitionEndpointsEntries(endpoints);
@@ -111,19 +111,19 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           parameters,
           body: getRequestBody(requestBody),
           credentials: (endpoint.credentials == true) ? 'include' : undefined,
-          context
+          context,
         });
 
         const response = await this[httpClientSymbol].rawRequest(request);
         return getResponseBody(response, endpoint.result);
-      }
+      },
     }[name];
 
     Object.defineProperty(api.prototype, name, {
       enumerable: true,
       configurable: true,
       writable: true,
-      value: apiEndpointFunction
+      value: apiEndpointFunction,
     });
   }
 

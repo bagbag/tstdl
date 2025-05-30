@@ -6,6 +6,8 @@ import { isNotNullOrUndefined } from '@tstdl/base/utils';
  * @param options
  * @returns
  */
+function errorHandledResource<T, R>(options: ResourceOptions<T, R> & { defaultValue: NoInfer<T> }): ResourceRef<T>;
+function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T | undefined>;
 function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T | undefined> {
   const errorHandler = inject(ErrorHandler);
   const ref = resource(options);

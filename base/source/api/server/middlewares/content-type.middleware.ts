@@ -1,3 +1,5 @@
+import { match, P } from 'ts-pattern';
+
 import { isDefined } from '#/utils/type-guards.js';
 import type { ApiGatewayMiddlewareContext, ApiGatewayMiddlewareNext } from '../gateway.js';
 
@@ -10,11 +12,11 @@ export async function contentTypeMiddleware(context: ApiGatewayMiddlewareContext
     return;
   }
 
-  response.headers.contentType =
-    (isDefined(response.body?.json)) ? 'application/json; charset=utf-8'
-      : (isDefined(response.body?.text)) ? 'text/plain; charset=utf-8'
-        : (isDefined(response.body?.buffer)) ? 'application/octet-stream'
-          : (isDefined(response.body?.stream)) ? 'application/octet-stream'
-            : (isDefined(response.body?.events)) ? 'text/event-stream'
-              : undefined;
+  response.headers.contentType = match(response.body)
+    .with({ json: P.select(P.nonNullable) }, () => 'application/json; charset=utf-8')
+    .with({ text: P.select(P.nonNullable) }, () => 'text/plain; charset=utf-8')
+    .with({ buffer: P.select(P.nonNullable) }, () => 'application/octet-stream')
+    .with({ stream: P.select(P.nonNullable) }, () => 'application/octet-stream')
+    .with({ events: P.select(P.nonNullable) }, () => 'text/event-stream')
+    .otherwise(() => undefined);
 }

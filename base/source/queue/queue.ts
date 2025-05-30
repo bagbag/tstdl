@@ -1,4 +1,5 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
+import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import type { Logger } from '#/logger/logger.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
@@ -22,46 +23,48 @@ export type Job<T> = {
   data: T,
   enqueueTimestamp: number,
   lastDequeueTimestamp: number | null,
-  tries: number
+  tries: number,
 };
 
 export const defaultJobPriority = 1000;
 
-export enum UniqueTagStrategy {
-  KeepOld = 0,
-  TakeNew = 1
-}
+export const UniqueTagStrategy = defineEnum('UniqueTagStrategy', {
+  KeepOld: 0,
+  TakeNew: 1,
+});
+
+export type UniqueTagStrategy = EnumType<typeof UniqueTagStrategy>;
 
 export type EnqueueOptions = {
   tag?: JobTag,
-  priority?: number
+  priority?: number,
 };
 
 export type EnqueueOneOptions = {
   tag?: JobTag,
   uniqueTag?: UniqueTagStrategy,
-  priority?: number
+  priority?: number,
 };
 
 export type EnqueueManyItem<T> = EnqueueOptions & {
-  data: T
+  data: T,
 };
 
 export type EnqueueManyOptions = {
   uniqueTag?: UniqueTagStrategy,
-  returnJobs?: boolean
+  returnJobs?: boolean,
 };
 
 export type QueueConfig = {
   processTimeout?: number,
-  maxTries?: number
+  maxTries?: number,
 };
 
 export type QueueArgument = string | (QueueConfig & { name: string });
 
 export const defaultQueueConfig: Required<QueueConfig> = {
   processTimeout: millisecondsPerMinute,
-  maxTries: 3
+  maxTries: 3,
 };
 
 export abstract class Queue<T> implements Resolvable<QueueArgument> {

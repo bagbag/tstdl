@@ -5,12 +5,12 @@ import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import { isSyncOrAsyncDisposable, type AsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { reflectionRegistry, type ConstructorParameterMetadata } from '#/reflection/registry.js';
-import type { Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
+import type { AbstractConstructor, Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';
-import { assert, isArray, isBoolean, isDefined, isFunction, isNotNull, isNull, isPromise, isUndefined } from '#/utils/type-guards.js';
+import { assert, isArray, isBoolean, isDefined, isFunction, isNotNull, isNotObject, isNull, isPromise, isUndefined } from '#/utils/type-guards.js';
 import { setCurrentInjectionContext, type InjectOptions, type InjectionContext } from './inject.js';
 import { afterResolve, type Resolvable, type ResolveArgument } from './interfaces.js';
 import { isClassProvider, isFactoryProvider, isProviderWithInitializer, isTokenProvider, isValueProvider, type Provider } from './provider.js';
@@ -43,7 +43,7 @@ type InternalResolveContext = {
   forwardRefQueue: CircularBuffer<() => void>,
   forwardRefs: Set<ForwardRef>,
 
-  $done: DeferredPromise
+  $done: DeferredPromise,
 };
 
 type Resolution<T, A> = {
@@ -53,7 +53,7 @@ type Resolution<T, A> = {
   argument: ResolveArgument<T, A>,
   afterResolveRegistrations: AfterResolveHandler<A, Record>[],
   afterResolveContext: AfterResolveContext<any>,
-  chain: ResolveChain
+  chain: ResolveChain,
 };
 
 export type ProvidersItem<T = any, A = any, D extends Record = Record> = Provider<T, A, D> & { provide: InjectionToken<T, A>, multi?: boolean };
@@ -62,16 +62,16 @@ export type GlobalRegistration<T = any, A = any> = {
   token: InjectionToken<T, A>,
   provider: Provider<T, A>,
   providers: ProvidersItem[],
-  options: RegistrationOptions<T, A>
+  options: RegistrationOptions<T, A>,
 };
 
 export type Registration<T = any, A = any> = GlobalRegistration<T, A> & {
-  resolutions: Map<any, T> // <argumentIdentity, T>
+  resolutions: Map<any, T>, // <argumentIdentity, T>
 };
 
 export type GetRegistrationOptions = {
   skipSelf?: boolean,
-  onlySelf?: boolean
+  onlySelf?: boolean,
 };
 
 export type ResolveManyArrayItem<T, A> = [token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>];
@@ -136,7 +136,7 @@ export class Injector implements AsyncDisposable {
         token,
         provider,
         providers: options.providers ?? [],
-        options: { multi, ...options }
+        options: { multi, ...options },
       };
 
       addRegistration(Injector.#globalRegistrations, registration);
@@ -149,7 +149,7 @@ export class Injector implements AsyncDisposable {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  static registerSingleton<T, A = ResolveArgument<T, any>, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): void {
+  static registerSingleton<T, A = undefined, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): void {
     Injector.register(token, providers, { ...options, lifecycle: 'singleton' });
   }
 
@@ -177,7 +177,7 @@ export class Injector implements AsyncDisposable {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  register<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options: RegistrationOptions<T, A, C> = {}): void {
+  register<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options: RegistrationOptions<T, A, C> = {}): this {
     this.assertNotDisposed();
 
     const multi = isArray(providers);
@@ -188,11 +188,13 @@ export class Injector implements AsyncDisposable {
         provider,
         providers: options.providers ?? [],
         options: { multi, ...options },
-        resolutions: new Map()
+        resolutions: new Map(),
       };
 
       addRegistration(this.#registrations, registration);
     }
+
+    return this;
   }
 
   /**
@@ -201,8 +203,9 @@ export class Injector implements AsyncDisposable {
    * @param provider provider used to resolve the token
    * @param options registration options
    */
-  registerSingleton<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): void {
+  registerSingleton<T, A = any, C extends Record = Record>(token: InjectionToken<T, A>, providers: OneOrMany<Provider<T, A, C>>, options?: TypedOmit<RegistrationOptions<T, A, C>, 'lifecycle'>): this {
     this.register(token, providers, { ...options, lifecycle: 'singleton' });
+    return this;
   }
 
   /**
@@ -263,9 +266,19 @@ export class Injector implements AsyncDisposable {
     const context: InternalResolveContext = newInternalResolveContext();
     const value = this._resolve(token, argument, options, context, ResolveChain.startWith(token));
 
-    postProcess(context);
+    try {
+      postProcess(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
 
-    context.$done.resolve();
+    if (context.forwardRefs.has(value as ForwardRef)) {
+      return ForwardRef.deref(value as ForwardRef) as T;
+    }
+
     return value;
   }
 
@@ -273,27 +286,39 @@ export class Injector implements AsyncDisposable {
     const context: InternalResolveContext = newInternalResolveContext();
     const values = this._resolveAll(token, argument, options, context, ResolveChain.startWith(token));
 
-    postProcess(context);
+    try {
+      postProcess(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
 
-    context.$done.resolve();
+    if (context.forwardRefs.has(values as ForwardRef)) {
+      return ForwardRef.deref(values as ForwardRef) as T[];
+    }
+
     return values;
   }
 
   resolveMany<T extends ResolveManyItem<any, any>[]>(...tokens: T): ResolveManyReturnType<T> {
     const context: InternalResolveContext = newInternalResolveContext();
+    const values = this._resolveManyTokens(tokens, context);
 
-    const values = tokens.map(
-      (token) => (
-        isArray(token)
-          ? this._resolve(token[0], token[1], token[2] ?? {}, context, ResolveChain.startWith(token[0]))
-          : this._resolve(token, undefined, {}, context, ResolveChain.startWith(token))
-      ) as ResolveManyItemReturnType<any>
+    try {
+      postProcess(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
+
+    return values.map((value): unknown => context.forwardRefs.has(value as ForwardRef)
+      ? ForwardRef.deref(value as ForwardRef)
+      : value
     ) as ResolveManyReturnType<T>;
-
-    postProcess(context);
-
-    context.$done.resolve();
-    return values;
   }
 
   async resolveAsync<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions<T, A> & { optional: true }): Promise<T | undefined>;
@@ -302,9 +327,19 @@ export class Injector implements AsyncDisposable {
     const context: InternalResolveContext = newInternalResolveContext();
     const value = this._resolve(token, argument, options, context, ResolveChain.startWith(token));
 
-    await postProcessAsync(context);
+    try {
+      await postProcessAsync(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
 
-    context.$done.resolve();
+    if (context.forwardRefs.has(value as ForwardRef)) {
+      return ForwardRef.deref(value as ForwardRef) as T;
+    }
+
     return value;
   }
 
@@ -312,27 +347,49 @@ export class Injector implements AsyncDisposable {
     const context: InternalResolveContext = newInternalResolveContext();
     const values = this._resolveAll(token, argument, options, context, ResolveChain.startWith(token));
 
-    await postProcessAsync(context);
+    try {
+      await postProcessAsync(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
 
-    context.$done.resolve();
+    if (context.forwardRefs.has(values as ForwardRef)) {
+      return ForwardRef.deref(values as ForwardRef) as T[];
+    }
+
     return values;
   }
 
   async resolveManyAsync<T extends ResolveManyItem<any, any>[]>(...tokens: T): Promise<ResolveManyReturnType<T>> {
     const context: InternalResolveContext = newInternalResolveContext();
+    const values = this._resolveManyTokens(tokens, context);
 
-    const values = tokens.map(
+    try {
+      await postProcessAsync(context);
+      context.$done.resolve();
+    }
+    catch (error) {
+      context.$done.reject(error); // eslint-disable-line @typescript-eslint/prefer-promise-reject-errors
+      throw error;
+    }
+
+    return values.map((value): unknown => context.forwardRefs.has(value as ForwardRef)
+      ? ForwardRef.deref(value as ForwardRef)
+      : value
+    ) as ResolveManyReturnType<T>;
+  }
+
+  private _resolveManyTokens<T extends ResolveManyItem<any, any>[]>(tokens: T, context: InternalResolveContext): ResolveManyReturnType<T> {
+    return tokens.map(
       (token) => (
         isArray(token)
           ? this._resolve(token[0], token[1], token[2] ?? {}, context, ResolveChain.startWith(token[0]))
           : this._resolve(token, undefined, {}, context, ResolveChain.startWith(token))
       ) as ResolveManyItemReturnType<any>
     ) as ResolveManyReturnType<T>;
-
-    await postProcessAsync(context);
-
-    context.$done.resolve();
-    return values;
   }
 
   private _resolve<T, A>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: ResolveOptions<T, A>, context: InternalResolveContext, chain: ResolveChain): T | undefined {
@@ -341,8 +398,8 @@ export class Injector implements AsyncDisposable {
     if (isDefined(options.forwardRef) && (options.forwardRef != false)) {
       assert(options.optional != true, 'ForwardRef does not support optional without resolveAll/injectAll as undefined is not forwardable.');
 
-      const forwardRef = ForwardRef.create<object>();
       const forwardToken = isFunction(options.forwardRef) ? options.forwardRef() : token;
+      const forwardRef = ForwardRef.create<object>({ typeHint: options.forwardRefTypeHint ?? isFunction(forwardToken) ? forwardToken as AbstractConstructor : undefined });
 
       context.forwardRefQueue.add(() => ForwardRef.setRef(forwardRef, this._resolve(forwardToken, argument, { ...options, forwardRef: false }, context, chain.markAsForwardRef(forwardToken)) as object));
       context.forwardRefs.add(forwardRef);
@@ -376,8 +433,8 @@ export class Injector implements AsyncDisposable {
     this.assertNotDisposed();
 
     if (isDefined(options.forwardRef) && (options.forwardRef != false)) {
-      const forwardRef = ForwardRef.create<T[]>({ typeHint: options.forwardRefTypeHint });
       const forwardToken = isFunction(options.forwardRef) ? options.forwardRef() : token;
+      const forwardRef = ForwardRef.create<T[]>({ typeHint: options.forwardRefTypeHint ?? isFunction(forwardToken) ? forwardToken as AbstractConstructor : undefined });
 
       context.forwardRefQueue.add(() => ForwardRef.setRef(forwardRef, this._resolveAll(forwardToken, argument, { ...options, forwardRef: false }, context, chain.markAsForwardRef(forwardToken))));
       context.forwardRefs.add(forwardRef);
@@ -412,7 +469,7 @@ export class Injector implements AsyncDisposable {
 
     const { token, providers } = registration;
 
-    const injector = (providers.length > 0) ? this.fork('LocalProvidersInjector') : this;
+    const injector = this.fork('ResolutionInjector');
 
     for (const nestedProvider of providers) {
       injector.registerSingleton(nestedProvider.provide, nestedProvider, { multi: nestedProvider.multi });
@@ -441,7 +498,7 @@ export class Injector implements AsyncDisposable {
       }
 
       const resolutionContext: ResolutionContext<A> = {
-        afterResolveRegistrations: []
+        afterResolveRegistrations: [],
       };
 
       const value = injector._resolveProvider(resolutionTag, registration, resolveArgument, options, context, resolutionContext, injectionContext, chain);
@@ -453,7 +510,7 @@ export class Injector implements AsyncDisposable {
         argument: injectionContext.argument as ResolveArgument<T, A>,
         afterResolveRegistrations: resolutionContext.afterResolveRegistrations,
         afterResolveContext: injector.getAfterResolveContext(resolutionTag, context),
-        chain
+        chain,
       };
 
       context.resolutions.push(resolution);
@@ -565,14 +622,9 @@ export class Injector implements AsyncDisposable {
     const parameterResolveArgument = injectMetadata.forwardArgumentMapper?.(resolveArgument) ?? injectMetadata.resolveArgumentProvider?.(this.getResolveContext(resolutionTag, context, getChain(injectToken)));
     const { forwardRef } = injectMetadata;
 
-    if (isDefined(forwardRef)) {
-      context.forwardRefQueue.add(() => {
-        const forwardToken = isFunction(forwardRef) ? forwardRef() : isBoolean(forwardRef) ? injectToken : forwardRef;
-
-        if (isDefined(injectMetadata.mapper)) {
-          throw new ResolveError('Cannot use inject mapper with forwardRef.', getChain(forwardToken));
-        }
-      });
+    if (isDefined(forwardRef) && isDefined(injectMetadata.mapper)) {
+      const forwardToken = isFunction(forwardRef) ? forwardRef() : isBoolean(forwardRef) ? injectToken : forwardRef;
+      throw new ResolveError('Cannot use inject mapper with forwardRef.', getChain(forwardToken));
     }
 
     const resolveFn = (injectMetadata.resolveAll == true) ? '_resolveAll' : '_resolve';
@@ -610,7 +662,7 @@ export class Injector implements AsyncDisposable {
       addDisposeHandler: this.#addDisposeHandler,
       get data() {
         return resolveContext.resolutionContextData.get(resolutionTag);
-      }
+      },
     };
 
     return context;
@@ -622,7 +674,7 @@ export class Injector implements AsyncDisposable {
       addDisposeHandler: this.#addDisposeHandler,
       get data() {
         return resolveContext.resolutionContextData.get(resolutionTag);
-      }
+      },
     };
 
     return context;
@@ -637,9 +689,9 @@ export class Injector implements AsyncDisposable {
       inject: (token, argument, options) => this.resolveInjection(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
       injectAll: (token, argument, options) => this.resolveInjectionAll(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
       injectMany: (...tokens) => this.resolveMany(...tokens),
-      injectAsync: async (token, argument, options) => this.resolveInjectionAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
-      injectAllAsync: async (token, argument, options) => this.resolveInjectionAllAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
-      injectManyAsync: async (...tokens) => this.resolveManyAsync(...tokens)
+      injectAsync: async (token, argument, options) => await this.resolveInjectionAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectAllAsync: async (token, argument, options) => await this.resolveInjectionAllAsync(token, argument, options ?? {}, resolveContext, injectIndex++, chain),
+      injectManyAsync: async (...tokens) => await this.resolveManyAsync(...tokens),
     };
 
     return context;
@@ -691,7 +743,7 @@ function newInternalResolveContext(): InternalResolveContext {
     resolutionContextData: new FactoryMap(() => ({})),
     forwardRefQueue: new CircularBuffer(),
     forwardRefs: new Set(),
-    $done: new DeferredPromise()
+    $done: new DeferredPromise(),
   };
 }
 
@@ -785,7 +837,7 @@ function checkOverflow(chain: ResolveChain, context: InternalResolveContext): vo
 
 function derefForwardRefs(context: InternalResolveContext): void {
   for (const resolution of context.resolutions.values()) {
-    if (!(typeof resolution.value == 'object')) {
+    if (isNotObject(resolution.value)) {
       continue;
     }
 

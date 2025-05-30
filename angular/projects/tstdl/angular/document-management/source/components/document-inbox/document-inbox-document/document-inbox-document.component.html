@@ -1,0 +1,100 @@
+@let currentWorkflow = document().workflows[0];
+@let categoryColor = document().type ? (context().categoryColors()[document().type!.category.rootCategory.id] ?? "red") : "neutral";
+
+<div class="relative w-8">
+  <tsl-badge [color]="categoryColor" class="category-badge absolute inset-0 justify-center px-1.5 py-4 rounded-none border-r-2 border-r-current">
+    @if (document().type?.category?.label; as label) {
+      {{ label }}
+    }
+  </tsl-badge>
+</div>
+
+<div class="grid grid-rows-[repeat(3,auto)] gap-4 p-4 pb-2">
+  <div class="flex justify-between items-start">
+    <div class="shrink">
+      @if (document().title; as title) {
+        <div class="font-semibold">{{ document().title }}</div>
+      }
+
+      @if (document().subtitle; as subtitle) {
+        <div class="text-sm">{{ subtitle }}</div>
+      }
+    </div>
+
+    @if (document().type; as type) {
+      <tsl-badge design="flat-with-outline" color="lime">{{ type.label }}</tsl-badge>
+    }
+  </div>
+
+  <div class="justify-self-start grid grid-rows-[auto,auto] grid-flow-col gap-x-6 text-sm overflow-hidden">
+    @for (property of document().properties; let last = $last; track property.propertyId) {
+      <div class="opacity-80 font-semibold truncate">{{ property.label }}</div>
+      <div tslPropertyValue [property]="property" class="truncate opacity-70"></div>
+    }
+  </div>
+
+  <div>
+    <div class="opacity-80 font-semibold text-sm">Akten</div>
+    <div class="flex gap-2">
+      @for (collection of document().assignments.collections; track collection.collection.id) {
+        <div class="opacity-70">
+          <tsl-icon icon="folder" size="xs" class="inline-block mr-1"></tsl-icon>
+          <span>{{ collection.collection.name }}</span>
+        </div>
+      }
+
+      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
+      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
+      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
+    </div>
+  </div>
+
+  <div class="overflow-hidden">
+    <div class="flex gap-2 w-full">
+      @for (tag of document().tags; track tag) {
+        <tsl-badge design="flat-with-outline" color="emerald" size="small">{{ tag }}</tsl-badge>
+      }
+    </div>
+
+    <hr class="my-1.5 border-t-[1.5px] border-neutral-500/40" />
+
+    <div>
+      <div class="flex justify-between items-start">
+        <div class="flex items-start gap-4 text-sm opacity-70">
+          <div class="flex gap-2 items-center">
+            <tsl-icon icon="person"></tsl-icon>
+            <span>Hans Muster</span>
+          </div>
+
+          <div class="flex gap-2 items-center">
+            <tsl-icon icon="calendar-event"></tsl-icon>
+            <span>{{ document().metadata.createTimestamp | dateTimeLocale: dateShort }}</span>
+          </div>
+        </div>
+
+        <div class="col-start-2 justify-self-end self-start flex gap-2 items-start text-nowrap">
+          <tsl-badge design="flat-with-outline" size="small" pill="true" dot="true" color="amber" class="uppercase">{{ getMimeTypeExtensions(document().mimeType)[0] }}</tsl-badge>
+          <tsl-badge design="flat-with-outline" size="small" pill="true" dot="true" color="sky">{{ formatBytes(document().size) }}</tsl-badge>
+
+          @if (document().pages; as pages) {
+            <tsl-badge design="flat-with-outline" size="small" pill="true" dot="true" color="emerald" class="text-nowrap">
+              <span>{{ pages }} Seite{{ pages > 1 ? "n" : "" }}</span>
+            </tsl-badge>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="relative inset-0 rounded-r-[inherit] overflow-clip">
+  <div class="absolute inset-0 border-l-2 rounded-r-[inherit]">
+    <img [src]="previewUrl()" alt="Document preview" class="w-full h-full block object-cover object-top dark:filter dark:opacity-85" />
+  </div>
+</div>
+
+@if ((currentWorkflow?.step == "classification" || currentWorkflow?.step == "extraction") && (currentWorkflow?.state == "pending" || currentWorkflow?.state == "running")) {
+  <div class="absolute inset-0 flex justify-center items-center text-neutral-50 bg-black/40 animate-pulse">
+    {{ currentWorkflow?.step == "classification" ? "Klassifikation..." : "Extraktion..." }}
+  </div>
+}

@@ -1,10 +1,10 @@
 import { TemporaryFile } from '#/file/server/temporary-file.js';
 import { spawnCommand } from '#/process/spawn.js';
-import { isString } from '#/utils/type-guards.js';
+import { isNotString, isString } from '#/utils/type-guards.js';
 
 export async function getPdfPageCount(file: string | Uint8Array | ReadableStream<Uint8Array>): Promise<number> {
   const fileIsPath = isString(file);
-  await using tmpFile = fileIsPath ? await TemporaryFile.from(file) : undefined;
+  await using tmpFile = fileIsPath ? undefined : await TemporaryFile.from(file);
   const path = fileIsPath ? file : tmpFile!.path;
 
   const process = await spawnCommand('qpdf', ['--show-npages', path]);
@@ -63,4 +63,29 @@ async function pdfunite(sourceFiles: string[], resultFile: TemporaryFile) {
     const errorOutput = await process.readError();
     throw new Error(errorOutput);
   }
+}
+
+/**
+ * Convert a PDF page to an image.
+ * @param file The PDF file to convert.
+ * @param page The page number to convert.
+ * @param size The size of the output image.
+ * @param format The format of the output image.
+ * @returns The converted image as a byte array.
+ */
+export async function pdfToImage(file: string | Uint8Array | ReadableStream<Uint8Array>, page: number, size: number, format: 'png' | 'jpeg' | 'tiff' | 'ps' | 'eps' | 'pdf' | 'svg'): Promise<Uint8Array> {
+  const path = isString(file) ? file : '-';
+
+  const process = await spawnCommand(
+    'pdftocairo',
+    ['-f', String(page), '-l', String(page), '-scale-to', String(size), '-singlefile', `-${format}`, path, '-'],
+  );
+
+  process.handleNonZeroExitCode();
+
+  if (isNotString(file)) {
+    process.autoWrite(file);
+  }
+
+  return process.readOutputBytes();
 }

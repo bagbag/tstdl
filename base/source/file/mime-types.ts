@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import { objectEntries } from '#/utils/object/object.js';
 
 export const mimeTypes: Record<string, string[]> = {
@@ -769,7 +767,7 @@ export const mimeTypes: Record<string, string[]> = {
   'video/x-msvideo': ['avi'],
   'video/x-sgi-movie': ['movie'],
   'video/x-smv': ['smv'],
-  'x-conference/x-cooltalk': ['ice']
-};
+  'x-conference/x-cooltalk': ['ice'],
+} as const satisfies Record<string, string[]>;
 
 export const mimeTypesMap = new Map(objectEntries(mimeTypes));

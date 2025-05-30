@@ -11,3 +11,10 @@ export class NoopApiRequestTokenProvider extends ApiRequestTokenProvider {
     throw new Error('No RequestTokenProvider registered');
   }
 }
+
+@Singleton({ alias: ApiRequestTokenProvider })
+export class MockApiRequestTokenProvider extends ApiRequestTokenProvider {
+  getToken<T>(): T {
+    return {} as T;
+  }
+}

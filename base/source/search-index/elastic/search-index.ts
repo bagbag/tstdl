@@ -1,6 +1,5 @@
-import type { Client } from '@elastic/elasticsearch';
+import type { Client, estypes } from '@elastic/elasticsearch';
 
-/* eslint-disable max-classes-per-file */
 import type { Entity, Query, QueryOptions } from '#/database/index.js';
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { MultiError } from '#/errors/multi.error.js';
@@ -13,7 +12,6 @@ import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
 import { filterObject } from '#/utils/object/object.js';
 import { isDefined, isNumber, isString } from '#/utils/type-guards.js';
-import type { estypes } from '@elastic/elasticsearch';
 import type { ElasticSearchIndexConfig } from './config.js';
 import { KeywordRewriter } from './keyword-rewriter.js';
 import type { ElasticIndexMapping, SortCombinations } from './model/index.js';
@@ -71,11 +69,11 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     this.logger.info(`closed index ${this.indexName} for updates`);
 
     this.logger.info(`updating settings for index ${this.indexName}`);
-    await this.client.indices.putSettings({ index: this.indexName, body: this.indexSettings });
+    await this.client.indices.putSettings({ index: this.indexName, settings: this.indexSettings });
     this.logger.info(`updated settings for index ${this.indexName}`);
 
     this.logger.info(`updating mapping for index ${this.indexName}`);
-    await this.client.indices.putMapping({ index: this.indexName, body: this.indexMapping });
+    await this.client.indices.putMapping({ index: this.indexName, ...this.indexMapping });
     this.logger.info(`updated mapping for index ${this.indexName}`);
 
     this.logger.info(`reopening index ${this.indexName}`);
@@ -121,7 +119,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
 
   async deleteByQuery(query: Query<T>): Promise<void> {
     const queryBody = convertQuery(query);
-    await this.client.deleteByQuery({ index: this.indexName, body: { query: queryBody } });
+    await this.client.deleteByQuery({ index: this.indexName, query: queryBody });
   }
 
   // eslint-disable-next-line max-statements

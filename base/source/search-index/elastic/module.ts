@@ -16,7 +16,7 @@ export type ElasticsearchModuleConfig = {
 
 export const elasticsearchModuleConfig: ElasticsearchModuleConfig = {
   defaultOptions: { node: 'http://localhost:9200' },
-  logPrefix: 'ELASTIC'
+  logPrefix: 'ELASTIC',
 };
 
 export const ELASTIC_SEARCH_INDEX_CONFIG = injectionToken<ElasticSearchIndexConfig, ElasticSearchIndexConfigArgument>('ElasticSearchIndexConfig');
@@ -31,23 +31,23 @@ Injector.registerSingleton<Client, ClientOptions, { logger: Logger }>(Client, {
     assertDefined(argument, 'missing elasticsearch client options');
 
     context.data.logger = inject(Logger, elasticsearchModuleConfig.logPrefix);
-    const client: Client = new Client(argument as ClientOptions);
+    const client: Client = new Client(argument);
 
-    context.addDisposeHandler(async () => client.close().then(() => context.data.logger.info('closed connection')));
+    context.addDisposeHandler(async () => await client.close().then(() => context.data.logger.info('closed connection')));
 
     return client;
   },
   async afterResolve(client, options, { cancellationSignal, data: { logger } }) {
-    const url = getUrl(options.node ?? options.nodes);
-    await connect(`elasticsearch (${url})`, async () => client.ping().then((alive) => assert(alive, 'failed to connect')), logger, cancellationSignal);
+    const url = getUrl(options!.node ?? options!.nodes);
+    await connect(`elasticsearch (${url})`, async () => await client.ping().then((alive) => assert(alive, 'failed to connect')), logger, cancellationSignal);
   },
   defaultArgumentProvider() {
     return elasticsearchModuleConfig.defaultOptions;
-  }
+  },
 });
 
 Injector.registerSingleton(ELASTIC_SEARCH_INDEX_CONFIG, {
-  useFactory: (argument, context) => context.resolve(ElasticSearchIndexConfig, argument)
+  useFactory: (argument, context) => context.resolve(ElasticSearchIndexConfig, argument),
 });
 
 function getUrl(node: ClientOptions['node']): string {

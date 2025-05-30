@@ -1,4 +1,3 @@
-/* eslint-disable max-classes-per-file */
 import { Singleton, type InjectableOptionsWithoutLifecycle } from '#/injector/decorators.js';
 import type { Constructor, Type } from '#/types.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -62,7 +61,7 @@ export function implementApi<T extends ApiDefinition>(definition: T, implementat
       enumerable: true,
       configurable: true,
       writable: true,
-      value: handler
+      value: handler,
     });
   }
 

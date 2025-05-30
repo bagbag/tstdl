@@ -1,9 +1,10 @@
 import { compileClient } from '#/api/client/index.js';
 import { defineApi } from '#/api/index.js';
 import { ReplaceClass } from '#/injector/decorators.js';
-import { boolean, literal, nullable, object, optional, string } from '#/schema/index.js';
-import { megabyte } from '#/utils/units.js';
-import { CategoryAndTypesView, Document, DocumentCategory, DocumentCollection, DocumentManagementData, DocumentRequest, DocumentRequestFile, DocumentRequestTemplate, DocumentRequestsTemplate, DocumentRequestsTemplateData, DocumentType, addOrArchiveDocumentToOrFromCollectionParametersSchema, applyDocumentRequestsTemplateParametersSchema, approveDocumentRequestFileParametersSchema, createCollectionParametersSchema, createDocumentCategoryParametersSchema, createDocumentParametersSchema, createDocumentRequestFileParametersSchema, createDocumentRequestParametersSchema, createDocumentRequestTemplateParametersSchema, createDocumentRequestsTemplateParametersSchema, createDocumentTypeParametersSchema, deleteDocumentRequestFileParametersSchema, deleteDocumentRequestParametersSchema, deleteDocumentRequestTemplateParametersSchema, deleteDocumentRequestsTemplateParametersSchema, loadDataParametersSchema, rejectDocumentRequestFileParametersSchema, updateDocumentParametersSchema, updateDocumentRequestFileParametersSchema, updateDocumentRequestParametersSchema, updateDocumentRequestTemplateParametersSchema, updateDocumentRequestsTemplateParametersSchema } from '../models/index.js';
+import { array, boolean, literal, number, object, optional, string } from '#/schema/index.js';
+import { ServerSentEvents } from '#/sse/server-sent-events.js';
+import { Document, DocumentCategory, DocumentRequest, DocumentRequestsTemplate, DocumentRequestTemplate, DocumentType } from '../models/index.js';
+import { addOrArchiveDocumentToOrFromCollectionParametersSchema, applyDocumentRequestsTemplateParametersSchema, createDocumentCategoryParametersSchema, createDocumentParametersSchema, createDocumentRequestParametersSchema, createDocumentRequestsTemplateParametersSchema, createDocumentRequestTemplateParametersSchema, createDocumentTypeParametersSchema, deleteDocumentRequestParametersSchema, deleteDocumentRequestsTemplateParametersSchema, deleteDocumentRequestTemplateParametersSchema, DocumentCategoryView, DocumentManagementData, DocumentRequestsTemplateData, loadDataParametersSchema, updateDocumentParametersSchema, updateDocumentRequestParametersSchema, updateDocumentRequestsTemplateParametersSchema, updateDocumentRequestTemplateParametersSchema } from '../service-models/index.js';
 
 export type DocumentManagementApiDefinition = typeof documentManagementApiDefinition;
 
@@ -15,201 +16,192 @@ export const documentManagementApiDefinition = defineApi({
       method: 'GET',
       parameters: loadDataParametersSchema,
       result: DocumentManagementData,
-      credentials: true
+      credentials: true,
+    },
+    loadDataStream: {
+      resource: 'data/stream',
+      method: 'GET',
+      parameters: loadDataParametersSchema,
+      result: ServerSentEvents,
+      credentials: true,
     },
     loadDocumentRequestsTemplateData: {
       resource: 'views/document-requests-template-data',
       method: 'GET',
       result: DocumentRequestsTemplateData,
-      credentials: true
+      credentials: true,
     },
-    loadAvailableCategoriesAndTypes: {
-      resource: 'views/categories-and-types',
+    loadAvailableCategories: {
+      resource: 'views/categories',
       method: 'GET',
-      result: CategoryAndTypesView,
-      credentials: true
+      result: array(DocumentCategoryView),
+      credentials: true,
     },
-    loadFileContent: {
-      resource: 'files/:id/content',
+    loadContent: {
+      resource: 'documents/:id/content',
       method: 'GET',
       parameters: object({
         id: string(),
-        title: nullable(string()),
-        download: optional(boolean({ coerce: true }))
+        download: optional(boolean({ coerce: true })),
       }),
       result: Uint8Array,
-      credentials: true
+      credentials: true,
     },
-    getFileContentUrl: {
-      resource: 'files/:id/content/url',
+    getContentUrl: {
+      resource: 'documents/:id/content/url',
       method: 'GET',
       parameters: object({
         id: string(),
-        title: nullable(string()),
-        download: optional(boolean({ coerce: true }))
+        download: optional(boolean({ coerce: true })),
       }),
       result: string(),
-      credentials: true
+      credentials: true,
+    },
+    loadPreview: {
+      resource: 'documents/:id/preview/:page',
+      method: 'GET',
+      parameters: object({
+        id: string(),
+        page: number({ coerce: true }),
+      }),
+      result: Uint8Array,
+      credentials: true,
+    },
+    getPreviewUrl: {
+      resource: 'documents/:id/preview/:page/url',
+      method: 'GET',
+      parameters: object({
+        id: string(),
+        page: number({ coerce: true }),
+      }),
+      result: string(),
+      credentials: true,
     },
     createCategory: {
       resource: 'categories',
       method: 'POST',
       parameters: createDocumentCategoryParametersSchema,
       result: DocumentCategory,
-      credentials: true
+      credentials: true,
     },
     createType: {
       resource: 'types',
       method: 'POST',
       parameters: createDocumentTypeParametersSchema,
       result: DocumentType,
-      credentials: true
+      credentials: true,
     },
-    createCollection: {
-      resource: 'collections',
+    initiateDocumentUpload: {
+      resource: 'document-uploads',
       method: 'POST',
-      parameters: createCollectionParametersSchema,
-      result: DocumentCollection,
-      credentials: true
+      parameters: object({
+        contentLength: number(),
+      }),
+      result: object({
+        uploadId: string(),
+        uploadUrl: string(),
+      }),
+      credentials: true,
     },
     createDocument: {
       resource: 'documents',
       method: 'POST',
       parameters: createDocumentParametersSchema,
-      body: Uint8Array,
-      maxBytes: 50 * megabyte,
       result: Document,
-      credentials: true
+      credentials: true,
     },
     createDocumentRequestsTemplate: {
       resource: 'document-requests-template',
       method: 'POST',
       parameters: createDocumentRequestsTemplateParametersSchema,
       result: DocumentRequestsTemplate,
-      credentials: true
+      credentials: true,
     },
     updateDocumentRequestsTemplate: {
       resource: 'document-requests-template/:id',
       method: 'PATCH',
       parameters: updateDocumentRequestsTemplateParametersSchema,
       result: DocumentRequestsTemplate,
-      credentials: true
+      credentials: true,
     },
     applyDocumentRequestsTemplate: {
       resource: 'document-requests-template/:id',
       method: 'POST',
       parameters: applyDocumentRequestsTemplateParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
     deleteDocumentRequestsTemplate: {
       resource: 'document-requests-template/:id',
       method: 'DELETE',
       parameters: deleteDocumentRequestsTemplateParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
     createDocumentRequestTemplate: {
       resource: 'document-request-template',
       method: 'POST',
       parameters: createDocumentRequestTemplateParametersSchema,
       result: DocumentRequestTemplate,
-      credentials: true
+      credentials: true,
     },
     updateDocumentRequestTemplate: {
       resource: 'document-request-template/:id',
       method: 'PATCH',
       parameters: updateDocumentRequestTemplateParametersSchema,
       result: DocumentRequestTemplate,
-      credentials: true
+      credentials: true,
     },
     deleteDocumentRequestTemplate: {
       resource: 'document-request-template/:id',
       method: 'DELETE',
       parameters: deleteDocumentRequestTemplateParametersSchema,
       result: literal('ok'),
-      credentials: true
-    },
-    createDocumentRequestFile: {
-      resource: 'requests/:requestId/files',
-      method: 'POST',
-      parameters: createDocumentRequestFileParametersSchema,
-      body: Uint8Array,
-      result: DocumentRequestFile,
-      maxBytes: 50 * megabyte,
-      credentials: true
-    },
-    approveDocumentRequestFile: {
-      resource: 'request-files/:id/create-document',
-      method: 'POST',
-      parameters: approveDocumentRequestFileParametersSchema,
-      result: Document,
-      credentials: true
-    },
-    rejectDocumentRequestFile: {
-      resource: 'request-files/:id/reject',
-      method: 'POST',
-      parameters: rejectDocumentRequestFileParametersSchema,
-      result: literal('ok'),
-      credentials: true
-    },
-    updateDocumentRequestFile: {
-      resource: 'request-files/:id',
-      method: 'PATCH',
-      parameters: updateDocumentRequestFileParametersSchema,
-      result: DocumentRequestFile,
-      credentials: true
-    },
-    deleteDocumentRequestFile: {
-      resource: 'request-files/:id',
-      method: 'DELETE',
-      parameters: deleteDocumentRequestFileParametersSchema,
-      result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
     createDocumentRequest: {
       resource: 'requests',
       method: 'POST',
       parameters: createDocumentRequestParametersSchema,
       result: DocumentRequest,
-      credentials: true
+      credentials: true,
     },
     updateDocumentRequest: {
       resource: 'requests/:id',
       method: 'PATCH',
       parameters: updateDocumentRequestParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
     deleteDocumentRequest: {
       resource: 'requests/:id',
       method: 'DELETE',
       parameters: deleteDocumentRequestParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
-    addDocumentToCollection: {
+    assignDocumentToCollection: {
       resource: 'collections/:collectionId/documents/:documentId',
       method: 'PUT',
       parameters: addOrArchiveDocumentToOrFromCollectionParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
-    archiveDocument: {
+    archiveDocumentInCollection: {
       resource: 'collections/:collectionId/documents/:documentId',
       method: 'DELETE',
       parameters: addOrArchiveDocumentToOrFromCollectionParametersSchema,
       result: literal('ok'),
-      credentials: true
+      credentials: true,
     },
     updateDocument: {
       resource: 'documents/:id',
       method: 'PATCH',
       parameters: updateDocumentParametersSchema,
       result: literal('ok'),
-      credentials: true
-    }
-  }
+      credentials: true,
+    },
+  },
 });
 
 const _DocumentManagementApi = compileClient(documentManagementApiDefinition);

@@ -1,0 +1,11 @@
+@layer tstdl.components {
+  #viewerContainer.grab-to-pan-grab {
+    @apply bg-neutral-50 !important;
+  }
+
+  .pdf-viewer-dark {
+    #viewerContainer.grab-to-pan-grab {
+      @apply bg-neutral-700 !important;
+    }
+  }
+}

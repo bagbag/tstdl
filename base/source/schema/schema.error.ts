@@ -9,7 +9,7 @@ export type SchemaErrorOptions = Pick<CustomErrorOptions, 'fast'> & {
   path: string | JsonPath,
   details?: UndefinableJson,
   inner?: OneOrMany<SchemaError>,
-  cause?: any
+  cause?: any,
 };
 
 export class SchemaError extends CustomError implements ErrorExtraInfo {
@@ -21,9 +21,11 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   readonly innerMessages?: string[];
 
   constructor(message: string, options: SchemaErrorOptions, cause?: any) {
-    super({ message, cause: cause ?? options.cause, fast: options.fast });
+    const path = isString(options.path) ? options.path : options.path.path;
 
-    this.path = isString(options.path) ? options.path : options.path.path;
+    super({ message: `${path}: ${message}`, cause: cause ?? options.cause, fast: options.fast });
+
+    this.path = path;
 
     if (isDefined(options.inner) && (!isArray(options.inner) || (options.inner.length > 0))) {
       this.inner = isArray(options.inner)
@@ -40,7 +42,6 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   static expectedButGot(expected: OneOrMany<string | AbstractConstructor>, got: string, path: string | JsonPath, options?: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
     const expectedNames = toArray(expected).map((e) => isFunction(e) ? e.name : e);
 
@@ -53,7 +54,6 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
     return new SchemaError(message, { path, ...options });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   static couldNotCoerce(expected: OneOrMany<string | AbstractConstructor>, got: string, path: string | JsonPath, options: TypedOmit<SchemaErrorOptions, 'path'> & { customMessage?: string }): SchemaError {
     const expectedNames = toArray(expected).map((e) => isFunction(e) ? e.name : e);
 
@@ -67,9 +67,7 @@ export class SchemaError extends CustomError implements ErrorExtraInfo {
   }
 
   getExtraInfo(includeMessage: boolean = false): UndefinableJson | undefined {
-    const obj: UndefinableJson = {
-      path: this.path
-    };
+    const obj: UndefinableJson = { path: this.path };
 
     if (includeMessage) {
       obj['message'] = this.message;

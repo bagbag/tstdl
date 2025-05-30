@@ -1,6 +1,6 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { Entity } from '#/orm/entity.js';
-import { Unique } from '#/orm/types.js';
+import { type Enum, Unique } from '#/orm/types.js';
 import { Enumeration, StringProperty } from '#/schema/index.js';
 import { DocumentManagementTable } from './document-management-table.js';
 
@@ -9,7 +9,7 @@ export const DocumentPropertyDataType = defineEnum('DocumentPropertyDataType', {
   Integer: 'integer',
   Decimal: 'decimal',
   Boolean: 'boolean',
-  Date: 'date'
+  Date: 'date',
 });
 
 export type DocumentPropertyDataType = EnumType<typeof DocumentPropertyDataType>;
@@ -23,5 +23,5 @@ export class DocumentProperty extends Entity {
   label: string;
 
   @Enumeration(DocumentPropertyDataType)
-  dataType: DocumentPropertyDataType;
+  dataType: Enum<DocumentPropertyDataType>;
 }

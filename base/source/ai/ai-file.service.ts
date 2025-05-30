@@ -1,9 +1,9 @@
 import '#/polyfills.js';
 
-import { readFile } from 'node:fs/promises';
+import { openAsBlob } from 'node:fs';
 
 import { type Bucket, Storage } from '@google-cloud/storage';
-import { FileState, GoogleAIFileManager } from '@google/generative-ai/server';
+import { FileState, GoogleGenAI } from '@google/genai';
 
 import { AsyncEnumerable } from '#/enumerable/async-enumerable.js';
 import { DetailsError } from '#/errors/details.error.js';
@@ -34,7 +34,15 @@ type File = {
 @Singleton()
 export class AiFileService implements Resolvable<AiFileServiceArgument> {
   readonly #options = injectArgument(this);
-  readonly #fileManager = isUndefined(this.#options.vertex) ? new GoogleAIFileManager(assertDefinedPass(this.#options.apiKey, 'Api key not defined')) : undefined;
+
+  readonly #genAI = new GoogleGenAI({
+    vertexai: isDefined(this.#options.vertex?.project),
+    project: this.#options.vertex?.project,
+    location: this.#options.vertex?.location,
+    googleAuthOptions: isDefined(this.#options.vertex?.project) ? { apiKey: this.#options.apiKey, keyFile: this.#options.keyFile } : undefined,
+    apiKey: isUndefined(this.#options.vertex?.project) ? assertDefinedPass(this.#options.apiKey, 'Api key not defined') : undefined,
+  });
+
   readonly #storage = isDefined(this.#options.vertex) ? new Storage({ keyFile: assertDefinedPass(this.#options.keyFile, 'Key file not defined'), projectId: this.#options.vertex.project }) : undefined;
   readonly #fileMap = new Map<string, File>();
   readonly #fileUriMap = new Map<string, File>();
@@ -97,13 +105,11 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   private async uploadFile(fileInput: FileInput, id: string): Promise<File> {
     const inputIsBlob = isBlob(fileInput);
 
-    const buffer = inputIsBlob
-      ? Buffer.from(await fileInput.arrayBuffer())
-      : await readFile(fileInput.path);
+    const blob = inputIsBlob
+      ? fileInput
+      : await openAsBlob(fileInput.path, { type: fileInput.mimeType });
 
-    const mimeType = inputIsBlob ? fileInput.type : fileInput.mimeType;
-
-    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(buffer.length)})...`);
+    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(blob.size)})...`);
 
     if (isDefined(this.#storage)) {
       throw new NotImplementedError();
@@ -120,13 +126,13 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
       */
     }
 
-    const response = await this.#fileManager!.uploadFile(buffer, { mimeType });
+    const response = await this.#genAI.files.upload({ file: blob, config: { mimeType: blob.type } });
 
     return {
       id,
-      name: response.file.name,
-      uri: response.file.uri,
-      mimeType: response.file.mimeType
+      name: assertDefinedPass(response.name, 'Missing file name'),
+      uri: assertDefinedPass(response.uri, 'Missing file uri'),
+      mimeType: assertDefinedPass(response.mimeType, 'Missing file mime type'),
     };
   }
 
@@ -148,9 +154,9 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
         lifecycle: {
           rule: [{
             action: { type: 'Delete' },
-            condition: { age: 1 }
-          }]
-        }
+            condition: { age: 1 },
+          }],
+        },
       });
 
       this.#bucket = bucket;
@@ -160,15 +166,15 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   }
 
   private async waitForFileActive(file: File): Promise<void> {
-    if (isUndefined(this.#fileManager)) {
+    if (isUndefined(this.#genAI)) {
       return;
     }
 
-    let state = await this.#fileManager.getFile(file.name);
+    let state = await this.#genAI.files.get({ name: file.name });
 
     while (state.state == FileState.PROCESSING) {
       await timeout(millisecondsPerSecond);
-      state = await this.#fileManager.getFile(file.name);
+      state = await this.#genAI.files.get({ name: file.name });
     }
 
     if (state.state == FileState.FAILED) {

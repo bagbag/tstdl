@@ -13,5 +13,6 @@ export const routes: Routes = [
   { path: 'vertical-tab-group', loadComponent: () => import('./examples/vertical-tab-group-example/vertical-tab-group-example.component').then((module) => module.VerticalTabGroupExampleComponent) },
   { path: 'react', loadComponent: () => import('./examples/react/react.component') },
   { path: 'markdown', loadComponent: () => import('./examples/markdown/markdown.component') },
+  { path: 'document-management', loadComponent: () => import('./examples/document-management/document-management.component') },
   { path: 'misc', loadComponent: () => import('./examples/misc-examples/misc-examples.component').then((module) => module.MiscExamplesComponent) }
 ];

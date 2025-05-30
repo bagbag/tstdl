@@ -1,0 +1,5 @@
+@layer tstdl.components {
+  tsl-tooltip {
+    @apply block w-max px-2 py-0.5 rounded-md shadow bg-white dark:bg-neutral-700 text-neutral-800 dark:text-neutral-300 border border-neutral-300/60 dark:border dark:border-neutral-800;
+  }
+}

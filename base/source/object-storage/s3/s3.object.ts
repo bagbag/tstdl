@@ -24,7 +24,6 @@ export class S3Object extends ObjectStorageObject {
     return this.resourceUri;
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async getContentLength(): Promise<number> {
     if (isUndefined(this.contentLength)) {
       const stat = await this.stat();
@@ -40,7 +39,7 @@ export class S3Object extends ObjectStorageObject {
   }
 
   async getContent(): Promise<Uint8Array> {
-    return this.storage.getContent(this.key);
+    return await this.storage.getContent(this.key);
   }
 
   getContentStream(): ReadableStream<Uint8Array> {
@@ -52,6 +51,6 @@ export class S3Object extends ObjectStorageObject {
       this.statPromise = this.storage.statObject(this.key);
     }
 
-    return this.statPromise;
+    return await this.statPromise;
   }
 }

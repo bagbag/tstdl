@@ -1,5 +1,4 @@
-import { FinishReason, type FunctionDeclaration, type FunctionDeclarationSchema, type GenerateContentCandidate, type GenerationConfig, type Content as GoogleContent, FunctionCallingMode as GoogleFunctionCallingMode, type Part, type StreamGenerateContentResult, type UsageMetadata, VertexAI } from '@google-cloud/vertexai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { FinishReason, type FunctionDeclaration, type GenerateContentConfig, type GenerateContentResponse, type Candidate as GoogleCandidate, type Content as GoogleContent, FunctionCallingConfigMode as GoogleFunctionCallingMode, GoogleGenAI, type Schema as GoogleSchema, type Part, type UsageMetadata } from '@google/genai';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
@@ -10,7 +9,7 @@ import { getShutdownSignal } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
-import { array, enumeration, nullable, object, type OneOrMany, Schema, type SchemaTestable, string } from '#/schema/index.js';
+import { Schema, type SchemaTestable } from '#/schema/index.js';
 import type { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
@@ -18,7 +17,7 @@ import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { lazyObject } from '#/utils/object/lazy-property.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { cancelableTimeout } from '#/utils/timing.js';
-import { assertDefinedPass, assertNotNullPass, isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
@@ -27,11 +26,11 @@ import { type AiModel, type Content, type ContentPart, type ContentRole, type Fi
 
 export type SpecializedGenerationResult<T> = {
   result: T,
-  raw: GenerationResult
+  raw: GenerationResult,
 };
 
 export type SpecializedGenerationResultGenerator<T> = AsyncGenerator<T> & {
-  raw: Promise<GenerationResult>
+  raw: Promise<GenerationResult>,
 };
 
 export class AiServiceOptions {
@@ -46,7 +45,7 @@ export type AiServiceArgument = AiServiceOptions;
 const functionCallingModeMap: Record<FunctionCallingMode, GoogleFunctionCallingMode> = {
   auto: GoogleFunctionCallingMode.AUTO,
   force: GoogleFunctionCallingMode.ANY,
-  none: GoogleFunctionCallingMode.NONE
+  none: GoogleFunctionCallingMode.NONE,
 };
 
 export type ClassificationResult<T extends EnumerationType> = { types: { type: EnumerationValue<T>, confidence: 'high' | 'medium' | 'low' }[] | null };
@@ -54,11 +53,11 @@ export type ClassificationResult<T extends EnumerationType> = { types: { type: E
 export type AnalyzeContentResult<T extends EnumerationType> = {
   content: string[],
   documentTypes: ClassificationResult<T>[],
-  tags: string[]
+  tags: string[],
 };
 
 export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<GenerationRequest, 'contents' | 'model' | 'systemInstruction' | 'functionCallingMode'> & GenerationOptions & {
-  functions: T
+  functions: T,
 };
 
 let generationCounter = 0;
@@ -69,13 +68,17 @@ export class AiService implements Resolvable<AiServiceArgument> {
   readonly #fileService = inject(AiFileService, this.#options);
   readonly #logger = inject(Logger, AiService.name);
 
-  readonly #genAI = (
-    isDefined(this.#options.vertex)
-      ? new VertexAI({ project: this.#options.vertex.project, location: this.#options.vertex.location, googleAuthOptions: { apiKey: this.#options.apiKey, keyFile: this.#options.keyFile } })
-      : new GoogleGenerativeAI(assertDefinedPass(this.#options.apiKey, 'Api key not defined'))
-  ) as VertexAI;
+  readonly #genAI = new GoogleGenAI({
+    vertexai: isDefined(this.#options.vertex?.project),
+    project: this.#options.vertex?.project,
+    location: this.#options.vertex?.location,
+    googleAuthOptions: isDefined(this.#options.vertex?.project) ? { apiKey: this.#options.apiKey, keyFile: this.#options.keyFile } : undefined,
+    apiKey: isUndefined(this.#options.vertex?.project) ? assertDefinedPass(this.#options.apiKey, 'Api key not defined') : undefined,
+  });
 
-  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.0-flash' satisfies AiModel;
+  readonly #maxOutputTokensCache = new Map<string, number | Promise<number>>();
+
+  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.5-flash-preview-05-20' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
 
@@ -84,132 +87,15 @@ export class AiService implements Resolvable<AiServiceArgument> {
   }
 
   async processFile(fileInput: FileInput): Promise<FileContentPart> {
-    return this.#fileService.processFile(fileInput);
+    return await this.#fileService.processFile(fileInput);
   }
 
   async processFiles(fileInputs: FileInput[]): Promise<FileContentPart[]> {
-    return this.#fileService.processFiles(fileInputs);
+    return await this.#fileService.processFiles(fileInputs);
   }
 
   getFileById(id: string): FileContentPart {
     return { file: id };
-  }
-
-  async classify<T extends EnumerationType>(parts: OneOrMany<ContentPart>, types: T, options?: GenerationOptions & Pick<GenerationRequest, 'model'>): Promise<SpecializedGenerationResult<ClassificationResult<T>>> {
-    const generationSchema = object({
-      types: nullable(array(
-        object({
-          type: enumeration(types, { description: 'Type of document' }),
-          confidence: enumeration(['high', 'medium', 'low'], { description: 'How sure/certain you are about the classficiation' })
-        }),
-        { description: 'One or more document types that matches' }
-      ))
-    });
-
-    const generation = await this.generate({
-      model: options?.model,
-      generationOptions: {
-        maxOutputTokens: 1048,
-        temperature: 0.5,
-        ...options
-      },
-      generationSchema,
-      systemInstruction: 'You are a highly accurate document classification AI. Your task is to analyze the content of a given document and determine its type based on a predefined list of possible document types.',
-      contents: this.getClassifyContents(parts)
-    });
-
-    return {
-      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
-      raw: generation
-    };
-  }
-
-  getClassifyContents(parts: OneOrMany<ContentPart>): Content[] {
-    return [{
-      role: 'user',
-      parts: [
-        ...toArray(parts),
-        { text: 'Classify the document. Output as JSON using the provided schema\n\nIf none of the provided document types are a suitable match, return null for types.' }
-      ]
-    }];
-  }
-
-  async extractData<T>(parts: OneOrMany<ContentPart>, schema: SchemaTestable<T>, options?: GenerationOptions & Pick<GenerationRequest, 'model'>): Promise<SpecializedGenerationResult<T>> {
-    const generation = await this.generate({
-      model: options?.model,
-      generationOptions: {
-        temperature: 0.5,
-        ...options
-      },
-      generationSchema: schema as SchemaTestable,
-      systemInstruction: `You are a highly skilled data extraction AI, specializing in accurately identifying and extracting information from unstructured text documents and converting it into a structured JSON format. Your primary goal is to meticulously follow the provided JSON schema and populate it with data extracted from the given document.
-
-**Instructions:**
-Carefully read and analyze the provided document. Identify relevant information that corresponds to each field in the JSON schema. Focus on accuracy and avoid making assumptions. If a field has multiple possible values, extract all relevant ones into the correct array structures ONLY IF the schema defines that field as an array; otherwise, extract only the single most relevant value.`,
-      contents: this.getExtractDataConents(parts)
-    });
-
-    return {
-      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
-      raw: generation
-    };
-  }
-
-  getExtractDataConents(parts: OneOrMany<ContentPart>): Content[] {
-    return [{
-      role: 'user',
-      parts: [
-        ...toArray(parts),
-        { text: 'Extract the data as specified in the schema. Output as JSON.' }
-      ]
-    }];
-  }
-
-  async analyzeContent<T extends EnumerationType>(parts: OneOrMany<ContentPart>, types: T, options?: GenerationOptions & { targetLanguage?: string, maximumNumberOfTags?: number }): Promise<SpecializedGenerationResult<AnalyzeContentResult<T>>> {
-    const schema = object({
-      content: string({ description: 'Content of the document with important details only' }),
-      types: nullable(array(
-        object({
-          type: enumeration(types, { description: 'Type of document' }),
-          confidence: enumeration(['high', 'medium', 'low'], { description: 'How sure/certain you are about the classficiation' })
-        }),
-        { description: 'One or more document types that matches' }
-      )),
-      tags: array(string({ description: 'Tag which describes the content' }), { description: 'List of tags', maximum: options?.maximumNumberOfTags ?? 5 })
-    });
-
-    const generation = await this.generate({
-      generationOptions: {
-        maxOutputTokens: 2048,
-        temperature: 0.5,
-        ...options
-      },
-      generationSchema: schema,
-      systemInstruction: `You are a highly skilled data extraction AI, specializing in accurately identifying and extracting information from unstructured content and converting it into a structured JSON format. Your primary goal is to meticulously follow the provided JSON schema and populate it with data extracted from the given document.
-
-**Instructions:**
-Carefully read and analyze the provided content.
-Identify key points and relevant information that describes the content. Focus on a general overview without providing specific details.
-Classify the content based on the provided list of types.
-Output up to ${options?.maximumNumberOfTags ?? 5} tags.
-Always output the content and tags in ${options?.targetLanguage ?? 'the same language as the content'}.`,
-      contents: this.getAnalyzeContentConents(parts)
-    });
-
-    return {
-      result: JSON.parse(assertNotNullPass(generation.text, 'No text returned.')),
-      raw: generation
-    };
-  }
-
-  getAnalyzeContentConents(parts: OneOrMany<ContentPart>): Content[] {
-    return [{
-      role: 'user',
-      parts: [
-        ...toArray(parts),
-        { text: 'Classify the document. Output as JSON.' }
-      ]
-    }];
   }
 
   async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]> & { getFunctionResultContentParts: () => FunctionResultContentPart[] }> {
@@ -217,12 +103,12 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       model: options.model,
       generationOptions: {
         temperature: 0.5,
-        ...options
+        ...options,
       },
       systemInstruction: options.systemInstruction,
       functions: options.functions,
       functionCallingMode: options.functionCallingMode ?? 'force',
-      contents: options.contents
+      contents: options.contents,
     });
 
     const result: SchemaFunctionDeclarationsResult<T>[] = [];
@@ -237,14 +123,14 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         functionName: call.name,
         parameters: parameters as any,
         handlerResult: handlerResult as any,
-        getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } })
+        getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } }),
       });
     }
 
     return {
       result,
       raw: generation,
-      getFunctionResultContentParts: () => result.map((result) => result.getFunctionResultContentPart())
+      getFunctionResultContentParts: () => result.map((result) => result.getFunctionResultContentPart()),
     };
   }
 
@@ -269,18 +155,27 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     const generationNumber = ++generationCounter;
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
 
-    const generationConfig: GenerationConfig = {
-      maxOutputTokens: request.generationOptions?.maxOutputTokens,
+    const config = {
+      systemInstruction: request.systemInstruction,
       temperature: request.generationOptions?.temperature,
       topP: request.generationOptions?.topP,
       topK: request.generationOptions?.topK,
+      presencePenalty: request.generationOptions?.presencePenalty,
+      frequencyPenalty: request.generationOptions?.frequencyPenalty,
       responseMimeType: isDefined(request.generationSchema) ? 'application/json' : undefined,
       responseSchema: isDefined(request.generationSchema) ? convertToOpenApiSchema(request.generationSchema) : undefined,
-      frequencyPenalty: request.generationOptions?.frequencyPenalty
-    };
+      safetySettings: [],
+      tools: (isDefined(googleFunctionDeclarations) && (googleFunctionDeclarations.length > 0)) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
+      toolConfig: isDefined(request.functionCallingMode)
+        ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
+        : undefined,
+      thinkingConfig: {
+        thinkingBudget: request.generationOptions?.thinkingBudget,
+      },
+    } satisfies GenerateContentConfig;
 
     const model = request.model ?? this.defaultModel;
-    const maxModelTokens = model.includes('thinking') ? 65536 : 8192;
+    const maxModelTokens = await this.getModelOutputTokenLimit(model);
     const maxTotalOutputTokens = request.generationOptions?.maxOutputTokens ?? maxModelTokens;
     const inputContent = this.convertContents(request.contents);
 
@@ -290,32 +185,28 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
     let totalTokens = 0;
 
     while (totalOutputTokens < maxTotalOutputTokens) {
-      let generation: StreamGenerateContentResult;
+      let generation: AsyncGenerator<GenerateContentResponse>;
 
       for (let i = 0; ; i++) {
         try {
           this.#logger.verbose(`[C:${generationNumber}] [I:${iterations + 1}] Generating...`);
-          generation = await this.getModel(model).generateContentStream({
-            generationConfig: {
-              ...generationConfig,
-              maxOutputTokens: Math.min(maxModelTokens, maxTotalOutputTokens - totalOutputTokens)
+          generation = await this.#genAI.models.generateContentStream({
+            model,
+            config: {
+              ...config,
+              maxOutputTokens: Math.min(maxModelTokens, maxTotalOutputTokens - totalOutputTokens),
             },
-            systemInstruction: request.systemInstruction,
-            tools: (isDefined(googleFunctionDeclarations) && (googleFunctionDeclarations.length > 0)) ? [{ functionDeclarations: googleFunctionDeclarations }] : undefined,
-            toolConfig: isDefined(request.functionCallingMode)
-              ? { functionCallingConfig: { mode: functionCallingModeMap[request.functionCallingMode] } }
-              : undefined,
-            contents: inputContent
+            contents: inputContent,
           });
 
           break;
         }
         catch (error) {
-          if ((i < 20) && isError(error) && (((error as Record)['status'] == 429) || ((error as Record)['status'] == 503))) {
+          if ((i < 20) && isError(error) && (error.message.includes('429 Too Many Requests') || (error.message.includes('503 Service Unavailable')))) {
             this.#logger.verbose('429 Too Many Requests - trying again in 15 seconds');
-            const canceled = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
+            const timeoutResult = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
 
-            if (!canceled) {
+            if (timeoutResult == 'timeout') {
               continue;
             }
           }
@@ -327,16 +218,26 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       iterations++;
 
       let lastUsageMetadata: UsageMetadata | undefined;
-      let candidate: GenerateContentCandidate | undefined;
+      let candidate: GoogleCandidate | undefined;
 
-      for await (const generationResponse of generation.stream) {
-        candidate = generationResponse.candidates!.at(0)!;
-        inputContent.push(candidate.content);
+      for await (const generationResponse of generation) {
+        candidate = generationResponse.candidates?.at(0);
+        const rawContent = candidate?.content;
 
-        const { promptTokenCount = 0, candidatesTokenCount = 0 } = generationResponse.usageMetadata as (Partial<UsageMetadata> | undefined) ?? {};
+        if (isUndefined(candidate)) {
+          throw new Error('No candidate returned.');
+        }
+
+        if (isUndefined(rawContent)) {
+          throw new Error('No content returned.');
+        }
+
+        inputContent.push(rawContent);
+
+        const { promptTokenCount = 0, candidatesTokenCount = 0 } = generationResponse.usageMetadata ?? {};
         lastUsageMetadata = generationResponse.usageMetadata;
 
-        const content = this.convertGoogleContent(candidate.content);
+        const content = this.convertGoogleContent(rawContent);
         let text: string | null;
         let functionCallParts: FunctionCall[] | undefined;
 
@@ -369,15 +270,15 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
             iterations,
             prompt: totalPromptTokens + promptTokenCount,
             output: totalOutputTokens + candidatesTokenCount,
-            total: totalTokens + promptTokenCount + candidatesTokenCount
-          }
+            total: totalTokens + promptTokenCount + candidatesTokenCount,
+          },
         };
 
         yield result;
       }
 
       totalPromptTokens += lastUsageMetadata?.promptTokenCount ?? 0;
-      totalOutputTokens += lastUsageMetadata?.candidatesTokenCount ?? 0;
+      totalOutputTokens += lastUsageMetadata?.responseTokenCount ?? 0;
       totalTokens += lastUsageMetadata?.totalTokenCount ?? 0;
 
       if (candidate?.finishReason != FinishReason.MAX_TOKENS) {
@@ -391,12 +292,12 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       model: options.model,
       generationOptions: {
         temperature: 0.5,
-        ...options
+        ...options,
       },
       systemInstruction: options.systemInstruction,
       functions: options.functions,
       functionCallingMode: options.functionCallingMode ?? 'force',
-      contents: options.contents
+      contents: options.contents,
     });
 
     const items: GenerationResult[] = [];
@@ -414,12 +315,39 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
           functionName: call.name,
           parameters: parameters as any,
           handlerResult: handlerResult as any,
-          getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } })
+          getFunctionResultContentPart: () => ({ functionResult: { name: call.name, value: handlerResult as any } }),
         };
       }
     }
 
     itemsPromise.resolve(items);
+  }
+
+  private async getModelOutputTokenLimit(model: AiModel): Promise<number> {
+    const existingValue = this.#maxOutputTokensCache.get(model);
+
+    if (isDefined(existingValue)) {
+      return await existingValue;
+    }
+
+    const promise = this._getModelOutputTokenLimit(model);
+    this.#maxOutputTokensCache.set(model, promise);
+
+    promise
+      .then((limit) => this.#maxOutputTokensCache.set(model, limit))
+      .catch(() => this.#maxOutputTokensCache.delete(model));
+
+    return await promise;
+  }
+
+  private async _getModelOutputTokenLimit(model: AiModel): Promise<number> {
+    const modelInfo = await this.#genAI.models.get({ model });
+
+    if (isUndefined(modelInfo.outputTokenLimit)) {
+      throw new Error(`Model ${model} does not support maxOutputTokens`);
+    }
+
+    return modelInfo.outputTokenLimit;
   }
 
   private convertContents(contents: Content | readonly Content[]): GoogleContent[] {
@@ -448,7 +376,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
         }
 
         throw new NotSupportedError('Unsupported content part.');
-      })
+      }),
     };
   }
 
@@ -465,7 +393,7 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
       return {
         name,
         description: declaration.description,
-        parameters: isDefined(parametersSchema) ? convertToOpenApiSchema(parametersSchema) as any as FunctionDeclarationSchema : undefined
+        parameters: isDefined(parametersSchema) ? convertToOpenApiSchema(parametersSchema) as any as GoogleSchema : undefined,
       };
     });
 
@@ -489,26 +417,22 @@ Always output the content and tags in ${options?.targetLanguage ?? 'the same lan
             }
 
             if (isDefined(part.fileData)) {
-              const file = assertDefinedPass(this.#fileService.getFileByUri(part.fileData.fileUri), 'File not found.');
+              const file = assertDefinedPass(this.#fileService.getFileByUri(assertDefinedPass(part.fileData.fileUri, 'Missing file uri')), 'File not found.');
               return { file: file.id };
             }
 
             if (isDefined(part.functionResponse)) {
-              return { functionResult: { name: part.functionResponse.name, value: part.functionResponse.response as any } };
+              return { functionResult: { name: assertDefinedPass(part.functionResponse.name, 'Missing function name'), value: part.functionResponse.response as any } };
             }
 
             if (isDefined(part.functionCall)) {
-              return { functionCall: { name: part.functionCall.name, parameters: part.functionCall.args as UndefinableJsonObject } };
+              return { functionCall: { name: assertDefinedPass(part.functionCall.name, 'Missing function name'), parameters: part.functionCall.args as UndefinableJsonObject } };
             }
 
             throw new NotSupportedError('Unsupported content part.');
           })
-          .filter(isNotNull)
+          .filter(isNotNull),
     };
-  }
-
-  private getModel(model: AiModel) {
-    return this.#genAI.getGenerativeModel({ model });
   }
 }
 
@@ -530,7 +454,7 @@ export function mergeGenerationStreamItems<S>(items: GenerationResult<S>[], sche
     },
     json() {
       if (isUndefined(schema)) {
-        return undefined as any;
+        return undefined as any; // eslint-disable-line @typescript-eslint/no-unsafe-return
       }
 
       if (isNull(this.text)) {
@@ -547,6 +471,6 @@ export function mergeGenerationStreamItems<S>(items: GenerationResult<S>[], sche
       return functionCallParts;
     },
     finishReason: { value: items.at(-1)!.finishReason },
-    usage: { value: items.at(-1)!.usage }
+    usage: { value: items.at(-1)!.usage },
   });
 }

@@ -3,6 +3,7 @@ import * as Http from 'node:http';
 import type { Socket } from 'node:net';
 import { Writable } from 'node:stream';
 import { bindNodeCallback, share } from 'rxjs';
+import { match, P } from 'ts-pattern';
 
 import { CancellationToken } from '#/cancellation/index.js';
 import { disposeAsync, type AsyncDisposable } from '#/disposable/index.js';
@@ -66,11 +67,11 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
 
     this.httpServer.listen(port);
 
-    return new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       let listeningListener: () => void;
-      let errorListener: (error: Error) => void; // eslint-disable-line prefer-const
+      let errorListener: (error: Error) => void;
 
-      listeningListener = () => { // eslint-disable-line prefer-const
+      listeningListener = () => {
         this.logger.info(`Listening on port ${port}`);
         this.untrackConnectedSockets = trackConnectedSockets(this.httpServer, this.sockets);
         this.httpServer.removeListener('error', errorListener);
@@ -139,7 +140,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       headers,
       query,
       ip: request.socket.remoteAddress!,
-      body: request
+      body: request,
     });
 
     const item: HttpServerRequestContext<NodeHttpServerContext> = {
@@ -147,20 +148,18 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
       respond: getResponder(response),
       context,
       async close() {
-        return new Promise<void>((resolve) => response.end(resolve));
-      }
+        await new Promise<void>((resolve) => response.end(resolve));
+      },
     };
 
     return item;
   }
 }
 
-// eslint-disable-next-line max-lines-per-function
 function getResponder(httpResponse: Http.ServerResponse): (response: HttpServerResponse) => Promise<void> {
-  // eslint-disable-next-line max-statements
   async function respond(response: HttpServerResponse): Promise<void> {
     writeHeaders(response, httpResponse);
-    return writeResponseBody(response, httpResponse);
+    await writeResponseBody(response, httpResponse);
   }
 
   return respond;
@@ -181,17 +180,17 @@ function writeHeaders(response: HttpServerResponse, httpResponse: ServerResponse
 }
 
 async function writeResponseBody(response: HttpServerResponse, httpResponse: ServerResponse): Promise<void> {
-  const simpleData =
-    isDefined(response.body?.json) ? JSON.stringify(response.body!.json)
-      : isDefined(response.body?.text) ? response.body.text
-        : isDefined(response.body?.buffer) ? response.body.buffer
-          : undefined;
+  const simpleData = match(response.body)
+    .with({ json: P.select(P.nonNullable) }, (json) => JSON.stringify(json))
+    .with({ text: P.select(P.nonNullable) }, (text) => text)
+    .with({ buffer: P.select(P.nonNullable) }, (buffer) => buffer)
+    .otherwise(() => undefined);
 
-  const streamData =
-    isDefined(simpleData) ? undefined
-      : isDefined(response.body?.stream) ? response.body.stream
-        : isDefined(response.body?.events) ? response.body.events.readable
-          : undefined;
+  const streamData = match(response.body)
+    .when(() => isDefined(simpleData), () => undefined)
+    .with({ stream: P.select(P.nonNullable) }, (stream) => stream)
+    .with({ events: P.select(P.nonNullable) }, (events) => events.readable)
+    .otherwise(() => undefined);
 
   if (isDefined(simpleData)) {
     const bytes = isString(simpleData) ? encodeUtf8(simpleData) : simpleData;
@@ -207,13 +206,11 @@ async function writeResponseBody(response: HttpServerResponse, httpResponse: Ser
     await streamData.pipeTo(responseStream);
   }
 
-  return new Promise<void>((resolve) => {
-    httpResponse.end(resolve);
-  });
+  await new Promise<void>((resolve) => httpResponse.end(resolve));
 }
 
 async function write(httpResponse: Http.ServerResponse, bytes: string | Uint8Array): Promise<void> {
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     httpResponse.write(bytes, (error) => {
       if (isNullOrUndefined(error)) {
         resolve();
@@ -243,7 +240,7 @@ function trackConnectedSockets(server: Http.Server, sockets: Set<Socket>): () =>
 }
 
 async function getConnectionsCount(server: Http.Server): Promise<number> {
-  return new Promise<number>((resolve, reject) => {
+  return await new Promise<number>((resolve, reject) => {
     server.getConnections((error, count) => {
       if (error != undefined) {
         reject(error);

@@ -5,24 +5,24 @@ import type { ResolveArgument } from './interfaces.js';
 import type { InjectionToken } from './token.js';
 import type { AfterResolveContext, ResolveContext } from './types.js';
 
-export type Factory<T, A = any, D extends Record = Record> = (argument: ResolveArgument<T, A>, context: ResolveContext<D>) => T;
+export type Factory<T, A = undefined, D extends Record = Record> = (argument: ResolveArgument<T, A>, context: ResolveContext<D>) => T;
 
 export type ProviderWithArgument<T, A> = { defaultArgument?: ResolveArgument<T, A>, defaultArgumentProvider?: () => ResolveArgument<T, A> };
 
-export type ProviderWithInitializer<T, A, D extends Record> = { afterResolve?: (value: T, argument: A, context: AfterResolveContext<D>) => void | Promise<void> };
+export type ProviderWithInitializer<T, A, D extends Record> = { afterResolve?: (value: T, argument: ResolveArgument<T, A>, context: AfterResolveContext<D>) => void | Promise<void> };
 
-export type Provider<T = any, A = any, D extends Record = Record> =
+export type Provider<T = any, A = undefined, D extends Record = Record> =
   | ClassProvider<T, A, D>
   | ValueProvider<T>
   | TokenProvider<T, A, D>
   | FactoryProvider<T, A, D>;
 
 export type ClassProvider<T = any, A = any, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
-  useClass: Constructor<T>
+  useClass: Constructor<T>,
 };
 
 export type ValueProvider<T = any> = {
-  useValue: T
+  useValue: T,
 };
 
 export type TokenProvider<T = any, A = any, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & (
@@ -32,8 +32,8 @@ export type TokenProvider<T = any, A = any, D extends Record = Record> = Provide
   | { useToken?: undefined, useTokenProvider: () => InjectionToken<T extends (infer U)[] ? U : T, A>, resolveAll: true }
 );
 
-export type FactoryProvider<T = any, A = unknown, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
-  useFactory: Factory<T, A, D>
+export type FactoryProvider<T = any, A = undefined, D extends Record = Record> = ProviderWithArgument<T, A> & ProviderWithInitializer<T, A, D> & {
+  useFactory: Factory<T, A, D>,
 };
 
 export function classProvider<T, A, D extends Record>(constructor: Constructor<T>, options?: TypedOmit<ClassProvider<T, A, D>, 'useClass'>): ClassProvider<T, A, D> {

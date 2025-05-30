@@ -6,6 +6,9 @@ module.exports = {
     preflight: false,
     container: false
   },
+  plugins: [
+    require('@tailwindcss/container-queries'),
+  ],
   darkMode: ['class', '.tsl-dark'],
   theme: {
     extend: {

@@ -15,7 +15,7 @@ export type ReadBinaryStreamOptions = {
   onLengthExceed?: 'error' | 'close' | 'leave-open',
 
   /** Action if source stream has less bytes than provided length */
-  onLengthSubceed?: 'error' | 'close' | 'leave-open'
+  onLengthSubceed?: 'error' | 'close' | 'leave-open',
 };
 
 export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array> {
@@ -28,64 +28,105 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBuffer
   if (isDefined(length)) {
     const reader = stream.getReader({ mode: 'byob' });
 
-    let buffer = new ArrayBuffer(length + 1);
+    let buffer = new ArrayBuffer(length + 1); // To read one extra byte for exceed detection
     let bytesRead = 0;
+    let shouldCancelReaderAtEnd = true;
 
-    while (true) {
-      const result = await reader.read(new Uint8Array(buffer, bytesRead, buffer.byteLength - bytesRead));
+    try {
+      while (true) {
+        const view = new Uint8Array(buffer, bytesRead, buffer.byteLength - bytesRead);
+        const result = await reader.read(view);
 
-      buffer = result.value!.buffer;
-      bytesRead += result.value!.byteLength;
+        buffer = result.value!.buffer;
+        bytesRead += result.value!.byteLength;
 
-      if (result.done) {
-        break;
-      }
+        if (result.done) {
+          break;
+        }
 
-      if (bytesRead > length) {
-        switch (onLengthExceed) {
-          case 'error':
-            await reader.cancel();
-            throw new MaxBytesExceededError('Size of stream is greater than provided length.');
+        // Check if we have read more data than the specified 'length'.
+        // This implies bytesRead is at least length + 1.
+        if (bytesRead > length) {
+          switch (onLengthExceed) {
+            case 'error':
+              await reader.cancel();
+              shouldCancelReaderAtEnd = false;
+              throw new MaxBytesExceededError('Size of stream is greater than provided length.');
 
-          case 'close':
-            await reader.cancel();
-            break;
+            case 'close':
+              await reader.cancel();
+              shouldCancelReaderAtEnd = false;
+              break;
 
-          case 'leave-open':
-            reader.releaseLock();
-            break;
+            case 'leave-open':
+              reader.releaseLock();
+              shouldCancelReaderAtEnd = false;
+              break;
 
-          default:
-            throw new NotSupportedError(`Action ${onLengthExceed as string} not supported.`);
+            default:
+              await reader.cancel();
+              shouldCancelReaderAtEnd = false;
+              throw new NotSupportedError(`Action ${onLengthExceed as string} not supported.`);
+          }
+          break;
         }
       }
 
-      if (bytesRead == length + 1) {
-        break;
+      if (bytesRead < length) { // Stream ended before specified length was read
+        switch (onLengthSubceed) {
+          case 'error':
+            if (shouldCancelReaderAtEnd) {
+              await reader.cancel();
+            }
+
+            shouldCancelReaderAtEnd = false;
+            throw new BadRequestError('Size of stream was less than provided length.');
+
+          case 'close':
+            if (shouldCancelReaderAtEnd) {
+              await reader.cancel();
+            }
+
+            shouldCancelReaderAtEnd = false;
+            break;
+
+          case 'leave-open':
+            if (shouldCancelReaderAtEnd) {
+              reader.releaseLock();
+            }
+
+            shouldCancelReaderAtEnd = false;
+            break;
+
+          default:
+            if (shouldCancelReaderAtEnd) {
+              await reader.cancel();
+            }
+
+            shouldCancelReaderAtEnd = false;
+            throw new NotSupportedError(`Action ${onLengthSubceed as string} not supported.`);
+        }
       }
-    }
 
-    if (bytesRead < length) {
-      switch (onLengthSubceed) {
-        case 'error':
-          await reader.cancel();
-          throw new BadRequestError('Size of stream was less than provided length.');
-
-        case 'close':
-          await reader.cancel();
-          break;
-
-        case 'leave-open':
-          reader.releaseLock();
-          break;
-
-        default:
-          throw new NotSupportedError(`Action ${onLengthSubceed as string} not supported.`);
+      if (shouldCancelReaderAtEnd) {
+        await reader.cancel();
       }
-    }
 
-    await reader.cancel();
-    return new Uint8Array(buffer, 0, Math.min(length, bytesRead));
+      return new Uint8Array(buffer, 0, Math.min(length, bytesRead));
+    }
+    catch (error) {
+      // If an error occurred (e.g., network, or thrown by logic above)
+      // and reader hasn't been handled, try to cancel it.
+      // This is a "best effort" cleanup.
+      if (shouldCancelReaderAtEnd && reader) {
+        try {
+          await reader.cancel(error); // Pass the error reason
+        }
+        catch { /* ignore */ }
+      }
+
+      throw error;
+    }
   }
 
   let totalLength = 0;
@@ -96,6 +137,11 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBuffer
     const result = await reader.read();
 
     if (result.done) {
+      if (isDefined(result.value)) {
+        views.push(result.value);
+        totalLength += result.value.byteLength;
+      }
+
       break;
     }
 

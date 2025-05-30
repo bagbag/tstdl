@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-badge {
-    @apply relative inline-flex items-center gap-x-1.5 px-3 py-1 text-sm font-medium overflow-hidden transition-[opacity];
+    @apply relative inline-flex items-center gap-x-1.5 h-auto px-3 py-1 text-sm font-medium overflow-hidden transition-[opacity];
 
     &.badge-bold {
       @apply font-semibold;
@@ -8,6 +8,10 @@
 
     &.badge-small {
       @apply px-1.5 py-0.5 text-xs rounded-md;
+
+      &.badge-pill {
+        @apply pr-2;
+      }
     }
 
     &.badge-rounded {

@@ -120,7 +120,11 @@
                 "input": "projects/test/public",
                 "followSymlinks": true
               },
-              "projects/test/src/assets"
+              {
+                "glob": "**/*",
+                "input": "node_modules/ngx-extended-pdf-viewer/assets/",
+                "output": "/assets/"
+              }
             ],
             "styles": [
               "projects/test/src/styles.scss"
@@ -160,6 +164,9 @@
             "development": {
               "buildTarget": "test:build:development"
             }
+          },
+          "options": {
+            "allowedHosts": true
           },
           "defaultConfiguration": "development"
         },

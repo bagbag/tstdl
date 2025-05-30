@@ -26,5 +26,5 @@ export type InjectMetadata = {
   injectArgumentMapper?: Mapper,
 
   /** If defined, use the provided argument, map it and pass it to the resolution of the token */
-  forwardArgumentMapper?: Mapper
+  forwardArgumentMapper?: Mapper,
 };

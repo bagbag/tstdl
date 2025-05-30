@@ -11,19 +11,19 @@ import type { ApiGatewayMiddlewareContext } from './server/index.js';
 
 export type ApiRegistrationOptions = {
   name?: string,
-  prefix?: string
+  prefix?: string,
 };
 
 export type ApiRegistration = {
   target: object,
   name: string,
   path: string,
-  prefix: string
+  prefix: string,
 };
 
 export type EndpointRegistrationOptions = {
   path?: string,
-  description?: string
+  description?: string,
 };
 
 export type ApiEndpointMethod = HttpMethod;
@@ -41,7 +41,7 @@ export type ApiEndpointDefinitionCors = {
   accessControlAllowOrigin?: ApiEndpointDataProvider<string | undefined>,
   autoAccessControlAllowOrigin?: ApiEndpointDataProvider<OneOrMany<string> | undefined>,
   accessControlExposeHeaders?: ApiEndpointDataProvider<OneOrMany<string> | undefined>,
-  accessControlMaxAge?: ApiEndpointDataProvider<number | undefined>
+  accessControlMaxAge?: ApiEndpointDataProvider<number | undefined>,
 };
 
 export type ApiEndpointDefinition = {
@@ -85,7 +85,7 @@ export type ApiEndpointDefinition = {
    */
   credentials?: boolean,
 
-  cors?: ApiEndpointDefinitionCors
+  cors?: ApiEndpointDefinitionCors,
 };
 
 export type ApiEndpointsDefinition = Record<string, ValueOrProvider<ApiEndpointDefinition>>;
@@ -101,10 +101,10 @@ export type ApiDefinition<Resource extends string = string, Endpoints extends Ap
    */
   prefix?: string | null,
 
-  endpoints: Endpoints
+  endpoints: Endpoints,
 };
 
-export type ApiEndpointKeys<T extends ApiDefinition> = keyof T['endpoints'];
+export type ApiEndpointKeys<T extends ApiDefinition> = Extract<keyof T['endpoints'], string>;
 export type NormalizedApiEndpoints<T extends ApiDefinition['endpoints']> = { [P in keyof T]: ReturnTypeOrT<T[P]> };
 export type ApiEndpoint<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NormalizedApiEndpoints<T['endpoints']>[K];
 
@@ -136,11 +136,11 @@ export type ApiClientResult<T extends ApiDefinition, K extends ApiEndpointKeys<T
 export type ApiRequestData<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = {
   parameters: ApiParameters<T, K>,
   body: ApiServerBody<T, K>,
-  request: HttpServerRequest
+  request: HttpServerRequest,
 };
 
 export type ApiRequestContext<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> = ApiRequestData<T, K> & {
-  getToken<Token>(): Promise<Token>
+  getToken<Token>(): Promise<Token>,
 };
 
 export type ApiEndpointServerImplementation<T extends ApiDefinition = ApiDefinition, K extends ApiEndpointKeys<T> = ApiEndpointKeys<T>> =
@@ -161,7 +161,7 @@ export type ApiClientImplementation<T extends ApiDefinition = any> =
   { [P in ApiEndpointKeys<T>]: ApiEndpointClientImplementation<T, P> }
   & {
     getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string,
-    getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string
+    getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string,
   };
 
 export function defineApi<T extends ApiDefinition>(definition: T): T {

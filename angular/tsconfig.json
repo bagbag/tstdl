@@ -108,6 +108,12 @@
       "@tstdl/angular/react": [
         "projects/tstdl/angular/react",
       ],
+      "@tstdl/angular/tooltip/*": [
+        "projects/tstdl/angular/tooltip/*",
+      ],
+      "@tstdl/angular/tooltip": [
+        "projects/tstdl/angular/tooltip",
+      ],
       "@tstdl/angular/vertical-tab-group/*": [
         "projects/tstdl/angular/vertical-tab-group/*",
       ],

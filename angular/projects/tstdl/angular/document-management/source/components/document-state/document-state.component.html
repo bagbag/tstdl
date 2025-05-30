@@ -1,0 +1,65 @@
+@if (selectedWorkflow(); as workflow) {
+  <div class="p-4">
+    <div class="flex justify-between mb-2">
+      <div class="font-semibold text-base">{{ workflow.step | localizeEnum: DocumentWorkflowStep }}</div>
+      <tsl-badge design="flat-with-outline" [color]="stateColors[workflow.state]">{{ workflow.state | localizeEnum: DocumentWorkflowState }}</tsl-badge>
+    </div>
+
+    <div class="space-y-2 text-sm">
+      <div>
+        <div class="font-semibold opacity-80">Start</div>
+        <div class="opacity-70">{{ workflow.metadata.createTimestamp | dateTimeLocale: dateTimeNumeric }}</div>
+      </div>
+
+      @if (workflow.completeTimestamp; as completeTimestamp) {
+        <div>
+          <div class="font-semibold opacity-80">Completed</div>
+          <div class="opacity-70">{{ completeTimestamp | dateTimeLocale: dateTimeNumeric }}</div>
+        </div>
+
+        <div>
+          <div class="font-semibold opacity-80">Completed by</div>
+          <div class="opacity-70">Max Mustermann</div>
+        </div>
+      }
+
+      @if (workflow.state == DocumentWorkflowState.Failed) {
+        <div>
+          <div class="text-red-500 font-semibold opacity-80">Fehler:</div>
+          <div class="opacity-70">{{ workflow.failReason | localizeEnum: DocumentWorkflowFailReason }}</div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<div class="flex flex-col border-l border-neutral-400 dark:border-neutral-500/75">
+  @for (step of workflowSteps; let last = $last; track step) {
+    @let state = lastStepStates()[step];
+
+    <button
+      tslButton
+      [color]="'neutral'"
+      [class.bg-transparent]="step == selectedWorkflow()?.step"
+      [class.animate-pulse]="state == DocumentWorkflowState.Running"
+      [disabled]="state == 'none'"
+      class="relative grow p-4 rounded-none"
+      (click)="selectedWorkflowStep.set(step)">
+      <tsl-icon [icon]="stepIcons[step]"></tsl-icon>
+
+      @if (state == DocumentWorkflowState.Running) {
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="loader"></div>
+        </div>
+      }
+
+      @if (state != "none") {
+        <tsl-badge design="flat-with-outline" size="small" dot="true" [color]="stateColors[state]" class="absolute justify-center w-4 h-4 p-0 top-1 right-1"></tsl-badge>
+      }
+    </button>
+
+    @if (!last) {
+      <hr class="border-neutral-400 dark:border-neutral-500/75" />
+    }
+  }
+</div>

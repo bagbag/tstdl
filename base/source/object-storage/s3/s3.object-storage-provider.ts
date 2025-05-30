@@ -57,7 +57,7 @@ export class S3ObjectStorageProvider extends ObjectStorageProvider<S3ObjectStora
       port: (port.length > 0) ? parseInt(port, 10) : undefined,
       useSSL: protocol == 'https:',
       accessKey: config.accessKey,
-      secretKey: config.secretKey
+      secretKey: config.secretKey,
     });
 
     this.bucket = assertDefinedPass((config.bucketPerModule == true) ? true : config.bucket, 'either bucket or bucketPerModule must be specified');

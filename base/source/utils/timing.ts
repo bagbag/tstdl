@@ -7,7 +7,7 @@ import { resolveValueOrProvider, type ValueOrProvider } from './value-or-provide
 
 /** Timeout for specified duration */
 export async function timeout(milliseconds: number = 0, options?: { abortSignal?: AbortSignal }): Promise<void> {
-  return new Promise<void>((resolve) => {
+  await new Promise<void>((resolve) => {
     const abortListener = () => clearTimeout(timeoutRef);
 
     const timeoutRef = setTimeout(() => {
@@ -22,23 +22,23 @@ export async function timeout(milliseconds: number = 0, options?: { abortSignal?
 /** Timeout until specified time */
 export async function timeoutUntil(timestamp: number | Date): Promise<void> {
   const left = timestamp.valueOf() - Date.now();
-  return timeout(left);
+  await timeout(left);
 }
 
 /** Timeout for specified duration */
-export async function cancelableTimeout(milliseconds: number, cancelSignal: Observable<void> | CancellationSignal): Promise<boolean> {
+export async function cancelableTimeout(milliseconds: number, cancelSignal: Observable<void> | CancellationSignal): Promise<'timeout' | 'canceled'> {
   const observable = (cancelSignal instanceof CancellationSignal) ? cancelSignal.set$ : cancelSignal;
 
-  return firstValueFrom(race([
-    timer(milliseconds).pipe(map(() => false)),
-    observable.pipe(map(() => true))
+  return await firstValueFrom(race([
+    timer(milliseconds).pipe(map(() => 'timeout' as const)),
+    observable.pipe(map(() => 'canceled' as const)),
   ]));
 }
 
 /** Timeout until specified time */
-export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: Observable<void> | CancellationSignal): Promise<boolean> {
+export async function cancelableTimeoutUntil(timestamp: number | Date, cancelSignal: Observable<void> | CancellationSignal): Promise<'timeout' | 'canceled'> {
   const left = timestamp.valueOf() - Date.now();
-  return cancelableTimeout(left, cancelSignal);
+  return await cancelableTimeout(left, cancelSignal);
 }
 
 export async function withTimeout<T>(milliseconds: number, promiseOrProvider: ValueOrProvider<Promise<T>>, options?: { errorMessage?: string }): Promise<T> {
@@ -47,24 +47,24 @@ export async function withTimeout<T>(milliseconds: number, promiseOrProvider: Va
 
   void promise.then(() => abortController.abort());
 
-  return Promise.race([
+  return await Promise.race([
     promise,
-    timeout(milliseconds, { abortSignal: abortController.signal }).then(() => _throw(new TimeoutError(options?.errorMessage)))
+    timeout(milliseconds, { abortSignal: abortController.signal }).then(() => _throw(new TimeoutError(options?.errorMessage))),
   ]);
 }
 
 export async function immediate(): Promise<void> {
-  return new Promise<void>(setImmediate as (callback: () => void) => void);
+  await new Promise<void>(setImmediate as (callback: () => void) => void);
 }
 
 export async function nextTick(): Promise<void> {
-  return new Promise<void>((resolve) => process.nextTick(resolve));
+  await new Promise<void>((resolve) => process.nextTick(resolve));
 }
 
 export async function animationFrame(): Promise<number> {
-  return new Promise<number>(requestAnimationFrame);
+  return await new Promise<number>(requestAnimationFrame);
 }
 
 export async function idle(timeout?: number): Promise<IdleDeadline> {
-  return new Promise<IdleDeadline>((resolve) => requestIdleCallback(resolve, { timeout }));
+  return await new Promise<IdleDeadline>((resolve) => requestIdleCallback(resolve, { timeout }));
 }

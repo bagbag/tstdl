@@ -1,15 +1,16 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
+import { assertUndefined } from '@tstdl/base/utils';
 
-export const badgeStyles = ['flat', 'outline', 'flat-with-outline'] as const;
+export const badgeDesigns = ['flat', 'outline', 'flat-with-outline'] as const;
 export const badgeColors = ['neutral', 'gray', 'red', 'yellow', 'amber', 'green', 'lime', 'blue', 'sky', 'cyan', 'teal', 'emerald', 'indigo', 'purple', 'pink', 'fuchsia', 'rose'] as const;
 export const badgeSizes = ['small', 'normal'] as const;
 export const badgePills = [true, false] as const;
 export const badgeDots = [true, false] as const;
 export const badgeSmalls = [true, false] as const;
 
-export type BadgeStyle = (typeof badgeStyles)[number];
+export type BadgeDesign = (typeof badgeDesigns)[number];
 export type BadgeColor = (typeof badgeColors)[number];
 export type BadgeSize = (typeof badgeSizes)[number];
 
@@ -30,7 +31,7 @@ const flatBackgroundColors: Record<BadgeColor, string> = {
   purple: 'bg-purple-300 dark:bg-purple-500/40',
   pink: 'bg-pink-300 dark:bg-pink-500/40',
   fuchsia: 'bg-fuchsia-300 dark:bg-fuchsia-500/40',
-  rose: 'bg-rose-300 dark:bg-rose-500/40'
+  rose: 'bg-rose-300 dark:bg-rose-500/40',
 };
 
 const flatWithOutlineBackgroundColors: Record<BadgeColor, string> = {
@@ -50,7 +51,7 @@ const flatWithOutlineBackgroundColors: Record<BadgeColor, string> = {
   purple: 'bg-purple-100 dark:bg-purple-400/10',
   pink: 'bg-pink-100 dark:bg-pink-400/10',
   fuchsia: 'bg-fuchsia-100 dark:bg-fuchsia-400/10',
-  rose: 'bg-rose-100 dark:bg-rose-400/10'
+  rose: 'bg-rose-100 dark:bg-rose-400/10',
 };
 
 const flatWithOutlineRingColors: Record<BadgeColor, string> = {
@@ -70,7 +71,7 @@ const flatWithOutlineRingColors: Record<BadgeColor, string> = {
   purple: 'ring-purple-700/10 dark:ring-purple-400/30',
   pink: 'ring-pink-700/10 dark:ring-pink-400/20',
   fuchsia: 'ring-fuchsia-700/10 dark:ring-fuchsia-400/20',
-  rose: 'ring-rose-700/10 dark:ring-rose-400/20'
+  rose: 'ring-rose-700/10 dark:ring-rose-400/20',
 };
 
 const outlineRingColors: Record<BadgeColor, string> = {
@@ -90,7 +91,7 @@ const outlineRingColors: Record<BadgeColor, string> = {
   purple: 'ring-purple-700/10 dark:ring-purple-600/30',
   pink: 'ring-pink-700/10 dark:ring-pink-600/20',
   fuchsia: 'ring-fuchsia-700/10 dark:ring-fuchsia-600/20',
-  rose: 'ring-rose-700/10 dark:ring-rose-600/20'
+  rose: 'ring-rose-700/10 dark:ring-rose-600/20',
 };
 
 const flatTextColor: Record<BadgeColor, string> = {
@@ -110,7 +111,7 @@ const flatTextColor: Record<BadgeColor, string> = {
   purple: 'text-purple-800 dark:text-purple-200',
   pink: 'text-pink-800 dark:text-pink-200',
   fuchsia: 'text-fuchsia-800 dark:text-fuchsia-200',
-  rose: 'text-rose-800 dark:text-rose-200'
+  rose: 'text-rose-800 dark:text-rose-200',
 };
 
 const flatWithOutlineTextColor: Record<BadgeColor, string> = {
@@ -130,7 +131,7 @@ const flatWithOutlineTextColor: Record<BadgeColor, string> = {
   purple: 'text-purple-700 dark:text-purple-300',
   pink: 'text-pink-700 dark:text-pink-300',
   fuchsia: 'text-fuchsia-700 dark:text-fuchsia-300',
-  rose: 'text-rose-700 dark:text-rose-300'
+  rose: 'text-rose-700 dark:text-rose-300',
 };
 
 const dotColor: Record<BadgeColor, string> = {
@@ -150,7 +151,7 @@ const dotColor: Record<BadgeColor, string> = {
   purple: 'bg-purple-500 dark:bg-purple-500',
   pink: 'bg-pink-500 dark:bg-pink-500',
   fuchsia: 'bg-fuchsia-500 dark:bg-fuchsia-500',
-  rose: 'bg-rose-500 dark:bg-rose-500'
+  rose: 'bg-rose-500 dark:bg-rose-500',
 };
 
 @Component({
@@ -165,16 +166,18 @@ const dotColor: Record<BadgeColor, string> = {
     'class': 'tsl-tw',
     '[class.cursor-pointer]': 'interactive() && !disabled()',
     '[class.opacity-60]': '!active() && !disabled()',
-    '[class.opacity-50]': 'disabled()'
+    '[class.opacity-50]': 'disabled()',
   },
-  hostDirectives: [NgClass]
+  hostDirectives: [NgClass],
 })
 export class BadgeComponent implements OnInit, OnDestroy {
   readonly #ngClass = inject(NgClass);
   readonly #changeDetector = inject(ChangeDetectorRef);
   readonly #ripple = inject(MatRipple);
 
-  readonly style = input<BadgeStyle>('flat');
+  /** @deprecated Use `design` instead. */
+  readonly style = input<undefined>();
+  readonly design = input<BadgeDesign>('flat');
   readonly color = input<BadgeColor>('neutral');
   readonly size = input<BadgeSize>('normal');
   readonly rounded = input<boolean, boolean | `${boolean}`>(true, { transform: booleanAttribute });
@@ -188,22 +191,25 @@ export class BadgeComponent implements OnInit, OnDestroy {
   readonly dotColor = dotColor;
 
   readonly classes = computed(() => {
-    const style = this.style();
+    const design = this.design();
     const color = this.color();
     const size = this.size();
+    const rounded = this.rounded();
+    const pill = this.pill();
+    const bold = this.bold();
 
     const classes = [
-      ['ring-2 ring-inset', (style == 'outline') || (style == 'flat-with-outline')],
-      [[flatBackgroundColors[color]], style == 'flat'],
-      [[flatWithOutlineBackgroundColors[color]], style == 'flat-with-outline'],
-      [[outlineRingColors[color]], style == 'outline'],
-      [[flatWithOutlineRingColors[color]], style == 'flat-with-outline'],
-      [[flatWithOutlineTextColor[color]], style == 'flat-with-outline'],
-      [[flatTextColor[color]], style == 'flat'],
-      ['text-neutral-800 dark:text-neutral-300', style == 'outline'],
-      ['badge-rounded', this.rounded() && !this.pill()],
-      ['badge-pill', this.pill()],
-      ['badge-bold', this.bold()],
+      ['ring-2 ring-inset', (design == 'outline') || (design == 'flat-with-outline')],
+      [[flatBackgroundColors[color]], design == 'flat'],
+      [[flatWithOutlineBackgroundColors[color]], design == 'flat-with-outline'],
+      [[outlineRingColors[color]], design == 'outline'],
+      [[flatWithOutlineRingColors[color]], design == 'flat-with-outline'],
+      [[flatWithOutlineTextColor[color]], design == 'flat-with-outline'],
+      [[flatTextColor[color]], design == 'flat'],
+      ['text-neutral-800 dark:text-neutral-300', design == 'outline'],
+      ['badge-rounded', rounded && !pill],
+      ['badge-pill', pill],
+      ['badge-bold', bold],
       ['badge-small', size == 'small'],
     ] as const;
 
@@ -218,6 +224,8 @@ export class BadgeComponent implements OnInit, OnDestroy {
     });
 
     effect(() => (this.#ripple.disabled = (!this.interactive() || this.disabled())));
+
+    effect(() => assertUndefined(this.style(), 'The "style" input is deprecated and should not be used. Use "design" instead.'));
   }
 
   ngOnInit(): void {

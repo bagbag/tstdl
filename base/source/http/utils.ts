@@ -16,11 +16,11 @@ import { isArrayBuffer, isBlob, isDefined, isReadableStream, isUint8Array, isUnd
 type Body = Uint8Array | Blob | AnyIterable<Uint8Array> | ReadableStream<Uint8Array>;
 
 export type ReadBodyOptions = {
-  maxBytes?: number
+  maxBytes?: number,
 };
 
 export type ReadBodyAsJsonOptions = ReadBodyOptions & {
-  fallbackToText?: boolean
+  fallbackToText?: boolean,
 };
 
 export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): ReadableStream<Uint8Array> {
@@ -36,7 +36,7 @@ export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options
           start: (controller) => {
             controller.enqueue(body);
             controller.close();
-          }
+          },
         })
         : isAnyIterable(body)
           ? getReadableStreamFromIterable(body)
@@ -114,14 +114,14 @@ export async function readBodyAsJson(body: Body, headers: HttpHeaders, options?:
 
 export async function readBody(body: Body, headers: HttpHeaders, options?: ReadBodyOptions): Promise<string | UndefinableJson | Uint8Array> {
   if (headers.contentType?.includes('json') == true) {
-    return readBodyAsJson(body, headers, { ...options, fallbackToText: true });
+    return await readBodyAsJson(body, headers, { ...options, fallbackToText: true });
   }
 
   if (headers.contentType?.includes('text') == true) {
-    return readBodyAsText(body, headers, options);
+    return await readBodyAsText(body, headers, options);
   }
 
-  return readBodyAsBuffer(body, headers, options);
+  return await readBodyAsBuffer(body, headers, options);
 }
 
 export function readBodyAsStream(body: Body, headers: HttpHeaders, options?: ReadBodyOptions): ReadableStream<string> | ReadableStream<Uint8Array> {

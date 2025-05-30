@@ -17,7 +17,7 @@ import { Optional } from '#/schema/index.js';
 import type { TemplateField } from '#/templates/index.js';
 import { Template, TemplateService } from '#/templates/index.js';
 import { finalizeStream } from '#/utils/stream/finalize-stream.js';
-import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
+import { readableStreamFromPromise } from '#/utils/stream/from-promise.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { timeout } from '#/utils/timing.js';
 import { isDefined } from '#/utils/type-guards.js';

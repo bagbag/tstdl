@@ -1,40 +1,21 @@
-import { spawnCommand } from '#/process/spawn.js';
-import { isDefined, isString } from '#/utils/type-guards.js';
+import { fileTypeFromBuffer, fileTypeFromFile, fileTypeFromStream } from 'file-type/node';
+
+import { isReadableStream, isString, isUint8Array } from '#/utils/type-guards.js';
+import { match } from 'ts-pattern';
 import { mimeTypesMap } from './mime-types.js';
 
-export async function getMimeType(file: string | Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
-  const path = isString(file) ? file : '-';
-  const data = isString(file) ? undefined : file;
+export async function getMimeType(file: string | Uint8Array | ReadableStream<Uint8Array>): Promise<string | undefined>;
+export async function getMimeType<F>(file: string | Uint8Array | ReadableStream<Uint8Array>, fallback: F): Promise<string | F>;
+export async function getMimeType<F>(file: string | Uint8Array | ReadableStream<Uint8Array>, fallback?: F): Promise<string | F> {
+  const result = await match(file)
+    .when(isString, async (f) => await fileTypeFromFile(f))
+    .when(isUint8Array, async (f) => await fileTypeFromBuffer(f))
+    .when(isReadableStream<Uint8Array>, async (f) => await fileTypeFromStream(f))
+    .exhaustive();
 
-  return spawnFileCommand(['--brief', '--mime-type', path], data);
+  return result?.mime ?? fallback!;
 }
 
 export function getMimeTypeExtensions(mimeType: string): string[] {
   return mimeTypesMap.get(mimeType) ?? [];
-}
-
-async function spawnFileCommand(args: string[], file?: Uint8Array | ReadableStream<Uint8Array>): Promise<string> {
-  const process = await spawnCommand('file', args);
-
-  if (isDefined(file)) {
-    try {
-      await process.write(file);
-    }
-    catch { /* ignore as file command closes stdin early */ }
-  }
-
-  const { code } = await process.wait();
-
-  if (code != 0) {
-    const errorOutput = await process.readError();
-    throw new Error(errorOutput.trim());
-  }
-
-  const output = await process.readOutput();
-
-  if (output.includes('file or directory')) {
-    throw new Error(output.trim());
-  }
-
-  return output.trim();
 }

@@ -89,7 +89,7 @@ export type ApiMetadata = {
  * @todo error handling (standardized format, serialization etc.)
  */
 @Singleton({
-  defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions
+  defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions,
 })
 export class ApiGateway implements Resolvable<ApiGatewayOptions> {
   private readonly requestTokenProvider: ApiRequestTokenProvider;
@@ -155,9 +155,9 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
               hostname: '*',
               port: '*',
               search: '*',
-              hash: '*'
+              hash: '*',
             }),
-            endpoints: new Map()
+            endpoints: new Map(),
           };
 
           this.apis.set(resource, resourceApis);
@@ -257,16 +257,16 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
       parameters: validatedParameters,
       body,
       request: context.request,
-      getToken: async () => this.requestTokenProvider.getToken(requestContext)
+      getToken: async () => this.requestTokenProvider.getToken(requestContext),
     };
 
     const result = await context.endpoint.implementation(requestContext);
 
     if (result instanceof HttpServerResponse) {
-      context.response.update(result); // eslint-disable-line require-atomic-updates
+      context.response.update(result);
     }
     else {
-      context.response.body = isUint8Array(result) ? { buffer: result } // eslint-disable-line require-atomic-updates
+      context.response.body = isUint8Array(result) ? { buffer: result }
         : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
           : isReadableStream<Uint8Array>(result) ? { stream: result }
             : (result instanceof ServerSentEventsSource) ? { events: result }

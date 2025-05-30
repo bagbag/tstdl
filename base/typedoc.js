@@ -8,7 +8,7 @@ const packageJsonString = packageJsonBytes.toString('utf-8');
 const packageJson = JSON.parse(packageJsonString);
 
 const entryPoints = Object.entries(packageJson.exports)
-  .filter(([key]) => key != './tsconfig.json')
+  .filter(([key]) => !['./tsconfig.json', './eslint.config.js'].includes(key))
   .map(([_, value]) => `./source/${value.slice(2).slice(0, -3)}.ts`);
 
 /**
@@ -17,8 +17,7 @@ const entryPoints = Object.entries(packageJson.exports)
 const config = {
   $schema: 'https://typedoc.org/schema.json',
   readme: 'README.md',
-  plugin: ['typedoc-plugin-missing-exports', '@mxssfd/typedoc-theme'],
-  theme: 'my-theme',
+  plugin: ['typedoc-plugin-missing-exports'],
   includeVersion: true,
   out: 'dist/docs',
   entryPoints,

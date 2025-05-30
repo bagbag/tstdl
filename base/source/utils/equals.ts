@@ -13,16 +13,15 @@ export interface Equals<T = unknown> {
 
 const equalsSymbol: unique symbol = Symbol('equals');
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare, @typescript-eslint/naming-convention
 export const Equals = {
-  symbol: equalsSymbol
+  symbol: equalsSymbol,
 } as const;
 
 export type ArrayEqualsComparator<A, B> = (a: A, b: B) => boolean;
 
 export type ArrayEqualsOptions<A, B> = {
   sort?: Comparator<A | B>,
-  comparator?: ArrayEqualsComparator<A, B>
+  comparator?: ArrayEqualsComparator<A, B>,
 };
 
 export function strictEquals(a: any, b: any): boolean {
@@ -56,7 +55,7 @@ export type EqualsOptions = {
   arrayDeep?: boolean,
   sortArray?: boolean,
   coerceStrings?: boolean,
-  checkPrototype?: boolean
+  checkPrototype?: boolean,
 };
 
 const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'];

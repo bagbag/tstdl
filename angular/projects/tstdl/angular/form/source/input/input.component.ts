@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, bool
 import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-types';
 
 @Component({
-  selector: 'input[tslInput]',
+  selector: 'input[tslInput], textarea[tslInput]',
   imports: [],
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss',

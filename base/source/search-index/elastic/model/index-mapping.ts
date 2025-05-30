@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+import type { estypes } from '@elastic/elasticsearch';
 
 import type { Entity } from '#/database/index.js';
 import type { DeepFlatten, StringMap, TypedOmit } from '#/types.js';
 import { mergeObjects } from '#/utils/object/merge.js';
-import type { estypes } from '@elastic/elasticsearch';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<estypes.MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 

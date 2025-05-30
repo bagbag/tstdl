@@ -23,7 +23,8 @@ import { NumericDateSchema } from '../../schemas/numeric-date.js';
 import { TimestampSchema } from '../../schemas/timestamp.js';
 import { UuidSchema } from '../../schemas/uuid.js';
 import { decryptBytes, encryptBytes } from '../encryption.js';
-import type { BuildTypeOptions, ColumnDefinition, PgTableFromType, TransformContext } from '../types.js';
+import { convertQuery } from '../query-converter.js';
+import type { BuildTypeOptions, ColumnDefinition, ColumnDefinitionsMap, PgTableFromType, TransformContext } from '../types.js';
 
 type ConverterContext = { type: AbstractConstructor, property: string };
 
@@ -32,9 +33,14 @@ const getDbSchema = memoizeSingle(pgSchema);
 export const getDrizzleTableFromType = memoize(_getDrizzleTableFromType);
 
 const columnDefinitionsSymbol = Symbol('columnDefinitions');
+const columnDefinitionsMapSymbol = Symbol('columnDefinitionsMap');
 
 export function getColumnDefinitions(table: PgTableWithColumns<any>): ColumnDefinition[] {
   return (table as PgTableWithColumns<any> & { [columnDefinitionsSymbol]: ColumnDefinition[] })[columnDefinitionsSymbol];
+}
+
+export function getColumnDefinitionsMap(table: PgTableWithColumns<any>): ColumnDefinitionsMap {
+  return (table as PgTableWithColumns<any> & { [columnDefinitionsMapSymbol]: ColumnDefinitionsMap })[columnDefinitionsMapSymbol];
 }
 
 export function _getDrizzleTableFromType<T extends EntityType, S extends string>(type: T, fallbackSchemaName?: S): PgTableFromType<T, S> {
@@ -59,6 +65,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
   const dbSchema = getDbSchema(schema);
   const columnDefinitions = getPostgresColumnEntries(type, dbSchema, tableName);
+  const columnDefinitionsMap = new Map(columnDefinitions.map((column) => [column.objectPath.path, column]));
 
   function getColumn(table: Record<string, ExtraConfigColumn>, propertyName: string): ExtraConfigColumn {
     return assertDefinedPass(table[propertyName], `Property "${propertyName}" does not exist on ${type.name}`);
@@ -86,7 +93,14 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
     const indexFn = (data.options?.unique == true) ? uniqueIndex : index;
 
-    return indexFn(data.name ?? getIndexName(tableName, columns, { naming: data.options?.naming })).using(data.options?.using ?? 'btree', ...columns);
+    let builder = indexFn(data.name ?? getIndexName(tableName, columns, { naming: data.options?.naming })).using(data.options?.using ?? 'btree', ...columns);
+
+    if (isDefined(data.options?.where)) {
+      const query = convertQuery(data.options.where(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>), table as PgTableWithColumns<any> as PgTableFromType, columnDefinitionsMap);
+      builder = builder.where(query.inlineParams());
+    }
+
+    return builder;
   }
 
   function buildPrimaryKey(table: Record<string, ExtraConfigColumn>) {
@@ -94,7 +108,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
     return primaryKey({
       name: mergedTableReflectionData.compundPrimaryKeyName ?? getPrimaryKeyName(tableName, columns, { naming: mergedTableReflectionData.compundPrimaryKeyNaming }),
-      columns
+      columns,
     });
   }
 
@@ -135,11 +149,12 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
         return constraint;
       }),
       ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.index).filter(isDefined).map((data) => buildIndex(table, data)),
-      ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.checks).filter(isDefined).map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>)))
+      ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.checks).filter(isDefined).map((data) => check(data.name, data.builder(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>))),
     ]
   );
 
   (drizzleSchema as Record)[columnDefinitionsSymbol] = columnDefinitions;
+  (drizzleSchema as Record)[columnDefinitionsMapSymbol] = columnDefinitionsMap;
 
   return drizzleSchema as any as PgTableFromType<T, S>;
 }
@@ -191,7 +206,7 @@ function getPostgresColumnEntries(type: AbstractConstructor, dbSchema: PgSchema,
       buildType: (options: BuildTypeOptions) => getPostgresColumn(tableName, toSnakeCase(prefixedColumnName), dbSchema, schema, columnReflectionData ?? {}, options, { type, property }),
       dereferenceObjectPath: compileDereferencer(objectPath, { optional: true }),
       toDatabase,
-      fromDatabase
+      fromDatabase,
     }];
   });
 

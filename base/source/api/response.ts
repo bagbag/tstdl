@@ -12,15 +12,15 @@ export type ErrorDeserializer<T extends CustomError, TData extends ErrorHandlerD
 export type ErrorHandler<T extends CustomError = CustomError, TData extends ErrorHandlerData = undefined> = {
   statusCode: number,
   serializer: ErrorSerializer<T, TData>,
-  deserializer: ErrorDeserializer<T, TData>
+  deserializer: ErrorDeserializer<T, TData>,
 };
 
 export type ResultResponse<T> = {
-  result: T
+  result: T,
 };
 
 export type ErrorResponse = {
-  error: ResponseError
+  error: ResponseError,
 };
 
 export type Response<T> = ResultResponse<T> | ErrorResponse;
@@ -29,7 +29,7 @@ export type ResponseError = {
   name: string,
   message: string,
   details?: any,
-  data?: ErrorHandlerData
+  data?: ErrorHandlerData,
 };
 
 const errorHandlers = new Map<string, ErrorHandler<any, any>>();
@@ -76,8 +76,8 @@ export function createErrorResponse(errorOrName: Error | string, message: string
           name: errorOrName.name,
           message: errorOrName.message,
           details,
-          data
-        }
+          data,
+        },
       };
     }
     else {
@@ -85,8 +85,8 @@ export function createErrorResponse(errorOrName: Error | string, message: string
         error: {
           name: errorOrName.name,
           message: errorOrName.message,
-          details
-        }
+          details,
+        },
       };
     }
   }
@@ -95,8 +95,8 @@ export function createErrorResponse(errorOrName: Error | string, message: string
       error: {
         name: errorOrName,
         message,
-        details
-      }
+        details,
+      },
     };
   }
 

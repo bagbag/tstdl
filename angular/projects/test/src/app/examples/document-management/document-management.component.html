@@ -1,0 +1,10 @@
+<div class="content-grid">
+  <tsl-input-group class="feature">
+    <label tslInputGroupLabel>Collection Ids</label>
+    <input tslInput [(ngModel)]="collectionIdsInput" placeholder="123-abc, 456-def" />
+  </tsl-input-group>
+</div>
+
+<div class="content-grid h-full py-2 overflow-y-auto">
+  <tsl-document-inbox class="feature h-full min-h-96" [context]="context"></tsl-document-inbox>
+</div>

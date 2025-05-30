@@ -1,10 +1,12 @@
 import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
+import { createAccessorDecorator } from '#/reflection/index.js';
 import type { Constructor } from '#/types.js';
+import { assertDefinedPass } from '../type-guards.js';
 
 export type MemoizeOptions = {
   /** Use WeakMap instead of Map for caching. Can be used with object parameters only */
-  weak?: boolean
+  weak?: boolean,
 };
 
 /**
@@ -25,7 +27,7 @@ export type MemoizeOptions = {
       cache.set(parameters, result);
 
       return result;
-    }
+    },
   }[name] as Fn;
 }
 
@@ -48,7 +50,7 @@ export function memoizeSingle<Fn extends (parameter: any) => any>(fn: Fn, option
       cache.set(parameter, result);
 
       return result;
-    }
+    },
   }[name] as Fn;
 }
 
@@ -58,6 +60,46 @@ export function memoizeClass<T extends Constructor>(type: T, options: MemoizeOpt
 
 export function memoizeClassSingle<T extends Constructor<any, [any]>>(type: T, options: MemoizeOptions = {}): (...parameters: ConstructorParameters<T>) => InstanceType<T> {
   return memoizeSingle((parameter: ConstructorParameters<T>[0]) => new type(parameter), options);
+}
+
+/**
+ * Memoizes an accessor (getter)
+ *
+ * @example
+ * ```typescript
+ * class MyClass {
+ *   @Memoize()
+ *   get myValue() {
+ *     // expensive calculation
+ *     return 123;
+ *   }
+ * }
+ * ```
+ *
+ * @remarks
+ * The getter will be called only once for each instance of the class.
+ */
+export function Memoize() {
+  const cache = new WeakMap<object>();
+
+  return createAccessorDecorator({
+    handler: (data) => {
+      const getter = assertDefinedPass(data.descriptor.get, 'Memoize requires an getter for accessors.'); // eslint-disable-line @typescript-eslint/unbound-method
+
+      function cachedGetter(this: object) {
+        if (cache.has(this)) {
+          return cache.get(this); // eslint-disable-line @typescript-eslint/no-unsafe-return
+        }
+
+        const value = getter.call(this);
+        cache.set(this, value);
+
+        return value; // eslint-disable-line @typescript-eslint/no-unsafe-return
+      }
+
+      return { get: cachedGetter };
+    },
+  });
 }
 
 function getMemoizedName(fn: (...args: any[]) => any): string {

@@ -29,7 +29,7 @@ export type CreateTokenData<AdditionalTokenPayload extends Record> = {
   sessionId: string,
   impersonator: string | undefined,
   refreshTokenExpiration: number,
-  timestamp?: number
+  timestamp?: number,
 };
 
 export class AuthenticationServiceOptions {
@@ -40,7 +40,7 @@ export class AuthenticationServiceOptions {
   secret: string | BinaryData | {
     tokenSigningSecret: Uint8Array,
     refreshTokenSigningSecret: Uint8Array,
-    secretResetTokenSigningSecret: Uint8Array
+    secretResetTokenSigningSecret: Uint8Array,
   };
 
   /** Token version, forces refresh on mismatch (useful if payload changes) */
@@ -66,29 +66,29 @@ export type TokenResult<AdditionalTokenPayload extends Record> = {
   refreshToken: string,
   omitImpersonatorRefreshToken?: boolean,
   impersonatorRefreshToken?: string,
-  impersonatorRefreshTokenExpiration?: number
+  impersonatorRefreshTokenExpiration?: number,
 };
 
 export type SetCredentialsOptions = {
   /** skip validation for password strength */
-  skipValidation?: boolean
+  skipValidation?: boolean,
 };
 
 type CreateTokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
-  jsonToken: Token<AdditionalTokenPayload>
+  jsonToken: Token<AdditionalTokenPayload>,
 };
 
 type CreateRefreshTokenResult = {
   token: string,
   jsonToken: RefreshToken,
   salt: Uint8Array,
-  hash: Uint8Array
+  hash: Uint8Array,
 };
 
 type CreateSecretResetTokenResult = {
   token: string,
-  jsonToken: SecretResetToken
+  jsonToken: SecretResetToken,
 };
 
 const SIGNING_SECRETS_LENGTH = 64;
@@ -96,8 +96,8 @@ const SIGNING_SECRETS_LENGTH = 64;
 @Singleton({
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'authentication' } }),
-    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(AuthenticationModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) }
-  ]
+    { provide: DatabaseConfig, useFactory: (_, context) => context.resolve(AuthenticationModuleConfig).database ?? context.resolve(DatabaseConfig, undefined, { skipSelf: true }) },
+  ],
 })
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> implements AfterResolve {
   private readonly credentialsRepository = injectRepository(AuthenticationCredentials);
@@ -144,7 +144,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       subject: actualSubject,
       hashVersion: 1,
       salt,
-      hash
+      hash,
     });
   }
 
@@ -171,25 +171,25 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const now = currentTimestamp();
     const end = now + this.refreshTokenTimeToLive;
 
-    return this.sessionRepository.transaction(async (sessionRepository) => {
-      const session = await sessionRepository.insert({
+    return this.sessionRepository.transaction(async (tx) => {
+      const session = await this.sessionRepository.withTransaction(tx).insert({
         subject: actualSubject,
         begin: now,
         end,
         refreshTokenHashVersion: 0,
         refreshTokenSalt: new Uint8Array(),
-        refreshTokenHash: new Uint8Array()
+        refreshTokenHash: new Uint8Array(),
       });
 
       const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
       const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
       const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
 
-      await sessionRepository.update(session.id, {
+      await this.sessionRepository.withTransaction(tx).update(session.id, {
         end,
         refreshTokenHashVersion: 1,
         refreshTokenSalt: refreshToken.salt,
-        refreshTokenHash: refreshToken.hash
+        refreshTokenHash: refreshToken.hash,
       });
 
       return { token, jsonToken, refreshToken: refreshToken.token };
@@ -227,7 +227,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       end: newEnd,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: newRefreshToken.salt,
-      refreshTokenHash: newRefreshToken.hash
+      refreshTokenHash: newRefreshToken.hash,
     });
 
     return { token, jsonToken, refreshToken: newRefreshToken.token, omitImpersonatorRefreshToken: omitImpersonator };
@@ -248,7 +248,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return {
       ...tokenResult,
       impersonatorRefreshToken,
-      impersonatorRefreshTokenExpiration: validatedImpersonatorRefreshToken.payload.exp
+      impersonatorRefreshTokenExpiration: validatedImpersonatorRefreshToken.payload.exp,
     };
   }
 
@@ -267,7 +267,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const initSecretResetData: InitSecretResetData & AdditionalInitSecretResetData = {
       subject: actualSubject,
       token: secretResetToken.token,
-      ...data
+      ...data,
     };
 
     await this.authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
@@ -311,7 +311,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: tokenVersion ?? this.tokenVersion,
       alg: 'HS256',
-      typ: 'JWT'
+      typ: 'JWT',
     };
 
     const payload: Token<AdditionalTokenPayload>['payload'] = {
@@ -322,15 +322,15 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       sessionId,
       subject,
       impersonator: impersonatedBy,
-      ...additionalTokenPayload
+      ...additionalTokenPayload,
     };
 
     const jsonToken: Token<AdditionalTokenPayload> = {
       header,
-      payload
+      payload,
     };
 
-    const token = await createJwtTokenString<Token<AdditionalTokenPayload>>(jsonToken, this.derivedTokenSigningSecret);
+    const token = await createJwtTokenString(jsonToken, this.derivedTokenSigningSecret);
 
     return { token, jsonToken };
   }
@@ -344,18 +344,18 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const jsonToken: RefreshToken = {
       header: {
         alg: 'HS256',
-        typ: 'JWT'
+        typ: 'JWT',
       },
       payload: {
         exp: timestampToTimestampSeconds(expirationTimestamp),
         subject,
         impersonator: options?.impersonator,
         sessionId,
-        secret
-      }
+        secret,
+      },
     };
 
-    const token = await createJwtTokenString<RefreshToken>(jsonToken, this.derivedRefreshTokenSigningSecret);
+    const token = await createJwtTokenString(jsonToken, this.derivedRefreshTokenSigningSecret);
 
     return { token, jsonToken, salt, hash: new Uint8Array(hash) };
   }
@@ -364,15 +364,15 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const jsonToken: SecretResetToken = {
       header: {
         alg: 'HS256',
-        typ: 'JWT'
+        typ: 'JWT',
       },
       payload: {
         exp: timestampToTimestampSeconds(expirationTimestamp),
-        subject
-      }
+        subject,
+      },
     };
 
-    const token = await createJwtTokenString<SecretResetToken>(jsonToken, this.derivedSecretResetTokenSigningSecret);
+    const token = await createJwtTokenString(jsonToken, this.derivedSecretResetTokenSigningSecret);
 
     return { token, jsonToken };
   }

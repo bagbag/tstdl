@@ -1,3 +1,7 @@
+/**
+ * @module
+ * Defines decorators for ORM entities and columns, used to configure database schema mapping.
+ */
 import type { SQL } from 'drizzle-orm';
 import type { LiteralUnion } from 'type-fest';
 
@@ -6,7 +10,8 @@ import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
 import { filterUndefinedObjectProperties, objectEntries } from '#/utils/object/object.js';
 import { assertNotArrayPass, isArray, isString, isUndefined } from '#/utils/type-guards.js';
-import type { Entity, EntityType } from './entity.js';
+import type { Entity, EntityType, EntityWithoutMetadata } from './entity.js';
+import type { Query } from './query.js';
 import type { PgTableFromType } from './server/types.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
@@ -14,8 +19,23 @@ type NamingStrategy = 'abbreviated-table';
 
 type Columns<T> = [Extract<keyof T, string>, ...Extract<keyof T, string>[]];
 
+/**
+ * Builder function type for creating SQL check constraints.
+ * @param table - The Drizzle table object.
+ * @returns The SQL check constraint expression.
+ */
 export type CheckBuilder<T extends Entity = any> = (table: PgTableFromType<EntityType<T>>) => SQL;
 
+/**
+ * Builder function type for creating partial index WHERE clauses.
+ * @param table - The Drizzle table object.
+ * @returns The query object representing the WHERE clause.
+ */
+export type WhereBuilder<T extends Entity | EntityWithoutMetadata = any> = (table: PgTableFromType<EntityType<T>>) => Query<T>;
+
+/**
+ * Reflection data stored for ORM table decorators.
+ */
 export type OrmTableReflectionData = {
   name?: string,
   schema?: string,
@@ -26,6 +46,9 @@ export type OrmTableReflectionData = {
   checks?: CheckReflectionData[]
 };
 
+/**
+ * Reflection data stored for ORM column decorators.
+ */
 export type OrmColumnReflectionData = {
   name?: string,
   primaryKey?: boolean,
@@ -37,6 +60,9 @@ export type OrmColumnReflectionData = {
   encrypted?: boolean
 };
 
+/**
+ * Reflection data for unique constraints.
+ */
 export type UniqueReflectionData = {
   name?: string,
   columns?: string[],
@@ -46,13 +72,18 @@ export type UniqueReflectionData = {
   }
 };
 
-export type IndexReflectionData = {
+/**
+ * Reflection data for index definitions.
+ * @template T - The entity type.
+ */
+export type IndexReflectionData<T extends Entity | EntityWithoutMetadata = any> = {
   name?: string,
   columns?: (string | [string, 'asc' | 'desc'])[],
   order?: 'asc' | 'desc',
   options?: {
     using?: IndexMethod,
     unique?: boolean,
+    where?: WhereBuilder<T>,
     nulls?: 'first' | 'last',
     naming?: NamingStrategy
   }
@@ -66,6 +97,12 @@ type CheckReflectionData = {
   }
 };
 
+/**
+ * Factory function to create a class decorator for ORM table configuration.
+ * Merges provided data with existing ORM reflection data on the class metadata.
+ * @param data - The ORM table reflection data to add.
+ * @returns A class decorator.
+ */
 export function createTableDecorator(data: OrmTableReflectionData = {}) {
   return createClassDecorator({
     handler: (_, metadata) => {
@@ -92,34 +129,78 @@ export function createTableDecorator(data: OrmTableReflectionData = {}) {
   });
 }
 
+/**
+ * Factory function to create a property decorator for ORM column configuration.
+ * Merges provided data with existing ORM reflection data on the property metadata.
+ * @param data - The ORM column reflection data to add.
+ * @returns A property decorator.
+ */
 export function createColumnDecorator(data?: OrmColumnReflectionData) {
   return createPropertyDecorator({ data: { orm: data }, mergeData: true });
 }
 
+/**
+ * Factory function to create a decorator applicable to both classes and properties for ORM configuration.
+ * Merges provided data with existing ORM reflection data on the target's metadata.
+ * @param data - The ORM reflection data to add.
+ * @returns A class or property decorator.
+ */
 export function createTableAndColumnDecorator(data?: OrmColumnReflectionData) {
   return createDecorator({ class: true, property: true, data: { orm: data }, mergeData: true });
 }
 
+/**
+ * Decorator to specify ORM column options.
+ * @param options - Column configuration options.
+ * @returns A property decorator.
+ */
 export function Column(options: OrmColumnReflectionData) {
   return createColumnDecorator({ ...options });
 }
 
+/**
+ * Decorator to mark a property as the primary key column.
+ * @returns A property decorator.
+ */
 export function PrimaryKey() {
   return createColumnDecorator({ primaryKey: true });
 }
 
+/**
+ * Decorator to define a foreign key relationship.
+ * @param type - A function returning the referenced entity type.
+ * @returns A property decorator.
+ */
 export function References(type: () => EntityType) {
   return createColumnDecorator({ references: type });
 }
 
+/**
+ * Decorator to define a table check constraint.
+ * @template T - The entity type.
+ * @param name - The name of the check constraint.
+ * @param builder - A function to build the SQL check expression.
+ * @returns A class decorator.
+ */
 export function Check<T extends Entity>(name: string, builder: CheckBuilder<T>) {
   return createTableDecorator({ checks: [{ name, builder }] });
 }
 
+/**
+ * Decorator to mark a column for encryption.
+ * The underlying database type will typically be `bytea`.
+ * @returns A property decorator.
+ */
 export function Encrypted() {
   return createColumnDecorator({ encrypted: true });
 }
 
+/**
+ * Decorator to embed another class's properties into the current entity's table.
+ * @param type - The constructor of the class to embed.
+ * @param options - Embedding options, like prefixing column names.
+ * @returns A property decorator.
+ */
 export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNullable<OrmColumnReflectionData['embedded']>, 'type'>) {
   return createPropertyDecorator({
     include: [Property(type), createColumnDecorator({ embedded: { type, ...options } })]
@@ -127,7 +208,20 @@ export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNulla
 }
 
 type TableOptions = Partial<Pick<OrmTableReflectionData, 'name' | 'schema'>>;
+
+/**
+ * Decorator to specify the database table name and optionally the schema.
+ * @param name - The table name.
+ * @param options - Additional table options (currently only schema).
+ * @returns A class decorator.
+ */
 export function Table(name?: string, options?: TypedOmit<TableOptions, 'schema'>): ClassDecorator;
+
+/**
+ * Decorator to specify database table options like name and schema.
+ * @param options - Table options including name and schema.
+ * @returns A class decorator.
+ */
 export function Table(options?: TableOptions): ClassDecorator;
 export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: TableOptions): ClassDecorator {
   const name = isString(nameOrOptions) ? nameOrOptions : nameOrOptions?.name;
@@ -140,8 +234,31 @@ export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: 
   return createTableDecorator(data);
 }
 
+/**
+ * Decorator to define a unique constraint on a single column.
+ * @param name - Optional name for the unique constraint.
+ * @param options - Additional unique constraint options.
+ * @returns A property decorator.
+ */
 export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
+
+/**
+ * Decorator to define a composite unique constraint on multiple columns.
+ * @template T - The entity type.
+ * @param name - The name of the unique constraint.
+ * @param columns - An array of property names included in the constraint.
+ * @param options - Additional unique constraint options.
+ * @returns A class decorator.
+ */
 export function Unique<T>(name: string | undefined, columns: Columns<T>, options?: UniqueReflectionData['options']): ClassDecorator;
+
+/**
+ * Decorator to define a composite unique constraint on multiple columns.
+ * @template T - The entity type.
+ * @param columns - An array of property names included in the constraint.
+ * @param options - Additional unique constraint options.
+ * @returns A class decorator.
+ */
 export function Unique<T>(columns: Columns<T>, options?: UniqueReflectionData['options']): ClassDecorator;
 export function Unique<T>(nameOrColumns?: string | Columns<T>, columnsOrOptions?: Columns<T> | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
   if (isArray(nameOrColumns)) {
@@ -155,10 +272,34 @@ export function Unique<T>(nameOrColumns?: string | Columns<T>, columnsOrOptions?
   return createColumnDecorator({ unique: { name: nameOrColumns, options: columnsOrOptions } });
 }
 
-export function Index(name?: string, options?: IndexReflectionData['options']): PropertyDecorator;
-export function Index<T>(name: string, columns: Columns<T>, options?: IndexReflectionData['options']): ClassDecorator;
-export function Index<T>(columns: Columns<T>, options?: IndexReflectionData['options']): ClassDecorator;
-export function Index<T>(nameOrColumns?: string | Columns<T>, columnsOrOptions?: Columns<T> | IndexReflectionData['options'], options?: IndexReflectionData['options']) {
+/**
+ * Decorator to define an index on a single column.
+ * @template T - The entity type.
+ * @param name - Optional name for the index.
+ * @param options - Additional index options (e.g., method, uniqueness, conditions).
+ * @returns A property decorator.
+ */
+export function Index<T extends Entity | EntityWithoutMetadata = any>(name?: string, options?: IndexReflectionData<T>['options']): PropertyDecorator;
+
+/**
+ * Decorator to define a composite index on multiple columns.
+ * @template T - The entity type.
+ * @param name - The name of the index.
+ * @param columns - An array of property names (or tuples with direction) included in the index.
+ * @param options - Additional index options.
+ * @returns A class decorator.
+ */
+export function Index<T extends Entity | EntityWithoutMetadata = any>(name: string, columns: Columns<T>, options?: IndexReflectionData<T>['options']): ClassDecorator;
+
+/**
+ * Decorator to define a composite index on multiple columns.
+ * @template T - The entity type.
+ * @param columns - An array of property names (or tuples with direction) included in the index.
+ * @param options - Additional index options.
+ * @returns A class decorator.
+ */
+export function Index<T extends Entity | EntityWithoutMetadata = any>(columns: Columns<T>, options?: IndexReflectionData<T>['options']): ClassDecorator;
+export function Index<T extends Entity | EntityWithoutMetadata = any>(nameOrColumns?: string | Columns<T>, columnsOrOptions?: Columns<T> | IndexReflectionData<T>['options'], options?: IndexReflectionData<T>['options']) {
   if (isArray(nameOrColumns)) {
     return createTableDecorator({ index: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
   }

@@ -85,7 +85,7 @@ export function lazyProperty<T extends object, K extends keyof T>(object: T, pro
       }
       : undefined,
     enumerable,
-    configurable
+    configurable,
   });
 }
 
@@ -121,7 +121,7 @@ export function lazyObject<T extends object>(initializers: { [P in keyof T]: Laz
     const descriptor: LazyPropertyDescriptor = {
       configurable: definition.configurable,
       enumerable: definition.enumerable,
-      writable: definition.writable
+      writable: definition.writable,
     };
 
     if (hasInitializer) {

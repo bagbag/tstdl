@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.123",
+  "version": "0.92.142",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -51,6 +51,7 @@
     "./browser": "./browser/index.js",
     "./cancellation": "./cancellation/index.js",
     "./cookie": "./cookie/index.js",
+    "./css": "./css/index.js",
     "./data-structures": "./data-structures/index.js",
     "./database": "./database/index.js",
     "./database/mongo": "./database/mongo/index.js",
@@ -124,6 +125,7 @@
     "./types/geo-json": "./types/geo-json.js",
     "./utils": "./utils/index.js",
     "./utils/array": "./utils/array/index.js",
+    "./utils/async-hook": "./utils/async-hook/index.js",
     "./utils/async-iterable-helpers": "./utils/async-iterable-helpers/index.js",
     "./utils/async-iterable-helpers/parallel": "./utils/async-iterable-helpers/parallel/index.js",
     "./utils/function": "./utils/function/index.js",
@@ -133,18 +135,46 @@
     "./utils/string": "./utils/string/index.js"
   },
   "dependencies": {
-    "@google-cloud/storage": "^7.16",
-    "@google-cloud/vertexai": "^1.9",
     "disposablestack": "^1.1",
+    "jsondiffpatch": "^0.7",
     "luxon": "^3.6",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
     "ts-pattern": "^5.7",
     "type-fest": "4.37"
   },
+  "peerDependencies": {
+    "@elastic/elasticsearch": "^9.0",
+    "@google-cloud/storage": "7.16",
+    "@google/genai": "^1.1",
+    "@tstdl/angular": "^0.92",
+    "@zxcvbn-ts/core": "^3.0",
+    "@zxcvbn-ts/language-common": "^3.0",
+    "@zxcvbn-ts/language-de": "^3.0",
+    "@zxcvbn-ts/language-en": "^3.0",
+    "chroma-js": "^2.6",
+    "drizzle-orm": "^0.43",
+    "file-type": "^21.0",
+    "handlebars": "^4.7",
+    "minio": "^8.0",
+    "mjml": "^4.15",
+    "mongodb": "^6.16",
+    "nodemailer": "^7.0",
+    "pg": "^8.16",
+    "playwright": "^1.52",
+    "preact": "^10.26",
+    "preact-render-to-string": "^6.5",
+    "sharp": "^0.34",
+    "undici": "^7.10",
+    "urlpattern-polyfill": "^10.1"
+  },
+  "peerDependenciesMeta": {
+    "@tstdl/angular": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@biomejs/biome": "1.9",
-    "@stylistic/eslint-plugin": "4.2",
+    "@stylistic/eslint-plugin": "4.4",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.6",
@@ -152,46 +182,20 @@
     "@types/mjml": "4.7",
     "@types/node": "22",
     "@types/nodemailer": "6.4",
-    "@types/pg": "8.11",
-    "@typescript-eslint/eslint-plugin": "8.29",
+    "@types/pg": "8.15",
     "concurrently": "9.1",
-    "drizzle-kit": "0.30",
-    "eslint": "9.23",
-    "globals": "16.0",
+    "drizzle-kit": "0.31",
+    "eslint": "9.27",
+    "globals": "16.2",
     "tsc-alias": "1.8",
-    "typescript": "5.8"
-  },
-  "peerDependencies": {
-    "@elastic/elasticsearch": "^8.17",
-    "@google/generative-ai": "^0.24",
-    "@tstdl/angular": "^0.92",
-    "@zxcvbn-ts/core": "^3.0",
-    "@zxcvbn-ts/language-common": "^3.0",
-    "@zxcvbn-ts/language-de": "^3.0",
-    "@zxcvbn-ts/language-en": "^3.0",
-    "chroma-js": "^2.6",
-    "drizzle-orm": "^0.41",
-    "handlebars": "^4.7",
-    "minio": "^8.0",
-    "mjml": "^4.15",
-    "mongodb": "^6.15",
-    "nodemailer": "^6.10",
-    "pg": "^8.14",
-    "playwright": "^1.51",
-    "preact": "^10.26",
-    "preact-render-to-string": "^6.5",
-    "undici": "^7.7",
-    "urlpattern-polyfill": "^10.0"
-  },
-  "peerDependenciesMeta": {
-    "@tstdl/angular": {
-      "optional": true
-    }
+    "typedoc-plugin-missing-exports": "4.0",
+    "typescript": "5.8",
+    "typescript-eslint": "8.32"
   },
   "overrides": {
     "drizzle-kit": {
       "@esbuild-kit/esm-loader": "^2.6",
-      "esbuild": "^0.24",
+      "esbuild": "^0.25",
       "esbuild-register": "^3.6"
     }
   }

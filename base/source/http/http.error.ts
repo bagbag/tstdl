@@ -18,7 +18,7 @@ export enum HttpErrorReason {
   /** Invalid http response */
   ResponseError = 'ResponseError',
 
-  Timeout = 'Timeout'
+  Timeout = 'Timeout',
 }
 
 export class HttpError extends CustomError implements ErrorExtraInfo {
@@ -31,8 +31,8 @@ export class HttpError extends CustomError implements ErrorExtraInfo {
   readonly requestInstance: HttpClientRequest;
   readonly responseInstance: HttpClientResponse | undefined;
 
-  constructor(reason: HttpErrorReason, request: HttpClientRequest, response?: HttpClientResponse, responseBody?: UndefinableJson | Uint8Array, cause?: Error | string) {
-    super({ message: (isString(cause) ? cause : cause?.message) ?? 'An error occurred', cause: (isNotString(cause) ? cause : undefined) });
+  constructor(reason: HttpErrorReason, request: HttpClientRequest, { response, responseBody, cause }: { response?: HttpClientResponse, responseBody?: UndefinableJson | Uint8Array, cause?: Error | string } = {}) {
+    super({ message: (isString(cause) ? cause : cause?.message) ?? 'An error occurred', cause: (isNotString(cause) ? cause : new Error(cause)) });
 
     this.reason = reason;
     this.request = request.asObject();
@@ -48,24 +48,24 @@ export class HttpError extends CustomError implements ErrorExtraInfo {
 
     Object.defineProperty(this, propertyNameOf<this>((instance) => instance.requestInstance), {
       value: request,
-      enumerable: false
+      enumerable: false,
     });
 
     Object.defineProperty(this, propertyNameOf<this>((instance) => instance.responseInstance), {
       value: response,
-      enumerable: false
+      enumerable: false,
     });
   }
 
   static async create(reason: HttpErrorReason, request: HttpClientRequest, response: HttpClientResponse | undefined, cause?: Error | string): Promise<HttpError> {
     const body = (response?.body.available == true) ? await response.body.read() : undefined;
-    return new HttpError(reason, request, response, body, cause);
+    return new HttpError(reason, request, { response, responseBody: body, cause });
   }
 
   getExtraInfo(): UndefinableJson | undefined {
     const extraInfo: Record<string> = {
       url: this.request.url,
-      method: this.request.method
+      method: this.request.method,
     };
 
     if (isDefined(this.response)) {

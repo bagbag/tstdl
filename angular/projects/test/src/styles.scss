@@ -20,3 +20,31 @@ body {
   @tailwind utilities;
   @tailwind variants;
 }
+
+:root {
+  /* tailwind slate */
+  --tsl-color-neutral-50: 248 250 252;
+  --tsl-color-neutral-100: 241 245 249;
+  --tsl-color-neutral-200: 226 232 240;
+  --tsl-color-neutral-300: 203 213 225;
+  --tsl-color-neutral-400: 148 163 184;
+  --tsl-color-neutral-500: 100 116 139;
+  --tsl-color-neutral-600: 71 85 105;
+  --tsl-color-neutral-700: 51 65 85;
+  --tsl-color-neutral-800: 30 41 59;
+  --tsl-color-neutral-900: 15 23 42;
+  --tsl-color-neutral-950: 2 6 23;
+
+  /* tailwind sky */
+  --tsl-color-accent-50: 247 254 231;
+  --tsl-color-accent-100: 236 252 203;
+  --tsl-color-accent-200: 217 249 157;
+  --tsl-color-accent-300: 190 242 100;
+  --tsl-color-accent-400: 163 230 53;
+  --tsl-color-accent-500: 132 204 22;
+  --tsl-color-accent-600: 101 163 13;
+  --tsl-color-accent-700: 77 124 15;
+  --tsl-color-accent-800: 63 98 18;
+  --tsl-color-accent-900: 54 83 20;
+  --tsl-color-accent-950: 26 46 5;
+}

@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import { createClassDecorator, createDecorator, type Decorator } from '#/reflection/index.js';
+import { createClassDecorator, createDecorator, reflectionRegistry, type Decorator } from '#/reflection/index.js';
 import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types.js';
 import { toArray } from '#/utils/array/array.js';
-import { isDefined, isFunction } from '#/utils/type-guards.js';
+import { isDefined, isFunction, isNotNull } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';
+import type { ResolveArgument } from './interfaces.js';
 import type { Provider } from './provider.js';
-import { injectMetadataSymbol, injectableMetadataSymbol } from './symbols.js';
+import { injectMetadataSymbol, injectableMetadataSymbol, injectableOptionsSymbol } from './symbols.js';
 import type { InjectionToken } from './token.js';
 import type { InjectMetadata } from './type-info.js';
-import type { ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOptions } from './types.js';
+import type { AfterResolveContext, ArgumentProvider, ForwardRefInjectionToken, Mapper, RegistrationOptions } from './types.js';
 
 export type InjectDecorator = Decorator<'accessor' | 'constructorParameter'>;
 
@@ -18,7 +19,7 @@ export type InjectableOptions<T, A, C extends Record = Record> = RegistrationOpt
   alias?: OneOrMany<InjectionToken>,
 
   /** Custom provider. Useful for example if initialization is required */
-  provider?: Provider<T, A, C>
+  provider?: Provider<T, A, C>,
 };
 
 export type InjectableOptionsWithoutLifecycle<T, A> = Simplify<TypedOmit<InjectableOptions<T, A>, 'lifecycle'>>;
@@ -32,27 +33,61 @@ export function ReplaceClass<T>(constructor: Constructor<T>): ClassDecorator {
   return createClassDecorator({ handler: () => constructor });
 }
 
+export function InjectableOptions<T = any, A = any, C extends Record = Record>(options: InjectableOptions<T, A, C>): ClassDecorator {
+  return createClassDecorator({
+    data: { [injectableOptionsSymbol]: options },
+    mergeData: true,
+  });
+}
+
 /**
  * Globally registers the class for injection
  * @param options registration options
  */
 export function Injectable<T = any, A = any, C extends Record = Record>(options: InjectableOptions<T, A, C> = {}): ClassDecorator {
   return createClassDecorator({
-    data: { [injectableMetadataSymbol]: {} },
+    data: {
+      [injectableMetadataSymbol]: {},
+      [injectableOptionsSymbol]: options,
+    },
     mergeData: true,
-    handler: (data) => {
+    handler: (data, metadata) => {
       const { alias: aliases, provider, ...registrationOptions } = options;
       const token = data.constructor as Constructor;
 
-      const targetProvider: Provider = provider ?? { useClass: token };
-      Injector.register(token, targetProvider, registrationOptions);
+      let mergedRegistationOptions = registrationOptions;
+
+      if (isNotNull(metadata.parent)) {
+        const parentOptions = reflectionRegistry.getMetadata(metadata.parent)?.data.tryGet<InjectableOptions<T, A, C>>(injectableOptionsSymbol);
+
+        if (isDefined(parentOptions)) {
+          const { alias: _, provider: __, ...parentRegistrationOptions } = parentOptions;
+
+          mergedRegistationOptions = {
+            ...parentRegistrationOptions,
+            ...registrationOptions,
+            providers: [...(parentRegistrationOptions.providers ?? []), ...(registrationOptions.providers ?? [])],
+            afterResolve: (instance: T, argument: ResolveArgument<T, A>, context: AfterResolveContext<C>) => {
+              parentRegistrationOptions.afterResolve?.(instance, argument, context);
+              registrationOptions.afterResolve?.(instance, argument, context);
+            },
+            metadata: {
+              ...parentRegistrationOptions.metadata,
+              ...registrationOptions.metadata,
+            },
+          };
+        }
+      }
+
+      const targetProvider: Provider<T, A> = provider ?? { useClass: token };
+      Injector.register(token, targetProvider, mergedRegistationOptions);
 
       if (isDefined(aliases)) {
         for (const alias of toArray(aliases)) {
-          Injector.register(alias, { useToken: token }, registrationOptions);
+          Injector.register(alias, { useToken: token });
         }
       }
-    }
+    },
   });
 }
 
@@ -60,7 +95,7 @@ export function Injectable<T = any, A = any, C extends Record = Record>(options:
  * Registers the class in the global container with singleton lifecycle. Decorated class is not modified in any way
  * @param options registration options
  */
-export function Singleton<T = any, A = any>(options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
+export function Singleton<T = any, A = undefined>(options: InjectableOptionsWithoutLifecycle<T, A> = {}): ClassDecorator {
   return Injectable({ ...options, lifecycle: 'singleton' });
 }
 
@@ -146,8 +181,8 @@ export function InjectArg<T>(mapperOrKey?: Mapper<T> | keyof T): InjectDecorator
     injectArgumentMapper: isFunction(mapperOrKey)
       ? mapperOrKey
       : isDefined(mapperOrKey)
-        ? ((value: T) => (value as Record<any, unknown>)[mapperOrKey])
-        : ((value: T) => value)
+        ? (value: T) => (value as Record<any, unknown>)[mapperOrKey]
+        : (value: T) => value,
   });
 }
 
@@ -177,7 +212,7 @@ export function Optional(): InjectDecorator {
 export function ForwardRef<T extends object, A>(token?: ForwardRefInjectionToken<T>, argument?: A, options?: Pick<InjectMetadata, 'forwardRefTypeHint'>): InjectDecorator {
   const injectMetadata: InjectMetadata = {
     forwardRef: token ?? true,
-    forwardRefTypeHint: options?.forwardRefTypeHint
+    forwardRefTypeHint: options?.forwardRefTypeHint,
   };
 
   if (isDefined(argument)) {
@@ -193,6 +228,6 @@ function createInjectDecorator(metadata: InjectMetadata): InjectDecorator {
     accessor: true,
     constructorParameter: true,
     data: { [injectMetadataSymbol]: metadata },
-    mergeData: true
+    mergeData: true,
   });
 }

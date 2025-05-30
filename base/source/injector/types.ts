@@ -17,13 +17,13 @@ export type Lifecycle = 'transient' | 'resolution' | 'injector' | 'singleton';
 export type ResolveContext<D extends Record> = Pick<Injector, 'resolve' | 'resolveAll'> & {
   readonly data: ResolveContextData<D>,
   readonly cancellationSignal: CancellationSignal,
-  addDisposeHandler(handler: AsyncDisposeHandler): void
+  addDisposeHandler(handler: AsyncDisposeHandler): void,
 };
 
 export type AfterResolveContext<D extends Record> = {
   readonly data: ResolveContextData<D>,
   readonly cancellationSignal: CancellationSignal,
-  addDisposeHandler(handler: AsyncDisposeHandler): void
+  addDisposeHandler(handler: AsyncDisposeHandler): void,
 };
 
 export type Mapper<T = any, U = unknown> = (value: T) => U;
@@ -39,7 +39,7 @@ export type ResolveOptions<T, A> = {
 
   /** If defined, resolve the token using ForwardRef strategy instead of resolving the token directly can be used to circumvent circular dependency problems */
   forwardRef?: boolean | ForwardRefInjectionToken<T, A>,
-  forwardRefTypeHint?: ForwardRefTypeHint
+  forwardRefTypeHint?: ForwardRefTypeHint,
 };
 
 /**
@@ -77,5 +77,5 @@ export type RegistrationOptions<T, A = unknown, D extends Record = Record> = {
   multi?: boolean,
 
   /** Custom metadata */
-  metadata?: Record
+  metadata?: Record,
 };

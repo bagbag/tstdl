@@ -4,10 +4,10 @@ import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';
 import { schemaTestableToSchema } from '../testable.js';
-import { array } from './array.js';
+import { array, type ArraySchemaOptions } from './array.js';
 import { union } from './union.js';
 
-export type OneOrManySchemaOptions<T> = SchemaOptions<T | T[]>;
+export type OneOrManySchemaOptions<T> = SchemaOptions<T | T[]> & Pick<ArraySchemaOptions<T>, 'minimum' | 'maximum'>;
 
 export type OneOrMany<T> = OneOrManyType<T>;
 
@@ -20,7 +20,7 @@ export class OneOrManySchema<T> extends Schema<T | T[]> {
 
     const oneSchema = schemaTestableToSchema(schema);
 
-    this.schema = union(oneSchema, array(oneSchema));
+    this.schema = union(oneSchema, array(oneSchema, { minimum: options?.minimum, maximum: options?.maximum }));
 
     lazyProperty(this, 'name', () => `OneOrMany[${oneSchema.name}]`);
   }

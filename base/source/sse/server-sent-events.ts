@@ -19,7 +19,7 @@ export enum ServerSentEventsState {
   /**
    * The connection is closed.
    */
-  Closed = 2
+  Closed = 2,
 }
 
 /**

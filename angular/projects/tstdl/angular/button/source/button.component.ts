@@ -34,8 +34,8 @@ export class ButtonComponent implements OnInit, OnDestroy {
   readonly size = input<ButtonSize | null | undefined>(null);
   readonly coloredText = input<boolean | null | undefined, boolean | `${boolean}` | null | undefined>(null, { transform: booleanAttribute });
   readonly invertIconPadding = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
-  readonly disabled = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
-  readonly inert = input<boolean, boolean | null | `${boolean}` | undefined>(false, { transform: booleanAttribute });
+  readonly disabled = input<boolean, boolean | null | `${boolean}` | '' | undefined>(false, { transform: (value) => (value === '') ? true : booleanAttribute(value) });
+  readonly inert = input<boolean, boolean | null | `${boolean}` | '' | undefined>(false, { transform: (value) => (value === '') ? true : booleanAttribute(value) });
 
   readonly disabledAttribute = computed(() => this.disabled() ? true : null);
 

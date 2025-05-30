@@ -4,7 +4,7 @@ import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
 import type { Logger } from '#/logger/logger.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
-import { readableStreamFromPromise } from '#/utils/stream/readable-stream-from-promise.js';
+import { readableStreamFromPromise } from '#/utils/stream/from-promise.js';
 import { toReadableStream } from '#/utils/stream/to-readable-stream.js';
 import { withTimeout } from '#/utils/timing.js';
 import { isDefined, isNull, isObject, isUndefined } from '#/utils/type-guards.js';

@@ -13,7 +13,7 @@ export const reflectMethodsMap: Record<keyof ProxyHandler<object>, true> = {
   ownKeys: true,
   preventExtensions: true,
   set: true,
-  setPrototypeOf: true
+  setPrototypeOf: true,
 };
 
 export type ReflectMethodsReturnTypeMap = { [P in keyof ProxyHandler<object>]-?: ReturnType<Required<ProxyHandler<object>>[P]> };

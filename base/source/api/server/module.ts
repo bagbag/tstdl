@@ -9,11 +9,11 @@ import { API_CONTROLLER, API_MODULE_OPTIONS } from './tokens.js';
 export type ApiModuleOptions = {
   controllers: Type[],
   requestTokenProvider?: Type<ApiRequestTokenProvider>,
-  gatewayOptions?: ApiGatewayOptions
+  gatewayOptions?: ApiGatewayOptions,
 };
 
 export const apiModuleOptions: ApiModuleOptions = {
-  controllers: []
+  controllers: [],
 };
 
 export function configureApiServer(options: Partial<ApiModuleOptions>): void {

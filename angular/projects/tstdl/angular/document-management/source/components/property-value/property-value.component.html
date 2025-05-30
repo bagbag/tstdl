@@ -1,0 +1,29 @@
+@let _property = property();
+@let dataType = _property.dataType;
+@let value = _property.value;
+
+@if (value === null) {
+  Keine Angabe
+} @else {
+  @switch (typeof value) {
+    @case ("string") {
+      {{ value }}
+    }
+    @case ("number") {
+      @switch (dataType) {
+        @case (DocumentPropertyDataType.Integer) {
+          {{ $any(value) | numberLocale: integerFormat }}
+        }
+        @case (DocumentPropertyDataType.Decimal) {
+          {{ $any(value) | numberLocale: decimalFormat }}
+        }
+        @case (DocumentPropertyDataType.Date) {
+          {{ $any(value) | numericDateToDateTime | dateTimeLocale: dateShort }}
+        }
+      }
+    }
+    @case (DocumentPropertyDataType.Boolean) {
+      <tsl-icon [icon]="value ? 'check' : 'x'"></tsl-icon>
+    }
+  }
+}

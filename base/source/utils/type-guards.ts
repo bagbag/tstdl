@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
-import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, TypedArray } from '#/types.js';
+import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, Type, TypedArray } from '#/types.js';
 import { AssertionError } from '../errors/assertion.error.js';
 
 export type AssertionMessage = string | (() => string);
@@ -59,7 +59,7 @@ export function createGuards<N extends string, T>(name: N, testFn: (value: any) 
     [`assertNot${normalizedName}Pass`]<V>(value: V, message: AssertionMessage = defaultNotMessage): Exclude<V, T> {
       assertNot(testFn(value), message);
       return value as Exclude<V, T>;
-    }
+    },
   } as GuardFunctions<N, T>;
 }
 
@@ -400,3 +400,16 @@ export const assertReadableStream: <T = any>(value: any, message?: AssertionMess
 export const assertNotReadableStream: AssertNotFunction<ReadableStream> = readableStreamGuards.assertNotReadableStream;
 export const assertReadableStreamPass: <T = any>(value: any, message?: AssertionMessage) => ReadableStream<T> = readableStreamGuards.assertReadableStreamPass;
 export const assertNotReadableStreamPass: AssertNotPassFunction<ReadableStream> = readableStreamGuards.assertNotReadableStreamPass;
+
+export const isInstanceOf = <T>(value: any, type: Type<T>): value is T => value instanceof type;
+export const isNotInstanceOf = <V, T>(value: V, type: Type<T>): value is Exclude<V, T> => !isInstanceOf(value, type);
+export const assertInstanceOf = <T>(value: any, type: Type<T>, message?: AssertionMessage): asserts value is T => assert(isInstanceOf(value, type), message);
+export const assertNotInstanceOf = <V, T>(value: V, type: Type<T>, message?: AssertionMessage): asserts value is Exclude<V, T> => assertNot(isInstanceOf(value, type), message);
+export const assertInstanceOfPass = <T>(value: any, type: Type<T>, message?: AssertionMessage): T => {
+  assert(isInstanceOf(value, type), message);
+  return value;
+};
+export const assertNotInstanceOfPass = <V, T>(value: V, type: Type<T>, message?: AssertionMessage): Exclude<V, T> => {
+  assertNot(isInstanceOf(value, type), message);
+  return value as Exclude<V, T>;
+};

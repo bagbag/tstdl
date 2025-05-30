@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-input-group {
-    @apply flex w-full sm:text-sm bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 outline outline-[1.5px] outline-neutral-300 dark:outline-neutral-500 rounded-md transition-[outline];
+    @apply flex w-full sm:text-sm bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 outline outline-[1.5px] outline-neutral-300 dark:outline-neutral-500 rounded-md transition-[outline];
 
     &:is(:focus-within, :hover) {
       @apply outline-accent-600;

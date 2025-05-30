@@ -13,6 +13,6 @@ export function sizeLimitTransform<T extends BinaryData>(maxBytes: number, writa
       }
 
       controller.enqueue(chunk);
-    }
+    },
   }, writableStrategy, readableStrategy);
 }

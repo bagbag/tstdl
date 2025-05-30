@@ -9,7 +9,7 @@ export type SchemaTestOptions = Coercible & Maskable & {
   /**
    * Use fast errors which can improve performance a lot but misses detailed stack traces.
    */
-  fastErrors?: boolean
+  fastErrors?: boolean,
 };
 
 export type SchemaTestResult<T> =
@@ -44,7 +44,7 @@ export declare const OPTIONAL: unique symbol;
 
 export type SchemaOptions<_T> = {
   description?: string | null,
-  example?: any
+  example?: any,
 };
 
 export abstract class Schema<T = unknown> {

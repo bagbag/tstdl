@@ -3,7 +3,8 @@ module.exports = {
   content: ['./projects/**/*.{html,ts,tsx}'],
   darkMode: ['class', '.tsl-dark'],
   plugins: [
-    require('@tailwindcss/typography')
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/container-queries'),
   ],
   theme: {
     extend: {

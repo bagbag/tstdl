@@ -1,0 +1,9 @@
+@layer tstdl.components {
+  tsl-document-inbox-document {
+    @apply relative h-64 grid grid-cols-[max-content,1fr,16rem] rounded-xl overflow-clip border border-neutral-500/40;
+
+    .category-badge {
+      writing-mode: sideways-lr;
+    }
+  }
+}

@@ -70,7 +70,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolv
         body,
         headersTimeout: httpClientRequest.timeout,
         bodyTimeout: httpClientRequest.timeout,
-        dispatcher: this.options.dispatcher
+        dispatcher: this.options.dispatcher,
       });
 
       const httpClientResponse = new HttpClientResponse({
@@ -79,7 +79,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolv
         statusMessage: '?',
         headers: new HttpHeaders(response.headers),
         body: response.body,
-        closeHandler: () => response.body.destroy()
+        closeHandler: () => response.body.destroy(),
       });
 
       return httpClientResponse;
@@ -87,7 +87,7 @@ export class UndiciHttpClientAdapter extends HttpClientAdapter implements Resolv
     catch (error) {
       if (error instanceof undiciErrors.UndiciError) {
         const reason = getHttpErrorReason(error);
-        throw new HttpError(reason, httpClientRequest, undefined, undefined, error);
+        throw new HttpError(reason, httpClientRequest, { cause: error });
       }
 
       throw error;

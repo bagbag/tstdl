@@ -1,4 +1,4 @@
-import type { FunctionDeclaration, FunctionDeclarationSchema } from '@google/generative-ai';
+import type { FunctionDeclaration, Schema as GoogleSchema } from '@google/genai';
 
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
 import { FunctionSchema, getObjectSchema, object } from '#/schema/index.js';
@@ -27,7 +27,7 @@ export function getFunctionDeclarations(type: AbstractConstructor): FunctionDecl
     .filter(isNotNull);
 }
 
-function getFunctionDeclarationParameters(functionSchema: FunctionSchema<any>): FunctionDeclarationSchema {
+function getFunctionDeclarationParameters(functionSchema: FunctionSchema<any>): GoogleSchema {
   const entries = functionSchema.parameterSchemas!.map((schema, index) => {
     const parameterName = functionSchema.parameterNames[index];
 
@@ -39,5 +39,5 @@ function getFunctionDeclarationParameters(functionSchema: FunctionSchema<any>): 
   });
 
   const parametersSchema = object(fromEntries(entries));
-  return convertToOpenApiSchema(parametersSchema) as any as FunctionDeclarationSchema;
+  return convertToOpenApiSchema(parametersSchema) as any as GoogleSchema;
 }

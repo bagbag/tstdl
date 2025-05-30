@@ -15,7 +15,7 @@ export type MongoModuleConfig = {
 export const mongoModuleConfig: MongoModuleConfig = {
   defaultConnection: { url: 'mongodb://localhost:27017/test-db' },
   defaultDatabase: undefined,
-  logPrefix: 'Mongo'
+  logPrefix: 'Mongo',
 };
 
 export function configureMongo(config: Partial<MongoModuleConfig>): void {
@@ -48,10 +48,10 @@ Injector.registerSingleton<MongoClient, MongoClientArgument, { logger: Logger, u
   },
   async afterResolve(client, _argument, { cancellationSignal, data: { url, logger } }) {
     await connect(`mongo at ${url}`, async () => client.connect(), logger, cancellationSignal);
-  }
+  },
 }, {
   defaultArgumentProvider: (): MongoClientArgument => mongoModuleConfig.defaultConnection,
-  argumentIdentityProvider: JSON.stringify
+  argumentIdentityProvider: JSON.stringify,
 });
 
 Injector.registerSingleton(Database, {
@@ -64,7 +64,7 @@ Injector.registerSingleton(Database, {
   },
   defaultArgumentProvider: (): DatabaseArgument => ({ database: mongoModuleConfig.defaultDatabase, connection: mongoModuleConfig.defaultConnection }),
 }, {
-  argumentIdentityProvider: JSON.stringify
+  argumentIdentityProvider: JSON.stringify,
 });
 
 Injector.registerSingleton<Collection, CollectionArgument, { database: Database }>(Collection, {
@@ -81,13 +81,13 @@ Injector.registerSingleton<Collection, CollectionArgument, { database: Database 
     const existingCollections = await database.collections();
 
     for (const collection of existingCollections) {
-      if (collection.collectionName == config.collection) {
+      if (collection.collectionName == config!.collection) {
         return;
       }
     }
 
-    await database.createCollection(config.collection);
-  }
+    await database.createCollection(config!.collection);
+  },
 }, {
-  argumentIdentityProvider: JSON.stringify
+  argumentIdentityProvider: JSON.stringify,
 });

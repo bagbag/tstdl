@@ -1,6 +1,6 @@
 @layer tstdl.components {
   [tslInput] {
-    @apply sm:text-sm sm:leading-6 bg-white dark:bg-neutral-800 placeholder:text-neutral-400;
+    @apply sm:text-sm sm:leading-6 bg-white dark:bg-neutral-700 placeholder:text-neutral-400;
 
     :not(tsl-input-group) > & {
       @apply shadow-sm;
@@ -17,6 +17,10 @@
 
     &.input-checkbox {
       @apply h-4 w-4 rounded border-neutral-300 text-accent-700 dark:text-accent-400 focus:ring;
+    }
+
+    &[readonly] {
+      @apply bg-white/80 dark:bg-neutral-700 cursor-default;
     }
   }
 }

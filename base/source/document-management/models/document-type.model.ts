@@ -14,9 +14,6 @@ export class DocumentType extends Entity {
   @References(() => DocumentCategory)
   categoryId: Uuid;
 
-  @StringProperty({ nullable: true })
-  group: string | null;
-
   @StringProperty()
   label: string;
 }

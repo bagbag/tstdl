@@ -15,16 +15,16 @@ export type CreateDecoratorOptions = {
   mergeData?: boolean,
 
   /** Return values of these decorators are not used */
-  include?: OneOrMany<DecoratorUnion>
+  include?: OneOrMany<DecoratorUnion>,
 };
 
 export type SpecificCreateDecoratorOptions<T extends DecoratorType> = TypedOmit<CreateDecoratorOptions, 'include'> & {
   handler?: DecoratorHandler<T>,
-  include?: OneOrMany<DecoratorUnion<T>>
+  include?: OneOrMany<DecoratorUnion<T>>,
 };
 
 export type WrapDecoratorOptions = CreateDecoratorOptions & {
-  handler?: (data: DecoratorData, metadata: DecoratorMetadata, originalArguments: CombinedDecoratorParameters) => void
+  handler?: (data: DecoratorData, metadata: DecoratorMetadata, originalArguments: CombinedDecoratorParameters) => void,
 };
 
 type CreateDecoratorType<T extends CreateDecoratorOptions> = Extract<PropertiesOfType<T, true>, DecoratorType>;
@@ -53,7 +53,7 @@ export function createDecorator<T extends CreateDecoratorTypeOptions & CreateDec
 
     if (isDefined(options.include)) {
       for (const include of toArray(options.include)) {
-        (include as (...includeArgs: any[]) => any)(...args); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+        (include as (...includeArgs: any[]) => any)(...args);
       }
     }
 
@@ -113,7 +113,7 @@ export function wrapDecorator<T extends DecoratorUnion>(decorator: T, options?: 
       parameter: true,
       methodParameter: true,
       constructorParameter: true,
-      ...options
+      ...options,
     },
     (data, metadata, args) => {
       options?.handler?.(data, metadata, args);
@@ -165,5 +165,5 @@ export function getTypeInfoString(type: AbstractConstructor): string {
 
 export function printType(type: Constructor): void {
   const text = getTypeInfoString(type);
-  console.log(text); // eslint-disable-line no-console
+  console.log(text);
 }

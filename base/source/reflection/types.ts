@@ -22,7 +22,7 @@ export type DecoratorDataMap = DecoratorTypeMap<{
   method: MethodDecoratorData,
   parameter: ParameterDecoratorData,
   methodParameter: MethodParameterDecoratorData,
-  constructorParameter: ConstructorParameterDecoratorData
+  constructorParameter: ConstructorParameterDecoratorData,
 }>;
 
 export type DecoratorMetadataMap = DecoratorTypeMap<{
@@ -32,7 +32,7 @@ export type DecoratorMetadataMap = DecoratorTypeMap<{
   method: MethodMetadata,
   parameter: ParameterMetadata,
   methodParameter: MethodParameterMetadata,
-  constructorParameter: ConstructorParameterMetadata
+  constructorParameter: ConstructorParameterMetadata,
 }>;
 
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
@@ -43,7 +43,7 @@ export type DecoratorHandlerReturnTypeMap = DecoratorTypeMap<{
   method: void | undefined | PropertyDescriptor,
   parameter: void,
   methodParameter: void,
-  constructorParameter: void
+  constructorParameter: void,
 }>;
 /* eslint-enable @typescript-eslint/no-invalid-void-type */
 
@@ -54,26 +54,26 @@ export type DecoratorMap = DecoratorTypeMap<{
   method: MethodDecorator,
   parameter: ParameterDecorator & ConstructorParameterDecorator,
   methodParameter: ParameterDecorator,
-  constructorParameter: ConstructorParameterDecorator
+  constructorParameter: ConstructorParameterDecorator,
 }>;
 
 export type DecoratorDataBase<Type extends string> = {
   type: Type,
   constructor: AbstractConstructor,
-  prototype: object
+  prototype: object,
 };
 
 export type ClassDecoratorData = DecoratorDataBase<'class'>;
 
 export type PropertyDecoratorData = DecoratorDataBase<'property'> & {
   static: boolean,
-  propertyKey: string | symbol
+  propertyKey: string | symbol,
 };
 
 export type AccessorDecoratorData = DecoratorDataBase<'accessor'> & {
   static: boolean,
   propertyKey: string | symbol,
-  descriptor: PropertyDescriptor
+  descriptor: PropertyDescriptor,
 };
 
 export type PropertyOrAccessorDecoratorData = PropertyDecoratorData | AccessorDecoratorData;
@@ -81,17 +81,17 @@ export type PropertyOrAccessorDecoratorData = PropertyDecoratorData | AccessorDe
 export type MethodDecoratorData = DecoratorDataBase<'method'> & {
   static: boolean,
   methodKey: string | symbol,
-  descriptor: PropertyDescriptor
+  descriptor: PropertyDescriptor,
 };
 
 export type MethodParameterDecoratorData = DecoratorDataBase<'method-parameter'> & {
   static: boolean,
   methodKey: string | symbol,
-  index: number
+  index: number,
 };
 
 export type ConstructorParameterDecoratorData = DecoratorDataBase<'constructor-parameter'> & {
-  index: number
+  index: number,
 };
 
 export type ParameterDecoratorData = MethodParameterDecoratorData | ConstructorParameterDecoratorData;

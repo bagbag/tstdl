@@ -8,8 +8,8 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation } from '@angular/
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'tsl-tw'
-  }
+    class: 'tsl-tw',
+  },
 })
 export class InputGroupComponent {
 

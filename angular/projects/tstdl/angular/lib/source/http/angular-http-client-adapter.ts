@@ -1,13 +1,11 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector as AngularInjector, inject } from '@angular/core';
-import type { ApiClientHttpRequestContext } from '@tstdl/base/api/client';
 import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
-import type { HttpClientRequest } from '@tstdl/base/http/client';
+import type { HttpClientRequest } from '@tstdl/base/http';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
 import type { StringMap } from '@tstdl/base/types';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
-import { hasOwnProperty } from '@tstdl/base/utils/object';
 import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
 
 const aborted = Symbol('aborted');
@@ -25,7 +23,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
             responseType: 'blob',
             observe: 'response',
             body: getAngularBody(request.body),
-            withCredentials: (request.credentials == 'same-origin') || (request.credentials == 'include')
+            withCredentials: (request.credentials == 'same-origin') || (request.credentials == 'include'),
           }),
           request.abortSignal.set$.pipe(switchMap(() => throwError(() => aborted)))
         )
@@ -39,7 +37,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
         statusMessage: angularResponse.statusText,
         headers,
         body: angularResponse.body ?? undefined,
-        closeHandler: () => request.abort()
+        closeHandler: () => request.abort(),
       });
 
       return response;
@@ -50,7 +48,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
       }
 
       if (!(error instanceof AngularHttpErrorResponse)) {
-        throw new HttpError(HttpErrorReason.Unknown, request, undefined, undefined, error as Error);
+        throw new HttpError(HttpErrorReason.Unknown, request, { cause: error as Error });
       }
 
       const response = new HttpClientResponse({
@@ -59,7 +57,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
         statusMessage: error.statusText,
         headers: convertAngularHeaders(error.headers),
         body: (error.error instanceof ProgressEvent) ? undefined : error.error,
-        closeHandler: () => request.abort()
+        closeHandler: () => request.abort(),
       });
 
       if ((error.type == HttpEventType.Response) && (error.status > 0)) {
@@ -132,10 +130,6 @@ function getAngularBody(body: HttpClientRequest['body']): any {
   }
 
   throw new Error('Unsupported body.');
-}
-
-function isApiClientHttpRequestContext(context: HttpClientRequest['context']): context is ApiClientHttpRequestContext {
-  return hasOwnProperty(context, 'endpoint');
 }
 
 export function configureAngularHttpClientAdapter(): void {

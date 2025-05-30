@@ -8,7 +8,7 @@ import type { HttpHeadersInput } from '../http-headers.js';
 import { HttpHeaders } from '../http-headers.js';
 
 export type SetCookieObject = SetCookieOptions & {
-  value: string
+  value: string,
 };
 
 export type HttpServerResponseOptions = {
@@ -21,8 +21,8 @@ export type HttpServerResponseOptions = {
     buffer?: Uint8Array,
     text?: string,
     json?: unknown,
-    events?: ServerSentEventsSource
-  }
+    events?: ServerSentEventsSource,
+  },
 };
 
 export class HttpServerResponse {
@@ -34,7 +34,7 @@ export class HttpServerResponse {
     buffer?: Uint8Array,
     text?: string,
     json?: unknown,
-    events?: ServerSentEventsSource
+    events?: ServerSentEventsSource,
   };
 
   constructor(response: HttpServerResponseOptions = {}) {
@@ -51,8 +51,8 @@ export class HttpServerResponse {
       ...options,
       headers: {
         Location: url,
-        ...options?.headers
-      }
+        ...options?.headers,
+      },
     });
   }
 

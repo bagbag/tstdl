@@ -1,11 +1,15 @@
 import { Entity } from '#/orm/entity.js';
-import { Unique } from '#/orm/types.js';
+import { References, Unique, Uuid } from '#/orm/types.js';
 import { StringProperty } from '#/schema/index.js';
 import { DocumentManagementTable } from './document-management-table.js';
 
 @DocumentManagementTable()
 export class DocumentCategory extends Entity {
   declare static readonly entityName: 'DocumentCategory';
+
+  @Uuid({ nullable: true })
+  @References(() => DocumentCategory)
+  parentId: Uuid | null;
 
   @StringProperty()
   @Unique()

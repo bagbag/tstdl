@@ -28,20 +28,20 @@ export class RoutingService {
   readonly route = inject(ActivatedRoute);
 
   async setQueryParameter(key: string, value: string | string[] | null): Promise<void> {
-    return this.setQueryParameters({ [key]: value });
+    await this.setQueryParameters({ [key]: value });
   }
 
   async setQueryParameters(parameters: Record<string, string | string[] | null>, options?: Pick<NavigationExtras, 'queryParamsHandling'>): Promise<void> {
     await this.router.navigate([], {
       queryParams: parameters,
-      queryParamsHandling: options?.queryParamsHandling ?? 'merge'
+      queryParamsHandling: options?.queryParamsHandling ?? 'merge',
     });
   }
 
   async setFragment(value: string | null): Promise<void> {
     await this.router.navigate([], {
       fragment: value ?? '',
-      queryParamsHandling: 'preserve'
+      queryParamsHandling: 'preserve',
     });
   }
 }

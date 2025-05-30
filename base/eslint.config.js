@@ -12,25 +12,24 @@ export default [
       parser: tsParser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.js']
-        }
+          allowDefaultProject: ['*.js'],
+        },
       },
-      globals: { ...globals.browser, ...globals.node }
-    }
+      globals: { ...globals.browser, ...globals.node },
+    },
   },
   stylistic.configs.customize({
     semi: true,
     arrowParens: true,
-    commaDangle: 'never'
   }),
   {
     rules: {
-      'prefer-named-capture-group': ['warn']
-    }
+      'prefer-named-capture-group': ['warn'],
+    },
   },
   {
     plugins: {
-      '@typescript-eslint': tseslint
+      '@typescript-eslint': tseslint,
     },
     rules: {
       ...tseslint.configs['strict-type-checked'].rules,
@@ -48,24 +47,40 @@ export default [
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
       '@typescript-eslint/promise-function-async': 'error',
-      '@typescript-eslint/restrict-template-expressions': ['warn', { allowNumber: true, allowBoolean: true, allowNullish: true }]
-    }
+      '@typescript-eslint/restrict-template-expressions': ['warn', { allowNumber: true, allowBoolean: true, allowNullish: true }],
+      '@typescript-eslint/return-await': ['error', 'always'],
+    },
   },
   {
     rules: {
       '@stylistic/member-delimiter-style': ['warn', {
-        multiline: { delimiter: 'comma', requireLast: false },
+        multiline: { delimiter: 'comma', requireLast: true },
         singleline: { delimiter: 'comma', requireLast: false },
         overrides: {
           interface: {
             multiline: { delimiter: 'semi', requireLast: true },
-            singleline: { delimiter: 'semi', requireLast: true }
-          }
-        }
+            singleline: { delimiter: 'semi', requireLast: true },
+          },
+        },
       }],
       '@stylistic/yield-star-spacing': ['warn', 'after'],
       '@stylistic/generator-star-spacing': ['warn', 'before'],
-      '@stylistic/indent': 'off'
-    }
-  }
+      '@stylistic/indent': 'off',
+      '@stylistic/comma-dangle': [
+        'error',
+        {
+          arrays: 'always-multiline',
+          objects: 'always-multiline',
+          imports: 'always-multiline',
+          exports: 'always-multiline',
+          functions: 'only-multiline',
+          importAttributes: 'always-multiline',
+          dynamicImports: 'always-multiline',
+          enums: 'always-multiline',
+          generics: 'always-multiline',
+          tuples: 'always-multiline',
+        },
+      ],
+    },
+  },
 ];

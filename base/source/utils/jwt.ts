@@ -11,12 +11,12 @@ export type JwtTokenAlgorithm = 'HS256' | 'HS384' | 'HS512';
 
 export type JwtTokenHeader<T extends StringMap = StringMap> = {
   alg: JwtTokenAlgorithm,
-  typ: 'JWT'
+  typ: 'JWT',
 } & T;
 
 export type JwtToken<TPayload = StringMap, THeader extends JwtTokenHeader = JwtTokenHeader> = {
   readonly header: THeader,
-  readonly payload: TPayload
+  readonly payload: TPayload,
 };
 
 export type JwtTokenParseResult<T extends JwtToken = JwtToken> = {
@@ -25,17 +25,17 @@ export type JwtTokenParseResult<T extends JwtToken = JwtToken> = {
   encoded: {
     header: string,
     payload: string,
-    signature: string
+    signature: string,
   },
   bytes: {
     header: Uint8Array,
     payload: Uint8Array,
-    signature: Uint8Array
+    signature: Uint8Array,
   },
   string: {
     header: string,
-    payload: string
-  }
+    payload: string,
+  },
 };
 
 export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: string): JwtTokenParseResult<T> {
@@ -53,18 +53,18 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
   const encoded: JwtTokenParseResult['encoded'] = {
     header: encodedHeader!,
     payload: encodedPayload!,
-    signature: encodedSignature!
+    signature: encodedSignature!,
   };
 
   const bytes: JwtTokenParseResult['bytes'] = {
     header: decodeBase64Url(encodedHeader!),
     payload: decodeBase64Url(encodedPayload!),
-    signature: decodeBase64Url(encodedSignature!)
+    signature: decodeBase64Url(encodedSignature!),
   };
 
   const string: JwtTokenParseResult['string'] = {
     header: textDecoder.decode(bytes.header),
-    payload: textDecoder.decode(bytes.payload)
+    payload: textDecoder.decode(bytes.payload),
   };
 
   try {
@@ -73,7 +73,7 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
 
     const token: JwtToken = {
       header,
-      payload
+      payload,
     };
 
     return {
@@ -81,7 +81,7 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
       token: token as T,
       encoded,
       bytes,
-      string
+      string,
     };
   }
   catch {
@@ -89,7 +89,7 @@ export function parseJwtTokenString<T extends JwtToken = JwtToken>(tokenString: 
   }
 }
 
-export async function createJwtTokenString<T extends JwtToken = JwtToken>(jwtToken: T, key: Key | string): Promise<string> {
+export async function createJwtTokenString(jwtToken: JwtToken, key: Key | string): Promise<string> {
   const headerBuffer = encodeUtf8(JSON.stringify(jwtToken.header));
   const payloadBuffer = encodeUtf8(JSON.stringify(jwtToken.payload));
 

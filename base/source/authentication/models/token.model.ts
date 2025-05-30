@@ -3,7 +3,7 @@ import type { JwtToken, JwtTokenHeader } from '#/utils/jwt.js';
 import type { TokenPayloadBase } from './token-payload-base.model.js';
 
 export type TokenHeader = {
-  v: number
+  v: number,
 };
 
 export type Token<AdditionalTokenPayload extends Record = Record<never>> = JwtToken<TokenPayload<AdditionalTokenPayload>, JwtTokenHeader<TokenHeader>>;
@@ -17,10 +17,10 @@ export type RefreshToken = JwtToken<{
   subject: string,
   impersonator?: string,
   sessionId: string,
-  secret: string
+  secret: string,
 }>;
 
 export type SecretResetToken = JwtToken<{
   exp: number,
-  subject: string
+  subject: string,
 }>;

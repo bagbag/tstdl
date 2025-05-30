@@ -9,7 +9,7 @@ export type ResolveArgumentType = typeof resolveArgumentType;
 
 export type ResolveArgument<T, Fallback = undefined> = undefined | (
   T extends Resolvable<infer U> ? (U | undefined)
-  : T extends Type<Resolvable<infer U>> ? (U | undefined)
+  : T extends Type<Pick<Required<Resolvable<infer U>>, typeof resolveArgumentType>> ? (U | undefined)
   : T extends (ArgumentedInjectionToken<any, any> | ReifyingInjectionToken) ? InjectionTokenArgument<T>
   : Fallback
 );

@@ -19,7 +19,7 @@ export type SchemaFunctionDeclarationsResult<T extends SchemaFunctionDeclaration
     functionName: P,
     parameters: SchemaOutput<NonNullable<ResolvedValueOrProvider<T[P]['parameters']>>>,
     handlerResult: SchemaFunctionDeclarationHandlerResult<T[P]>,
-    getFunctionResultContentPart: () => FunctionResultContentPart
+    getFunctionResultContentPart: () => FunctionResultContentPart,
   }
 }[keyof T];
 
@@ -40,14 +40,16 @@ export type FunctionCallingMode = 'auto' | 'force' | 'none';
 
 export type FinishReason = 'stop' | 'maxTokens' | 'unknown';
 
-export type AiModel = LiteralUnion<'gemini-2.0-flash' | 'gemini-2.0-flash-lite' | 'gemini-2.0-pro-exp-02-05' | 'gemini-2.0-flash-thinking-exp-01-21', string>;
+export type AiModel = LiteralUnion<'gemini-2.5-pro-preview-05-06' | 'gemini-2.5-flash-preview-05-20', string>;
 
 export type GenerationOptions = {
   maxOutputTokens?: number,
   temperature?: number,
   topP?: number,
   topK?: number,
-  frequencyPenalty?: number
+  presencePenalty?: number,
+  frequencyPenalty?: number,
+  thinkingBudget?: number,
 };
 
 export type GenerationRequest<S = unknown> = {
@@ -57,14 +59,14 @@ export type GenerationRequest<S = unknown> = {
   functions?: SchemaFunctionDeclarations,
   functionCallingMode?: FunctionCallingMode,
   generationSchema?: SchemaTestable<S>,
-  generationOptions?: GenerationOptions
+  generationOptions?: GenerationOptions,
 };
 
 export type GenerationUsage = {
   iterations: number,
   prompt: number,
   output: number,
-  total: number
+  total: number,
 };
 
 export type GenerationResult<S = unknown> = {
@@ -73,7 +75,7 @@ export type GenerationResult<S = unknown> = {
   json: S,
   functionCalls: FunctionCall[],
   finishReason: FinishReason,
-  usage: GenerationUsage
+  usage: GenerationUsage,
 };
 
 export function defineFunctions<T extends SchemaFunctionDeclarations>(declarations: T): T {

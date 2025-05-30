@@ -7,18 +7,20 @@ import type { ResolveOptions } from './types.js';
 export type InjectOptions<T, A> = ResolveOptions<T, A>;
 
 export type InjectArgumentOptions = {
-  optional?: boolean
+  optional?: boolean,
 };
 
 export type InjectionContext = {
   injector: Injector,
   argument: unknown,
-  inject<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T,
+  inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A> & { optional: true }): T | undefined,
+  inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A> & { optional?: false }): T,
+  inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T | undefined,
   injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T[],
   injectMany<T extends InjectManyItem<any, any>[]>(...tokens: T): InjectManyReturnType<T>,
   injectAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T>,
   injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T[]>,
-  injectManyAsync<T extends InjectManyItem<any, any>[]>(...tokens: T): Promise<InjectManyReturnType<T>>
+  injectManyAsync<T extends InjectManyItem<any, any>[]>(...tokens: T): Promise<InjectManyReturnType<T>>,
 };
 
 export type InjectManyItem<T, A> = ResolveManyItem<T, A>;
@@ -35,8 +37,9 @@ let currentInjectionContext: InjectionContext | null = null;
  */
 export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A> & { optional: true }): T | undefined;
 export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A> & { optional?: false }): T;
+export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T | undefined;
 export function inject<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): T {
-  return getCurrentInjectionContext(inject, true).inject(token, argument, options);
+  return getCurrentInjectionContext(inject, true).inject(token, argument, options)!;
 }
 
 /**
@@ -56,9 +59,10 @@ export function injectMany<T extends InjectManyItem<any, any>[]>(...tokens: T): 
  * @param options resolve options
  */
 export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument: ResolveArgument<T, A>, options: InjectOptions<T, A> & { optional: true }): Promise<T | undefined>;
-export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T>;
+export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A> & { optional?: false }): Promise<T>;
+export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T | undefined>;
 export async function injectAsync<T = unknown, A = unknown>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T> {
-  return getCurrentInjectionContext(injectAsync, true).injectAsync(token, argument, options);
+  return await getCurrentInjectionContext(injectAsync, true).injectAsync(token, argument, options);
 }
 
 /**
@@ -67,7 +71,7 @@ export async function injectAsync<T = unknown, A = unknown>(token: InjectionToke
  * @param token tokens to resolve
  */
 export async function injectManyAsync<T extends InjectManyItem<any, any>[]>(...tokens: T): Promise<InjectManyReturnType<T>> {
-  return getCurrentInjectionContext(injectManyAsync, true).injectManyAsync(...tokens);
+  return await getCurrentInjectionContext(injectManyAsync, true).injectManyAsync(...tokens);
 }
 
 /**
@@ -89,7 +93,7 @@ export function injectAll<T, A>(token: InjectionToken<T, A>, argument?: ResolveA
  * @param options resolve options
  */
 export async function injectAllAsync<T, A>(token: InjectionToken<T, A>, argument?: ResolveArgument<T, A>, options?: InjectOptions<T, A>): Promise<T[]> {
-  return getCurrentInjectionContext(injectAllAsync, true).injectAllAsync(token, argument, options);
+  return await getCurrentInjectionContext(injectAllAsync, true).injectAllAsync(token, argument, options);
 }
 
 /**
@@ -145,9 +149,9 @@ export function runInInjectionContext<ReturnT>(injectorOrContext: Injector | Inj
       inject(token, argument, options) { return injectorOrContext.resolve(token, argument, options); },
       injectAll(token, argument, options) { return injectorOrContext.resolveAll(token, argument, options); },
       injectMany(...tokens) { return injectorOrContext.resolveMany(...tokens); },
-      async injectAsync(token, argument, options) { return injectorOrContext.resolveAsync(token, argument, options); },
-      async injectAllAsync(token, argument, options) { return injectorOrContext.resolveAllAsync(token, argument, options); },
-      async injectManyAsync(...tokens) { return injectorOrContext.resolveManyAsync(...tokens); },
+      async injectAsync(token, argument, options) { return await injectorOrContext.resolveAsync(token, argument, options); },
+      async injectAllAsync(token, argument, options) { return await injectorOrContext.resolveAllAsync(token, argument, options); },
+      async injectManyAsync(...tokens) { return await injectorOrContext.resolveManyAsync(...tokens); },
     }
     : injectorOrContext;
 

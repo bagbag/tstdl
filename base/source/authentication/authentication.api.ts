@@ -29,8 +29,8 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Re
     resource: resource ?? 'auth',
     endpoints: {
       ...getAuthenticationApiEndpointsDefinition(additionalTokenPayloadSchema, authenticationDataSchema, initSecretResetDataSchema),
-      ...additionalEndpoints
-    }
+      ...additionalEndpoints,
+    },
   });
 }
 
@@ -48,50 +48,50 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
       parameters: explicitObject({
         subject: string(),
         secret: string(),
-        data: authenticationDataSchema
+        data: authenticationDataSchema,
       }),
       result: tokenResultSchema,
       credentials: true,
       data: {
-        [dontWaitForValidToken]: true
-      }
+        [dontWaitForValidToken]: true,
+      },
     },
     refresh: {
       resource: 'refresh',
       method: 'POST',
       parameters: explicitObject({
-        data: authenticationDataSchema
+        data: authenticationDataSchema,
       }),
       result: tokenResultSchema,
       credentials: true,
       data: {
-        [dontWaitForValidToken]: true
-      }
+        [dontWaitForValidToken]: true,
+      },
     },
     impersonate: {
       resource: 'impersonate',
       method: 'POST',
       parameters: explicitObject({
         subject: string(),
-        data: authenticationDataSchema
+        data: authenticationDataSchema,
       }),
       result: tokenResultSchema,
       credentials: true,
       data: {
-        [dontWaitForValidToken]: true
-      }
+        [dontWaitForValidToken]: true,
+      },
     },
     unimpersonate: {
       resource: 'unimpersonate',
       method: 'POST',
       parameters: explicitObject({
-        data: authenticationDataSchema
+        data: authenticationDataSchema,
       }),
       result: tokenResultSchema,
       credentials: true,
       data: {
-        [dontWaitForValidToken]: true
-      }
+        [dontWaitForValidToken]: true,
+      },
     },
     endSession: {
       resource: 'end-session',
@@ -99,38 +99,38 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
       result: literal('ok' as const),
       credentials: true,
       data: {
-        [dontWaitForValidToken]: true
-      }
+        [dontWaitForValidToken]: true,
+      },
     },
     initSecretReset: {
       resource: 'secret/init-reset',
       method: 'POST',
       parameters: explicitObject({
         subject: string(),
-        data: additionalInitSecretResetDataSchema
+        data: additionalInitSecretResetDataSchema,
       }),
-      result: literal('ok' as const)
+      result: literal('ok' as const),
     },
     resetSecret: {
       resource: 'secret/reset',
       method: 'POST',
       parameters: object({
         token: string(),
-        newSecret: string()
+        newSecret: string(),
       }),
-      result: literal('ok' as const)
+      result: literal('ok' as const),
     },
     checkSecret: {
       resource: 'secret/check',
       method: 'POST',
       parameters: object({
-        secret: string()
+        secret: string(),
       }),
-      result: SecretCheckResult
+      result: SecretCheckResult,
     },
     timestamp: {
       resource: 'timestamp',
-      result: number()
-    }
+      result: number(),
+    },
   } satisfies ApiEndpointsDefinition;
 }

@@ -24,6 +24,8 @@ export type ColumnDefinition = {
   fromDatabase: (value: unknown, context: TransformContext) => any
 };
 
+export type ColumnDefinitionsMap = Map<string, ColumnDefinition>;
+
 export type TransformContext = {
   encryptionKey?: CryptoKey
 };

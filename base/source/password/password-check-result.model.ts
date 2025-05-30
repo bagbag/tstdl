@@ -1,14 +1,17 @@
+import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { NumberProperty } from '#/schema/index.js';
 import { Array } from '#/schema/schemas/array.js';
 import { Enumeration } from '#/schema/schemas/enumeration.js';
 
-export enum PasswordStrength {
-  VeryWeak = 0,
-  Weak = 1,
-  Medium = 2,
-  Strong = 3,
-  VeryStrong = 4
-}
+export const PasswordStrength = defineEnum('PasswordStrength', {
+  VeryWeak: 0,
+  Weak: 1,
+  Medium: 2,
+  Strong: 3,
+  VeryStrong: 4,
+});
+
+export type PasswordStrength = EnumType<typeof PasswordStrength>;
 
 export class PasswordCheckResult {
   @Enumeration(PasswordStrength)

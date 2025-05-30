@@ -77,11 +77,11 @@ export function createContextProvider<Context, const Name extends string>(name: 
   }
 
   return {
-    [`getCurrent${name}Context`]: getCurrentContext,
-    [`setCurrent${name}Context`]: setCurrentContext,
-    [`runIn${name}Context`]: runInContext,
-    [`isIn${name}Context`]: isInContext,
-    [`assertIn${name}Context`]: assertInContext
+    [`getCurrent${name}Context`](...args: Parameters<typeof getCurrentContext>) { return getCurrentContext(...args); },
+    [`setCurrent${name}Context`](...args: Parameters<typeof setCurrentContext>) { return setCurrentContext(...args); },
+    [`runIn${name}Context`](...args: Parameters<typeof runInContext>) { return runInContext(...args); },
+    [`isIn${name}Context`](...args: Parameters<typeof isInContext>) { return isInContext(...args); },
+    [`assertIn${name}Context`](...args: Parameters<typeof assertInContext>) { assertInContext(...args); },
   } as SimplifyObject<
     Record<`getCurrent${Name}Context`, typeof getCurrentContext>
     & Record<`setCurrent${Name}Context`, typeof setCurrentContext>
