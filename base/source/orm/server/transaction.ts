@@ -1,4 +1,4 @@
-import type { PgTransaction as DrizzlePgTransaction, PgQueryResultHKT, PgTransactionConfig } from 'drizzle-orm/pg-core';
+import { PgTransaction as DrizzlePgTransaction, type PgQueryResultHKT, type PgTransactionConfig } from 'drizzle-orm/pg-core';
 import { Subject } from 'rxjs';
 
 import { DeferredPromise } from '#/promise/deferred-promise.js';
@@ -6,6 +6,7 @@ import type { Record } from '#/types.js';
 import type { Database } from './database.js';
 
 export type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;
+export { DrizzlePgTransaction };
 
 export type TransactionConfig = PgTransactionConfig;
 
@@ -57,6 +58,8 @@ export abstract class Transaction implements AsyncDisposable {
 
   async rollback(): Promise<void> {
     this.#done = true;
+    this.#afterCommitSubject.complete();
+
     await this._rollback();
   }
 

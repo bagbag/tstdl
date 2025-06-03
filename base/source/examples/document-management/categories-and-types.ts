@@ -405,6 +405,7 @@ export const TstdlDocumentTypeCategories = {
 
 export const TstdlDocumentProperty = defineEnum('TstdlDocumentProperty', {
   Correspondent: 'correspondent',
+  HasCorrespondent: 'has-correspondent',
   EffectiveDate: 'effective-date', // Date from which the document or its terms are active
   ExpiryDate: 'expiry-date', // Date on which the document or its terms expire
   ReferenceNumber: 'reference-number', // Generic reference (e.g., file number, internal ID)
@@ -426,6 +427,7 @@ export type TstdlDocumentProperty = EnumType<typeof TstdlDocumentProperty>;
 
 export const TstdlDocumentPropertyConfiguration = {
   [TstdlDocumentProperty.Correspondent]: [DocumentPropertyDataType.Text, 'Korrespondent'],
+  [TstdlDocumentProperty.HasCorrespondent]: [DocumentPropertyDataType.Boolean, 'Hat Korrespondent'],
   [TstdlDocumentProperty.EffectiveDate]: [DocumentPropertyDataType.Date, 'Wirksamkeitsdatum'],
   [TstdlDocumentProperty.ExpiryDate]: [DocumentPropertyDataType.Date, 'Ablaufdatum'],
   [TstdlDocumentProperty.ReferenceNumber]: [DocumentPropertyDataType.Text, 'Referenznummer'],
@@ -446,6 +448,7 @@ export const TstdlDocumentPropertyConfiguration = {
 export const TstdlDocumentTypeProperties = {
   // Administration/Contracts/RentalAgreements
   [TstdlDocumentType.ResidentialRentalAgreement]: [
+        TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -458,6 +461,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.CommercialRentalAgreement]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -470,6 +474,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.ShortTermRentalAgreement]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -483,6 +488,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   // Administration/Contracts/PurchaseAgreements
   [TstdlDocumentType.PurchaseAgreementProperty]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Buyer/Seller
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -492,6 +498,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.SaleAgreementProperty]: [ // Similar to Purchase
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -502,6 +509,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   // Administration/Contracts/WorkContracts
   [TstdlDocumentType.WorkOrderContract]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Client/Contractor
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.RealEstate,
@@ -513,6 +521,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.FrameworkAgreement]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.ContractNumber,
     TstdlDocumentProperty.EffectiveDate,
@@ -524,6 +533,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   // Administration/GeneralCorrespondence
   [TstdlDocumentType.TerminationNotice]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Sender/Recipient
     TstdlDocumentProperty.EffectiveDate, // Termination effective date
     TstdlDocumentProperty.RealEstate,
@@ -531,6 +541,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.ContractNumber, // Related contract
   ],
   [TstdlDocumentType.ComplaintLetter]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Complainant/Recipient
     TstdlDocumentProperty.RealEstate,
     TstdlDocumentProperty.ReferenceNumber,
@@ -539,6 +550,7 @@ export const TstdlDocumentTypeProperties = {
   // Finance/Invoices
   [TstdlDocumentType.IncomingInvoice]: [
     TstdlDocumentProperty.InvoiceNumber,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Supplier
     TstdlDocumentProperty.DueDate,
     TstdlDocumentProperty.Amount, // Gross amount
@@ -549,6 +561,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   [TstdlDocumentType.OutgoingInvoice]: [
     TstdlDocumentProperty.InvoiceNumber,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Customer/Tenant
     TstdlDocumentProperty.TenantId,
     TstdlDocumentProperty.DueDate,
@@ -558,6 +571,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.PaymentReminder]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Debtor
     TstdlDocumentProperty.TenantId,
     TstdlDocumentProperty.DueDate, // Original or new
@@ -613,6 +627,7 @@ export const TstdlDocumentTypeProperties = {
     // Description of issue
     TstdlDocumentProperty.Status, // Open, In Progress, Closed
     TstdlDocumentProperty.ReferenceNumber, // Order No.
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Reported by
   ],
   [TstdlDocumentType.MaintenanceReport]: [
@@ -624,6 +639,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   [TstdlDocumentType.InspectionReport]: [
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Inspector
     // e.g., Annual Safety Inspection
     TstdlDocumentProperty.Status, // Passed, Failed, Issues Found
@@ -631,6 +647,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   [TstdlDocumentType.DamageReport]: [
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Reported by
     // Description of damage
     TstdlDocumentProperty.Amount, // Estimated damage cost
@@ -648,10 +665,12 @@ export const TstdlDocumentTypeProperties = {
   [TstdlDocumentType.TenantRegistrationForm]: [
     TstdlDocumentProperty.TenantId,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Tenant
     TstdlDocumentProperty.EffectiveDate, // Move-in date
   ],
   [TstdlDocumentType.MemberApplication]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Applicant
     TstdlDocumentProperty.Status, // Submitted, Approved, Rejected
     TstdlDocumentProperty.EffectiveDate, // Membership start if approved
@@ -659,6 +678,7 @@ export const TstdlDocumentTypeProperties = {
   [TstdlDocumentType.HandoverProtocolApartment]: [
     TstdlDocumentProperty.RealEstate,
     TstdlDocumentProperty.TenantId,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Tenant/Landlord Rep
     TstdlDocumentProperty.EffectiveDate, // Handover date
     TstdlDocumentProperty.Status, // e.g., Defects noted
@@ -669,14 +689,17 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.RealEstate,
     TstdlDocumentProperty.Amount, // New rent
     TstdlDocumentProperty.Currency,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Landlord/Tenant
   ],
   [TstdlDocumentType.TenantCorrespondenceLetter]: [
     TstdlDocumentProperty.TenantId,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Sender/Recipient
   ],
   [TstdlDocumentType.MemberCorrespondenceLetter]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Sender/Recipient (Member ID if applicable)
   ],
 
@@ -684,15 +707,18 @@ export const TstdlDocumentTypeProperties = {
   [TstdlDocumentType.CourtOrder]: [
     TstdlDocumentProperty.CaseNumber,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Court/Parties
     TstdlDocumentProperty.EffectiveDate,
   ],
   [TstdlDocumentType.LawsuitDocument]: [
     TstdlDocumentProperty.CaseNumber,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Parties/Lawyers
   ],
   [TstdlDocumentType.LegalOpinionReport]: [
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Lawyer/Client
     TstdlDocumentProperty.CaseNumber,
     TstdlDocumentProperty.RealEstate,
@@ -715,6 +741,7 @@ export const TstdlDocumentTypeProperties = {
   ],
   [TstdlDocumentType.MeetingInvitation]: [
     TstdlDocumentProperty.MeetingDate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Inviter/Invitee
   ],
   [TstdlDocumentType.MeetingAgenda]: [
@@ -732,6 +759,7 @@ export const TstdlDocumentTypeProperties = {
     // Plan Title / Project Name
     TstdlDocumentProperty.RealEstate,
     TstdlDocumentProperty.ReferenceNumber, // Plan No.
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Architect
   ],
   [TstdlDocumentType.BuildingPermitDocument]: [
@@ -740,6 +768,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.ExpiryDate,
     // Project Name
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Issuing Authority
   ],
   [TstdlDocumentType.DemolitionPermit]: [ // Similar to BuildingPermit
@@ -747,6 +776,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.EffectiveDate,
     TstdlDocumentProperty.ExpiryDate,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
   ],
   [TstdlDocumentType.ConstructionSchedule]: [
@@ -769,6 +799,7 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.Amount, // Contract Value
     TstdlDocumentProperty.Currency,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Service Provider
     TstdlDocumentProperty.Status,
   ],
@@ -777,11 +808,13 @@ export const TstdlDocumentTypeProperties = {
     TstdlDocumentProperty.EffectiveDate,
     TstdlDocumentProperty.ExpiryDate,
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent,
     TstdlDocumentProperty.Status,
   ],
   [TstdlDocumentType.ProviderCommunication]: [
     TstdlDocumentProperty.RealEstate,
+    TstdlDocumentProperty.HasCorrespondent,
     TstdlDocumentProperty.Correspondent, // Sender/Recipient
   ],
 } as const satisfies Partial<Record<TstdlDocumentType, TstdlDocumentProperty[]>>;

@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import type { AfterContentInit, OnChanges } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, Inject, Input, Optional, QueryList } from '@angular/core';
 import { DynamicTextPipe } from '@tstdl/angular';
@@ -58,7 +58,7 @@ const rowSpanClasses: Record<number, string> = {
 
 @Component({
   selector: 'tsl-data-grid',
-  imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, GridLabelComponent, GridValueComponent, DynamicTextPipe],
+  imports: [NgClass, NgTemplateOutlet, GridLabelComponent, GridValueComponent, DynamicTextPipe],
   templateUrl: './data-grid.component.html',
   styleUrls: ['./data-grid.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -174,9 +174,5 @@ export class DataGridComponent implements AfterContentInit, OnChanges {
     else {
       this.actualDisplayType = 'items';
     }
-  }
-
-  trackBy(_index: number, _item: any): true {
-    return true;
   }
 }

@@ -3,6 +3,7 @@ import { defineApi } from '#/api/index.js';
 import { ReplaceClass } from '#/injector/decorators.js';
 import { array, boolean, literal, number, object, optional, string } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
+import { policy } from '../authorization/index.js';
 import { Document, DocumentCategory, DocumentRequest, DocumentRequestsTemplate, DocumentRequestTemplate, DocumentType } from '../models/index.js';
 import { addOrArchiveDocumentToOrFromCollectionParametersSchema, applyDocumentRequestsTemplateParametersSchema, createDocumentCategoryParametersSchema, createDocumentParametersSchema, createDocumentRequestParametersSchema, createDocumentRequestsTemplateParametersSchema, createDocumentRequestTemplateParametersSchema, createDocumentTypeParametersSchema, deleteDocumentRequestParametersSchema, deleteDocumentRequestsTemplateParametersSchema, deleteDocumentRequestTemplateParametersSchema, DocumentCategoryView, DocumentManagementData, DocumentRequestsTemplateData, loadDataParametersSchema, updateDocumentParametersSchema, updateDocumentRequestParametersSchema, updateDocumentRequestsTemplateParametersSchema, updateDocumentRequestTemplateParametersSchema } from '../service-models/index.js';
 
@@ -199,6 +200,22 @@ export const documentManagementApiDefinition = defineApi({
       method: 'PATCH',
       parameters: updateDocumentParametersSchema,
       result: literal('ok'),
+      credentials: true,
+    },
+    proceedDocumentWorkflow: {
+      resource: 'documents/:id/proceed-workflow',
+      method: 'POST',
+      parameters: object({
+        id: string(),
+      }),
+      result: literal('ok'),
+      credentials: true,
+    },
+    testAuthorization: {
+      resource: 'authorization/test',
+      method: 'POST',
+      parameters: policy,
+      result: boolean(),
       credentials: true,
     },
   },

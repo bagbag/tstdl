@@ -3,20 +3,24 @@ import { union } from 'drizzle-orm/pg-core';
 
 import type { CancellationSignal } from '#/cancellation/token.js';
 import { Enumerable } from '#/enumerable/index.js';
+import { inject } from '#/injector/index.js';
+import { Logger } from '#/logger/logger.js';
 import type { NewEntity } from '#/orm/index.js';
 import { Transactional, injectRepository, injectTransactional } from '#/orm/server/index.js';
+import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { Record } from '#/types.js';
 import { distinct } from '#/utils/array/index.js';
 import { compareByValueSelectionToOrder } from '#/utils/comparison.js';
 import { groupToMap, groupToSingleMap } from '#/utils/iterable-helpers/index.js';
 import { fromEntries, objectEntries } from '#/utils/object/index.js';
-import { cancelableTimeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNotNull, isNotNullOrUndefined, isNull, isUndefined } from '#/utils/type-guards.js';
+import { filter, merge } from 'rxjs';
 import { DocumentAssignmentScope, DocumentAssignmentTask, DocumentCategory, DocumentCollectionAssignment, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestTemplate, DocumentRequestsTemplate, DocumentType, DocumentTypeProperty, DocumentValidationExecution, DocumentWorkflowStep, type DocumentProperty, type DocumentPropertyDataType } from '../../models/index.js';
 import type { DocumentManagementData, DocumentRequestView, DocumentRequestsTemplateData, DocumentRequestsTemplateView, DocumentView } from '../../service-models/index.js';
 import { documentAssignmentScope, documentAssignmentTask, documentCollectionAssignment, documentRequest, documentRequestCollectionAssignment } from '../schemas.js';
 import { DocumentCategoryTypeService } from './document-category-type.service.js';
 import { DocumentCollectionService } from './document-collection.service.js';
+import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentPropertyService } from './document-property.service.js';
 import { DocumentWorkflowService } from './document-workflow.service.js';
 import { DocumentService } from './document.service.js';
@@ -41,6 +45,8 @@ export class DocumentManagementService extends Transactional {
   readonly #documentTypeRepository = injectRepository(DocumentType);
   readonly #documentTypePropertyRepository = injectRepository(DocumentTypeProperty);
   readonly #documentValidationExecutionRepository = injectRepository(DocumentValidationExecution);
+  readonly #observationService = inject(DocumentManagementObservationService);
+  readonly #logger = inject(Logger, DocumentManagementService.name);
 
   /**
    * Get all relevant document collection IDs for a given document. This includes direct assignments, request assignments, and assignment scopes.
@@ -78,15 +84,24 @@ export class DocumentManagementService extends Transactional {
   }
 
   async *loadDataStream(collectionIds: string[], cancellationSignal: CancellationSignal): AsyncIterableIterator<DocumentManagementData> {
-    while (cancellationSignal.isUnset) {
-      const data = await this.loadData(collectionIds);
-      yield data;
+    const continuePromise = new DeferredPromise();
 
-      const timeoutResult = await cancelableTimeout(250, cancellationSignal);
+    const newData$ = this.#observationService.collectionsChangedMessageBus.allMessages$.pipe(
+      filter((changedCollectionIds) => collectionIds.some((id) => changedCollectionIds.includes(id))),
+    );
 
-      if (timeoutResult == 'canceled') {
-        break;
+    const subscription = merge(newData$, cancellationSignal).subscribe(() => continuePromise.resolveIfPending());
+
+    try {
+      while (cancellationSignal.isUnset) {
+        yield await this.loadData(collectionIds);
+
+        await continuePromise;
+        continuePromise.reset();
       }
+    }
+    finally {
+      subscription.unsubscribe();
     }
   }
 
@@ -115,8 +130,9 @@ export class DocumentManagementService extends Transactional {
       const assignmentTaskDocumentIds = assignmentTasks.map((task) => task.documentId);
       const documentIds = distinct([...assignmentDocumentIds, ...requestDocumentIds, ...assignmentTaskDocumentIds]);
 
-      const [documents, propertyValues, workflows] = await Promise.all([
+      const [documents, propertyViews, propertyValues, workflows] = await Promise.all([
         this.#documentService.repository.withTransaction(tx).loadManyByQuery({ id: { $in: documentIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
+        this.#documentPropertyService.withTransaction(tx).loadViews(),
         this.#documentPropertyService.withTransaction(tx).loadDocumentProperties(documentIds),
         this.#documentWorkflowService.withTransaction(tx).loadWorkflows(documentIds),
       ]);
@@ -169,6 +185,7 @@ export class DocumentManagementService extends Transactional {
         requests: requestViews,
         categories,
         types,
+        properties: propertyViews,
       };
     });
   }
@@ -222,10 +239,12 @@ export class DocumentManagementService extends Transactional {
         if (isUndefined(category)) {
           const category = await this.#documentCategoryTypeService.withTransaction(tx).createCategory(label, parentCategoryId, key);
           enumKeyCategoryMap.set(key, category);
+          this.#logger.info(`Created category ${category.label}`);
         }
         else if ((category.label != label) || (category.parentId != parentCategoryId)) {
           const updatedCategory = await this.#documentCategoryTypeService.withTransaction(tx).updateCategory(category.id, { label, parentId: parentCategoryId });
           enumKeyCategoryMap.set(key, updatedCategory);
+          this.#logger.info(`Updated category ${updatedCategory.label}`);
         }
       }
 
@@ -237,10 +256,12 @@ export class DocumentManagementService extends Transactional {
         if (isUndefined(type)) {
           const type = await this.#documentCategoryTypeService.withTransaction(tx).createType(label, category.id, key);
           enumKeyTypeMap.set(key, type);
+          this.#logger.info(`Created type ${type.label} in category ${category.label}`);
         }
         else if ((type.categoryId != category.id) || (type.label != label)) {
           const updatedType = await this.#documentCategoryTypeService.withTransaction(tx).updateType(type.id, { categoryId: category.id, label: label });
           enumKeyTypeMap.set(key, updatedType);
+          this.#logger.info(`Updated type ${updatedType.label} in category ${category.label}`);
         }
       }
 
@@ -250,10 +271,12 @@ export class DocumentManagementService extends Transactional {
         if (isUndefined(property)) {
           const newProperty = await this.#documentPropertyService.withTransaction(tx).createProperty(label, dataType, key);
           enumKeyPropertyMap.set(key, newProperty);
+          this.#logger.info(`Created property ${newProperty.label} of type ${dataType}`);
         }
         else if ((property.label != label) || (property.dataType != dataType)) {
           const updatedProperty = await this.#documentPropertyService.withTransaction(tx).updateProperty(property.id, { label, dataType });
           enumKeyPropertyMap.set(key, updatedProperty);
+          this.#logger.info(`Updated property ${updatedProperty.label} of type ${updatedProperty.dataType}`);
         }
       }
 

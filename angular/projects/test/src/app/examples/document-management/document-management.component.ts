@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { injectQueryParameter } from '@tstdl/angular';
 import { DocumentInboxComponent, documentManagementContext } from '@tstdl/angular/document-management';
 import { InputComponent, InputGroupComponent, InputGroupLabelComponent } from '@tstdl/angular/form';
-import { injectQueryParameter } from '@tstdl/angular/public-api';
 
 @Component({
   selector: 'app-document-management',

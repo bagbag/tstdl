@@ -7,7 +7,6 @@ export * from './document-management-table.js';
 export * from './document-property-value.model.js';
 export * from './document-property.model.js';
 export * from './document-request-collection-assignment.model.js';
-export * from './document-request-submission.model.js';
 export * from './document-request-template.js';
 export * from './document-request.model.js';
 export * from './document-requests-template.js';

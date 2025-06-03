@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-badge {
-    @apply relative inline-flex items-center gap-x-1.5 h-auto px-3 py-1 text-sm font-medium overflow-hidden transition-[opacity];
+    @apply inline-flex items-center gap-x-1.5 h-auto px-3 py-1 text-sm font-medium overflow-hidden transition-[opacity] truncate;
 
     &.badge-bold {
       @apply font-semibold;

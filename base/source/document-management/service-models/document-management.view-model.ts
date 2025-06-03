@@ -1,6 +1,6 @@
 import { Array, Enumeration, Property, string, StringProperty, Union } from '#/schema/index.js';
 import type { TypedOmit } from '#/types.js';
-import { Document, DocumentAssignmentTarget, DocumentAssignmentTask, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentPropertyDataType, DocumentRequest, DocumentType, DocumentValidationExecution, DocumentWorkflow } from '../models/index.js';
+import { Document, DocumentAssignmentTarget, DocumentAssignmentTask, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentPropertyDataType, DocumentRequest, DocumentType, DocumentTypeProperty, DocumentValidationExecution, DocumentWorkflow, type DocumentProperty } from '../models/index.js';
 
 export class DocumentCollectionView extends DocumentCollection {
   @StringProperty({ nullable: true })
@@ -71,6 +71,20 @@ export class DocumentRequestView extends DocumentRequest {
   collectionIds: string[];
 }
 
+export class DocumentPropertyView implements TypedOmit<DocumentProperty, 'metadata'> {
+  @StringProperty()
+  id: string;
+
+  @StringProperty()
+  label: string;
+
+  @Enumeration(DocumentPropertyDataType)
+  dataType: DocumentPropertyDataType;
+
+  @Array(String)
+  typeIds: string[];
+}
+
 export class DocumentManagementData {
   @Array(DocumentCollectionView)
   collections: DocumentCollectionView[];
@@ -86,4 +100,7 @@ export class DocumentManagementData {
 
   @Array(DocumentType)
   types: DocumentType[];
+
+  @Array(DocumentTypeProperty)
+  properties: DocumentPropertyView[];
 }

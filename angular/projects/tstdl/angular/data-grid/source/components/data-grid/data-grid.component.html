@@ -1,82 +1,98 @@
-<div *ngIf="heading" class="bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-2 py-0.5 text-base font-bold">{{ heading | dynamicText }}</div>
+@if (heading) {
+  <div class="bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-2 py-0.5 text-base font-bold">{{ heading | dynamicText }}</div>
+}
 
-<div *ngIf="actualDisplayType == 'items'" class="grid" [ngClass]="columnClasses[columns]">
-  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
-  <div *ngIf="empty" class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ (noValueText ?? 'N/A') | dynamicText }}</div>
+@if (actualDisplayType == "items") {
+  <div class="grid" [ngClass]="columnClasses[columns]">
+    <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+    @if (empty) {
+      <div class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ noValueText ?? "N/A" | dynamicText }}</div>
+    }
+    @for (matrixRow of matrix; track matrixRow; let rowIndex = $index; let firstRow = $first; let lastRow = $last; let oddRow = $odd) {
+      @for (item of matrixRow; track item; let columnIndex = $index; let firstColumn = $first; let lastColumn = $last) {
+        <div
+          class="flex flex-col gap-1.5 p-2"
+          [ngClass]="colSpanClasses[item?.colSpan ?? 0] + ' ' + rowSpanClasses[item?.rowSpan ?? 0]"
+          [class.border-t]="!firstRow"
+          [class.bg-white]="!oddRow"
+          [class.dark:bg-neutral-700]="!oddRow"
+          [class.bg-neutral-100]="oddRow"
+          [class.dark:bg-neutral-800]="oddRow">
+          @if (item) {
+            <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]="item?.label" [enum]="item?.enum"></tsl-grid-label>
+            <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item"></tsl-grid-value>
+          }
+        </div>
+      }
+    }
+  </div>
+}
 
-  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
-    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
-      <div class="flex flex-col gap-1.5 p-2"
-           [ngClass]="colSpanClasses[item?.colSpan ?? 0] + ' ' + rowSpanClasses[item?.rowSpan ?? 0]"
-           [class.border-t]="!firstRow"
-           [class.bg-white]="!oddRow"
-           [class.dark:bg-neutral-700]="!oddRow"
-           [class.bg-neutral-100]="oddRow"
-           [class.dark:bg-neutral-800]="oddRow">
-        <ng-container *ngIf="item">
-          <tsl-grid-label [templateRef]="item?.labelRef?.templateRef" [label]="item?.label" [enum]="item?.enum"></tsl-grid-label>
-          <tsl-grid-value [booleanTrueText]="booleanTrueText" [booleanFalseText]="booleanFalseText" [noValueText]="noValueText" [item]="item"></tsl-grid-value>
-        </ng-container>
-      </div>
-    </ng-container>
-  </ng-container>
-</div>
+@if (actualDisplayType == "table") {
+  <div class="grid" [ngClass]="columnClasses[columns]">
+    <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+    @if (empty) {
+      <div class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ noValueText ?? "N/A" | dynamicText }}</div>
+    }
+    @for (matrixRow of matrix; track matrixRow; let rowIndex = $index; let firstRow = $first; let lastRow = $last; let oddRow = $odd) {
+      @for (item of matrixRow; track item; let columnIndex = $index; let firstColumn = $first; let lastColumn = $last) {
+        <tsl-grid-value
+          [item]="item"
+          [booleanTrueText]="booleanTrueText"
+          [booleanFalseText]="booleanFalseText"
+          [noValueText]="noValueText"
+          class="px-2 py-1.5"
+          [class.border-t]="!firstRow"
+          [class.bg-white]="!oddRow"
+          [class.dark:bg-neutral-700]="!oddRow"
+          [class.bg-neutral-100]="oddRow"
+          [class.dark:bg-neutral-800]="oddRow"></tsl-grid-value>
+      }
+    }
+  </div>
+}
 
-<div *ngIf="actualDisplayType == 'table'" class="grid" [ngClass]="columnClasses[columns]">
-  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
-  <div *ngIf="empty" class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ (noValueText ?? 'N/A') | dynamicText }}</div>
-
-  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
-    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
-      <tsl-grid-value [item]="item"
-                      [booleanTrueText]="booleanTrueText"
-                      [booleanFalseText]="booleanFalseText"
-                      [noValueText]="noValueText"
-                      class="px-2 py-1.5"
-                      [class.border-t]="!firstRow"
-                      [class.bg-white]="!oddRow"
-                      [class.dark:bg-neutral-700]="!oddRow"
-                      [class.bg-neutral-100]="oddRow"
-                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-value>
-    </ng-container>
-  </ng-container>
-</div>
-
-<div *ngIf="actualDisplayType == 'columns'" class="grid" [ngClass]="columnClasses[columns * 2]">
-  <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
-  <div *ngIf="empty" class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ (noValueText ?? 'N/A') | dynamicText }}</div>
-
-  <ng-container *ngFor="let matrixRow of matrix; let rowIndex = index; let firstRow = first; let lastRow = last; let oddRow = odd; trackBy: trackBy">
-    <ng-container *ngFor="let item of matrixRow; let columnIndex = index; let firstColumn = first; let lastColumn = last; trackBy: trackBy">
-      <tsl-grid-label [templateRef]="item?.labelRef?.templateRef"
-                      [label]="item?.label"
-                      [enum]="item?.enum"
-                      class="p-2"
-                      [class.border-t]="!firstRow"
-                      [class.bg-white]="!oddRow"
-                      [class.dark:bg-neutral-700]="!oddRow"
-                      [class.bg-neutral-100]="oddRow"
-                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-label>
-
-      <tsl-grid-value [item]="item"
-                      [booleanTrueText]="booleanTrueText"
-                      [booleanFalseText]="booleanFalseText"
-                      [noValueText]="noValueText"
-                      class="p-2"
-                      [class.border-t]="!firstRow"
-                      [class.bg-white]="!oddRow"
-                      [class.dark:bg-neutral-700]="!oddRow"
-                      [class.bg-neutral-100]="oddRow"
-                      [class.dark:bg-neutral-800]="oddRow"></tsl-grid-value>
-    </ng-container>
-  </ng-container>
-</div>
+@if (actualDisplayType == "columns") {
+  <div class="grid" [ngClass]="columnClasses[columns * 2]">
+    <ng-container [ngTemplateOutlet]="headerRow"></ng-container>
+    @if (empty) {
+      <div class="text-center py-2" [ngClass]="colSpanClasses[columns]">{{ noValueText ?? "N/A" | dynamicText }}</div>
+    }
+    @for (matrixRow of matrix; track matrixRow; let rowIndex = $index; let firstRow = $first; let lastRow = $last; let oddRow = $odd) {
+      @for (item of matrixRow; track item; let columnIndex = $index; let firstColumn = $first; let lastColumn = $last) {
+        <tsl-grid-label
+          [templateRef]="item?.labelRef?.templateRef"
+          [label]="item?.label"
+          [enum]="item?.enum"
+          class="p-2"
+          [class.border-t]="!firstRow"
+          [class.bg-white]="!oddRow"
+          [class.dark:bg-neutral-700]="!oddRow"
+          [class.bg-neutral-100]="oddRow"
+          [class.dark:bg-neutral-800]="oddRow" />
+        <tsl-grid-value
+          [item]="item"
+          [booleanTrueText]="booleanTrueText"
+          [booleanFalseText]="booleanFalseText"
+          [noValueText]="noValueText"
+          class="p-2"
+          [class.border-t]="!firstRow"
+          [class.bg-white]="!oddRow"
+          [class.dark:bg-neutral-700]="!oddRow"
+          [class.bg-neutral-100]="oddRow"
+          [class.dark:bg-neutral-800]="oddRow" />
+      }
+    }
+  </div>
+}
 
 <ng-template #headerRow>
-  <tsl-grid-label *ngFor="let headerItem of headerItemRefs; let first = first; let last = last; trackBy: trackBy"
-                  [templateRef]="headerItem?.templateRef"
-                  [label]="headerItem?.label"
-                  [enum]="headerItem?.enum"
-                  class="px-2 pb-1.5 bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
-                  [class.pt-1.5]="heading == undefined"></tsl-grid-label>
+  @for (headerItem of headerItemRefs; track headerItem; let first = $first; let last = $last) {
+    <tsl-grid-label
+      [templateRef]="headerItem?.templateRef"
+      [label]="headerItem?.label"
+      [enum]="headerItem?.enum"
+      class="px-2 pb-1.5 bg-neutral-300 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+      [class.pt-1.5]="heading == undefined" />
+  }
 </ng-template>

@@ -1,5 +1,5 @@
 import { CdkOverlayOrigin, OverlayModule } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, ViewEncapsulation, computed, contentChildren, forwardRef, inject, model } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, ViewEncapsulation, computed, contentChildren, effect, forwardRef, inject, model } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { DynamicTextPipe, LocalizePipe } from '@tstdl/angular';
@@ -21,6 +21,7 @@ import { SelectOptionComponent } from './select-option/select-option.component';
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => SelectComponent), multi: true }
   ],
   host: {
+    class: 'tsl-tw',
     '[attr.disabled]': '(disabled()?.toString() == "true") ? true : null'
   }
 })
@@ -64,8 +65,20 @@ export class SelectComponent<T> implements ControlValueAccessor {
     this.#elementRef.nativeElement.id = id;
   }
 
+  constructor() {
+    effect(() => {
+      if (this.disabled()) {
+        this.open.set(false);
+      }
+    });
+  }
+
   @HostListener('click')
   onClick(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     let isOpen = this.open();
 
     if (isOpen) {
@@ -76,6 +89,10 @@ export class SelectComponent<T> implements ControlValueAccessor {
   }
 
   toggle(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     this.open.update((open) => !open);
   }
 

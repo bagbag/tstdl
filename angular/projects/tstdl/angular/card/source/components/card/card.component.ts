@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, contentChildren, input } from '@angular/core';
 import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, fadeInOutAnimation } from '@tstdl/angular';
 import type { Record } from '@tstdl/base/types';
@@ -8,7 +8,7 @@ import { CardActionDirective, CardBodyDirective, CardFooterDirective, CardHeader
   selector: 'tsl-card, [tslCard]',
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
-  imports: [CommonModule, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent],
+  imports: [NgClass, TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   animations: [
     fadeInOutAnimation({ duration: 100 })

@@ -1,48 +1,63 @@
-<div *ngIf="loading()" @fadeInOut class="absolute top-0 inset-x-0">
-  <tsl-indeterminate-progress-bar></tsl-indeterminate-progress-bar>
-</div>
-
-<div *ngIf="hasHeader()" class="flex flex-wrap gap-2" [ngClass]="headerOuterContainerClass()">
-  <ng-content select="[tslCardPreHeader]"></ng-content>
-
-  <div *ngIf="(headers().length + subHeaders().length) > 0" class="flex-grow" [ngClass]="headerContainerClass()">
-    <div *ngIf="headers().length > 0" class="contents text-xl font-medium">
-      <ng-content select="[tslCardHeader]"></ng-content>
-    </div>
-
-    <div *ngIf="subHeaders().length > 0" class="contents text-sm text-neutral-800 dark:text-neutral-200">
-      <ng-content select="[tslCardSubHeader]"></ng-content>
-    </div>
+@if (loading()) {
+  <div @fadeInOut class="absolute top-0 inset-x-0">
+    <tsl-indeterminate-progress-bar></tsl-indeterminate-progress-bar>
   </div>
+}
 
-  <ng-content select="[tslCardPostHeader]"></ng-content>
-</div>
-
-<div *ngIf="showHeaderSeparator()" class="w-12 h-[2px] ml-3 border-t-2"></div>
-
-<div *ngIf="hasBody()" class="grow grid gap-4 min-h-0">
-  <ng-content select="[tslCardBody]"></ng-content>
-</div>
-
-<tsl-colored-progressbar *ngIf="progress() != undefined"
-                         class="w-auto -mx-6 -mb-4 mt-4 !h-[2px]"
-                         [progress]="progress()"></tsl-colored-progressbar>
-
-<div *ngIf="hasFooter()" class="relative -mx-6 -mb-5 px-6 py-3 border-solid"
-     [class.bg-neutral-100]="footerBackground()"
-     [class.dark:bg-neutral-700]="footerBackground()"
-     [class.mt-4]="(progress() == undefined) && (hasHeader() || hasBody())"
-     [class.border-t-2]="showFooterSeparator()">
-  <ng-content select="[tslCardFooter]"></ng-content>
-
-  <div *ngIf="hasAction()" class="grid grid-cols-[auto_auto] gap-2">
-    <div class="empty:hidden flex gap-2 flex-wrap content-end">
-      <ng-content #content select="[tslCardAction][slot=left]"></ng-content>
-    </div>
-    <div class="empty:hidden flex gap-2 flex-wrap justify-end content-end col-start-2">
-      <ng-content select="[tslCardAction]"></ng-content>
-    </div>
+@if (hasHeader()) {
+  <div class="flex flex-wrap gap-2" [ngClass]="headerOuterContainerClass()">
+    <ng-content select="[tslCardPreHeader]"></ng-content>
+    @if (headers().length + subHeaders().length > 0) {
+      <div class="flex-grow" [ngClass]="headerContainerClass()">
+        @if (headers().length > 0) {
+          <div class="contents text-xl font-medium">
+            <ng-content select="[tslCardHeader]"></ng-content>
+          </div>
+        }
+        @if (subHeaders().length > 0) {
+          <div class="contents text-sm text-neutral-800 dark:text-neutral-200">
+            <ng-content select="[tslCardSubHeader]"></ng-content>
+          </div>
+        }
+      </div>
+    }
+    <ng-content select="[tslCardPostHeader]"></ng-content>
   </div>
-</div>
+}
+
+@if (showHeaderSeparator()) {
+  <div class="w-12 h-[2px] ml-3 border-t-2"></div>
+}
+
+@if (hasBody()) {
+  <div class="grow grid gap-4 min-h-0">
+    <ng-content select="[tslCardBody]"></ng-content>
+  </div>
+}
+
+@if (progress() != undefined) {
+  <tsl-colored-progressbar class="w-auto -mx-6 -mb-4 mt-4 !h-[2px]" [progress]="progress()" />
+}
+
+@if (hasFooter()) {
+  <div
+    class="relative -mx-6 -mb-5 px-6 py-3 border-solid"
+    [class.bg-neutral-100]="footerBackground()"
+    [class.dark:bg-neutral-700]="footerBackground()"
+    [class.mt-4]="progress() == undefined && (hasHeader() || hasBody())"
+    [class.border-t-2]="showFooterSeparator()">
+    <ng-content select="[tslCardFooter]"></ng-content>
+    @if (hasAction()) {
+      <div class="grid grid-cols-[auto_auto] gap-2">
+        <div class="empty:hidden flex gap-2 flex-wrap content-end">
+          <ng-content #content select="[tslCardAction][slot=left]"></ng-content>
+        </div>
+        <div class="empty:hidden flex gap-2 flex-wrap justify-end content-end col-start-2">
+          <ng-content select="[tslCardAction]"></ng-content>
+        </div>
+      </div>
+    }
+  </div>
+}
 
 <ng-content></ng-content>

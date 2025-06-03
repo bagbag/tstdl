@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, input, signal, untracked, ViewEncapsulation } from '@angular/core';
 import { DateTimeLocalePipe, LocalizeEnumPipe } from '@tstdl/angular';
 import { enterAnimation } from '@tstdl/angular/animations';
@@ -7,9 +6,9 @@ import { ButtonComponent } from '@tstdl/angular/button';
 import { IconComponent, type IconName } from '@tstdl/angular/icon';
 import { DocumentWorkflowFailReason, DocumentWorkflowState, DocumentWorkflowStep, type EnrichedDocument } from '@tstdl/base/document-management';
 import { dateTimeNumeric } from '@tstdl/base/formats';
-
 import { enumValues } from '@tstdl/base/utils';
 import { fromEntries } from '@tstdl/base/utils/object';
+
 import type { DocumentManagementContext } from '../../context';
 
 const workflowStateColors = {
@@ -43,12 +42,15 @@ const workflowSteps = enumValues(DocumentWorkflowStep);
 
 @Component({
   selector: 'tsl-document-state',
-  imports: [NgClass, LocalizeEnumPipe, DateTimeLocalePipe, BadgeComponent, IconComponent, ButtonComponent],
+  imports: [LocalizeEnumPipe, DateTimeLocalePipe, BadgeComponent, IconComponent, ButtonComponent],
   templateUrl: './document-state.component.html',
   styleUrl: './document-state.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  animations: [enterAnimation()]
+  animations: [enterAnimation()],
+  host: {
+    class: 'tsl-tw',
+  },
 })
 export class DocumentStateComponent {
   readonly context = input.required<DocumentManagementContext>();

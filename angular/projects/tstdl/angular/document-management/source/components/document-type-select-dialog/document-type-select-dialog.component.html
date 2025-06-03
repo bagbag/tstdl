@@ -1,0 +1,66 @@
+<div class="feature-xl bg-neutral-100 dark:bg-neutral-800 border-2 rounded-md overflow-hidden">
+  <div class="flex justify-between items-center p-2 border-b-2 bg-white/30 dark:bg-neutral-900/30">
+    <h2 class="text-lg font-semibold">Dokumententyp auswählen</h2>
+
+    <div class="flex gap-4">
+      <tsl-input-group>
+        <label tslInputGroupLabel>Filter</label>
+        <input tslInput [(ngModel)]="searchFilter" />
+      </tsl-input-group>
+
+      <button tslButton design="icon" (click)="close()">
+        <tsl-icon icon="x-lg"></tsl-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex gap-2 h-[50rem] px-2 overflow-hidden">
+    @for (layer of filteredLayers(); track index; let index = $index) {
+      <div class="border-r-2 py-2 pr-2 overflow-y-auto">
+        <div class="mb-2 font-semibold">Ebene {{ index + 1 }}</div>
+
+        <div class="h-0 max-h-0 overflow-hidden pointer-events-none" inert>
+          @for (item of layer.irrelevant; track item.category.id) {
+            <button tslButton design="outline" class="block invisible">{{ item.category.label }}</button>
+          }
+        </div>
+
+        <div class="space-y-2 overflow-hidden">
+          @for (item of layer.relevant; track item.category.id) {
+            <div @enter>
+              <button tslButton [design]="item.highlight ? 'flat' : 'outline'" [color]="context.categoryColors()[item.category.id] ?? 'red'" class="block" (click)="selectCategory(item.category)">
+                {{ item.category.label }}
+              </button>
+            </div>
+          } @empty {
+            <div @enter class="text-neutral-600 dark:text-neutral-300">Keine Kategorien</div>
+          }
+        </div>
+      </div>
+    }
+
+    <div class="overflow-y-auto py-2">
+      <div class="mb-2 font-semibold">Dokumententypen</div>
+
+      <div class="h-0 max-h-0 overflow-hidden pointer-events-none" inert>
+        @for (type of context.data()?.types; track type.id) {
+          <button tslButton design="outline" class="block invisible">{{ type.label }}</button>
+        }
+      </div>
+
+      <div class="space-y-2">
+        @for (type of types(); track type.id) {
+          <div @enter>
+            <button tslButton [design]="type == selection ? 'flat' : 'outline'" [color]="context.categoryColors()[type.category.id] ?? 'red'" class="block" (click)="selectType(type)">
+              {{ type.label }}
+            </button>
+          </div>
+        }
+      </div>
+
+      @if (types().length == 0) {
+        <div class="text-neutral-600 dark:text-neutral-300">Keine Dokumententypen gefunden.</div>
+      }
+    </div>
+  </div>
+</div>

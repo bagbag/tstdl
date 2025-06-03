@@ -12,7 +12,7 @@ import { enterAnimation } from '@tstdl/angular/animations';
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   animations: [enterAnimation({ timing: '100ms ease-in-out', scale: 0.9, opacity: true, height: false })],
-  hostDirectives: [CdkMenu]
+  hostDirectives: [CdkMenu],
 })
 export class TslMenu {
   @HostBinding('@enter')

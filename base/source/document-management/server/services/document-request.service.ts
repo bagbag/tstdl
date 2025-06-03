@@ -2,6 +2,7 @@ import { count, isNotNull as dbIsNotNull, isNull as dbIsNull, eq, inArray, sql }
 
 import type { RequestStats } from '#/document-management/service-models/index.js';
 import { BadRequestError } from '#/errors/index.js';
+import { inject } from '#/injector/inject.js';
 import type { NewEntity } from '#/orm/index.js';
 import { Transactional, injectRepository } from '#/orm/server/index.js';
 import type { OneOrMany } from '#/types.js';
@@ -9,6 +10,7 @@ import { toArray } from '#/utils/array/index.js';
 import { assertDefinedPass, isNotNull } from '#/utils/type-guards.js';
 import { DocumentApproval, DocumentCollectionAssignment, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate } from '../../models/index.js';
 import { document, documentRequest, documentRequestCollectionAssignment } from '../schemas.js';
+import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
 @DocumentManagementSingleton()
@@ -18,6 +20,7 @@ export class DocumentRequestService extends Transactional {
   readonly #documentRequestTemplateRepository = injectRepository(DocumentRequestTemplate);
   readonly #documentRequestsTemplateRepository = injectRepository(DocumentRequestsTemplate);
   readonly #documentCollectionAssignmentRepository = injectRepository(DocumentCollectionAssignment);
+  readonly #observationService = inject(DocumentManagementObservationService);
 
   async getRequestStats(collectionIds: OneOrMany<string>): Promise<RequestStats> {
     const relevantRequests = this.session.$with('relevant_requests').as(
@@ -88,6 +91,8 @@ export class DocumentRequestService extends Transactional {
       const newDocumentRequestCollectionAssignments = collectionIds.map((collectionId): NewEntity<DocumentRequestCollectionAssignment> => ({ requestId: request.id, collectionId }));
       await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).insertMany(newDocumentRequestCollectionAssignments);
 
+      this.#observationService.collectionChange(collectionIds, tx);
+
       return request;
     });
   }
@@ -101,6 +106,7 @@ export class DocumentRequestService extends Transactional {
       }
 
       await this.#documentRequestRepository.withTransaction(tx).update(id, update);
+      this.#observationService.requestChange(id, tx);
     });
   }
 
@@ -114,6 +120,7 @@ export class DocumentRequestService extends Transactional {
 
       await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).deleteManyByQuery({ requestId: id });
       await this.#documentRequestRepository.withTransaction(tx).delete(id);
+      this.#observationService.requestChange(id, tx);
     });
   }
 
@@ -126,6 +133,7 @@ export class DocumentRequestService extends Transactional {
       }
 
       await this.#documentRequestRepository.withTransaction(tx).update(requestId, { documentId });
+      this.#observationService.requestChange(requestId, tx);
     });
   }
 
@@ -161,6 +169,7 @@ export class DocumentRequestService extends Transactional {
 
       await this.#documentCollectionAssignmentRepository.withTransaction(tx).insertMany(links);
       await this.#documentRequestRepository.withTransaction(tx).update(requestId, { state: DocumentRequestState.Fulfilled });
+      this.#observationService.requestChange(requestId, tx);
     });
   }
 }

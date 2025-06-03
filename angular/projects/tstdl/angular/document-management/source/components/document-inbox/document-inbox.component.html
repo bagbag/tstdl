@@ -3,20 +3,26 @@
 } @else {
   <div class="grid grid-cols-[1fr,auto] gap-x-2 gap-y-4">
     @for (document of pendingDocuments(); track document.id) {
-      <tsl-document-inbox-document
-        @enter
-        [context]="context()"
-        [document]="document"
-        (click)="openDocument(document.id)"
-        class="hover:cursor-pointer bg-neutral-100 dark:bg-neutral-800 hover:outline outline-2 outline-offset-4 outline-accent-600 dark:outline-accent-400 shadow rounded-r-none" />
-
-      <div class="relative w-96 h-full">
-        <tsl-document-state
+      @defer (on viewport; on idle) {
+        <tsl-document-inbox-document
           @enter
+          [@.disabled]="disableEnterAnimation()"
           [context]="context()"
           [document]="document"
-          class="absolute inset-0 bg-neutral-100 dark:bg-neutral-800 border border-neutral-500/25 shadow rounded-l-none"></tsl-document-state>
-      </div>
+          (click)="openDocument(document.id)"
+          class="hover:cursor-pointer bg-neutral-100 dark:bg-neutral-800 hover:outline outline-2 outline-offset-4 outline-accent-600 dark:outline-accent-400 shadow rounded-r-none" />
+
+        <div class="relative w-96 h-full">
+          <tsl-document-state
+            @enter
+            [@.disabled]="disableEnterAnimation()"
+            [context]="context()"
+            [document]="document"
+            class="absolute inset-0 bg-neutral-100 dark:bg-neutral-800 border border-neutral-500/25 shadow rounded-l-none"></tsl-document-state>
+        </div>
+      } @placeholder {
+        <div class="col-span-2 h-64"></div>
+      }
     }
   </div>
 

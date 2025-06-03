@@ -1,11 +1,11 @@
-<ng-container *ngIf="templateRef" [ngTemplateOutlet]="templateRef"></ng-container>
+@if (templateRef) {
+  <ng-container [ngTemplateOutlet]="templateRef" />
+}
 
-<ng-container *ngIf="label != undefined; else enumLabel">
-  {{ label | dynamicText }} {{ colon ? ':' : '' }}
-</ng-container>
-
-<ng-template #enumLabel>
-  <ng-container *ngIf="enum">
-    {{ enum | localizeEnum }} {{ colon ? ':' : '' }}
-  </ng-container>
-</ng-template>
+@if (label != undefined) {
+  {{ label | dynamicText }} {{ colon ? ":" : "" }}
+} @else {
+  @if (enum) {
+    {{ enum | localizeEnum }} {{ colon ? ":" : "" }}
+  }
+}

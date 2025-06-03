@@ -39,8 +39,8 @@ export class Document extends Entity {
   @StringProperty({ nullable: true })
   summary: string | null;
 
-  @Array(string(), { nullable: true })
-  tags: string[] | null;
+  @Array(string())
+  tags: string[];
 
   @Enumeration(DocumentApproval)
   approval: DocumentApproval;

@@ -1,4 +1,4 @@
-import { NgIf, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import type { TemplateRef } from '@angular/core';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
 import { DynamicTextPipe, LocalizeEnumPipe } from '@tstdl/angular';
@@ -7,7 +7,7 @@ import type { Enumeration } from '@tstdl/base/types';
 
 @Component({
   selector: 'tsl-grid-label',
-  imports: [NgIf, NgTemplateOutlet, DynamicTextPipe, LocalizeEnumPipe],
+  imports: [NgTemplateOutlet, DynamicTextPipe, LocalizeEnumPipe],
   templateUrl: './grid-label.component.html',
   styleUrls: ['./grid-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.Default,

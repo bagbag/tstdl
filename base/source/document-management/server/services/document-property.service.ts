@@ -1,6 +1,7 @@
 import { and, isNotNull as drizzleIsNotNull, eq, inArray } from 'drizzle-orm';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
+import { inject } from '#/injector/index.js';
 import { autoAlias, coalesce, getEntityMap, toJsonb, type NewEntity } from '#/orm/index.js';
 import { Transactional } from '#/orm/server/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
@@ -8,8 +9,9 @@ import type { OneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertBooleanPass, assertDefinedPass, assertNumberPass, assertStringPass, isBoolean, isNotNull, isNull, isNumber, isString } from '#/utils/type-guards.js';
 import { DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentTypeProperty } from '../../models/index.js';
-import type { DocumentPropertyValueView, SetDocumentPropertyParameters } from '../../service-models/index.js';
+import type { DocumentPropertyValueView, DocumentPropertyView, SetDocumentPropertyParameters } from '../../service-models/index.js';
 import { document, documentProperty, documentPropertyValue, documentType, documentTypeProperty } from '../schemas.js';
+import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { enumTypeKey } from './enum-type-key.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
@@ -26,6 +28,7 @@ export class DocumentPropertyService extends Transactional {
   readonly #documentPropertyRepository = injectRepository(DocumentProperty);
   readonly #documentPropertyValueRepository = injectRepository(DocumentPropertyValue);
   readonly #documentTypePropertyRepository = injectRepository(DocumentTypeProperty);
+  readonly #observationService = inject(DocumentManagementObservationService);
 
   readonly repository = injectRepository(DocumentProperty);
 
@@ -49,6 +52,24 @@ export class DocumentPropertyService extends Transactional {
     .innerJoin(documentProperty, eq(documentProperty.id, documentTypeProperty.propertyId))
     .leftJoin(documentPropertyValue, and(eq(documentPropertyValue.documentId, document.id), eq(documentPropertyValue.propertyId, documentProperty.id)))
   );
+
+  async loadViews(): Promise<DocumentPropertyView[]> {
+    const properties = await this.#documentPropertyRepository.loadAll();
+    const typeProperties = await this.#documentTypePropertyRepository.loadAll();
+
+    return properties.map((property) => {
+      const typeIds = typeProperties
+        .filter((typeProperty) => typeProperty.propertyId == property.id)
+        .map((typeProperty) => typeProperty.typeId);
+
+      return {
+        id: property.id,
+        label: property.label,
+        dataType: property.dataType,
+        typeIds,
+      };
+    });
+  }
 
   async createProperty(label: string, dataType: DocumentPropertyDataType, enumKey?: string): Promise<DocumentProperty> {
     return await this.#documentPropertyRepository.insert({ label, dataType, metadata: { attributes: { [enumTypeKey]: enumKey } } });
@@ -111,6 +132,8 @@ export class DocumentPropertyService extends Transactional {
 
       await this.#documentPropertyValueRepository.withTransaction(tx).hardDeleteManyByQuery({ documentId, propertyId: { $in: deletePropertyIds } });
       await this.#documentPropertyValueRepository.withTransaction(tx).upsertMany(['documentId', 'propertyId'], upserts);
+
+      this.#observationService.documentChange(documentId, tx);
     });
   }
 }

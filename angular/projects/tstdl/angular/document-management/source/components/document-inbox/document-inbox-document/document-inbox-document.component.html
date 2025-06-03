@@ -1,28 +1,30 @@
 @let currentWorkflow = document().workflows[0];
-@let categoryColor = document().type ? (context().categoryColors()[document().type!.category.rootCategory.id] ?? "red") : "neutral";
+@let categoryColor = document().type ? (context().categoryColors()[document().type!.category.id] ?? 'red') : 'neutral';
 
 <div class="relative w-8">
   <tsl-badge [color]="categoryColor" class="category-badge absolute inset-0 justify-center px-1.5 py-4 rounded-none border-r-2 border-r-current">
     @if (document().type?.category?.label; as label) {
-      {{ label }}
+      <span class="truncate">{{ label }}</span>
     }
   </tsl-badge>
 </div>
 
 <div class="grid grid-rows-[repeat(3,auto)] gap-4 p-4 pb-2">
-  <div class="flex justify-between items-start">
-    <div class="shrink">
+  <div class="grid grid-cols-[1fr,auto] gap-2 items-start truncate">
+    <div class="truncate">
       @if (document().title; as title) {
-        <div class="font-semibold">{{ document().title }}</div>
+        <div class="font-semibold truncate">{{ document().title }}</div>
       }
 
       @if (document().subtitle; as subtitle) {
-        <div class="text-sm">{{ subtitle }}</div>
+        <div class="text-sm truncate">{{ subtitle }}</div>
       }
     </div>
 
     @if (document().type; as type) {
-      <tsl-badge design="flat-with-outline" color="lime">{{ type.label }}</tsl-badge>
+      <tsl-badge design="flat-with-outline" color="lime">
+        <span class="truncate">{{ type.label }}</span>
+      </tsl-badge>
     }
   </div>
 
@@ -37,22 +39,22 @@
     <div class="opacity-80 font-semibold text-sm">Akten</div>
     <div class="flex gap-2">
       @for (collection of document().assignments.collections; track collection.collection.id) {
-        <div class="opacity-70">
-          <tsl-icon icon="folder" size="xs" class="inline-block mr-1"></tsl-icon>
+        <div class="flex items-center gap-1 opacity-70">
+          <tsl-icon icon="folder" size="xs"></tsl-icon>
           <span>{{ collection.collection.name }}</span>
         </div>
+      } @empty {
+        <span class="opacity-70">Keine Akten zugeordnet</span>
       }
-
-      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
-      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
-      <tsl-badge design="flat-with-outline" color="amber" size="small">Erika Musterfrau</tsl-badge>
     </div>
   </div>
 
   <div class="overflow-hidden">
     <div class="flex gap-2 w-full">
       @for (tag of document().tags; track tag) {
-        <tsl-badge design="flat-with-outline" color="emerald" size="small">{{ tag }}</tsl-badge>
+        <tsl-badge design="flat-with-outline" color="emerald" size="small">
+          <span class="truncate">{{ tag }}</span>
+        </tsl-badge>
       }
     </div>
 
@@ -78,7 +80,7 @@
 
           @if (document().pages; as pages) {
             <tsl-badge design="flat-with-outline" size="small" pill="true" dot="true" color="emerald" class="text-nowrap">
-              <span>{{ pages }} Seite{{ pages > 1 ? "n" : "" }}</span>
+              <span>{{ pages }} Seite{{ pages > 1 ? 'n' : '' }}</span>
             </tsl-badge>
           }
         </div>
@@ -89,12 +91,16 @@
 
 <div class="relative inset-0 rounded-r-[inherit] overflow-clip">
   <div class="absolute inset-0 border-l-2 rounded-r-[inherit]">
-    <img [src]="previewUrl()" alt="Document preview" class="w-full h-full block object-cover object-top dark:filter dark:opacity-85" />
+    @defer (on viewport) {
+      <img [src]="previewUrl()" alt="Document preview" class="w-full h-full block object-cover object-top dark:filter dark:opacity-85" />
+    } @placeholder {
+      <div class="w-full h-full"></div>
+    }
   </div>
 </div>
 
-@if ((currentWorkflow?.step == "classification" || currentWorkflow?.step == "extraction") && (currentWorkflow?.state == "pending" || currentWorkflow?.state == "running")) {
+@if ((currentWorkflow?.step == 'classification' || currentWorkflow?.step == 'extraction') && (currentWorkflow?.state == 'pending' || currentWorkflow?.state == 'running')) {
   <div class="absolute inset-0 flex justify-center items-center text-neutral-50 bg-black/40 animate-pulse">
-    {{ currentWorkflow?.step == "classification" ? "Klassifikation..." : "Extraktion..." }}
+    {{ currentWorkflow?.step == 'classification' ? 'Klassifikation...' : 'Extraktion...' }}
   </div>
 }

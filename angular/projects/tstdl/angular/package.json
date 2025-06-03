@@ -13,7 +13,7 @@
     "chroma-js": "^2.6",
     "luxon": "^3.6",
     "marked": "^15.0",
-    "ngx-extended-pdf-viewer": "23.1"
+    "ngx-extended-pdf-viewer": "23.3"
   },
   "sideEffects": false
 }

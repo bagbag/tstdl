@@ -1,6 +1,5 @@
-import { DOCUMENT as ANGULAR_DOCUMENT } from '@angular/common';
 import type { CreateEffectOptions, Signal } from '@angular/core';
-import { Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, runInInjectionContext, signal, untracked } from '@angular/core';
+import { DOCUMENT as ANGULAR_DOCUMENT, Injectable, Injector, assertInInjectionContext, computed, effect, inject, isDevMode, isSignal, runInInjectionContext, signal, untracked } from '@angular/core';
 import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';

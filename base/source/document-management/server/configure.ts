@@ -1,8 +1,7 @@
 import { Injector } from '#/injector/injector.js';
+import { DocumentManagementAuthorizationService } from '../authorization/document-management-authorization.service.js';
 import { DocumentManagementConfig } from './module.js';
-import { DocumentManagementAncillaryService } from './services/document-management-ancillary.service.js';
-import { DocumentManagementAuthorizationService } from './services/document-management-authorization.service.js';
-
+import { DocumentManagementAncillaryService } from './services/index.js';
 
 export function configureDocumentManagement(config: DocumentManagementConfig): void {
   Injector.register(DocumentManagementConfig, { useValue: config });

@@ -10,9 +10,14 @@ export class EnrichedDocumentCollection implements TypedOmit<DocumentCollectionV
   readonly #data: EnrichedDocumentManagementData;
 
   readonly id: string;
+  readonly parentId: string | null;
   readonly name: string;
   readonly group: string | null;
-  readonly parent: EnrichedDocumentCollection | null;
+
+  @Memoize()
+  get parent(): EnrichedDocumentCollection | null {
+    return this.#data.collections.find((collection) => collection.id == this.parentId) ?? null;
+  }
 
   @Memoize()
   get children(): EnrichedDocumentCollection[] {
@@ -54,12 +59,12 @@ export class EnrichedDocumentCollection implements TypedOmit<DocumentCollectionV
     return mergeRequestsStats(this.children.map((child) => child.requestsStatsDeep));
   }
 
-  constructor(data: EnrichedDocumentManagementData, collectionView: DocumentCollectionView, parent: EnrichedDocumentCollection | null) {
+  constructor(data: EnrichedDocumentManagementData, collectionView: DocumentCollectionView) {
     this.#data = data;
 
     this.id = collectionView.id;
+    this.parentId = collectionView.parentId;
     this.name = collectionView.name;
     this.group = collectionView.group;
-    this.parent = parent;
   }
 }

@@ -47,14 +47,14 @@
       (click)="selectedWorkflowStep.set(step)">
       <tsl-icon [icon]="stepIcons[step]"></tsl-icon>
 
+      @if (state != 'none') {
+        <tsl-badge design="flat-with-outline" size="small" dot="true" [color]="stateColors[state]" class="absolute justify-center w-4 h-4 p-0 top-1 right-1"></tsl-badge>
+      }
+
       @if (state == DocumentWorkflowState.Running) {
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="loader"></div>
         </div>
-      }
-
-      @if (state != "none") {
-        <tsl-badge design="flat-with-outline" size="small" dot="true" [color]="stateColors[state]" class="absolute justify-center w-4 h-4 p-0 top-1 right-1"></tsl-badge>
       }
     </button>
 

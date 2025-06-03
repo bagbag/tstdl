@@ -17,6 +17,9 @@ import { PropertyValueComponent } from '../../property-value/property-value.comp
   styleUrl: './document-inbox-document.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'tsl-tw',
+  },
 })
 export class DocumentInboxDocumentComponent {
   readonly context = input.required<DocumentManagementContext>();

@@ -5,6 +5,7 @@ import { createErrorResponse, type ApiController, type ApiRequestContext, type A
 import { apiController } from '#/api/server/index.js';
 import { CancellationSignal } from '#/cancellation/token.js';
 import { documentManagementApiDefinition, type DocumentManagementApiDefinition } from '#/document-management/api/index.js';
+import { DocumentManagementAuthorizationService } from '#/document-management/authorization/index.js';
 import { DocumentRequestCollectionAssignment } from '#/document-management/models/document-request-collection-assignment.model.js';
 import type { DocumentManagementData } from '#/document-management/service-models/document-management.view-model.js';
 import { ForbiddenError, NotImplementedError } from '#/errors/index.js';
@@ -17,7 +18,7 @@ import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import { toArray } from '#/utils/array/index.js';
 import { tryIgnoreAsync } from '#/utils/try-ignore.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
-import { DocumentCategoryTypeService, DocumentFileService, DocumentManagementAuthorizationService, DocumentManagementService, DocumentRequestService, DocumentService } from '../services/index.js';
+import { DocumentCategoryTypeService, DocumentFileService, DocumentManagementService, DocumentRequestService, DocumentService, DocumentWorkflowService } from '../services/index.js';
 
 const jsonDiffPatch = createDiffPatch({
   omitRemovedValues: true,
@@ -32,13 +33,14 @@ const jsonDiffPatch = createDiffPatch({
 
 @apiController(documentManagementApiDefinition)
 export class DocumentManagementApiController implements ApiController<DocumentManagementApiDefinition> {
+  readonly #documentManagementService = inject(DocumentManagementService);
   readonly #authorizationService = inject(DocumentManagementAuthorizationService);
   readonly #documentCategoryTypeService = inject(DocumentCategoryTypeService);
   readonly #documentFileService = inject(DocumentFileService);
-  readonly #documentManagementService = inject(DocumentManagementService);
   readonly #documentRequestService = inject(DocumentRequestService);
   readonly #documentRequestCollectionAssignmentRepository = injectRepository(DocumentRequestCollectionAssignment);
   readonly #documentService = inject(DocumentService);
+  readonly #workflowService = inject(DocumentWorkflowService);
   readonly #cancellationSignal = inject(CancellationSignal);
   readonly #logger = inject(Logger, DocumentManagementApiController.name);
 
@@ -125,7 +127,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
 
   async loadContent(context: ApiRequestContext<DocumentManagementApiDefinition, 'loadContent'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'loadContent'>> {
     const token = await context.getToken();
-    const allowed = await this.#authorizationService.canReadDocument(context.parameters.id, token);
+    const allowed = await this.canReadDocument(context.parameters.id, token);
 
     if (!allowed) {
       throw new ForbiddenError(`You are not allowed to load content for document ${context.parameters.id}.`);
@@ -138,7 +140,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
 
   async getContentUrl(context: ApiRequestContext<DocumentManagementApiDefinition, 'getContentUrl'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'getContentUrl'>> {
     const token = await context.getToken();
-    const allowed = await this.#authorizationService.canReadDocument(context.parameters.id, token);
+    const allowed = await this.canReadDocument(context.parameters.id, token);
 
     if (!allowed) {
       throw new ForbiddenError(`You are not allowed to get content URL for document ${context.parameters.id}.`);
@@ -149,7 +151,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
 
   async loadPreview(context: ApiRequestContext<DocumentManagementApiDefinition, 'loadPreview'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'loadPreview'>> {
     const token = await context.getToken();
-    const allowed = await this.#authorizationService.canReadDocument(context.parameters.id, token);
+    const allowed = await this.canReadDocument(context.parameters.id, token);
 
     if (!allowed) {
       throw new ForbiddenError(`You are not allowed to get content preview for document ${context.parameters.id}.`);
@@ -162,7 +164,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
 
   async getPreviewUrl(context: ApiRequestContext<DocumentManagementApiDefinition, 'getPreviewUrl'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'getPreviewUrl'>> {
     const token = await context.getToken();
-    const allowed = await this.#authorizationService.canReadDocument(context.parameters.id, token);
+    const allowed = await this.canReadDocument(context.parameters.id, token);
 
     if (!allowed) {
       throw new ForbiddenError(`You are not allowed to get content preview for document ${context.parameters.id}.`);
@@ -292,7 +294,58 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
     throw new NotImplementedError();
   }
 
-  async updateDocument(_context: ApiRequestContext<DocumentManagementApiDefinition, 'updateDocument'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'updateDocument'>> {
-    throw new NotImplementedError();
+  async updateDocument({ parameters, getToken }: ApiRequestContext<DocumentManagementApiDefinition, 'updateDocument'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'updateDocument'>> {
+    const token = await getToken();
+
+    const { id, ...update } = parameters;
+    await this.#documentService.update(id, update);
+
+    return 'ok';
+  }
+
+  async proceedDocumentWorkflow({ parameters, getToken }: ApiRequestContext<DocumentManagementApiDefinition, 'proceedDocumentWorkflow'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'proceedDocumentWorkflow'>> {
+    const token = await getToken();
+    const userId = await this.#authorizationService.getSubject(token);
+
+    const { id, ...update } = parameters;
+    await this.#workflowService.proceedWorkflow(id, userId);
+
+    return 'ok';
+  }
+
+  async testAuthorization({ parameters, getToken }: ApiRequestContext<DocumentManagementApiDefinition, 'testAuthorization'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'testAuthorization'>> {
+    const token = await getToken();
+
+    return await match(parameters)
+      .with({ type: 'canReadCollection' }, async (parameters) => await this.#authorizationService.canReadCollection(parameters.collectionId, token))
+      .with({ type: 'canCreateDocuments' }, async (parameters) => await this.#authorizationService.canCreateDocuments(parameters.collectionId, token))
+      .with({ type: 'canDeleteDocuments' }, async (parameters) => await this.#authorizationService.canDeleteDocuments(parameters.collectionId, token))
+      .with({ type: 'canAssignDocuments' }, async (parameters) => await this.#authorizationService.canAssignDocuments(parameters.collectionId, token))
+      .with({ type: 'canManageRequests' }, async (parameters) => await this.#authorizationService.canManageRequests(parameters.collectionId, token))
+      .with({ type: 'canUpdateDocument' }, async (parameters) => await this.#authorizationService.canUpdateDocument(parameters.documentId, token))
+      .with({ type: 'canApproveDocument' }, async (parameters) => await this.#authorizationService.canApproveDocument(parameters.documentId, token))
+      .with({ type: 'canRejectDocument' }, async (parameters) => await this.#authorizationService.canRejectDocument(parameters.documentId, token))
+      .with({ type: 'canProgressDocumentWorkflow' }, async (parameters) => await this.#authorizationService.canProgressDocumentWorkflow(parameters.documentId, token))
+      .with({ type: 'canManageCategoriesAndTypes' }, async () => await this.#authorizationService.canManageCategoriesAndTypes(token))
+      .with({ type: 'canReadDocumentRequestsTemplates' }, async () => await this.#authorizationService.canReadDocumentRequestsTemplates(token))
+      .with({ type: 'canManageDocumentRequestsTemplates' }, async () => await this.#authorizationService.canManageDocumentRequestsTemplates(token))
+      .with({ type: 'canManageValidationDefinitions' }, async () => await this.#authorizationService.canManageValidationDefinitions(token))
+      .otherwise(() => {
+        throw new NotImplementedError(`Authorization test for type ${parameters.type} is not implemented.`);
+      });
+  }
+
+  private async canReadDocument(documentId: string, token?: unknown): Promise<boolean> {
+    const relevantCollectionIds = await this.#documentManagementService.getRelevantDocumentCollectionIds(documentId);
+
+    for (const collectionId of relevantCollectionIds) {
+      const canReadCollection = await this.#authorizationService.canReadCollection(collectionId, token);
+
+      if (canReadCollection) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

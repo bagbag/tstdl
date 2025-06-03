@@ -1,6 +1,7 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
+import { hostClass } from '@tstdl/angular/host-class';
 import { assertUndefined } from '@tstdl/base/utils';
 
 export const badgeDesigns = ['flat', 'outline', 'flat-with-outline'] as const;
@@ -167,12 +168,9 @@ const dotColor: Record<BadgeColor, string> = {
     '[class.cursor-pointer]': 'interactive() && !disabled()',
     '[class.opacity-60]': '!active() && !disabled()',
     '[class.opacity-50]': 'disabled()',
-  },
-  hostDirectives: [NgClass],
+  }
 })
 export class BadgeComponent implements OnInit, OnDestroy {
-  readonly #ngClass = inject(NgClass);
-  readonly #changeDetector = inject(ChangeDetectorRef);
   readonly #ripple = inject(MatRipple);
 
   /** @deprecated Use `design` instead. */
@@ -190,7 +188,7 @@ export class BadgeComponent implements OnInit, OnDestroy {
 
   readonly dotColor = dotColor;
 
-  readonly classes = computed(() => {
+  readonly hostClass = hostClass(() => {
     const design = this.design();
     const color = this.color();
     const size = this.size();
@@ -218,11 +216,6 @@ export class BadgeComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    effect(() => {
-      this.#ngClass.ngClass = this.classes();
-      this.#changeDetector.markForCheck();
-    });
-
     effect(() => (this.#ripple.disabled = (!this.interactive() || this.disabled())));
 
     effect(() => assertUndefined(this.style(), 'The "style" input is deprecated and should not be used. Use "design" instead.'));

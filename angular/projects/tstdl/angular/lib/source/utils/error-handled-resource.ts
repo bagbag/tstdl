@@ -1,4 +1,4 @@
-import { effect, ErrorHandler, inject, resource, ResourceStatus, type ResourceOptions, type ResourceRef } from '@angular/core';
+import { effect, ErrorHandler, inject, resource, type ResourceOptions, type ResourceRef } from '@angular/core';
 import { isNotNullOrUndefined } from '@tstdl/base/utils';
 
 /**
@@ -10,21 +10,21 @@ function errorHandledResource<T, R>(options: ResourceOptions<T, R> & { defaultVa
 function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T | undefined>;
 function errorHandledResource<T, R>(options: ResourceOptions<T, R>): ResourceRef<T | undefined> {
   const errorHandler = inject(ErrorHandler);
-  const ref = resource(options);
+  const resourceRef = resource(options);
 
   effect(() => {
-    if (ref.status() != ResourceStatus.Error) {
+    if (resourceRef.status() != 'error') {
       return;
     }
 
-    const error = ref.error();
+    const error = resourceRef.error();
 
     if (isNotNullOrUndefined(error)) {
       errorHandler.handleError(error);
     }
   }, { injector: options.injector });
 
-  return ref;
+  return resourceRef;
 }
 
 export { errorHandledResource as resource };

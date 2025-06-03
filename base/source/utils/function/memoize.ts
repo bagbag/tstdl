@@ -2,7 +2,7 @@ import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { createAccessorDecorator } from '#/reflection/index.js';
 import type { Constructor } from '#/types.js';
-import { assertDefinedPass } from '../type-guards.js';
+import { assertDefinedPass, isDefined } from '../type-guards.js';
 
 export type MemoizeOptions = {
   /** Use WeakMap instead of Map for caching. Can be used with object parameters only */
@@ -85,6 +85,7 @@ export function Memoize() {
   return createAccessorDecorator({
     handler: (data) => {
       const getter = assertDefinedPass(data.descriptor.get, 'Memoize requires an getter for accessors.'); // eslint-disable-line @typescript-eslint/unbound-method
+      const setter = data.descriptor.set; // eslint-disable-line @typescript-eslint/unbound-method
 
       function cachedGetter(this: object) {
         if (cache.has(this)) {
@@ -97,7 +98,15 @@ export function Memoize() {
         return value; // eslint-disable-line @typescript-eslint/no-unsafe-return
       }
 
-      return { get: cachedGetter };
+      function cachedSetter(this: object, value: any) {
+        setter?.call(this, value);
+        cache.delete(this);
+      }
+
+      return {
+        get: cachedGetter,
+        set: isDefined(setter) ? cachedSetter : undefined,
+      };
     },
   });
 }

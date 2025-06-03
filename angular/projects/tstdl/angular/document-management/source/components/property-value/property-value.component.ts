@@ -10,7 +10,10 @@ import { dateShort, decimalFormat, integerFormat } from '@tstdl/base/formats';
   templateUrl: './property-value.component.html',
   styleUrl: './property-value.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  host: {
+    class: 'tsl-tw',
+  },
 })
 export class PropertyValueComponent {
   readonly property = input.required<DocumentPropertyValueView>();

@@ -22,6 +22,7 @@ import { desc, inArray } from 'drizzle-orm';
 import { documentWorkflow } from '../schemas.js';
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentManagementAiService } from './document-management-ai.service.js';
+import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentRequestService } from './document-request.service.js';
 import { DocumentService } from './document.service.js';
 import { DocumentManagementSingleton } from './singleton.js';
@@ -35,6 +36,7 @@ export class DocumentWorkflowService extends Transactional {
   readonly #documentRequestService = injectTransactional(DocumentRequestService);
   readonly #documentAssignmentTaskRepository = injectRepository(DocumentAssignmentTask);
   readonly #documentAssignmentScopeRepository = injectRepository(DocumentAssignmentScope);
+  readonly #observationService = inject(DocumentManagementObservationService);
   readonly #queue = inject(Queue<WorkflowJobData>, { name: 'DocumentWorkflow', processTimeout: 5 * 60 * 1000, maxTries: 3 });
   readonly #logger = inject(Logger, DocumentWorkflowService.name);
 
@@ -76,15 +78,15 @@ export class DocumentWorkflowService extends Transactional {
     await this.transaction(async (tx) => {
       const workflow = await this.withTransaction(tx).loadLatestWorkflow(documentId);
 
-      if (workflow.state != DocumentWorkflowState.Completed) {
-        throw new BadRequestError('Current workflow is not completed');
+      if (workflow.state != DocumentWorkflowState.Review) {
+        throw new BadRequestError('Current workflow is not in review state.');
       }
 
       if (isNotNull(workflow.completeUserId)) {
-        throw new BadRequestError('Latest workflow is already completed');
+        throw new BadRequestError('Latest workflow is already completed.');
       }
 
-      await this.repository.withTransaction(tx).update(workflow.id, { completeUserId: userId });
+      await this.repository.withTransaction(tx).update(workflow.id, { state: DocumentWorkflowState.Completed, completeUserId: userId });
 
       await match(workflow.step)
         .with(DocumentWorkflowStep.Classification, () => _throw(new BadRequestError('Proceeding from classification occurs automatically.')))
@@ -92,12 +94,16 @@ export class DocumentWorkflowService extends Transactional {
         .with(DocumentWorkflowStep.Assignment, async () => await this.withTransaction(tx).initiateWorkflow(documentId, DocumentWorkflowStep.Validation))
         .with(DocumentWorkflowStep.Validation, () => { /* nothing to do */ })
         .exhaustive();
+
+      this.#observationService.documentChange(workflow.id, tx);
     });
   }
 
   async initiateWorkflow(documentId: string, step: DocumentWorkflowStep): Promise<DocumentWorkflow> {
     const workflow = await this.repository.insert({ documentId, step, state: 'pending', failReason: null, completeTimestamp: null, completeUserId: null });
     await this.#queue.enqueue({ workflowId: workflow.id });
+
+    this.#observationService.documentChange(workflow.id, this.session);
 
     return workflow;
   }
@@ -106,6 +112,7 @@ export class DocumentWorkflowService extends Transactional {
   private async setWorkflowState(id: string, state: TypedExtract<DocumentWorkflowState, 'failed'>, reason: DocumentWorkflowFailReason): Promise<void>;
   private async setWorkflowState(id: string, state: DocumentWorkflowState, failReason: DocumentWorkflowFailReason | null = null): Promise<void> {
     await this.repository.update(id, { state, completeTimestamp: (state == DocumentWorkflowState.Completed) ? currentTimestamp() : undefined, failReason });
+    this.#observationService.workflowChange(id, this.session);
   }
 
   private async processWorkflowJob(job: Job<WorkflowJobData>): Promise<void> {
@@ -134,10 +141,11 @@ export class DocumentWorkflowService extends Transactional {
       }
     }
     catch (error) {
-      const isLastTry = job.tries == this.#queue.maxTries;
+      const isLastTry = job.tries >= this.#queue.maxTries;
 
       if (isLastTry) {
         await this.repository.update(workflow.id, { state: DocumentWorkflowState.Error });
+        this.#observationService.documentChange(workflow.id, this.session);
       }
 
       throw error;
@@ -147,6 +155,7 @@ export class DocumentWorkflowService extends Transactional {
   private async processClassificationWorkflow(workflow: DocumentWorkflow): Promise<void> {
     const typeId = await this.#documentManagementAiService.classifyDocumentType(workflow.documentId);
     await this.documentService.repository.update(workflow.documentId, { typeId, approval: DocumentApproval.Pending });
+    this.#observationService.documentChange(workflow.documentId, this.session);
   }
 
   private async processExtractionWorkflow(workflow: DocumentWorkflow): Promise<void> {

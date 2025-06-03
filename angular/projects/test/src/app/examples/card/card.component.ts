@@ -1,10 +1,9 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TstdlCardModule } from '@tstdl/angular/card';
 
 @Component({
   selector: 'app-card',
-  imports: [CommonModule, TstdlCardModule],
+  imports: [TstdlCardModule],
   templateUrl: './card.component.html',
   styleUrls: ['./card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

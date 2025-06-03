@@ -1,10 +1,10 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, computed, ErrorHandler, inject, input, signal, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ErrorHandler, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { DropDirective, fadeInOutAnimation } from '@tstdl/angular';
 import { enterAnimation } from '@tstdl/angular/animations';
 import { IconComponent } from '@tstdl/angular/icon';
 import { DocumentAssignmentTarget } from '@tstdl/base/document-management';
-import { isUndefined } from '@tstdl/base/utils';
+import { isDefined, isUndefined } from '@tstdl/base/utils';
 
 import type { DocumentManagementContext } from '../../context';
 import { DocumentDetailsComponent } from '../document-details/document-details.component';
@@ -23,13 +23,17 @@ type PendingUpload = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [DropDirective],
-  animations: [fadeInOutAnimation(), enterAnimation()]
+  animations: [fadeInOutAnimation(), enterAnimation()],
+  host: {
+    class: 'tsl-tw',
+  },
 })
 export class DocumentInboxComponent {
   readonly #dialog = inject(Dialog);
   readonly #errorHandler = inject(ErrorHandler);
 
   readonly drop = inject(DropDirective);
+  readonly disableEnterAnimation = signal(true);
 
   uploadsRunning = false;
 
@@ -40,6 +44,14 @@ export class DocumentInboxComponent {
 
   constructor() {
     this.drop.filesDropped.subscribe((files) => this.onFilesDropped(files));
+
+    let dataCounter = 0;
+    const effectRef = effect(() => {
+      if (isDefined(this.context().data()) && (++dataCounter >= 2)) {
+        this.disableEnterAnimation.set(false);
+        effectRef.destroy();
+      }
+    });
   }
 
   onFilesDropped(files: File[]): void {

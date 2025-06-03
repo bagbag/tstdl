@@ -18,7 +18,7 @@ export class EnrichedDocument implements TypedOmit<DocumentView, 'typeId' | 'ass
   readonly pages: number | null;
   readonly date: number | null;
   readonly summary: string | null;
-  readonly tags: string[] | null;
+  readonly tags: string[];
   readonly approval: DocumentApproval;
   readonly comment: string | null;
   readonly originalFileName: string | null;

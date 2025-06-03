@@ -1,26 +1,19 @@
 @layer tstdl.components {
   tsl-document-state {
-    @apply grid grid-cols-[1fr,auto] rounded-xl border border-neutral-500/25 overflow-y-auto overflow-clip;
+    @apply contain-strict grid grid-cols-[1fr,auto] rounded-xl border border-neutral-500/25 overflow-y-auto overflow-clip;
+
+    content-visibility: auto;
+    contain-intrinsic-size: 256px;
   }
 }
 
 .loader {
-  width: 40px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1.5px solid;
-  border-color: currentColor #0000;
-  animation: l1 1s infinite;
+  @apply w-10 aspect-square rounded-[50%] border-[1.5px] border-solid border-[currentColor_#0000];
+  animation: loader 1s infinite;
 }
 
-@keyframes l1 {
+@keyframes loader {
   to {
     transform: rotate(0.5turn);
-  }
-}
-
-@keyframes rotate {
-  100% {
-    transform: rotate(1turn);
   }
 }

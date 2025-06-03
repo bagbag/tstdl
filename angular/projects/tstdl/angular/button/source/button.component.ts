@@ -1,6 +1,6 @@
-import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, type OnDestroy, type OnInit, ViewEncapsulation, booleanAttribute, computed, effect, inject, input } from '@angular/core';
 import { MatRipple } from '@angular/material/core';
+import { hostClass } from '@tstdl/angular/host-class';
 import { resolveValueOrProvider } from '@tstdl/base/utils';
 import { fromEntries, objectEntries } from '@tstdl/base/utils/object';
 
@@ -18,16 +18,13 @@ export type ButtonColor = 'transparent' | 'white' | 'accent' | 'neutral' | 'ston
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   providers: [MatRipple],
-  hostDirectives: [NgClass],
   host: {
     '[attr.disabled]': 'disabledAttribute()'
   }
 })
 export class ButtonComponent implements OnInit, OnDestroy {
-  readonly #ngClass = inject(NgClass);
   readonly #ripple = inject(MatRipple);
   readonly #config = inject(TstdlButtonConfig, { optional: true });
-  readonly changeDetector = inject(ChangeDetectorRef);
 
   readonly design = input<ButtonDesign | null | undefined>(null);
   readonly color = input<ButtonColor | null | undefined>(null);
@@ -39,7 +36,7 @@ export class ButtonComponent implements OnInit, OnDestroy {
 
   readonly disabledAttribute = computed(() => this.disabled() ? true : null);
 
-  readonly classes = computed(() => {
+  readonly hostClass = hostClass(() => {
     const design = this.design() ?? resolveValueOrProvider(this.#config?.default?.design) ?? 'flat';
     const size = this.size() ?? resolveValueOrProvider(this.#config?.default?.size) ?? 'normal';
     const color = this.color() ?? resolveValueOrProvider(this.#config?.default?.color) ?? 'accent';
@@ -72,11 +69,6 @@ export class ButtonComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    effect(() => {
-      this.#ngClass.ngClass = this.classes();
-      this.changeDetector.markForCheck();
-    });
-
     effect(() => (this.#ripple.disabled = this.disabled()));
   }
 

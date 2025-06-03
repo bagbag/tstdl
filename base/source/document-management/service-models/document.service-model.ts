@@ -33,7 +33,7 @@ export const createDocumentParametersSchema = assign(
 
 export const updateDocumentParametersSchema = assign(
   pick(Document, ['id']),
-  partial(omit(Document, ['id', 'metadata'])),
+  partial(pick(Document, ['title', 'subtitle', 'date', 'tags', 'comment', 'typeId'])),
   object({ properties: optional(array(setDocumentPropertyParametersSchema)) }),
   metadataParameterObjectSchema,
 );

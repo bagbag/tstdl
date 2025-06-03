@@ -1,8 +1,14 @@
 <tsl-card headerContainerClass="mr-6" [headerSeparator]="headerSeparator" [footerSeparator]="footerSeparator" [footerBackground]="footerBackground" [loading]="loading">
-  <div tslCardPreHeader *ngIf="prePostHeader" class="w-auto flex justify-center items-center self-center rounded-full aspect-square p-2 bg-sky-300 text-2xl leading-[0]">✓</div>
+  @if (prePostHeader) {
+    <div tslCardPreHeader class="w-auto flex justify-center items-center self-center rounded-full aspect-square p-2 bg-sky-300 text-2xl leading-[0]">✓</div>
+  }
+
   <div tslCardHeader>Card</div>
   <div tslCardSubHeader>Subheader</div>
-  <div tslCardPostHeader *ngIf="prePostHeader" class="px-3 py-1 bg-green-500 rounded-full self-start" [class.mr-10]="closeButton">12 Monate</div>
+
+  @if (prePostHeader) {
+    <div tslCardPostHeader class="px-3 py-1 bg-green-500 rounded-full self-start" [class.mr-10]="closeButton">12 Monate</div>
+  }
 
   <div tslCardBody>Body</div>
 
@@ -15,5 +21,7 @@
   <button tslCardAction (click)="closeButton = !closeButton">Toggle close button</button>
   <button tslCardAction (click)="prePostHeader = !prePostHeader">Toggle pre/post header</button>
 
-  <div *ngIf="closeButton" class="flex justify-center items-center absolute top-0 right-0 w-10 h-10 rounded-bl-lg bg-green-300">✗</div>
+  @if (closeButton) {
+    <div class="flex justify-center items-center absolute top-0 right-0 w-10 h-10 rounded-bl-lg bg-green-300">✗</div>
+  }
 </tsl-card>

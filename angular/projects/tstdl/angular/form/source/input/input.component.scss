@@ -8,7 +8,7 @@
 
     &.input-text {
       @apply block w-full px-2;
-      @apply bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100;
+      @apply bg-white dark:bg-neutral-800/50 text-neutral-900 dark:text-neutral-100;
 
       :not(tsl-input-group) > & {
         @apply min-h-[2.5em] rounded-md outline-1 outline-neutral-300 dark:outline-neutral-500 border-none;
@@ -20,7 +20,7 @@
     }
 
     &[readonly] {
-      @apply bg-white/80 dark:bg-neutral-700 cursor-default;
+      @apply bg-white/80 dark:bg-neutral-800/80 cursor-default;
     }
   }
 }

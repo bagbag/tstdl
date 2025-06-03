@@ -51,12 +51,12 @@ export class EnrichedDocumentManagementData {
 
   @Memoize()
   get rootCollections(): EnrichedDocumentCollection[] {
-    return this.rawData.collections.filter((collection) => isNull(collection.parentId)).map((collection) => new EnrichedDocumentCollection(this, collection, null));
+    return this.rootCollections.filter((collection) => isNull(collection.parent));
   }
 
   @Memoize()
   get collections(): EnrichedDocumentCollection[] {
-    return this.rootCollections.flatMap((collection) => [collection, ...collection.childrenDeep]);
+    return this.rawData.collections.map((collection) => new EnrichedDocumentCollection(this, collection));
   }
 
   @Memoize()

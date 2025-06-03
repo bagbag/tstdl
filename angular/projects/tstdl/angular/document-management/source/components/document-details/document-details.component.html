@@ -1,12 +1,8 @@
-<div class="feature-xl grid grid-cols-[1fr,auto] bg-neutral-100 dark:bg-neutral-800 border-2 border-neutral-800/60 dark:border-neutral-200/60 rounded-md overflow-clip">
-  <div class="flex flex-col">
-    <div class="flex justify-end p-4">
-      <button tslButton>Do something</button>
-    </div>
+@let currentWorkflow = document().workflows[0];
 
-    <div class="border-t-4 border-r-4 dark:border-neutral-500/60">
-      <tsl-pdf-viewer [source]="contentUrl()" class="w-full h-full"></tsl-pdf-viewer>
-    </div>
+<div class="feature-xl grid grid-cols-[1fr,auto] bg-neutral-100 dark:bg-neutral-800 border-2 rounded-md overflow-hidden">
+  <div class="border-r-4 dark:border-neutral-500/60">
+    <tsl-pdf-viewer [source]="contentUrl()" class="w-full h-full"></tsl-pdf-viewer>
   </div>
 
   <div class="relative min-w-24 max-w-[45ch] p-4 overflow-y-auto flex flex-col gap-4">
@@ -14,45 +10,143 @@
       <tsl-icon icon="x-lg"></tsl-icon>
     </button>
 
-    <div>
-      <div class="text-xl font-semibold">{{ document().title }}</div>
-      <div class="text-lg">{{ document().subtitle }}</div>
-    </div>
+    @if (!canEdit()) {
+      <div>
+        <div class="text-xl font-semibold">{{ document().title }}</div>
+        <div class="text-lg">{{ document().subtitle }}</div>
+      </div>
+    }
 
-    <div>
-      <input tslInput class="h-auto text-xl font-semibold" [value]="document().title" />
-      <input tslInput class="h-auto text-lg" [value]="document().subtitle" />
-    </div>
+    <div [class.mt-8]="!canEdit()">
+      <div class="font-semibold" [class.text-lg]="!canEdit()" [class.text-2xl]="canEdit()">Eigenschaften</div>
 
-    <div class="mt-8 text-lg font-semibold">Eigenschaften</div>
-
-    <div class="grid grid-cols-[auto,1fr] gap-y-2">
-      @for (property of properties(); track property.id) {
-        <tsl-input-group class="col-span-2 grid grid-cols-subgrid">
-          <label for="" tslInputGroupLabel>{{ property.label }}</label>
-          <input tslInput [value]="property.value" readonly />
+      <div [formGroup]="form().controls.properties" class="grid grid-cols-[auto,1fr,auto] gap-y-2" [class.mt-2]="!canEdit()" [class.mt-8]="canEdit()">
+        <tsl-input-group class="col-span-3 grid grid-cols-subgrid">
+          <label tslInputGroupLabel>Typ</label>
+          <input tslInput [value]="fromValueDocumentTypeLabel()" readonly />
+          <button tslInputGroupLabel class="px-3 ring-1 ring-inset ring-lime-500 hover:bg-neutral-50 dark:hover:bg-neutral-600" (click)="selectDocumentType()">
+            <tsl-icon icon="list-nested"></tsl-icon>
+          </button>
         </tsl-input-group>
-      }
+
+        @if (canEdit()) {
+          <tsl-input-group class="col-span-3 grid grid-cols-subgrid">
+            <label tslInputGroupLabel>Titel</label>
+            <input tslInput [formControl]="form().controls.title" class="col-span-2" />
+          </tsl-input-group>
+
+          <tsl-input-group class="col-span-3 grid grid-cols-subgrid">
+            <label tslInputGroupLabel>Untertitel</label>
+            <input tslInput [formControl]="form().controls.subtitle" class="col-span-2" />
+          </tsl-input-group>
+        }
+
+        @for (property of properties(); track property.id) {
+          <tsl-input-group class="col-span-3 grid grid-cols-subgrid">
+            <label tslInputGroupLabel>{{ property.label }}</label>
+
+            @if (property.inputType != 'checkbox') {
+              <input [type]="property.inputType" tslInput [formControlName]="property.id" [readonly]="!property.editable || !canEdit()" class="col-span-2" />
+            } @else {
+              <button tslSelect [formControlName]="property.id" class="col-span-2" [disabled]="!property.editable || !canEdit()">
+                <button tslSelectOption [value]="null">{{ commonLocalizationKeys.notSpecified | localize }}</button>
+                <button tslSelectOption [value]="true">{{ commonLocalizationKeys.yes | localize }}</button>
+                <button tslSelectOption [value]="false">{{ commonLocalizationKeys.no | localize }}</button>
+              </button>
+            }
+          </tsl-input-group>
+        }
+      </div>
     </div>
 
-    <div class="grow mt-8">
+    <div class="mt-4">
       <div class="text-lg font-semibold">Kommentar</div>
-      <tsl-input-group class="w-full h-auto">
-        <textarea tslInput [value]="document().comment" rows="5" class="resize-none" readonly></textarea>
+      <tsl-input-group class="w-full h-auto mt-2">
+        <textarea tslInput [formControl]="form().controls.comment" rows="5" class="resize-none" [readonly]="!canEdit()"></textarea>
       </tsl-input-group>
     </div>
 
-    <div class="grow mt-8">
-      <div class="text-lg font-semibold">Tags</div>
+    <div class="mt-4">
+      <div class="flex items-center gap-1 text-lg font-semibold">
+        <div>Akten</div>
+
+        <button tslButton design="icon" size="small" [cdkMenuTriggerFor]="menu">
+          <tsl-icon icon="plus" size="xl"></tsl-icon>
+        </button>
+
+        <ng-template #menu>
+          <tsl-menu>
+            @for (collection of assignableCollections(); track collection.id) {
+              @if (!form().controls.collections.value.includes(collection.id)) {
+                <button cdkMenuItem (click)="addCollection(collection.id)">{{ collection.name }}</button>
+              }
+            } @empty {
+              <div class="px-2">Keine weiteren zuweisbaren Akten</div>
+            }
+          </tsl-menu>
+        </ng-template>
+      </div>
+
       <div class="flex flex-wrap gap-2 mt-2">
-        @for (tag of document().tags; track tag) {
-          <tsl-badge design="flat-with-outline" color="emerald">
-            <span class="truncate">{{ tag }}</span>
+        @for (collectionControl of form().controls.collections.controls; track collectionControl; let index = $index) {
+          <tsl-badge design="flat-with-outline" color="amber" class="pr-1">
+            @if (canEdit()) {
+              <div class="grid grid-cols-[1fr,auto] gap-1">
+                <span class="truncate">{{ context.data()?.maps?.collections?.get(collectionControl.value)?.name ?? '-' }}</span>
+                <button tslButton design="icon" class="place-self-center p-0.5" (click)="removeCollection(index)">
+                  <tsl-icon icon="x"></tsl-icon>
+                </button>
+              </div>
+            } @else {}
           </tsl-badge>
         }
       </div>
     </div>
 
-    <button tslButton (click)="download()">Herunterladen</button>
+    <div class="grow mt-4">
+      <div class="flex items-center gap-1 text-lg font-semibold">
+        <div>Tags</div>
+        <button tslButton design="icon" size="small" (click)="addNewTag()">
+          <tsl-icon icon="plus" size="xl"></tsl-icon>
+        </button>
+      </div>
+
+      <div class="gap-2 mt-2" [ngClass]="{ 'flex flex-wrap': !canEdit(), 'grid grid-cols-2': canEdit() }">
+        @for (tagControl of form().controls.tags.controls; track tagControl; let index = $index) {
+          <tsl-badge design="flat-with-outline" color="emerald" [ngClass]="{ 'gap-2 p-0 pr-1': canEdit() }">
+            @if (canEdit()) {
+              <div class="grid grid-cols-[1fr,auto] gap-1">
+                <input type="text" [formControl]="tagControl" class="px-2 py-1.5 w-full bg-transparent rounded-[inherit]" />
+                <button tslButton design="icon" class="place-self-center p-0.5" (click)="removeTag(index)">
+                  <tsl-icon icon="x"></tsl-icon>
+                </button>
+              </div>
+            } @else {
+              <span class="truncate">{{ tagControl.value }}</span>
+            }
+          </tsl-badge>
+        }
+      </div>
+    </div>
+
+    <div class="grid grid-cols-[auto,auto] gap-x-2 gap-y-4">
+      @if (
+        currentWorkflow?.step != DocumentWorkflowStep.Assignment &&
+        (currentWorkflow?.state == DocumentWorkflowState.Review || currentWorkflow?.state == DocumentWorkflowState.Error || currentWorkflow?.state == DocumentWorkflowState.Failed)
+      ) {
+        <button tslButton design="outline" color="sky" class="col-span-2 flex justify-center items-center gap-2" (click)="proceedWorkflow()">
+          <span>Worfklowschritt abschließen</span>
+          <tsl-icon icon="play-fill"></tsl-icon>
+        </button>
+      }
+      <button tslButton design="outline" class="justify-self-start flex items-center gap-2" (click)="download()">
+        <tsl-icon icon="download"></tsl-icon>
+        <span>Herunterladen</span>
+      </button>
+      <button tslButton design="outline" class="justify-self-end flex items-center gap-2" [disabled]="!formValueHasChanged()" (click)="save()">
+        <tsl-icon icon="save"></tsl-icon>
+        <span>Speichern</span>
+      </button>
+    </div>
   </div>
 </div>

@@ -6,7 +6,7 @@ import { inject, runInInjectionContext } from '#/injector/inject.js';
 import type { Type } from '#/types.js';
 import { isDefined, isNull, isUndefined } from '#/utils/type-guards.js';
 import { Database } from './database.js';
-import { DrizzleTransaction, type PgTransaction, type Transaction, type TransactionConfig } from './transaction.js';
+import { DrizzleTransaction, Transaction, type PgTransaction, type TransactionConfig } from './transaction.js';
 
 export type TransactionInitOptions = TransactionConfig & {
   /**
@@ -190,4 +190,20 @@ export function injectTransactional<T extends Transactional, A = unknown>(token:
   }
 
   return transactional;
+}
+
+export function tryGetTstdlTransaction(transactionOrSession: Transaction | Database | PgTransaction | undefined): Transaction | undefined {
+  if (isUndefined(transactionOrSession)) {
+    return undefined;
+  }
+
+  if (transactionOrSession instanceof Transaction) {
+    return transactionOrSession;
+  }
+
+  if (transactionOrSession instanceof DrizzlePgTransaction) {
+    return transactionCache.get(transactionOrSession);
+  }
+
+  return undefined;
 }

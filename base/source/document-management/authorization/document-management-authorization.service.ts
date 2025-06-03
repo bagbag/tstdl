@@ -1,39 +1,5 @@
-import { injectRepository, injectTransactional } from '#/orm/server/index.js';
-import { DocumentRequestCollectionAssignment, type DocumentWorkflowStep } from '../../models/index.js';
-import { DocumentManagementService } from './document-management.service.js';
 
 export abstract class DocumentManagementAuthorizationService<Token = unknown> {
-  readonly #documentManagementService = injectTransactional(DocumentManagementService);
-  readonly #documentRequestCollectionAssignmentRepository = injectRepository(DocumentRequestCollectionAssignment);
-
-  async canReadDocument(documentId: string, token?: Token): Promise<boolean> {
-    const relevantCollectionIds = await this.#documentManagementService.getRelevantDocumentCollectionIds(documentId);
-
-    for (const collectionId of relevantCollectionIds) {
-      const canReadCollection = await this.canReadCollection(collectionId, token);
-
-      if (canReadCollection) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  async canManageRequest(requestId: string, token?: Token): Promise<boolean> {
-    const assignments = await this.#documentRequestCollectionAssignmentRepository.loadManyByQuery({ requestId });
-
-    for (const assignment of assignments) {
-      const canManageRequest = await this.canManageRequests(assignment.collectionId, token);
-
-      if (!canManageRequest) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   /**
    * Gets the subject from the request token.
    * @param token The token of the request
@@ -54,8 +20,6 @@ export abstract class DocumentManagementAuthorizationService<Token = unknown> {
    */
   abstract canCreateDocuments(collectionId: string, token?: Token): boolean | Promise<boolean>;
 
-  abstract canUpdateDocuments(collectionId: string, token?: Token): boolean | Promise<boolean>;
-
   abstract canDeleteDocuments(collectionId: string, token?: Token): boolean | Promise<boolean>;
 
   /**
@@ -64,6 +28,8 @@ export abstract class DocumentManagementAuthorizationService<Token = unknown> {
    * @param token The token of the request.
    */
   abstract canAssignDocuments(collectionId: string, token?: Token): boolean | Promise<boolean>;
+
+  abstract canUpdateDocument(collectionId: string, token?: Token): boolean | Promise<boolean>;
 
   /**
    * Checks if a user can approve a specific document. This implicitly allows fulfilling document requests by approving their linked document.
@@ -122,8 +88,7 @@ export abstract class DocumentManagementAuthorizationService<Token = unknown> {
    * This implies reviewing the current step's output, making corrections if necessary,
    * and then confirming to proceed to the next phase or finalization.
    * @param documentId The ID of the document.
-   * @param currentWorkflowStep The current step of the workflow the user is interacting with.
    * @param token The token of the request.
    */
-  abstract canProgressDocumentWorkflow(documentId: string, currentWorkflowStep: DocumentWorkflowStep, token?: Token): boolean | Promise<boolean>;
+  abstract canProgressDocumentWorkflow(documentId: string, token?: Token): boolean | Promise<boolean>;
 }

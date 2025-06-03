@@ -5,9 +5,9 @@ import { MockApiRequestTokenProvider } from '#/api/server/api-request-token.prov
 import { configureApiServer } from '#/api/server/module.js';
 import { Application } from '#/application/application.js';
 import { configureTstdl } from '#/core.js';
-import type { DocumentCollection, DocumentCollectionMetadata } from '#/document-management/index.js';
+import { DocumentManagementAuthorizationService, type DocumentCollection, type DocumentCollectionMetadata } from '#/document-management/index.js';
 import { configureDocumentManagement } from '#/document-management/server/configure.js';
-import { DocumentCategoryTypeService, DocumentCollectionService, DocumentManagementAncillaryService, DocumentManagementApiController, DocumentManagementAuthorizationService, DocumentRequestService } from '#/document-management/server/index.js';
+import { DocumentCategoryTypeService, DocumentCollectionService, DocumentManagementAncillaryService, DocumentManagementApiController, DocumentRequestService } from '#/document-management/server/index.js';
 import { migrateDocumentManagementSchema } from '#/document-management/server/module.js';
 import { DocumentManagementService } from '#/document-management/server/services/document-management.service.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
@@ -60,9 +60,9 @@ export class AllowAllDocumentManagementAuthorizationService extends DocumentMana
   override getSubject(): string { return '00000000-0000-0000-0000-000000000000'; }
   override canReadCollection(): boolean { return true; }
   override canCreateDocuments(): boolean { return true; }
-  override canUpdateDocuments(): boolean { return true; }
   override canDeleteDocuments(): boolean { return true; }
   override canAssignDocuments(): boolean { return true; }
+  override canUpdateDocument(): boolean { return true; }
   override canApproveDocument(): boolean { return true; }
   override canRejectDocument(): boolean { return true; }
   override canManageRequests(): boolean { return true; }

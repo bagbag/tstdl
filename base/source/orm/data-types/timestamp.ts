@@ -20,8 +20,8 @@ export const timestamp = customType<Config>({
   },
   fromDriver(value: string): number {
     return new Date(value).getTime();
-  }
+  },
 }) as {
   (): PgCustomColumnBuilder<ConvertCustomConfig<'', Config>>,
-  <TName extends string>(dbName: TName): PgCustomColumnBuilder<ConvertCustomConfig<TName, Config>>
+  <TName extends string>(dbName: TName): PgCustomColumnBuilder<ConvertCustomConfig<TName, Config>>,
 };

@@ -10,27 +10,34 @@
       "style": "scss",
       "changeDetection": "OnPush",
       "skipTests": true,
-      "standalone": true
+      "type": "component"
     },
     "@schematics/angular:directive": {
       "skipTests": true,
-      "standalone": true
+      "type": "directive"
     },
     "@schematics/angular:guard": {
-      "skipTests": true
+      "skipTests": true,
+      "typeSeparator": "."
     },
     "@schematics/angular:interceptor": {
-      "skipTests": true
+      "skipTests": true,
+      "typeSeparator": "."
     },
     "@schematics/angular:pipe": {
       "skipTests": true,
-      "standalone": true
+      "typeSeparator": "."
     },
     "@schematics/angular:resolver": {
-      "skipTests": true
+      "skipTests": true,
+      "typeSeparator": "."
     },
     "@schematics/angular:service": {
-      "skipTests": true
+      "skipTests": true,
+      "type": "service"
+    },
+    "@schematics/angular:module": {
+      "typeSeparator": "."
     }
   },
   "projects": {

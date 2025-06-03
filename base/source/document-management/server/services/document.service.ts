@@ -17,6 +17,7 @@ import { isDefined, isNotReadableStream, isNotUint8Array, isString, isUndefined 
 import { Document } from '../../models/index.js';
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentFileService } from './document-file.service.js';
+import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentPropertyService } from './document-property.service.js';
 import { DocumentRequestService } from './document-request.service.js';
 import { DocumentWorkflowService } from './document-workflow.service.js';
@@ -28,9 +29,10 @@ export class DocumentService extends Transactional {
   readonly #requestService = injectTransactional(DocumentRequestService);
   readonly #workflowService = injectTransactional(DocumentWorkflowService);
   readonly #documentPropertyService = injectTransactional(DocumentPropertyService);
-  readonly #documentCollectionService = injectTransactional(DocumentCollectionService);
+  readonly #collectionService = injectTransactional(DocumentCollectionService);
   readonly #documentAssignmentTaskRepository = injectRepository(DocumentAssignmentTask);
   readonly #documentAssignmentScopeRepository = injectRepository(DocumentAssignmentScope);
+  readonly #observationService = inject(DocumentManagementObservationService);
   readonly #logger = inject(Logger, DocumentService.name);
 
   readonly repository = injectRepository(Document);
@@ -46,7 +48,7 @@ export class DocumentService extends Transactional {
         pages: -1,
         date: date ?? null,
         summary: summary ?? null,
-        tags: tags ?? null,
+        tags: tags ?? [],
         approval: approval ?? DocumentApproval.Pending,
         comment: comment ?? null,
         createUserId: createUserId ?? null,
@@ -80,6 +82,8 @@ export class DocumentService extends Transactional {
       return document;
     });
 
+    this.#observationService.documentChange(document.id);
+
     return document;
   }
 
@@ -100,6 +104,8 @@ export class DocumentService extends Transactional {
       if (isDefined(update.properties)) {
         await this.#documentPropertyService.withTransaction(tx).setPropertyValues(id, update.properties);
       }
+
+      this.#observationService.documentChange(id, tx);
     });
   }
 
@@ -144,7 +150,7 @@ export class DocumentService extends Transactional {
     await match(assignment)
       .with({ collections: P.select() }, async (collectionIds) => {
         const collectionIdsArray = toArray(collectionIds);
-        await this.#documentCollectionService.withTransaction(transaction).assignDocument(documentId, collectionIdsArray);
+        await this.#collectionService.withTransaction(transaction).assignDocument(documentId, collectionIdsArray);
       })
       .with({ request: P.select() }, async (requestId) => {
         await this.#requestService.withTransaction(transaction).assignDocument(requestId, documentId);
@@ -158,5 +164,7 @@ export class DocumentService extends Transactional {
         }
       })
       .exhaustive();
+
+    this.#observationService.documentChange(documentId, this.session);
   }
 }

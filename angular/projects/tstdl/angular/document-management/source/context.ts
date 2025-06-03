@@ -1,6 +1,9 @@
 import { computed, inject, Injector, signal, type ResourceStreamItem } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { resource } from '@tstdl/angular';
 import type { BadgeColor } from '@tstdl/angular/badge';
+import type { ButtonColor } from '@tstdl/angular/button';
+import { CancellationToken } from '@tstdl/base/cancellation';
 import { toEnrichedDocumentManagementData, type DocumentManagementData } from '@tstdl/base/document-management';
 import { map } from '@tstdl/base/signals';
 import { isUndefined } from '@tstdl/base/utils';
@@ -8,36 +11,36 @@ import { fromEntries, hasOwnProperty } from '@tstdl/base/utils/object';
 import { patch, type Delta } from 'jsondiffpatch';
 import { merge, map as rxjsMap, scan, takeUntil } from 'rxjs';
 
-import { toSignal } from '@angular/core/rxjs-interop';
-import { CancellationToken } from '@tstdl/base/cancellation';
 import { DocumentManagementApiService } from './api';
+import { ForwardingDocumentManagementAuthorizationService } from './services';
 
-const colors: BadgeColor[] = [
-  'yellow',
+const colors = [
   'amber',
-  'green',
   'lime',
-  'blue',
-  'sky',
   'cyan',
-  'teal',
-  'emerald',
-  'indigo',
   'purple',
-  'pink',
+  'yellow',
+  'green',
+  'sky',
   'fuchsia',
-  'rose'
-] as const;
+  'emerald',
+  'blue',
+  'pink',
+  'teal',
+  'indigo',
+  'rose',
+] as const satisfies (BadgeColor & ButtonColor)[];
 
 export class DocumentManagementContext {
   readonly #injector = inject(Injector);
   readonly api = inject(DocumentManagementApiService);
+  readonly authorizationService = inject(ForwardingDocumentManagementAuthorizationService);
   readonly collectionIds = signal<string[]>([]);
 
   readonly rawData = resource({
-    request: this.collectionIds,
-    stream: async ({ request, abortSignal }) => {
-      const eventSource = await this.api.loadDataStream({ collectionIds: request });
+    params: this.collectionIds,
+    stream: async ({ params, abortSignal }) => {
+      const eventSource = await this.api.loadDataStream({ collectionIds: params });
       abortSignal.addEventListener('abort', () => eventSource.close());
 
       const data$ = eventSource.message$('data').pipe(rxjsMap((message) => ({ data: JSON.parse(message.data) as DocumentManagementData })));
@@ -71,11 +74,14 @@ export class DocumentManagementContext {
   readonly isLoading = this.rawData.isLoading;
 
   readonly categoryColors = computed(() => {
-    const entries = this.data()?.rootCategories.map((category, index) => {
-      return [category.id, colors[index % colors.length]!] as const;
+    const entries = this.data()?.rootCategories.flatMap((category, index) => {
+      const color = colors[index % colors.length]!;
+
+      const children = category.childrenDeep.map((child) => [child.id, color] as const);
+      return [[category.id, color], ...children] as const;
     });
 
-    return fromEntries(entries ?? []) as Record<string, BadgeColor>;
+    return fromEntries(entries ?? []);
   });
 
   constructor(collectionIds: string[]) {

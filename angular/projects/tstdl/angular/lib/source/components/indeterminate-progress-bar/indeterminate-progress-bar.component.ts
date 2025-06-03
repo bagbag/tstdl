@@ -1,9 +1,8 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'tsl-indeterminate-progress-bar',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './indeterminate-progress-bar.component.html',
   styleUrls: ['./indeterminate-progress-bar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

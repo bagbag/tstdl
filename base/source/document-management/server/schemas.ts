@@ -1,6 +1,6 @@
 import { databaseSchema } from '#/orm/server/database-schema.js';
 
-import { Document, DocumentApproval, DocumentAssignmentScope, DocumentAssignmentTarget, DocumentAssignmentTask, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestsTemplate, DocumentRequestSubmission, DocumentRequestTemplate, DocumentType, DocumentTypeProperty, DocumentTypeValidation, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationExecutionRelatedDocument, DocumentValidationExecutionState, DocumentValidationResultStatus, DocumentWorkflow, DocumentWorkflowFailReason, DocumentWorkflowState, DocumentWorkflowStep } from '../models/index.js';
+import { Document, DocumentApproval, DocumentAssignmentScope, DocumentAssignmentTarget, DocumentAssignmentTask, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestsTemplate, DocumentRequestTemplate, DocumentType, DocumentTypeProperty, DocumentTypeValidation, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationExecutionRelatedDocument, DocumentValidationExecutionState, DocumentValidationResultStatus, DocumentWorkflow, DocumentWorkflowFailReason, DocumentWorkflowState, DocumentWorkflowStep } from '../models/index.js';
 
 export const documentManagementSchema = databaseSchema('document_management');
 
@@ -25,7 +25,6 @@ export const documentPropertyValue = documentManagementSchema.getTable(DocumentP
 export const documentRequest = documentManagementSchema.getTable(DocumentRequest);
 export const documentRequestCollectionAssignment = documentManagementSchema.getTable(DocumentRequestCollectionAssignment);
 export const documentRequestsTemplate = documentManagementSchema.getTable(DocumentRequestsTemplate);
-export const documentRequestSubmission = documentManagementSchema.getTable(DocumentRequestSubmission);
 export const documentRequestTemplate = documentManagementSchema.getTable(DocumentRequestTemplate);
 export const documentType = documentManagementSchema.getTable(DocumentType);
 export const documentTypeProperty = documentManagementSchema.getTable(DocumentTypeProperty);

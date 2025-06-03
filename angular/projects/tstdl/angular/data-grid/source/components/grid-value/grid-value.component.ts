@@ -1,4 +1,4 @@
-import { NgIf, NgSwitch, NgSwitchCase, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import type { OnChanges } from '@angular/core';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { DateTimeLocalePipe, DynamicTextPipe, LocalizeEnumPipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe } from '@tstdl/angular';
@@ -21,7 +21,7 @@ const timeShort: Intl.DateTimeFormatOptions = {
 
 @Component({
   selector: 'tsl-grid-value',
-  imports: [NgIf, NgTemplateOutlet, NgSwitch, NgSwitchCase, DynamicTextPipe, NumberLocalePipe, DateTimeLocalePipe, NumericDateToDateTimePipe, LocalizeEnumPipe, NumericTimeToDateTimePipe],
+  imports: [NgTemplateOutlet, DynamicTextPipe, NumberLocalePipe, DateTimeLocalePipe, NumericDateToDateTimePipe, LocalizeEnumPipe, NumericTimeToDateTimePipe],
   templateUrl: './grid-value.component.html',
   styleUrls: ['./grid-value.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

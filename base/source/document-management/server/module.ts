@@ -3,8 +3,8 @@ import './schemas.js';
 import { inject, type InjectionToken } from '#/injector/index.js';
 import { Database, migrate } from '#/orm/server/database.js';
 import type { DatabaseConfig } from '#/orm/server/module.js';
+import type { DocumentManagementAuthorizationService } from '../authorization/document-management-authorization.service.js';
 import type { DocumentManagementAncillaryService } from './services/document-management-ancillary.service.js';
-import type { DocumentManagementAuthorizationService } from './services/document-management-authorization.service.js';
 
 export class DocumentManagementConfig {
   ancillaryService: InjectionToken<DocumentManagementAncillaryService>;

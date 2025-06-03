@@ -1,8 +1,9 @@
+import { map, timer } from 'rxjs';
+
 import { CancellationToken } from '#/cancellation/index.js';
 import { Injectable } from '#/injector/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { assertStringPass, isDefined, isNull, isObject } from '#/utils/type-guards.js';
-import { map, timer } from 'rxjs';
 import type { AcquireResult, LockArgument, LockController, LockedFunction, UsingResult } from '../lock.js';
 import { Lock } from '../lock.js';
 import { WebLockProvider } from './web-lock.provider.js';
@@ -16,14 +17,10 @@ import { WebLockProvider } from './web-lock.provider.js';
 
       const provider = context.resolve(WebLockProvider, prefix);
       return provider.get(resource);
-    }
-  }
+    },
+  },
 })
 export class WebLock extends Lock {
-  constructor(resource: string) {
-    super(resource);
-  }
-
   async acquire<Throw extends boolean>(timeout: number | undefined, throwOnFail: Throw): Promise<AcquireResult<Throw>> {
     const acquirePromise = new DeferredPromise<boolean>();
     const releasePromise = new DeferredPromise();
@@ -32,7 +29,7 @@ export class WebLock extends Lock {
       lost: false,
       release(): void {
         releasePromise.resolve();
-      }
+      },
     };
 
     const timeoutToken = (isDefined(timeout) && (timeout > 0)) ? CancellationToken.from(timer(timeout).pipe(map(() => true))) : undefined;
@@ -41,7 +38,7 @@ export class WebLock extends Lock {
       this.resource,
       {
         signal: isDefined(timeoutToken) ? timeoutToken.asAbortSignal() : undefined,
-        ifAvailable: isDefined(timeout) && (timeout <= 0)
+        ifAvailable: isDefined(timeout) && (timeout <= 0),
       },
       async (lock) => {
         if (isNull(lock)) {

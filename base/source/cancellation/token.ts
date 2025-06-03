@@ -53,12 +53,12 @@ export class CancellationSignal implements PromiseLike<void>, Subscribable<void>
   /**
    * Observable which emits when this token is set.
    */
-  readonly set$ = this.state$.pipe(filter((state) => state), map(() => undefined));
+  readonly set$ = this.state$.pipe(filter((state) => state), map(() => undefined)) as Observable<void>;
 
   /**
    * Observable which emits when this token is unset.
    */
-  readonly unset$ = this.state$.pipe(filter((state) => !state), map(() => undefined));
+  readonly unset$ = this.state$.pipe(filter((state) => !state), map(() => undefined)) as Observable<void>;
 
   /**
    * Returns a promise which is resolved when this token changes its state.
@@ -119,7 +119,7 @@ export class CancellationSignal implements PromiseLike<void>, Subscribable<void>
    * @see {@link connect}
    */
   createChild(config?: ConnectConfig): CancellationToken {
-    const child = new CancellationToken(); // eslint-disable-line @typescript-eslint/no-use-before-define
+    const child = new CancellationToken();
     this.connect(child, config);
 
     return child;
@@ -130,7 +130,7 @@ export class CancellationSignal implements PromiseLike<void>, Subscribable<void>
    * @param target receiver to connect
    */
   connect(target: CancellationToken, config?: ConnectConfig): void {
-    CancellationToken.connect(this.state$, target, config); // eslint-disable-line @typescript-eslint/no-use-before-define
+    CancellationToken.connect(this.state$, target, config);
   }
 
   async then<TResult>(onfulfilled?: ((value: void) => TResult | PromiseLike<TResult>) | null): Promise<TResult> {
@@ -203,12 +203,12 @@ export class CancellationToken extends CancellationSignal {
     const subscription = stateObservable.subscribe({
       next: (state) => target.setState(state),
       error: error ? ((errorValue) => target.error(errorValue as Error)) : noop,
-      complete: complete ? (() => target.complete()) : noop
+      complete: complete ? (() => target.complete()) : noop,
     });
 
     target.#stateSubject.subscribe({
       error: () => subscription.unsubscribe(),
-      complete: () => subscription.unsubscribe()
+      complete: () => subscription.unsubscribe(),
     });
   }
 
