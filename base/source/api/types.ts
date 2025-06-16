@@ -170,7 +170,7 @@ export function defineApi<T extends ApiDefinition>(definition: T): T {
 
 export async function resolveApiEndpointDataProvider<T>(request: HttpServerRequest, context: ApiGatewayMiddlewareContext, provider: ApiEndpointDataProvider<T>): Promise<T> {
   if (isFunction(provider)) {
-    return provider(request, context);
+    return await provider(request, context);
   }
 
   return provider;

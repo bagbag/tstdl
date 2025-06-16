@@ -1,8 +1,8 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { NumericDate, Uuid } from '#/orm/types.js';
-import { Array, Enumeration, Integer, string, StringProperty } from '#/schema/index.js';
+import { NumericDate, Unique, Uuid } from '#/orm/types.js';
+import { Enumeration, Integer, StringProperty } from '#/schema/index.js';
 import { DocumentManagementTable } from './document-management-table.js';
 import { DocumentType } from './document-type.model.js';
 
@@ -14,11 +14,15 @@ export const DocumentApproval = defineEnum('DocumentApproval', {
 
 export type DocumentApproval = EnumType<typeof DocumentApproval>;
 
-export type UpdatableDocumentProperties = keyof Pick<Document, 'typeId' | 'title' | 'subtitle' | 'date' | 'summary' | 'tags' | 'comment'>;
+export type UpdatableDocumentProperties = keyof Pick<Document, 'typeId' | 'title' | 'subtitle' | 'date' | 'summary' | 'comment'>;
 
 @DocumentManagementTable()
+@Unique<Document>(['tenantId', 'id'])
 export class Document extends Entity {
   declare static readonly entityName: 'Document';
+
+  @Uuid()
+  tenantId: Uuid;
 
   @Uuid({ nullable: true })
   @References(() => DocumentType)
@@ -38,9 +42,6 @@ export class Document extends Entity {
 
   @StringProperty({ nullable: true })
   summary: string | null;
-
-  @Array(string())
-  tags: string[];
 
   @Enumeration(DocumentApproval)
   approval: DocumentApproval;

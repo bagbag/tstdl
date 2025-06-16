@@ -61,6 +61,8 @@ export type UpdateOptions<T extends EntityWithoutMetadata> = LoadOptions<T>;
 /** Type definition for updating entity metadata attributes, allowing partial updates and SQL expressions. */
 export type EntityMetadataUpdate = WithSql<Partial<UntaggedDeep<Pick<EntityMetadata, 'attributes'>>>>;
 
+export type EntityMetadataInsert = Partial<Pick<EntityMetadata, 'attributes'>>;
+
 /**
  * Represents the data structure for creating a new entity.
  * Excludes 'id' and 'metadata' by default, but allows providing an optional 'id' and partial 'metadata.attributes'.
@@ -68,7 +70,7 @@ export type EntityMetadataUpdate = WithSql<Partial<UntaggedDeep<Pick<EntityMetad
  * @template T - The entity type.
  */
 export type NewEntity<T extends Entity | EntityWithoutMetadata> = T extends Entity
-  ? WithSql<UntaggedDeep<TypedOmit<T, 'id' | 'metadata'> & { id?: string, metadata?: Partial<Pick<EntityMetadata, 'attributes'>> }>>
+  ? WithSql<UntaggedDeep<TypedOmit<T, 'id' | 'metadata'> & { id?: string, metadata?: EntityMetadataInsert }>>
   : WithSql<UntaggedDeep<TypedOmit<T, 'id'> & { id?: string }>>;
 
 /**

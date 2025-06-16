@@ -1,25 +1,28 @@
 @if (context().isLoading()) {
   <div class="flex justify-center items-center h-full">Loading...</div>
 } @else {
-  <div class="grid grid-cols-[1fr,auto] gap-x-2 gap-y-4">
+  <div class="grid gap-x-2 gap-y-4" [ngClass]="{ 'grid-cols-1': !showWorkflowState(), 'grid-cols-[1fr,auto]': showWorkflowState() }">
     @for (document of pendingDocuments(); track document.id) {
       @defer (on viewport; on idle) {
-        <tsl-document-inbox-document
+        <tsl-document-list-document
           @enter
           [@.disabled]="disableEnterAnimation()"
           [context]="context()"
           [document]="document"
           (click)="openDocument(document.id)"
-          class="hover:cursor-pointer bg-neutral-100 dark:bg-neutral-800 hover:outline outline-2 outline-offset-4 outline-accent-600 dark:outline-accent-400 shadow rounded-r-none" />
+          class="hover:cursor-pointer bg-neutral-100 dark:bg-neutral-800 hover:outline outline-2 outline-offset-4 outline-accent-600 dark:outline-accent-400 shadow"
+          [class.rounded-r-none]="showWorkflowState()" />
 
-        <div class="relative w-96 h-full">
-          <tsl-document-state
-            @enter
-            [@.disabled]="disableEnterAnimation()"
-            [context]="context()"
-            [document]="document"
-            class="absolute inset-0 bg-neutral-100 dark:bg-neutral-800 border border-neutral-500/25 shadow rounded-l-none"></tsl-document-state>
-        </div>
+        @if (showWorkflowState()) {
+          <div class="relative w-96 h-full">
+            <tsl-document-workflow-state
+              @enter
+              [@.disabled]="disableEnterAnimation()"
+              [context]="context()"
+              [document]="document"
+              class="absolute inset-0 bg-neutral-100 dark:bg-neutral-800 shadow rounded-l-none"></tsl-document-workflow-state>
+          </div>
+        }
       } @placeholder {
         <div class="col-span-2 h-64"></div>
       }

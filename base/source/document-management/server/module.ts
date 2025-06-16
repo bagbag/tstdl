@@ -6,7 +6,7 @@ import type { DatabaseConfig } from '#/orm/server/module.js';
 import type { DocumentManagementAuthorizationService } from '../authorization/document-management-authorization.service.js';
 import type { DocumentManagementAncillaryService } from './services/document-management-ancillary.service.js';
 
-export class DocumentManagementConfig {
+export class DocumentManagementConfiguration {
   ancillaryService: InjectionToken<DocumentManagementAncillaryService>;
   authorizationService: InjectionToken<DocumentManagementAuthorizationService>;
   fileObjectStorageModule: string;
@@ -17,7 +17,7 @@ export class DocumentManagementConfig {
 };
 
 export async function migrateDocumentManagementSchema(): Promise<void> {
-  const connection = inject(DocumentManagementConfig, undefined, { optional: true })?.database?.connection;
+  const connection = inject(DocumentManagementConfiguration, undefined, { optional: true })?.database?.connection;
   const database = inject(Database, connection);
 
   await migrate(

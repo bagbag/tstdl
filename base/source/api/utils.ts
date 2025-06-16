@@ -8,7 +8,7 @@ type GetApiEndpointUrlData = {
   api: ApiDefinition,
   endpoint: ApiEndpointDefinition,
   defaultPrefix: string | undefined | null,
-  explicitVersion?: number | null
+  explicitVersion?: number | null,
 };
 
 export function getFullApiEndpointResource({ api, endpoint, defaultPrefix, explicitVersion }: GetApiEndpointUrlData): string {

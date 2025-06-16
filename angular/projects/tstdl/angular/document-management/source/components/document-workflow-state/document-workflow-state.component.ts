@@ -41,10 +41,10 @@ const workflowStepIcons: Record<DocumentWorkflowStep, IconName> = {
 const workflowSteps = enumValues(DocumentWorkflowStep);
 
 @Component({
-  selector: 'tsl-document-state',
+  selector: 'tsl-document-workflow-state',
   imports: [LocalizeEnumPipe, DateTimeLocalePipe, BadgeComponent, IconComponent, ButtonComponent],
-  templateUrl: './document-state.component.html',
-  styleUrl: './document-state.component.scss',
+  templateUrl: './document-workflow-state.component.html',
+  styleUrl: './document-workflow-state.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   animations: [enterAnimation()],
@@ -52,7 +52,7 @@ const workflowSteps = enumValues(DocumentWorkflowStep);
     class: 'tsl-tw',
   },
 })
-export class DocumentStateComponent {
+export class DocumentWorkflowStateComponent {
   readonly context = input.required<DocumentManagementContext>();
   readonly document = input.required<EnrichedDocument>();
 

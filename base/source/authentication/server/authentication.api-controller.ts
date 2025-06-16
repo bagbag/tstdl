@@ -1,5 +1,6 @@
 import { apiController } from '#/api/server/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
+import type { SetCookieOptions } from '#/cookie/cookie.js';
 import { InvalidCredentialsError } from '#/errors/invalid-credentials.error.js';
 import type { HttpServerResponseOptions, SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
@@ -13,8 +14,8 @@ import type { TokenResult } from './authentication.service.js';
 import { AuthenticationService } from './authentication.service.js';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 
-const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' };
-const deleteCookie = { value: '', ...cookieBaseOptions, expires: -1 };
+const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' } satisfies SetCookieOptions;
+const deleteCookie = { value: '', ...cookieBaseOptions, maxAge: -1 } satisfies SetCookieObject;
 
 @apiController(authenticationApiDefinition)
 export class AuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
@@ -86,11 +87,11 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
       cookies: {
         authorization: deleteCookie,
         refreshToken: deleteCookie,
-        impersonatorRefreshToken: deleteCookie
+        impersonatorRefreshToken: deleteCookie,
       },
       body: {
-        json: result
-      }
+        json: result,
+      },
     });
   }
 
@@ -105,7 +106,7 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
   }
 
   async checkSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'checkSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'checkSecret'>> {
-    return this.authenticationService.checkSecret(parameters.secret);
+    return await this.authenticationService.checkSecret(parameters.secret);
   }
 
   timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'timestamp'> {
@@ -117,16 +118,28 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
 
     const options: HttpServerResponseOptions = {
       cookies: {
-        authorization: { value: `Bearer ${token}`, ...cookieBaseOptions, expires: jsonToken.payload.exp * 1000 },
-        refreshToken: { value: `Bearer ${refreshToken}`, ...cookieBaseOptions, expires: jsonToken.payload.refreshTokenExp * 1000 }
+        authorization: {
+          value: `Bearer ${token}`,
+          ...cookieBaseOptions,
+          expires: jsonToken.payload.exp * 1000,
+        },
+        refreshToken: {
+          value: `Bearer ${refreshToken}`,
+          ...cookieBaseOptions,
+          expires: jsonToken.payload.refreshTokenExp * 1000,
+        },
       },
       body: {
-        json: result
-      }
+        json: result,
+      },
     };
 
     if (isDefined(impersonatorRefreshToken)) {
-      options.cookies!['impersonatorRefreshToken'] = { value: `Bearer ${impersonatorRefreshToken}`, ...cookieBaseOptions, expires: assertDefinedPass(impersonatorRefreshTokenExpiration) * 1000 };
+      options.cookies!['impersonatorRefreshToken'] = {
+        value: `Bearer ${impersonatorRefreshToken}`,
+        ...cookieBaseOptions,
+        expires: assertDefinedPass(impersonatorRefreshTokenExpiration) * 1000,
+      };
     }
 
     if (omitImpersonatorRefreshToken == true) {

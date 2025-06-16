@@ -6,7 +6,7 @@ import type { EnrichedDocumentCollection } from './enriched-document-collection.
 import type { EnrichedDocumentManagementData } from './enriched-document-management-data.view.js';
 import type { EnrichedDocument } from './enriched-document.view.js';
 
-export class EnrichedDocumentCollectionAssignment implements TypedOmit<DocumentCollectionAssignment, 'id' | 'collectionId' | 'documentId' | 'metadata'> {
+export class EnrichedDocumentCollectionAssignment implements TypedOmit<DocumentCollectionAssignment, 'id' | 'tenantId' | 'collectionId' | 'documentId' | 'metadata'> {
   readonly #data: EnrichedDocumentManagementData;
   readonly #assignment: DocumentCollectionAssignmentView;
 
@@ -26,7 +26,6 @@ export class EnrichedDocumentCollectionAssignment implements TypedOmit<DocumentC
 }
 
 export class EnrichedDocumentAssignment implements TypedOmit<DocumentAssignmentView, 'collections' | 'assignmentTask'> {
-  readonly #data: EnrichedDocumentManagementData;
   readonly #collections: EnrichedDocumentCollectionAssignment[];
   readonly #document: EnrichedDocument;
 
@@ -41,7 +40,6 @@ export class EnrichedDocumentAssignment implements TypedOmit<DocumentAssignmentV
   readonly assignmentTask: DocumentAssignmentTaskView | null;
 
   constructor(data: EnrichedDocumentManagementData, document: EnrichedDocument, assignment: DocumentAssignmentView) {
-    this.#data = data;
     this.#document = document;
     this.#collections = assignment.collections.map((assignment) => new EnrichedDocumentCollectionAssignment(data, assignment, document));
     this.assignmentTask = assignment.assignmentTask;

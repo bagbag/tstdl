@@ -10,6 +10,7 @@ export class EnrichedDocumentCollection implements TypedOmit<DocumentCollectionV
   readonly #data: EnrichedDocumentManagementData;
 
   readonly id: string;
+  readonly tenantId: string;
   readonly parentId: string | null;
   readonly name: string;
   readonly group: string | null;
@@ -63,6 +64,7 @@ export class EnrichedDocumentCollection implements TypedOmit<DocumentCollectionV
     this.#data = data;
 
     this.id = collectionView.id;
+    this.tenantId = collectionView.tenantId;
     this.parentId = collectionView.parentId;
     this.name = collectionView.name;
     this.group = collectionView.group;

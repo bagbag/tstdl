@@ -1,5 +1,10 @@
-
 export abstract class DocumentManagementAuthorizationService<Token = unknown> {
+  /**
+   * Gets the tenant from the request token.
+   * @param token The token of the request
+   */
+  abstract getTenantId(token?: Token): string | Promise<string>;
+
   /**
    * Gets the subject from the request token.
    * @param token The token of the request

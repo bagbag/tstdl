@@ -18,7 +18,7 @@ export abstract class AuthenticationSecretRequirementsValidator {
 @Singleton({ alias: AuthenticationSecretRequirementsValidator })
 export class DefaultAuthenticationSecretRequirementsValidator extends AuthenticationSecretRequirementsValidator {
   async checkSecretRequirements(secret: string): Promise<SecretCheckResult> {
-    return checkPassword(secret, { checkForPwned: true });
+    return await checkPassword(secret, { checkForPwned: true });
   }
 
   async testSecretRequirements(secret: string): Promise<SecretTestResult> {

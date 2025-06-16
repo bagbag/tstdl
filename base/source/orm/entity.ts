@@ -15,6 +15,8 @@ export interface EntityType<T extends Entity | EntityWithoutMetadata = Entity | 
   readonly entityName?: string;
 }
 
+export type AnyEntity = Entity | EntityWithoutMetadata;
+
 /**
  * Base class for extensible metadata attributes associated with an entity.
  * Allows storing arbitrary key-value pairs.

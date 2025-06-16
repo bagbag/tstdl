@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 
 import { and, asc, count, desc, eq, inArray, isNull, isSQLWrapper, SQL, sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { PgColumn, PgInsertValue, PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { match } from 'ts-pattern';
 
@@ -17,9 +16,9 @@ import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { importSymmetricKey } from '#/utils/cryptography.js';
-import { typeExtends } from '#/utils/index.js';
 import { fromDeepObjectEntries, fromEntries, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isArray, isDefined, isString, isUndefined } from '#/utils/type-guards.js';
+import { typeExtends } from '#/utils/type/index.js';
 import { Entity, type EntityMetadataAttributes, type EntityType, type EntityWithoutMetadata } from '../entity.js';
 import type { Query } from '../query.js';
 import type { EntityMetadataUpdate, EntityUpdate, LoadManyOptions, LoadOptions, NewEntity, Order, TargetColumnPaths } from '../repository.types.js';
@@ -29,7 +28,7 @@ import { getColumnDefinitions, getColumnDefinitionsMap, getDrizzleTableFromType 
 import { convertQuery } from './query-converter.js';
 import { ENCRYPTION_SECRET } from './tokens.js';
 import type { PgTransaction } from './transaction.js';
-import { getTransactionalContextData, injectTransactional, isInTransactionalContext, Transactional } from './transactional.js';
+import { getTransactionalContextData, injectTransactional, injectTransactionalAsync, isInTransactionalContext, Transactional } from './transactional.js';
 import type { ColumnDefinition, PgTableFromType, TransformContext } from './types.js';
 
 export const repositoryType: unique symbol = Symbol('repositoryType');
@@ -151,8 +150,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
     let dbQuery = this.session.select()
       .from(this.#table)
       .where(sqlQuery)
-      .offset(options?.offset!)
+      .limit(1)
       .$dynamic();
+
+    if (isDefined(options?.offset)) {
+      dbQuery = dbQuery.offset(options.offset);
+    }
 
     if (isDefined(options?.order)) {
       dbQuery = dbQuery.orderBy(...this.convertOrderBy(options.order));
@@ -174,6 +177,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of loaded entities.
    */
   async loadMany(ids: string[], options?: LoadManyOptions<T>): Promise<T[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return await this.loadManyByQuery(inArray(this.#table.id, ids), options);
   }
 
@@ -205,12 +212,16 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
         return this.session.selectDistinctOn(ons);
       })
       .from(this.#table)
+      .where(sqlQuery)
       .$dynamic();
 
-    dbQuery = dbQuery
-      .where(sqlQuery)
-      .offset(options?.offset!)
-      .limit(options?.limit!);
+    if (isDefined(options?.offset)) {
+      dbQuery = dbQuery.offset(options.offset);
+    }
+
+    if (isDefined(options?.limit)) {
+      dbQuery = dbQuery.limit(options.limit);
+    }
 
     if (isDefined(options?.order)) {
       dbQuery = dbQuery.orderBy(...this.convertOrderBy(options.order));
@@ -256,12 +267,9 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to the total count.
    */
   async count(): Promise<number> {
-    const sqlQuery = this.convertQuery({});
-
     const dbQuery = this.session
       .select({ count: count() })
-      .from(this.#table)
-      .where(sqlQuery);
+      .from(this.#table);
 
     const [result] = await dbQuery;
     return assertDefinedPass(result).count;
@@ -301,26 +309,25 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   async hasByQuery(query: Query<T>): Promise<boolean> {
     const sqlQuery = this.convertQuery(query);
 
-    const dbQuery = this.session
-      .select({ exists: sql<boolean>`SELECT EXISTS(SELECT 1 FROM ${this.#table} WHERE ${sqlQuery})` })
-      .from(this.#table);
+    const result = await this.session.execute<{ exists: boolean }>(sql<boolean>`SELECT EXISTS(SELECT 1 FROM ${this.#table} WHERE ${sqlQuery}) AS exists`);
 
-    const [result] = await dbQuery;
-    return assertDefinedPass(result).exists;
+    console.log(result);
+    throw new Error('handle result');
   }
 
   /**
    * Checks if all entities with the given IDs exist.
    * @param ids An array of entity IDs to check.
-   * @returns A promise that resolves to `true` if all entities exist, `false` otherwise.
+   * @returns A promise that resolves to `true` if all entities exist, `false` otherwise. If `ids` is empty, returns `false`.
    */
   async hasAll(ids: string[]): Promise<boolean> {
-    const sqlQuery = this.convertQuery({});
+    if (ids.length === 0) {
+      return false;
+    }
 
     const result = await this.session
       .select({ contains: sql<boolean>`array_agg(${this.#table.id}) @> ${ids}`.as('contains') })
-      .from(this.#table)
-      .where(sqlQuery);
+      .from(this.#table);
 
     return assertDefinedPass(result[0]).contains;
   }
@@ -368,8 +375,58 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of the inserted entities.
    */
   async insertMany(entities: NewEntity<T>[]): Promise<T[]> {
+    if (entities.length === 0) {
+      return [];
+    }
+
     const columns = await this.mapManyToInsertColumns(entities);
     const rows = await this.session.insert(this.#table).values(columns).returning();
+
+    return await this.mapManyToEntity(rows);
+  }
+
+  /**
+   * Inserts an entity if it does not already exist based on the target columns.
+   * @param target The column(s) to use for conflict detection.
+   * @param entity The entity to insert.
+   * @returns A promise that resolves to the inserted or existing entity.
+   */
+  async insertIfNotExists(target: OneOrMany<Paths<UntaggedDeep<T>>>, entity: NewEntity<T>): Promise<T | undefined> {
+    const targetColumns = toArray(target).map((path) => this.getColumn(path));
+    const columns = await this.mapToInsertColumns(entity);
+
+    const [row] = await this.session
+      .insert(this.#table)
+      .values(columns)
+      .onConflictDoNothing({ target: targetColumns })
+      .returning();
+
+    if (isUndefined(row)) {
+      return undefined;
+    }
+
+    return await this.mapToEntity(row);
+  }
+
+  /**
+   * Inserts many entities if they do not already exist based on the target columns.
+   * @param target The column(s) to use for conflict detection.
+   * @param entities The entities to insert.
+   * @returns A promise that resolves to the inserted or existing entities.
+   */
+  async insertManyIfNotExists(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[]): Promise<T[]> {
+    if (entities.length === 0) {
+      return [];
+    }
+
+    const targetColumns = toArray(target).map((path) => this.getColumn(path));
+    const columns = await this.mapManyToInsertColumns(entities);
+
+    const rows = await this.session
+      .insert(this.#table)
+      .values(columns)
+      .onConflictDoNothing({ target: targetColumns })
+      .returning();
 
     return await this.mapManyToEntity(rows);
   }
@@ -407,6 +464,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of the inserted or updated entities.
    */
   async upsertMany(target: OneOrMany<Paths<UntaggedDeep<T>>>, entities: NewEntity<T>[], update?: EntityUpdate<T>): Promise<T[]> {
+    if (entities.length === 0) {
+      return [];
+    }
+
     const targetColumns = toArray(target).map((path) => this.getColumn(path));
 
     const columns = await this.mapManyToInsertColumns(entities);
@@ -520,6 +581,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of the updated entities.
    */
   async updateMany(ids: string[], update: EntityUpdate<T>): Promise<T[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return await this.updateManyByQuery(inArray(this.#table.id, ids), update);
   }
 
@@ -645,6 +710,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of the deleted entities.
    */
   async deleteMany(ids: string[], metadataUpdate?: EntityMetadataUpdate): Promise<T[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return await this.deleteManyByQuery(inArray(this.#table.id, ids), metadataUpdate);
   }
 
@@ -699,7 +768,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   async tryHardDelete(id: string): Promise<T | undefined> {
     const sqlQuery = this.convertQuery(eq(this.#table.id, id));
 
-    const [row] = await (this.session as NodePgDatabase)
+    const [row] = await this.session
       .delete(this.#table)
       .where(sqlQuery)
       .returning();
@@ -737,7 +806,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   async tryHardDeleteByQuery(query: Query<T>): Promise<T | undefined> {
     const idQuery = this.getIdLimitSelect(query);
 
-    const [row] = await (this.session as NodePgDatabase)
+    const [row] = await this.session
       .delete(this.#table)
       .where(inArray(this.#table.id, idQuery.for('update')))
       .returning();
@@ -755,6 +824,10 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to an array of the hard deleted entities.
    */
   async hardDeleteMany(ids: string[]): Promise<T[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return await this.hardDeleteManyByQuery(inArray(this.#table.id, ids));
   }
 
@@ -766,7 +839,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
   async hardDeleteManyByQuery(query: Query<T>): Promise<T[]> {
     const sqlQuery = this.convertQuery(query);
 
-    const rows = await (this.session as NodePgDatabase)
+    const rows = await this.session
       .delete(this.#table)
       .where(sqlQuery)
       .returning();
@@ -1047,6 +1120,16 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
  */
 export function injectRepository<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>, session?: Database | PgTransaction | null): EntityRepository<T> {
   return injectTransactional(EntityRepository<T>, session, type);
+}
+
+/**
+ * Injects an EntityRepository instance for the specified entity type.
+ * @template T The entity type.
+ * @param type The entity type.
+ * @returns An EntityRepository instance for the specified type.
+ */
+export async function injectRepositoryAsync<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>, session?: Database | PgTransaction | null): Promise<EntityRepository<T>> {
+  return await injectTransactionalAsync(EntityRepository<T>, session, type);
 }
 
 /**

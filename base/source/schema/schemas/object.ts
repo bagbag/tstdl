@@ -1,5 +1,3 @@
-/* eslint-disable max-depth */
-
 import type { EmptyObject, Merge } from 'type-fest';
 
 import type { JsonPath } from '#/json-path/json-path.js';
@@ -31,7 +29,7 @@ export type ObjectSchemaOptions<T extends Record = Record, K extends PropertyKey
   mask?: boolean | null,
   unknownPropertiesKey?: SchemaTestable<K> | null,
   unknownProperties?: SchemaTestable<V> | null,
-  factory?: ObjectSchemaFactory<T> | null
+  factory?: ObjectSchemaFactory<T> | null,
 };
 
 export type ObjectSchemaOrType<T extends Record = any> = ObjectSchema<T> | AbstractConstructor<T>;
@@ -108,7 +106,6 @@ export class ObjectSchema<T extends Record = Record> extends Schema<T> {
           return { valid: false, error: new SchemaError('Invalid property key.', { path: propertyPath, inner: keyResult.error, fast: options.fastErrors }) };
         }
 
-
         const innerValueResult = this.unknownProperties?._test((value as Record)[key], propertyPath, options) ?? { valid: true, value: (value as Record)[key] };
 
         if (!innerValueResult.valid) {
@@ -169,7 +166,7 @@ export function assign(...schemasOrTypes: ObjectSchemaOrType[]): ObjectSchema {
       mask: schemas.findLast((schema) => isNotNull(schema.mask))?.mask,
       unknownProperties: schemas.findLast((schema) => isNotNull(schema.unknownProperties))?.unknownProperties,
       unknownPropertiesKey: schemas.findLast((schema) => isNotNull(schema.unknownPropertiesKey))?.unknownPropertiesKey,
-      description: schemas.findLast((schema) => isNotNull(schema.description))?.description
+      description: schemas.findLast((schema) => isNotNull(schema.description))?.description,
     }
   );
 }
@@ -189,7 +186,7 @@ export function partial<const T extends Record, const K extends keyof T>(schemaO
     {
       mask: schema.mask,
       unknownProperties: schema.unknownProperties,
-      unknownPropertiesKey: schema.unknownPropertiesKey
+      unknownPropertiesKey: schema.unknownPropertiesKey,
     }
   ) as any as ObjectSchema<Partial<T>>;
 }
@@ -203,7 +200,7 @@ export function pick<const T extends Record, const K extends keyof T>(schemaOrTy
     {
       mask: schema.mask,
       unknownProperties: schema.unknownProperties,
-      unknownPropertiesKey: schema.unknownPropertiesKey
+      unknownPropertiesKey: schema.unknownPropertiesKey,
     }
   ) as ObjectSchema<Pick<T, K>>;
 }
@@ -217,7 +214,7 @@ export function omit<const T extends Record, const K extends keyof T>(schemaOrTy
     {
       mask: schema.mask,
       unknownProperties: schema.unknownProperties,
-      unknownPropertiesKey: schema.unknownPropertiesKey
+      unknownPropertiesKey: schema.unknownPropertiesKey,
     }
   ) as ObjectSchema<Omit<T, K>>;
 }
@@ -256,10 +253,10 @@ function _tryGetSchemaFromReflection<T extends Record>(type: AbstractConstructor
     unknownProperties: typeData.unknownProperties,
     unknownPropertiesKey: typeData.unknownPropertiesKey,
     description: typeData.description,
-    example: typeData.example
+    example: typeData.example,
   }) as ObjectSchema<T>;
 
-  const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor;
+  const prototype = Reflect.getPrototypeOf(type) as AbstractConstructor | null;
 
   if (isNotNull(prototype) && reflectionRegistry.hasType(prototype)) {
     const parentSchema = getSchemaFromReflection(prototype);

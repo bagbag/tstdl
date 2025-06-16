@@ -15,7 +15,7 @@ import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
 import { normalizedApiDefinitionEndpointsEntries, type ApiClientImplementation, type ApiDefinition, type ApiEndpointDefinition, type ApiEndpointDefinitionResult, type ApiEndpointKeys, type ApiParameters } from '../types.js';
 import { getFullApiEndpointResource } from '../utils.js';
 
-export type ApiClient<T extends ApiDefinition> = Type<ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>, [httpClientOrOptions?: HttpClient | HttpClientOptions]>;
+export type ApiClient<T extends ApiDefinition> = Type<ApiClientImplementation<T> & Resolvable<HttpClient | HttpClientOptions>, [httpClientOrOptions?: HttpClient | HttpClientOptions]> & Pick<ApiClientImplementation<T>, 'getEndpointResource' | 'getEndpointUrl'>;
 
 export type ClientOptions = {
   /**
@@ -40,7 +40,6 @@ export function setDefaultApiClientOptions(options: ClientOptions): void {
   copyObjectProperties(options, defaultOptions);
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function compileClient<T extends ApiDefinition>(definition: T, options: ClientOptions = defaultOptions): ApiClient<T> {
   const { resource: path, endpoints } = definition;
   const constructedApiName = toTitleCase(path[0] ?? '');
@@ -57,7 +56,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         this[apiDefinitionSymbol] = definition;
       }
 
-      getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string {
+      static getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string {
         const resource = getFullApiEndpointResource({ api: definition, endpoint: resolveValueOrProvider(definition.endpoints[endpoint]!), defaultPrefix: options.prefix });
 
         if (isUndefined(parameters)) {
@@ -67,9 +66,18 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         return buildUrl(resource, parameters as UndefinableJsonObject | undefined).parsedUrl;
       }
 
-      getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): URL {
+      static getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): URL {
         const url = this.getEndpointResource(endpoint, parameters);
+        return new URL(url, 'http://baseurl/');
+      }
+
+      getEndpointUrl<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): URL {
+        const url = api.getEndpointResource(endpoint, parameters);
         return new URL(url, this[httpClientSymbol].options.baseUrl);
+      }
+
+      getEndpointResource<E extends ApiEndpointKeys<T>>(endpoint: E, parameters?: ApiParameters<T, E>): string {
+        return api.getEndpointResource(endpoint, parameters);
       }
     },
   }[apiName]!;
@@ -115,7 +123,7 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
         });
 
         const response = await this[httpClientSymbol].rawRequest(request);
-        return getResponseBody(response, endpoint.result);
+        return await getResponseBody(response, endpoint.result);
       },
     }[name];
 
@@ -162,7 +170,7 @@ async function getResponseBody(response: HttpClientResponse, schema: ApiEndpoint
           : await response.body.read()
     : undefined;
 
-  return Schema.parse(schema, body, { mask: true }) as Promise<unknown>;
+  return Schema.parse(schema, body, { mask: true });
 }
 
 function getServerSentEvents(baseUrl: string | undefined, resource: string, endpoint: ApiEndpointDefinition, parameters: UndefinableJsonObject | undefined): ServerSentEvents {

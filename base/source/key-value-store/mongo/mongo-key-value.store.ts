@@ -17,8 +17,8 @@ import { MongoKeyValueRepository } from './mongo-key-value.repository.js';
       assertString(argument, 'Missing or invalid argument (KV-Store module)');
 
       return provider.get(argument);
-    }
-  }
+    },
+  },
 })
 export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> {
   private readonly keyValueRepository: MongoKeyValueRepository;
@@ -46,10 +46,21 @@ export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> 
 
     const update: UpdateFilter<MongoKeyValue> = {
       $set: { value, updated: timestamp },
-      $setOnInsert: { _id: getNewId() }
+      $setOnInsert: { _id: getNewId() },
     };
 
     await this.keyValueRepository.baseRepository.update({ module: this.module, key: key as string }, update, { upsert: true });
+  }
+
+  async getOrSet<K extends keyof KV>(key: K, value: KV[K]): Promise<KV[K]> {
+    await this.keyValueRepository.baseRepository.insertIfNotExistsByFilter({
+      module: this.module,
+      key: key as string,
+      value,
+    }, { id: getNewId(), module: this.module, key: key as string, value, updated: currentTimestamp() });
+
+    const result = await this.get(key);
+    return result as KV[K];
   }
 
   async setMany(keyValues: Partial<KV>): Promise<void> {
@@ -60,7 +71,7 @@ export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> 
     for (const [key, value] of objectEntries<StringMap>(keyValues)) {
       const update: UpdateFilter<MongoKeyValue> = {
         $set: { value, updated: timestamp },
-        $setOnInsert: { _id: getNewId() }
+        $setOnInsert: { _id: getNewId() },
       };
 
       bulk.update({ module: this.module, key }, update, { upsert: true });
@@ -70,7 +81,7 @@ export class MongoKeyValueStore<KV extends StringMap> extends KeyValueStore<KV> 
   }
 
   async delete(key: keyof KV): Promise<boolean> {
-    return this.keyValueRepository.deleteByFilter({ module: this.module, key: key as string });
+    return await this.keyValueRepository.deleteByFilter({ module: this.module, key: key as string });
   }
 
   async deleteMany(keys: (keyof KV)[]): Promise<void> {

@@ -7,7 +7,7 @@ import { Agent } from 'undici';
 import { configureApiServer } from '#/api/server/index.js';
 import { Application } from '#/application/application.js';
 import { AuthenticationClientService, configureAuthenticationClient, getAuthenticationApiClient } from '#/authentication/index.js';
-import { AuthenticationAncillaryService, AuthenticationApiController, AuthenticationService as AuthenticationServerService, configureAuthenticationServer } from '#/authentication/server/index.js';
+import { AuthenticationAncillaryService, AuthenticationApiController, AuthenticationService as AuthenticationServerService, configureAuthenticationServer, type ResolveSubjectResult } from '#/authentication/server/index.js';
 import { configureUndiciHttpClientAdapter } from '#/http/client/adapters/undici.adapter.js';
 import { configureHttpClient } from '#/http/client/module.js';
 import { configureNodeHttpServer } from '#/http/server/node/module.js';
@@ -69,7 +69,7 @@ class CustomAuthenticationAncillaryService extends AuthenticationAncillaryServic
     return { deviceRegistrationId: `registration:${authenticationData.deviceId}` };
   }
 
-  override resolveSubject(): string | Promise<string> {
+  override resolveSubject(): ResolveSubjectResult | Promise<ResolveSubjectResult> {
     throw new Error('Method not implemented.');
   }
 

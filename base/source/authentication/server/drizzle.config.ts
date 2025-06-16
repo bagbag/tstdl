@@ -8,6 +8,6 @@ export default defineConfig({
   schema: resolve(__dirname, '../models/schemas.js'),
   migrations: {
     schema: 'authentication',
-    table: '_migrations'
-  }
+    table: '_migrations',
+  },
 });

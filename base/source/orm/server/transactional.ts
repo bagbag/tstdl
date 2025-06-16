@@ -2,7 +2,7 @@ import { PgTransaction as DrizzlePgTransaction } from 'drizzle-orm/pg-core';
 
 import { createContextProvider } from '#/context/context.js';
 import { Injector, type InjectionToken, type ResolveArgument } from '#/injector/index.js';
-import { inject, runInInjectionContext } from '#/injector/inject.js';
+import { inject, injectAsync, runInInjectionContext } from '#/injector/inject.js';
 import type { Type } from '#/types.js';
 import { isDefined, isNull, isUndefined } from '#/utils/type-guards.js';
 import { Database } from './database.js';
@@ -176,22 +176,6 @@ export function getTransactionalContextData<T>(_instance?: Transactional<T>): T 
   return getCurrentTransactionalContext(true, getTransactionalContextData).data as T;
 }
 
-export function injectTransactional<T extends Transactional, A = unknown>(token: InjectionToken<T, A>, session?: Database | PgTransaction | null, argument?: ResolveArgument<T, A>): T {
-  const transactional = inject(token, argument);
-
-  if (isNull(session)) {
-    return transactional;
-  }
-
-  const newSession = session ?? getCurrentTransactionalContext()?.session;
-
-  if (isDefined(newSession) && (transactional.session != newSession)) {
-    return transactional.withSession(newSession);
-  }
-
-  return transactional;
-}
-
 export function tryGetTstdlTransaction(transactionOrSession: Transaction | Database | PgTransaction | undefined): Transaction | undefined {
   if (isUndefined(transactionOrSession)) {
     return undefined;
@@ -206,4 +190,28 @@ export function tryGetTstdlTransaction(transactionOrSession: Transaction | Datab
   }
 
   return undefined;
+}
+
+export function injectTransactional<T extends Transactional, A = unknown>(token: InjectionToken<T, A>, session?: Database | PgTransaction | null, argument?: ResolveArgument<T, A>): T {
+  const transactional = inject(token, argument);
+  return handleInjectedTransactional(transactional, session);
+}
+
+export async function injectTransactionalAsync<T extends Transactional, A = unknown>(token: InjectionToken<T, A>, session?: Database | PgTransaction | null, argument?: ResolveArgument<T, A>): Promise<T> {
+  const transactional = await injectAsync(token, argument);
+  return handleInjectedTransactional(transactional, session);
+}
+
+function handleInjectedTransactional<T extends Transactional>(transactional: T, session?: Database | PgTransaction | null): T {
+  if (isNull(session)) {
+    return transactional;
+  }
+
+  const newSession = session ?? getCurrentTransactionalContext()?.session;
+
+  if (isDefined(newSession) && (transactional.session != newSession)) {
+    return transactional.withSession(newSession);
+  }
+
+  return transactional;
 }

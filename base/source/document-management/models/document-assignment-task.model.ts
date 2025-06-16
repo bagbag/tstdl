@@ -1,5 +1,5 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
-import { References } from '#/orm/decorators.js';
+import { ForeignKey, References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { Unique, Uuid } from '#/orm/types.js';
 import { Enumeration } from '#/schema/index.js';
@@ -13,9 +13,13 @@ export const DocumentAssignmentTarget = defineEnum('DocumentAssignmentTarget', {
 
 export type DocumentAssignmentTarget = EnumType<typeof DocumentAssignmentTarget>;
 
-@DocumentManagementTable()
+@DocumentManagementTable({ name: 'assignment_task' })
+@ForeignKey<DocumentAssignmentTask, Document>(() => Document, ['tenantId', 'documentId'], ['tenantId', 'id'])
 export class DocumentAssignmentTask extends Entity {
   declare static readonly entityName: 'DocumentAssignmentTask';
+
+  @Uuid()
+  tenantId: Uuid;
 
   @Uuid()
   @References(() => Document)

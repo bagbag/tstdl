@@ -1,14 +1,15 @@
-import { and, isNotNull as drizzleIsNotNull, eq, inArray } from 'drizzle-orm';
+import { and, isNotNull as drizzleIsNotNull, isNull as drizzleIsNull, eq, inArray, or } from 'drizzle-orm';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
+import { NotFoundError } from '#/errors/not-found.error.js';
 import { inject } from '#/injector/index.js';
 import { autoAlias, coalesce, getEntityMap, toJsonb, type NewEntity } from '#/orm/index.js';
 import { Transactional } from '#/orm/server/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
 import type { OneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
-import { assertBooleanPass, assertDefinedPass, assertNumberPass, assertStringPass, isBoolean, isNotNull, isNull, isNumber, isString } from '#/utils/type-guards.js';
-import { DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentTypeProperty } from '../../models/index.js';
+import { assertBooleanPass, assertNumberPass, assertStringPass, isBoolean, isNotNull, isNull, isNumber, isString, isUndefined } from '#/utils/type-guards.js';
+import { DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentTypeProperty, type Document } from '../../models/index.js';
 import type { DocumentPropertyValueView, DocumentPropertyView, SetDocumentPropertyParameters } from '../../service-models/index.js';
 import { document, documentProperty, documentPropertyValue, documentType, documentTypeProperty } from '../schemas.js';
 import { DocumentManagementObservationService } from './document-management-observation.service.js';
@@ -36,6 +37,8 @@ export class DocumentPropertyService extends Transactional {
     .select({
       documentId: autoAlias(document.id),
       propertyId: autoAlias(documentProperty.id),
+      documentTenantId: autoAlias(document.tenantId),
+      propertyTenantId: autoAlias(documentProperty.tenantId),
       label: documentProperty.label,
       dataType: documentProperty.dataType,
       value: coalesce(
@@ -47,15 +50,37 @@ export class DocumentPropertyService extends Transactional {
       ).as('value'),
     })
     .from(document)
-    .innerJoin(documentType, eq(documentType.id, document.typeId))
-    .innerJoin(documentTypeProperty, eq(documentTypeProperty.typeId, documentType.id))
-    .innerJoin(documentProperty, eq(documentProperty.id, documentTypeProperty.propertyId))
-    .leftJoin(documentPropertyValue, and(eq(documentPropertyValue.documentId, document.id), eq(documentPropertyValue.propertyId, documentProperty.id)))
+    .innerJoin(documentType, and(
+      eq(documentType.id, document.typeId),
+      or(
+        drizzleIsNull(documentType.tenantId),
+        eq(documentType.tenantId, document.tenantId),
+      ),
+    ))
+    .innerJoin(documentTypeProperty, and(
+      eq(documentTypeProperty.typeId, documentType.id),
+      or(
+        drizzleIsNull(documentTypeProperty.tenantId),
+        eq(documentTypeProperty.tenantId, document.tenantId),
+      ),
+    ))
+    .innerJoin(documentProperty, and(
+      eq(documentProperty.id, documentTypeProperty.propertyId),
+      or(
+        drizzleIsNull(documentProperty.tenantId),
+        eq(documentProperty.tenantId, document.tenantId),
+      ),
+    ))
+    .leftJoin(documentPropertyValue, and(
+      eq(documentPropertyValue.tenantId, document.tenantId),
+      eq(documentPropertyValue.documentId, document.id),
+      eq(documentPropertyValue.propertyId, documentProperty.id),
+    ))
   );
 
-  async loadViews(): Promise<DocumentPropertyView[]> {
-    const properties = await this.#documentPropertyRepository.loadAll();
-    const typeProperties = await this.#documentTypePropertyRepository.loadAll();
+  async loadViews(tenantId: string | null): Promise<DocumentPropertyView[]> {
+    const properties = await this.#documentPropertyRepository.loadManyByQuery({ tenantId: { $or: [null, tenantId] } });
+    const typeProperties = await this.#documentTypePropertyRepository.loadManyByQuery({ tenantId: { $or: [null, tenantId] } });
 
     return properties.map((property) => {
       const typeIds = typeProperties
@@ -64,6 +89,7 @@ export class DocumentPropertyService extends Transactional {
 
       return {
         id: property.id,
+        tenantId: property.tenantId,
         label: property.label,
         dataType: property.dataType,
         typeIds,
@@ -71,19 +97,24 @@ export class DocumentPropertyService extends Transactional {
     });
   }
 
-  async createProperty(label: string, dataType: DocumentPropertyDataType, enumKey?: string): Promise<DocumentProperty> {
-    return await this.#documentPropertyRepository.insert({ label, dataType, metadata: { attributes: { [enumTypeKey]: enumKey } } });
+  async createProperty(data: { tenantId: string | null, label: string, dataType: DocumentPropertyDataType, enumKey?: string }): Promise<DocumentProperty> {
+    return await this.#documentPropertyRepository.insert({
+      tenantId: data.tenantId,
+      label: data.label,
+      dataType: data.dataType,
+      metadata: { attributes: { [enumTypeKey]: data.enumKey } },
+    });
   }
 
-  async updateProperty(id: string, update: { label?: string, dataType?: DocumentPropertyDataType }): Promise<DocumentProperty> {
-    return await this.#documentPropertyRepository.update(id, update);
+  async updateProperty(tenantId: string | null, id: string, update: { label?: string, dataType?: DocumentPropertyDataType }): Promise<DocumentProperty> {
+    return await this.#documentPropertyRepository.updateByQuery({ tenantId, id }, update);
   }
 
-  async assignPropertyToType(typeId: string, propertyId: string): Promise<void> {
-    await this.#documentTypePropertyRepository.insert({ typeId, propertyId });
+  async assignPropertyToType(tenantId: string | null, typeId: string, propertyId: string): Promise<void> {
+    await this.#documentTypePropertyRepository.insert({ tenantId, typeId, propertyId });
   }
 
-  async loadDocumentProperties(documentId: OneOrMany<string>, includeNulls = false): Promise<DocumentPropertyValueView[]> {
+  async loadDocumentPropertyValues(tenantId: string, documentId: OneOrMany<string>, includeNulls = false): Promise<DocumentPropertyValueView[]> {
     return await this.session
       .with(this.documentProperties)
       .select({
@@ -95,12 +126,14 @@ export class DocumentPropertyService extends Transactional {
       })
       .from(this.documentProperties)
       .where(and(
+        eq(this.documentProperties.documentTenantId, tenantId),
         inArray(this.documentProperties.documentId, toArray(documentId) as string[]),
+        inArray(this.documentProperties.propertyTenantId, [null, tenantId]),
         includeNulls ? undefined : drizzleIsNotNull(this.documentProperties.value),
       ));
   }
 
-  async setPropertyValues(documentId: string, propertyValues: SetDocumentPropertyParameters[]): Promise<void> {
+  async setPropertyValues(document: Document, propertyValues: SetDocumentPropertyParameters[]): Promise<void> {
     if ((propertyValues.length == 0)) {
       return;
     }
@@ -108,16 +141,21 @@ export class DocumentPropertyService extends Transactional {
     await this.transaction(async (tx) => {
       const propertyIds = propertyValues.map((property) => property.propertyId);
 
-      const properties = await this.#documentPropertyRepository.withTransaction(tx).loadManyByQuery({ id: { $in: propertyIds } });
+      const properties = await this.#documentPropertyRepository.withTransaction(tx).loadManyByQuery({ tenantId: { $or: [null, document.tenantId] }, id: { $in: propertyIds } });
       const propertiesMap = getEntityMap(properties);
 
       const upserts = propertyValues.filter((value) => isNotNull(value.value)).map(({ propertyId, value, metadata }) => {
-        const property = assertDefinedPass(propertiesMap.get(propertyId));
+        const property = propertiesMap.get(propertyId);
+
+        if (isUndefined(property)) {
+          throw new NotFoundError(`Property "${propertyId}" not found.`);
+        }
 
         validatePropertyValue(propertyId, property.dataType, value);
 
         return {
-          documentId,
+          tenantId: document.tenantId,
+          documentId: document.id,
           propertyId,
           text: (property.dataType == 'text') ? assertStringPass(value) : null,
           integer: (property.dataType == 'integer') ? assertNumberPass(value) : null,
@@ -130,10 +168,10 @@ export class DocumentPropertyService extends Transactional {
 
       const deletePropertyIds = propertyValues.filter((value) => isNull(value.value)).map(({ propertyId }) => propertyId);
 
-      await this.#documentPropertyValueRepository.withTransaction(tx).hardDeleteManyByQuery({ documentId, propertyId: { $in: deletePropertyIds } });
+      await this.#documentPropertyValueRepository.withTransaction(tx).hardDeleteManyByQuery({ tenantId: document.tenantId, documentId: document.id, propertyId: { $in: deletePropertyIds } });
       await this.#documentPropertyValueRepository.withTransaction(tx).upsertMany(['documentId', 'propertyId'], upserts);
 
-      this.#observationService.documentChange(documentId, tx);
+      this.#observationService.documentChange(document.id, tx);
     });
   }
 }

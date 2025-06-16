@@ -7,33 +7,33 @@ import { millisecondsPerDay, millisecondsPerHour, millisecondsPerMinute, millise
 export type DateObject = {
   year: number,
   month: number,
-  day: number
+  day: number,
 };
 
 export type ZonedDateObject = DateObject & {
-  zone: string
+  zone: string,
 };
 
 export type TimeObject = {
   hour: number,
   minute: number,
   second: number,
-  millisecond: number
+  millisecond: number,
 };
 
 export type ZonedTimeObject = TimeObject & {
-  zone: string
+  zone: string,
 };
 
 export type SimpleDateTimeObject = DateObject & TimeObject;
 
 export type ZonedDateTimeObject = SimpleDateTimeObject & {
-  zone: string
+  zone: string,
 };
 
 export type NumericDateTime = {
   date: number,
-  time: number
+  time: number,
 };
 
 export function now(): Date {
@@ -107,14 +107,14 @@ export function numericTimeToTimeObject(time: number): TimeObject {
     hour: Math.floor(time / millisecondsPerHour),
     minute: Math.floor((time % millisecondsPerHour) / millisecondsPerMinute),
     second: Math.floor((time % millisecondsPerMinute) / millisecondsPerSecond),
-    millisecond: Math.floor(time % millisecondsPerSecond)
+    millisecond: Math.floor(time % millisecondsPerSecond),
   };
 }
 
 export function timestampToNumericDateAndTime(timestamp: number): NumericDateTime {
   return {
     date: timestampToNumericDate(timestamp),
-    time: timestampToTime(timestamp)
+    time: timestampToTime(timestamp),
   };
 }
 
@@ -133,7 +133,7 @@ export function numericDateToDateObject(numericDate: number): { year: number, mo
   return {
     year: date.getUTCFullYear(),
     month: date.getUTCMonth() + 1,
-    day: date.getUTCDate()
+    day: date.getUTCDate(),
   };
 }
 
@@ -142,11 +142,32 @@ export function numericDateTimeToTimestamp({ date, time }: NumericDateTime): num
 }
 
 export function dateObjectToDateTime(dateObject: ZonedDateObject, units?: DateObjectUnits, options?: DateTimeJSOptions): DateTime {
-  return DateTime.fromObject({ ...dateObject, ...units }, options);
+  const dateTime = DateTime.fromObject({ ...dateObject, ...units }, options);
+
+  if (!dateTime.isValid) {
+    throw new Error(`Invalid date object: ${dateTime.invalidExplanation}`);
+  }
+
+  return dateTime;
+}
+
+export function tryDateObjectToNumericDate(dateObject: DateObject): number | null {
+  const dateTime = DateTime.fromObject({ ...dateObject }, { zone: 'UTC' });
+
+  if (!dateTime.isValid) {
+    return null;
+  }
+
+  return dateTimeToNumericDate(dateTime);
 }
 
 export function dateObjectToNumericDate(dateObject: DateObject): number {
   const dateTime = DateTime.fromObject({ ...dateObject }, { zone: 'UTC' });
+
+  if (!dateTime.isValid) {
+    throw new Error(`Invalid date: ${dateTime.invalidExplanation}`);
+  }
+
   return dateTimeToNumericDate(dateTime);
 }
 

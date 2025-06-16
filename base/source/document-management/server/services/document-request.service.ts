@@ -1,4 +1,4 @@
-import { count, isNotNull as dbIsNotNull, isNull as dbIsNull, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, isNotNull as dbIsNotNull, isNull as dbIsNull, eq, inArray, sql } from 'drizzle-orm';
 
 import type { RequestStats } from '#/document-management/service-models/index.js';
 import { BadRequestError } from '#/errors/index.js';
@@ -8,7 +8,7 @@ import { Transactional, injectRepository } from '#/orm/server/index.js';
 import type { OneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertDefinedPass, isNotNull } from '#/utils/type-guards.js';
-import { DocumentApproval, DocumentCollectionAssignment, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate } from '../../models/index.js';
+import { DocumentApproval, DocumentCollectionAssignment, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate, type Document } from '../../models/index.js';
 import { document, documentRequest, documentRequestCollectionAssignment } from '../schemas.js';
 import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentManagementSingleton } from './singleton.js';
@@ -19,15 +19,18 @@ export class DocumentRequestService extends Transactional {
   readonly #documentRequestRepository = injectRepository(DocumentRequest);
   readonly #documentRequestTemplateRepository = injectRepository(DocumentRequestTemplate);
   readonly #documentRequestsTemplateRepository = injectRepository(DocumentRequestsTemplate);
-  readonly #documentCollectionAssignmentRepository = injectRepository(DocumentCollectionAssignment);
   readonly #observationService = inject(DocumentManagementObservationService);
 
-  async getRequestStats(collectionIds: OneOrMany<string>): Promise<RequestStats> {
+  async getRequestStats(tenantId: string, collectionIds: OneOrMany<string>): Promise<RequestStats> {
     const relevantRequests = this.session.$with('relevant_requests').as(
       this.session.selectDistinct({ id: documentRequest.id })
         .from(documentRequest)
         .innerJoin(documentRequestCollectionAssignment, eq(documentRequestCollectionAssignment.requestId, documentRequest.id))
-        .where(inArray(documentRequestCollectionAssignment.collectionId, toArray(collectionIds))),
+        .where(and(
+          eq(documentRequest.tenantId, tenantId),
+          eq(documentRequestCollectionAssignment.tenantId, tenantId),
+          inArray(documentRequestCollectionAssignment.collectionId, toArray(collectionIds))
+        )),
     );
 
     const [result] = await this.session.with(relevantRequests)
@@ -46,49 +49,49 @@ export class DocumentRequestService extends Transactional {
     return assertDefinedPass(result);
   }
 
-  async createRequestsTemplate(parameters: Pick<DocumentRequestsTemplate, 'label' | 'description'>): Promise<DocumentRequestsTemplate> {
-    return await this.#documentRequestsTemplateRepository.insert(parameters);
+  async createRequestsTemplate(tenantId: string | null, parameters: Pick<DocumentRequestsTemplate, 'label' | 'description'>): Promise<DocumentRequestsTemplate> {
+    return await this.#documentRequestsTemplateRepository.insert({ ...parameters, tenantId });
   }
 
-  async updateRequestsTemplate(id: string, parameters: Pick<DocumentRequestsTemplate, 'label' | 'description' | 'metadata'>): Promise<DocumentRequestsTemplate> {
-    return await this.#documentRequestsTemplateRepository.update(id, parameters);
+  async updateRequestsTemplate(tenantId: string | null, id: string, parameters: Pick<DocumentRequestsTemplate, 'label' | 'description' | 'metadata'>): Promise<DocumentRequestsTemplate> {
+    return await this.#documentRequestsTemplateRepository.updateByQuery({ tenantId, id }, parameters);
   }
 
-  async applyRequestsTemplate(id: string, collectionIds: string[]): Promise<void> {
-    const requestTemplates = await this.#documentRequestTemplateRepository.loadManyByQuery({ requestsTemplateId: id });
+  async applyRequestsTemplate(tenantId: string, id: string, collectionIds: string[]): Promise<void> {
+    const requestTemplates = await this.#documentRequestTemplateRepository.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, requestsTemplateId: id });
 
     await this.transaction(async (tx) => {
       for (const { typeId, comment } of requestTemplates) {
-        await this.withTransaction(tx).createRequest(typeId, collectionIds, comment);
+        await this.withTransaction(tx).createRequest(tenantId, typeId, collectionIds, comment);
       }
     });
   }
 
-  async deleteRequestsTemplate(id: string): Promise<DocumentRequestsTemplate> {
-    return await this.#documentRequestsTemplateRepository.delete(id);
+  async deleteRequestsTemplate(tenantId: string, id: string): Promise<DocumentRequestsTemplate> {
+    return await this.#documentRequestsTemplateRepository.deleteByQuery({ tenantId, id });
   }
 
-  async createRequestTemplate(requestsTemplateId: string, typeId: string, comment: string): Promise<DocumentRequestTemplate> {
-    return await this.#documentRequestTemplateRepository.insert({ requestsTemplateId, typeId, comment });
+  async createRequestTemplate(tenantId: string, requestsTemplateId: string, typeId: string, comment: string): Promise<DocumentRequestTemplate> {
+    return await this.#documentRequestTemplateRepository.insert({ tenantId, requestsTemplateId, typeId, comment });
   }
 
-  async updateRequestTemplate(id: string, parameters: Pick<DocumentRequestTemplate, 'typeId' | 'comment'>): Promise<DocumentRequestTemplate> {
-    return await this.#documentRequestTemplateRepository.update(id, parameters);
+  async updateRequestTemplate(tenantId: string, id: string, parameters: Pick<DocumentRequestTemplate, 'typeId' | 'comment'>): Promise<DocumentRequestTemplate> {
+    return await this.#documentRequestTemplateRepository.updateByQuery({ tenantId, id }, parameters);
   }
 
-  async deleteRequestTemplate(id: string): Promise<DocumentRequestTemplate> {
-    return await this.#documentRequestTemplateRepository.delete(id);
+  async deleteRequestTemplate(tenantId: string, id: string): Promise<DocumentRequestTemplate> {
+    return await this.#documentRequestTemplateRepository.deleteByQuery({ tenantId, id });
   }
 
-  async createRequest(typeId: string, collectionIds: string[], comment: string | null): Promise<DocumentRequest> {
+  async createRequest(tenantId: string, typeId: string, collectionIds: string[], comment: string | null): Promise<DocumentRequest> {
     if (collectionIds.length == 0) {
       throw new BadRequestError('No target collectionId specified.');
     }
 
     return await this.transaction(async (tx) => {
-      const request = await this.#documentRequestRepository.withTransaction(tx).insert({ typeId, documentId: null, comment, state: DocumentRequestState.Open });
+      const request = await this.#documentRequestRepository.withTransaction(tx).insert({ tenantId, typeId, documentId: null, comment, state: DocumentRequestState.Open });
 
-      const newDocumentRequestCollectionAssignments = collectionIds.map((collectionId): NewEntity<DocumentRequestCollectionAssignment> => ({ requestId: request.id, collectionId }));
+      const newDocumentRequestCollectionAssignments = collectionIds.map((collectionId): NewEntity<DocumentRequestCollectionAssignment> => ({ tenantId, requestId: request.id, collectionId }));
       await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).insertMany(newDocumentRequestCollectionAssignments);
 
       this.#observationService.collectionChange(collectionIds, tx);
@@ -97,78 +100,42 @@ export class DocumentRequestService extends Transactional {
     });
   }
 
-  async updateRequest(id: string, update: Partial<Pick<DocumentRequest, 'typeId' | 'comment'>>): Promise<void> {
+  async updateRequest(tenantId: string, id: string, update: Partial<Pick<DocumentRequest, 'typeId' | 'comment'>>): Promise<void> {
     await this.transaction(async (tx) => {
-      const request = await this.#documentRequestRepository.withTransaction(tx).load(id);
+      const request = await this.#documentRequestRepository.withTransaction(tx).loadByQuery({ tenantId, id });
 
       if (isNotNull(request.documentId)) {
         throw new BadRequestError('Cannot update document requests which have an assigned document.');
       }
 
-      await this.#documentRequestRepository.withTransaction(tx).update(id, update);
+      await this.#documentRequestRepository.withTransaction(tx).updateByQuery({ tenantId, id }, update);
       this.#observationService.requestChange(id, tx);
     });
   }
 
-  async deleteRequest(id: string): Promise<void> {
+  async deleteRequest(tenantId: string, id: string): Promise<void> {
     await this.transaction(async (tx) => {
-      const request = await this.#documentRequestRepository.withTransaction(tx).load(id);
+      const request = await this.#documentRequestRepository.withTransaction(tx).loadByQuery({ tenantId, id });
 
       if (isNotNull(request.documentId)) {
         throw new BadRequestError('Cannot delete requests which have an assigned document.');
       }
 
-      await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).deleteManyByQuery({ requestId: id });
-      await this.#documentRequestRepository.withTransaction(tx).delete(id);
+      await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).deleteManyByQuery({ tenantId, requestId: id });
+      await this.#documentRequestRepository.withTransaction(tx).deleteByQuery({ tenantId, id });
       this.#observationService.requestChange(id, tx);
     });
   }
 
-  async assignDocument(requestId: string, documentId: string): Promise<void> {
+  async assignDocument(document: Document, requestId: string): Promise<void> {
     await this.transaction(async (tx) => {
-      const request = await this.#documentRequestRepository.withTransaction(tx).load(requestId);
+      const request = await this.#documentRequestRepository.withTransaction(tx).loadByQuery({ tenantId: document.tenantId, id: requestId });
 
       if (isNotNull(request.documentId)) {
         throw new BadRequestError('Document request already has a document assigned.');
       }
 
-      await this.#documentRequestRepository.withTransaction(tx).update(requestId, { documentId });
-      this.#observationService.requestChange(requestId, tx);
-    });
-  }
-
-  /**
-   * Fulfills a document request.
-   * Marks the request as fulfilled and creates associations between the document
-   * and the target collections defined in the request.
-   *
-   * @param requestId The ID of the DocumentRequest to fulfill.
-   * @param documentId The ID of the Document fulfilling the request.
-   * @param userId The ID of the user performing the action (for audit purposes).
-   * @throws NotFoundError if the DocumentRequest with the given ID does not exist.
-   */
-  async fulfillRequest(requestId: string, documentId: string): Promise<void> {
-    await this.transaction(async (tx) => {
-      const request = await this.#documentRequestRepository.withTransaction(tx).load(requestId);
-
-      if (request.state == DocumentRequestState.Fulfilled) {
-        throw new BadRequestError('Document request is already fulfilled.');
-      }
-
-      const targetCollectionIds = await this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).loadManyByQuery({ requestId });
-
-      if (targetCollectionIds.length == 0) {
-        throw new Error('No document request collection for document request found.');
-      }
-
-      const links = targetCollectionIds.map((target): NewEntity<DocumentCollectionAssignment> => ({
-        collectionId: target.collectionId,
-        documentId,
-        archiveTimestamp: null,
-      }));
-
-      await this.#documentCollectionAssignmentRepository.withTransaction(tx).insertMany(links);
-      await this.#documentRequestRepository.withTransaction(tx).update(requestId, { state: DocumentRequestState.Fulfilled });
+      await this.#documentRequestRepository.withTransaction(tx).updateByQuery({ tenantId: document.tenantId, id: requestId }, { documentId: document.id });
       this.#observationService.requestChange(requestId, tx);
     });
   }

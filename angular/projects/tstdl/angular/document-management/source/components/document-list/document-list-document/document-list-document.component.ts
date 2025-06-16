@@ -11,17 +11,17 @@ import type { DocumentManagementContext } from '../../../context';
 import { PropertyValueComponent } from '../../property-value/property-value.component';
 
 @Component({
-  selector: 'tsl-document-inbox-document',
+  selector: 'tsl-document-list-document',
   imports: [DateTimeLocalePipe, BadgeComponent, IconComponent, PropertyValueComponent],
-  templateUrl: './document-inbox-document.component.html',
-  styleUrl: './document-inbox-document.component.scss',
+  templateUrl: './document-list-document.component.html',
+  styleUrl: './document-list-document.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'tsl-tw',
   },
 })
-export class DocumentInboxDocumentComponent {
+export class DocumentListDocumentComponent {
   readonly context = input.required<DocumentManagementContext>();
   readonly document = input.required<EnrichedDocument>();
 

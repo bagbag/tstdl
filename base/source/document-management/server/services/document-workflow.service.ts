@@ -18,7 +18,7 @@ import { toArray } from '#/utils/array/array.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { _throw } from '#/utils/throw.js';
 import { isNotNull, isNull } from '#/utils/type-guards.js';
-import { desc, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { documentWorkflow } from '../schemas.js';
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentManagementAiService } from './document-management-ai.service.js';
@@ -56,27 +56,30 @@ export class DocumentWorkflowService extends Transactional {
     );
   }
 
-  async loadLatestWorkflow(documentId: string): Promise<DocumentWorkflow> {
-    return await this.repository.loadByQuery({ documentId }, { order: { 'metadata.createTimestamp': 'desc' } });
+  async loadLatestWorkflow(tenantId: string, documentId: string): Promise<DocumentWorkflow> {
+    return await this.repository.loadByQuery({ tenantId, documentId }, { order: { 'metadata.createTimestamp': 'desc' } });
   }
 
-  async loadLatestWorkflows(documentIds: string[]): Promise<DocumentWorkflow[]> {
+  async loadLatestWorkflows(tenantId: string, documentIds: string[]): Promise<DocumentWorkflow[]> {
     const latestWorkflows = await this.repository.session
       .selectDistinctOn([documentWorkflow.documentId])
       .from(documentWorkflow)
-      .where(inArray(documentWorkflow.documentId, documentIds))
+      .where(and(
+        eq(documentWorkflow.tenantId, tenantId),
+        inArray(documentWorkflow.documentId, documentIds)
+      ))
       .orderBy(documentWorkflow.documentId, desc(documentWorkflow.createTimestamp));
 
     return await this.repository.mapManyToEntity(latestWorkflows);
   }
 
-  async loadWorkflows(documentId: OneOrMany<string>): Promise<DocumentWorkflow[]> {
-    return await this.repository.loadManyByQuery({ documentId: { $in: toArray(documentId) } }, { order: { 'documentId': 'asc', 'metadata.createTimestamp': 'desc' } });
+  async loadWorkflows(tenantId: string, documentId: OneOrMany<string>): Promise<DocumentWorkflow[]> {
+    return await this.repository.loadManyByQuery({ tenantId, documentId: { $in: toArray(documentId) } }, { order: { 'documentId': 'asc', 'metadata.createTimestamp': 'desc' } });
   }
 
-  async proceedWorkflow(documentId: string, userId: string): Promise<void> {
+  async proceedWorkflow(tenantId: string, documentId: string, userId: string): Promise<void> {
     await this.transaction(async (tx) => {
-      const workflow = await this.withTransaction(tx).loadLatestWorkflow(documentId);
+      const workflow = await this.withTransaction(tx).loadLatestWorkflow(tenantId, documentId);
 
       if (workflow.state != DocumentWorkflowState.Review) {
         throw new BadRequestError('Current workflow is not in review state.');
@@ -90,8 +93,8 @@ export class DocumentWorkflowService extends Transactional {
 
       await match(workflow.step)
         .with(DocumentWorkflowStep.Classification, () => _throw(new BadRequestError('Proceeding from classification occurs automatically.')))
-        .with(DocumentWorkflowStep.Extraction, async () => await this.withTransaction(tx).initiateWorkflow(documentId, DocumentWorkflowStep.Assignment))
-        .with(DocumentWorkflowStep.Assignment, async () => await this.withTransaction(tx).initiateWorkflow(documentId, DocumentWorkflowStep.Validation))
+        .with(DocumentWorkflowStep.Extraction, async () => await this.withTransaction(tx).initiateWorkflow(tenantId, documentId, DocumentWorkflowStep.Assignment))
+        .with(DocumentWorkflowStep.Assignment, async () => await this.withTransaction(tx).initiateWorkflow(tenantId, documentId, DocumentWorkflowStep.Validation))
         .with(DocumentWorkflowStep.Validation, () => { /* nothing to do */ })
         .exhaustive();
 
@@ -99,8 +102,8 @@ export class DocumentWorkflowService extends Transactional {
     });
   }
 
-  async initiateWorkflow(documentId: string, step: DocumentWorkflowStep): Promise<DocumentWorkflow> {
-    const workflow = await this.repository.insert({ documentId, step, state: 'pending', failReason: null, completeTimestamp: null, completeUserId: null });
+  async initiateWorkflow(tenantId: string, documentId: string, step: DocumentWorkflowStep): Promise<DocumentWorkflow> {
+    const workflow = await this.repository.insert({ tenantId, documentId, step, state: 'pending', failReason: null, completeTimestamp: null, completeUserId: null });
     await this.#queue.enqueue({ workflowId: workflow.id });
 
     this.#observationService.documentChange(workflow.id, this.session);
@@ -134,7 +137,7 @@ export class DocumentWorkflowService extends Transactional {
         // no need for after classification review. Automatically start extraction.
 
         await this.setWorkflowState(workflow.id, DocumentWorkflowState.Completed);
-        await this.initiateWorkflow(workflow.documentId, DocumentWorkflowStep.Extraction);
+        await this.initiateWorkflow(workflow.tenantId, workflow.documentId, DocumentWorkflowStep.Extraction);
       }
       else {
         await this.setWorkflowState(workflow.id, DocumentWorkflowState.Review);
@@ -153,42 +156,46 @@ export class DocumentWorkflowService extends Transactional {
   }
 
   private async processClassificationWorkflow(workflow: DocumentWorkflow): Promise<void> {
-    const typeId = await this.#documentManagementAiService.classifyDocumentType(workflow.documentId);
+    const typeId = await this.#documentManagementAiService.classifyDocumentType(workflow.tenantId, workflow.documentId);
     await this.documentService.repository.update(workflow.documentId, { typeId, approval: DocumentApproval.Pending });
     this.#observationService.documentChange(workflow.documentId, this.session);
   }
 
   private async processExtractionWorkflow(workflow: DocumentWorkflow): Promise<void> {
-    const extraction = await this.#documentManagementAiService.extractDocumentInformation(workflow.documentId);
-    await this.documentService.update(workflow.documentId, extraction);
+    const extraction = await this.#documentManagementAiService.extractDocumentInformation(workflow.tenantId, workflow.documentId);
+    await this.documentService.update(workflow.tenantId, workflow.documentId, extraction);
   }
 
   private async processAssignmentWorkflow(workflow: DocumentWorkflow): Promise<void> {
-    const assignmentTask = await this.#documentAssignmentTaskRepository.loadByQuery({ documentId: workflow.documentId });
-    const assignmentScopes = await this.#documentAssignmentScopeRepository.loadManyByQuery({ taskId: assignmentTask.id });
+    const [document, assignmentTask] = await Promise.all([
+      this.documentService.repository.loadByQuery({ tenantId: workflow.tenantId, id: workflow.documentId }),
+      this.#documentAssignmentTaskRepository.loadByQuery({ tenantId: workflow.tenantId, documentId: workflow.documentId }),
+    ]);
+
+    const assignmentScopes = await this.#documentAssignmentScopeRepository.loadManyByQuery({ tenantId: workflow.tenantId, taskId: assignmentTask.id });
 
     const collectionIds = assignmentScopes.map((scope) => scope.collectionId);
 
     await match(assignmentTask.target)
       .with('collection', async () => {
-        const suitableCollectionIds = await this.#documentManagementAiService.findSuitableCollectionsForDocument(workflow.documentId, collectionIds);
+        const suitableCollectionIds = await this.#documentManagementAiService.findSuitableCollectionsForDocument(document, collectionIds);
 
         if (suitableCollectionIds.length == 0) {
           await this.setWorkflowState(workflow.id, DocumentWorkflowState.Failed, DocumentWorkflowFailReason.NoSuitableCollection);
           return;
         }
 
-        await this.#documentCollectionService.assignDocument(workflow.documentId, suitableCollectionIds);
+        await this.#documentCollectionService.assignDocument(document, suitableCollectionIds);
       })
       .with('request', async () => {
-        const suitableRequestId = await this.#documentManagementAiService.findSuitableRequestForDocument(workflow.documentId, collectionIds);
+        const suitableRequestId = await this.#documentManagementAiService.findSuitableRequestForDocument(document, collectionIds);
 
         if (isNull(suitableRequestId)) {
           await this.setWorkflowState(workflow.id, DocumentWorkflowState.Failed, DocumentWorkflowFailReason.NoSuitableRequest);
           return;
         }
 
-        await this.#documentRequestService.assignDocument(suitableRequestId, workflow.documentId);
+        await this.#documentRequestService.assignDocument(document, suitableRequestId);
       })
       .exhaustive();
   }

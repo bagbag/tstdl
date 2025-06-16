@@ -1,5 +1,5 @@
 @layer tstdl.components {
-  tsl-document-state {
+  tsl-document-workflow-state {
     @apply contain-strict grid grid-cols-[1fr,auto] rounded-xl border border-neutral-500/25 overflow-y-auto overflow-clip;
 
     content-visibility: auto;

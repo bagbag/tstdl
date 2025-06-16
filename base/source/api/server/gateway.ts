@@ -35,7 +35,7 @@ export type ApiGatewayMiddlewareContext = {
   readonly resourcePatternResult: URLPatternResult,
 
   readonly request: HttpServerRequest,
-  readonly response: HttpServerResponse
+  readonly response: HttpServerResponse,
 };
 
 export type ApiGatewayMiddlewareNext = AsyncMiddlewareNext;
@@ -66,13 +66,13 @@ export abstract class ApiGatewayOptions {
 
 export type GatewayEndpoint = {
   definition: ApiEndpointDefinition,
-  implementation: ApiEndpointServerImplementation
+  implementation: ApiEndpointServerImplementation,
 };
 
 export type ApiItem = {
   resource: string,
   pattern: URLPattern,
-  endpoints: Map<ApiEndpointMethod, GatewayEndpoint>
+  endpoints: Map<ApiEndpointMethod, GatewayEndpoint>,
 };
 
 export type EndpointMetadataBodyType = 'none' | 'text' | 'json' | 'buffer' | 'stream';
@@ -81,7 +81,7 @@ export type ApiGatewayArgument = ApiGatewayOptions;
 
 export type ApiMetadata = {
   api: ApiItem,
-  patternResult: URLPatternResult
+  patternResult: URLPatternResult,
 };
 
 /**

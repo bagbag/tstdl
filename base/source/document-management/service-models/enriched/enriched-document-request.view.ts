@@ -13,6 +13,7 @@ export class EnrichedDocumentRequest implements TypedOmit<DocumentRequestView, '
   readonly #documentRequestView: DocumentRequestView;
 
   readonly id: string;
+  readonly tenantId: string;
   readonly comment: string | null;
   readonly state: DocumentRequestState;
 
@@ -40,6 +41,7 @@ export class EnrichedDocumentRequest implements TypedOmit<DocumentRequestView, '
     this.#documentRequestView = request;
 
     this.id = request.id;
+    this.tenantId = request.tenantId;
     this.comment = request.comment;
     this.state = request.state;
   }

@@ -11,7 +11,6 @@ import { inject } from '#/injector/inject.js';
 import { Logger } from '#/logger/logger.js';
 import { ObjectStorage } from '#/object-storage/index.js';
 import { Transactional } from '#/orm/server/index.js';
-import { injectRepository } from '#/orm/server/repository.js';
 import { pdfToImage } from '#/pdf/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { digest } from '#/utils/cryptography.js';
@@ -21,7 +20,7 @@ import { readableStreamFromPromise, readBinaryStream } from '#/utils/stream/inde
 import { isDefined, isNotReadableStream, isNotUint8Array, isUint8Array } from '#/utils/type-guards.js';
 import { millisecondsPerMinute, secondsPerMinute } from '#/utils/units.js';
 import { Document } from '../../models/index.js';
-import { DocumentManagementConfig } from '../module.js';
+import { DocumentManagementConfiguration } from '../module.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
 export type DocumentFileMetadata = {
@@ -32,13 +31,12 @@ export type DocumentFileMetadata = {
 
 @DocumentManagementSingleton()
 export class DocumentFileService extends Transactional {
-  readonly #config = inject(DocumentManagementConfig);
+  readonly #configuration = inject(DocumentManagementConfiguration);
 
-  readonly #documentRepository = injectRepository(Document);
   readonly #aiService = inject(AiService);
-  readonly #fileObjectStorage = inject(ObjectStorage, this.#config.fileObjectStorageModule);
-  readonly #filePreviewObjectStorage = inject(ObjectStorage, this.#config.filePreviewObjectStorageModule);
-  readonly #fileUploadObjectStorage = inject(ObjectStorage, { module: this.#config.fileUploadObjectStorageModule, configuration: { lifecycle: { expiration: { after: 5 * secondsPerMinute } } } });
+  readonly #fileObjectStorage = inject(ObjectStorage, this.#configuration.fileObjectStorageModule);
+  readonly #filePreviewObjectStorage = inject(ObjectStorage, this.#configuration.filePreviewObjectStorageModule);
+  readonly #fileUploadObjectStorage = inject(ObjectStorage, { module: this.#configuration.fileUploadObjectStorageModule, configuration: { lifecycle: { expiration: { after: 5 * secondsPerMinute } } } });
   readonly #logger = inject(Logger, DocumentFileService.name);
 
   readonly #aiFilePartCache = new Map<string, { part: FileContentPart, timestamp: number }>();
@@ -50,8 +48,8 @@ export class DocumentFileService extends Transactional {
    * @returns upload information
    */
   async initiateUpload({ key, contentLength }: { key: string, contentLength: number }): Promise<{ uploadId: string, uploadUrl: string }> {
-    if (contentLength > (this.#config.maxFileSize ?? Number.POSITIVE_INFINITY)) {
-      throw new ForbiddenError(`Content length exceeds the maximum limit of ${this.#config.maxFileSize} bytes.`);
+    if (contentLength > (this.#configuration.maxFileSize ?? Number.POSITIVE_INFINITY)) {
+      throw new ForbiddenError(`Content length exceeds the maximum limit of ${this.#configuration.maxFileSize} bytes.`);
     }
 
     const id = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
@@ -74,9 +72,9 @@ export class DocumentFileService extends Transactional {
         throw new ForbiddenError(`Invalid upload key`);
       }
 
-      if (objectContentLength > (this.#config.maxFileSize ?? Number.POSITIVE_INFINITY)) {
+      if (objectContentLength > (this.#configuration.maxFileSize ?? Number.POSITIVE_INFINITY)) {
         await this.#fileUploadObjectStorage.deleteObject(object.key);
-        throw new ForbiddenError(`Content length exceeds the maximum limit of ${this.#config.maxFileSize} bytes.`);
+        throw new ForbiddenError(`Content length exceeds the maximum limit of ${this.#configuration.maxFileSize} bytes.`);
       }
     }
 
@@ -105,48 +103,46 @@ export class DocumentFileService extends Transactional {
     return metadata;
   }
 
-  async getContent(fileId: string): Promise<Uint8Array> {
-    const objectKey = getObjectKey(fileId);
+  async getContent(document: Document): Promise<Uint8Array> {
+    const objectKey = getObjectKey(document.id);
     return await this.#fileObjectStorage.getContent(objectKey);
   }
 
-  getContentStream(fileId: string): ReadableStream<Uint8Array> {
-    const objectKey = getObjectKey(fileId);
+  getContentStream(document: Document): ReadableStream<Uint8Array> {
+    const objectKey = getObjectKey(document.id);
     return this.#fileObjectStorage.getContentStream(objectKey);
   }
 
-  async getContentUrl(documentId: string, title: string | null, download: boolean = false): Promise<string> {
-    const document = await this.#documentRepository.load(documentId);
-    return await this.getDocumentFileContentObjectUrl(document, title ?? documentId, download);
+  async getContentUrl(document: Document, download: boolean = false): Promise<string> {
+    return await this.getDocumentFileContentObjectUrl(document, document.title ?? document.id, download);
   }
 
-  async getPreview(fileId: string, page: number = 1): Promise<Uint8Array> {
-    const objectKey = getObjectKey(fileId);
-    await this.createPreviewIfNotExists(fileId, page);
+  async getPreview(document: Document, page: number = 1): Promise<Uint8Array> {
+    const objectKey = getObjectKey(document.id);
+    await this.createPreviewIfNotExists(document, page);
 
     return await this.#filePreviewObjectStorage.getContent(objectKey);
   }
 
-  getPreviewStream(fileId: string, page: number = 1): ReadableStream<Uint8Array> {
+  getPreviewStream(document: Document, page: number = 1): ReadableStream<Uint8Array> {
     return readableStreamFromPromise(async () => {
-      const objectKey = getObjectKey(fileId);
-      await this.createPreviewIfNotExists(fileId, page);
+      const objectKey = getObjectKey(document.id);
+      await this.createPreviewIfNotExists(document, page);
 
       return this.#filePreviewObjectStorage.getContentStream(objectKey);
     });
   }
 
-  async getPreviewUrl(fileId: string, page: number = 1): Promise<string> {
-    const objectKey = getObjectKey(fileId);
-    await this.createPreviewIfNotExists(fileId, page);
+  async getPreviewUrl(document: Document, page: number = 1): Promise<string> {
+    const objectKey = getObjectKey(document.id);
+    await this.createPreviewIfNotExists(document, page);
 
     return await this.#filePreviewObjectStorage.getDownloadUrl(objectKey, currentTimestamp() + (5 * millisecondsPerMinute), {
       'Response-Content-Type': 'image/jpeg',
     });
   }
 
-  async getAiFileContentPart(documentId: string): Promise<FileContentPart> {
-    const document = await this.#documentRepository.load(documentId);
+  async getAiFileContentPart(document: Document): Promise<FileContentPart> {
     const cachedAiFilePart = this.#aiFilePartCache.get(document.id);
 
     if (isDefined(cachedAiFilePart)) {
@@ -157,7 +153,7 @@ export class DocumentFileService extends Transactional {
       this.#aiFilePartCache.delete(document.id);
     }
 
-    const fileContentStream = this.getContentStream(document.id);
+    const fileContentStream = this.getContentStream(document);
     await using tmpFile = await TemporaryFile.from(fileContentStream);
     const filePart = await this.#aiService.processFile({ path: tmpFile.path, mimeType: document.mimeType });
 
@@ -166,12 +162,11 @@ export class DocumentFileService extends Transactional {
     return filePart;
   }
 
-  private async createPreviewIfNotExists(documentId: string, page: number = 1): Promise<void> {
-    const key = getObjectKey(documentId);
+  private async createPreviewIfNotExists(document: Document, page: number = 1): Promise<void> {
+    const key = getObjectKey(document.id);
     const hasPreview = await this.#filePreviewObjectStorage.exists(key);
 
     if (!hasPreview) {
-      const document = await this.#documentRepository.load(documentId);
       const content = await this.#fileObjectStorage.getContent(key);
 
       const image = await match(document.mimeType)

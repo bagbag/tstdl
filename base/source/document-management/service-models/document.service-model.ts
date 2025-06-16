@@ -11,8 +11,13 @@ export const setDocumentPropertyParametersSchema = assign(
   metadataParameterObjectSchema,
 );
 
+export const updateDocumentCollectionsParametersSchema = object({
+  assign: optional(array(string())),
+  archive: optional(array(string())),
+});
+
 export const createDocumentParametersSchema = assign(
-  partial(pick(Document, ['typeId', 'title', 'subtitle', 'date', 'summary', 'tags', 'approval', 'comment', 'originalFileName'])),
+  partial(pick(Document, ['typeId', 'title', 'subtitle', 'date', 'summary', 'approval', 'comment', 'originalFileName'])),
   object({
     uploadId: string(),
     assignment: union(
@@ -26,6 +31,7 @@ export const createDocumentParametersSchema = assign(
         }),
       }),
     ),
+    tags: array(string()),
     properties: optional(array(setDocumentPropertyParametersSchema)),
   }),
   metadataParameterObjectSchema,
@@ -33,8 +39,12 @@ export const createDocumentParametersSchema = assign(
 
 export const updateDocumentParametersSchema = assign(
   pick(Document, ['id']),
-  partial(pick(Document, ['title', 'subtitle', 'date', 'tags', 'comment', 'typeId'])),
-  object({ properties: optional(array(setDocumentPropertyParametersSchema)) }),
+  partial(pick(Document, ['title', 'subtitle', 'date', 'comment', 'typeId'])),
+  object({
+    tags: optional(array(string())),
+    properties: optional(array(setDocumentPropertyParametersSchema)),
+    collections: optional(updateDocumentCollectionsParametersSchema),
+  }),
   metadataParameterObjectSchema,
 );
 
@@ -139,6 +149,7 @@ export type DeleteDocumentRequestTemplateParameters = SchemaOutput<typeof delete
 export type CreateDocumentPropertyParameters = SchemaOutput<typeof createDocumentPropertyParametersSchema>;
 export type AssignPropertyToTypeParameters = SchemaOutput<typeof assignPropertyToTypeParametersSchema>;
 export type SetDocumentPropertyParameters = SchemaOutput<typeof setDocumentPropertyParametersSchema>;
+export type UpdateDocumentCollectionsParameters = SchemaOutput<typeof updateDocumentCollectionsParametersSchema>;
 export type SetDocumentPropertiesParameters = SchemaOutput<typeof setDocumentPropertiesParametersSchema>;
 export type AddOrArchiveDocumentToOrFromCollectionParameters = SchemaOutput<typeof addOrArchiveDocumentToOrFromCollectionParametersSchema>;
 export type UpdateDocumentParameters = SchemaOutput<typeof updateDocumentParametersSchema>;

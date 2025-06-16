@@ -1,5 +1,6 @@
-import { Table } from '#/orm/decorators.js';
+import { Table, type TableOptions } from '#/orm/decorators.js';
+import type { TypedOmit } from '#/types.js';
 
-export function DocumentManagementTable() {
-  return Table({ schema: 'document_management' });
+export function DocumentManagementTable(options?: TypedOmit<TableOptions, 'schema'>) {
+  return Table({ ...options, schema: 'document_management' });
 }

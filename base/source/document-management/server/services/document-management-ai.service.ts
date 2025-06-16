@@ -9,7 +9,7 @@ import { arrayAgg } from '#/orm/index.js';
 import { injectRepository } from '#/orm/server/index.js';
 import { array, boolean, enumeration, integer, nullable, number, object, string } from '#/schema/index.js';
 import { distinct } from '#/utils/array/index.js';
-import { dateObjectToNumericDate, numericDateToDateObject, type DateObject } from '#/utils/date-time.js';
+import { numericDateToDateObject, tryDateObjectToNumericDate, type DateObject } from '#/utils/date-time.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
 import { assertDefined, assertDefinedPass, assertNotNull, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
 import type { DocumentPropertyDataType } from '../../models/index.js';
@@ -20,6 +20,7 @@ import { DocumentCategoryTypeService } from './document-category-type.service.js
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentFileService } from './document-file.service.js';
 import { DocumentPropertyService } from './document-property.service.js';
+import { DocumentTagService } from './document-tag.service.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
 type DocumentInformationExtractionPropertyResult = { propertyId: string, dataType: DocumentPropertyDataType, value: string | number | boolean };
@@ -38,6 +39,7 @@ const MODEL = 'gemini-2.5-flash-preview-05-20';
 @DocumentManagementSingleton()
 export class DocumentManagementAiService {
   readonly #documentCollectionService = inject(DocumentCollectionService);
+  readonly #documentTagService = inject(DocumentTagService);
   readonly #documentCategoryTypeService = inject(DocumentCategoryTypeService);
   readonly #documentFileService = inject(DocumentFileService);
   readonly #documentPropertyService = inject(DocumentPropertyService);
@@ -48,13 +50,13 @@ export class DocumentManagementAiService {
   readonly #documentTypePropertyRepository = injectRepository(DocumentTypeProperty);
   readonly #logger = inject(Logger, DocumentManagementAiService.name);
 
-  async classifyDocumentType(documentId: string): Promise<string> {
-    const document = await this.#documentRepository.load(documentId);
-    const fileContentStream = this.#documentFileService.getContentStream(document.id);
+  async classifyDocumentType(tenantId: string, documentId: string): Promise<string> {
+    const document = await this.#documentRepository.loadByQuery({ tenantId, id: documentId });
+    const fileContentStream = this.#documentFileService.getContentStream(document);
     await using tmpFile = await TemporaryFile.from(fileContentStream);
 
     const filePart = await this.#aiService.processFile({ path: tmpFile.path, mimeType: document.mimeType });
-    const categories = await this.#documentCategoryTypeService.loadCategoryViews();
+    const categories = await this.#documentCategoryTypeService.loadCategoryViews(tenantId);
     const typeLabelEntries = getDescriptiveTypeLabels(categories);
 
     const typeLabels = typeLabelEntries.map(({ label }) => label);
@@ -90,9 +92,10 @@ export class DocumentManagementAiService {
     return typeId;
   }
 
-  async extractDocumentInformation(documentId: string): Promise<DocumentInformationExtractionResult> {
-    const document = await this.#documentRepository.load(documentId);
-    const fileContentStream = this.#documentFileService.getContentStream(document.id);
+  async extractDocumentInformation(tenantId: string, documentId: string): Promise<DocumentInformationExtractionResult> {
+    const document = await this.#documentRepository.loadByQuery({ tenantId, id: documentId });
+    const existingTags = await this.#documentTagService.loadTags(tenantId);
+    const fileContentStream = this.#documentFileService.getContentStream(document);
     await using tmpFile = await TemporaryFile.from(fileContentStream);
 
     const filePart = await this.#aiService.processFile({ path: tmpFile.path, mimeType: document.mimeType });
@@ -101,9 +104,9 @@ export class DocumentManagementAiService {
       throw new Error(`Document ${document.id} has no type`);
     }
 
-    const typeProperties = await this.#documentTypePropertyRepository.loadManyByQuery({ typeId: document.typeId });
+    const typeProperties = await this.#documentTypePropertyRepository.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, typeId: document.typeId });
     const propertyIds = typeProperties.map((property) => property.propertyId);
-    const properties = (propertyIds.length > 0) ? await this.#documentPropertyRepository.loadManyByQuery({ id: { $in: propertyIds } }) : undefined;
+    const properties = (propertyIds.length > 0) ? await this.#documentPropertyRepository.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, id: { $in: propertyIds } }) : undefined;
 
     const propertiesSchemaEntries = properties?.map((property) => {
       const schema = match(property.dataType)
@@ -130,6 +133,8 @@ export class DocumentManagementAiService {
       ),
     });
 
+    const context = { existingTags };
+
     this.#logger.trace(`Extracting document ${document.id}`);
     const { json: extraction } = await this.#aiService.generate({
       model: MODEL,
@@ -147,11 +152,15 @@ export class DocumentManagementAiService {
           parts: [
             { file: filePart.file },
             {
-              text: `Extrahiere den Inhalt des Dokuments in das angegebenen JSON Schema.
+              text: `<context>
+${JSON.stringify(context, null, 2)}
+</context>
+              Extrahiere den Inhalt des Dokuments in das angegebenen JSON Schema.
 
 Vermeide es, den Titel im Untertitel zu wiederholen.
 Gib in der summary ausführlich an, welche Informationen in dem Dokument vorkommen (ohne konkrete Werte).
-Erstelle bis zu 7 möglichst spezifische Tags.
+Erstelle bis zu 5 Tags. Verwende vorhandene Tags, wenn sie passen. Erstelle neue Tags, wenn es keine passenden gibt.
+Vermeide es, den Titel oder Untertitel als Tag zu verwenden.
 Antworte auf deutsch.`,
             },
           ],
@@ -160,7 +169,7 @@ Antworte auf deutsch.`,
     });
 
     const filteredDocumentTags = extraction.documentTags.filter((tag) => (tag != extraction.documentTitle) && (tag != extraction.documentSubtitle));
-    const date = isNotNull(extraction.documentDate) ? dateObjectToNumericDate(extraction.documentDate) : null;
+    const date = isNotNull(extraction.documentDate) ? tryAiOutputDateObjectToNumericDate(extraction.documentDate) : null;
     const parsedProperties = isUndefined(extraction.documentProperties)
       ? []
       : objectEntries(extraction.documentProperties)
@@ -172,8 +181,12 @@ Antworte auf deutsch.`,
           const property = assertDefinedPass(properties?.find((property) => property.label == propertyLabel));
 
           const value = match(rawValue)
-            .with({ year: P.number }, (val) => dateObjectToNumericDate(val))
-            .otherwise((val) => val);
+            .with({ year: P.number }, (value) => tryAiOutputDateObjectToNumericDate(value))
+            .otherwise((value) => value);
+
+          if (isNull(value)) {
+            return null;
+          }
 
           return { propertyId: property.id, dataType: property.dataType, value };
         })
@@ -189,18 +202,21 @@ Antworte auf deutsch.`,
     };
   }
 
-  async findSuitableCollectionsForDocument(documentId: string, collectionIds: string[]): Promise<string[]> {
-    const document = await this.#documentRepository.load(documentId);
+  async findSuitableCollectionsForDocument(document: Document, collectionIds: string[]): Promise<string[]> {
     assertNotNull(document.typeId, 'Document has no type');
 
-    const documentProperties = await this.#documentPropertyService.loadDocumentProperties(documentId);
-    const collectionNamesMap = await this.#documentCollectionService.resolveMetadata(...collectionIds);
+    const [documentTags, documentProperties, collectionNamesMap] = await Promise.all([
+      this.#documentTagService.loadDocumentTags(document.tenantId, document.id),
+      this.#documentPropertyService.loadDocumentPropertyValues(document.tenantId, document.id),
+      this.#documentCollectionService.resolveMetadata(document.tenantId, collectionIds),
+    ]);
 
     const collections = collectionIds.map((collectionId, index) => ({
       id: collectionId,
       ...assertDefinedPass(collectionNamesMap[index]),
     }));
 
+    const documentTagLabels = documentTags.map((tag) => tag.label);
     const propertyEntries = documentProperties.map((property) => [property.label, property.value] as const);
 
     type Context = {
@@ -225,7 +241,7 @@ Antworte auf deutsch.`,
         subtitle: document.subtitle ?? undefined,
         date: isNotNull(document.date) ? numericDateToDateObject(document.date) : undefined,
         summary: document.summary ?? undefined,
-        tags: ((document.tags?.length ?? 0) > 0) ? document.tags! : undefined,
+        tags: (documentTagLabels.length > 0) ? documentTagLabels : undefined,
         properties: fromEntries(propertyEntries),
       },
       collections,
@@ -258,13 +274,13 @@ Ordne das Dokument unter "document" einer oder mehreren passenden Collection unt
     return result.json.collectionIds;
   }
 
-  async findSuitableRequestForDocument(documentId: string, collectionIds: string[]): Promise<string | null> {
+  async findSuitableRequestForDocument(document: Document, collectionIds: string[]): Promise<string | null> {
     const session = this.#documentPropertyRepository.session;
 
-    const document = await this.#documentRepository.load(documentId);
     assertNotNull(document.typeId, 'Document has no type');
 
-    const documentProperties = await this.#documentPropertyService.loadDocumentProperties(documentId);
+    const documentTags = await this.#documentTagService.loadDocumentTags(document.tenantId, document.id);
+    const documentProperties = await this.#documentPropertyService.loadDocumentPropertyValues(document.tenantId, document.id);
 
     const openRequestsWithoutDocument = await session
       .select({
@@ -278,19 +294,19 @@ Ordne das Dokument unter "document" einer oder mehreren passenden Collection unt
       .innerJoin(documentRequestCollectionAssignment, eq(documentRequestCollectionAssignment.requestId, documentRequest.id))
       .innerJoin(documentType, eq(documentType.id, documentRequest.typeId))
       .innerJoin(documentCategory, eq(documentCategory.id, documentType.categoryId))
-      .where(
-        and(
-          inArray(documentRequestCollectionAssignment.collectionId, collectionIds),
-          eq(documentRequest.typeId, document.typeId),
-          eq(documentRequest.state, DocumentRequestState.Open),
-          drizzleIsNull(documentRequest.documentId),
-        ),
-      )
+      .where(and(
+        eq(documentRequest.tenantId, document.tenantId),
+        inArray(documentRequestCollectionAssignment.collectionId, collectionIds),
+        eq(documentRequest.typeId, document.typeId),
+        eq(documentRequest.state, DocumentRequestState.Open),
+        drizzleIsNull(documentRequest.documentId),
+      ))
       .groupBy(documentRequest.id, documentCategory.label, documentType.label, documentRequest.comment);
 
+    const documentTagLabels = documentTags.map((tag) => tag.label);
     const requestsCollectionIds = distinct(openRequestsWithoutDocument.flatMap((request) => request.collectionIds));
 
-    const collectionNamesMap = await this.#documentCollectionService.resolveMetadataMap(...requestsCollectionIds);
+    const collectionNamesMap = await this.#documentCollectionService.resolveMetadataMap(document.tenantId, requestsCollectionIds);
 
     const requests = openRequestsWithoutDocument.map((request) => ({
       id: request.id,
@@ -322,7 +338,7 @@ Ordne das Dokument unter "document" einer oder mehreren passenden Collection unt
         subtitle: document.subtitle ?? undefined,
         date: isNotNull(document.date) ? numericDateToDateObject(document.date) : undefined,
         summary: document.summary ?? undefined,
-        tags: ((document.tags?.length ?? 0) > 0) ? document.tags! : undefined,
+        tags: (documentTagLabels.length > 0) ? documentTagLabels : undefined,
         properties: fromEntries(propertyEntries),
       },
       requests,
@@ -361,4 +377,15 @@ function getDescriptiveTypeLabels(categories: DocumentCategoryView[], prefix = '
     ...category.types.map((type) => ({ id: type.id, label: `${prefix}${category.label} | Type: ${type.label}` })),
     ...getDescriptiveTypeLabels(category.children, `${prefix}${category.label} -> `),
   ]);
+}
+
+function tryAiOutputDateObjectToNumericDate(dateObject: DateObject): number | null {
+  const date = tryDateObjectToNumericDate(dateObject);
+
+  if (isNull(date)) {
+    // try to interpret the date with swapped month and day
+    return tryDateObjectToNumericDate({ ...dateObject, month: dateObject.day, day: dateObject.month });
+  }
+
+  return date;
 }

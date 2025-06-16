@@ -10,8 +10,9 @@ import { disposeAsync, type AsyncDisposable } from '#/disposable/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
 import { HttpQuery } from '#/http/http-query.js';
 import type { HttpMethod } from '#/http/types.js';
-import { ResolveArg, Singleton } from '#/injector/index.js';
-import { Logger, type LoggerArgument } from '#/logger/index.js';
+import { afterResolve, inject, Singleton } from '#/injector/index.js';
+import { Logger } from '#/logger/index.js';
+import { toArray } from '#/utils/array/array.js';
 import { encodeUtf8 } from '#/utils/encoding.js';
 import { FeedableAsyncIterable } from '#/utils/feedable-async-iterable.js';
 import { Timer } from '#/utils/timer.js';
@@ -20,6 +21,7 @@ import { isDefined, isNullOrUndefined, isString } from '#/utils/type-guards.js';
 import { HttpServerRequest } from '../http-server-request.js';
 import type { HttpServerResponse } from '../http-server-response.js';
 import { HttpServer, type HttpServerRequestContext } from '../http-server.js';
+import { NodeHttpServerConfiguration } from './module.js';
 
 type RequestItem = { request: Http.IncomingMessage, response: Http.ServerResponse };
 
@@ -27,90 +29,80 @@ export type NodeHttpServerContext = { nodeRequest: Http.IncomingMessage, nodeRes
 
 @Singleton()
 export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements AsyncDisposable {
-  private readonly httpServer: Http.Server;
-  private readonly sockets: Set<Socket>;
-  private readonly requestIterable: FeedableAsyncIterable<RequestItem>;
-  private readonly logger: Logger;
+  readonly #configuration = inject(NodeHttpServerConfiguration);
+  readonly #httpServer = new Http.Server();
+  readonly #sockets = new Set<Socket>();
+  readonly #requestIterable = new FeedableAsyncIterable<RequestItem>();
+  readonly #logger = inject(Logger, NodeHttpServer.name);
 
   private untrackConnectedSockets?: () => void;
 
   get connectedSocketsCount(): number {
-    return this.sockets.size;
+    return this.#sockets.size;
   }
 
-  constructor(@ResolveArg<LoggerArgument>('NodeHttpServer') logger: Logger) {
-    super();
-
-    this.logger = logger;
-
-    this.httpServer = new Http.Server();
-    this.sockets = new Set();
-    this.requestIterable = new FeedableAsyncIterable();
-
-    this.httpServer.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => {
-      this.logger.verbose(`${request.method} from "${request.socket.remoteAddress}" to "${request.url}"`);
-      this.requestIterable.feed({ request, response });
-    });
+  [afterResolve]() {
+    this.#httpServer.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => this.#requestIterable.feed({ request, response }));
   }
 
   async [disposeAsync](): Promise<void> {
-    if (this.httpServer.listening) {
+    if (this.#httpServer.listening) {
       await this.close(3000);
-      this.requestIterable.end();
+      this.#requestIterable.end();
     }
   }
 
   async listen(port: number): Promise<void> {
-    if (this.httpServer.listening) {
+    if (this.#httpServer.listening) {
       throw new Error('http server is already listening');
     }
 
-    this.httpServer.listen(port);
+    this.#httpServer.listen(port);
 
     await new Promise<void>((resolve, reject) => {
       let listeningListener: () => void;
       let errorListener: (error: Error) => void;
 
       listeningListener = () => {
-        this.logger.info(`Listening on port ${port}`);
-        this.untrackConnectedSockets = trackConnectedSockets(this.httpServer, this.sockets);
-        this.httpServer.removeListener('error', errorListener);
+        this.#logger.info(`Listening on port ${port}`);
+        this.untrackConnectedSockets = trackConnectedSockets(this.#httpServer, this.#sockets);
+        this.#httpServer.removeListener('error', errorListener);
         resolve();
       };
 
       errorListener = (error: Error) => {
-        this.httpServer.removeListener('listening', listeningListener);
+        this.#httpServer.removeListener('listening', listeningListener);
         reject(error);
       };
 
-      this.httpServer.once('listening', listeningListener);
-      this.httpServer.once('error', errorListener);
+      this.#httpServer.once('listening', listeningListener);
+      this.#httpServer.once('error', errorListener);
     });
   }
 
   async close(timeout: number): Promise<void> {
-    this.logger.info('Closing http server');
+    this.#logger.info('Closing http server');
 
     const timer = new Timer(true);
 
-    const close$ = bindNodeCallback(this.httpServer.close.bind(this.httpServer))().pipe(share());
+    const close$ = bindNodeCallback(this.#httpServer.close.bind(this.#httpServer))().pipe(share());
     close$.subscribe();
 
     while (true) {
-      const connections = await getConnectionsCount(this.httpServer);
+      const connections = await getConnectionsCount(this.#httpServer);
 
       if (connections == 0) {
         break;
       }
 
       if (timer.milliseconds >= timeout) {
-        this.logger.info(`Force closing of ${connections} remaining sockets after waiting for ${timeout} milliseconds`);
-        destroySockets(this.sockets);
+        this.#logger.info(`Force closing of ${connections} remaining sockets after waiting for ${timeout} milliseconds`);
+        destroySockets(this.#sockets);
         break;
       }
 
       if (connections > 0) {
-        this.logger.info(`Waiting for ${connections} connections to end`);
+        this.#logger.info(`Waiting for ${connections} connections to end`);
         await cancelableTimeout(250, CancellationToken.from(close$));
       }
     }
@@ -120,7 +112,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
   }
 
   async *[Symbol.asyncIterator](): AsyncIterator<HttpServerRequestContext<NodeHttpServerContext>> {
-    for await (const { request, response } of this.requestIterable) {
+    for await (const { request, response } of this.#requestIterable) {
       yield this.handleRequest(request, response);
     }
   }
@@ -134,12 +126,16 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
 
     const context: NodeHttpServerContext = { nodeRequest: request, nodeResponse: response };
 
+    const clientIp = getClientIp(request.socket, headers, this.#configuration);
+
+    this.#logger.verbose(`${request.method} from "${clientIp}" to "${request.url}"`);
+
     const httpRequest = new HttpServerRequest({
       url,
       method,
       headers,
       query,
-      ip: request.socket.remoteAddress!,
+      ip: clientIp,
       body: request,
     });
 
@@ -256,4 +252,20 @@ function destroySockets(sockets: Iterable<Socket>): void {
   for (const socket of sockets) {
     socket.destroy();
   }
+}
+
+function getClientIp(socket: Socket, headers: HttpHeaders, configuration: NodeHttpServerConfiguration): string {
+  if (configuration.trustedProxiesCount <= 0) {
+    return socket.remoteAddress!;
+  }
+
+  const xForwardedForHeader = headers.tryGet('X-Forwarded-For');
+
+  if (isNullOrUndefined(xForwardedForHeader)) {
+    return socket.remoteAddress!;
+  }
+
+  const ips = toArray(xForwardedForHeader).flatMap((value) => (value as string).split(',').map((ip) => ip.trim()).filter((ip) => ip.length > 0));
+
+  return ips.at(-configuration.trustedProxiesCount) ?? socket.remoteAddress!;
 }

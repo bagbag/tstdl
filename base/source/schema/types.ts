@@ -5,7 +5,7 @@ export type Coercible = {
    * Try to convert wrong input into desired output.
    * Can be specified on definition and validation. If specified on both, definition has higher priority
    */
-  coerce?: boolean
+  coerce?: boolean,
 };
 
 export type Maskable = {
@@ -13,7 +13,7 @@ export type Maskable = {
    * Remove unspecified fields on input data instead of raising an error.
    * Can be specified on definition and validation. If specified on both, definition has higher priority
    */
-  mask?: boolean
+  mask?: boolean,
 };
 
 export type CoerceResult<T> =

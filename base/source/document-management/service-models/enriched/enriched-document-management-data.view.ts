@@ -34,6 +34,8 @@ export class EnrichedDocumentManagementData {
     requests: () => getEntityMap(this.rawData.requests),
     categories: () => getEntityMap(this.rawData.categories),
     types: () => getEntityMap(this.rawData.types),
+    properties: () => getEntityMap(this.rawData.properties),
+    tags: () => getEntityMap(this.rawData.tags),
   });
 
   readonly maps = lazyObject({

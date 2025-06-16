@@ -1,5 +1,5 @@
 import { toCamelCase, toSnakeCase } from 'drizzle-orm/casing';
-import { boolean, check, doublePrecision, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { boolean, check, doublePrecision, foreignKey, index, integer, jsonb, pgSchema, primaryKey, text, unique, uniqueIndex, uuid, type ExtraConfigColumn, type PgColumn, type PgColumnBuilder, type PgEnum, type PgSchema, type PgTableWithColumns } from 'drizzle-orm/pg-core';
 
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { tryGetEnumName } from '#/enumeration/enumeration.js';
@@ -93,7 +93,7 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
 
     const indexFn = (data.options?.unique == true) ? uniqueIndex : index;
 
-    let builder = indexFn(data.name ?? getIndexName(tableName, columns, { naming: data.options?.naming })).using(data.options?.using ?? 'btree', ...columns);
+    let builder = indexFn(data.options?.name ?? getIndexName(tableName, columns, { naming: data.options?.naming })).using(data.options?.using ?? 'btree', ...columns);
 
     if (isDefined(data.options?.where)) {
       const query = convertQuery(data.options.where(table as PgTableWithColumns<any> as PgTableFromType<EntityType<any>>), table as PgTableWithColumns<any> as PgTableFromType, columnDefinitionsMap);
@@ -137,10 +137,21 @@ export function _getDrizzleTableFromType<T extends EntityType, S extends string>
           return buildIndex(table, indexData, columnDefinition.name);
         }).filter(isDefined)
       ),
+      ...tableReflectionDatas.flatMap((tableReflectionData) => {
+        return tableReflectionData.foreignKeys?.map((foreignKeyData) => {
+          const foreignTable = getDrizzleTableFromType(foreignKeyData.target(), dbSchema.schemaName);
+
+          return foreignKey({
+            name: foreignKeyData.options?.name ?? getForeignKeyName(tableName, foreignKeyData.columns, { naming: foreignKeyData.options?.naming }),
+            columns: foreignKeyData.columns.map((column) => getColumn(table, column)) as [ExtraConfigColumn, ...ExtraConfigColumn[]],
+            foreignColumns: foreignKeyData.foreignColumns.map((column) => getColumn(foreignTable as any as Record<string, ExtraConfigColumn>, column)) as [ExtraConfigColumn, ...ExtraConfigColumn[]],
+          });
+        }) ?? [];
+      }),
       ...tableReflectionDatas.flatMap((tableReflectionData) => tableReflectionData.unique).filter(isDefined).map((data) => {
         const columns = data.columns?.map((column) => getColumn(table, column)) as [ExtraConfigColumn, ...ExtraConfigColumn[]];
 
-        let constraint = unique(data.name ?? getUniqueName(tableName, columns, { naming: data.options?.naming })).on(...columns);
+        let constraint = unique(data.options?.name ?? getUniqueName(tableName, columns, { naming: data.options?.naming })).on(...columns);
 
         if (data.options?.nulls == 'not distinct') {
           constraint = constraint.nullsNotDistinct();
@@ -186,7 +197,7 @@ function getPostgresColumnEntries(type: AbstractConstructor, dbSchema: PgSchema,
     const toDatabase = encrypted
       ? async (value: unknown, context: TransformContext) => {
         const bytes = encodeUtf8(value as string);
-        return encryptBytes(bytes, context.encryptionKey!);
+        return await encryptBytes(bytes, context.encryptionKey!);
       }
       : (value: unknown) => value;
 
@@ -243,15 +254,21 @@ function getPostgresColumn(tableName: string, columnName: string, dbSchema: PgSc
   }
 
   if (isDefined(reflectionData.unique)) {
-    column = column.unique(reflectionData.unique.name ?? getUniqueName(tableName, [columnName], { naming: reflectionData.unique.options?.naming }), isString(reflectionData.unique.options?.nulls) ? { nulls: reflectionData.unique.options.nulls } : undefined);
+    column = column.unique(reflectionData.unique.options?.name ?? getUniqueName(tableName, [columnName], { naming: reflectionData.unique.options?.naming }), isString(reflectionData.unique.options?.nulls) ? { nulls: reflectionData.unique.options.nulls } : undefined);
   }
 
   if ((reflectionData.primaryKey == true) && (options.skipPrimaryKey != true)) {
     column = column.primaryKey();
   }
 
+  for (const { target, targetColumn } of reflectionData.references ?? []) {
+    column = column.references(() => {
+      const targetTable = getDrizzleTableFromType(target(), dbSchema.schemaName);
+      return targetTable[(targetColumn ?? 'id') as keyof PgTableFromType] as PgColumn;
+    });
+  }
+
   if (isDefined(reflectionData.references)) {
-    column = column.references(() => getDrizzleTableFromType(reflectionData.references!(), dbSchema.schemaName).id);
   }
 
   return column;
@@ -351,15 +368,33 @@ function getDefaultTableName(type: Type & Partial<Pick<EntityType, 'entityName'>
 }
 
 function getPrimaryKeyName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
-  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_pk`;
+  return getIdentifier(tableName, columns, 'pk', options);
 }
 
 function getIndexName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
-  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_idx`;
+  return getIdentifier(tableName, columns, 'idx', options);
 }
 
 function getUniqueName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
-  return `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_unique`;
+  return getIdentifier(tableName, columns, 'unique', options);
+}
+
+function getForeignKeyName(tableName: string, columns: (string | PgColumn)[], options?: { naming?: 'abbreviated-table' }) {
+  return getIdentifier(tableName, columns, 'fkey', options);
+}
+
+function getIdentifier(tableName: string, columns: (string | PgColumn)[], suffix: string, options?: { naming?: 'abbreviated-table' }): string {
+  const identifier = `${getTablePrefix(tableName, options?.naming)}_${getColumnNames(columns).join('_')}_${suffix}`;
+
+  if (identifier.length > 63) {
+    if (options?.naming != 'abbreviated-table') {
+      return getIdentifier(tableName, columns, suffix, { naming: 'abbreviated-table' });
+    }
+
+    throw new Error(`Identifier "${identifier}" for table "${tableName}" is too long. Maximum length is 63 characters.`);
+  }
+
+  return identifier;
 }
 
 function getTablePrefix(tableName: string, naming?: 'abbreviated-table'): string {

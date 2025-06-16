@@ -114,6 +114,12 @@
       "@tstdl/angular/tooltip": [
         "projects/tstdl/angular/tooltip",
       ],
+      "@tstdl/angular/tree-view/*": [
+        "projects/tstdl/angular/tree-view/*",
+      ],
+      "@tstdl/angular/tree-view": [
+        "projects/tstdl/angular/tree-view",
+      ],
       "@tstdl/angular/vertical-tab-group/*": [
         "projects/tstdl/angular/vertical-tab-group/*",
       ],

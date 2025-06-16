@@ -51,12 +51,13 @@ const config = {
 @Singleton()
 export class ExampleDocumentManagementAncillaryService extends DocumentManagementAncillaryService {
   override resolveMetadata(collections: DocumentCollection[]): DocumentCollectionMetadata[] {
-    return collections.map((collection) => ({ name: collection.id.split('-')[0]!, group: null }));
+    return collections.map((collection) => ({ name: (collection.metadata.attributes['name'] as string | undefined) ?? collection.id.split('-')[0]!, group: null }));
   }
 }
 
 @Singleton()
 export class AllowAllDocumentManagementAuthorizationService extends DocumentManagementAuthorizationService {
+  override getTenantId(): string { return '00000000-0000-0000-0000-000000000000'; }
   override getSubject(): string { return '00000000-0000-0000-0000-000000000000'; }
   override canReadCollection(): boolean { return true; }
   override canCreateDocuments(): boolean { return true; }
@@ -132,14 +133,18 @@ async function bootstrap(): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const tenantId = '00000000-0000-0000-0000-000000000000';
+
   const [documentManagementService, documentCollectionService] = await injectManyAsync(DocumentManagementService, DocumentCollectionService, DocumentCategoryTypeService, DocumentRequestService);
 
-  const { categories, types } = await documentManagementService.initializeCategoriesAndTypes(TstdlDocumentCategoryLabels, TstdlCategoryParents, TstdlDocumentTypeLabels, TstdlDocumentTypeCategories, TstdlDocumentPropertyConfiguration, TstdlDocumentTypeProperties);
+  const { categories, types } = await documentManagementService.initializeCategoriesAndTypes(tenantId, TstdlDocumentCategoryLabels, TstdlCategoryParents, TstdlDocumentTypeLabels, TstdlDocumentTypeCategories, TstdlDocumentPropertyConfiguration, TstdlDocumentTypeProperties);
 
   const collectionCount = await documentCollectionService.repository.count();
 
-  for (let i = 0; i < (3 - collectionCount); i++) {
-    await documentCollectionService.createCollection(null);
+  if (collectionCount == 0) {
+    await documentCollectionService.createCollection(tenantId, null, { metadata: { attributes: { name: 'Objekt ABC' } } });
+    await documentCollectionService.createCollection(tenantId, null, { metadata: { attributes: { name: 'Einheit 3' } } });
+    await documentCollectionService.createCollection(tenantId, null, { metadata: { attributes: { name: 'Mieter Muster' } } });
   }
 
   const collections = await documentCollectionService.repository.loadAll();
@@ -147,6 +152,8 @@ async function main(): Promise<void> {
   for (const collection of collections) {
     console.log(`Collection: ${collection.id}`);
   }
+
+  console.log(`Collections: ${collections.map((collection) => collection.id).join(',')}`);
 }
 
 Application.run({ bootstrap }, main, WebServerModule);

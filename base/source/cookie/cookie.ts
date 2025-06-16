@@ -13,19 +13,19 @@ export type SetCookieOptions = {
   path?: string,
   sameSite?: 'strict' | 'lax' | 'none',
   priority?: 'low' | 'medium' | 'high',
-  secure?: boolean
+  secure?: boolean,
 };
 
 const sameSiteMap = {
   none: 'None',
   lax: 'Lax',
-  strict: 'Strict'
+  strict: 'Strict',
 } as const;
 
 const priorityMap = {
   low: 'Low',
   medium: 'Medium',
-  high: 'High'
+  high: 'High',
 } as const;
 
 export function formatSetCookie(name: string, value: string, options: SetCookieOptions = {}): string {

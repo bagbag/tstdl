@@ -20,7 +20,7 @@ export function createSchemaDecorator(data: SchemaReflectionData = {}): Combined
     method: true,
     parameter: true,
     data: { schema: filterUndefinedObjectProperties(data) },
-    mergeData: true
+    mergeData: true,
   });
 }
 

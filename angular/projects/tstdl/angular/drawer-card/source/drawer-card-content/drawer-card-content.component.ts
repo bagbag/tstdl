@@ -10,8 +10,9 @@ import { MatRipple } from '@angular/material/core';
   encapsulation: ViewEncapsulation.None,
   providers: [MatRipple],
   host: {
-    '[class.interactive]': 'interactive()'
-  }
+    '[class.interactive]': 'interactive()',
+    '[attr.tabindex]': '0',
+  },
 })
 export class DrawerCardContentComponent implements OnInit, OnDestroy {
   readonly #ripple = inject(MatRipple);
@@ -32,7 +33,15 @@ export class DrawerCardContentComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('click')
-  onClick(): void {
+  @HostListener('keyup.enter', ['$event'])
+  @HostListener('keyup.space', ['$event'])
+  onClick(event: Event): void {
+    event.preventDefault();
     this.clicked.emit();
+  }
+
+  @HostListener('keydown.space', ['$event'])
+  preventDefault(event: Event): void {
+    event.preventDefault();
   }
 }

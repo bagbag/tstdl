@@ -1,6 +1,6 @@
 @layer tstdl.components {
   tsl-drawer-card-content {
-    @apply relative block -m-[1px] p-4 rounded-lg overflow-clip border bg-white dark:bg-neutral-800 border-neutral-500/25 dark:border-neutral-200/25 shadow transition-[background,border] duration-300;
+    @apply relative block -m-[1px] p-4 rounded-lg overflow-clip border bg-white dark:bg-neutral-800 border-neutral-500/25 dark:border-neutral-200/25 shadow transition-[background,border] duration-300 focus-visible:outline-none;
 
     &.interactive {
       @apply cursor-pointer;

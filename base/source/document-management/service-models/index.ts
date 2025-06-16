@@ -5,5 +5,4 @@ export * from './document-management.view-model.js';
 export * from './document-requests-template.view-model.js';
 export * from './document.service-model.js';
 export * from './enriched/index.js';
-export * from './normalized-requests-template-data.model.js';
 export * from './stats.view-model.js';

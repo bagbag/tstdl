@@ -68,8 +68,8 @@ export class DocumentDetailsComponent {
   readonly formatBytes = formatBytes;
   readonly dateShort = dateShort;
 
-  // readonly canEdit = computed(() => this.document().approval == 'pending');
-  readonly canEdit = computed(() => false);
+  readonly canEdit = computed(() => this.document().approval == 'pending');
+  // readonly canEdit = computed(() => false);
 
   readonly documentId = computed(() => this.document().id);
   readonly contentUrl = computed(() => { return this.context.api.getEndpointUrl('loadContent', { id: this.documentId() }) });
@@ -295,6 +295,10 @@ export class DocumentDetailsComponent {
           })
           .exhaustive()
       })),
+      collections: {
+        assign: [],
+        archive: []
+      }
     })
   }
 

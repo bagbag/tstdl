@@ -5,5 +5,9 @@
     .drawer-container {
       @apply overflow-clip;
     }
+
+    &:has(> tsl-drawer-card-content:focus-visible) {
+      @apply outline outline-2 outline-offset-2 outline-accent-600 dark:outline-accent-400;
+    }
   }
 }

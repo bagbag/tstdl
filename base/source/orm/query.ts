@@ -26,6 +26,8 @@ export type ComparisonQueryOrValue<T = any> = ComparisonQuery<T> | ComparisonVal
 
 /** Represents a comparison query using various operators like $eq, $ne, $gt, $in, etc. */
 export type ComparisonQuery<T = any> = Partial<
+  & ComparisonAndQuery<T>
+  & ComparisonOrQuery<T>
   & ComparisonNotQuery<T>
   & ComparisonEqualsQuery<T>
   & ComparisonNotEqualsQuery<T>
@@ -83,17 +85,17 @@ export const allOperators: Operator[] = ['and', 'or'];
 
 /** Represents an AND logical query. All sub-queries must be true. */
 export type LogicalAndQuery<T = any> = {
-  $and: readonly Query<T>[]
+  $and: readonly Query<T>[],
 };
 
 /** Represents an OR logical query. At least one sub-query must be true. */
 export type LogicalOrQuery<T = any> = {
-  $or: readonly Query<T>[]
+  $or: readonly Query<T>[],
 };
 
 /** Represents a NOR logical query. All sub-queries must be false. */
 export type LogicalNorQuery<T = any> = {
-  $nor: readonly Query<T>[]
+  $nor: readonly Query<T>[],
 };
 
 /** Represents a value used in comparisons, can be a direct value, a flattened value, or a Drizzle SQLWrapper. */
@@ -106,24 +108,34 @@ export type ComparisonValueWithRegex<T> = T extends string
   ? ComparisonValue<readonly (Flatten<T> | RegExp)[]>
   : (T | Flatten<T>);
 
+/** Represents a logical AND query. All sub-queries must be true. */
+export type ComparisonAndQuery<T = any> = {
+  $and: readonly ComparisonQueryOrValue<T>[],
+};
+
+/** Represents a logical OR query. At least one sub-query must be true. */
+export type ComparisonOrQuery<T = any> = {
+  $or: readonly ComparisonQueryOrValue<T>[],
+};
+
 /** Represents a NOT comparison query. Inverts the result of the nested comparison. */
 export type ComparisonNotQuery<T = any> = {
-  $not: ComparisonQuery<T>
+  $not: ComparisonQueryOrValue<T>,
 };
 
 /** Represents an equality comparison query ($eq). */
 export type ComparisonEqualsQuery<T = any> = {
-  $eq: ComparisonValueWithRegex<T>
+  $eq: ComparisonValueWithRegex<T>,
 };
 
 /** Represents a non-equality comparison query ($neq). */
 export type ComparisonNotEqualsQuery<T = any> = {
-  $neq: ComparisonValueWithRegex<T>
+  $neq: ComparisonValueWithRegex<T>,
 };
 
 /** Represents an existence check query ($exists). Checks if a field exists (or not). */
 export type ComparisonExistsQuery = {
-  $exists: ComparisonValue<boolean>
+  $exists: ComparisonValue<boolean>,
 };
 
 /** Represents a query targeting elements within an array field ($item). */
@@ -132,52 +144,52 @@ export type ComparisonItemQuery<T = any> = {
   ? U extends Record
   ? Query<U>
   : ComparisonQuery<U>
-  : never
+  : never,
 };
 
 /** Represents an "in list" comparison query ($in). Checks if a field value is within a specified array. */
 export type ComparisonInQuery<T = any> = {
-  $in: readonly ComparisonValueWithRegex<T>[]
+  $in: readonly ComparisonValueWithRegex<T>[],
 };
 
 /** Represents a "not in list" comparison query ($nin). Checks if a field value is not within a specified array. */
 export type ComparisonNotInQuery<T = any> = {
-  $nin: readonly ComparisonValueWithRegex<T>[]
+  $nin: readonly ComparisonValueWithRegex<T>[],
 };
 
 /** Represents an "all elements match" query ($all). Checks if an array field contains all specified values. */
 export type ComparisonAllQuery<T = any> = {
-  $all: readonly ComparisonValueWithRegex<T>[]
+  $all: readonly ComparisonValueWithRegex<T>[],
 };
 
 /** Represents a "greater than" comparison query ($gt). */
 export type ComparisonGreaterThanQuery<T = any> = {
-  $gt: ComparisonValue<T>
+  $gt: ComparisonValue<T>,
 };
 
 /** Represents a "greater than or equals" comparison query ($gte). */
 export type ComparisonGreaterThanOrEqualsQuery<T = any> = {
-  $gte: ComparisonValue<T>
+  $gte: ComparisonValue<T>,
 };
 
 /** Represents a "less than" comparison query ($lt). */
 export type ComparisonLessThanQuery<T = any> = {
-  $lt: ComparisonValue<T>
+  $lt: ComparisonValue<T>,
 };
 
 /** Represents a "less than or equals" comparison query ($lte). */
 export type ComparisonLessThanOrEqualsQuery<T = any> = {
-  $lte: ComparisonValue<T>
+  $lte: ComparisonValue<T>,
 };
 
 /** Represents a regular expression comparison query ($regex). */
 export type ComparisonRegexQuery = {
-  $regex: string | RegExp | { pattern: string, flags: string }
+  $regex: string | RegExp | { pattern: string, flags: string },
 };
 
 /** Represents a full-text search query ($text). */
 export type ComparisonTextQuery = {
-  $text: string | { text: string, operator?: Operator }
+  $text: string | { text: string, operator?: Operator },
 };
 
 /** Defines the possible spatial relationships for geospatial shape queries. */
@@ -187,8 +199,8 @@ export type GeoShapeRelation = 'intersects' | 'within' | 'disjoint' | 'contains'
 export type ComparisonGeoShapeQuery = {
   $geoShape: {
     geometry: Geometry,
-    relation: GeoShapeRelation
-  }
+    relation: GeoShapeRelation,
+  },
 };
 
 /** Represents a geospatial query based on distance from a point ($geoDistance). */
@@ -205,8 +217,8 @@ export type ComparisonGeoDistanceQuery = {
     /**
      * Minimum distance in meters
      */
-    minDistance?: number
-  }
+    minDistance?: number,
+  },
 };
 
 /** Defines the modes for text span queries, affecting how multiple field matches are handled. */
@@ -221,6 +233,6 @@ export type TextSpanQuery<T = any> = {
     fields: readonly (Extract<keyof T, string>)[],
     text: string,
     mode?: TextSpanQueryMode,
-    operator?: Operator
-  }
+    operator?: Operator,
+  },
 };

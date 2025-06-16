@@ -8,7 +8,7 @@ export type PropertyName = { [propertyName]: string };
 export type PropertyNameProxy<T extends Record> = { [P in keyof DeepNonNullable<T>]: PropertyNameProxyChild<T[P]> };
 export type PropertyNameProxyChild<T> = (T extends Record ? (PropertyNameProxy<T> & PropertyName) : (PropertyName)) & { [cast]<U extends T>(): PropertyNameProxyChild<U> };
 export type PropertyNameOfExpressionObject<T> = { [P in keyof T]: PropertyNameOfExpressionObject<DeepNonNullable<T>[P]> & { [cast]<U extends T[P]>(): PropertyNameOfExpressionObject<DeepNonNullable<U>> } };
-export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<T>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]<U extends DeepFlatten<T>[P]>(): FlatPropertyNameOfExpressionObject<DeepNonNullable<U>> } };
+export type FlatPropertyNameOfExpressionObject<T> = { [P in keyof DeepFlatten<DeepNonNullable<T>>]: FlatPropertyNameOfExpressionObject<DeepFlatten<DeepNonNullable<T>>[P]> & { [cast]<U extends DeepFlatten<DeepNonNullable<T>>[P]>(): FlatPropertyNameOfExpressionObject<DeepNonNullable<U>> } };
 
 export function getPropertyName(name: string): PropertyName {
   return { [propertyName]: name };

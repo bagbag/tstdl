@@ -9,7 +9,7 @@ export type CombinedSchemaDecorator = Decorator<'property' | 'accessor' | 'param
 
 export type SchemaTypeReflectionData = Partial<Pick<ObjectSchemaOptions, 'mask' | 'unknownProperties' | 'unknownPropertiesKey' | 'description' | 'example'>> & {
   schema?: SchemaTestable,
-  factory?: ObjectSchemaFactory<any>
+  factory?: ObjectSchemaFactory<any>,
 };
 
 export type SchemaTestableProvider = (data: SchemaReflectionData) => SchemaTestable;
@@ -20,9 +20,9 @@ export type SchemaReflectionData = Partial<Pick<SchemaOptions<any>, 'description
   optional?: boolean,
   nullable?: boolean,
   method?: {
-    returnType?: SchemaTestableProvider
+    returnType?: SchemaTestableProvider,
   },
   parameter?: {
-    name?: string
-  }
+    name?: string,
+  },
 };

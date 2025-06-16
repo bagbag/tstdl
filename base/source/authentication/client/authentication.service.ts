@@ -157,8 +157,8 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     try {
       await Promise.race([
         this.client.endSession(),
-        timeout(150)
-      ]).catch((error) => this.logger.error(error as Error));
+        timeout(150),
+      ]).catch((error: unknown) => this.logger.error(error as Error));
     }
     finally {
       this.setNewToken(undefined);
@@ -232,7 +232,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   async checkSecret(secret: string): Promise<SecretCheckResult> {
-    return this.client.checkSecret({ secret });
+    return await this.client.checkSecret({ secret });
   }
 
   private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
@@ -264,7 +264,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   private async refreshLoop(): Promise<void> {
     while (this.disposeToken.isUnset) {
       try {
-        await this.lock.use(0, false, async () => this.refreshLoopIteration());
+        await this.lock.use(0, false, async () => await this.refreshLoopIteration());
         await firstValueFrom(race([timer(2500), this.disposeToken, this.forceRefreshToken]));
       }
       catch {

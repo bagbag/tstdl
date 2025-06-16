@@ -5,7 +5,7 @@ import { decodeBase64Url, encodeBase64Url } from './base64.js';
 import type { HashAlgorithm, Key } from './cryptography.js';
 import { importHmacKey, sign } from './cryptography.js';
 import { encodeUtf8 } from './encoding.js';
-import { binaryEquals } from './equals.js';
+import { timingSafeBinaryEquals } from './equals.js';
 
 export type JwtTokenAlgorithm = 'HS256' | 'HS384' | 'HS512';
 
@@ -115,7 +115,7 @@ export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtTok
     }
 
     const calculatedSignature = await getSignature(encodeUtf8(`${encoded.header}.${encoded.payload}`), token.header.alg, key);
-    const validSignature = binaryEquals(calculatedSignature, bytes.signature);
+    const validSignature = timingSafeBinaryEquals(bytes.signature, calculatedSignature);
 
     if (!validSignature) {
       throw new InvalidTokenError('Invalid token signature');
@@ -137,7 +137,7 @@ async function getSignature(data: BinaryData, algorithm: JwtTokenAlgorithm, secr
   const hmacKey = await importHmacKey(hashAlgorithm, secret, false);
   const hmacSignature = sign('HMAC', hmacKey, data);
 
-  return hmacSignature.toBuffer();
+  return await hmacSignature.toBuffer();
 }
 
 function getHmacHashAlgorithm(algorithm: JwtTokenAlgorithm): HashAlgorithm {

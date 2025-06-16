@@ -1,14 +1,18 @@
 import { ForbiddenError } from '#/errors/forbidden.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
+import { NotFoundError } from '#/errors/not-found.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import { type AfterResolve, Singleton, afterResolve, inject, provide } from '#/injector/index.js';
+import { KeyValueStore } from '#/key-value-store/key-value.store.js';
+import { Logger } from '#/logger/logger.js';
 import { DatabaseConfig } from '#/orm/server/index.js';
 import { EntityRepositoryConfig, injectRepository } from '#/orm/server/repository.js';
 import type { BinaryData, Record } from '#/types.js';
 import { Alphabet } from '#/utils/alphabet.js';
+import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
 import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time.js';
-import { binaryEquals } from '#/utils/equals.js';
+import { timingSafeBinaryEquals } from '#/utils/equals.js';
 import { createJwtTokenString } from '#/utils/jwt.js';
 import { getRandomBytes, getRandomString } from '#/utils/random.js';
 import { isBinaryData, isString, isUndefined } from '#/utils/type-guards.js';
@@ -72,6 +76,9 @@ export type TokenResult<AdditionalTokenPayload extends Record> = {
 export type SetCredentialsOptions = {
   /** skip validation for password strength */
   skipValidation?: boolean,
+
+  /** skip session invalidation */
+  skipSessionInvalidation?: boolean,
 };
 
 type CreateTokenResult<AdditionalTokenPayload extends Record> = {
@@ -91,6 +98,10 @@ type CreateSecretResetTokenResult = {
   jsonToken: SecretResetToken,
 };
 
+type AuthenticationKeyValueStore = {
+  derivationSalt: string,
+};
+
 const SIGNING_SECRETS_LENGTH = 64;
 
 @Singleton({
@@ -100,16 +111,18 @@ const SIGNING_SECRETS_LENGTH = 64;
   ],
 })
 export class AuthenticationService<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> implements AfterResolve {
-  private readonly credentialsRepository = injectRepository(AuthenticationCredentials);
-  private readonly sessionRepository = injectRepository(AuthenticationSession);
-  private readonly authenticationSecretRequirementsValidator = inject(AuthenticationSecretRequirementsValidator);
-  private readonly authenticationAncillaryService = inject<AuthenticationAncillaryService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>(AuthenticationAncillaryService, undefined, { optional: true });
-  private readonly options = inject(AuthenticationServiceOptions);
+  readonly #credentialsRepository = injectRepository(AuthenticationCredentials);
+  readonly #sessionRepository = injectRepository(AuthenticationSession);
+  readonly #authenticationSecretRequirementsValidator = inject(AuthenticationSecretRequirementsValidator);
+  readonly #authenticationAncillaryService = inject<AuthenticationAncillaryService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>(AuthenticationAncillaryService, undefined, { optional: true });
+  readonly #keyValueStore = inject(KeyValueStore<AuthenticationKeyValueStore>, 'authentication');
+  readonly #options = inject(AuthenticationServiceOptions);
+  readonly #logger = inject(Logger, 'authentication');
 
-  private readonly tokenVersion = this.options.version ?? 1;
-  private readonly tokenTimeToLive: number = this.options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
-  private readonly refreshTokenTimeToLive = this.options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
-  private readonly secretResetTokenTimeToLive = this.options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
+  private readonly tokenVersion = this.#options.version ?? 1;
+  private readonly tokenTimeToLive: number = this.#options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
+  private readonly refreshTokenTimeToLive = this.#options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
+  private readonly secretResetTokenTimeToLive = this.#options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
 
   private derivedTokenSigningSecret: Uint8Array;
   private derivedRefreshTokenSigningSecret: Uint8Array;
@@ -120,44 +133,52 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   async initialize(): Promise<void> {
-    if (isString(this.options.secret) || isBinaryData(this.options.secret)) {
-      await this.deriveSigningSecrets(this.options.secret);
+    if (isString(this.#options.secret) || isBinaryData(this.#options.secret)) {
+      await this.deriveSigningSecrets(this.#options.secret);
     }
     else {
-      this.derivedTokenSigningSecret = this.options.secret.tokenSigningSecret;
-      this.derivedRefreshTokenSigningSecret = this.options.secret.refreshTokenSigningSecret;
-      this.derivedSecretResetTokenSigningSecret = this.options.secret.secretResetTokenSigningSecret;
+      this.derivedTokenSigningSecret = this.#options.secret.tokenSigningSecret;
+      this.derivedRefreshTokenSigningSecret = this.#options.secret.refreshTokenSigningSecret;
+      this.derivedSecretResetTokenSigningSecret = this.#options.secret.secretResetTokenSigningSecret;
     }
   }
 
   async setCredentials(subject: string, secret: string, options?: SetCredentialsOptions): Promise<void> {
+    // We do not need to avoid information leakage here, as this is a non-public method that is only called by a public api if the secret reset token is valid.
     const actualSubject = await this.resolveSubject(subject);
 
     if (options?.skipValidation != true) {
-      await this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
+      await this.#authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
     }
 
     const salt = getRandomBytes(32);
     const hash = await this.getHash(secret, salt);
 
-    await this.credentialsRepository.upsert('subject', {
-      subject: actualSubject,
-      hashVersion: 1,
-      salt,
-      hash,
+    await this.#credentialsRepository.transaction(async (tx) => {
+      await this.#credentialsRepository.withTransaction(tx).upsert('subject', {
+        subject: actualSubject,
+        hashVersion: 1,
+        salt,
+        hash,
+      });
+
+      if (options?.skipSessionInvalidation != true) {
+        await this.#sessionRepository.withTransaction(tx).updateManyByQuery({ subject: actualSubject }, { end: currentTimestamp() });
+      }
     });
   }
 
   async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
-    const actualSubject = await this.resolveSubject(subject);
-    const credentials = await this.credentialsRepository.tryLoadByQuery({ subject: actualSubject });
+    const actualSubject = await this.tryResolveSubject(subject) ?? subject;
 
-    if (isUndefined(credentials)) {
-      return { success: false };
-    }
+    // Always try to load credentials, even if the subject is not resolved, to avoid information leakage.
+    // If the subject is not resolved, we will create a new credentials entry with an empty salt and hash.
+    // This way, we do not leak if the subject exists or not via timing attacks.
+    const credentials = await this.#credentialsRepository.tryLoadByQuery({ subject: actualSubject })
+      ?? { subject: actualSubject, salt: new Uint8Array(), hash: new Uint8Array() };
 
     const hash = await this.getHash(secret, credentials.salt);
-    const valid = binaryEquals(hash, credentials.hash);
+    const valid = timingSafeBinaryEquals(hash, credentials.hash);
 
     if (valid) {
       return { success: true, subject: credentials.subject };
@@ -171,8 +192,8 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const now = currentTimestamp();
     const end = now + this.refreshTokenTimeToLive;
 
-    return this.sessionRepository.transaction(async (tx) => {
-      const session = await this.sessionRepository.withTransaction(tx).insert({
+    return await this.#sessionRepository.transaction(async (tx) => {
+      const session = await this.#sessionRepository.withTransaction(tx).insert({
         subject: actualSubject,
         begin: now,
         end,
@@ -181,11 +202,11 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
         refreshTokenHash: new Uint8Array(),
       });
 
-      const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
+      const tokenPayload = await this.#authenticationAncillaryService?.getTokenPayload(actualSubject, authenticationData, { action: GetTokenPayloadContextAction.GetToken });
       const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: actualSubject, impersonator, sessionId: session.id, refreshTokenExpiration: end, timestamp: now });
       const refreshToken = await this.createRefreshToken(actualSubject, session.id, end, { impersonator });
 
-      await this.sessionRepository.withTransaction(tx).update(session.id, {
+      await this.#sessionRepository.withTransaction(tx).update(session.id, {
         end,
         refreshTokenHashVersion: 1,
         refreshTokenSalt: refreshToken.salt,
@@ -198,32 +219,32 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   async endSession(sessionId: string): Promise<void> {
     const now = currentTimestamp();
-    await this.sessionRepository.update(sessionId, { end: now });
+    await this.#sessionRepository.update(sessionId, { end: now });
   }
 
   async refresh(refreshToken: string, authenticationData: AuthenticationData, { omitImpersonator = false }: { omitImpersonator?: boolean } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
     const validatedRefreshToken = await this.validateRefreshToken(refreshToken);
     const sessionId = validatedRefreshToken.payload.sessionId;
 
-    const session = await this.sessionRepository.load(sessionId);
+    const session = await this.#sessionRepository.load(sessionId);
     const hash = await this.getHash(validatedRefreshToken.payload.secret, session.refreshTokenSalt);
 
     if (session.end <= currentTimestamp()) {
       throw new InvalidTokenError('Session is expired.');
     }
 
-    if (!binaryEquals(hash, session.refreshTokenHash)) {
+    if (!timingSafeBinaryEquals(hash, session.refreshTokenHash)) {
       throw new InvalidTokenError('Invalid refresh token.');
     }
 
     const now = currentTimestamp();
     const impersonator = omitImpersonator ? undefined : validatedRefreshToken.payload.impersonator;
     const newEnd = now + this.refreshTokenTimeToLive;
-    const tokenPayload = await this.authenticationAncillaryService?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
+    const tokenPayload = await this.#authenticationAncillaryService?.getTokenPayload(session.subject, authenticationData, { action: GetTokenPayloadContextAction.Refresh });
     const { token, jsonToken } = await this.createToken({ additionalTokenPayload: tokenPayload!, subject: session.subject, sessionId, refreshTokenExpiration: newEnd, impersonator, timestamp: now });
     const newRefreshToken = await this.createRefreshToken(validatedRefreshToken.payload.subject, sessionId, newEnd, { impersonator });
 
-    await this.sessionRepository.update(sessionId, {
+    await this.#sessionRepository.update(sessionId, {
       end: newEnd,
       refreshTokenHashVersion: 1,
       refreshTokenSalt: newRefreshToken.salt,
@@ -237,7 +258,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const validatedImpersonatorRoken = await this.validateToken(impersonatorRoken);
     const validatedImpersonatorRefreshToken = await this.validateRefreshToken(impersonatorRefreshToken);
 
-    const allowed = await this.authenticationAncillaryService?.canImpersonate(validatedImpersonatorRoken.payload, subject, authenticationData) ?? false;
+    const allowed = await this.#authenticationAncillaryService?.canImpersonate(validatedImpersonatorRoken.payload, subject, authenticationData) ?? false;
 
     if (!allowed) {
       throw new ForbiddenError('Impersonation forbidden.');
@@ -253,15 +274,27 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   async unimpersonate(impersonatorRefreshToken: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
-    return this.refresh(impersonatorRefreshToken, authenticationData, { omitImpersonator: true });
+    return await this.refresh(impersonatorRefreshToken, authenticationData, { omitImpersonator: true });
   }
 
   async initSecretReset(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
-    if (isUndefined(this.authenticationAncillaryService)) {
+    if (isUndefined(this.#authenticationAncillaryService)) {
       throw new NotImplementedError();
     }
 
-    const actualSubject = await this.resolveSubject(subject);
+    const actualSubject = await this.tryResolveSubject(subject);
+
+    if (isUndefined(actualSubject)) {
+      this.#logger.warn(`Subject "${subject}" not found for secret reset.`);
+
+      /**
+       * If the subject cannot be resolved, we do not throw an error here to avoid information leakage.
+       * This is to prevent attackers from discovering valid subjects by trying to reset secrets.
+       * Instead, we simply log the attempt and return without performing any action.
+       */
+      return;
+    }
+
     const secretResetToken = await this.createSecretResetToken(actualSubject, currentTimestamp() + this.secretResetTokenTimeToLive);
 
     const initSecretResetData: InitSecretResetData & AdditionalInitSecretResetData = {
@@ -270,7 +303,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
       ...data,
     };
 
-    await this.authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
+    await this.#authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
   }
 
   async resetSecret(tokenString: string, newSecret: string): Promise<void> {
@@ -279,31 +312,62 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   async checkSecret(secret: string): Promise<SecretCheckResult> {
-    return this.authenticationSecretRequirementsValidator.checkSecretRequirements(secret);
+    return await this.#authenticationSecretRequirementsValidator.checkSecretRequirements(secret);
   }
 
   async testSecret(secret: string): Promise<SecretTestResult> {
-    return this.authenticationSecretRequirementsValidator.testSecretRequirements(secret);
+    return await this.#authenticationSecretRequirementsValidator.testSecretRequirements(secret);
   }
 
   async validateSecret(secret: string): Promise<void> {
-    return this.authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
+    await this.#authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
   }
 
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {
-    return getTokenFromString(token, this.tokenVersion, this.derivedTokenSigningSecret);
+    return await getTokenFromString(token, this.tokenVersion, this.derivedTokenSigningSecret);
   }
 
   async validateRefreshToken(token: string): Promise<RefreshToken> {
-    return getRefreshTokenFromString(token, this.derivedRefreshTokenSigningSecret);
+    return await getRefreshTokenFromString(token, this.derivedRefreshTokenSigningSecret);
   }
 
   async validateSecretResetToken(token: string): Promise<SecretResetToken> {
-    return getSecretResetTokenFromString(token, this.derivedSecretResetTokenSigningSecret);
+    return await getSecretResetTokenFromString(token, this.derivedSecretResetTokenSigningSecret);
   }
 
+  async tryResolveSubject(subject: string): Promise<string | undefined> {
+    if (isUndefined(this.#authenticationAncillaryService)) {
+      return subject;
+    }
+
+    const result = await this.#authenticationAncillaryService.resolveSubject(subject);
+
+    if (result.success) {
+      return result.subject;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Resolves the subject to the actual subject used for authentication.
+   * This should *not* be used for public facing APIs, as it throws an error if the subject is not found that leaks if the subjects exists or not.
+   * Instead use {@link tryResolveSubject} to check if the subject exists without leaking information.
+   * @param subject The subject to resolve.
+   * @returns The resolved subject or the original subject if not found.
+   */
   async resolveSubject(subject: string): Promise<string> {
-    return this.authenticationAncillaryService?.resolveSubject(subject) ?? subject;
+    if (isUndefined(this.#authenticationAncillaryService)) {
+      return subject;
+    }
+
+    const result = await this.#authenticationAncillaryService.resolveSubject(subject);
+
+    if (result.success) {
+      return result.subject;
+    }
+
+    throw new NotFoundError(`Subject not found.`);
   }
 
   /** Creates a token without session or refresh token and is not saved in database */
@@ -379,7 +443,10 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   private async deriveSigningSecrets(secret: string | BinaryData): Promise<void> {
     const key = await importPbkdf2Key(secret);
-    const algorithm = { name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt: new Uint8Array() };
+    const saltBase64 = await this.#keyValueStore.getOrSet('derivationSalt', encodeBase64(getRandomBytes(32)));
+    const salt = decodeBase64(saltBase64);
+
+    const algorithm = { name: 'PBKDF2', hash: 'SHA-512', iterations: 500000, salt };
     const [derivedTokenSigningSecret, derivedRefreshTokenSigningSecret, derivedSecretResetTokenSigningSecret] = await deriveBytesMultiple(algorithm, key, 3, SIGNING_SECRETS_LENGTH);
 
     this.derivedTokenSigningSecret = derivedTokenSigningSecret;

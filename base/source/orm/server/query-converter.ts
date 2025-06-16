@@ -11,7 +11,7 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { Primitive, Record } from '#/types.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
-import type { ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';
+import type { ComparisonAndQuery, ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonNotQuery, ComparisonOrQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';
 import type { ColumnDefinition, PgTableFromType } from './types.js';
 
 const sqlTrue = sql`true`;
@@ -118,6 +118,33 @@ function getCondition(property: string, value: Primitive | Record, column: PgCol
     }
 
     return eq(column, queryValue);
+  }
+
+  if (hasOwnProperty(value, '$and')) {
+    const innerQueries = (value as ComparisonAndQuery).$and.map((query) => getCondition(property, query, column)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    const andQuery = and(...innerQueries);
+
+    if (isUndefined(andQuery)) {
+      throw new Error(`No valid conditions in $and for property "${property}".`);
+    }
+
+    return andQuery;
+  }
+
+  if (hasOwnProperty(value, '$or')) {
+    const innerQueries = (value as ComparisonOrQuery).$or.map((query) => getCondition(property, query, column)); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    const orQuery = or(...innerQueries);
+
+    if (isUndefined(orQuery)) {
+      throw new Error(`No valid conditions in $or for property "${property}".`);
+    }
+
+    return orQuery;
+  }
+
+  if (hasOwnProperty(value, '$not')) {
+    const innerQuery = getCondition(property, (value as ComparisonNotQuery).$not, column); // eslint-disable-line @typescript-eslint/no-unsafe-argument
+    return not(innerQuery);
   }
 
   if (hasOwnProperty(value, '$neq')) {

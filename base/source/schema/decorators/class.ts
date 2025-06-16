@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import { createClassDecorator, type Decorator } from '#/reflection/index.js';
 import type { SchemaTypeReflectionData } from './types.js';
 

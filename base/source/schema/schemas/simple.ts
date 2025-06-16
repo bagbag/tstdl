@@ -11,7 +11,7 @@ export type SimpleSchemaOptions<T> = SchemaOptions<T> & Coercible;
 type SimpleSchemaRefinements<T> = {
   coercers?: SimpleSchemaCoercers<T>,
   constraints?: (SimpleSchemaConstraint<T> | null)[],
-  gotValueFormatter?: SimpleSchemaGotValueFormatter
+  gotValueFormatter?: SimpleSchemaGotValueFormatter,
 };
 
 export type SimpleSchemaCoercers<T> = {
@@ -21,7 +21,7 @@ export type SimpleSchemaCoercers<T> = {
   bigint?: (value: bigint, path: JsonPath, options: SchemaTestOptions) => CoerceResult<T>,
   undefined?: (value: undefined, path: JsonPath, options: SchemaTestOptions) => CoerceResult<T>,
   null?: (value: null, path: JsonPath, options: SchemaTestOptions) => CoerceResult<T>,
-  all?: (value: unknown, path: JsonPath, options: SchemaTestOptions) => CoerceResult<T>
+  all?: (value: unknown, path: JsonPath, options: SchemaTestOptions) => CoerceResult<T>,
 };
 
 export type SimpleSchemaConstraint<T> = (value: T) => ConstraintResult;

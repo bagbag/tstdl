@@ -19,7 +19,7 @@ import type { DocumentValidationExecutor, DocumentValidationExecutorContext, Doc
 import { DocumentWorkflowService } from './document-workflow.service.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
-type ValidationJobData = { executionId: string };
+type ValidationJobData = { tenantId: string, executionId: string };
 
 const DOCUMENT_VALIDATION_EXECUTORS = injectionToken<DocumentValidationExecutor>('DocumentValidationExecutors');
 
@@ -52,27 +52,28 @@ export class DocumentValidationService {
       { concurrency: 5, cancellationSignal },
       async (job) => {
         this.#logger.verbose(`Processing validation execution "${job.data.executionId}"`);
-        await this.processValidationExecution(job.data.executionId);
+        await this.processValidationExecution(job.data.tenantId, job.data.executionId);
       },
       this.#logger,
     );
   }
 
-  async startValidationWorkflow(documentId: string): Promise<void> {
-    const document = await this.#documentService.load(documentId);
+  async startValidationWorkflow(tenantId: string, documentId: string): Promise<void> {
+    const document = await this.#documentService.loadByQuery({ tenantId, id: documentId });
 
     if (isNull(document.typeId)) {
       throw new BadRequestError('Document has no type');
     }
 
-    const workflow = await this.#documentWorkflowService.initiateWorkflow(documentId, DocumentWorkflowStep.Validation);
+    const workflow = await this.#documentWorkflowService.initiateWorkflow(document.tenantId, documentId, DocumentWorkflowStep.Validation);
 
-    const typeValidations = await this.#documentTypeValidationService.loadManyByQuery({ typeId: document.typeId });
+    const typeValidations = await this.#documentTypeValidationService.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, typeId: document.typeId });
 
     for (const typeValidation of typeValidations) {
-      const validationDefinition = await this.#validationDefinitionService.load(typeValidation.validationId);
+      const validationDefinition = await this.#validationDefinitionService.loadByQuery({ tenantId: { $or: [null, tenantId] }, id: typeValidation.validationId });
 
       const execution = await this.#validationExecutionService.insert({
+        tenantId: document.tenantId,
         definitionId: validationDefinition.id,
         workflowId: workflow.id,
         state: DocumentValidationExecutionState.Pending,
@@ -82,53 +83,53 @@ export class DocumentValidationService {
         completedAt: null,
       });
 
-      await this.#queue.enqueue({ executionId: execution.id });
+      await this.#queue.enqueue({ tenantId, executionId: execution.id });
     }
   }
 
-  async setExecutionRunning(executionId: string): Promise<void> {
-    await this.#validationExecutionService.update(executionId, { state: DocumentValidationExecutionState.Running, resultStatus: null, resultMessage: null, startedAt: currentTimestamp(), completedAt: null });
+  async setExecutionRunning(tenantId: string, executionId: string): Promise<void> {
+    await this.#validationExecutionService.updateByQuery({ tenantId, executionId }, { state: DocumentValidationExecutionState.Running, resultStatus: null, resultMessage: null, startedAt: currentTimestamp(), completedAt: null });
   }
 
-  async setExecutionCompleted(executionId: string, status: DocumentValidationResultStatus, message: string | null): Promise<void> {
-    await this.#validationExecutionService.update(executionId, { state: DocumentValidationExecutionState.Completed, resultStatus: status, resultMessage: message, completedAt: currentTimestamp() });
+  async setExecutionCompleted(tenantId: string, executionId: string, status: DocumentValidationResultStatus, message: string | null): Promise<void> {
+    await this.#validationExecutionService.updateByQuery({ tenantId, executionId }, { state: DocumentValidationExecutionState.Completed, resultStatus: status, resultMessage: message, completedAt: currentTimestamp() });
   }
 
-  async setExecutionError(executionId: string, reason: string | null): Promise<void> {
-    await this.#validationExecutionService.update(executionId, { state: DocumentValidationExecutionState.Error, resultStatus: DocumentValidationResultStatus.Failed, resultMessage: reason, completedAt: currentTimestamp() });
+  async setExecutionError(tenantId: string, executionId: string, reason: string | null): Promise<void> {
+    await this.#validationExecutionService.updateByQuery({ tenantId, executionId }, { state: DocumentValidationExecutionState.Error, resultStatus: DocumentValidationResultStatus.Failed, resultMessage: reason, completedAt: currentTimestamp() });
   }
 
-  async loadRelatedDocument(executionId: string, documentId: string): Promise<DocumentValidationExecutorContextDocumentData> {
-    const execution = await this.#validationExecutionService.load(executionId);
-    const workflow = await this.#documentWorkflowService.repository.load(execution.workflowId);
-    const documentData = await this.loadDocumentData(documentId);
+  async loadRelatedDocument(tenantId: string, executionId: string, documentId: string): Promise<DocumentValidationExecutorContextDocumentData> {
+    const execution = await this.#validationExecutionService.loadByQuery({ tenantId, id: executionId });
+    const workflow = await this.#documentWorkflowService.repository.loadByQuery({ tenantId, id: execution.workflowId });
+    const documentData = await this.loadDocumentData(tenantId, documentId);
 
-    await this.#validationExecutionRelatedDocumentService.upsert(['executionId', 'documentId'], { executionId, documentId: workflow.documentId });
+    await this.#validationExecutionRelatedDocumentService.upsert(['executionId', 'documentId'], { tenantId, executionId, documentId: workflow.documentId });
 
     return documentData;
   }
 
-  async loadDocumentData(documentId: string): Promise<DocumentValidationExecutorContextDocumentData> {
-    const document = await this.#documentService.load(documentId);
+  async loadDocumentData(tenantId: string, documentId: string): Promise<DocumentValidationExecutorContextDocumentData> {
+    const document = await this.#documentService.loadByQuery({ tenantId, id: documentId });
 
     if (isNull(document.typeId)) {
       throw new Error('Document has no type');
     }
 
-    const [documentCollections, documentTypeProperties] = await Promise.all([
-      this.#documentCollectionAssignmentRepository.loadManyByQuery({ documentId: document.id }),
-      this.#documentTypePropertyService.loadManyByQuery({ typeId: document.typeId }),
+    const [documentCollections, documentTypeProperties, type] = await Promise.all([
+      this.#documentCollectionAssignmentRepository.loadManyByQuery({ tenantId, documentId: document.id }),
+      this.#documentTypePropertyService.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, typeId: document.typeId }),
+      this.#documentTypeService.loadByQuery({ tenantId: { $or: [null, tenantId] }, id: document.typeId }),
     ]);
 
     const documentCollectionIds = getEntityIds(documentCollections);
     const documentPropertyIds = getEntityIds(documentTypeProperties);
 
-    const [collections, category, type, properties, propertyValues] = await Promise.all([
-      this.#documentManagementService.loadManyByQuery({ id: { $in: documentCollectionIds } }),
-      this.#documentCategoryService.load(document.typeId),
-      this.#documentTypeService.load(document.typeId),
-      this.#documentPropertyService.loadManyByQuery({ id: { $in: documentPropertyIds } }),
-      this.#documentPropertyValueService.loadManyByQuery({ documentId: document.id }),
+    const [collections, category, properties, propertyValues] = await Promise.all([
+      this.#documentManagementService.loadManyByQuery({ tenantId, id: { $in: documentCollectionIds } }),
+      this.#documentCategoryService.loadByQuery({ tenantId: { $or: [null, tenantId] }, id: type.categoryId }),
+      this.#documentPropertyService.loadManyByQuery({ tenantId: { $or: [null, tenantId] }, id: { $in: documentPropertyIds } }),
+      this.#documentPropertyValueService.loadManyByQuery({ tenantId, documentId: document.id }),
     ]);
 
     return {
@@ -141,15 +142,15 @@ export class DocumentValidationService {
     };
   }
 
-  protected async loadDocumentValidationExecutorContext(executionId: string): Promise<DocumentValidationExecutorContext> {
-    const execution = await this.#validationExecutionService.load(executionId);
+  protected async loadDocumentValidationExecutorContext(tenantId: string, executionId: string): Promise<DocumentValidationExecutorContext> {
+    const execution = await this.#validationExecutionService.loadByQuery({ tenantId, id: executionId });
 
     const [definition, workflow] = await Promise.all([
-      this.#validationDefinitionService.load(execution.definitionId),
-      this.#documentWorkflowService.repository.load(execution.workflowId),
+      this.#validationDefinitionService.loadByQuery({ tenantId, id: execution.definitionId }),
+      this.#documentWorkflowService.repository.loadByQuery({ tenantId, id: execution.workflowId }),
     ]);
 
-    const documentData = await this.loadDocumentData(workflow.documentId);
+    const documentData = await this.loadDocumentData(tenantId, workflow.documentId);
 
     return {
       execution,
@@ -158,23 +159,23 @@ export class DocumentValidationService {
     };
   }
 
-  async processValidationExecution(executionId: string): Promise<void> {
-    const context = await this.loadDocumentValidationExecutorContext(executionId);
+  async processValidationExecution(tenantId: string, executionId: string): Promise<void> {
+    const context = await this.loadDocumentValidationExecutorContext(tenantId, executionId);
     const executor = this.#executorMap.get(context.definition.identifier);
 
     if (isUndefined(executor)) {
-      await this.setExecutionError(executionId, `Invalid validation identifier`);
+      await this.setExecutionError(tenantId, executionId, `Invalid validation identifier`);
       return;
     }
 
     try {
-      await this.setExecutionRunning(executionId);
+      await this.setExecutionRunning(tenantId, executionId);
       const result = await executor.execute(context);
-      await this.setExecutionCompleted(executionId, result.status, result.message ?? null);
+      await this.setExecutionCompleted(tenantId, executionId, result.status, result.message ?? null);
     }
     catch (error) {
       this.#logger.error(error);
-      await this.setExecutionError(executionId, 'Internal error');
+      await this.setExecutionError(tenantId, executionId, 'Internal error');
     }
   }
 }

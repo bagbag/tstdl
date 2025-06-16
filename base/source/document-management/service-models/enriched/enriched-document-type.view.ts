@@ -11,6 +11,7 @@ export class EnrichedDocumentType implements TypedOmit<DocumentType, 'categoryId
   readonly #data: EnrichedDocumentManagementData;
 
   readonly id: string;
+  readonly tenantId: string | null;
   readonly label: string;
   readonly category: EnrichedDocumentCategory;
 
@@ -26,6 +27,7 @@ export class EnrichedDocumentType implements TypedOmit<DocumentType, 'categoryId
   constructor(data: EnrichedDocumentManagementData, type: DocumentType, category: EnrichedDocumentCategory) {
     this.#data = data;
     this.id = type.id;
+    this.tenantId = type.tenantId;
     this.label = type.label;
     this.category = category;
   }

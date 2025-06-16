@@ -28,7 +28,7 @@ type File = {
   id: string,
   name: string,
   uri: string,
-  mimeType: string
+  mimeType: string,
 };
 
 @Singleton()
@@ -94,7 +94,7 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   private async getFiles(fileInputs: readonly FileInput[]): Promise<File[]> {
     const ids = createArray(fileInputs.length, () => crypto.randomUUID());
 
-    const files = await AsyncEnumerable.from(fileInputs).parallelMap(5, true, async (file, index) => this.uploadFile(file, ids[index]!)).toArray();
+    const files = await AsyncEnumerable.from(fileInputs).parallelMap(5, true, async (file, index) => await this.uploadFile(file, ids[index]!)).toArray();
 
     this.#logger.verbose(`Processing ${fileInputs.length} files...`);
     await this.waitForFilesActive(files);

@@ -1,6 +1,6 @@
 @layer tstdl.components {
   [tslInput] {
-    @apply sm:text-sm sm:leading-6 bg-white dark:bg-neutral-700 placeholder:text-neutral-400;
+    @apply grow sm:text-sm sm:leading-6 bg-white dark:bg-neutral-700 placeholder:text-neutral-400;
 
     :not(tsl-input-group) > & {
       @apply shadow-sm;

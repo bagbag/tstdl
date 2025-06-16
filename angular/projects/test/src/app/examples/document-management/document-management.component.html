@@ -5,6 +5,12 @@
   </tsl-input-group>
 </div>
 
-<div class="content-grid h-full py-2 overflow-y-auto">
-  <tsl-document-inbox class="feature h-full min-h-96" [context]="context"></tsl-document-inbox>
+<div class="content-grid">
+  <div class="feature-xl grid grid-cols-[auto,1fr]">
+    <tsl-tree-view [items]="treeViewItems()"></tsl-tree-view>
+
+    <div class="h-full py-1.5 pl-1.5 overflow-y-auto">
+      <tsl-document-list class="feature h-full min-h-96" [context]="context"></tsl-document-list>
+    </div>
+  </div>
 </div>

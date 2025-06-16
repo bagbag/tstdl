@@ -5,4 +5,5 @@ export * from './enriched-document-management-data.view.js';
 export * from './enriched-document-request.view.js';
 export * from './enriched-document-type.view.js';
 export * from './enriched-document.view.js';
+export * from './enriched-requests-template-data.model.js';
 export * from './enriched.js';

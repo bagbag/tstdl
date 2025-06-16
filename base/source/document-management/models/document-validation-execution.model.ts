@@ -1,5 +1,5 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
-import { References } from '#/orm/decorators.js';
+import { ForeignKey, References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
 import { Timestamp, Unique, Uuid } from '#/orm/types.js';
 import { Enumeration, StringProperty } from '#/schema/index.js';
@@ -24,10 +24,14 @@ export const DocumentValidationResultStatus = defineEnum('DocumentValidationResu
 
 export type DocumentValidationResultStatus = EnumType<typeof DocumentValidationResultStatus>;
 
-@DocumentManagementTable()
-@Unique<DocumentValidationExecution>(['workflowId', 'definitionId'])
+@DocumentManagementTable({ name: 'validation_execution' })
+@Unique<DocumentValidationExecution>(['tenantId', 'workflowId', 'definitionId'])
+@ForeignKey<DocumentValidationExecution, DocumentWorkflow>(() => DocumentWorkflow, ['tenantId', 'workflowId'], ['tenantId', 'id'])
 export class DocumentValidationExecution extends Entity {
   declare static readonly entityName: 'DocumentValidationExecution';
+
+  @Uuid()
+  tenantId: Uuid;
 
   @Uuid()
   @References(() => DocumentWorkflow)

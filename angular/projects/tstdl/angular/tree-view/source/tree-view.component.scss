@@ -1,0 +1,19 @@
+@layer tstdl.components {
+  tsl-tree-view {
+    @apply block;
+
+    a {
+      &.tree-view-item {
+        @apply flex gap-2 items-center px-2.5 py-1.5 hover:bg-neutral-400/50 rounded-lg cursor-pointer;
+
+        &.tree-view-item-active {
+          @apply bg-neutral-400/30 hover:bg-neutral-400/40 dark:bg-neutral-400/30 dark:hover:bg-neutral-400/50;
+        }
+      }
+    }
+
+    tsl-tree-view {
+      @apply ml-4 space-y-0;
+    }
+  }
+}

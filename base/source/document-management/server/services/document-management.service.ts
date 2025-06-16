@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { union } from 'drizzle-orm/pg-core';
 
 import type { CancellationSignal } from '#/cancellation/token.js';
@@ -10,7 +10,7 @@ import { Transactional, injectRepository, injectTransactional } from '#/orm/serv
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import type { Record } from '#/types.js';
 import { distinct } from '#/utils/array/index.js';
-import { compareByValueSelectionToOrder } from '#/utils/comparison.js';
+import { compareByValueSelection } from '#/utils/comparison.js';
 import { groupToMap, groupToSingleMap } from '#/utils/iterable-helpers/index.js';
 import { fromEntries, objectEntries } from '#/utils/object/index.js';
 import { assertDefinedPass, isDefined, isNotNull, isNotNullOrUndefined, isNull, isUndefined } from '#/utils/type-guards.js';
@@ -22,6 +22,7 @@ import { DocumentCategoryTypeService } from './document-category-type.service.js
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentPropertyService } from './document-property.service.js';
+import { DocumentTagService } from './document-tag.service.js';
 import { DocumentWorkflowService } from './document-workflow.service.js';
 import { DocumentService } from './document.service.js';
 import { enumTypeKey } from './enum-type-key.js';
@@ -34,7 +35,7 @@ export class DocumentManagementService extends Transactional {
   readonly #documentService = injectTransactional(DocumentService);
   readonly #documentPropertyService = injectTransactional(DocumentPropertyService);
   readonly #documentWorkflowService = injectTransactional(DocumentWorkflowService);
-  readonly #documentCategoryRepository = injectRepository(DocumentCategory);
+  readonly #documentTagService = injectTransactional(DocumentTagService);
   readonly #documentCollectionAssignmentRepository = injectRepository(DocumentCollectionAssignment);
   readonly #documentRequestCollectionAssignmentRepository = injectRepository(DocumentRequestCollectionAssignment);
   readonly #documentAssignmentTaskRepository = injectRepository(DocumentAssignmentTask);
@@ -42,7 +43,6 @@ export class DocumentManagementService extends Transactional {
   readonly #documentRequestRepository = injectRepository(DocumentRequest);
   readonly #documentRequestsTemplateRepository = injectRepository(DocumentRequestsTemplate);
   readonly #documentRequestTemplateRepository = injectRepository(DocumentRequestTemplate);
-  readonly #documentTypeRepository = injectRepository(DocumentType);
   readonly #documentTypePropertyRepository = injectRepository(DocumentTypeProperty);
   readonly #documentValidationExecutionRepository = injectRepository(DocumentValidationExecution);
   readonly #observationService = inject(DocumentManagementObservationService);
@@ -53,37 +53,46 @@ export class DocumentManagementService extends Transactional {
    * This method is used to determine which collections a document is associated with, either directly or through requests and assignments.
    * @param documentId The ID of the document to retrieve collection IDs for.
    */
-  async getRelevantDocumentCollectionIds(documentId: string): Promise<string[]> {
+  async getRelevantDocumentCollectionIds(tenantId: string, documentId: string): Promise<string[]> {
     const directAssignments = this.#documentCollectionService.session.$with('directAssignments').as((qb) => qb
       .select({ collectionId: documentCollectionAssignment.id })
       .from(documentCollectionAssignment)
-      .where(eq(documentCollectionAssignment.documentId, documentId)),
+      .where(and(
+        eq(documentCollectionAssignment.tenantId, tenantId),
+        eq(documentCollectionAssignment.documentId, documentId),
+      )),
     );
 
     const requestAssignments = this.#documentRequestCollectionAssignmentRepository.session.$with('requestAssignments').as((qb) => qb
       .select({ collectionId: documentRequestCollectionAssignment.collectionId })
       .from(documentRequest)
       .innerJoin(documentRequestCollectionAssignment, eq(documentRequestCollectionAssignment.requestId, documentRequest.id))
-      .where(eq(documentRequest.documentId, documentId)),
+      .where(and(
+        eq(documentRequest.tenantId, tenantId),
+        eq(documentRequest.documentId, documentId),
+      )),
     );
 
     const assignmentScopes = this.#documentAssignmentScopeRepository.session.$with('assignmentScopes').as((qb) => qb
       .select({ collectionId: documentAssignmentScope.collectionId })
       .from(documentAssignmentTask)
       .innerJoin(documentAssignmentScope, eq(documentAssignmentScope.taskId, documentAssignmentTask.id))
-      .where(eq(documentAssignmentTask.documentId, documentId)),
+      .where(and(
+        eq(documentAssignmentTask.tenantId, tenantId),
+        eq(documentAssignmentTask.documentId, documentId),
+      )),
     );
 
     const result = await union(
-      this.#documentService.session.with(directAssignments).selectDistinct().from(directAssignments),
-      this.#documentService.session.with(requestAssignments).selectDistinct().from(requestAssignments),
-      this.#documentService.session.with(assignmentScopes).selectDistinct().from(assignmentScopes),
+      this.#documentService.session.with(directAssignments).select().from(directAssignments),
+      this.#documentService.session.with(requestAssignments).select().from(requestAssignments),
+      this.#documentService.session.with(assignmentScopes).select().from(assignmentScopes),
     );
 
     return result.map((row) => row.collectionId);
   }
 
-  async *loadDataStream(collectionIds: string[], cancellationSignal: CancellationSignal): AsyncIterableIterator<DocumentManagementData> {
+  async *loadDataStream(tenantId: string, collectionIds: string[], cancellationSignal: CancellationSignal): AsyncIterableIterator<DocumentManagementData> {
     const continuePromise = new DeferredPromise();
 
     const newData$ = this.#observationService.collectionsChangedMessageBus.allMessages$.pipe(
@@ -94,7 +103,7 @@ export class DocumentManagementService extends Transactional {
 
     try {
       while (cancellationSignal.isUnset) {
-        yield await this.loadData(collectionIds);
+        yield await this.loadData(tenantId, collectionIds);
 
         await continuePromise;
         continuePromise.reset();
@@ -105,24 +114,23 @@ export class DocumentManagementService extends Transactional {
     }
   }
 
-  async loadData(collectionIds: string[]): Promise<DocumentManagementData> {
+  async loadData(tenantId: string, collectionIds: string[]): Promise<DocumentManagementData> {
     return await this.transaction(async (tx) => {
-      const [collections, documentCollectionAssignments, requestAssignments, assignmentScopes, categories, types] = await Promise.all([
-        this.#documentCollectionService.withTransaction(tx).repository.loadMany(collectionIds),
-        this.#documentCollectionAssignmentRepository.withTransaction(tx).loadManyByQuery({ collectionId: { $in: collectionIds } }),
-        this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).loadManyByQuery({ collectionId: { $in: collectionIds } }),
-        this.#documentAssignmentScopeRepository.withTransaction(tx).loadManyByQuery({ collectionId: { $in: collectionIds } }),
-        this.#documentCategoryRepository.withTransaction(tx).loadManyByQuery({}, { order: 'label' }),
-        this.#documentTypeRepository.withTransaction(tx).loadManyByQuery({}, { order: 'label' }),
+      const [collections, documentCollectionAssignments, requestAssignments, assignmentScopes, { categories, types }] = await Promise.all([
+        this.#documentCollectionService.repository.withTransaction(tx).loadManyByQuery({ tenantId, id: { $in: collectionIds } }),
+        this.#documentCollectionAssignmentRepository.withTransaction(tx).loadManyByQuery({ tenantId, collectionId: { $in: collectionIds } }),
+        this.#documentRequestCollectionAssignmentRepository.withTransaction(tx).loadManyByQuery({ tenantId, collectionId: { $in: collectionIds } }),
+        this.#documentAssignmentScopeRepository.withTransaction(tx).loadManyByQuery({ tenantId, collectionId: { $in: collectionIds } }),
+        this.#documentCategoryTypeService.withTransaction(tx).loadCategoriesAndTypes(tenantId),
       ]);
 
-      const collectionsMetadataMap = await this.#documentCollectionService.withTransaction(tx).resolveMetadataMap(...collectionIds);
+      const collectionsMetadataMap = await this.#documentCollectionService.withTransaction(tx).resolveMetadataMap(tenantId, collections);
       const requestIds = requestAssignments.map((requestCollection) => requestCollection.requestId);
       const taskIds = assignmentScopes.map((scope) => scope.taskId);
 
       const [requests, assignmentTasks] = await Promise.all([
-        this.#documentRequestRepository.withTransaction(tx).loadManyByQuery({ id: { $in: requestIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
-        this.#documentAssignmentTaskRepository.withTransaction(tx).loadMany(taskIds),
+        this.#documentRequestRepository.withTransaction(tx).loadManyByQuery({ tenantId, id: { $in: requestIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
+        this.#documentAssignmentTaskRepository.withTransaction(tx).loadManyByQuery({ tenantId, ids: { $in: taskIds } }),
       ]);
 
       const assignmentDocumentIds = documentCollectionAssignments.map((assignment) => assignment.documentId);
@@ -131,28 +139,35 @@ export class DocumentManagementService extends Transactional {
       const documentIds = distinct([...assignmentDocumentIds, ...requestDocumentIds, ...assignmentTaskDocumentIds]);
 
       const [documents, propertyViews, propertyValues, workflows] = await Promise.all([
-        this.#documentService.repository.withTransaction(tx).loadManyByQuery({ id: { $in: documentIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
-        this.#documentPropertyService.withTransaction(tx).loadViews(),
-        this.#documentPropertyService.withTransaction(tx).loadDocumentProperties(documentIds),
-        this.#documentWorkflowService.withTransaction(tx).loadWorkflows(documentIds),
+        this.#documentService.repository.withTransaction(tx).loadManyByQuery({ tenantId, id: { $in: documentIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
+        this.#documentPropertyService.withTransaction(tx).loadViews(tenantId),
+        this.#documentPropertyService.withTransaction(tx).loadDocumentPropertyValues(tenantId, documentIds),
+        this.#documentWorkflowService.withTransaction(tx).loadWorkflows(tenantId, documentIds),
       ]);
 
+      const documentTagAssignments = await this.#documentTagService.tagAssignmentRepository.withTransaction(tx).loadManyByQuery({ tenantId, documentId: { $in: documentIds } });
+
+      const tags = await this.#documentTagService.withTransaction(tx).loadTags(tenantId);
+
+      const documentTagsMap = groupToMap(documentTagAssignments, (assignment) => assignment.documentId);
       const documentWorkflowsMap = groupToMap(workflows, (workflow) => workflow.documentId);
       const valuesMap = Enumerable.from(propertyValues).groupToMap((value) => value.documentId);
       const validationWorkflowIds = workflows.map((workflow) => (workflow.step == DocumentWorkflowStep.Validation) ? workflow.id : null).filter(isNotNull);
 
-      const validations = await this.#documentValidationExecutionRepository.withTransaction(tx).loadManyByQuery({ workflowId: { $in: validationWorkflowIds } });
+      const validations = await this.#documentValidationExecutionRepository.withTransaction(tx).loadManyByQuery({ tenantId, workflowId: { $in: validationWorkflowIds } });
       const workflowValidationsMap = groupToMap(validations, (validation) => validation.workflowId);
 
-      const collectionViews = collections.toSorted(compareByValueSelectionToOrder(collectionIds, (collection) => collection.id)).map((collection) => {
-        const metadata = assertDefinedPass(collectionsMetadataMap[collection.id]);
+      const collectionViews = collections
+        .toSorted(compareByValueSelection((collection) => collectionIds.indexOf(collection.id)))
+        .map((collection) => {
+          const metadata = assertDefinedPass(collectionsMetadataMap[collection.id]);
 
-        return ({
-          ...collection,
-          name: metadata.name,
-          group: metadata.group,
+          return ({
+            ...collection,
+            name: metadata.name,
+            group: metadata.group,
+          });
         });
-      });
 
       const documentViews = documents.map((document): DocumentView => {
         const documentWorkflows = documentWorkflowsMap.get(document.id) ?? [];
@@ -168,6 +183,7 @@ export class DocumentManagementService extends Transactional {
               ? { target: documentAssignmentTask.target, scope: documentAssignmentTaskScope }
               : null,
           },
+          tagIds: documentTagsMap.get(document.id)?.map((assignment) => assignment.tagId) ?? [],
           properties: valuesMap.get(document.id) ?? [],
           workflows: documentWorkflows,
           validations: documentValidations,
@@ -185,16 +201,17 @@ export class DocumentManagementService extends Transactional {
         requests: requestViews,
         categories,
         types,
+        tags,
         properties: propertyViews,
       };
     });
   }
 
-  async loadDocumentRequestsTemplateData(): Promise<DocumentRequestsTemplateData> {
+  async loadDocumentRequestsTemplateData(tenantId: string | null): Promise<DocumentRequestsTemplateData> {
     return await this.transaction(async (tx) => {
       const [requestsTemplates, requestTemplates] = await Promise.all([
-        this.#documentRequestsTemplateRepository.withTransaction(tx).loadManyByQuery({}, { order: 'label' }),
-        this.#documentRequestTemplateRepository.withTransaction(tx).loadManyByQuery({}),
+        this.#documentRequestsTemplateRepository.withTransaction(tx).loadManyByQuery({ tenantId }, { order: 'label' }),
+        this.#documentRequestTemplateRepository.withTransaction(tx).loadManyByQuery({ tenantId }),
       ]);
 
       const templates = requestsTemplates.map((requestsTemplate): DocumentRequestsTemplateView => ({
@@ -207,6 +224,7 @@ export class DocumentManagementService extends Transactional {
   }
 
   async initializeCategoriesAndTypes<CategoryKey extends string, TypeKey extends string, DocumentPropertyKey extends string>(
+    tenantId: string | null,
     categoryLabels: Record<CategoryKey, string>,
     categoryParents: Record<CategoryKey, CategoryKey | null>,
     typeLabels: Record<TypeKey, string>,
@@ -219,8 +237,8 @@ export class DocumentManagementService extends Transactional {
     const propertyEntries = objectEntries(propertyKeys);
 
     const { categoryMap, typeMap, propertyMap } = await this.transaction(async (tx) => {
-      const { categories: dbCategories, types: dbTypes } = await this.#documentCategoryTypeService.withTransaction(tx).loadCategoriesAndTypes();
-      const dbProperties = await this.#documentPropertyService.withTransaction(tx).repository.loadAll();
+      const { categories: dbCategories, types: dbTypes } = await this.#documentCategoryTypeService.withTransaction(tx).loadCategoriesAndTypes(tenantId);
+      const dbProperties = await this.#documentPropertyService.withTransaction(tx).repository.loadManyByQuery({ tenantId });
 
       const categories = dbCategories.filter((category) => isNotNullOrUndefined(category.metadata.attributes[enumTypeKey]));
       const types = dbTypes.filter((type) => isNotNullOrUndefined(type.metadata.attributes[enumTypeKey]));
@@ -230,52 +248,52 @@ export class DocumentManagementService extends Transactional {
       const enumKeyTypeMap = groupToSingleMap(types, (type) => type.metadata.attributes[enumTypeKey]);
       const enumKeyPropertyMap = groupToSingleMap(properties, (property) => property.metadata.attributes[enumTypeKey]);
 
-      for (const [key, label] of categoryEntries) {
-        const category = enumKeyCategoryMap.get(key);
-        const parentKey = assertDefinedPass(categoryParents[key], `Parent category not defined for ${key}`);
+      for (const [enumKey, label] of categoryEntries) {
+        const category = enumKeyCategoryMap.get(enumKey);
+        const parentKey = assertDefinedPass(categoryParents[enumKey], `Parent category not defined for ${enumKey}`);
         const parentCategory = isNull(parentKey) ? null : assertDefinedPass(enumKeyCategoryMap.get(parentKey));
         const parentCategoryId = parentCategory?.id ?? null;
 
         if (isUndefined(category)) {
-          const category = await this.#documentCategoryTypeService.withTransaction(tx).createCategory(label, parentCategoryId, key);
-          enumKeyCategoryMap.set(key, category);
+          const category = await this.#documentCategoryTypeService.withTransaction(tx).createCategory({ tenantId, label, parentId: parentCategoryId, enumKey });
+          enumKeyCategoryMap.set(enumKey, category);
           this.#logger.info(`Created category ${category.label}`);
         }
         else if ((category.label != label) || (category.parentId != parentCategoryId)) {
-          const updatedCategory = await this.#documentCategoryTypeService.withTransaction(tx).updateCategory(category.id, { label, parentId: parentCategoryId });
-          enumKeyCategoryMap.set(key, updatedCategory);
+          const updatedCategory = await this.#documentCategoryTypeService.withTransaction(tx).updateCategory(tenantId, category.id, { label, parentId: parentCategoryId });
+          enumKeyCategoryMap.set(enumKey, updatedCategory);
           this.#logger.info(`Updated category ${updatedCategory.label}`);
         }
       }
 
-      for (const [key, label] of typeEntries) {
-        const type = enumKeyTypeMap.get(key);
-        const enumCategory = typeCategories[key];
+      for (const [enumKey, label] of typeEntries) {
+        const type = enumKeyTypeMap.get(enumKey);
+        const enumCategory = typeCategories[enumKey];
         const category = assertDefinedPass(enumKeyCategoryMap.get(enumCategory));
 
         if (isUndefined(type)) {
-          const type = await this.#documentCategoryTypeService.withTransaction(tx).createType(label, category.id, key);
-          enumKeyTypeMap.set(key, type);
+          const type = await this.#documentCategoryTypeService.withTransaction(tx).createType({ tenantId, label, categoryId: category.id, enumKey });
+          enumKeyTypeMap.set(enumKey, type);
           this.#logger.info(`Created type ${type.label} in category ${category.label}`);
         }
         else if ((type.categoryId != category.id) || (type.label != label)) {
-          const updatedType = await this.#documentCategoryTypeService.withTransaction(tx).updateType(type.id, { categoryId: category.id, label: label });
-          enumKeyTypeMap.set(key, updatedType);
+          const updatedType = await this.#documentCategoryTypeService.withTransaction(tx).updateType(tenantId, type.id, { categoryId: category.id, label: label });
+          enumKeyTypeMap.set(enumKey, updatedType);
           this.#logger.info(`Updated type ${updatedType.label} in category ${category.label}`);
         }
       }
 
-      for (const [key, [dataType, label]] of propertyEntries) {
-        const property = enumKeyPropertyMap.get(key);
+      for (const [enumKey, [dataType, label]] of propertyEntries) {
+        const property = enumKeyPropertyMap.get(enumKey);
 
         if (isUndefined(property)) {
-          const newProperty = await this.#documentPropertyService.withTransaction(tx).createProperty(label, dataType, key);
-          enumKeyPropertyMap.set(key, newProperty);
+          const newProperty = await this.#documentPropertyService.withTransaction(tx).createProperty({ tenantId, label, dataType, enumKey });
+          enumKeyPropertyMap.set(enumKey, newProperty);
           this.#logger.info(`Created property ${newProperty.label} of type ${dataType}`);
         }
         else if ((property.label != label) || (property.dataType != dataType)) {
-          const updatedProperty = await this.#documentPropertyService.withTransaction(tx).updateProperty(property.id, { label, dataType });
-          enumKeyPropertyMap.set(key, updatedProperty);
+          const updatedProperty = await this.#documentPropertyService.withTransaction(tx).updateProperty(tenantId, property.id, { label, dataType });
+          enumKeyPropertyMap.set(enumKey, updatedProperty);
           this.#logger.info(`Updated property ${updatedProperty.label} of type ${updatedProperty.dataType}`);
         }
       }
@@ -284,11 +302,12 @@ export class DocumentManagementService extends Transactional {
         const type = assertDefinedPass(enumKeyTypeMap.get(typeKey), `Type ${typeKey} not found.`);
 
         const newEntities = propertyKeys.map((propertyKey): NewEntity<DocumentTypeProperty> => ({
+          tenantId,
           typeId: type.id,
           propertyId: assertDefinedPass(enumKeyPropertyMap.get(propertyKey), 'Could not get property').id,
         }));
 
-        await this.#documentTypePropertyRepository.withTransaction(tx).upsertMany(['typeId', 'propertyId'], newEntities);
+        await this.#documentTypePropertyRepository.withTransaction(tx).upsertMany(['tenantId', 'typeId', 'propertyId'], newEntities);
       }
 
       return { categoryMap: enumKeyCategoryMap, typeMap: enumKeyTypeMap, propertyMap: enumKeyPropertyMap };

@@ -1,10 +1,11 @@
 import { Overlay, OverlayPositionBuilder, OverlayRef, type PositionStrategy } from '@angular/cdk/overlay';
 import { ComponentPortal, TemplatePortal } from '@angular/cdk/portal';
 import { ComponentRef, Directive, ElementRef, EmbeddedViewRef, Input, type OnDestroy, TemplateRef, ViewContainerRef, inject, isSignal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { DynamicText } from '@tstdl/base/text';
 import type { Type } from '@tstdl/base/types';
 import { isDefined, isFunction, isNotNullOrUndefined, isNull, isString } from '@tstdl/base/utils';
-import { Subscription, delay, distinctUntilChanged, fromEvent, isObservable, map, merge, of, switchMap } from 'rxjs';
+import { combineLatest, delay, distinctUntilChanged, fromEvent, isObservable, map, merge, of, startWith, switchMap } from 'rxjs';
 
 import { TooltipComponent } from './tooltip.component';
 
@@ -17,7 +18,6 @@ export class TooltipDirective<Component extends Type, Context> implements OnDest
   private readonly overlay = inject(Overlay);
   private readonly overlayPositionBuilder = inject(OverlayPositionBuilder);
   private readonly positionStrategy: PositionStrategy;
-  private readonly subscription: Subscription;
 
   private overlayRef: OverlayRef | undefined;
 
@@ -30,15 +30,23 @@ export class TooltipDirective<Component extends Type, Context> implements OnDest
   tooltipViewRef: EmbeddedViewRef<Context> | undefined;
 
   constructor() {
-    const mouseEvent$ = merge(
-      fromEvent(this.elementRef.nativeElement, 'mouseenter').pipe(map(() => 'enter' as const)),
-      fromEvent(this.elementRef.nativeElement, 'mouseleave').pipe(map(() => 'leave' as const))
-    );
+    const showFromMouse$ = merge(
+      fromEvent(this.elementRef.nativeElement, 'mouseenter').pipe(map(() => true)),
+      fromEvent(this.elementRef.nativeElement, 'mouseleave').pipe(map(() => false)),
+    ).pipe(startWith(false));
 
-    this.subscription = mouseEvent$
+    const showFromFocus$ = merge(
+      fromEvent(this.elementRef.nativeElement, 'focusin').pipe(map(() => true)),
+      fromEvent(this.elementRef.nativeElement, 'focusout').pipe(map(() => false)),
+    ).pipe(startWith(false));
+
+    combineLatest([showFromMouse$, showFromFocus$])
       .pipe(
-        switchMap((event) => (event == 'enter' ? of(true).pipe(delay(this.tooltipDelay)) : of(false))),
-        distinctUntilChanged()
+        map(([mouse, focus]) => mouse || focus),
+        distinctUntilChanged(),
+        switchMap((show) => (show ? of(true).pipe(delay(this.tooltipDelay)) : of(false))),
+        distinctUntilChanged(),
+        takeUntilDestroyed(),
       )
       .subscribe((show) => (show ? this.show() : this.hide()));
 
@@ -57,7 +65,6 @@ export class TooltipDirective<Component extends Type, Context> implements OnDest
 
   ngOnDestroy(): void {
     this.hide();
-    this.subscription.unsubscribe();
   }
 
   show(): void {

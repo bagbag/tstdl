@@ -9,9 +9,10 @@ import { createClassDecorator, createDecorator, createPropertyDecorator } from '
 import { Property } from '#/schema/index.js';
 import type { AbstractConstructor, TypedOmit } from '#/types.js';
 import { filterUndefinedObjectProperties, objectEntries } from '#/utils/object/object.js';
-import { assertNotArrayPass, isArray, isString, isUndefined } from '#/utils/type-guards.js';
-import type { Entity, EntityType, EntityWithoutMetadata } from './entity.js';
+import { isArray, isString, isUndefined } from '#/utils/type-guards.js';
+import type { AnyEntity, Entity, EntityType, EntityWithoutMetadata } from './entity.js';
 import type { Query } from './query.js';
+import type { TargetColumnPaths } from './repository.types.js';
 import type { PgTableFromType } from './server/types.js';
 
 type IndexMethod = LiteralUnion<'hash' | 'btree' | 'gist' | 'spgist' | 'gin' | 'brin' | 'hnsw' | 'ivfflat', string>;
@@ -43,7 +44,8 @@ export type OrmTableReflectionData = {
   compundPrimaryKeyNaming?: NamingStrategy,
   unique?: UniqueReflectionData[],
   index?: IndexReflectionData[],
-  checks?: CheckReflectionData[]
+  checks?: CheckReflectionData[],
+  foreignKeys?: ForeignKeyReflectionData[],
 };
 
 /**
@@ -56,20 +58,20 @@ export type OrmColumnReflectionData = {
   index?: IndexReflectionData,
   uuid?: { defaultRandom?: boolean },
   embedded?: { type: AbstractConstructor, prefix?: string | null },
-  references?: () => EntityType,
-  encrypted?: boolean
+  references?: { target: () => EntityType, targetColumn?: TargetColumnPaths<any> }[],
+  encrypted?: boolean,
 };
 
 /**
  * Reflection data for unique constraints.
  */
 export type UniqueReflectionData = {
-  name?: string,
   columns?: string[],
   options?: {
+    name?: string,
+    naming?: NamingStrategy,
     nulls?: 'distinct' | 'not distinct',
-    naming?: NamingStrategy
-  }
+  },
 };
 
 /**
@@ -77,24 +79,34 @@ export type UniqueReflectionData = {
  * @template T - The entity type.
  */
 export type IndexReflectionData<T extends Entity | EntityWithoutMetadata = any> = {
-  name?: string,
   columns?: (string | [string, 'asc' | 'desc'])[],
   order?: 'asc' | 'desc',
   options?: {
+    name?: string,
+    naming?: NamingStrategy,
     using?: IndexMethod,
     unique?: boolean,
     where?: WhereBuilder<T>,
     nulls?: 'first' | 'last',
-    naming?: NamingStrategy
-  }
+  },
 };
 
 type CheckReflectionData = {
   name: string,
   builder: CheckBuilder,
   options?: {
-    naming?: NamingStrategy
-  }
+    naming?: NamingStrategy,
+  },
+};
+
+export type ForeignKeyReflectionData = {
+  target: () => EntityType,
+  columns: TargetColumnPaths<any>[],
+  foreignColumns: TargetColumnPaths<any>[],
+  options?: {
+    name?: string,
+    naming?: NamingStrategy,
+  },
 };
 
 /**
@@ -125,7 +137,7 @@ export function createTableDecorator(data: OrmTableReflectionData = {}) {
       }
 
       metadata.data.set('orm', reflectionData, true);
-    }
+    },
   });
 }
 
@@ -135,8 +147,30 @@ export function createTableDecorator(data: OrmTableReflectionData = {}) {
  * @param data - The ORM column reflection data to add.
  * @returns A property decorator.
  */
-export function createColumnDecorator(data?: OrmColumnReflectionData) {
-  return createPropertyDecorator({ data: { orm: data }, mergeData: true });
+export function createColumnDecorator(data: OrmColumnReflectionData = {}) {
+  return createPropertyDecorator({
+    handler: (_, metadata) => {
+      const reflectionData = metadata.data.tryGet<OrmColumnReflectionData>('orm') ?? {};
+      const dataEntries = objectEntries(data);
+
+      if (dataEntries.length == 0) {
+        return;
+      }
+
+      for (const [key, value] of dataEntries) {
+        const existingValue = reflectionData[key];
+
+        if (isArray(existingValue)) {
+          reflectionData[key] = [...existingValue, ...(value as any[])] as any;
+        }
+        else {
+          reflectionData[key] = value as any;
+        }
+      }
+
+      metadata.data.set('orm', reflectionData, true);
+    },
+  });
 }
 
 /**
@@ -171,8 +205,10 @@ export function PrimaryKey() {
  * @param type - A function returning the referenced entity type.
  * @returns A property decorator.
  */
-export function References(type: () => EntityType) {
-  return createColumnDecorator({ references: type });
+export function References(target: () => EntityType): PropertyDecorator;
+export function References<T extends AnyEntity>(target: () => EntityType<T>, targetColumn?: TargetColumnPaths<T>): PropertyDecorator;
+export function References<T extends AnyEntity>(target: () => EntityType<T>, targetColumn?: TargetColumnPaths<T>): PropertyDecorator {
+  return createColumnDecorator({ references: [{ target, targetColumn }] });
 }
 
 /**
@@ -203,11 +239,11 @@ export function Encrypted() {
  */
 export function Embedded(type: AbstractConstructor, options?: TypedOmit<NonNullable<OrmColumnReflectionData['embedded']>, 'type'>) {
   return createPropertyDecorator({
-    include: [Property(type), createColumnDecorator({ embedded: { type, ...options } })]
+    include: [Property(type), createColumnDecorator({ embedded: { type, ...options } })],
   });
 }
 
-type TableOptions = Partial<Pick<OrmTableReflectionData, 'name' | 'schema'>>;
+export type TableOptions = Partial<Pick<OrmTableReflectionData, 'name' | 'schema'>>;
 
 /**
  * Decorator to specify the database table name and optionally the schema.
@@ -235,22 +271,26 @@ export function Table(nameOrOptions?: string | TableOptions, optionsOrNothing?: 
 }
 
 /**
+ * Decorator to define a foreign key relationship.
+ * @param target - A function returning the referenced entity type.
+ * @param columns - The columns in the current entity that form the foreign key.
+ * @param foreignColumns - The columns in the referenced entity that the foreign key points to.
+ * @param options - Additional foreign key options (e.g., name, naming strategy).
+ * @template TThis - The entity type of the current entity.
+ * @template TTarget - The entity type of the referenced entity.
+ * @returns A property decorator.
+ */
+export function ForeignKey<TThis extends AnyEntity, TTarget extends AnyEntity>(target: () => EntityType<TTarget>, columns: Columns<TThis>, foreignColumns: Columns<TTarget>, options?: ForeignKeyReflectionData['options']): ClassDecorator {
+  return createTableDecorator({ foreignKeys: [{ target, columns, foreignColumns, options }] });
+}
+
+/**
  * Decorator to define a unique constraint on a single column.
  * @param name - Optional name for the unique constraint.
  * @param options - Additional unique constraint options.
  * @returns A property decorator.
  */
-export function Unique(name?: string, options?: UniqueReflectionData['options']): PropertyDecorator;
-
-/**
- * Decorator to define a composite unique constraint on multiple columns.
- * @template T - The entity type.
- * @param name - The name of the unique constraint.
- * @param columns - An array of property names included in the constraint.
- * @param options - Additional unique constraint options.
- * @returns A class decorator.
- */
-export function Unique<T>(name: string | undefined, columns: Columns<T>, options?: UniqueReflectionData['options']): ClassDecorator;
+export function Unique(options?: UniqueReflectionData['options']): PropertyDecorator;
 
 /**
  * Decorator to define a composite unique constraint on multiple columns.
@@ -259,17 +299,13 @@ export function Unique<T>(name: string | undefined, columns: Columns<T>, options
  * @param options - Additional unique constraint options.
  * @returns A class decorator.
  */
-export function Unique<T>(columns: Columns<T>, options?: UniqueReflectionData['options']): ClassDecorator;
-export function Unique<T>(nameOrColumns?: string | Columns<T>, columnsOrOptions?: Columns<T> | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
-  if (isArray(nameOrColumns)) {
-    return createTableDecorator({ unique: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
-  }
-
+export function Unique<T extends AnyEntity>(columns: Columns<T>, options?: UniqueReflectionData['options']): ClassDecorator;
+export function Unique<T extends AnyEntity>(columnsOrOptions?: Columns<T> | UniqueReflectionData['options'], options?: UniqueReflectionData['options']) {
   if (isArray(columnsOrOptions)) {
-    return createTableDecorator({ unique: [{ name: nameOrColumns, columns: columnsOrOptions, options }] });
+    return createTableDecorator({ unique: [{ columns: columnsOrOptions, options }] });
   }
 
-  return createColumnDecorator({ unique: { name: nameOrColumns, options: columnsOrOptions } });
+  return createColumnDecorator({ unique: { options: columnsOrOptions } });
 }
 
 /**
@@ -279,17 +315,7 @@ export function Unique<T>(nameOrColumns?: string | Columns<T>, columnsOrOptions?
  * @param options - Additional index options (e.g., method, uniqueness, conditions).
  * @returns A property decorator.
  */
-export function Index<T extends Entity | EntityWithoutMetadata = any>(name?: string, options?: IndexReflectionData<T>['options']): PropertyDecorator;
-
-/**
- * Decorator to define a composite index on multiple columns.
- * @template T - The entity type.
- * @param name - The name of the index.
- * @param columns - An array of property names (or tuples with direction) included in the index.
- * @param options - Additional index options.
- * @returns A class decorator.
- */
-export function Index<T extends Entity | EntityWithoutMetadata = any>(name: string, columns: Columns<T>, options?: IndexReflectionData<T>['options']): ClassDecorator;
+export function Index<T extends Entity | EntityWithoutMetadata = any>(options?: IndexReflectionData<T>['options']): PropertyDecorator;
 
 /**
  * Decorator to define a composite index on multiple columns.
@@ -299,14 +325,10 @@ export function Index<T extends Entity | EntityWithoutMetadata = any>(name: stri
  * @returns A class decorator.
  */
 export function Index<T extends Entity | EntityWithoutMetadata = any>(columns: Columns<T>, options?: IndexReflectionData<T>['options']): ClassDecorator;
-export function Index<T extends Entity | EntityWithoutMetadata = any>(nameOrColumns?: string | Columns<T>, columnsOrOptions?: Columns<T> | IndexReflectionData<T>['options'], options?: IndexReflectionData<T>['options']) {
-  if (isArray(nameOrColumns)) {
-    return createTableDecorator({ index: [{ columns: nameOrColumns, options: assertNotArrayPass(columnsOrOptions) }] });
-  }
-
+export function Index<T extends Entity | EntityWithoutMetadata = any>(columnsOrOptions?: Columns<T> | IndexReflectionData<T>['options'], options?: IndexReflectionData<T>['options']) {
   if (isArray(columnsOrOptions)) {
-    return createTableDecorator({ index: [{ name: nameOrColumns, columns: columnsOrOptions, options }] });
+    return createTableDecorator({ index: [{ columns: columnsOrOptions, options }] });
   }
 
-  return createColumnDecorator({ index: { name: nameOrColumns, options: columnsOrOptions ?? options } });
+  return createColumnDecorator({ index: { options: columnsOrOptions } });
 }

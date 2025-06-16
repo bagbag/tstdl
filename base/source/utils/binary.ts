@@ -25,7 +25,7 @@ export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBu
  * @param data binary data
  * @param clone whether to clone buffer or not
  */
-export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Array { // eslint-disable-line @typescript-eslint/no-shadow
+export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Array {
   if (isArrayBuffer(data)) {
     return clone
       ? new Uint8Array(data.slice(0))

@@ -1,4 +1,4 @@
-import type { BinaryData, Record } from '#/types.js';
+import type { BinaryData, Function, Record } from '#/types.js';
 import { toArray } from './array/array.js';
 import { toUint8Array } from './binary.js';
 import { compareByValue } from './comparison.js';
@@ -62,7 +62,7 @@ const allowedEqualsCoerceStringsTypes = ['string', 'number', 'boolean', 'bigint'
 
 export function equals(a: any, b: any, options?: EqualsOptions): boolean;
 export function equals(a: any, b: any, options?: EqualsOptions, __internal?: any): boolean; // eslint-disable-line @typescript-eslint/unified-signatures
-export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes: Set<any> = new Set()): boolean { // eslint-disable-line max-statements, complexity, max-lines-per-function
+export function equals(a: any, b: any, options: EqualsOptions = {}, visitedNodes = new Set<any>()): boolean {
   if (a === b) {
     return true;
   }
@@ -172,4 +172,25 @@ export function binaryEquals(bufferA: BinaryData, bufferB: BinaryData): boolean 
   }
 
   return true;
+}
+
+/**
+ * Compares two buffers in a way that is resistant to timing attacks.
+ * @param untrusted The first buffer to compare. It's length is used to determine the iterations of the comparison. This should be the untrusted input to minimize information leakage.
+ * @param trusted The second buffer to compare. This should be the secret.
+ * @returns True if the buffers are equal, false otherwise.
+ */
+export function timingSafeBinaryEquals(untrusted: BinaryData, trusted: BinaryData): boolean {
+  const a = toUint8Array(untrusted, false);
+  const b = toUint8Array(trusted, false);
+
+  const compareTarget = (a.length > b.length) ? a : b;
+
+  let diff = a.length ^ b.length;
+
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i]! ^ compareTarget[i]!;
+  }
+
+  return diff == 0;
 }

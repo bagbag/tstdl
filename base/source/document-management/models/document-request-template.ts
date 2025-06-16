@@ -7,8 +7,11 @@ import type { DocumentRequest } from './document-request.model.js';
 import { DocumentRequestsTemplate } from './document-requests-template.js';
 import { DocumentType } from './document-type.model.js';
 
-@DocumentManagementTable()
+@DocumentManagementTable({ name: 'request_template' })
 export class DocumentRequestTemplate extends Entity implements Pick<DocumentRequest, 'typeId' | 'comment'> {
+  @Uuid({ nullable: true })
+  tenantId: string | null;
+
   @Uuid()
   @References(() => DocumentRequestsTemplate)
   requestsTemplateId: Uuid;

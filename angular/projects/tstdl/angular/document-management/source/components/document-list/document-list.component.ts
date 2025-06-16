@@ -1,4 +1,5 @@
 import { Dialog } from '@angular/cdk/dialog';
+import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, ErrorHandler, inject, input, signal, ViewEncapsulation } from '@angular/core';
 import { DropDirective, fadeInOutAnimation } from '@tstdl/angular';
 import { enterAnimation } from '@tstdl/angular/animations';
@@ -8,18 +9,18 @@ import { isDefined, isUndefined } from '@tstdl/base/utils';
 
 import type { DocumentManagementContext } from '../../context';
 import { DocumentDetailsComponent } from '../document-details/document-details.component';
-import { DocumentStateComponent } from "../document-state/document-state.component";
-import { DocumentInboxDocumentComponent } from './document-inbox-document/document-inbox-document.component';
+import { DocumentWorkflowStateComponent } from '../document-workflow-state/document-workflow-state.component';
+import { DocumentListDocumentComponent } from './document-list-document/document-list-document.component';
 
 type PendingUpload = {
   file: File,
 };
 
 @Component({
-  selector: 'tsl-document-inbox',
-  imports: [DocumentInboxDocumentComponent, IconComponent, DocumentStateComponent],
-  templateUrl: './document-inbox.component.html',
-  styleUrl: './document-inbox.component.scss',
+  selector: 'tsl-document-list',
+  imports: [NgClass, DocumentListDocumentComponent, IconComponent, DocumentWorkflowStateComponent],
+  templateUrl: './document-list.component.html',
+  styleUrl: './document-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   hostDirectives: [DropDirective],
@@ -28,7 +29,7 @@ type PendingUpload = {
     class: 'tsl-tw',
   },
 })
-export class DocumentInboxComponent {
+export class DocumentListComponent {
   readonly #dialog = inject(Dialog);
   readonly #errorHandler = inject(ErrorHandler);
 
@@ -38,6 +39,7 @@ export class DocumentInboxComponent {
   uploadsRunning = false;
 
   readonly context = input.required<DocumentManagementContext>();
+  readonly showWorkflowState = input(true)
 
   readonly pendingDocuments = computed(() => this.context().data()?.documents.filter((document) => document.approval == 'pending'));
   readonly pendingUploads = signal([] as PendingUpload[]);
@@ -71,7 +73,6 @@ export class DocumentInboxComponent {
         const upload = this.pendingUploads()[0];
 
         if (isUndefined(upload)) {
-          console.log('handleUploads: no more uploads');
           break;
         }
 

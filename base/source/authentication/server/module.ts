@@ -46,7 +46,7 @@ export async function migrateAuthenticationSchema(): Promise<void> {
     {
       migrationsSchema: 'authentication',
       migrationsTable: '_migrations',
-      migrationsFolder: import.meta.resolve('./drizzle').replace('file://', '')
+      migrationsFolder: import.meta.resolve('./drizzle').replace('file://', ''),
     }
   );
 }

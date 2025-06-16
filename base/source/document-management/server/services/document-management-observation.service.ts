@@ -149,16 +149,10 @@ export class DocumentManagementObservationService {
         .where(inArray(documentRequestCollectionAssignment.requestId, requestIds));
 
       const result = await union(
-        union(
-          union(
-            documentCollectionIds,
-            documentAssignmentTaskCollectionIds
-          ),
-          union(
-            workflowDocumentCollectionIds,
-            workflowDocumentAssignmentTaskCollectionIds
-          )
-        ),
+        documentCollectionIds,
+        documentAssignmentTaskCollectionIds,
+        workflowDocumentCollectionIds,
+        workflowDocumentAssignmentTaskCollectionIds,
         requestCollectionIds
       );
 

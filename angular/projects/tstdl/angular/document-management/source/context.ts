@@ -4,7 +4,7 @@ import { resource } from '@tstdl/angular';
 import type { BadgeColor } from '@tstdl/angular/badge';
 import type { ButtonColor } from '@tstdl/angular/button';
 import { CancellationToken } from '@tstdl/base/cancellation';
-import { toEnrichedDocumentManagementData, type DocumentManagementData } from '@tstdl/base/document-management';
+import { getDocumentManagementFolders, toEnrichedDocumentManagementData, type DocumentManagementData } from '@tstdl/base/document-management';
 import { map } from '@tstdl/base/signals';
 import { isUndefined } from '@tstdl/base/utils';
 import { fromEntries, hasOwnProperty } from '@tstdl/base/utils/object';
@@ -39,8 +39,12 @@ export class DocumentManagementContext {
 
   readonly rawData = resource({
     params: this.collectionIds,
-    stream: async ({ params, abortSignal }) => {
-      const eventSource = await this.api.loadDataStream({ collectionIds: params });
+    stream: async ({ params: collectionIds, abortSignal }) => {
+      if (collectionIds.length == 0) {
+        return computed(() => ({ value: undefined }));
+      }
+
+      const eventSource = await this.api.loadDataStream({ collectionIds });
       abortSignal.addEventListener('abort', () => eventSource.close());
 
       const data$ = eventSource.message$('data').pipe(rxjsMap((message) => ({ data: JSON.parse(message.data) as DocumentManagementData })));
@@ -69,6 +73,8 @@ export class DocumentManagementContext {
   });
 
   readonly data = map(this.rawData.value, (data) => isUndefined(data) ? undefined : toEnrichedDocumentManagementData(data));
+
+  readonly folders = map(this.data, (data) => isUndefined(data) ? undefined : getDocumentManagementFolders(data));
 
   readonly hasValue = computed(() => this.rawData.hasValue());
   readonly isLoading = this.rawData.isLoading;

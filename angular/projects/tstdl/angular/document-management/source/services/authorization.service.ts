@@ -1,6 +1,6 @@
 import { inject, Injectable, type Signal } from '@angular/core';
 import { AuthenticationClientService } from '@tstdl/base/authentication';
-import { type Policy } from '@tstdl/base/document-management';
+import type { Policy } from '@tstdl/base/document-management';
 import { toSignal } from '@tstdl/base/signals';
 import type { TypedOmit } from '@tstdl/base/types';
 import { isUndefined } from '@tstdl/base/utils';
@@ -12,7 +12,7 @@ import { DocumentManagementApiService } from '../api';
  * This service forwards authorization checks to the backend.
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ForwardingDocumentManagementAuthorizationService {
   readonly #authenticationService = inject(AuthenticationClientService);
@@ -83,7 +83,7 @@ export class ForwardingDocumentManagementAuthorizationService {
           }
 
           console.log('ForwardingDocumentManagementAuthorizationService: Forwarding authorization check', type, parameters);
-          return this.#api.testAuthorization({ type, ...parameters } as Policy);
+          return await this.#api.testAuthorization({ type, ...parameters } as Policy);
         })
       );
 

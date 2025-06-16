@@ -1,5 +1,5 @@
 {
-  "id": "7babba70-6496-42a0-bbf9-53ffeef20b11",
+  "id": "2917aa37-84ad-420d-a45e-3663498ac9d4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,6 +14,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "type_id": {
           "name": "type_id",
@@ -48,12 +54,6 @@
         "summary": {
           "name": "summary",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tags": {
-          "name": "tags",
-          "type": "text[]",
           "primaryKey": false,
           "notNull": false
         },
@@ -134,10 +134,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_type_id_document_type_id_fk": {
-          "name": "document_type_id_document_type_id_fk",
+        "document_type_id_type_id_fk": {
+          "name": "document_type_id_type_id_fk",
           "tableFrom": "document",
-          "tableTo": "document_type",
+          "tableTo": "type",
           "schemaTo": "document_management",
           "columnsFrom": [
             "type_id"
@@ -150,13 +150,22 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "document_tenant_id_id_unique": {
+          "name": "document_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_assignment_scope": {
-      "name": "document_assignment_scope",
+    "document_management.assignment_scope": {
+      "name": "assignment_scope",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -165,6 +174,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "task_id": {
           "name": "task_id",
@@ -212,10 +227,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_assignment_scope_task_id_document_assignment_task_id_fk": {
-          "name": "document_assignment_scope_task_id_document_assignment_task_id_fk",
-          "tableFrom": "document_assignment_scope",
-          "tableTo": "document_assignment_task",
+        "assignment_scope_task_id_assignment_task_id_fk": {
+          "name": "assignment_scope_task_id_assignment_task_id_fk",
+          "tableFrom": "assignment_scope",
+          "tableTo": "assignment_task",
           "schemaTo": "document_management",
           "columnsFrom": [
             "task_id"
@@ -226,10 +241,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_assignment_scope_collection_id_document_collection_id_fk": {
-          "name": "document_assignment_scope_collection_id_document_collection_id_fk",
-          "tableFrom": "document_assignment_scope",
-          "tableTo": "document_collection",
+        "assignment_scope_collection_id_collection_id_fk": {
+          "name": "assignment_scope_collection_id_collection_id_fk",
+          "tableFrom": "assignment_scope",
+          "tableTo": "collection",
           "schemaTo": "document_management",
           "columnsFrom": [
             "collection_id"
@@ -239,12 +254,44 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "assignment_scope_tenantId_collectionId_fkey": {
+          "name": "assignment_scope_tenantId_collectionId_fkey",
+          "tableFrom": "assignment_scope",
+          "tableTo": "collection",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "collection_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assignment_scope_tenantId_taskId_fkey": {
+          "name": "assignment_scope_tenantId_taskId_fkey",
+          "tableFrom": "assignment_scope",
+          "tableTo": "assignment_task",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "task_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "das_task_id_collection_id_unique": {
-          "name": "das_task_id_collection_id_unique",
+        "assignment_scope_task_id_collection_id_unique": {
+          "name": "assignment_scope_task_id_collection_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "task_id",
@@ -256,8 +303,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_assignment_task": {
-      "name": "document_assignment_task",
+    "document_management.assignment_task": {
+      "name": "assignment_task",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -267,6 +314,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "document_id": {
           "name": "document_id",
           "type": "uuid",
@@ -275,7 +328,7 @@
         },
         "target": {
           "name": "target",
-          "type": "document_assignment_target",
+          "type": "assignment_target",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
@@ -314,9 +367,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_assignment_task_document_id_document_id_fk": {
-          "name": "document_assignment_task_document_id_document_id_fk",
-          "tableFrom": "document_assignment_task",
+        "assignment_task_document_id_document_id_fk": {
+          "name": "assignment_task_document_id_document_id_fk",
+          "tableFrom": "assignment_task",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -327,12 +380,28 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "assignment_task_tenantId_documentId_fkey": {
+          "name": "assignment_task_tenantId_documentId_fkey",
+          "tableFrom": "assignment_task",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_assignment_task_document_id_unique": {
-          "name": "document_assignment_task_document_id_unique",
+        "assignment_task_document_id_unique": {
+          "name": "assignment_task_document_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "document_id"
@@ -343,8 +412,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_category": {
-      "name": "document_category",
+    "document_management.category": {
+      "name": "category",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -353,6 +422,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "parent_id": {
           "name": "parent_id",
@@ -400,10 +475,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_category_parent_id_document_category_id_fk": {
-          "name": "document_category_parent_id_document_category_id_fk",
-          "tableFrom": "document_category",
-          "tableTo": "document_category",
+        "category_parent_id_category_id_fk": {
+          "name": "category_parent_id_category_id_fk",
+          "tableFrom": "category",
+          "tableTo": "category",
           "schemaTo": "document_management",
           "columnsFrom": [
             "parent_id"
@@ -417,10 +492,19 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_category_label_unique": {
-          "name": "document_category_label_unique",
+        "category_label_unique": {
+          "name": "category_label_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "label"
+          ]
+        },
+        "category_tenant_id_parent_id_label_unique": {
+          "name": "category_tenant_id_parent_id_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "parent_id",
             "label"
           ]
         }
@@ -429,8 +513,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_collection": {
-      "name": "document_collection",
+    "document_management.collection": {
+      "name": "collection",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -439,6 +523,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "parent_id": {
           "name": "parent_id",
@@ -480,10 +570,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_collection_parent_id_document_collection_id_fk": {
-          "name": "document_collection_parent_id_document_collection_id_fk",
-          "tableFrom": "document_collection",
-          "tableTo": "document_collection",
+        "collection_parent_id_collection_id_fk": {
+          "name": "collection_parent_id_collection_id_fk",
+          "tableFrom": "collection",
+          "tableTo": "collection",
           "schemaTo": "document_management",
           "columnsFrom": [
             "parent_id"
@@ -496,13 +586,22 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "collection_tenant_id_id_unique": {
+          "name": "collection_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_collection_assignment": {
-      "name": "document_collection_assignment",
+    "document_management.collection_assignment": {
+      "name": "collection_assignment",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -511,6 +610,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "collection_id": {
           "name": "collection_id",
@@ -562,12 +667,28 @@
           "default": "'{}'::jsonb"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "collection_assignment_collection_id_idx": {
+          "name": "collection_assignment_collection_id_idx",
+          "columns": [
+            {
+              "expression": "collection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "document_collection_assignment_collection_id_document_collection_id_fk": {
-          "name": "document_collection_assignment_collection_id_document_collection_id_fk",
-          "tableFrom": "document_collection_assignment",
-          "tableTo": "document_collection",
+        "collection_assignment_collection_id_collection_id_fk": {
+          "name": "collection_assignment_collection_id_collection_id_fk",
+          "tableFrom": "collection_assignment",
+          "tableTo": "collection",
           "schemaTo": "document_management",
           "columnsFrom": [
             "collection_id"
@@ -578,9 +699,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_collection_assignment_document_id_document_id_fk": {
-          "name": "document_collection_assignment_document_id_document_id_fk",
-          "tableFrom": "document_collection_assignment",
+        "collection_assignment_document_id_document_id_fk": {
+          "name": "collection_assignment_document_id_document_id_fk",
+          "tableFrom": "collection_assignment",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -591,14 +712,47 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "collection_assignment_tenantId_documentId_fkey": {
+          "name": "collection_assignment_tenantId_documentId_fkey",
+          "tableFrom": "collection_assignment",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "collection_assignment_tenantId_collectionId_fkey": {
+          "name": "collection_assignment_tenantId_collectionId_fkey",
+          "tableFrom": "collection_assignment",
+          "tableTo": "collection",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "collection_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_collection_assignment_collection_id_document_id_unique": {
-          "name": "document_collection_assignment_collection_id_document_id_unique",
+        "ca_tenant_id_collection_id_document_id_unique": {
+          "name": "ca_tenant_id_collection_id_document_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "collection_id",
             "document_id"
           ]
@@ -608,8 +762,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_property": {
-      "name": "document_property",
+    "document_management.property": {
+      "name": "property",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -619,6 +773,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "label": {
           "name": "label",
           "type": "text",
@@ -627,7 +787,7 @@
         },
         "data_type": {
           "name": "data_type",
-          "type": "document_property_data_type",
+          "type": "property_data_type",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
@@ -668,10 +828,18 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_property_label_unique": {
-          "name": "document_property_label_unique",
+        "property_label_unique": {
+          "name": "property_label_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "label"
+          ]
+        },
+        "property_tenant_id_label_unique": {
+          "name": "property_tenant_id_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
             "label"
           ]
         }
@@ -680,8 +848,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_property_value": {
-      "name": "document_property_value",
+    "document_management.property_value": {
+      "name": "property_value",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -690,6 +858,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "document_id": {
           "name": "document_id",
@@ -767,9 +941,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_property_value_document_id_document_id_fk": {
-          "name": "document_property_value_document_id_document_id_fk",
-          "tableFrom": "document_property_value",
+        "property_value_document_id_document_id_fk": {
+          "name": "property_value_document_id_document_id_fk",
+          "tableFrom": "property_value",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -781,10 +955,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_property_value_property_id_document_property_id_fk": {
-          "name": "document_property_value_property_id_document_property_id_fk",
-          "tableFrom": "document_property_value",
-          "tableTo": "document_property",
+        "property_value_property_id_property_id_fk": {
+          "name": "property_value_property_id_property_id_fk",
+          "tableFrom": "property_value",
+          "tableTo": "property",
           "schemaTo": "document_management",
           "columnsFrom": [
             "property_id"
@@ -794,14 +968,31 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "property_value_tenantId_documentId_fkey": {
+          "name": "property_value_tenantId_documentId_fkey",
+          "tableFrom": "property_value",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_property_value_document_id_property_id_unique": {
-          "name": "document_property_value_document_id_property_id_unique",
+        "property_value_tenant_id_document_id_property_id_unique": {
+          "name": "property_value_tenant_id_document_id_property_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "document_id",
             "property_id"
           ]
@@ -811,13 +1002,13 @@
       "checkConstraints": {
         "only_one_value": {
           "name": "only_one_value",
-          "value": "num_nonnulls(\"document_management\".\"document_property_value\".\"text\", \"document_management\".\"document_property_value\".\"integer\", \"document_management\".\"document_property_value\".\"decimal\", \"document_management\".\"document_property_value\".\"boolean\", \"document_management\".\"document_property_value\".\"date\") = 1"
+          "value": "num_nonnulls(\"document_management\".\"property_value\".\"text\", \"document_management\".\"property_value\".\"integer\", \"document_management\".\"property_value\".\"decimal\", \"document_management\".\"property_value\".\"boolean\", \"document_management\".\"property_value\".\"date\") = 1"
         }
       },
       "isRLSEnabled": false
     },
-    "document_management.document_request": {
-      "name": "document_request",
+    "document_management.request": {
+      "name": "request",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -826,6 +1017,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "type_id": {
           "name": "type_id",
@@ -847,7 +1044,7 @@
         },
         "state": {
           "name": "state",
-          "type": "document_request_state",
+          "type": "request_state",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
@@ -885,8 +1082,23 @@
         }
       },
       "indexes": {
-        "document_request_state_idx": {
-          "name": "document_request_state_idx",
+        "request_type_id_idx": {
+          "name": "request_type_id_idx",
+          "columns": [
+            {
+              "expression": "type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "request_state_idx": {
+          "name": "request_state_idx",
           "columns": [
             {
               "expression": "state",
@@ -902,10 +1114,10 @@
         }
       },
       "foreignKeys": {
-        "document_request_type_id_document_type_id_fk": {
-          "name": "document_request_type_id_document_type_id_fk",
-          "tableFrom": "document_request",
-          "tableTo": "document_type",
+        "request_type_id_type_id_fk": {
+          "name": "request_type_id_type_id_fk",
+          "tableFrom": "request",
+          "tableTo": "type",
           "schemaTo": "document_management",
           "columnsFrom": [
             "type_id"
@@ -916,9 +1128,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_request_document_id_document_id_fk": {
-          "name": "document_request_document_id_document_id_fk",
-          "tableFrom": "document_request",
+        "request_document_id_document_id_fk": {
+          "name": "request_document_id_document_id_fk",
+          "tableFrom": "request",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -929,15 +1141,39 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "request_tenantId_documentId_fkey": {
+          "name": "request_tenantId_documentId_fkey",
+          "tableFrom": "request",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_request_document_id_unique": {
-          "name": "document_request_document_id_unique",
+        "request_document_id_unique": {
+          "name": "request_document_id_unique",
           "nullsNotDistinct": false,
           "columns": [
             "document_id"
+          ]
+        },
+        "request_tenant_id_id_unique": {
+          "name": "request_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
           ]
         }
       },
@@ -945,8 +1181,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_request_collection_assignment": {
-      "name": "document_request_collection_assignment",
+    "document_management.request_collection_assignment": {
+      "name": "request_collection_assignment",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -955,6 +1191,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "request_id": {
           "name": "request_id",
@@ -1000,12 +1242,28 @@
           "default": "'{}'::jsonb"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "request_collection_assignment_collection_id_idx": {
+          "name": "request_collection_assignment_collection_id_idx",
+          "columns": [
+            {
+              "expression": "collection_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "document_request_collection_assignment_request_id_document_request_id_fk": {
-          "name": "document_request_collection_assignment_request_id_document_request_id_fk",
-          "tableFrom": "document_request_collection_assignment",
-          "tableTo": "document_request",
+        "request_collection_assignment_request_id_request_id_fk": {
+          "name": "request_collection_assignment_request_id_request_id_fk",
+          "tableFrom": "request_collection_assignment",
+          "tableTo": "request",
           "schemaTo": "document_management",
           "columnsFrom": [
             "request_id"
@@ -1016,10 +1274,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_request_collection_assignment_collection_id_document_collection_id_fk": {
-          "name": "document_request_collection_assignment_collection_id_document_collection_id_fk",
-          "tableFrom": "document_request_collection_assignment",
-          "tableTo": "document_collection",
+        "request_collection_assignment_collection_id_collection_id_fk": {
+          "name": "request_collection_assignment_collection_id_collection_id_fk",
+          "tableFrom": "request_collection_assignment",
+          "tableTo": "collection",
           "schemaTo": "document_management",
           "columnsFrom": [
             "collection_id"
@@ -1029,14 +1287,47 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "request_collection_assignment_tenantId_collectionId_fkey": {
+          "name": "request_collection_assignment_tenantId_collectionId_fkey",
+          "tableFrom": "request_collection_assignment",
+          "tableTo": "collection",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "collection_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "request_collection_assignment_tenantId_requestId_fkey": {
+          "name": "request_collection_assignment_tenantId_requestId_fkey",
+          "tableFrom": "request_collection_assignment",
+          "tableTo": "request",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "request_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_request_collection_assignment_request_id_collection_id_unique": {
-          "name": "document_request_collection_assignment_request_id_collection_id_unique",
+        "rca_tenant_id_request_id_collection_id_unique": {
+          "name": "rca_tenant_id_request_id_collection_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "request_id",
             "collection_id"
           ]
@@ -1046,8 +1337,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_request_submission": {
-      "name": "document_request_submission",
+    "document_management.request_template": {
+      "name": "request_template",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1057,106 +1348,11 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "request_id": {
-          "name": "request_id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revision": {
-          "name": "revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revision_timestamp": {
-          "name": "revision_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "create_timestamp": {
-          "name": "create_timestamp",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "delete_timestamp": {
-          "name": "delete_timestamp",
-          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "attributes": {
-          "name": "attributes",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "document_request_submission_request_id_document_request_id_fk": {
-          "name": "document_request_submission_request_id_document_request_id_fk",
-          "tableFrom": "document_request_submission",
-          "tableTo": "document_request",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "request_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "document_request_submission_document_id_document_id_fk": {
-          "name": "document_request_submission_document_id_document_id_fk",
-          "tableFrom": "document_request_submission",
-          "tableTo": "document",
-          "schemaTo": "document_management",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "document_request_submission_request_id_document_id_unique": {
-          "name": "document_request_submission_request_id_document_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "request_id",
-            "document_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "document_management.document_request_template": {
-      "name": "document_request_template",
-      "schema": "document_management",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
         },
         "requests_template_id": {
           "name": "requests_template_id",
@@ -1210,10 +1406,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_request_template_requests_template_id_document_requests_template_id_fk": {
-          "name": "document_request_template_requests_template_id_document_requests_template_id_fk",
-          "tableFrom": "document_request_template",
-          "tableTo": "document_requests_template",
+        "request_template_requests_template_id_requests_template_id_fk": {
+          "name": "request_template_requests_template_id_requests_template_id_fk",
+          "tableFrom": "request_template",
+          "tableTo": "requests_template",
           "schemaTo": "document_management",
           "columnsFrom": [
             "requests_template_id"
@@ -1224,10 +1420,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_request_template_type_id_document_type_id_fk": {
-          "name": "document_request_template_type_id_document_type_id_fk",
-          "tableFrom": "document_request_template",
-          "tableTo": "document_type",
+        "request_template_type_id_type_id_fk": {
+          "name": "request_template_type_id_type_id_fk",
+          "tableFrom": "request_template",
+          "tableTo": "type",
           "schemaTo": "document_management",
           "columnsFrom": [
             "type_id"
@@ -1245,8 +1441,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_requests_template": {
-      "name": "document_requests_template",
+    "document_management.requests_template": {
+      "name": "requests_template",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1255,6 +1451,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "label": {
           "name": "label",
@@ -1303,21 +1505,13 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "document_requests_template_label_unique": {
-          "name": "document_requests_template_label_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "label"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_type": {
-      "name": "document_type",
+    "document_management.tag": {
+      "name": "tag",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1326,6 +1520,208 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tag_tenant_id_label_unique": {
+          "name": "tag_tenant_id_label_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "label"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "document_management.tag_assignment": {
+      "name": "tag_assignment",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revision_timestamp": {
+          "name": "revision_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "create_timestamp": {
+          "name": "create_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delete_timestamp": {
+          "name": "delete_timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attributes": {
+          "name": "attributes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "tag_assignment_document_id_document_id_fk": {
+          "name": "tag_assignment_document_id_document_id_fk",
+          "tableFrom": "tag_assignment",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tag_assignment_tag_id_tag_id_fk": {
+          "name": "tag_assignment_tag_id_tag_id_fk",
+          "tableFrom": "tag_assignment",
+          "tableTo": "tag",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "tag_assignment_tenantId_documentId_fkey": {
+          "name": "tag_assignment_tenantId_documentId_fkey",
+          "tableFrom": "tag_assignment",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tag_assignment_tenant_id_document_id_tag_id_unique": {
+          "name": "tag_assignment_tenant_id_document_id_tag_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "document_id",
+            "tag_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "document_management.type": {
+      "name": "type",
+      "schema": "document_management",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "category_id": {
           "name": "category_id",
@@ -1373,10 +1769,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_type_category_id_document_category_id_fk": {
-          "name": "document_type_category_id_document_category_id_fk",
-          "tableFrom": "document_type",
-          "tableTo": "document_category",
+        "type_category_id_category_id_fk": {
+          "name": "type_category_id_category_id_fk",
+          "tableFrom": "type",
+          "tableTo": "category",
           "schemaTo": "document_management",
           "columnsFrom": [
             "category_id"
@@ -1390,10 +1786,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_type_category_id_label_unique": {
-          "name": "document_type_category_id_label_unique",
+        "type_tenant_id_category_id_label_unique": {
+          "name": "type_tenant_id_category_id_label_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "category_id",
             "label"
           ]
@@ -1403,8 +1800,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_type_property": {
-      "name": "document_type_property",
+    "document_management.type_property": {
+      "name": "type_property",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1413,6 +1810,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "type_id": {
           "name": "type_id",
@@ -1460,10 +1863,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_type_property_type_id_document_type_id_fk": {
-          "name": "document_type_property_type_id_document_type_id_fk",
-          "tableFrom": "document_type_property",
-          "tableTo": "document_type",
+        "type_property_type_id_type_id_fk": {
+          "name": "type_property_type_id_type_id_fk",
+          "tableFrom": "type_property",
+          "tableTo": "type",
           "schemaTo": "document_management",
           "columnsFrom": [
             "type_id"
@@ -1474,10 +1877,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_type_property_property_id_document_property_id_fk": {
-          "name": "document_type_property_property_id_document_property_id_fk",
-          "tableFrom": "document_type_property",
-          "tableTo": "document_property",
+        "type_property_property_id_property_id_fk": {
+          "name": "type_property_property_id_property_id_fk",
+          "tableFrom": "type_property",
+          "tableTo": "property",
           "schemaTo": "document_management",
           "columnsFrom": [
             "property_id"
@@ -1491,10 +1894,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_type_property_type_id_property_id_unique": {
-          "name": "document_type_property_type_id_property_id_unique",
+        "type_property_tenant_id_type_id_property_id_unique": {
+          "name": "type_property_tenant_id_type_id_property_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "type_id",
             "property_id"
           ]
@@ -1514,6 +1918,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "type_id": {
           "name": "type_id",
@@ -1559,12 +1969,28 @@
           "default": "'{}'::jsonb"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "document_type_validation_type_id_idx": {
+          "name": "document_type_validation_type_id_idx",
+          "columns": [
+            {
+              "expression": "type_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "document_type_validation_type_id_document_type_id_fk": {
-          "name": "document_type_validation_type_id_document_type_id_fk",
+        "document_type_validation_type_id_type_id_fk": {
+          "name": "document_type_validation_type_id_type_id_fk",
           "tableFrom": "document_type_validation",
-          "tableTo": "document_type",
+          "tableTo": "type",
           "schemaTo": "document_management",
           "columnsFrom": [
             "type_id"
@@ -1575,10 +2001,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_type_validation_validation_id_document_validation_definition_id_fk": {
-          "name": "document_type_validation_validation_id_document_validation_definition_id_fk",
+        "document_type_validation_validation_id_validation_definition_id_fk": {
+          "name": "document_type_validation_validation_id_validation_definition_id_fk",
           "tableFrom": "document_type_validation",
-          "tableTo": "document_validation_definition",
+          "tableTo": "validation_definition",
           "schemaTo": "document_management",
           "columnsFrom": [
             "validation_id"
@@ -1592,10 +2018,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_type_validation_type_id_validation_id_unique": {
-          "name": "document_type_validation_type_id_validation_id_unique",
+        "document_type_validation_tenant_id_type_id_validation_id_unique": {
+          "name": "document_type_validation_tenant_id_type_id_validation_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "type_id",
             "validation_id"
           ]
@@ -1605,8 +2032,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_validation_definition": {
-      "name": "document_validation_definition",
+    "document_management.validation_definition": {
+      "name": "validation_definition",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1615,6 +2042,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "identifier": {
           "name": "identifier",
@@ -1680,8 +2113,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_validation_execution": {
-      "name": "document_validation_execution",
+    "document_management.validation_execution": {
+      "name": "validation_execution",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1690,6 +2123,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "workflow_id": {
           "name": "workflow_id",
@@ -1705,14 +2144,14 @@
         },
         "state": {
           "name": "state",
-          "type": "document_validation_execution_state",
+          "type": "validation_execution_state",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
         },
         "result_status": {
           "name": "result_status",
-          "type": "document_validation_result_status",
+          "type": "validation_result_status",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": false
@@ -1769,10 +2208,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_validation_execution_workflow_id_document_workflow_id_fk": {
-          "name": "document_validation_execution_workflow_id_document_workflow_id_fk",
-          "tableFrom": "document_validation_execution",
-          "tableTo": "document_workflow",
+        "validation_execution_workflow_id_workflow_id_fk": {
+          "name": "validation_execution_workflow_id_workflow_id_fk",
+          "tableFrom": "validation_execution",
+          "tableTo": "workflow",
           "schemaTo": "document_management",
           "columnsFrom": [
             "workflow_id"
@@ -1783,10 +2222,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_validation_execution_definition_id_document_validation_definition_id_fk": {
-          "name": "document_validation_execution_definition_id_document_validation_definition_id_fk",
-          "tableFrom": "document_validation_execution",
-          "tableTo": "document_validation_definition",
+        "validation_execution_definition_id_validation_definition_id_fk": {
+          "name": "validation_execution_definition_id_validation_definition_id_fk",
+          "tableFrom": "validation_execution",
+          "tableTo": "validation_definition",
           "schemaTo": "document_management",
           "columnsFrom": [
             "definition_id"
@@ -1796,14 +2235,31 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "validation_execution_tenantId_workflowId_fkey": {
+          "name": "validation_execution_tenantId_workflowId_fkey",
+          "tableFrom": "validation_execution",
+          "tableTo": "workflow",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "workflow_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "document_validation_execution_workflow_id_definition_id_unique": {
-          "name": "document_validation_execution_workflow_id_definition_id_unique",
+        "validation_execution_tenant_id_workflow_id_definition_id_unique": {
+          "name": "validation_execution_tenant_id_workflow_id_definition_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "workflow_id",
             "definition_id"
           ]
@@ -1813,8 +2269,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_validation_execution_related_document": {
-      "name": "document_validation_execution_related_document",
+    "document_management.validation_execution_related_document": {
+      "name": "validation_execution_related_document",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1823,6 +2279,12 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         },
         "execution_id": {
           "name": "execution_id",
@@ -1870,10 +2332,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "document_validation_execution_related_document_execution_id_document_validation_execution_id_fk": {
-          "name": "document_validation_execution_related_document_execution_id_document_validation_execution_id_fk",
-          "tableFrom": "document_validation_execution_related_document",
-          "tableTo": "document_validation_execution",
+        "validation_execution_related_document_execution_id_validation_execution_id_fk": {
+          "name": "validation_execution_related_document_execution_id_validation_execution_id_fk",
+          "tableFrom": "validation_execution_related_document",
+          "tableTo": "validation_execution",
           "schemaTo": "document_management",
           "columnsFrom": [
             "execution_id"
@@ -1884,9 +2346,9 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "document_validation_execution_related_document_document_id_document_id_fk": {
-          "name": "document_validation_execution_related_document_document_id_document_id_fk",
-          "tableFrom": "document_validation_execution_related_document",
+        "validation_execution_related_document_document_id_document_id_fk": {
+          "name": "validation_execution_related_document_document_id_document_id_fk",
+          "tableFrom": "validation_execution_related_document",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
@@ -1897,14 +2359,47 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "validation_execution_related_document_tenantId_documentId_fkey": {
+          "name": "validation_execution_related_document_tenantId_documentId_fkey",
+          "tableFrom": "validation_execution_related_document",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "validation_execution_related_document_tenantId_executionId_fkey": {
+          "name": "validation_execution_related_document_tenantId_executionId_fkey",
+          "tableFrom": "validation_execution_related_document",
+          "tableTo": "validation_execution",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "execution_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "dverd_execution_id_document_id_unique": {
-          "name": "dverd_execution_id_document_id_unique",
+        "verd_tenant_id_execution_id_document_id_unique": {
+          "name": "verd_tenant_id_execution_id_document_id_unique",
           "nullsNotDistinct": false,
           "columns": [
+            "tenant_id",
             "execution_id",
             "document_id"
           ]
@@ -1914,8 +2409,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "document_management.document_workflow": {
-      "name": "document_workflow",
+    "document_management.workflow": {
+      "name": "workflow",
       "schema": "document_management",
       "columns": {
         "id": {
@@ -1925,6 +2420,12 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "document_id": {
           "name": "document_id",
           "type": "uuid",
@@ -1933,21 +2434,21 @@
         },
         "step": {
           "name": "step",
-          "type": "document_workflow_step",
+          "type": "workflow_step",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
         },
         "state": {
           "name": "state",
-          "type": "document_workflow_state",
+          "type": "workflow_state",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": true
         },
         "fail_reason": {
           "name": "fail_reason",
-          "type": "document_workflow_fail_reason",
+          "type": "workflow_fail_reason",
           "typeSchema": "document_management",
           "primaryKey": false,
           "notNull": false
@@ -1997,8 +2498,8 @@
         }
       },
       "indexes": {
-        "document_workflow_document_id_idx": {
-          "name": "document_workflow_document_id_idx",
+        "workflow_document_id_idx": {
+          "name": "workflow_document_id_idx",
           "columns": [
             {
               "expression": "document_id",
@@ -2008,22 +2509,38 @@
             }
           ],
           "isUnique": true,
-          "where": "\"document_management\".\"document_workflow\".\"state\" <> 'completed'",
+          "where": "\"document_management\".\"workflow\".\"state\" <> 'completed'",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "document_workflow_document_id_document_id_fk": {
-          "name": "document_workflow_document_id_document_id_fk",
-          "tableFrom": "document_workflow",
+        "workflow_document_id_document_id_fk": {
+          "name": "workflow_document_id_document_id_fk",
+          "tableFrom": "workflow",
           "tableTo": "document",
           "schemaTo": "document_management",
           "columnsFrom": [
             "document_id"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "workflow_tenantId_documentId_fkey": {
+          "name": "workflow_tenantId_documentId_fkey",
+          "tableFrom": "workflow",
+          "tableTo": "document",
+          "schemaTo": "document_management",
+          "columnsFrom": [
+            "tenant_id",
+            "document_id"
+          ],
+          "columnsTo": [
+            "tenant_id",
             "id"
           ],
           "onDelete": "no action",
@@ -2047,16 +2564,16 @@
         "rejected"
       ]
     },
-    "document_management.document_assignment_target": {
-      "name": "document_assignment_target",
+    "document_management.assignment_target": {
+      "name": "assignment_target",
       "schema": "document_management",
       "values": [
         "collection",
         "request"
       ]
     },
-    "document_management.document_property_data_type": {
-      "name": "document_property_data_type",
+    "document_management.property_data_type": {
+      "name": "property_data_type",
       "schema": "document_management",
       "values": [
         "text",
@@ -2066,8 +2583,8 @@
         "date"
       ]
     },
-    "document_management.document_request_state": {
-      "name": "document_request_state",
+    "document_management.request_state": {
+      "name": "request_state",
       "schema": "document_management",
       "values": [
         "open",
@@ -2075,8 +2592,8 @@
         "closed"
       ]
     },
-    "document_management.document_validation_execution_state": {
-      "name": "document_validation_execution_state",
+    "document_management.validation_execution_state": {
+      "name": "validation_execution_state",
       "schema": "document_management",
       "values": [
         "pending",
@@ -2085,8 +2602,8 @@
         "error"
       ]
     },
-    "document_management.document_validation_result_status": {
-      "name": "document_validation_result_status",
+    "document_management.validation_result_status": {
+      "name": "validation_result_status",
       "schema": "document_management",
       "values": [
         "passed",
@@ -2094,16 +2611,16 @@
         "warning"
       ]
     },
-    "document_management.document_workflow_fail_reason": {
-      "name": "document_workflow_fail_reason",
+    "document_management.workflow_fail_reason": {
+      "name": "workflow_fail_reason",
       "schema": "document_management",
       "values": [
         "no-suitable-collection",
         "no-suitable-request"
       ]
     },
-    "document_management.document_workflow_state": {
-      "name": "document_workflow_state",
+    "document_management.workflow_state": {
+      "name": "workflow_state",
       "schema": "document_management",
       "values": [
         "pending",
@@ -2114,8 +2631,8 @@
         "failed"
       ]
     },
-    "document_management.document_workflow_step": {
-      "name": "document_workflow_step",
+    "document_management.workflow_step": {
+      "name": "workflow_step",
       "schema": "document_management",
       "values": [
         "classification",

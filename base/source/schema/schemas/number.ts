@@ -7,7 +7,7 @@ import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 export type NumberSchemaOptions = SimpleSchemaOptions<number> & {
   integer?: boolean,
   minimum?: number,
-  maximum?: number
+  maximum?: number,
 };
 
 export class NumberSchema extends SimpleSchema<number> {
@@ -28,13 +28,13 @@ export class NumberSchema extends SimpleSchema<number> {
             : { success: true, value: result, valid: true };
         },
         boolean: (value) => ({ success: true, value: globalThis.Number(value), valid: true }),
-        bigint: (value) => ({ success: true, value: globalThis.Number(value), valid: false })
+        bigint: (value) => ({ success: true, value: globalThis.Number(value), valid: false }),
       },
       constraints: [
         (options?.integer == true) ? (value) => globalThis.Number.isInteger(value) ? ({ success: true }) : ({ success: false, error: 'Value is not an integer.' }) : null,
         isNumber(options?.minimum) ? (value) => (value >= this.minimum!) ? ({ success: true }) : ({ success: false, error: `Value must be more than or equal to ${this.minimum}.` }) : null,
-        isNumber(options?.maximum) ? (value) => (value <= this.maximum!) ? ({ success: true }) : ({ success: false, error: `Value must be less than or equal to ${this.maximum}.` }) : null
-      ]
+        isNumber(options?.maximum) ? (value) => (value <= this.maximum!) ? ({ success: true }) : ({ success: false, error: `Value must be less than or equal to ${this.maximum}.` }) : null,
+      ],
     });
 
     this.integer = options?.integer ?? false;

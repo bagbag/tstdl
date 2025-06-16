@@ -6,7 +6,7 @@ export type HttpServerRequestContext<Context = unknown> = {
   request: HttpServerRequest,
   context: Context,
   respond(response: HttpServerResponse): Promise<void>,
-  close(): Promise<void>
+  close(): Promise<void>,
 };
 
 export abstract class HttpServer<Context = unknown> implements AsyncIterable<HttpServerRequestContext<Context>>, AsyncDisposable {

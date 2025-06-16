@@ -1,10 +1,10 @@
 import type { TypedOmit } from '#/types.js';
 import { assertDefinedPass } from '#/utils/type-guards.js';
-import type { DocumentRequestTemplate } from '../models/index.js';
-import type { DocumentRequestsTemplateData, DocumentRequestsTemplateView } from './document-requests-template.view-model.js';
-import type { EnrichedDocumentCategory } from './enriched/enriched-document-category.view.js';
-import type { EnrichedDocumentManagementData } from './enriched/enriched-document-management-data.view.js';
-import type { EnrichedDocumentType } from './enriched/enriched-document-type.view.js';
+import type { DocumentRequestTemplate } from '../../models/index.js';
+import type { DocumentRequestsTemplateData, DocumentRequestsTemplateView } from '../document-requests-template.view-model.js';
+import type { EnrichedDocumentCategory } from '../enriched/enriched-document-category.view.js';
+import type { EnrichedDocumentManagementData } from '../enriched/enriched-document-management-data.view.js';
+import type { EnrichedDocumentType } from '../enriched/enriched-document-type.view.js';
 
 export type EnrichedDocumentRequestsTemplateData = TypedOmit<DocumentRequestsTemplateData, 'templates'> & {
   templates: EnrichedDocumentRequestsTemplateView[],

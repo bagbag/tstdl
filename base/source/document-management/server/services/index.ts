@@ -7,6 +7,7 @@ export * from './document-management-observation.service.js';
 export * from './document-management.service.js';
 export * from './document-property.service.js';
 export * from './document-request.service.js';
+export * from './document-tag.service.js';
 export * from './document-validation.service.js';
 export * from './document-workflow.service.js';
 export * from './document.service.js';

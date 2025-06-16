@@ -5,9 +5,12 @@ import { DocumentManagementTable } from './document-management-table.js';
 import { DocumentProperty } from './document-property.model.js';
 import { DocumentType } from './document-type.model.js';
 
-@DocumentManagementTable()
-@Unique<DocumentTypeProperty>(['typeId', 'propertyId'])
+@DocumentManagementTable({ name: 'type_property' })
+@Unique<DocumentTypeProperty>(['tenantId', 'typeId', 'propertyId'])
 export class DocumentTypeProperty extends Entity {
+  @Uuid({ nullable: true })
+  tenantId: string | null;
+
   @Uuid()
   @References(() => DocumentType)
   typeId: Uuid;

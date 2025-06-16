@@ -1,0 +1,26 @@
+@for (item of items(); track item.value) {
+  <div>
+    <a
+      class="tree-view-item tree-view-item-small my-0.5"
+      [class.tree-view-item-active]="item == selectedItem()"
+      [routerLink]="item.link?.routerLink"
+      [queryParams]="item.link?.queryParams"
+      [fragment]="item.link?.fragment"
+      [relativeTo]="item.link?.relativeTo"
+      tabindex="0"
+      (keyup.enter)="itemSelected.emit(item)"
+      (keyup.space)="itemSelected.emit(item)"
+      (keydown.space)="$event.preventDefault()"
+      (click)="itemSelected.emit(item)">
+      @if (item.icon; as icon) {
+        <tsl-icon [icon]="icon" size="xl"></tsl-icon>
+      }
+
+      <span class="text-[0.9rem]">{{ item.label }}</span>
+    </a>
+
+    @if (item.children.length > 0) {
+      <tsl-tree-view [items]="item.children" [selectedItem]="selectedItem()" gapOnFirstLevel="false" (itemSelected)="itemSelected.emit($any($event))"></tsl-tree-view>
+    }
+  </div>
+}

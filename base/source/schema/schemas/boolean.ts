@@ -1,5 +1,5 @@
 import { isBoolean, isString } from '#/utils/type-guards.js';
-import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';
+import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { SimpleSchema, type SimpleSchemaOptions } from './simple.js';
 
 export type BooleanSchemaOptions = SimpleSchemaOptions<boolean>;
@@ -31,8 +31,8 @@ export class BooleanSchema extends SimpleSchema<boolean> {
             default:
               return { success: false };
           }
-        }
-      }
+        },
+      },
     });
   }
 }

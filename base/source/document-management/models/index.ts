@@ -10,6 +10,8 @@ export * from './document-request-collection-assignment.model.js';
 export * from './document-request-template.js';
 export * from './document-request.model.js';
 export * from './document-requests-template.js';
+export * from './document-tag-assignment.model.js';
+export * from './document-tag.model.js';
 export * from './document-type-property.model.js';
 export * from './document-type-validation.model.js';
 export * from './document-type.model.js';
