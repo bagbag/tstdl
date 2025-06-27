@@ -11,7 +11,7 @@ import type { EntityType } from '../entity.js';
 import type { ColumnBuilder, EmbeddedConfigTag } from '../types.js';
 
 export type BuildTypeOptions = {
-  skipPrimaryKey?: boolean
+  skipPrimaryKey?: boolean,
 };
 
 export type ColumnDefinition = {
@@ -21,13 +21,13 @@ export type ColumnDefinition = {
   buildType: (options: BuildTypeOptions) => PgColumnBuilder<any, any, any, any>,
   dereferenceObjectPath: (obj: Record) => any,
   toDatabase: (value: unknown, context: TransformContext) => any,
-  fromDatabase: (value: unknown, context: TransformContext) => any
+  fromDatabase: (value: unknown, context: TransformContext) => any,
 };
 
 export type ColumnDefinitionsMap = Map<string, ColumnDefinition>;
 
 export type TransformContext = {
-  encryptionKey?: CryptoKey
+  encryptionKey?: CryptoKey,
 };
 
 type Column<Name extends string, T> = null extends T ? ColumnBuilder<Exclude<T, null>, Name> : NotNull<ColumnBuilder<T, Name>>;
@@ -42,7 +42,7 @@ export type PgTableFromType<T extends EntityType = EntityType, S extends string 
     { [P in Exclude<keyof InstanceType<T>, keyof EmbeddedProperties<InstanceType<T>>>]: Column<CamelCase<Extract<P, string>>, InstanceType<T>[P]>; }
     & UnionToIntersection<{ [P in keyof EmbeddedProperties<InstanceType<T>>]: EmbeddedColumns<InstanceType<T>[P], ColumnPrefix<InstanceType<T>[P]>>; }[keyof EmbeddedProperties<InstanceType<T>>]>,
     'pg'>,
-  dialect: 'pg'
+  dialect: 'pg',
 }>;
 
 export type EmbeddedProperties<T> = ConditionalPick<T, Tagged<unknown, EmbeddedConfigTag, { prefix: any }>>;

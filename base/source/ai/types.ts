@@ -40,7 +40,7 @@ export type FunctionCallingMode = 'auto' | 'force' | 'none';
 
 export type FinishReason = 'stop' | 'maxTokens' | 'unknown';
 
-export type AiModel = LiteralUnion<'gemini-2.5-pro-preview-05-06' | 'gemini-2.5-flash-preview-05-20', string>;
+export type AiModel = LiteralUnion<'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-2.5-flash-lite-preview-06-17', string>;
 
 export type GenerationOptions = {
   maxOutputTokens?: number,

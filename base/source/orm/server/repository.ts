@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-
 import { and, asc, count, desc, eq, inArray, isNull, isSQLWrapper, SQL, sql } from 'drizzle-orm';
 import type { PgColumn, PgInsertValue, PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import { match } from 'ts-pattern';
@@ -12,7 +10,7 @@ import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
 import type { DeepPartial, OneOrMany, Paths, Record, Type } from '#/types.js';
 import type { UntaggedDeep } from '#/types/index.js';
-import { toArray } from '#/utils/array/array.js';
+import { distinct, toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
 import { importSymmetricKey } from '#/utils/cryptography.js';
@@ -321,15 +319,19 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to `true` if all entities exist, `false` otherwise. If `ids` is empty, returns `false`.
    */
   async hasAll(ids: string[]): Promise<boolean> {
-    if (ids.length === 0) {
+    const uniqueIds = distinct(ids);
+
+    if (uniqueIds.length === 0) {
       return false;
     }
 
     const result = await this.session
-      .select({ contains: sql<boolean>`array_agg(${this.#table.id}) @> ${ids}`.as('contains') })
-      .from(this.#table);
+      .select({ count: count() })
+      .from(this.#table)
+      .where(inArray(this.#table.id, uniqueIds));
 
-    return assertDefinedPass(result[0]).contains;
+    const foundCount = result[0]?.count ?? 0;
+    return foundCount == uniqueIds.length;
   }
 
   /**
@@ -559,12 +561,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    */
   async tryUpdateByQuery(query: Query<T>, update: EntityUpdate<T>): Promise<T | undefined> {
     const mappedUpdate = await this.mapUpdate(update);
-    const idQuery = this.getIdLimitSelect(query);
+    const idQuery = this.getIdLimitQuery(query).for('update');
 
     const [row] = await this.session
       .update(this.#table)
       .set(mappedUpdate)
-      .where(inArray(this.#table.id, idQuery.for('update')))
+      .where(inArray(this.#table.id, idQuery))
       .returning();
 
     if (isUndefined(row)) {
@@ -685,7 +687,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       return await this.tryHardDeleteByQuery(query);
     }
 
-    const idQuery = this.getIdLimitSelect(query);
+    const idQuery = this.getIdLimitQuery(query).for('update');
 
     const [row] = await this.session
       .update(this.#tableWithMetadata)
@@ -693,7 +695,7 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
         deleteTimestamp: TRANSACTION_TIMESTAMP,
         attributes: this.getAttributesUpdate(metadataUpdate?.attributes),
       })
-      .where(inArray(this.#table.id, idQuery.for('update')))
+      .where(inArray(this.#table.id, idQuery))
       .returning();
 
     if (isUndefined(row)) {
@@ -804,11 +806,11 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A promise that resolves to the hard deleted entity or `undefined` if not found.
    */
   async tryHardDeleteByQuery(query: Query<T>): Promise<T | undefined> {
-    const idQuery = this.getIdLimitSelect(query);
+    const idQuery = this.getIdLimitQuery(query).for('update');
 
     const [row] = await this.session
       .delete(this.#table)
-      .where(inArray(this.#table.id, idQuery.for('update')))
+      .where(inArray(this.#table.id, idQuery))
       .returning();
 
     if (isUndefined(row)) {
@@ -987,7 +989,12 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
    * @returns A Drizzle select query for the entity ID.
    */
   getIdLimitQuery(query: Query<T>) {
-    return this.getIdLimitSelect(query);
+    const sqlQuery = this.convertQuery(query);
+
+    return this.session.select({ id: this.#table.id })
+      .from(this.#table)
+      .where(sqlQuery)
+      .limit(1);
   }
 
   protected getAttributesUpdate(attributes: SQL | EntityMetadataAttributes | undefined) {
@@ -1086,15 +1093,6 @@ export class EntityRepository<T extends Entity | EntityWithoutMetadata = EntityW
       : undefined;
   }
 
-  protected getIdLimitSelect(query: Query<T>) {
-    const sqlQuery = this.convertQuery(query);
-
-    return this.session.select({ id: this.#table.id })
-      .from(this.#table)
-      .where(sqlQuery)
-      .limit(1);
-  }
-
   protected async getTransformContext(): Promise<TransformContext> {
     if (isUndefined(this.#transformContext)) {
       if (isUndefined(this.#encryptionSecret)) {
@@ -1139,7 +1137,7 @@ export async function injectRepositoryAsync<T extends Entity | EntityWithoutMeta
  * @returns A singleton EntityRepository class for the specified type.
  */
 export function getRepository<T extends Entity | EntityWithoutMetadata>(type: EntityType<T>): Type<EntityRepository<T>> {
-  const className = `${type.name}Service`;
+  const className = `${type.name}Repository`;
 
   const entityRepositoryClass = {
     [className]: class extends EntityRepository<T> {

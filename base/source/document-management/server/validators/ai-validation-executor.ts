@@ -26,10 +26,10 @@ export abstract class AiValidationExecutor<R> extends DocumentValidationExecutor
     const validationPrompt = await this.getPrompt(context);
 
     const model = match<AiValidationDifficulty, AiModel>(this.difficulty)
-      .with('easy', () => 'gemini-2.5-flash-preview-05-20')
-      .with('medium-low', () => 'gemini-2.5-flash-preview-05-20')
-      .with('medium-high', () => 'gemini-2.5-flash-preview-05-20')
-      .with('hard', () => 'gemini-2.5-pro-preview-05-06')
+      .with('easy', () => 'gemini-2.5-flash-lite-preview-06-17')
+      .with('medium-low', () => 'gemini-2.5-flash')
+      .with('medium-high', () => 'gemini-2.5-flash')
+      .with('hard', () => 'gemini-2.5-pro')
       .exhaustive();
 
     const prompt = `Deine Aufgabe ist es ein Dokument zu validieren.

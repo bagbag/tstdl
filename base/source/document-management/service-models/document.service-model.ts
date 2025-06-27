@@ -31,7 +31,7 @@ export const createDocumentParametersSchema = assign(
         }),
       }),
     ),
-    tags: array(string()),
+    tags: optional(array(string())),
     properties: optional(array(setDocumentPropertyParametersSchema)),
   }),
   metadataParameterObjectSchema,

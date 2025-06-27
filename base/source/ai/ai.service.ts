@@ -78,7 +78,7 @@ export class AiService implements Resolvable<AiServiceArgument> {
 
   readonly #maxOutputTokensCache = new Map<string, number | Promise<number>>();
 
-  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.5-flash-preview-05-20' satisfies AiModel;
+  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
 

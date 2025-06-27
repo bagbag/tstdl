@@ -130,7 +130,7 @@ export class DocumentManagementService extends Transactional {
 
       const [requests, assignmentTasks] = await Promise.all([
         this.#documentRequestRepository.withTransaction(tx).loadManyByQuery({ tenantId, id: { $in: requestIds } }, { order: { 'metadata.createTimestamp': 'desc' } }),
-        this.#documentAssignmentTaskRepository.withTransaction(tx).loadManyByQuery({ tenantId, ids: { $in: taskIds } }),
+        this.#documentAssignmentTaskRepository.withTransaction(tx).loadManyByQuery({ tenantId, id: { $in: taskIds } }),
       ]);
 
       const assignmentDocumentIds = documentCollectionAssignments.map((assignment) => assignment.documentId);

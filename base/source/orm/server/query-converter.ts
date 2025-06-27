@@ -10,7 +10,7 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import type { Primitive, Record } from '#/types.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
-import { assertDefinedPass, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, isDefined, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
 import type { ComparisonAndQuery, ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonNotQuery, ComparisonOrQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';
 import type { ColumnDefinition, PgTableFromType } from './types.js';
 
@@ -19,11 +19,12 @@ const sqlTrue = sql`true`;
 /**
  * Converts a query object into a Drizzle SQL condition.
  * Recursively handles nested logical operators and maps property names to database columns.
+ * All top-level keys in the query object are implicitly joined with AND.
+ *
  * @param query The query object to convert. Can be a Drizzle SQL object, SQLWrapper, or a custom query object.
  * @param table The Drizzle table object.
  * @param columnDefinitionsMap A map from property names to column definitions.
  * @returns A Drizzle SQL condition representing the query.
- * @throws {Error} If multiple logical operators are used at the same level.
  * @throws {Error} If a property cannot be mapped to a column.
  * @throws {Error} If an unsupported query type is encountered.
  */
@@ -33,7 +34,7 @@ export function convertQuery(query: Query, table: PgTableFromType, columnDefinit
   }
 
   if (isSQLWrapper(query)) {
-    return sql`${query}`;
+    return query.getSQL();
   }
 
   const queryEntries = objectEntries(query) as [string, Primitive | Record][];
@@ -45,56 +46,54 @@ export function convertQuery(query: Query, table: PgTableFromType, columnDefinit
   const conditions: SQL[] = [];
 
   for (const [property, value] of queryEntries) {
-    if (property == '$and') {
-      if (queryEntries.length > 1) {
-        throw new Error('only one logical operator per level allowed');
+    switch (property) {
+      case '$and': {
+        const subQueries = (value as LogicalAndQuery['$and']).map((item) => convertQuery(item, table, columnDefinitionsMap));
+        const andCondition = and(...subQueries);
+
+        if (isDefined(andCondition)) {
+          conditions.push(andCondition);
+        }
+
+        break;
       }
 
-      const andQuery = and(...(query as LogicalAndQuery).$and.map((item) => convertQuery(item, table, columnDefinitionsMap)));
+      case '$or': {
+        const subQueries = (value as LogicalOrQuery['$or']).map((item) => convertQuery(item, table, columnDefinitionsMap));
+        const orCondition = or(...subQueries);
 
-      if (isUndefined(andQuery)) {
-        return sqlTrue;
+        if (isDefined(orCondition)) {
+          conditions.push(orCondition);
+        }
+
+        break;
       }
 
-      return andQuery;
+      case '$nor': {
+        const subQueries = (value as LogicalNorQuery['$nor']).map((item) => convertQuery(item, table, columnDefinitionsMap));
+        const orCondition = or(...subQueries);
+
+        if (isDefined(orCondition)) {
+          const norCondition = not(orCondition);
+          conditions.push(norCondition);
+        }
+
+        break;
+      }
+
+      default: {
+        const columnDef = assertDefinedPass(columnDefinitionsMap.get(property), `Could not map property ${property} to column.`);
+        const column = table[columnDef.name as keyof PgTableFromType] as PgColumn;
+        const condition = getCondition(property, value, column);
+        conditions.push(condition);
+
+        break;
+      }
     }
-
-    if (property == '$or') {
-      if (queryEntries.length > 1) {
-        throw new Error('only one logical operator per level allowed');
-      }
-
-      const orQuery = or(...(query as LogicalOrQuery).$or.map((item) => convertQuery(item, table, columnDefinitionsMap)));
-
-      if (isUndefined(orQuery)) {
-        return sqlTrue;
-      }
-
-      return orQuery;
-    }
-
-    if (property == '$nor') {
-      if (queryEntries.length > 1) {
-        throw new Error('only one logical operator per level allowed');
-      }
-
-      const orQuery = or(...(query as LogicalNorQuery).$nor.map((item) => convertQuery(item, table, columnDefinitionsMap)));
-
-      if (isUndefined(orQuery)) {
-        return sqlTrue;
-      }
-
-      return not(orQuery);
-    }
-
-    const columnDef = assertDefinedPass(columnDefinitionsMap.get(property), `Could not map property ${property} to column.`);
-    const column = table[columnDef.name as keyof PgTableFromType] as PgColumn;
-
-    const condition = getCondition(property, value, column);
-    conditions.push(condition);
   }
 
-  return and(...conditions)!;
+  // Combine all collected conditions with AND. Return `true` if no conditions were generated.
+  return and(...conditions) ?? sqlTrue;
 }
 
 /**
@@ -201,7 +200,8 @@ function getCondition(property: string, value: Primitive | Record, column: PgCol
         ? ({ flags: queryValue.flags, value: queryValue.source })
         : ({ flags: queryValue.flags, value: queryValue.pattern });
 
-    return sql`regexp_like(${column}, ${regexp.value}, ${regexp.flags})`;
+    const operator = (regexp.flags?.includes('i') ?? false) ? sql.raw('~*') : sql.raw('~');
+    return sql`${column} ${operator} ${regexp.value}`;
   }
 
   if (hasOwnProperty(value, '$text')) {

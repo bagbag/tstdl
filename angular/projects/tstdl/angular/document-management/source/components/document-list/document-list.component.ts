@@ -39,7 +39,7 @@ export class DocumentListComponent {
   uploadsRunning = false;
 
   readonly context = input.required<DocumentManagementContext>();
-  readonly showWorkflowState = input(true)
+  readonly showWorkflowState = input(true);
 
   readonly pendingDocuments = computed(() => this.context().data()?.documents.filter((document) => document.approval == 'pending'));
   readonly pendingUploads = signal([] as PendingUpload[]);
@@ -108,8 +108,8 @@ export class DocumentListComponent {
     }
   }
 
-  openDocument(documentId: string): void {
-    DocumentDetailsComponent.open({
+  async openDocument(documentId: string): Promise<void> {
+    await DocumentDetailsComponent.open({
       context: this.context(),
       documentId,
     }, this.#dialog);

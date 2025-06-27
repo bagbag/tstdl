@@ -1,6 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import type { DocumentCollectionMetadata } from '#/document-management/service-models/index.js';
 import { inject } from '#/injector/inject.js';
 import { TRANSACTION_TIMESTAMP, type EntityMetadataInsert, type Query } from '#/orm/index.js';
 import { Transactional } from '#/orm/server/index.js';
@@ -10,6 +9,7 @@ import { toArray } from '#/utils/array/index.js';
 import { fromEntries } from '#/utils/object/index.js';
 import { assertDefinedPass, isString } from '#/utils/type-guards.js';
 import { Document, DocumentCollection, DocumentCollectionAssignment } from '../../models/index.js';
+import type { DocumentCollectionMetadata } from '../../service-models/index.js';
 import { document, documentCollectionAssignment } from '../schemas.js';
 import { DocumentManagementAncillaryService } from './document-management-ancillary.service.js';
 import { DocumentManagementSingleton } from './singleton.js';

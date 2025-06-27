@@ -5,12 +5,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, Injector, runInIn
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { LocalizePipe } from '@tstdl/angular';
-import { BadgeComponent } from "@tstdl/angular/badge";
+import { BadgeComponent } from '@tstdl/angular/badge';
 import { ButtonComponent } from '@tstdl/angular/button';
 import { InputComponent, InputGroupComponent, InputGroupLabelComponent, SelectComponent, SelectOptionComponent } from '@tstdl/angular/form';
-import { IconComponent } from "@tstdl/angular/icon";
+import { IconComponent } from '@tstdl/angular/icon';
 import { TslMenu } from '@tstdl/angular/menu';
-import { PdfViewerComponent } from "@tstdl/angular/pdf-viewer";
+import { PdfViewerComponent } from '@tstdl/angular/pdf-viewer';
 import { DocumentPropertyDataType, DocumentWorkflowState, DocumentWorkflowStep } from '@tstdl/base/document-management';
 import { getMimeTypeExtensions } from '@tstdl/base/file';
 import { dateShort } from '@tstdl/base/formats';
@@ -51,7 +51,7 @@ type PropertyItem = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'tsl-tw content-grid h-full sm:py-4',
-  }
+  },
 })
 export class DocumentDetailsComponent {
   readonly #injector = inject(Injector);
@@ -72,7 +72,7 @@ export class DocumentDetailsComponent {
   // readonly canEdit = computed(() => false);
 
   readonly documentId = computed(() => this.document().id);
-  readonly contentUrl = computed(() => { return this.context.api.getEndpointUrl('loadContent', { id: this.documentId() }) });
+  readonly contentUrl = computed(() => this.context.api.getEndpointUrl('loadContent', { id: this.documentId() }));
 
   readonly assignableCollections = computed(() => {
     const existingCollectionIds = this.formValue().collections;
@@ -98,7 +98,7 @@ export class DocumentDetailsComponent {
         type: DocumentPropertyDataType.Text,
         inputType: 'text',
         editable: false,
-        value: this.getMimeTypeExtensions(document.mimeType)[0] ?? null
+        value: this.getMimeTypeExtensions(document.mimeType)[0] ?? null,
       },
       {
         id: 'originalFileName',
@@ -106,7 +106,7 @@ export class DocumentDetailsComponent {
         type: DocumentPropertyDataType.Text,
         inputType: 'text',
         editable: false,
-        value: document.originalFileName ?? '-'
+        value: document.originalFileName ?? '-',
       },
       {
         id: 'size',
@@ -114,7 +114,7 @@ export class DocumentDetailsComponent {
         type: DocumentPropertyDataType.Text,
         inputType: 'text',
         editable: false,
-        value: this.formatBytes(document.size)
+        value: this.formatBytes(document.size),
       },
       {
         id: 'pages',
@@ -132,22 +132,24 @@ export class DocumentDetailsComponent {
           type: property.dataType,
           label: property.label,
           inputType: match(property.dataType)
-            .with("text", () => 'text' as const)
-            .with("integer", () => 'number' as const)
-            .with("decimal", () => 'number' as const)
-            .with("boolean", () => 'checkbox' as const)
-            .with("date", () => 'date' as const)
+            .with('text', () => 'text' as const)
+            .with('integer', () => 'number' as const)
+            .with('decimal', () => 'number' as const)
+            .with('boolean', () => 'checkbox' as const)
+            .with('date', () => 'date' as const)
             .exhaustive(),
           editable: true,
-          value: isUndefined(propertyValue) ? null : match(property.dataType)
-            .with("text", () => isNull(String(propertyValue.value)) ? null : String(propertyValue.value))
-            .with("integer", () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? propertyValue.value : parseInt(String(propertyValue.value)))
-            .with("decimal", () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? propertyValue.value : parseFloat(String(propertyValue.value)))
-            .with("boolean", () => isNull(propertyValue.value) ? null : isBoolean(propertyValue.value) ? propertyValue.value : null)
-            .with("date", () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? numericDateToDateTime(propertyValue.value).toFormat('yyyy-MM-dd') : DateTime.fromJSDate(new Date(String(propertyValue.value))).toFormat('yyyy-MM-dd'))
-            .exhaustive()
+          value: isUndefined(propertyValue)
+            ? null
+            : match(property.dataType)
+              .with('text', () => isNull(String(propertyValue.value)) ? null : String(propertyValue.value))
+              .with('integer', () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? propertyValue.value : parseInt(String(propertyValue.value)))
+              .with('decimal', () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? propertyValue.value : parseFloat(String(propertyValue.value)))
+              .with('boolean', () => isNull(propertyValue.value) ? null : isBoolean(propertyValue.value) ? propertyValue.value : null)
+              .with('date', () => isNull(propertyValue.value) ? null : isNumber(propertyValue.value) ? numericDateToDateTime(propertyValue.value).toFormat('yyyy-MM-dd') : DateTime.fromJSDate(new Date(String(propertyValue.value))).toFormat('yyyy-MM-dd'))
+              .exhaustive(),
         };
-      })
+      }),
     ];
   });
 
@@ -163,9 +165,9 @@ export class DocumentDetailsComponent {
       title: this.#formBuilder.control(this.document().title),
       subtitle: this.#formBuilder.control(this.document().subtitle),
       comment: this.#formBuilder.control(this.document().comment),
-      tags: this.#formBuilder.array(this.document().tags.map((tag) => this.#formBuilder.nonNullable.control(tag))),
+      tags: this.#formBuilder.array(this.document().tags.map((tag) => this.#formBuilder.nonNullable.control(tag.label))),
       collections: this.#formBuilder.array(this.document().assignments.collections.map((collection) => this.#formBuilder.nonNullable.control(collection.collection.id))),
-      properties
+      properties,
     });
 
     if (!this.canEdit()) {
@@ -187,7 +189,7 @@ export class DocumentDetailsComponent {
       return '-';
     }
 
-    const type = this.context.data()?.maps.types.get(typeId!);
+    const type = this.context.data()?.maps.types.get(typeId);
     return type?.label ?? '-';
   });
 
@@ -199,23 +201,22 @@ export class DocumentDetailsComponent {
       return true;
     }
 
-    if ((document.tags.toSorted().join(',') != formValue.tags!.filter((tag) => tag.length > 0).toSorted().join(','))) {
+    if ((document.tags.map((tag) => tag.label).toSorted().join(',') != formValue.tags.filter((tag) => tag.length > 0).toSorted().join(','))) {
       return true;
     }
 
-    for (const [id, controlValue] of objectEntries(formValue.properties!)) {
+    for (const [id, controlValue] of objectEntries(formValue.properties)) {
       const property = this.properties().find((property) => property.id == id);
       if (controlValue != property?.value) {
         return true;
       }
     }
 
-
     return false;
   });
 
   static async open(data: TypedOmit<DocumentDetailsData, 'dialog'>, dialog: Dialog): Promise<void> {
-    const dialogRef = dialog.open<void, DocumentDetailsData>(DocumentDetailsComponent, {
+    const dialogRef = dialog.open<undefined, DocumentDetailsData>(DocumentDetailsComponent, {
       data: { ...data, dialog },
       width: '100dvw',
       height: '100dvh',
@@ -266,19 +267,19 @@ export class DocumentDetailsComponent {
     await this.context.api.updateDocument({
       id: this.document().id,
       typeId: type,
-      title: normalizeTextInput(title as string | null),
-      subtitle: normalizeTextInput(subtitle as string | null),
+      title: normalizeTextInput(title),
+      subtitle: normalizeTextInput(subtitle),
       date: isNull(date) ? null : dateTimeToNumericDate(DateTime.fromFormat(date as string, 'yyyy-MM-dd')),
       tags: (tags as string[]).map((tag) => normalizeTextInput(tag)).filter(isNotNull),
-      comment: normalizeTextInput(comment as string | null),
+      comment: normalizeTextInput(comment),
       properties: documentProperties.map((property) => ({
         propertyId: property.id,
         value: match(property.type)
-          .with("text", (): string | null => normalizeTextInput(properties[property.id] as string | null))
-          .with("integer", (): number | null => isNull(properties[property.id]) ? null : isNumber(properties[property.id]) ? properties[property.id] as number : parseInt(String(properties[property.id])))
-          .with("decimal", (): number | null => isNull(properties[property.id]) ? null : isNumber(properties[property.id]) ? properties[property.id] as number : parseFloat(String(properties[property.id])))
-          .with("boolean", (): boolean | null => (isNull(properties[property.id]) || isBoolean(properties[property.id])) ? properties[property.id] as boolean : null)
-          .with("date", (): number | null => {
+          .with('text', (): string | null => normalizeTextInput(properties[property.id] as string | null))
+          .with('integer', (): number | null => isNull(properties[property.id]) ? null : isNumber(properties[property.id]) ? properties[property.id] as number : parseInt(String(properties[property.id])))
+          .with('decimal', (): number | null => isNull(properties[property.id]) ? null : isNumber(properties[property.id]) ? properties[property.id] as number : parseFloat(String(properties[property.id])))
+          .with('boolean', (): boolean | null => (isNull(properties[property.id]) || isBoolean(properties[property.id])) ? properties[property.id] as boolean : null)
+          .with('date', (): number | null => {
             const normalized = normalizeTextInput(properties[property.id] as string | null);
 
             if (isNull(normalized)) {
@@ -293,13 +294,13 @@ export class DocumentDetailsComponent {
 
             return null;
           })
-          .exhaustive()
+          .exhaustive(),
       })),
       collections: {
         assign: [],
-        archive: []
-      }
-    })
+        archive: [],
+      },
+    });
   }
 
   async proceedWorkflow(): Promise<void> {

@@ -4,10 +4,6 @@ import { match, P } from 'ts-pattern';
 import { createErrorResponse, type ApiController, type ApiRequestContext, type ApiServerResult } from '#/api/index.js';
 import { apiController } from '#/api/server/index.js';
 import { CancellationSignal } from '#/cancellation/token.js';
-import { documentManagementApiDefinition, type DocumentManagementApiDefinition } from '#/document-management/api/index.js';
-import { DocumentManagementAuthorizationService } from '#/document-management/authorization/index.js';
-import { DocumentRequestCollectionAssignment } from '#/document-management/models/document-request-collection-assignment.model.js';
-import type { DocumentManagementData } from '#/document-management/service-models/document-management.view-model.js';
 import { ForbiddenError, NotImplementedError } from '#/errors/index.js';
 import { HttpServerResponse } from '#/http/index.js';
 import { inject } from '#/injector/index.js';
@@ -18,6 +14,10 @@ import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import { toArray } from '#/utils/array/index.js';
 import { tryIgnoreAsync } from '#/utils/try-ignore.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
+import { documentManagementApiDefinition, type DocumentManagementApiDefinition } from '../../api/index.js';
+import { DocumentManagementAuthorizationService } from '../../authorization/index.js';
+import { DocumentRequestCollectionAssignment } from '../../models/document-request-collection-assignment.model.js';
+import type { DocumentManagementData } from '../../service-models/document-management.view-model.js';
 import { DocumentCategoryTypeService, DocumentFileService, DocumentManagementService, DocumentRequestService, DocumentService, DocumentWorkflowService } from '../services/index.js';
 
 const jsonDiffPatch = createDiffPatch({

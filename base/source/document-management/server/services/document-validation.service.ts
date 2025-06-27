@@ -1,6 +1,4 @@
 import type { CancellationSignal } from '#/cancellation/token.js';
-import { DocumentWorkflowStep } from '#/document-management/models/document-workflow.model.js';
-import { Document, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentProperty, DocumentPropertyValue, DocumentType, DocumentTypeProperty, DocumentTypeValidation, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationExecutionRelatedDocument, DocumentValidationExecutionState, DocumentValidationResultStatus } from '#/document-management/models/index.js';
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { inject, injectAll } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
@@ -15,6 +13,8 @@ import type { Type } from '#/types.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { isNull, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';
+import { DocumentWorkflowStep } from '../../models/document-workflow.model.js';
+import { Document, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentProperty, DocumentPropertyValue, DocumentType, DocumentTypeProperty, DocumentTypeValidation, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationExecutionRelatedDocument, DocumentValidationExecutionState, DocumentValidationResultStatus } from '../../models/index.js';
 import type { DocumentValidationExecutor, DocumentValidationExecutorContext, DocumentValidationExecutorContextDocumentData } from '../validators/index.js';
 import { DocumentWorkflowService } from './document-workflow.service.js';
 import { DocumentManagementSingleton } from './singleton.js';

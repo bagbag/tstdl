@@ -344,11 +344,13 @@ export function getPgEnum(schema: string | PgSchema, enumeration: Enumeration, c
   const enumName = enumNames.get(enumeration) ?? tryGetEnumName(enumeration as EnumerationObject);
 
   if (isUndefined(enumName)) {
+    const errorMessage = 'Enum is not registered. Please register it using `databaseSchema.getEnum(MyEnum)` before use.';
+
     if (isDefined(context)) {
-      throw new Error(`Enum is not registered. (type: ${context.type.name}, property: ${context.property})`);
+      throw new Error(`${errorMessage} (type: ${context.type.name}, property: ${context.property})`);
     }
 
-    throw new Error('Enum is not registered.');
+    throw new Error(errorMessage);
   }
 
   const values = (isArray(enumeration) ? enumeration : enumValues(enumeration))

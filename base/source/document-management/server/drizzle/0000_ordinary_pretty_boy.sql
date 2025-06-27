@@ -54,7 +54,8 @@ CREATE TABLE "document_management"."assignment_task" (
 	"create_timestamp" timestamp with time zone NOT NULL,
 	"delete_timestamp" timestamp with time zone,
 	"attributes" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	CONSTRAINT "assignment_task_document_id_unique" UNIQUE("document_id")
+	CONSTRAINT "assignment_task_document_id_unique" UNIQUE("document_id"),
+	CONSTRAINT "assignment_task_tenant_id_id_unique" UNIQUE("tenant_id","id")
 );
 --> statement-breakpoint
 CREATE TABLE "document_management"."category" (
@@ -277,7 +278,8 @@ CREATE TABLE "document_management"."validation_execution" (
 	"create_timestamp" timestamp with time zone NOT NULL,
 	"delete_timestamp" timestamp with time zone,
 	"attributes" jsonb DEFAULT '{}'::jsonb NOT NULL,
-	CONSTRAINT "validation_execution_tenant_id_workflow_id_definition_id_unique" UNIQUE("tenant_id","workflow_id","definition_id")
+	CONSTRAINT "validation_execution_tenant_id_workflow_id_definition_id_unique" UNIQUE("tenant_id","workflow_id","definition_id"),
+	CONSTRAINT "validation_execution_tenant_id_id_unique" UNIQUE("tenant_id","id")
 );
 --> statement-breakpoint
 CREATE TABLE "document_management"."validation_execution_related_document" (
@@ -306,7 +308,8 @@ CREATE TABLE "document_management"."workflow" (
 	"revision_timestamp" timestamp with time zone NOT NULL,
 	"create_timestamp" timestamp with time zone NOT NULL,
 	"delete_timestamp" timestamp with time zone,
-	"attributes" jsonb DEFAULT '{}'::jsonb NOT NULL
+	"attributes" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	CONSTRAINT "workflow_tenant_id_id_unique" UNIQUE("tenant_id","id")
 );
 --> statement-breakpoint
 ALTER TABLE "document_management"."document" ADD CONSTRAINT "document_type_id_type_id_fk" FOREIGN KEY ("type_id") REFERENCES "document_management"."type"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

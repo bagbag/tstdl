@@ -1,7 +1,7 @@
 import { and, isNull as drizzleIsNull, eq, inArray } from 'drizzle-orm';
 import { P, match } from 'ts-pattern';
 
-import { AiService } from '#/ai/index.js';
+import { AiService, type AiModel } from '#/ai/index.js';
 import { TemporaryFile } from '#/file/server/index.js';
 import { inject } from '#/injector/inject.js';
 import { Logger } from '#/logger/logger.js';
@@ -34,7 +34,9 @@ export type DocumentInformationExtractionResult = {
   properties: DocumentInformationExtractionPropertyResult[],
 };
 
-const MODEL = 'gemini-2.5-flash-preview-05-20';
+const CLASSIFY_MODEL = 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
+const EXTRACT_MODEL = 'gemini-2.5-flash' satisfies AiModel;
+const ASSIGN_MODEL = 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
 
 @DocumentManagementSingleton()
 export class DocumentManagementAiService {
@@ -64,7 +66,7 @@ export class DocumentManagementAiService {
     this.#logger.trace(`Classifying document ${document.id}`);
 
     const documentTypeGeneration = await this.#aiService.generate({
-      model: MODEL,
+      model: CLASSIFY_MODEL,
       generationOptions: {
         maxOutputTokens: 128,
         temperature: 0.1,
@@ -137,7 +139,7 @@ export class DocumentManagementAiService {
 
     this.#logger.trace(`Extracting document ${document.id}`);
     const { json: extraction } = await this.#aiService.generate({
-      model: MODEL,
+      model: EXTRACT_MODEL,
       generationOptions: {
         maxOutputTokens: 2048,
         temperature: 0.2,
@@ -248,7 +250,7 @@ Antworte auf deutsch.`,
     };
 
     const result = await this.#aiService.generate({
-      model: MODEL,
+      model: ASSIGN_MODEL,
       generationOptions: {
         maxOutputTokens: 100,
         temperature: 0,
@@ -345,7 +347,7 @@ Ordne das Dokument unter "document" einer oder mehreren passenden Collection unt
     };
 
     const result = await this.#aiService.generate({
-      model: MODEL,
+      model: ASSIGN_MODEL,
       generationOptions: {
         maxOutputTokens: 100,
         temperature: 0,

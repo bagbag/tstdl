@@ -1,5 +1,5 @@
-import { DocumentValidationResultStatus } from '#/document-management/models/document-validation-execution.model.js';
 import { boolean, object, optional, string, type SchemaOutput } from '#/schema/index.js';
+import { DocumentValidationResultStatus } from '../../models/document-validation-execution.model.js';
 import { AiValidationDifficulty, AiValidationExecutor } from './ai-validation-executor.js';
 import type { DocumentValidationExecutorResult } from './validator.js';
 

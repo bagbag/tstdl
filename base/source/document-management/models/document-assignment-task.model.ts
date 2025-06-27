@@ -14,6 +14,7 @@ export const DocumentAssignmentTarget = defineEnum('DocumentAssignmentTarget', {
 export type DocumentAssignmentTarget = EnumType<typeof DocumentAssignmentTarget>;
 
 @DocumentManagementTable({ name: 'assignment_task' })
+@Unique<DocumentAssignmentTask>(['tenantId', 'id'])
 @ForeignKey<DocumentAssignmentTask, Document>(() => Document, ['tenantId', 'documentId'], ['tenantId', 'id'])
 export class DocumentAssignmentTask extends Entity {
   declare static readonly entityName: 'DocumentAssignmentTask';

@@ -1,9 +1,5 @@
 import { match } from 'ts-pattern';
 
-import { DocumentAssignmentScope } from '#/document-management/models/document-assignment-scope.model.js';
-import { DocumentAssignmentTask } from '#/document-management/models/document-assignment-task.model.js';
-import { DocumentWorkflow, DocumentWorkflowFailReason, DocumentWorkflowState, DocumentWorkflowStep } from '#/document-management/models/document-workflow.model.js';
-import { DocumentApproval } from '#/document-management/models/document.model.js';
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { AfterResolveContext } from '#/injector/index.js';
@@ -19,6 +15,10 @@ import { currentTimestamp } from '#/utils/date-time.js';
 import { _throw } from '#/utils/throw.js';
 import { isNotNull, isNull } from '#/utils/type-guards.js';
 import { and, desc, eq, inArray } from 'drizzle-orm';
+import { DocumentAssignmentScope } from '../../models/document-assignment-scope.model.js';
+import { DocumentAssignmentTask } from '../../models/document-assignment-task.model.js';
+import { DocumentWorkflow, DocumentWorkflowFailReason, DocumentWorkflowState, DocumentWorkflowStep } from '../../models/document-workflow.model.js';
+import { DocumentApproval } from '../../models/document.model.js';
 import { documentWorkflow } from '../schemas.js';
 import { DocumentCollectionService } from './document-collection.service.js';
 import { DocumentManagementAiService } from './document-management-ai.service.js';

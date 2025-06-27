@@ -1,5 +1,5 @@
 {
-  "id": "2917aa37-84ad-420d-a45e-3663498ac9d4",
+  "id": "bbddb1b8-fa09-4465-8016-5a9b7915023d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -405,6 +405,14 @@
           "nullsNotDistinct": false,
           "columns": [
             "document_id"
+          ]
+        },
+        "assignment_task_tenant_id_id_unique": {
+          "name": "assignment_task_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
           ]
         }
       },
@@ -2263,6 +2271,14 @@
             "workflow_id",
             "definition_id"
           ]
+        },
+        "validation_execution_tenant_id_id_unique": {
+          "name": "validation_execution_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
+          ]
         }
       },
       "policies": {},
@@ -2548,7 +2564,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "workflow_tenant_id_id_unique": {
+          "name": "workflow_tenant_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

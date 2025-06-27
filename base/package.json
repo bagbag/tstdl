@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.142",
+  "version": "0.92.145",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -148,7 +148,7 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^9.0",
     "@google-cloud/storage": "7.16",
-    "@google/genai": "^1.5",
+    "@google/genai": "^1.7",
     "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
@@ -167,7 +167,7 @@
     "preact": "^10.26",
     "preact-render-to-string": "^6.5",
     "sharp": "^0.34",
-    "undici": "^7.10",
+    "undici": "^7.11",
     "urlpattern-polyfill": "^10.1"
   },
   "peerDependenciesMeta": {
@@ -176,7 +176,7 @@
     }
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "4.4",
+    "@stylistic/eslint-plugin": "5.0",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
     "@types/luxon": "3.6",
@@ -185,14 +185,14 @@
     "@types/node": "24",
     "@types/nodemailer": "6.4",
     "@types/pg": "8.15",
-    "concurrently": "9.1",
+    "concurrently": "9.2",
     "drizzle-kit": "0.31",
     "eslint": "9.29",
     "globals": "16.2",
     "tsc-alias": "1.8",
     "typedoc-plugin-missing-exports": "4.0",
     "typescript": "5.8",
-    "typescript-eslint": "8.34"
+    "typescript-eslint": "8.35"
   },
   "overrides": {
     "drizzle-kit": {

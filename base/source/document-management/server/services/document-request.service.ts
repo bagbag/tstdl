@@ -1,6 +1,5 @@
 import { and, count, isNotNull as dbIsNotNull, isNull as dbIsNull, eq, inArray, sql } from 'drizzle-orm';
 
-import type { RequestStats } from '#/document-management/service-models/index.js';
 import { BadRequestError } from '#/errors/index.js';
 import { inject } from '#/injector/inject.js';
 import type { NewEntity } from '#/orm/index.js';
@@ -8,7 +7,8 @@ import { Transactional, injectRepository } from '#/orm/server/index.js';
 import type { OneOrMany } from '#/types.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertDefinedPass, isNotNull } from '#/utils/type-guards.js';
-import { DocumentApproval, DocumentCollectionAssignment, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate, type Document } from '../../models/index.js';
+import { DocumentApproval, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate, type Document } from '../../models/index.js';
+import type { RequestStats } from '../../service-models/index.js';
 import { document, documentRequest, documentRequestCollectionAssignment } from '../schemas.js';
 import { DocumentManagementObservationService } from './document-management-observation.service.js';
 import { DocumentManagementSingleton } from './singleton.js';

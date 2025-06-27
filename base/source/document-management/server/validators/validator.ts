@@ -1,4 +1,4 @@
-import type { Document, DocumentCategory, DocumentCollection, DocumentProperty, DocumentPropertyValue, DocumentType, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationResultStatus } from '#/document-management/models/index.js';
+import type { Document, DocumentCategory, DocumentCollection, DocumentProperty, DocumentPropertyValue, DocumentType, DocumentValidationDefinition, DocumentValidationExecution, DocumentValidationResultStatus } from '../../models/index.js';
 
 export type DocumentValidationExecutorContextDocumentData = {
   document: Document,

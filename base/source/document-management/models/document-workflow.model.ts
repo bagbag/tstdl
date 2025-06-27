@@ -1,7 +1,7 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
 import { ForeignKey, References } from '#/orm/decorators.js';
 import { Entity } from '#/orm/entity.js';
-import { Index, Timestamp, Uuid } from '#/orm/types.js';
+import { Index, Timestamp, Unique, Uuid } from '#/orm/types.js';
 import { Enumeration } from '#/schema/index.js';
 import { DocumentManagementTable } from './document-management-table.js';
 import { Document } from './document.model.js';
@@ -42,6 +42,7 @@ export type DocumentWorkflowFailReason = EnumType<typeof DocumentWorkflowFailRea
 @DocumentManagementTable({ name: 'workflow' })
 @Index<DocumentWorkflow>(['documentId'], { unique: true, where: () => ({ state: { $neq: DocumentWorkflowState.Completed } }) })
 @ForeignKey<DocumentWorkflow, Document>(() => Document, ['tenantId', 'documentId'], ['tenantId', 'id'])
+@Unique<DocumentWorkflow>(['tenantId', 'id'])
 export class DocumentWorkflow extends Entity {
   declare static readonly entityName: 'DocumentWorkflow';
 

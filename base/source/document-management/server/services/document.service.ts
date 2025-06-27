@@ -66,7 +66,9 @@ export class DocumentService extends Transactional {
         metadata,
       });
 
-      await this.#documentTagService.withTransaction(tx).assignTags(document, tags);
+      if (isDefined(tags)) {
+        await this.#documentTagService.withTransaction(tx).assignTags(document, tags);
+      }
 
       const [documentMetadata, content] = isUpload
         ? await this.#documentFileService.withTransaction(tx).store(document.id, contentSource)

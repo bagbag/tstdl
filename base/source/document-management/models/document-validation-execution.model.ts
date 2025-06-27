@@ -25,6 +25,7 @@ export const DocumentValidationResultStatus = defineEnum('DocumentValidationResu
 export type DocumentValidationResultStatus = EnumType<typeof DocumentValidationResultStatus>;
 
 @DocumentManagementTable({ name: 'validation_execution' })
+@Unique<DocumentValidationExecution>(['tenantId', 'id'])
 @Unique<DocumentValidationExecution>(['tenantId', 'workflowId', 'definitionId'])
 @ForeignKey<DocumentValidationExecution, DocumentWorkflow>(() => DocumentWorkflow, ['tenantId', 'workflowId'], ['tenantId', 'id'])
 export class DocumentValidationExecution extends Entity {

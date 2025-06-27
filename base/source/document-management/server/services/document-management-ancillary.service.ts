@@ -1,5 +1,5 @@
-import type { DocumentCollectionMetadata } from '#/document-management/service-models/index.js';
 import type { DocumentCollection } from '../../models/index.js';
+import type { DocumentCollectionMetadata } from '../../service-models/index.js';
 
 export abstract class DocumentManagementAncillaryService {
   /**

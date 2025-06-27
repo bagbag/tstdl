@@ -63,7 +63,7 @@ export class DocumentTagService extends Transactional {
 
       const newAssignments = tagIds.map((tagId): NewEntity<DocumentTagAssignment> => ({ tenantId: document.tenantId, documentId: document.id, tagId }));
 
-      await this.tagAssignmentRepository.withTransaction(tx).insertManyIfNotExists(['documentId', 'tagId'], newAssignments);
+      await this.tagAssignmentRepository.withTransaction(tx).insertManyIfNotExists(['tenantId', 'documentId', 'tagId'], newAssignments);
       await this.tagAssignmentRepository.withTransaction(tx).hardDeleteManyByQuery({ tenantId: document.tenantId, documentId: document.id, tagId: { $nin: tagIds } });
     });
   }
