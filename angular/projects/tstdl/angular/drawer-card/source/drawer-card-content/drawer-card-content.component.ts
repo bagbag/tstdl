@@ -35,8 +35,8 @@ export class DrawerCardContentComponent implements OnInit, OnDestroy {
   @HostListener('click')
   @HostListener('keyup.enter', ['$event'])
   @HostListener('keyup.space', ['$event'])
-  onClick(event: Event): void {
-    event.preventDefault();
+  onClick(event?: Event): void {
+    event?.preventDefault();
     this.clicked.emit();
   }
 
