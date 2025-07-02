@@ -44,7 +44,7 @@ export class WrappedR3InjectorRecordsMap implements R3InjectorRecordsMap {
   }
 
   forEach(callbackfn: (value: any, key: ProviderToken<any>, map: R3InjectorRecordsMap) => void, thisArg?: any): void {
-    const _this = this; // eslint-disable-line consistent-this, @typescript-eslint/no-this-alias
+    const _this = this; // eslint-disable-line @typescript-eslint/no-this-alias
 
     function callback(value: any, key: ProviderToken<any>): void {
       callbackfn(value, key, _this);

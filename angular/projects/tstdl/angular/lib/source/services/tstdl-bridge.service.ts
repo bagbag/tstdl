@@ -12,12 +12,17 @@ import { Observable, type Subscribable } from 'rxjs';
 import { configureAngularHttpClientAdapter } from '../http/angular-http-client-adapter';
 import { type R3Injector, WrappedR3InjectorRecordsMap } from './wrapped-r3-injector-records-map';
 
+export class TstdlBridgeServiceOptions {
+  debugInjectorWrapper?: boolean;
+}
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TstdlBridgeService {
   readonly #injector = inject(Injector) as R3Injector;
   readonly #tstdlInjector = new TstdlInjector('TstdlBridgeServiceInjector');
+  readonly #options = inject(TstdlBridgeServiceOptions, { optional: true }) ?? {};
 
   private initialized = false;
 
@@ -45,8 +50,13 @@ export class TstdlBridgeService {
   private wrapInjector(injector: Injector): void {
     const tstdlInjector = this.#tstdlInjector;
     const originalGet = injector.constructor.prototype.get as Function;
+    const debug = this.#options.debugInjectorWrapper ?? false;
 
     function tstdlGetWrapper(this: R3Injector, ...args: any[]): any {
+      if (debug) {
+        console.debug('TstdlBridgeService: injector get called with args:', args);
+      }
+
       if (isInTstdlInjectionContext()) {
         return originalGet.apply(this, args);
       }
@@ -92,7 +102,7 @@ export class TstdlBridgeService {
       },
       isInSignalsInjectionContext: () => isInInjectionContext(),
       getCurrentSignalsInjector: () => inject(Injector),
-      runInSignalsInjectionContext: (injector, fn) => runInInjectionContext(injector, fn)
+      runInSignalsInjectionContext: (injector, fn) => runInInjectionContext(injector, fn),
     });
   }
 }

@@ -45,7 +45,7 @@
     "@angular/build": "20.0",
     "@angular/cli": "20.0",
     "@angular/compiler-cli": "20.0",
-    "@stylistic/eslint-plugin": "5.0",
+    "@stylistic/eslint-plugin": "5.1",
     "@tailwindcss/typography": "0.5",
     "@types/chroma-js": "2.4",
     "@types/luxon": "3.6",
@@ -55,7 +55,8 @@
     "ng-packagr": "20.0",
     "source-map-explorer": "2.5",
     "tailwindcss": "3.4",
-    "typescript": "5.8",
-    "typescript-eslint": "8.35"
+    "type-fest": "4.37",
+    "typescript-eslint": "8.35",
+    "typescript": "5.8"
   }
 }

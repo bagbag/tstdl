@@ -1,9 +1,10 @@
-import { type EnvironmentProviders, NgModule, importProvidersFrom, inject, provideAppInitializer } from '@angular/core';
+import { type EnvironmentProviders, NgModule, type Provider, importProvidersFrom, inject, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
 
 import { TstdlColoredProgressbarComponent, TstdlIndeterminateProgressBarComponent, TstdlSkeletonComponent } from './components';
 import { AutoForDirective, AutoIdDirective, InputPatternDirective, LazyDirective, LazyListDirective, LetDirective, RepeatDirective, VisibilityObserverDirective } from './directives';
 import { DateTimeLocalePipe, DateTimePipe, DateTimeToDatePipe, DecyclePipe, DurationPipe, DynamicTextPipe, LocalizeEnumPipe, LocalizePipe, NumberLocalePipe, NumericDateToDateTimePipe, NumericTimeToDateTimePipe, OptionalLocalizePipe, PadPipe, SafeHtmlPipe, SafeResourceUrlPipe, SafeUrlPipe, SerializePipe } from './pipes';
-import { TstdlBridgeService } from './services/tstdl-bridge.service';
+import { TstdlBridgeService, TstdlBridgeServiceOptions } from './services/tstdl-bridge.service';
+import type { Tagged } from 'type-fest';
 
 const pipes = [
   DateTimeLocalePipe,
@@ -22,7 +23,7 @@ const pipes = [
   SafeHtmlPipe,
   SafeResourceUrlPipe,
   SafeUrlPipe,
-  SerializePipe
+  SerializePipe,
 ];
 
 const directives = [
@@ -33,27 +34,27 @@ const directives = [
   LazyListDirective,
   LetDirective,
   RepeatDirective,
-  VisibilityObserverDirective
+  VisibilityObserverDirective,
 ];
 
 const components = [
   TstdlSkeletonComponent,
   TstdlIndeterminateProgressBarComponent,
-  TstdlColoredProgressbarComponent
+  TstdlColoredProgressbarComponent,
 ];
 
 const declarations = [
   ...pipes,
   ...directives,
-  ...components
+  ...components,
 ];
 
 @NgModule({
   imports: declarations,
   exports: declarations,
   providers: [
-    provideAppInitializer(appInitializer)
-  ]
+    provideAppInitializer(appInitializer),
+  ],
 })
 export class TstdlAngularModule { }
 
@@ -62,6 +63,18 @@ function appInitializer(): void {
   bridgeService.initialize();
 }
 
-export function provideTstdlAngular(): EnvironmentProviders {
-  return importProvidersFrom(TstdlAngularModule);
+export function provideTstdlAngular(...providers: Tagged<Provider, 'tstdl-angular'>[][]): EnvironmentProviders {
+  return makeEnvironmentProviders([
+    importProvidersFrom(TstdlAngularModule),
+    ...providers,
+  ]);
+}
+
+export function withTstdlBridgeServiceOptions(options: TstdlBridgeServiceOptions): Tagged<Provider, 'tstdl-angular'>[] {
+  return [
+    {
+      provide: TstdlBridgeServiceOptions,
+      useValue: options,
+    },
+  ] as Tagged<Provider, 'tstdl-angular'>[];
 }
