@@ -4,9 +4,10 @@ import type { ToObservableOptions } from '@angular/core/rxjs-interop';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { configureTstdl } from '@tstdl/base';
 import { HttpClientAdapter } from '@tstdl/base/http';
-import { Injector as TstdlInjector, isInInjectionContext, isInInjectionContext as isInTstdlInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
+import { Injector as TstdlInjector, isInInjectionContext, runInInjectionContext as runInTstdlInjectionContext } from '@tstdl/base/injector';
 import { type CreateEffectOptions as TstdlCreateEffectOptions, type ToObservableOptions as TstdlToObservableOptions, type ToSignalOptions as TstdlToSignalOptions, configureSignals } from '@tstdl/base/signals';
 import { DOCUMENT } from '@tstdl/base/tokens';
+import { isNull } from '@tstdl/base/utils';
 import { Observable, type Subscribable } from 'rxjs';
 import type { Tagged } from 'type-fest';
 
@@ -90,9 +91,7 @@ function injectorInitializer(): void {
   const injector = inject(Injector);
   const tstdlInjector = inject(TstdlInjector);
 
-  if (!tstdlInitialized) {
-    wrapInjector(injector, tstdlInjector);
-  }
+  wrapInjector(injector, tstdlInjector);
 
   inject(DestroyRef).onDestroy(() => void tstdlInjector.dispose());
 
@@ -146,6 +145,10 @@ function wrapInjector(injector: Injector, tstdlInjector: TstdlInjector): void {
 
   WrappedR3InjectorRecordsMap.wrap(tstdlInjector, injector as R3Injector);
 
+  if (tstdlInitialized) {
+    return;
+  }
+
   const originalGet = injector.constructor.prototype.get as Injector['get']; // eslint-disable-line @typescript-eslint/no-unsafe-member-access
 
   function tstdlGetWrapper(this: Injector, ...args: Parameters<Injector['get']>): any {
@@ -153,11 +156,11 @@ function wrapInjector(injector: Injector, tstdlInjector: TstdlInjector): void {
       console.trace('TstdlBridgeService: injector get called with args:', args);
     }
 
-    if (isInTstdlInjectionContext()) {
+    const tstdlInjector = originalGet.apply(this, [TstdlInjector, null]) as TstdlInjector | null;
+
+    if (isNull(tstdlInjector)) {
       return originalGet.apply(this, args);
     }
-
-    const tstdlInjector = originalGet.apply(this, [TstdlInjector]) as TstdlInjector;
 
     return runInTstdlInjectionContext(tstdlInjector, () => originalGet.apply(this, args)); // eslint-disable-line @typescript-eslint/no-unsafe-return
   }
