@@ -33,7 +33,7 @@
     "jsondiffpatch": "0.7",
     "luxon": "3.6",
     "marked": "16.0",
-    "ngx-extended-pdf-viewer": "23.3",
+    "ngx-extended-pdf-viewer": "24.0",
     "preact": "10.26",
     "react": "npm:@preact/compat@18.3",
     "react-dom": "npm:@preact/compat@18.3",
@@ -52,11 +52,11 @@
     "angular-eslint": "20.1",
     "eslint": "9",
     "globals": "16",
-    "ng-packagr": "20.0",
+    "ng-packagr": "20.1",
     "source-map-explorer": "2.5",
     "tailwindcss": "3.4",
     "type-fest": "4.37",
-    "typescript-eslint": "8.35",
+    "typescript-eslint": "8.36",
     "typescript": "5.8"
   }
 }

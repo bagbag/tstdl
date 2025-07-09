@@ -54,7 +54,7 @@ export class TstdlBridgeService {
 
     function tstdlGetWrapper(this: R3Injector, ...args: any[]): any {
       if (debug) {
-        console.debug('TstdlBridgeService: injector get called with args:', args);
+        console.trace('TstdlBridgeService: injector get called with args:', args);
       }
 
       if (isInTstdlInjectionContext()) {
