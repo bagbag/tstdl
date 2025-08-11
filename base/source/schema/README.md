@@ -1,0 +1,345 @@
+# Schema Validation and Parsing
+
+A powerful, TypeScript-first schema declaration, validation, and parsing library with deep integration into classes via decorators. This module allows you to define data structures once and get static type safety, runtime validation, and serialization for free.
+
+## Features
+
+- **Type Safety**: Automatically infers TypeScript types from your schemas.
+- **Fluent API**: A simple and chainable API for building complex schemas.
+- **Decorator-Based**: Define schemas directly from your classes, reducing boilerplate and keeping your models as the single source of truth.
+- **Runtime Validation**: Robust validation for any data, from API responses to user input.
+- **Type Coercion**: Optional coercion of data to the correct types (e.g., string to number).
+- **Detailed Error Reporting**: Get precise error messages with paths to invalid data.
+- **Extensible**: Easily create custom schemas and transformations.
+- **OpenAPI Generation**: Convert schemas to OpenAPI v3 schema objects.
+
+## Installation
+
+```bash
+npm install @tstdl/base
+```
+
+## Basic Usage
+
+The core of the library is the `Schema` class and a set of builder functions for creating schema instances.
+
+You can define a schema, then use `Schema.parse()` to validate and parse data. If the data is invalid, it will throw a `SchemaError`.
+
+```typescript
+import { Schema, object, string, number } from '@tstdl/base/schema';
+import { SchemaError } from '@tstdl/base/schema';
+
+const userSchema = object({
+  id: string(),
+  name: string(),
+  age: number({ minimum: 0 }),
+});
+
+// Valid data
+const validUser = {
+  id: 'user-123',
+  name: 'John Doe',
+  age: 30,
+};
+
+try {
+  const parsedUser = Schema.parse(userSchema, validUser);
+  console.log('Validation successful:', parsedUser);
+  // parsedUser is fully typed as { id: string; name: string; age: number; }
+} catch (e) {
+  // This block will not be reached
+}
+
+// Invalid data
+const invalidUser = {
+  id: 'user-123',
+  name: 'Jane Doe',
+  age: -5, //
+};
+
+try {
+  Schema.parse(userSchema, invalidUser);
+} catch (e) {
+  if (e instanceof SchemaError) {
+    console.error('Validation failed!');
+    console.error(e.message); // -> /age: Value must be more than or equal to 0.
+    console.error(e.path); // -> /age
+  }
+}
+```
+
+## Schema Types
+
+### Primitives
+
+The library provides builders for all common primitive types.
+
+- `string(options?)`: validates strings.
+  - `pattern`: A RegExp to match against.
+- `number(options?)`: validates numbers.
+  - `integer`: If `true`, only allows integers.
+  - `minimum`: The minimum allowed value.
+  - `maximum`: The maximum allowed value.
+- `boolean()`: validates booleans.
+- `bigint()`: validates bigints.
+- `date()`: validates `Date` objects.
+- `literal(value)`: validates against an exact literal value.
+- `enumeration(enum)`: validates against a TypeScript enum or a plain object/array of values.
+- `any()`: allows any value.
+- `unknown()`: allows any value (safer alternative to `any`).
+
+```typescript
+import { enumeration, literal, string, number } from '@tstdl/base/schema';
+
+// String with pattern
+const emailSchema = string({ pattern: /^\S+@\S+\.\S+$/ });
+
+// Integer with range
+const portSchema = number({ integer: true, minimum: 1, maximum: 65535 });
+
+// Enum
+enum Role {
+  Admin = 'ADMIN',
+  User = 'USER',
+}
+const roleSchema = enumeration(Role);
+
+// Literal
+const successSchema = literal('ok' as const);
+```
+
+### Composing Schemas
+
+You can combine schemas to build complex data structures.
+
+- `object(properties, options?)`: Defines an object with specific keys and value schemas.
+- `array(itemSchema, options?)`: Defines an array where each element matches `itemSchema`.
+- `union(...schemas)`: Defines a value that can be one of several types.
+- `record(keySchema, valueSchema)`: Defines an object with keys and values matching the provided schemas.
+
+**Example:**
+
+```typescript
+import { array, object, string, number, union } from '@tstdl/base/schema';
+
+const userProfileSchema = object({
+  username: string(),
+  contact: union(object({ type: literal('email'), value: string() }), object({ type: literal('phone'), value: string() })),
+  tags: array(string()),
+});
+
+const data = {
+  username: 'testuser',
+  contact: { type: 'email', value: 'test@example.com' },
+  tags: ['developer', 'typescript'],
+};
+
+const userProfile = Schema.parse(userProfileSchema, data);
+```
+
+### Utility Schemas
+
+- `assign(...schemas)`: Merges multiple object schemas.
+- `pick(schema, keys)`: Creates a new object schema with only the specified keys.
+- `omit(schema, keys)`: Creates a new object schema without the specified keys.
+- `partial(schema, keys?)`: Makes all (or specified) properties of an object schema optional.
+
+**Example:**
+
+```typescript
+import { assign, pick, partial, object, string, number } from '@tstdl/base/schema';
+
+const UserSchema = object({
+  id: string(),
+  name: string(),
+  email: string(),
+  age: number(),
+});
+
+// Create a schema for user creation (id is generated by the server)
+const CreateUserSchema = omit(UserSchema, ['id']);
+
+// Create a schema for user updates (all fields are optional)
+const UpdateUserSchema = partial(UserSchema);
+
+// Create a schema with only name and email
+const UserContactSchema = pick(UserSchema, ['name', 'email']);
+```
+
+### Modifiers
+
+Modifiers wrap other schemas to change their behavior.
+
+- `optional(schema)`: The value can be `undefined`.
+- `nullable(schema)`: The value can be `null`.
+- `defaulted(schema, defaultValue)`: If the value is `null` or `undefined`, the default value is used.
+- `oneOrMany(schema)`: The value can be a single item or an array of items.
+
+```typescript
+import { optional, nullable, defaulted, string, number } from '@tstdl/base/schema';
+
+const schema = object({
+  requiredField: string(),
+  optionalField: optional(string()),
+  nullableField: nullable(string()),
+  fieldWithDefault: defaulted(number(), 0),
+});
+
+Schema.parse(schema, { requiredField: 'hello' });
+// Result: { requiredField: 'hello', optionalField: undefined, nullableField: undefined, fieldWithDefault: 0 }
+```
+
+## Class-based Schemas with Decorators
+
+This is a powerful feature that lets you derive schemas directly from your classes, keeping your models as the single source of truth.
+
+Enable `emitDecoratorMetadata` in your `tsconfig.json`.
+
+```jsonc
+// tsconfig.json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+  },
+}
+```
+
+- `@Class(options?)`: Marks a class as a schema source.
+- `@Property(schema?, options?)`: Marks a class property. The schema is often inferred from TypeScript's type metadata but can be explicitly provided for more complex validation.
+- Shortcut decorators like `@StringProperty`, `@NumberProperty`, `@Enumeration`, `@Array` are available.
+
+**Example:**
+
+```typescript
+import { Class, StringProperty, Enumeration, Array, Property } from '@tstdl/base/schema';
+import { Entity } from '@tstdl/base/orm'; // Base class from the ORM
+
+enum UserRole {
+  StaffMember = 'staff-member',
+  Customer = 'customer',
+}
+
+// Our base Address class
+@Class()
+class Address {
+  @StringProperty()
+  street: string;
+
+  @StringProperty()
+  city: string;
+}
+
+// User class extending an ORM entity
+@Class()
+class User extends Entity {
+  @Enumeration(UserRole)
+  role: UserRole;
+
+  @StringProperty({ nullable: true })
+  firstName: string | null;
+
+  @StringProperty()
+  lastName: string;
+
+  @StringProperty({ pattern: /^\S+@\S+\.\S+$/ })
+  mail: string;
+
+  @Property(Address) // Use another class as a schema for a nested object
+  address: Address;
+}
+
+// Now you can use the class directly as a schema
+const userData = {
+  role: 'customer',
+  firstName: 'John',
+  lastName: 'Doe',
+  mail: 'john.doe@example.com',
+  address: {
+    street: '123 Main St',
+    city: 'Anytown',
+  },
+};
+
+const user = Schema.parse(User, userData);
+console.log(user instanceof User); // true
+console.log(user.address instanceof Address); // true
+```
+
+## Coercion
+
+The library can automatically convert types during parsing if you enable coercion. This is useful for handling data from sources like query parameters or form data, which are always strings.
+
+```typescript
+import { Schema, number } from '@tstdl/base/schema';
+
+const schema = number();
+
+// Without coercion, this will fail
+try {
+  Schema.parse(schema, '123');
+} catch (e) {
+  console.log(e.message); // -> /: Expected number but got string.
+}
+
+// With coercion, it works
+const value = Schema.parse(schema, '123', { coerce: true });
+console.log(value); // 123 (as a number)
+```
+
+## OpenAPI Generation
+
+You can generate OpenAPI v3 compatible schemas from your schema definitions, which is useful for documenting your APIs.
+
+```typescript
+import { convertToOpenApiSchema } from '@tstdl/base/schema/converters';
+import { object, string, number, enumeration } from '@tstdl/base/schema';
+
+enum Role {
+  Admin = 'ADMIN',
+  User = 'USER',
+}
+
+const userSchema = object({
+  id: string({ description: 'The user ID' }),
+  username: string(),
+  role: enumeration(Role),
+  age: number({ optional: true, minimum: 18 }),
+});
+
+const openApiSchema = convertToOpenApiSchema(userSchema);
+
+console.log(JSON.stringify(openApiSchema, null, 2));
+```
+
+**Output:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "nullable": false,
+      "description": "The user ID"
+    },
+    "username": {
+      "type": "string",
+      "nullable": false
+    },
+    "role": {
+      "type": "string",
+      "format": "enum",
+      "enum": ["ADMIN", "USER"],
+      "nullable": false
+    },
+    "age": {
+      "type": "number",
+      "minimum": 18,
+      "nullable": false
+    }
+  },
+  "required": ["id", "username", "role"],
+  "nullable": false
+}
+```
