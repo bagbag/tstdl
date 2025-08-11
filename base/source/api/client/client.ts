@@ -31,7 +31,7 @@ export type ApiClientHttpRequestContext = {
   endpoint: ApiEndpointDefinition,
 };
 
-export const httpClientSymbol = Symbol('ApiTransport');
+export const httpClientSymbol = Symbol('HttpClient for ApiClient');
 export const apiDefinitionSymbol = Symbol('ApiDefinition');
 
 export const defaultOptions: ClientOptions = {};

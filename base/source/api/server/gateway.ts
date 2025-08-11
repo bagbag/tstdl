@@ -84,10 +84,6 @@ export type ApiMetadata = {
   patternResult: URLPatternResult,
 };
 
-/**
- * router for {@link ApiTransport} requests to {@link ApiImplementation}
- * @todo error handling (standardized format, serialization etc.)
- */
 @Singleton({
   defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions,
 })

@@ -21,7 +21,23 @@ const config = {
   includeVersion: true,
   out: 'dist/docs',
   entryPoints,
+
   excludeExternals: true,
+
+  /* format */
+  enumMembersFormat: 'table',
+  parametersFormat: 'table',
+  propertiesFormat: 'table',
+  typeDeclarationFormat: 'table',
+  indexFormat: 'table',
+
+  /* reduce output */
+  hideBreadcrumbs: true,
+  hidePageTitle: true,
+  hidePageHeader: true,
+  hideGenerator: true,
+  disableSources: true,
+
   exclude: [
     'dist',
   ],
