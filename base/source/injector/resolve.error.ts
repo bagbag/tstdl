@@ -9,7 +9,7 @@ export class ResolveError extends CustomError {
     super({
       message: `${message}${causeMessage}\n  chain: ${chain.format(15)}`,
       cause,
-      stack: cause?.stack
+      stack: cause?.stack,
     });
   }
 }

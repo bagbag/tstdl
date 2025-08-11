@@ -66,7 +66,10 @@ export type GlobalRegistration<T = any, A = any> = {
 };
 
 export type Registration<T = any, A = any> = GlobalRegistration<T, A> & {
-  resolutions: Map<any, T>, // <argumentIdentity, T>
+  /**
+   * A map associating argument identities to their resolved instances of type `T`.
+   */
+  resolutions: Map<any, T>,
 };
 
 export type GetRegistrationOptions = {
@@ -162,6 +165,12 @@ export class Injector implements AsyncDisposable {
     await this.dispose();
   }
 
+  /**
+   * Creates a new child `Injector` instance with the specified name.
+   *
+   * @param name - The name to assign to the child injector.
+   * @returns The newly created child `Injector` instance.
+   */
   fork(name: string): Injector {
     const child = new Injector(name, this);
 

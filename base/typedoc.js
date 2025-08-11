@@ -17,14 +17,14 @@ const entryPoints = Object.entries(packageJson.exports)
 const config = {
   $schema: 'https://typedoc.org/schema.json',
   readme: 'README.md',
-  plugin: ['typedoc-plugin-missing-exports'],
+  plugin: ['typedoc-plugin-missing-exports', 'typedoc-plugin-markdown', 'typedoc-github-wiki-theme'],
   includeVersion: true,
   out: 'dist/docs',
   entryPoints,
   excludeExternals: true,
   exclude: [
-    'dist'
-  ]
+    'dist',
+  ],
 };
 
 export default config;

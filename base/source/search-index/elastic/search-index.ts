@@ -22,7 +22,7 @@ type CursorData<T extends Entity = Entity> = {
   query: estypes.QueryDslQueryContainer,
   sort: SortCombinations<T>[] | undefined,
   options?: QueryOptions<T>,
-  searchAfter: estypes.SortResults
+  searchAfter: estypes.SortResults,
 };
 
 export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> implements AfterResolve {
@@ -54,7 +54,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     const exists = await this.exists();
 
     if (!exists) {
-      await this.client.indices.create({ index: this.indexName, mappings: this.indexMapping, settings: this.indexSettings });
+      await this.client.indices.create({ index: this.indexName, mappings: this.indexMapping as estypes.MappingTypeMapping, settings: this.indexSettings });
       this.logger.info(`created index ${this.indexName}`);
     }
   }
@@ -73,7 +73,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     this.logger.info(`updated settings for index ${this.indexName}`);
 
     this.logger.info(`updating mapping for index ${this.indexName}`);
-    await this.client.indices.putMapping({ index: this.indexName, ...this.indexMapping });
+    await this.client.indices.putMapping({ index: this.indexName, ...(this.indexMapping as estypes.MappingTypeMapping) });
     this.logger.info(`updated mapping for index ${this.indexName}`);
 
     this.logger.info(`reopening index ${this.indexName}`);
@@ -92,7 +92,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
       operations: entities.flatMap((entity) => {
         const { id: _, ...entityWithoutId } = entity;
         return [{ index: { _id: entity.id } }, entityWithoutId];
-      })
+      }),
     };
 
     const result = await this.client.bulk(request);
@@ -122,7 +122,6 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
     await this.client.deleteByQuery({ index: this.indexName, query: queryBody });
   }
 
-  // eslint-disable-next-line max-statements
   async search(searchQueryOrCursor: Query<T> | string, options?: QueryOptions<T>): Promise<SearchResult<T>> {
     const cursorData = isString(searchQueryOrCursor) ? deserializeCursor(searchQueryOrCursor) : undefined;
     const queryBody = isDefined(cursorData) ? cursorData.query : convertQuery(searchQueryOrCursor as Query<T>);
@@ -163,7 +162,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
 
     const result = await this.client.count({
       index: this.indexName,
-      query: convertQuery(query ?? {})
+      query: convertQuery(query ?? {}),
     });
 
     return result.count;
@@ -180,7 +179,7 @@ export class ElasticSearchIndex<T extends Entity> extends SearchIndex<T> impleme
   }
 
   async exists(): Promise<boolean> {
-    return this.client.indices.exists({ index: this.indexName });
+    return await this.client.indices.exists({ index: this.indexName });
   }
 }
 

@@ -7,7 +7,7 @@ export type AsyncMiddlewareNext = () => void | Promise<void>;
 export type AsyncMiddleware<Context = unknown> = (context: Context, next: AsyncMiddlewareNext) => void | Promise<void>;
 
 export type MiddlewareOptions = {
-  allowMultipleNextCalls?: boolean
+  allowMultipleNextCalls?: boolean,
 };
 
 export function composeMiddleware<Context = unknown>(middlewares: Middleware<Context>[], options: MiddlewareOptions = {}): ComposedMiddleware<Context> {
@@ -56,13 +56,13 @@ export function composeAsyncMiddleware<Context>(middlewares: AsyncMiddleware<Con
           throw new Error('next() called multiple times');
         }
 
-        return dispatch(index + 1);
+        await dispatch(index + 1);
       }
 
-      return middleware(context, next); // eslint-disable-line consistent-return
+      await middleware(context, next);
     }
 
-    return dispatch(0);
+    await dispatch(0);
   }
 
   return composedMiddleware;

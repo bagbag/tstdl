@@ -92,7 +92,7 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
     }
 
     if (isDefined(options.sort)) {
-      items.sort(compareByValueSelectionOrdered(...options.sort.map((sort) => [(item: T) => item[sort.field as keyof T], sort.order == 'desc' ? -1 : 1] as const)));
+      items.sort(compareByValueSelectionOrdered(...options.sort.map((sort) => [(item: T) => item[sort.field as keyof T] as string | number, sort.order == 'desc' ? -1 : 1] as const)));
     }
 
     if (isDefined(options.skip) || isDefined(options.limit)) {
@@ -107,13 +107,13 @@ export class MemorySearchIndex<T extends Entity> extends SearchIndex<T> {
       total: resultItems.length,
       totalIsLowerBound: false,
       milliseconds: timer.milliseconds,
-      items: resultItems
+      items: resultItems,
     };
 
     return result;
   }
 
-  async count(query?: Query<T>, options?: QueryOptions<T> | undefined): Promise<number> {
+  async count(query?: Query<T>, options?: QueryOptions<T>): Promise<number> {
     const items = await this.searchAll(query ?? {}, options);
     return items.length;
   }

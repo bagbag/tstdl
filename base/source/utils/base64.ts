@@ -47,7 +47,7 @@ export function decodeBase64Url(base64Url: string): Uint8Array {
 
 export function base64ToBase64Url(input: string): string {
   return input
-    .replace(/=/ug, '') // eslint-disable-line no-div-regex
+    .replace(/=/ug, '')
     .replace(/\+/ug, '-')
     .replace(/\//ug, '_');
 }
@@ -127,7 +127,6 @@ export function utf8ArrayToString(bytes: Uint8Array): string {
   return string;
 }
 
-// eslint-disable-next-line max-lines-per-function, max-statements
 export function stringToUtf8Array(string: string): Uint8Array {
   let bytesLength = 0;
 

@@ -1,5 +1,5 @@
 /**
- * Dependency Injection
+ * {@include ./README.md}
  *
  * @module Injector
  */

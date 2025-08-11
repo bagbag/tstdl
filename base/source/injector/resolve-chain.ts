@@ -6,7 +6,7 @@ import { getTokenName } from './token.js';
 
 export type ResolveChainNodeBase<Type extends string> = {
   type: Type,
-  forwardRef?: true
+  forwardRef?: true,
 };
 
 export type ResolveChainNode =
@@ -22,7 +22,7 @@ export class ResolveChain {
     return this.nodes.length;
   }
 
-  /** @deprecated internal */
+  /** @deprecated for internal use only */
   constructor(nodes: ResolveChainNode[]) {
     this.nodes = nodes;
   }

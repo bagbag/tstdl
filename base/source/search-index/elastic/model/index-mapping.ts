@@ -7,14 +7,14 @@ import { mergeObjects } from '#/utils/object/merge.js';
 export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<estypes.MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;
 
 export type ElasticNestedIndexMapping<T> = {
-  properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> }
+  properties: { [P in keyof Required<T>]: ElasticIndexMappingItem<DeepFlatten<Required<T>[P]>> },
 };
 
 type StrippedBaseType<T extends estypes.MappingPropertyBase> = TypedOmit<T, 'properties' | 'fields'>;
 
 type ElasticIndexMappingItemBase = {
   index?: boolean,
-  fields?: StringMap<ElasticIndexMappingItem>
+  fields?: StringMap<ElasticIndexMappingItem>,
 };
 
 export type MappingNumberProperty =

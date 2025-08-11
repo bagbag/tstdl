@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.145",
+  "version": "0.92.146",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -139,16 +139,16 @@
   "dependencies": {
     "disposablestack": "^1.1",
     "jsondiffpatch": "^0.7",
-    "luxon": "^3.6",
+    "luxon": "^3.7",
     "reflect-metadata": "^0.2",
     "rxjs": "^7.8",
-    "ts-pattern": "^5.7",
+    "ts-pattern": "^5.8",
     "type-fest": "4.37"
   },
   "peerDependencies": {
-    "@elastic/elasticsearch": "^9.0",
-    "@google-cloud/storage": "7.16",
-    "@google/genai": "^1.7",
+    "@elastic/elasticsearch": "^9.1",
+    "@google-cloud/storage": "^7.16",
+    "@google/genai": "^1.13",
     "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
@@ -160,14 +160,14 @@
     "handlebars": "^4.7",
     "minio": "^8.0",
     "mjml": "^4.15",
-    "mongodb": "^6.17",
+    "mongodb": "^6.18",
     "nodemailer": "^7.0",
     "pg": "^8.16",
-    "playwright": "^1.53",
-    "preact": "^10.26",
+    "playwright": "^1.54",
+    "preact": "^10.27",
     "preact-render-to-string": "^6.5",
     "sharp": "^0.34",
-    "undici": "^7.11",
+    "undici": "^7.13",
     "urlpattern-polyfill": "^10.1"
   },
   "peerDependenciesMeta": {
@@ -176,10 +176,10 @@
     }
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "5.0",
+    "@stylistic/eslint-plugin": "5.2",
     "@types/chroma-js": "2.4",
     "@types/koa__router": "12.0",
-    "@types/luxon": "3.6",
+    "@types/luxon": "3.7",
     "@types/minio": "7.1",
     "@types/mjml": "4.7",
     "@types/node": "24",
@@ -187,12 +187,14 @@
     "@types/pg": "8.15",
     "concurrently": "9.2",
     "drizzle-kit": "0.31",
-    "eslint": "9.29",
-    "globals": "16.2",
+    "eslint": "9.33",
+    "globals": "16.3",
     "tsc-alias": "1.8",
-    "typedoc-plugin-missing-exports": "4.0",
+    "typedoc-github-wiki-theme": "2.1",
+    "typedoc-plugin-markdown": "4.8",
+    "typedoc-plugin-missing-exports": "4.1",
     "typescript": "5.8",
-    "typescript-eslint": "8.35"
+    "typescript-eslint": "8.39"
   },
   "overrides": {
     "drizzle-kit": {

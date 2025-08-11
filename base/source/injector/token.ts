@@ -34,6 +34,13 @@ export class ReifyingInjectionToken<T = any, A = any> {
   }
 }
 
+/**
+ * Creates a new injection token.
+ *
+ * @template T The type that will be provided by the token.
+ * @template A Optional type for additional arguments.
+ * @param description A string describing the purpose of the injection token.
+ */
 export function injectionToken<T, A = never>(description: string): InjectionToken<T, A> {
   return new ReifyingInjectionToken<T, A>(description);
 }

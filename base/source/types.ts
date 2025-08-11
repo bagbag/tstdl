@@ -154,6 +154,7 @@ export type PickBy<T, V> = Pick<T, { [K in keyof T]: V extends Extract<T[K], V> 
 export type NonNullable<T> = T extends null ? never : T;
 export type NonUndefinable<T> = T extends undefined ? never : T;
 export type NonNullOrUndefinable<T> = T extends null | undefined ? never : T;
+export type NoUnion<T> = [T] extends [boolean] ? boolean : [T] extends [UnionToIntersection<T>] ? T : never;
 
 /**
  * Makes optional properties required and removes null and undefined
