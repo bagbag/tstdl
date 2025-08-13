@@ -9,15 +9,36 @@ import { isDefined } from '#/utils/type-guards.js';
 import { AuthenticationAncillaryService } from './authentication-ancillary.service.js';
 import { AuthenticationService, AuthenticationServiceOptions } from './authentication.service.js';
 
+/**
+ * Configuration for {@link configureAuthenticationServer}.
+ */
 export class AuthenticationModuleConfig {
+  /**
+   * Database configuration for authentication module.
+   * If not provided, the global database configuration is used.
+   */
   database?: DatabaseConfig;
+
+  /**
+   * Options for {@link AuthenticationService}.
+   */
   serviceOptions?: AuthenticationServiceOptions | Provider<AuthenticationServiceOptions>;
 
-  /** override default AuthenticationService */
+  /**
+   * Override default {@link AuthenticationService}.
+   */
   authenticationService?: InjectionToken<AuthenticationService<any, any, any>>;
+
+  /**
+   * Override default {@link AuthenticationAncillaryService}.
+   */
   authenticationAncillaryService?: InjectionToken<AuthenticationAncillaryService<any, any, any>>;
 }
 
+/**
+ * Configures authentication server services.
+ * @param config Configuration.
+ */
 export function configureAuthenticationServer(config: AuthenticationModuleConfig): void {
   Injector.register(AuthenticationModuleConfig, { useValue: config });
 
@@ -37,6 +58,9 @@ export function configureAuthenticationServer(config: AuthenticationModuleConfig
   }
 }
 
+/**
+ * Migrates the authentication schema.
+ */
 export async function migrateAuthenticationSchema(): Promise<void> {
   const connection = inject(AuthenticationModuleConfig, undefined, { optional: true })?.database?.connection;
   const database = inject(Database, connection);

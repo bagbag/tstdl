@@ -48,7 +48,7 @@ This library is composed of numerous modules, each providing a specific set of f
 
 ### Validation & Serialization
 
--   **Schema**: A powerful, type-safe schema definition, validation, and parsing library (inspired by Zod) with deep integration into classes via decorators and OpenAPI generation.
+-   **Schema**: A powerful, type-safe schema definition, validation, and parsing library with deep integration into classes via decorators and OpenAPI generation.
 -   **Serializer**: A serialization framework for complex objects with cycle detection and support for custom types.
 -   **JSON Path**: A utility for querying JSON objects using JSONPath syntax.
 

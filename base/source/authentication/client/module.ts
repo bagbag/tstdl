@@ -9,12 +9,33 @@ import { AuthenticationClientService } from './authentication.service.js';
 import { waitForAuthenticationCredentialsMiddleware } from './http-client.middleware.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
 
+/**
+ * Configuration for {@link configureAuthenticationClient}
+ */
 export type AuthenticationClientModuleConfig = {
+  /**
+   * Optional custom authentication api client
+   */
   authenticationApiClient?: Type<ApiClientImplementation<AuthenticationApiDefinition<any, any, any>>>,
+
+  /**
+   * Optional initial authentication data
+   */
   initialAuthenticationData?: unknown,
-  registerMiddleware?: boolean
+
+  /**
+   * Whether to register the {@link waitForAuthenticationCredentialsMiddleware} for all http clients.
+   *
+   * @default false
+   */
+  registerMiddleware?: boolean,
 };
 
+/**
+ * Configures authentication client services.
+ * @param config Configuration
+ * @param injector The injector to use. If not provided, the current injector is used.
+ */
 export function configureAuthenticationClient(config: AuthenticationClientModuleConfig, injector = getCurrentInjector()): void {
   if (isDefined(config.authenticationApiClient)) {
     (injector ?? Injector).registerSingleton(AUTHENTICATION_API_CLIENT, { useToken: config.authenticationApiClient });
@@ -29,7 +50,7 @@ export function configureAuthenticationClient(config: AuthenticationClientModule
       useFactory(_, context) {
         const authenticationService = context.resolve(AuthenticationClientService, undefined, { forwardRef: true, forwardRefTypeHint: 'object' });
         return waitForAuthenticationCredentialsMiddleware(authenticationService);
-      }
+      },
     }, { multi: true });
   }
 }

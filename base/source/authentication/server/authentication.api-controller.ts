@@ -17,6 +17,13 @@ import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 const cookieBaseOptions: TypedOmit<SetCookieObject, 'value'> = { path: '/', httpOnly: true, secure: true, sameSite: 'strict' } satisfies SetCookieOptions;
 const deleteCookie = { value: '', ...cookieBaseOptions, maxAge: -1 } satisfies SetCookieObject;
 
+/**
+ * API controller for authentication.
+ *
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ */
 @apiController(authenticationApiDefinition)
 export class AuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData = void> implements ApiController<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>> {
   readonly authenticationService: AuthenticationService<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>;
@@ -25,6 +32,12 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     this.authenticationService = authenticationService;
   }
 
+  /**
+   * Get a token for a subject and secret.
+   * @param parameters The parameters for the request.
+   * @returns The token result.
+   * @throws {InvalidCredentialsError} If the credentials are invalid.
+   */
   async getToken({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'>> {
     const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
 
@@ -37,6 +50,12 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     return this.getTokenResponse(result);
   }
 
+  /**
+   * Refresh a token.
+   * @param request The request context.
+   * @param parameters The parameters for the request.
+   * @returns The token result.
+   */
   async refresh({ request, parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'refresh'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'refresh'>> {
     const refreshTokenString = tryGetAuthorizationTokenStringFromRequest(request, 'refreshToken') ?? '';
     const result = await this.authenticationService.refresh(refreshTokenString, parameters.data);
@@ -44,6 +63,12 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     return this.getTokenResponse(result);
   }
 
+  /**
+   * Impersonate a subject.
+   * @param request The request context.
+   * @param parameters The parameters for the request.
+   * @returns The token result.
+   */
   async impersonate({ request, parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'impersonate'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'impersonate'>> {
     const tokenString = tryGetAuthorizationTokenStringFromRequest(request) ?? '';
     const refreshTokenString = tryGetAuthorizationTokenStringFromRequest(request, 'refreshToken') ?? '';
@@ -53,6 +78,12 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     return this.getTokenResponse(impersonatorResult);
   }
 
+  /**
+   * Unimpersonate a subject.
+   * @param request The request context.
+   * @param parameters The parameters for the request.
+   * @returns The token result.
+   */
   async unimpersonate({ request, parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'unimpersonate'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'unimpersonate'>> {
     const impersonatorRefreshTokenString = tryGetAuthorizationTokenStringFromRequest(request, 'impersonatorRefreshToken') ?? '';
     const result = await this.authenticationService.refresh(impersonatorRefreshTokenString, parameters.data, { omitImpersonator: true });
@@ -60,6 +91,11 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     return this.getTokenResponse(result);
   }
 
+  /**
+   * End a session.
+   * @param request The request context.
+   * @returns 'ok' if the session was ended.
+   */
   async endSession({ request }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'endSession'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'endSession'>> {
     let sessionId: string | undefined;
 
@@ -95,20 +131,39 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     });
   }
 
+  /**
+   * Initialize a secret reset.
+   * @param parameters The parameters for the request.
+   * @returns 'ok' if the secret reset was initialized.
+   */
   async initSecretReset({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'initSecretReset'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'initSecretReset'>> {
     await this.authenticationService.initSecretReset(parameters.subject, parameters.data);
     return 'ok';
   }
 
+  /**
+   * Reset a secret.
+   * @param parameters The parameters for the request.
+   * @returns 'ok' if the secret was reset.
+   */
   async resetSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'resetSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'resetSecret'>> {
     await this.authenticationService.resetSecret(parameters.token, parameters.newSecret);
     return 'ok';
   }
 
+  /**
+   * Check a secret.
+   * @param parameters The parameters for the request.
+   * @returns The result of the secret check.
+   */
   async checkSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'checkSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'checkSecret'>> {
     return await this.authenticationService.checkSecret(parameters.secret);
   }
 
+  /**
+   * Get the current server timestamp.
+   * @returns The current server timestamp.
+   */
   timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'timestamp'> {
     return currentTimestamp();
   }
@@ -150,6 +205,16 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
   }
 }
 
+/**
+ * Get an authentication API controller.
+ * @param additionalTokenPayloadSchema Schema for additional token payload.
+ * @param authenticationDataSchema Schema for additional authentication data.
+ * @param additionalInitSecretResetData Schema for additional secret reset data.
+ * @returns An authentication API controller.
+ * @template AdditionalTokenPayload Type of additional token payload.
+ * @template AuthenticationData Type of additional authentication data.
+ * @template AdditionalInitSecretResetData Type of additional secret reset data.
+ */
 export function getAuthenticationApiController<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData = void>( // eslint-disable-line @typescript-eslint/explicit-function-return-type
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,

@@ -6,10 +6,14 @@ import { cacheValueOrAsyncProvider, type ValueOrAsyncProvider } from '#/utils/va
 import { dontWaitForValidToken } from '../authentication.api.js';
 import type { AuthenticationClientService } from './authentication.service.js';
 
+/**
+ * A http client middleware that waits for a valid token before sending a request if the endpoint requires credentials.
+ * @param authenticationServiceOrProvider The authentication service or a provider for it.
+ * @returns A http client middleware.
+ */
 export function waitForAuthenticationCredentialsMiddleware(authenticationServiceOrProvider: ValueOrAsyncProvider<AuthenticationClientService>): HttpClientMiddleware {
   const getAuthenticationService = cacheValueOrAsyncProvider(authenticationServiceOrProvider);
 
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   async function waitForAuthenticationCredentialsMiddleware({ request }: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext): Promise<void> {
     const endpoint = (request.context as Partial<ApiClientHttpRequestContext> | undefined)?.endpoint;
 
@@ -21,7 +25,7 @@ export function waitForAuthenticationCredentialsMiddleware(authenticationService
       }
     }
 
-    return next();
+    await next();
   }
 
   return waitForAuthenticationCredentialsMiddleware;

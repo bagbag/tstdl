@@ -23,23 +23,47 @@ import { AuthenticationSecretRequirementsValidator, type SecretTestResult } from
 import { getRefreshTokenFromString, getSecretResetTokenFromString, getTokenFromString } from './helper.js';
 import { AuthenticationModuleConfig } from './module.js';
 
+/**
+ * Data for creating a token.
+ *
+ * @param AdditionalTokenPayload Type of additional token payload
+ */
 export type CreateTokenData<AdditionalTokenPayload extends Record> = {
+  /** Token version, forces refresh on mismatch (useful if payload changes) */
   tokenVersion?: number,
+
+  /** Custom token id */
   jwtId?: string,
+
+  /** Custom issued at timestamp */
   issuedAt?: number,
+
+  /** Custom expiration timestamp */
   expiration?: number,
+
+  /** Additional token payload */
   additionalTokenPayload: AdditionalTokenPayload,
+
+  /** Subject of the token */
   subject: string,
+
+  /** Session id */
   sessionId: string,
+
+  /** Impersonator subject */
   impersonator: string | undefined,
+
+  /** Refresh token expiration timestamp */
   refreshTokenExpiration: number,
+
+  /** Timestamp for issued at and expiration calculation */
   timestamp?: number,
 };
 
 export class AuthenticationServiceOptions {
   /**
-   * Secrets used for signing tokens and refreshTokens
-   * If single secret is provided, multiple secrets are derived internally
+   * Secrets used for signing tokens and refreshTokens.
+   * If single secret is provided, multiple secrets are derived internally.
    */
   secret: string | BinaryData | {
     tokenSigningSecret: Uint8Array,
@@ -47,23 +71,47 @@ export class AuthenticationServiceOptions {
     secretResetTokenSigningSecret: Uint8Array,
   };
 
-  /** Token version, forces refresh on mismatch (useful if payload changes) */
+  /**
+   * Token version, forces refresh on mismatch (useful if payload changes).
+   *
+   * @default 1
+   */
   version?: number;
 
-  /** How long a token is valid */
+  /**
+   * How long a token is valid in milliseconds.
+   *
+   * @default 5 minutes
+   */
   tokenTimeToLive?: number;
 
-  /** How long a refresh token is valid. Implies session time to live. */
+  /**
+   * How long a refresh token is valid in milliseconds. Implies session time to live.
+   *
+   * @default 5 days
+   */
   refreshTokenTimeToLive?: number;
 
-  /** How long a secret reset token is valid. */
+  /**
+   * How long a secret reset token is valid in milliseconds.
+   *
+   * @default 10 minutes
+   */
   secretResetTokenTimeToLive?: number;
 }
 
+/**
+ * Result of an authentication attempt.
+ */
 export type AuthenticationResult =
   | { success: true, subject: string }
   | { success: false, subject?: undefined };
 
+/**
+ * Result of a token creation.
+ *
+ * @param AdditionalTokenPayload Type of additional token payload
+ */
 export type TokenResult<AdditionalTokenPayload extends Record> = {
   token: string,
   jsonToken: Token<AdditionalTokenPayload>,
@@ -74,10 +122,18 @@ export type TokenResult<AdditionalTokenPayload extends Record> = {
 };
 
 export type SetCredentialsOptions = {
-  /** skip validation for password strength */
+  /**
+   * Skip validation for password strength.
+   *
+   * @default false
+   */
   skipValidation?: boolean,
 
-  /** skip session invalidation */
+  /**
+   * Skip session invalidation.
+   *
+   * @default false
+   */
   skipSessionInvalidation?: boolean,
 };
 
@@ -104,6 +160,23 @@ type AuthenticationKeyValueStore = {
 
 const SIGNING_SECRETS_LENGTH = 64;
 
+/**
+ * Handles authentication on server side.
+ *
+ * Can be used to:
+ * - Set credentials
+ * - Authenticate
+ * - Get token
+ * - End session
+ * - Refresh token
+ * - Impersonate/unimpersonate
+ * - Reset secret
+ * - Check secret
+ *
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ */
 @Singleton({
   providers: [
     provide(EntityRepositoryConfig, { useValue: { schema: 'authentication' } }),
@@ -128,10 +201,17 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   private derivedRefreshTokenSigningSecret: Uint8Array;
   private derivedSecretResetTokenSigningSecret: Uint8Array;
 
+  /** @internal */
   async [afterResolve](): Promise<void> {
     await this.initialize();
   }
 
+  /**
+   * Initializes the service.
+   * Derives signing secrets if necessary.
+   *
+   * @internal
+   */
   async initialize(): Promise<void> {
     if (isString(this.#options.secret) || isBinaryData(this.#options.secret)) {
       await this.deriveSigningSecrets(this.#options.secret);
@@ -143,6 +223,13 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     }
   }
 
+  /**
+   * Sets the credentials for a subject.
+   * This method should not be exposed to the public API without a secret reset token check.
+   * @param subject The subject to set the credentials for.
+   * @param secret The secret to set.
+   * @param options Options for setting the credentials.
+   */
   async setCredentials(subject: string, secret: string, options?: SetCredentialsOptions): Promise<void> {
     // We do not need to avoid information leakage here, as this is a non-public method that is only called by a public api if the secret reset token is valid.
     const actualSubject = await this.resolveSubject(subject);
@@ -168,6 +255,12 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     });
   }
 
+  /**
+   * Authenticates a subject with a secret.
+   * @param subject The subject to authenticate.
+   * @param secret The secret to authenticate with.
+   * @returns The result of the authentication.
+   */
   async authenticate(subject: string, secret: string): Promise<AuthenticationResult> {
     const actualSubject = await this.tryResolveSubject(subject) ?? subject;
 
@@ -187,6 +280,13 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { success: false };
   }
 
+  /**
+   * Gets a token for a subject.
+   * @param subject The subject to get the token for.
+   * @param authenticationData Additional authentication data.
+   * @param options Options for getting the token.
+   * @returns The token result.
+   */
   async getToken(subject: string, authenticationData: AuthenticationData, { impersonator }: { impersonator?: string } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
     const actualSubject = await this.resolveSubject(subject);
     const now = currentTimestamp();
@@ -217,11 +317,23 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     });
   }
 
+  /**
+   * Ends a session.
+   * @param sessionId The id of the session to end.
+   */
   async endSession(sessionId: string): Promise<void> {
     const now = currentTimestamp();
     await this.#sessionRepository.update(sessionId, { end: now });
   }
 
+  /**
+   * Refreshes a token.
+   * @param refreshToken The refresh token to use.
+   * @param authenticationData Additional authentication data.
+   * @param options Options for refreshing the token.
+   * @returns The token result.
+   * @throws {InvalidTokenError} If the refresh token is invalid.
+   */
   async refresh(refreshToken: string, authenticationData: AuthenticationData, { omitImpersonator = false }: { omitImpersonator?: boolean } = {}): Promise<TokenResult<AdditionalTokenPayload>> {
     const validatedRefreshToken = await this.validateRefreshToken(refreshToken);
     const sessionId = validatedRefreshToken.payload.sessionId;
@@ -254,6 +366,15 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { token, jsonToken, refreshToken: newRefreshToken.token, omitImpersonatorRefreshToken: omitImpersonator };
   }
 
+  /**
+   * Impersonates a subject.
+   * @param impersonatorRoken The token of the impersonator.
+   * @param impersonatorRefreshToken The refresh token of the impersonator.
+   * @param subject The subject to impersonate.
+   * @param authenticationData Additional authentication data.
+   * @returns The token result.
+   * @throws {ForbiddenError} If impersonation is not allowed.
+   */
   async impersonate(impersonatorRoken: string, impersonatorRefreshToken: string, subject: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
     const validatedImpersonatorRoken = await this.validateToken(impersonatorRoken);
     const validatedImpersonatorRefreshToken = await this.validateRefreshToken(impersonatorRefreshToken);
@@ -273,10 +394,22 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     };
   }
 
+  /**
+   * Unimpersonates a subject.
+   * @param impersonatorRefreshToken The refresh token of the impersonator.
+   * @param authenticationData Additional authentication data.
+   * @returns The token result.
+   */
   async unimpersonate(impersonatorRefreshToken: string, authenticationData: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
     return await this.refresh(impersonatorRefreshToken, authenticationData, { omitImpersonator: true });
   }
 
+  /**
+   * Initializes a secret reset.
+   * @param subject The subject to reset the secret for.
+   * @param data Additional data for the secret reset.
+   * @throws {NotImplementedError} If no ancillary service is registered.
+   */
   async initSecretReset(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
     if (isUndefined(this.#authenticationAncillaryService)) {
       throw new NotImplementedError();
@@ -306,35 +439,80 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     await this.#authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
   }
 
+  /**
+   * Resets a secret.
+   * @param tokenString The secret reset token.
+   * @param newSecret The new secret.
+   * @throws {InvalidTokenError} If the token is invalid.
+   */
   async resetSecret(tokenString: string, newSecret: string): Promise<void> {
     const token = await this.validateSecretResetToken(tokenString);
     await this.setCredentials(token.payload.subject, newSecret);
   }
 
+  /**
+   * Checks a secret against the requirements.
+   * @param secret The secret to check.
+   * @returns The result of the check.
+   */
   async checkSecret(secret: string): Promise<SecretCheckResult> {
     return await this.#authenticationSecretRequirementsValidator.checkSecretRequirements(secret);
   }
 
+  /**
+   * Tests a secret against the requirements.
+   * @param secret The secret to test.
+   * @returns The result of the test.
+   */
   async testSecret(secret: string): Promise<SecretTestResult> {
     return await this.#authenticationSecretRequirementsValidator.testSecretRequirements(secret);
   }
 
+  /**
+   * Validates a secret against the requirements. Throws an error if the requirements are not met.
+   * @param secret The secret to validate.
+   * @throws {SecretRequirementsError} If the secret does not meet the requirements.
+   */
   async validateSecret(secret: string): Promise<void> {
     await this.#authenticationSecretRequirementsValidator.validateSecretRequirements(secret);
   }
 
+  /**
+   * Validates a token.
+   * @param token The token to validate.
+   * @returns The validated token.
+   * @throws {InvalidTokenError} If the token is invalid.
+   */
   async validateToken(token: string): Promise<Token<AdditionalTokenPayload>> {
     return await getTokenFromString(token, this.tokenVersion, this.derivedTokenSigningSecret);
   }
 
+  /**
+   * Validates a refresh token.
+   * @param token The refresh token to validate.
+   * @returns The validated refresh token.
+   * @throws {InvalidTokenError} If the refresh token is invalid.
+   */
   async validateRefreshToken(token: string): Promise<RefreshToken> {
     return await getRefreshTokenFromString(token, this.derivedRefreshTokenSigningSecret);
   }
 
+  /**
+   * Validates a secret reset token.
+   * @param token The secret reset token to validate.
+   * @returns The validated secret reset token.
+   * @throws {InvalidTokenError} If the secret reset token is invalid.
+   */
   async validateSecretResetToken(token: string): Promise<SecretResetToken> {
     return await getSecretResetTokenFromString(token, this.derivedSecretResetTokenSigningSecret);
   }
 
+  /**
+   * Tries to resolve a subject.
+   * This method is safe to use in public facing APIs as it does not leak information about the existence of a subject.
+   * @param subject The subject to resolve.
+   * @returns The resolved subject or undefined if the subject could not be resolved.
+   */
   async tryResolveSubject(subject: string): Promise<string | undefined> {
     if (isUndefined(this.#authenticationAncillaryService)) {
       return subject;
@@ -370,7 +548,11 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     throw new NotFoundError(`Subject not found.`);
   }
 
-  /** Creates a token without session or refresh token and is not saved in database */
+  /**
+   * Creates a token without session or refresh token and is not saved in database.
+   * @param data Data for creating the token.
+   * @returns The created token.
+   */
   async createToken({ tokenVersion, jwtId, issuedAt, expiration, additionalTokenPayload, subject, sessionId, refreshTokenExpiration, impersonator: impersonatedBy, timestamp = currentTimestamp() }: CreateTokenData<AdditionalTokenPayload>): Promise<CreateTokenResult<AdditionalTokenPayload>> {
     const header: Token<AdditionalTokenPayload>['header'] = {
       v: tokenVersion ?? this.tokenVersion,
@@ -399,7 +581,14 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { token, jsonToken };
   }
 
-  /** Creates a refresh token without session or something else. */
+  /**
+   * Creates a refresh token without session and is not saved in database.
+   * @param subject The subject of the refresh token.
+   * @param sessionId The session id of the refresh token.
+   * @param expirationTimestamp The expiration timestamp of the refresh token.
+   * @param options Options for creating the refresh token.
+   * @returns The created refresh token.
+   */
   async createRefreshToken(subject: string, sessionId: string, expirationTimestamp: number, options?: { impersonator?: string }): Promise<CreateRefreshTokenResult> {
     const secret = getRandomString(64, Alphabet.LowerUpperCaseNumbers);
     const salt = getRandomBytes(32);
