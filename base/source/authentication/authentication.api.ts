@@ -6,6 +6,10 @@ import type { TokenPayload } from './index.js';
 import { SecretCheckResult } from './models/secret-check-result.model.js';
 import { TokenPayloadBase } from './models/token-payload-base.model.js';
 
+/**
+ * Can be provided in {@link ApiEndpointDefinition} data property to signal that the request does not need a valid token.
+ * Useful for login, refresh, etc. endpoints.
+ */
 export const dontWaitForValidToken: unique symbol = Symbol('dontWaitForValidToken');
 
 type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> =
@@ -13,11 +17,32 @@ type GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Reco
 
 type AuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> = ReturnType<GetAuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
+/**
+ * Authentication REST API definition
+ *
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ */
 export type AuthenticationApiDefinition<AdditionalTokenPayload extends Record = Record<never>, AuthenticationData = void, AdditionalInitSecretResetData = void> =
   ApiDefinition<string, AuthenticationApiEndpointsDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>;
 
+/** Default authentication API definition */
 export const authenticationApiDefinition = getAuthenticationApiDefinition(emptyObjectSchema, optional(never()), optional(never()));
 
+/**
+ * Get authentication REST API definition
+ * @param additionalTokenPayloadSchema Schema for additional token payload
+ * @param authenticationDataSchema Schema for additional authentication data
+ * @param initSecretResetDataSchema Schema for additional secret reset data
+ * @param resource Resource name (default: 'auth')
+ * @param additionalEndpoints Additional endpoints to add to the API definition
+ * @returns Authentication REST API definition
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ * @template AdditionalEndpoints Type of additional endpoints
+ */
 export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData, AdditionalEndpoints extends ApiEndpointsDefinition>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,
@@ -34,6 +59,16 @@ export function getAuthenticationApiDefinition<AdditionalTokenPayload extends Re
   });
 }
 
+/**
+ * Get authentication REST API endpoints definition
+ * @param additionalTokenPayloadSchema Schema for additional token payload
+ * @param authenticationDataSchema Schema for additional authentication data
+ * @param additionalInitSecretResetDataSchema Schema for additional secret reset data
+ * @returns Authentication REST API endpoints definition
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ */
 export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload extends Record, AuthenticationData, AdditionalInitSecretResetData>(
   additionalTokenPayloadSchema: ObjectSchemaOrType<AdditionalTokenPayload>,
   authenticationDataSchema: SchemaTestable<AuthenticationData>,

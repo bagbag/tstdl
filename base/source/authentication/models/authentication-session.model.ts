@@ -17,9 +17,15 @@ export class AuthenticationSession extends Entity {
   @Integer()
   refreshTokenHashVersion: number;
 
+  /**
+   * The salt used to hash the refresh token.
+   */
   @Uint8ArrayProperty()
   refreshTokenSalt: Uint8Array;
 
+  /**
+   * The hashed refresh token.
+   */
   @Uint8ArrayProperty()
   refreshTokenHash: Uint8Array;
 }

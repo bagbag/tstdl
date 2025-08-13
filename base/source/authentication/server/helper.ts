@@ -8,10 +8,11 @@ import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { RefreshToken, SecretResetToken, Token } from '../models/index.js';
 
 /**
- *
- * @param request
- * @param cookieName (default "authorization")
- * @returns token string
+ * Tries to get the authorization token string from a request.
+ * @param request The request to get the token from.
+ * @param cookieName The name of the cookie to get the token from (defaults to 'authorization').
+ * @param fromCookieOnly Whether to only get the token from the cookie.
+ * @returns The token string or undefined if not found.
  */
 export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerRequest, cookieName: string = 'authorization', fromCookieOnly: boolean = false): string | undefined {
   const authorizationHeaders = (fromCookieOnly || (cookieName.toLocaleLowerCase() != 'authorization')) ? undefined : (request.headers.tryGet('Authorization') as OneOrMany<string> | undefined);
@@ -34,6 +35,14 @@ export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerReq
   return undefined;
 }
 
+/**
+ * Tries to get a token from a request.
+ * @param request The request to get the token from.
+ * @param tokenVersion The version of the token to get.
+ * @param secret The secret to use for validation.
+ * @returns The token or undefined if not found.
+ * @throws {InvalidTokenError} If the token is invalid.
+ */
 export async function tryGetTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload> | undefined> {
   const tokenString = tryGetAuthorizationTokenStringFromRequest(request);
 
@@ -44,6 +53,14 @@ export async function tryGetTokenFromRequest<AdditionalTokenPayload extends Reco
   return getTokenFromString(tokenString, tokenVersion, secret);
 }
 
+/**
+ * Gets a token from a request.
+ * @param request The request to get the token from.
+ * @param tokenVersion The version of the token to get.
+ * @param secret The secret to use for validation.
+ * @returns The token.
+ * @throws {InvalidTokenError} If the token is invalid or not found.
+ */
 export async function getTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
   const token = await tryGetTokenFromRequest<AdditionalTokenPayload>(request, tokenVersion, secret);
 
@@ -54,6 +71,14 @@ export async function getTokenFromRequest<AdditionalTokenPayload extends Record 
   return token;
 }
 
+/**
+ * Gets a token from a token string.
+ * @param tokenString The token string to get the token from.
+ * @param tokenVersion The version of the token to get.
+ * @param secret The secret to use for validation.
+ * @returns The token.
+ * @throws {InvalidTokenError} If the token is invalid.
+ */
 export async function getTokenFromString<AdditionalTokenPayload extends Record = Record<never>>(tokenString: string, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing authorization token');
@@ -72,6 +97,13 @@ export async function getTokenFromString<AdditionalTokenPayload extends Record =
   return validatedToken;
 }
 
+/**
+ * Gets a refresh token from a token string.
+ * @param tokenString The token string to get the refresh token from.
+ * @param secret The secret to use for validation.
+ * @returns The refresh token.
+ * @throws {InvalidTokenError} If the refresh token is invalid.
+ */
 export async function getRefreshTokenFromString(tokenString: string, secret: string | BinaryData): Promise<RefreshToken> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing refresh token');
@@ -86,6 +118,13 @@ export async function getRefreshTokenFromString(tokenString: string, secret: str
   return validatedRefreshToken;
 }
 
+/**
+ * Gets a secret reset token from a token string.
+ * @param tokenString The token string to get the secret reset token from.
+ * @param secret The secret to use for validation.
+ * @returns The secret reset token.
+ * @throws {InvalidTokenError} If the secret reset token is invalid.
+ */
 export async function getSecretResetTokenFromString(tokenString: string, secret: string | BinaryData): Promise<SecretResetToken> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing secret reset token');

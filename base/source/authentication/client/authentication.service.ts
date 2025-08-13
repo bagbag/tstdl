@@ -33,6 +33,20 @@ const refreshLockResource = 'AuthenticationService:refresh';
 
 const localStorage = globalThis.localStorage as Storage | undefined;
 
+/**
+ * Handles authentication on client side.
+ *
+ * Can be used to:
+ * - Login/logout
+ * - Refresh token
+ * - Impersonate/unimpersonate
+ * - Reset secret
+ * - Check secret
+ *
+ * @template AdditionalTokenPayload Type of additional token payload
+ * @template AuthenticationData Type of additional authentication data
+ * @template AdditionalInitSecretResetData Type of additional secret reset data
+ */
 @Singleton()
 export class AuthenticationClientService<AdditionalTokenPayload extends Record = Record, AuthenticationData = any, AdditionalInitSecretResetData = void> implements AfterResolve, AsyncDisposable {
   private readonly client = inject(AUTHENTICATION_API_CLIENT) as InstanceType<ApiClient<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>>>;
@@ -44,26 +58,55 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   private readonly logger = inject(Logger, 'AuthenticationService');
   private readonly disposeToken = new CancellationToken();
 
+  /**
+   * Observable for authentication errors.
+   * Emits when a refresh fails.
+   */
   readonly error$ = this.errorSubject.asObservable();
 
+  /** Current token */
   readonly token = signal<TokenPayload<AdditionalTokenPayload> | undefined>(undefined);
+
+  /** Whether the user is logged in */
   readonly isLoggedIn = computed(() => isDefined(this.token()));
+
+  /** Current subject */
   readonly subject = computed(() => this.token()?.subject);
+
+  /** Current session id */
   readonly sessionId = computed(() => this.token()?.sessionId);
+
+  /** Current impersonator */
   readonly impersonator = computed(() => this.token()?.impersonator);
+
+  /** Whether the user is impersonated */
   readonly impersonated = computed(() => isDefined(this.impersonator()));
 
+  /** Current token */
   readonly token$ = toObservable(this.token);
+
+  /** Emits when token is available (not undefined) */
   readonly definedToken$ = this.token$.pipe(filter(isDefined));
+
+  /** Emits when a valid token is available (not undefined and not expired) */
   readonly validToken$ = this.definedToken$.pipe(filter((token) => token.exp > currentTimestampSeconds()));
 
+  /** Current subject */
   readonly subject$ = toObservable(this.subject);
+
+  /** Emits when subject is available */
   readonly definedSubject$ = this.subject$.pipe(filter(isDefined));
 
+  /** Current session id */
   readonly sessionId$ = toObservable(this.sessionId);
+
+  /** Emits when session id is available */
   readonly definedSessionId$ = this.sessionId$.pipe(filter(isDefined));
 
+  /** Whether the user is logged in */
   readonly isLoggedIn$ = toObservable(this.isLoggedIn);
+
+  /** Emits when the user logs out */
   readonly loggedOut$ = this.loggedOutBus.allMessages$;
 
   private get authenticationData(): AuthenticationData {
@@ -96,18 +139,31 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
+  /**
+   * Get current token or throw if not available
+   * @throws Will throw if token is not available
+   */
   get definedToken(): TokenPayload<AdditionalTokenPayload> {
     return assertDefinedPass(this.token(), 'No token available.');
   }
 
+  /**
+   * Get current subject or throw if not available
+   * @throws Will throw if subject is not available
+   */
   get definedSubject(): string {
     return this.definedToken.subject;
   }
 
+  /**
+   * Get current session id or throw if not available
+   * @throws Will throw if session id is not available
+   */
   get definedSessionId(): string {
     return this.definedToken.sessionId;
   }
 
+  /** Whether a valid token is available (not undefined and not expired) */
   get hasValidToken(): boolean {
     return (this.token()?.exp ?? 0) > currentTimestampSeconds();
   }
@@ -118,10 +174,17 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
+  /** @internal */
   [afterResolve](): void {
     this.initialize();
   }
 
+  /**
+   * Initializes the service.
+   * Loads token from storage and starts refresh loop.
+   *
+   * @internal
+   */
   initialize(): void {
     this.loadToken();
     this.tokenUpdateBus.messages$.subscribe((token) => this.token.set(token));
@@ -129,10 +192,15 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     void this.refreshLoop();
   }
 
+  /** @internal */
   async [disposeAsync](): Promise<void> {
     await this.dispose();
   }
 
+  /**
+   * Disposes the service.
+   * Stops refresh loop and completes subjects.
+   */
   async dispose(): Promise<void> {
     this.disposeToken.set();
     this.errorSubject.complete();
@@ -140,10 +208,20 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     await this.tokenUpdateBus.dispose();
   }
 
+  /**
+   * Set additional authentication data
+   * @param data The data to set
+   */
   setAdditionalData(data: AuthenticationData): void {
     this.authenticationData = data;
   }
 
+  /**
+   * Login with subject and secret
+   * @param subject The subject to login with
+   * @param secret The secret to login with
+   * @param data Additional authentication data
+   */
   async login(subject: string, secret: string, data?: AuthenticationData): Promise<void> {
     if (isDefined(data)) {
       this.setAdditionalData(data);
@@ -153,6 +231,9 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     this.setNewToken(token);
   }
 
+  /**
+   * Logout
+   */
   async logout(): Promise<void> {
     try {
       await Promise.race([
@@ -166,6 +247,10 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
+  /**
+   * Force a refresh of the token
+   * @param data Additional authentication data
+   */
   requestRefresh(data?: AuthenticationData): void {
     if (isDefined(data)) {
       this.setAdditionalData(data);
@@ -174,6 +259,10 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     this.forceRefreshToken.set();
   }
 
+  /**
+   * Refresh the token
+   * @param data Additional authentication data
+   */
   async refresh(data?: AuthenticationData): Promise<void> {
     if (isDefined(data)) {
       this.setAdditionalData(data);
@@ -189,6 +278,11 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
   }
 
+  /**
+   * Impersonate a subject
+   * @param subject The subject to impersonate
+   * @param data Additional authentication data
+   */
   async impersonate(subject: string, data?: AuthenticationData): Promise<void> {
     await this.lock.use(10000, true, async () => {
       this.impersonatorAuthenticationData = this.authenticationData;
@@ -205,6 +299,10 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     });
   }
 
+  /**
+   * Unimpersonate
+   * @param data Additional authentication data. If not provided, the data from before impersonation is used.
+   */
   async unimpersonate(data?: AuthenticationData): Promise<void> {
     await this.lock.use(10000, true, async () => {
       const newData = data ?? this.impersonatorAuthenticationData;
@@ -223,14 +321,29 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     });
   }
 
+  /**
+   * Initialize a secret reset
+   * @param subject The subject to reset the secret for
+   * @param data Additional data for secret reset
+   */
   async initResetSecret(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
     await this.client.initSecretReset({ subject, data });
   }
 
+  /**
+   * Reset a secret
+   * @param token The secret reset token
+   * @param newSecret The new secret
+   */
   async resetSecret(token: string, newSecret: string): Promise<void> {
     await this.client.resetSecret({ token, newSecret });
   }
 
+  /**
+   * Check a secret for requirements
+   * @param secret The secret to check
+   * @returns The result of the check
+   */
   async checkSecret(secret: string): Promise<SecretCheckResult> {
     return await this.client.checkSecret({ secret });
   }

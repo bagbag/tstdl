@@ -4,6 +4,9 @@ import { Singleton } from '#/injector/decorators.js';
 import { AuthenticationService } from './authentication.service.js';
 import { tryGetAuthorizationTokenStringFromRequest } from './helper.js';
 
+/**
+ * Provides the token for an API request from the authorization header.
+ */
 @Singleton()
 export class AuthenticationApiRequestTokenProvider extends ApiRequestTokenProvider {
   private readonly authenticationService: AuthenticationService;

@@ -9,7 +9,7 @@ import type { PasswordCheckLocalization } from './password-check.localization.js
 import { passwordCheckLocalizationKeys } from './password-check.localization.js';
 
 export type CheckPasswordOptions = {
-  checkForPwned?: boolean
+  checkForPwned?: boolean,
 };
 
 export async function checkPassword(password: string, { checkForPwned = true }: CheckPasswordOptions = {}): Promise<PasswordCheckResult> {
