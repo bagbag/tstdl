@@ -23,7 +23,7 @@ export type CustomErrorOptions = {
   cause?: Error,
 
   /** Skip {@link Error} super call, which improves speed but looses stack trace */
-  fast?: boolean | undefined
+  fast?: boolean | undefined,
 };
 
 export abstract class CustomError extends Error {
@@ -33,7 +33,6 @@ export abstract class CustomError extends Error {
 
       init(errorObject as Error, new.target as unknown as CustomErrorStatic, options);
 
-      // eslint-disable-next-line no-constructor-return
       return errorObject as CustomError;
     }
 
@@ -67,6 +66,9 @@ function init(instance: Error, target: CustomErrorStatic, { name, message, stack
 }
 
 export interface CustomErrorStatic<T extends CustomError = CustomError> {
+  /**
+   * Name of the error (usually the class name) to prevent issues from minification.
+   */
   readonly errorName: string;
 
   new(...args: any[]): T;

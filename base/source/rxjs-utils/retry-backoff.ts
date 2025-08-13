@@ -12,7 +12,7 @@ export function retryBackoff<T>(count: number, options: BackoffOptions): MonoTyp
 
       return counter + 1;
     }, 0),
-    delayWhen(() => timer(helper.backoff()))
+    delayWhen(() => timer(helper.getNextDelay()))
   ));
 }
 
@@ -33,7 +33,7 @@ export function retryBackoffHandled<T>(count: number, options: BackoffOptions, h
 
           return of(undefined);
         }),
-        delayWhen(() => timer(helper.backoff()))
+        delayWhen(() => timer(helper.getNextDelay()))
       ))
     );
 

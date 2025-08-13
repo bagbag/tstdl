@@ -6,6 +6,12 @@ import type { AbstractConstructor } from '#/types/index.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
 import { isNotNull, isNull, isString } from '#/utils/type-guards.js';
 
+/**
+ * Extracts Google AI function declarations from a class decorated with schema information.
+ * It iterates over the properties of the class schema and converts `FunctionSchema` instances
+ * into the format required by the Google Generative AI API.
+ * @param type The constructor of the class to extract function declarations from.
+ */
 export function getFunctionDeclarations(type: AbstractConstructor): FunctionDeclaration[] {
   const objectSchema = getObjectSchema(type);
 
@@ -20,7 +26,7 @@ export function getFunctionDeclarations(type: AbstractConstructor): FunctionDecl
         description: schema.description ?? undefined,
         parameters: isNull(schema.parameterSchemas)
           ? undefined
-          : getFunctionDeclarationParameters(schema)
+          : getFunctionDeclarationParameters(schema),
 
       } satisfies FunctionDeclaration;
     })

@@ -1,4 +1,4 @@
-# Playwright Controller Module
+# Browser Automation Module
 
 A high-level, controller-based wrapper for Playwright, designed to simplify web automation, scraping, and testing tasks within a dependency-injection-friendly architecture.
 
@@ -8,20 +8,19 @@ A high-level, controller-based wrapper for Playwright, designed to simplify web 
 - [Core Concepts](#core-concepts)
   - [Controller Hierarchy](#controller-hierarchy)
 - [Usage](#usage)
-  - [Installation](#installation)
   - [Configuration](#configuration)
   - [Basic Automation](#basic-automation)
   - [DI-Powered Lifecycle Management](#di-powered-lifecycle-management)
   - [Working with Persistent Contexts](#working-with-persistent-contexts)
   - [Locating and Filtering Elements](#locating-and-filtering-elements)
   - [Rendering a PDF](#rendering-a-pdf)
-- [API Reference](#api-reference)
-  - [`configureBrowser(options)`](#configurebrowseroptions)
-  - [`BrowserService`](#browserservice)
-  - [`BrowserController`](#browsercontroller)
-  - [`BrowserContextController`](#browsercontextcontroller)
-  - [`PageController` & `FrameController`](#pagecontroller--framecontroller)
-  - [`ElementController`](#elementcontroller)
+- [API Summary](#api-summary)
+  - [Configuration](#configuration-1)
+  - [BrowserService](#browserservice)
+  - [BrowserController](#browsercontroller)
+  - [BrowserContextController](#browsercontextcontroller)
+  - [PageController & FrameController](#pagecontroller--framecontroller)
+  - [ElementController](#elementcontroller)
 
 ## Features
 
@@ -39,30 +38,25 @@ The module is built around a hierarchy of controllers, each encapsulating a part
 - **`BrowserService`**: The main entry point. This singleton service is responsible for creating and managing all browser instances. Use it to launch new `BrowserController` instances or persistent contexts.
 - **`BrowserController`**: Represents a single browser instance (e.g., Chromium, Firefox). It's the factory for creating isolated browser sessions (`BrowserContextController`). It can be resolved via DI to get a managed browser instance.
 - **`BrowserContextController`**: Represents an isolated browser session with its own cookies, cache, and storage. It is used to create new pages (`PageController`). It can also be resolved via DI for a managed context.
-- **`PageController`**: Represents a single browser tab. This is the primary controller for interacting with a web page, including navigation, content evaluation, and element location.
-- **`FrameController`**: Represents an `<iframe>` within a page. It provides the same interaction capabilities as a `PageController` but is scoped to the frame's content.
+- **`PageController` / `FrameController`**: These controllers represent a single browser tab or an `<iframe>`, respectively. They are the primary entry points for interacting with a web page, including navigation, content evaluation, and element location. They inherit from `DocumentController`.
+- **`DocumentController`**: A base class for `PageController` and `FrameController` that provides shared functionality for interacting with a document, like finding frames and waiting for elements. It inherits from `LocatorController`.
+- **`LocatorController`**: A base class providing the powerful `getBy...` methods (e.g., `getByRole`, `getByText`) for finding elements on a page or within a frame/element.
 - **`ElementController`**: Wraps a Playwright `Locator` or `ElementHandle`. This is the workhorse for all element-level interactions like clicking, typing, and fetching attributes. It provides a rich set of methods for chaining, filtering, and asserting element states.
 
 ### Controller Hierarchy
 
-The typical flow of control is:
+The typical flow of control and inheritance is:
 
-`BrowserService` → `BrowserController` → `BrowserContextController` → `PageController` → `ElementController`
+`BrowserService` → `BrowserController` → `BrowserContextController` → `PageController` / `FrameController` (extends `DocumentController` which extends `LocatorController`) → `ElementController`
 
 ## Usage
-
-### Installation
-
-```bash
-npm install @your-scope/playwright-controller # or your package manager
-```
 
 ### Configuration
 
 Before using the service, you can optionally configure default options for all new browser instances. This is useful for setting global settings like headless mode or browser type.
 
 ```typescript
-import { configureBrowser } from '@your-scope/playwright-controller';
+import { configureBrowser } from '@tstdl/base/browser';
 
 // This should be done once at application startup
 configureBrowser({
@@ -74,8 +68,8 @@ configureBrowser({
       defaultNewContextOptions: {
         locale: 'en-US',
         colorScheme: 'dark',
-      }
-    }
+      },
+    },
   },
 });
 ```
@@ -85,12 +79,12 @@ configureBrowser({
 The following example demonstrates a complete workflow: launching a browser, navigating to a page, interacting with elements, and cleaning up resources.
 
 ```typescript
-import { Injector } from '#/injector/injector.js';
-import { disposeAsync } from '#/disposable/disposable.js';
-import { BrowserService, type BrowserController } from '@your-scope/playwright-controller';
+import { BrowserService, type BrowserController } from '@tstdl/base/browser';
+import { disposeAsync } from '@tstdl/base/disposable';
+import { Injector } from '@tstdl/base/injector';
 
 // Assume DI container is configured
-const browserService = Injector.get(BrowserService);
+const browserService = Injector.resolve(BrowserService);
 
 // Launch a new browser instance
 const browser: BrowserController = await browserService.newBrowser();
@@ -132,8 +126,8 @@ try {
 `BrowserController` and `BrowserContextController` are injectable, allowing the DI container to manage their lifecycle automatically.
 
 ```typescript
-import { Injectable, Inject } from '#/injector/decorators.js';
-import { BrowserContextController } from '@your-scope/playwright-controller';
+import { BrowserContextController } from '@tstdl/base/browser';
+import { Inject, Injectable } from '@tstdl/base/injector';
 
 @Injectable()
 class MyScraper {
@@ -156,10 +150,10 @@ class MyScraper {
 Use a persistent context to save and reuse session data like cookies and `localStorage` between runs.
 
 ```typescript
-import { BrowserService } from '@your-scope/playwright-controller';
-import { Injector } from '#/injector/injector.js';
+import { BrowserService } from '@tstdl/base/browser';
+import { Injector } from '@tstdl/base/injector';
 
-const browserService = Injector.get(BrowserService);
+const browserService = Injector.resolve(BrowserService);
 
 // The first run will create the data directory and might require a login.
 const context = await browserService.newPersistentContext('./user-data-dir');
@@ -172,6 +166,7 @@ await context.close();
 // The second run reuses the session.
 const context2 = await browserService.newPersistentContext('./user-data-dir');
 // ... continue scraping as a logged-in user ...
+await context2.close();
 ```
 
 ### Locating and Filtering Elements
@@ -179,7 +174,7 @@ const context2 = await browserService.newPersistentContext('./user-data-dir');
 `ElementController` provides a rich API for locating and filtering elements.
 
 ```typescript
-import { PageController } from '@your-scope/playwright-controller';
+import type { PageController } from '@tstdl/base/browser';
 
 async function findSpecificElement(page: PageController) {
   // Locate a list of items
@@ -204,8 +199,8 @@ async function findSpecificElement(page: PageController) {
 You can easily render a page as a PDF with various customization options.
 
 ```typescript
-import { PageController } from '@your-scope/playwright-controller';
-import { promises as fs } from 'fs';
+import { writeFile } from 'node:fs/promises';
+import type { PageController } from '@tstdl/base/browser';
 
 async function savePageAsPdf(page: PageController) {
   await page.navigate('https://example.com');
@@ -222,68 +217,73 @@ async function savePageAsPdf(page: PageController) {
 }
 ```
 
-## API Reference
+## API Summary
 
 This is a brief overview of the main classes and their key methods.
 
-### `configureBrowser(options)`
+### Configuration
 
-Sets up global default options for the `BrowserService`. Call this once at application startup.
-
----
+| Function             | Arguments                       | Returns | Description                                              |
+| :------------------- | :------------------------------ | :------ | :------------------------------------------------------- |
+| `configureBrowser()` | `options: BrowserModuleOptions` | `void`  | Sets up global default options for the `BrowserService`. |
 
 ### `BrowserService`
 
-A singleton service for managing browser instances. Usually resolved from a DI container.
+A singleton service for managing browser instances.
 
-- `newBrowser(options?: NewBrowserOptions): Promise<BrowserController>`: Launches a new browser instance.
-- `newPersistentContext(dataDir: string, ...): Promise<BrowserContextController>`: Launches a browser with a persistent context, useful for saving session data.
-- `[disposeAsync](): Promise<void>`: Closes all browsers and contexts created by the service.
-
----
+| Method                   | Arguments                                                                                              | Returns                             | Description                                                           |
+| :----------------------- | :----------------------------------------------------------------------------------------------------- | :---------------------------------- | :-------------------------------------------------------------------- |
+| `newBrowser()`           | `options?: NewBrowserOptions`                                                                          | `Promise<BrowserController>`        | Launches a new browser instance.                                      |
+| `newPersistentContext()` | `dataDirectory: string, browserOptions?: NewBrowserOptions, contextOptions?: NewBrowserContextOptions` | `Promise<BrowserContextController>` | Launches a browser with a persistent context for saving session data. |
 
 ### `BrowserController`
 
-Controls a single browser instance. Can be resolved from a DI container.
+Controls a single browser instance.
 
-- `newContext(options?: NewBrowserContextOptions): Promise<BrowserContextController>`: Creates a new, isolated browser context.
-- `close(): Promise<void>`: Closes the browser and all its contexts.
-- `[disposeAsync](): Promise<void>`: Alias for `close()`, enabling automatic disposal by a DI container.
-
----
+| Method         | Arguments                            | Returns                             | Description                              |
+| :------------- | :----------------------------------- | :---------------------------------- | :--------------------------------------- |
+| `newContext()` | `options?: NewBrowserContextOptions` | `Promise<BrowserContextController>` | Creates a new, isolated browser context. |
+| `close()`      |                                      | `Promise<void>`                     | Closes the browser and all its contexts. |
 
 ### `BrowserContextController`
 
-Controls an isolated browser session. Can be resolved from a DI container.
+Controls an isolated browser session.
 
-- `newPage(options?: NewPageOptions): Promise<PageController>`: Creates a new page (tab) within the context.
-- `getState(): Promise<BrowserContextState>`: Gets the storage state (cookies, localStorage) of the context.
-- `pages(): PageController[]`: Returns a list of all pages in the context.
-- `attachLogger(logger: Logger): void`: Attaches a logger to log console messages and requests.
-- `close(): Promise<void>`: Closes the browser context and all its pages.
-- `[disposeAsync](): Promise<void>`: Alias for `close()`.
-
----
+| Method           | Arguments                  | Returns                        | Description                                             |
+| :--------------- | :------------------------- | :----------------------------- | :------------------------------------------------------ |
+| `newPage()`      | `options?: NewPageOptions` | `Promise<PageController>`      | Creates a new page (tab) within the context.            |
+| `getState()`     |                            | `Promise<BrowserContextState>` | Gets the storage state (cookies, localStorage).         |
+| `pages()`        |                            | `PageController[]`             | Returns a list of all pages in the context.             |
+| `attachLogger()` | `logger: Logger`           | `void`                         | Attaches a logger to log console messages and requests. |
+| `close()`        |                            | `Promise<void>`                | Closes the browser context and all its pages.           |
 
 ### `PageController` & `FrameController`
 
-Controls a single page (tab) or an `<iframe>`. This is where most interactions happen.
+Controls a single page (tab) or an `<iframe>`. They inherit locator methods like `getByRole()` from `LocatorController` and document methods like `navigate()` from `DocumentController`.
 
-- **Navigation**: `navigate(url, ...)`
-- **Waiting**: `waitForUrl(...)`, `waitForLoadState(...)`, `waitForElement(...)`
-- **Locating Elements**: `getByRole(...)`, `getByText(...)`, `getByLabel(...)`, `getBySelector(...)`, etc. These return an `ElementController`.
-- **PDF**: `renderPdf(options?: PdfRenderOptions): Promise<Uint8Array>`, `renderPdfStream(...)`
-- **Scrolling**: `scroll(deltaX, deltaY)`, `scrollTo(target)`
-- **Lifecycle**: `close()`, `[disposeAsync]()`
-
----
+| Method             | Arguments                                                         | Returns                      | Description                                                                                   |
+| :----------------- | :---------------------------------------------------------------- | :--------------------------- | :-------------------------------------------------------------------------------------------- |
+| `navigate()`       | `url: string, options?: ...`                                      | `Promise<void>`              | Navigates the page/frame to a URL.                                                            |
+| `waitForUrl()`     | `url: string \| RegExp \| ((url: URL) => boolean), options?: ...` | `Promise<void>`              | Waits for the URL to match the provided predicate.                                            |
+| `waitForElement()` | `selector: string, options?: ...`                                 | `Promise<ElementController>` | Waits for an element to appear in the DOM.                                                    |
+| `renderPdf()`      | `options?: PdfRenderOptions`                                      | `Promise<Uint8Array>`        | **(PageController only)** Renders the current page as a PDF.                                  |
+| `scrollTo()`       | `coordinates: ScrollToCoordinates \| ElementController`           | `Promise<void>`              | **(PageController only)** Intelligently scrolls the page to a specific coordinate or element. |
+| `close()`          |                                                                   | `Promise<void>`              | **(PageController only)** Closes the page.                                                    |
 
 ### `ElementController`
 
-The primary tool for interacting with DOM elements, wrapping Playwright's `Locator`.
+The primary tool for interacting with DOM elements.
 
-- **Actions**: `click()`, `fill(text)`, `type(text)`, `press(key)`, `check()`, `uncheck()`, `hover()`, `focus()`.
-- **State Assertions**: `exists()`, `isVisible()`, `isHidden()`, `isEnabled()`, `isDisabled()`, `isChecked()`.
-- **Chaining & Filtering**: `locate(selector)`, `filter(options)`, `and(controller)`, `or(controller)`, `first()`, `last()`, `nth(index)`.
-- **Data Extraction**: `evaluate(fn)`, `inputValue()`, `boundingBox()`.
-- **Waiting**: `waitFor(state, options)`: Waits for the element to reach a specific state (e.g., 'visible', 'attached').
+| Method         | Arguments                                                | Returns                                 | Description                                                          |
+| :------------- | :------------------------------------------------------- | :-------------------------------------- | :------------------------------------------------------------------- |
+| `click()`      | `options?: ...`                                          | `Promise<void>`                         | Clicks the element.                                                  |
+| `fill()`       | `text: string, options?: ...`                            | `Promise<void>`                         | Fills an input element with text.                                    |
+| `type()`       | `text: string, options?: ...`                            | `Promise<void>`                         | Types text character by character into an element.                   |
+| `press()`      | `key: string, options?: ...`                             | `Promise<void>`                         | Simulates a key press.                                               |
+| `exists()`     | `options?: { state?, timeout? }`                         | `Promise<boolean>`                      | Checks if at least one matching element exists.                      |
+| `isVisible()`  |                                                          | `Promise<boolean>`                      | Checks if the element is visible.                                    |
+| `inputValue()` | `options?: ...`                                          | `Promise<string>`                       | Gets the value of an input element.                                  |
+| `filter()`     | `filter: Filter`                                         | `ElementController<Locator>`            | Filters the current locator to find a more specific set of elements. |
+| `locate()`     | `selector: string \| ElementController, filter?: Filter` | `ElementController<Locator>`            | Finds descendant elements matching a selector.                       |
+| `waitFor()`    | `state?: 'visible' \| 'attached' \| ..., options?: ...`  | `Promise<void>`                         | Waits for the element to reach a specific state.                     |
+| `getAll()`     |                                                          | `Promise<ElementController<Locator>[]>` | Returns an array of controllers for all matching elements.           |

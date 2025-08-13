@@ -1,11 +1,11 @@
-import { FinishReason, type FunctionDeclaration, type GenerateContentConfig, type GenerateContentResponse, type Candidate as GoogleCandidate, type Content as GoogleContent, FunctionCallingConfigMode as GoogleFunctionCallingMode, GoogleGenAI, type Schema as GoogleSchema, type Part, type UsageMetadata } from '@google/genai';
+import { FinishReason, type FunctionDeclaration, type GenerateContentConfig, type GenerateContentResponse, type Candidate as GoogleCandidate, type Content as GoogleContent, FunctionCallingConfigMode as GoogleFunctionCallingMode, GoogleGenAI, type Schema as GoogleSchema, type Model, type Part, type UsageMetadata } from '@google/genai';
 
+import { CancellationSignal } from '#/cancellation/index.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/logger.js';
-import { getShutdownSignal } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
@@ -14,29 +14,52 @@ import type { Enumeration as EnumerationType, EnumerationValue, Record, Undefina
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';
+import { backoffGenerator, type BackoffGeneratorOptions } from '#/utils/backoff.js';
 import { lazyObject } from '#/utils/object/lazy-property.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
-import { cancelableTimeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
-import { millisecondsPerSecond } from '#/utils/units.js';
 import { resolveValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 import { AiFileService } from './ai-file.service.js';
 import { AiSession } from './ai-session.js';
-import { type AiModel, type Content, type ContentPart, type ContentRole, type FileContentPart, type FileInput, type FunctionCall, type FunctionCallingMode, type FunctionResultContentPart, type GenerationOptions, type GenerationRequest, type GenerationResult, isSchemaFunctionDeclarationWithHandler, type SchemaFunctionDeclarations, type SchemaFunctionDeclarationsResult } from './types.js';
+import { type AiModel, type Content, type ContentPart, type ContentRole, type FileContentPart, type FileInput, type FunctionCall, type FunctionCallingMode, type GenerationOptions, type GenerationRequest, type GenerationResult, isSchemaFunctionDeclarationWithHandler, type SchemaFunctionDeclarations, type SchemaFunctionDeclarationsResult } from './types.js';
 
+/**
+ * A generation result that includes a specialized, typed result alongside the raw generation data.
+ * @template T The type of the specialized result.
+ */
 export type SpecializedGenerationResult<T> = {
+  /** The specialized, typed result. */
   result: T,
+
+  /** The raw, underlying generation result from the AI model. */
   raw: GenerationResult,
 };
 
+/**
+ * An async generator for specialized generation results, which also provides access to the final raw generation data.
+ * @template T The type of the specialized result yielded by the generator.
+ */
 export type SpecializedGenerationResultGenerator<T> = AsyncGenerator<T> & {
   raw: Promise<GenerationResult>,
 };
 
+/**
+ * Options for configuring the {@link AiService}.
+ */
 export class AiServiceOptions {
+  /** Google AI API key. */
   apiKey?: string;
+
+  /** Path to the Google Cloud credentials file. */
   keyFile?: string;
+
+  /** Vertex AI specific options. If provided, the service will use Vertex AI endpoints. */
   vertex?: { project: string, location: string, bucket?: string };
+
+  /**
+   * The default model to use for generation requests.
+   * @default 'gemini-2.5-flash-lite'
+   */
   defaultModel?: AiModel;
 };
 
@@ -56,17 +79,29 @@ export type AnalyzeContentResult<T extends EnumerationType> = {
   tags: string[],
 };
 
+/**
+ * Options for a function-calling request.
+ * @template T The schema declarations for the available functions.
+ */
 export type CallFunctionsOptions<T extends SchemaFunctionDeclarations> = Pick<GenerationRequest, 'contents' | 'model' | 'systemInstruction' | 'functionCallingMode'> & GenerationOptions & {
+  /** The function declarations available for the model to call. */
   functions: T,
 };
 
 let generationCounter = 0;
 
+/**
+ * A service for interacting with Google's Generative AI models (Gemini).
+ *
+ * This service provides methods for content generation, function calling, and file processing,
+ * supporting both standard Google AI and Vertex AI endpoints.
+ */
 @Singleton()
 export class AiService implements Resolvable<AiServiceArgument> {
   readonly #options = injectArgument(this, { optional: true }) ?? inject(AiServiceOptions);
   readonly #fileService = inject(AiFileService, this.#options);
   readonly #logger = inject(Logger, AiService.name);
+  readonly #cancellationSignal = inject(CancellationSignal);
 
   readonly #genAI = new GoogleGenAI({
     vertexai: isDefined(this.#options.vertex?.project),
@@ -78,27 +113,65 @@ export class AiService implements Resolvable<AiServiceArgument> {
 
   readonly #maxOutputTokensCache = new Map<string, number | Promise<number>>();
 
-  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
+  readonly #backoffOptions: BackoffGeneratorOptions = {
+    cancellationSignal: this.#cancellationSignal,
+    strategy: 'exponential',
+    initialDelay: 2500,
+    increase: 1.5,
+    jitter: 0.2,
+    maximumDelay: 30000,
+  };
+
+  /**
+   * The default AI model to use for requests if not specified otherwise.
+   */
+  readonly defaultModel = this.#options.defaultModel ?? 'gemini-2.5-flash-lite' satisfies AiModel;
 
   declare readonly [resolveArgumentType]: AiServiceArgument;
 
+  /**
+   * Creates a new {@link AiSession} for managing conversational history.
+   */
   createSession(): AiSession {
     return new AiSession(this);
   }
 
+  /**
+   * Processes a single file for use in AI requests by uploading it and making it available to the model.
+   * @param fileInput The file to process.
+   * @returns A promise that resolves to a {@link FileContentPart} which can be included in a generation request.
+   */
   async processFile(fileInput: FileInput): Promise<FileContentPart> {
     return await this.#fileService.processFile(fileInput);
   }
 
+  /**
+   * Processes multiple files in parallel for use in AI requests.
+   * @param fileInputs The files to process.
+   * @returns A promise that resolves to an array of {@link FileContentPart}s which can be included in generation requests.
+   */
   async processFiles(fileInputs: FileInput[]): Promise<FileContentPart[]> {
     return await this.#fileService.processFiles(fileInputs);
   }
 
+  /**
+   * Creates a file content part from a previously processed file ID.
+   * This does not re-upload the file.
+   * @param id The ID of the file, obtained from {@link AiFileService.processFile} or {@link AiFileService.processFiles}.
+   * @returns A {@link FileContentPart} for use in a generation request.
+   */
   getFileById(id: string): FileContentPart {
     return { file: id };
   }
 
-  async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]> & { getFunctionResultContentParts: () => FunctionResultContentPart[] }> {
+  /**
+   * A high-level method to prompt the model to call one or more functions.
+   * This method sends the request and parses the model's response to identify function calls.
+   * If the function declaration includes a handler, it will be executed automatically.
+   * @param options The options for the function call request.
+   * @returns A promise that resolves to a {@link SpecializedGenerationResult} containing the function call results.
+   */
+  async callFunctions<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): Promise<SpecializedGenerationResult<SchemaFunctionDeclarationsResult<T>[]>> {
     const generation = await this.generate({
       model: options.model,
       generationOptions: {
@@ -130,10 +203,16 @@ export class AiService implements Resolvable<AiServiceArgument> {
     return {
       result,
       raw: generation,
-      getFunctionResultContentParts: () => result.map((result) => result.getFunctionResultContentPart()),
     };
   }
 
+  /**
+   * A streaming version of `callFunctions`.
+   * Yields function call results as they are received from the model.
+   * If function declarations include handlers, they are executed as soon as a complete function call is parsed.
+   * @param options The options for the function call request.
+   * @returns A {@link SpecializedGenerationResultGenerator} that yields function call results.
+   */
   callFunctionsStream<const T extends SchemaFunctionDeclarations>(options: CallFunctionsOptions<T>): SpecializedGenerationResultGenerator<SchemaFunctionDeclarationsResult<T>> {
     const itemsPromise = new DeferredPromise<GenerationResult[]>();
     const generator = this._callFunctionsStream(options, itemsPromise) as SpecializedGenerationResultGenerator<SchemaFunctionDeclarationsResult<T>>;
@@ -146,11 +225,23 @@ export class AiService implements Resolvable<AiServiceArgument> {
     return generator;
   }
 
+  /**
+   * Generates content from the model based on a request.
+   * This method waits for the full response from the model. For streaming, use {@link generateStream}.
+   * @param request The generation request.
+   * @returns A promise that resolves to the complete {@link GenerationResult}.
+   */
   async generate<S>(request: GenerationRequest<S>): Promise<GenerationResult<S>> {
     const items = await toArrayAsync(this.generateStream(request));
     return mergeGenerationStreamItems(items, request.generationSchema);
   }
 
+  /**
+   * Generates content as a stream.
+   * Yields partial generation results as they are received from the model.
+   * @param request The generation request.
+   * @returns An `AsyncGenerator` that yields {@link GenerationResult} chunks.
+   */
   async *generateStream<S>(request: GenerationRequest<S>): AsyncGenerator<GenerationResult<S>> {
     const generationNumber = ++generationCounter;
     const googleFunctionDeclarations = isDefined(request.functions) ? await this.convertFunctions(request.functions) : undefined;
@@ -185,9 +276,10 @@ export class AiService implements Resolvable<AiServiceArgument> {
     let totalTokens = 0;
 
     while (totalOutputTokens < maxTotalOutputTokens) {
-      let generation: AsyncGenerator<GenerateContentResponse>;
+      let generation!: AsyncGenerator<GenerateContentResponse>;
 
-      for (let i = 0; ; i++) {
+      let triesLeft = 10;
+      for await (const backoff of backoffGenerator(this.#backoffOptions)) {
         try {
           this.#logger.verbose(`[C:${generationNumber}] [I:${iterations + 1}] Generating...`);
           generation = await this.#genAI.models.generateContentStream({
@@ -202,16 +294,15 @@ export class AiService implements Resolvable<AiServiceArgument> {
           break;
         }
         catch (error) {
-          if ((i < 20) && isError(error) && (error.message.includes('429 Too Many Requests') || (error.message.includes('503 Service Unavailable')))) {
-            this.#logger.verbose('429 Too Many Requests - trying again in 15 seconds');
-            const timeoutResult = await cancelableTimeout(15 * millisecondsPerSecond, getShutdownSignal());
+          triesLeft -= 1;
 
-            if (timeoutResult == 'timeout') {
-              continue;
-            }
+          if ((triesLeft > 0) && isError(error) && (error.message.includes('429 Too Many Requests') || error.message.includes('503 Service Unavailable'))) {
+            this.#logger.verbose(`Retrying after transient error: ${error.message}`);
+            backoff();
+            continue;
           }
 
-          throw error;
+          throw error; // Non-retryable error
         }
       }
 
@@ -341,7 +432,26 @@ export class AiService implements Resolvable<AiServiceArgument> {
   }
 
   private async _getModelOutputTokenLimit(model: AiModel): Promise<number> {
-    const modelInfo = await this.#genAI.models.get({ model });
+    let modelInfo!: Model;
+
+    let triesLeft = 10;
+    for await (const backoff of backoffGenerator(this.#backoffOptions)) {
+      try {
+        modelInfo = await this.#genAI.models.get({ model });
+        break;
+      }
+      catch (error) {
+        triesLeft -= 1;
+
+        if ((triesLeft > 0) && isError(error) && (error.message.includes('429 Too Many Requests') || error.message.includes('503 Service Unavailable'))) {
+          this.#logger.verbose(`Could not get model info for ${model} due to a transient error (${error.message}). Retrying...`);
+          backoff();
+          continue;
+        }
+
+        throw error;
+      }
+    }
 
     if (isUndefined(modelInfo.outputTokenLimit)) {
       throw new Error(`Model ${model} does not support maxOutputTokens`);
@@ -436,39 +546,55 @@ export class AiService implements Resolvable<AiServiceArgument> {
   }
 }
 
+/**
+ * Merges an array of streaming generation results into a single, consolidated result.
+ * This is useful for combining the chunks from a streaming response into a final object.
+ * @param items The array of {@link GenerationResult} items from a stream.
+ * @param schema An optional schema to parse the merged JSON output.
+ * @returns A single, merged {@link GenerationResult}.
+ */
 export function mergeGenerationStreamItems<S>(items: GenerationResult<S>[], schema?: SchemaTestable<S>): GenerationResult<S> {
-  const parts = items.flatMap((item) => item.content.parts);
+  if (items.length == 0) {
+    return {
+      content: { role: 'model', parts: [] },
+      text: null,
+      json: undefined as S,
+      functionCalls: [],
+      finishReason: 'unknown',
+      usage: { iterations: 0, prompt: 0, output: 0, total: 0 },
+    };
+  }
 
-  let text: string | null;
-  let functionCallParts: FunctionCall[] | undefined;
+  const parts = items.flatMap((item) => item.content.parts);
 
   return lazyObject<GenerationResult<S>>({
     content: { value: { role: 'model', parts } },
     text() {
-      if (isUndefined(text)) {
-        const textParts = parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
-        text = (textParts.length > 0) ? textParts.join('') : null;
-      }
-
-      return text;
+      const textParts = parts.filter((part) => hasOwnProperty(part, 'text')).map((part) => part.text);
+      return (textParts.length > 0) ? textParts.join('') : null;
     },
     json() {
       if (isUndefined(schema)) {
-        return undefined as any; // eslint-disable-line @typescript-eslint/no-unsafe-return
+        return undefined as S;
       }
 
       if (isNull(this.text)) {
         throw new Error('No text to parse available.');
       }
 
-      return Schema.parse(schema, JSON.parse(this.text));
-    },
-    functionCalls() {
-      if (isUndefined(functionCallParts)) {
-        functionCallParts = parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
+      let parsed: unknown;
+
+      try {
+        parsed = JSON.parse(this.text);
+      }
+      catch (error) {
+        throw new Error(`Failed to parse model output as JSON. Raw text: "${this.text}"`, { cause: error });
       }
 
-      return functionCallParts;
+      return Schema.parse(schema, parsed);
+    },
+    functionCalls() {
+      return parts.filter((part) => hasOwnProperty(part, 'functionCall')).map((part) => part.functionCall);
     },
     finishReason: { value: items.at(-1)!.finishReason },
     usage: { value: items.at(-1)!.usage },

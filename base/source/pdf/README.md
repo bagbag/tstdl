@@ -1,6 +1,6 @@
 # @tstdl/base/pdf
 
-A powerful module for generating and manipulating PDF files in Node.js. It leverages a headless browser for high-fidelity rendering of HTML and URLs to PDF and provides utilities for common operations like merging, page counting, and converting pages to images.
+A powerful module for generating and manipulating PDF files. It leverages a headless browser for high-fidelity rendering of HTML and URLs to PDF and provides utilities for common operations like merging, page counting, and converting pages to images.
 
 ## Table of Contents
 
@@ -15,83 +15,86 @@ A powerful module for generating and manipulating PDF files in Node.js. It lever
   - [Getting Page Count](#getting-page-count)
   - [Converting a PDF Page to an Image](#converting-a-pdf-page-to-an-image)
 - [API Summary](#api-summary)
-  - [Classes](#classes)
-  - [Functions](#functions)
 
 ## Features
 
 - **High-Fidelity Rendering**: Uses a headless browser to accurately render modern HTML, CSS, and JavaScript to PDF.
 - **Flexible Content Sources**: Generate PDFs from raw HTML strings, web page URLs, or dynamic templates.
-- **Template-Based Generation**: Integrates seamlessly with `@tstdl/templates` for complex, data-driven PDF reports and documents.
-- **PDF Manipulation**:
+- **Template-Based Generation**: Integrates seamlessly with `@tstdl/base/templates` for complex, data-driven PDF reports and documents.
+- **PDF Manipulation Utilities**:
   - Merge multiple PDF documents into a single file.
   - Get the total number of pages in a PDF.
-  - Convert individual PDF pages into various image formats (JPEG, PNG, etc.).
-- **Customization**: Extensive options for controlling PDF output, including page format, margins, headers, footers, and more.
+  - Convert individual PDF pages into various image formats (JPEG, PNG, SVG, etc.).
+- **Stream-Based Processing**: Methods are available to work with streams for improved memory efficiency with large files.
+- **Extensive Customization**: Provides a rich set of options to control PDF output, including page format, margins, headers, footers, and rendering delays.
 
 ## Core Concepts
 
 ### `PdfService`
 
-The `PdfService` is the central class for generating PDFs from various sources. It manages an underlying `BrowserController` to handle headless browser instances and contexts. This architecture ensures efficient resource management, especially when generating multiple PDFs concurrently.
+The `PdfService` is the primary interface for generating PDFs from various sources. It manages an underlying `BrowserController` to handle headless browser instances, ensuring efficient resource management.
 
-### Rendering Flow
+When a render method like `renderHtml` or `renderUrl` is called, the service performs the following steps:
 
-When a render method is called on `PdfService`, it performs the following steps:
 1.  Acquires a browser context and a new page.
-2.  Loads the content (HTML, URL, or rendered template) into the page.
-3.  Optionally waits for network activity to cease to ensure all resources are loaded.
-4.  Uses the browser's print-to-PDF functionality to generate a PDF stream.
-5.  Cleans up the browser page and context.
+2.  Loads the content (HTML, URL, or a rendered template) into the page.
+3.  Optionally waits for network activity to cease, ensuring all asynchronous resources like images and scripts are fully loaded.
+4.  Applies rendering options (e.g., margins, headers, footers).
+5.  Uses the browser's native print-to-PDF functionality to generate a high-quality PDF stream.
+6.  Cleans up the browser page and context to release resources.
 
-### `PdfTemplate` and `pdfTemplate()`
+### PDF Manipulation Utilities
 
-For dynamic document generation, you can use `PdfTemplate`. A template defines the structure of your document, including a `body`, and optional `header` and `footer`. The `pdfTemplate()` function is a convenient factory for creating `PdfTemplate` objects. These templates are then rendered using `PdfService.renderTemplate`, which populates them with your data before converting to PDF.
+For common PDF manipulation tasks, the module provides standalone utility functions that are highly efficient but rely on external command-line tools:
 
-### Utility Functions
+- `getPdfPageCount` uses `qpdf`.
+- `mergePdfs` and `mergePdfsStream` use `pdfunite` (from the `poppler-utils` suite).
+- `pdfToImage` uses `pdftocairo` (from the `poppler-utils` suite).
 
-The module also provides standalone utility functions that rely on external command-line tools for their operations:
--   `getPdfPageCount` uses `qpdf`.
--   `mergePdfs` and `mergePdfsStream` use `pdfunite`.
--   `pdfToImage` uses `pdftocairo`.
-
-These functions are highly efficient for their specific tasks but require the corresponding tools to be installed in the execution environment.
+This separation means you only need these external dependencies if you use the manipulation functions, not for the core PDF generation capabilities of `PdfService`.
 
 ## Usage
 
 ### Prerequisites
 
-The utility functions in this module depend on external command-line tools. Please ensure they are installed on your system and available in the `PATH`.
+The PDF manipulation utility functions depend on external command-line tools. Please ensure they are installed on your system and available in the `PATH`.
 
--   **`qpdf`**: For `getPdfPageCount`.
--   **`pdfunite`** (from `poppler-utils`): For `mergePdfs`.
--   **`pdftocairo`** (from `poppler-utils`): For `pdfToImage`.
+- **`qpdf`**: For `getPdfPageCount`.
+- **`pdfunite`** (part of `poppler-utils`): For `mergePdfs` and `mergePdfsStream`.
+- **`pdftocairo`** (part of `poppler-utils`): For `pdfToImage`.
 
 On Debian/Ubuntu, you can install them with:
+
 ```bash
 sudo apt-get update && sudo apt-get install -y qpdf poppler-utils
 ```
 
 ### Rendering HTML to PDF
 
-You can easily convert a string of HTML into a PDF.
+Convert a string of HTML directly into a PDF.
 
 ```typescript
 import { PdfService } from '@tstdl/base/pdf';
 import { inject } from '@tstdl/base/injector';
 import { writeFile } from 'fs/promises';
 
+// Get an instance of the service from the injector
 const pdfService = inject(PdfService);
-const htmlContent = '<h1>Hello, World!</h1><p>This is a PDF from HTML.</p>';
 
-const pdfBytes: Uint8Array = await pdfService.renderHtml(htmlContent);
+const htmlContent = '<h1>Hello, World!</h1><p>This is a PDF generated from an HTML string.</p>';
+
+// Render the HTML to a byte array
+const pdfBytes: Uint8Array = await pdfService.renderHtml(htmlContent, {
+  format: 'A4',
+  margin: { top: '2cm', bottom: '2cm' },
+});
 
 await writeFile('output.pdf', pdfBytes);
 ```
 
 ### Rendering a URL to PDF
 
-Render a live webpage to a PDF by providing its URL.
+Render any live webpage to a PDF by providing its URL.
 
 ```typescript
 import { PdfService } from '@tstdl/base/pdf';
@@ -101,6 +104,7 @@ import { writeFile } from 'fs/promises';
 const pdfService = inject(PdfService);
 const url = 'https://example.com';
 
+// Render the URL to a byte array
 const pdfBytes: Uint8Array = await pdfService.renderUrl(url);
 
 await writeFile('example.pdf', pdfBytes);
@@ -108,31 +112,34 @@ await writeFile('example.pdf', pdfBytes);
 
 ### Rendering a Template to PDF
 
-Define a template and pass it to the service with a context object to generate dynamic PDFs.
+For dynamic documents, define a template using `@tstdl/base/templates` and render it with a context object.
 
 ```typescript
 import { PdfService, pdfTemplate } from '@tstdl/base/pdf';
+import { stringTemplateField } from '@tstdl/base/templates';
 import { inject } from '@tstdl/base/injector';
 import { writeFile } from 'fs/promises';
 
 const pdfService = inject(PdfService);
 
+// Define a template for an invoice
 const invoiceTemplate = pdfTemplate(
   'invoice-template',
   {
-    header: '<span>Invoice - Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>',
-    body: '<h1>Invoice for {{ customerName }}</h1><p>Amount: ${{ amount }}</p>',
+    header: stringTemplateField({ template: '<span>Invoice - Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>' }),
+    body: stringTemplateField({ template: '<h1>Invoice for {{ customerName }}</h1><p>Amount: {{ amount }}</p>' }),
   },
   {
     displayHeaderFooter: true,
     format: 'A4',
-    margin: { top: '1cm', bottom: '1cm' }
-  }
+    margin: { top: '1cm', bottom: '1cm' },
+  },
 );
 
+// Provide the data to fill in the template
 const context = {
   customerName: 'John Doe',
-  amount: 199.99
+  amount: 199.99,
 };
 
 const pdfBytes: Uint8Array = await pdfService.renderTemplate(invoiceTemplate, context);
@@ -142,18 +149,18 @@ await writeFile('invoice.pdf', pdfBytes);
 
 ### Merging PDFs
 
-Combine multiple PDF files into one. The sources can be file paths, `Uint8Array` buffers, or `ReadableStream`s.
+Combine multiple PDF files into a single document. The sources can be file paths, `Uint8Array` buffers, or `ReadableStream`s.
 
 ```typescript
 import { mergePdfs } from '@tstdl/base/pdf';
 import { readFile, writeFile } from 'fs/promises';
 
-const pdf1 = await readFile('file1.pdf');
-const pdf2Path = 'file2.pdf';
+const pdfBuffer = await readFile('file1.pdf');
+const pdfPath = 'file2.pdf';
 
-const mergedPdf: Uint8Array = await mergePdfs([pdf1, pdf2Path]);
+const mergedPdfBytes: Uint8Array = await mergePdfs([pdfBuffer, pdfPath]);
 
-await writeFile('merged.pdf', mergedPdf);
+await writeFile('merged.pdf', mergedPdfBytes);
 ```
 
 ### Getting Page Count
@@ -169,12 +176,13 @@ console.log(`The document has ${pageCount} pages.`); // e.g., "The document has 
 
 ### Converting a PDF Page to an Image
 
-Extract a single page from a PDF and save it as a high-quality image.
+Extract a single page from a PDF and convert it into an image format like PNG or JPEG.
 
 ```typescript
 import { pdfToImage } from '@tstdl/base/pdf';
 import { writeFile } from 'fs/promises';
 
+// Convert the first page to a 300px wide PNG
 const imageBytes = await pdfToImage('my-document.pdf', 1, 300, 'png');
 
 await writeFile('page-1.png', imageBytes);
@@ -182,22 +190,17 @@ await writeFile('page-1.png', imageBytes);
 
 ## API Summary
 
-### Classes
-
--   **`PdfService`**: The main service for PDF generation.
--   **`PdfTemplate<Context>`**: Defines a template with fields and rendering options for PDF generation.
--   **`PdfServiceRenderOptions`**: Extends standard browser PDF options with additional controls like `delay`, `locale`, and `waitForNetworkIdle`.
-
-### Functions
-
--   `renderHtml(html: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`: Renders an HTML string to a PDF.
--   `renderHtmlStream(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`: Renders an HTML string to a PDF stream.
--   `renderUrl(url: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`: Renders a URL to a PDF.
--   `renderUrlStream(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`: Renders a URL to a PDF stream.
--   `renderTemplate(keyOrTemplate: string | PdfTemplate, context?: object, options?: PdfServiceRenderOptions): Promise<Uint8Array>`: Renders a template to a PDF.
--   `renderTemplateStream(keyOrTemplate: string | PdfTemplate, context?: object, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`: Renders a template to a PDF stream.
--   `pdfTemplate(name: string, fields: object, options?: PdfTemplateOptions): PdfTemplate`: A factory function to create a `PdfTemplate` instance.
--   `getPdfPageCount(file: string | Uint8Array | ReadableStream<Uint8Array>): Promise<number>`: Returns the number of pages in a PDF.
--   `mergePdfs(pdfs: (string | Uint8Array | ReadableStream<Uint8Array>)[]): Promise<Uint8Array>`: Merges multiple PDFs into a single `Uint8Array`.
--   `mergePdfsStream(pdfs: (string | Uint8Array | ReadableStream<Uint8Array>)[]): Promise<ReadableStream<Uint8Array>>`: Merges multiple PDFs into a single `ReadableStream`.
--   `pdfToImage(file: string | Uint8Array | ReadableStream<Uint8Array>, page: number, size: number, format: 'png' | 'jpeg' | ...): Promise<Uint8Array>`: Converts a single PDF page to an image.
+| Member                   | Signature                                                                                                                         | Description                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **`PdfService`**         | `class`                                                                                                                           | Main service for generating PDFs from HTML, URLs, or templates using a headless browser. |
+| `renderHtml()`           | `(html: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                          | Renders an HTML string to a PDF and returns it as a byte array.                          |
+| `renderHtmlStream()`     | `(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                   | Renders an HTML string to a PDF stream for memory-efficient processing.                  |
+| `renderUrl()`            | `(url: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                           | Renders a web page from a URL to a PDF and returns it as a byte array.                   |
+| `renderUrlStream()`      | `(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                    | Renders a web page from a URL to a PDF stream.                                           |
+| `renderTemplate()`       | `<C>(template: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                    | Renders a template to a PDF and returns it as a byte array.                              |
+| `renderTemplateStream()` | `<C>(template: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`             | Renders a template to a PDF stream.                                                      |
+| **`pdfTemplate()`**      | `(name: string, fields: object, options?: PdfTemplateOptions): PdfTemplate`                                                       | A factory function to create a `PdfTemplate` instance for dynamic PDF generation.        |
+| **`getPdfPageCount()`**  | `(file: string \| Uint8Array \| ReadableStream): Promise<number>`                                                                 | Gets the total number of pages in a PDF file. **Requires `qpdf`**.                       |
+| **`mergePdfs()`**        | `(pdfs: (string \| Uint8Array \| ReadableStream)[]): Promise<Uint8Array>`                                                         | Merges multiple PDF files into one, returned as a byte array. **Requires `pdfunite`**.   |
+| **`mergePdfsStream()`**  | `(pdfs: (string \| Uint8Array \| ReadableStream)[]): Promise<ReadableStream<Uint8Array>>`                                         | Merges multiple PDF files into a single PDF stream. **Requires `pdfunite`**.             |
+| **`pdfToImage()`**       | `(file: string \| Uint8Array \| ReadableStream, page: number, size: number, format: 'png' \| 'jpeg' \| ...): Promise<Uint8Array>` | Converts a single page of a PDF into an image. **Requires `pdftocairo`**.                |

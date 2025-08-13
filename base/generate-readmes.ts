@@ -1,10 +1,14 @@
 import { exists } from 'jsr:@std/fs';
 import { join } from 'jsr:@std/path';
+import packageJson from './package.json' with { type: 'json' };
+
+const allModules = Object.keys(packageJson.exports).map((key) => key.slice(2)).filter((key) => (key.length > 0) && !key.endsWith('json') && !key.endsWith('js'));
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 // List of module directories to process, relative to the project root.
 const MODULE_SUBDIRS: string[] = [
+  'ai',
   'authentication',
   'browser',
   'enumeration',
@@ -29,7 +33,10 @@ const MODULE_SUBDIRS: string[] = [
 
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
-const exampleSourceCode = await packDirectoryWithRepomix(`./source/document-management`);
+const exampleSourceCode1 = await packDirectoryWithRepomix(`./source/document-management`);
+const exampleSourceCode2 = await Deno.readTextFile('./tstdl-features.xml');
+
+const exampleSourceCode = [exampleSourceCode1, exampleSourceCode2].join('\n\n---\n\n');
 
 // --- HELPER FUNCTIONS ---
 
@@ -79,7 +86,8 @@ async function getExistingReadme(readmePath: string): Promise<string | null> {
  * @returns The complete prompt string.
  */
 function buildPrompt(module: string, packedCode: string, existingReadme: string | null): string {
-  const baseInstruction = `You are an expert software developer creating high-quality, developer-focused documentation.
+  const baseInstruction = `
+You are an expert software developer creating high-quality, developer-focused documentation.
 The output must be ONLY the raw Markdown content for the README.md file. Do not include any surrounding text, explanations, or code fences like \`\`\`markdown.
 
 The README should include:
@@ -92,18 +100,22 @@ The README should include:
 
 Study the example usage source code provided to understand how the module is typically used.
 
-The import for the module is \`@tstdl/base/${module}\`. Use this instead of the relative paths in the examples.`;
+Use package import statements instead of relative paths in your examples:
+Example: \`import { SomeService } from '@tstdl/base/some-module';\` instead of \`import { FooService } from '#/some-module/index.js';\`
+
+Available modules to import from: ${allModules.join(', ')}
+`.trim();
 
   if (existingReadme) {
     // --- UPDATE PROMPT ---
     return `
 ${baseInstruction}
 
-Your task is to UPDATE and IMPROVE an existing README.md file for a TypeScript module based on its source code.
+Your task is to UPDATE and IMPROVE an existing README.md file for the TypeScript ${module} module based on its source code.
 Make sure the README is accurate, reflects any new features or changes, and follows best practices for developer documentation.
 You can add, remove, or rewrite sections as needed for clarity and completeness.
 
-** EXAMPLE USAGE SOURCE CODE:**
+**EXAMPLE USAGE SOURCE CODE:**
   \`\`\`markdown
 ${exampleSourceCode}
 \`\`\`

@@ -23,7 +23,7 @@ export type FormatErrorOptions = {
   /**
    * Include stack trace
    */
-  includeStack?: boolean
+  includeStack?: boolean,
 };
 
 export interface ErrorExtraInfo {

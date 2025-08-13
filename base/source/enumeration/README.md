@@ -14,15 +14,15 @@ This module provides a simple way to define enumerations from plain objects whil
 ## Features
 
 - **Named Enums:** Associate a string name with an enum-like object, retrievable at runtime.
-- **Type-Safe:** Leverages TypeScript's type inference to provide strong type safety for enum members.
+- **Type-Safe:** Leverages TypeScript's `const` generics for strong type safety on enum members.
 - **Lightweight:** A minimal implementation with no external dependencies.
 - **Memory-Efficient:** Uses a `WeakMap` to store enum names, allowing for garbage collection if the enum object is no longer referenced.
 
 ## Core Concepts
 
-In standard TypeScript, when you define an `enum`, its declared name (e.g., `enum Status { ... }`) is lost during compilation. The compiled output is just a JavaScript object. This makes it difficult for runtime systems, like an ORM or a validation library, to identify the enum "type" by name.
+In standard TypeScript, the declared name of an `enum` (e.g., `enum Status { ... }`) is lost during compilation. The output is just a JavaScript object, making it difficult for runtime systems like an ORM, serializer, or validation library to identify the enum "type" by name.
 
-The `@tstdl/base/enumeration` module solves this by providing a `defineEnum` function. It takes an enum-like object and a string name, and stores this association in a global, memory-safe registry (`WeakMap`). This allows other parts of your application to retrieve the enum's registered name at runtime using `getEnumName` or `tryGetEnumName`.
+This module solves the problem by providing a `defineEnum` function. It takes an enum-like object and a string name, and stores this association in a global, memory-safe registry (`WeakMap`). This allows other parts of your application to retrieve the enum's registered name at runtime using `getEnumName` or `tryGetEnumName`.
 
 This pattern is especially powerful for framework development, where you might need to generate database schemas, UI components, or validation rules based on an enum type identified by its name.
 
@@ -30,32 +30,32 @@ This pattern is especially powerful for framework development, where you might n
 
 ### Defining an Enum
 
-Use the `defineEnum` function to create your enumeration object and register its name. You can then use the `EnumType` utility to create a corresponding TypeScript type for the enum values.
+Use the `defineEnum` function to create your enumeration object and register its name. The `EnumType` utility type can then be used to create a corresponding TypeScript type for the enum values.
 
 ```typescript
 import { defineEnum, type EnumType } from '@tstdl/base/enumeration';
 
-// 1. Define the enum object and register its name
+// 1. Define the enum object and register its name.
 export const DocumentApproval = defineEnum('DocumentApproval', {
   Pending: 'pending',
   Approved: 'approved',
   Rejected: 'rejected',
 });
 
-// 2. (Optional) Create a type alias for the enum values
+// 2. Create a type alias for the enum values for easy use.
 export type DocumentApproval = EnumType<typeof DocumentApproval>;
 
-// 3. Use the enum in your code
+// 3. Use the enum and its type in your code.
 function setApprovalStatus(status: DocumentApproval): void {
   console.log(`Setting status to: ${status}`);
 }
 
 setApprovalStatus(DocumentApproval.Pending); // OK
-// setApprovalStatus('pending'); // OK
+// setApprovalStatus('pending'); // OK, since DocumentApproval is a union of string literals
 // setApprovalStatus('unknown'); // Error: Argument of type '"unknown"' is not assignable to parameter of type 'DocumentApproval'.
 ```
 
-### Retrieving the Enum Name
+### Retrieving an Enum's Name
 
 You can retrieve the registered name of an enum object, which is useful for metaprogramming, serialization, or logging.
 
@@ -70,9 +70,15 @@ const UserRole = defineEnum('UserRole', {
 
 const unregisteredEnum = { a: 1 };
 
-// Get the name, throws if not found
-const name = getEnumName(UserRole);
-console.log(name); // Outputs: "UserRole"
+// Get the name, throws an error if the enum is not registered
+try {
+  const name = getEnumName(UserRole);
+  console.log(name); // Outputs: "UserRole"
+
+  getEnumName(unregisteredEnum); // This would throw an error
+} catch (error) {
+  console.error((error as Error).message); // Outputs: "Unknown enumeration"
+}
 
 // Safely get the name, returns undefined if not found
 const safeName = tryGetEnumName(UserRole);
@@ -84,26 +90,9 @@ console.log(unknownName); // Outputs: undefined
 
 ## API Summary
 
-### Functions
-
--   `defineEnum<const T>(name: string, enumObject: T): T`
-    Registers an `enumObject` with a given `name` and returns the object.
-    -   **`name`**: `string` - The runtime name for the enum.
-    -   **`enumObject`**: `T` - An object with string or number values.
-    -   **Returns**: `T` - The original `enumObject`.
-
--   `getEnumName(enumeration: object): string`
-    Retrieves the registered name for an enum object. Throws an error if the enum is not registered.
-    -   **`enumeration`**: `object` - The enum object created with `defineEnum`.
-    -   **Returns**: `string` - The registered name.
-
--   `tryGetEnumName(enumeration: object): string | undefined`
-    Retrieves the registered name for an enum object. Returns `undefined` if the enum is not registered.
-    -   **`enumeration`**: `object` - The enum object.
-    -   **Returns**: `string | undefined` - The registered name or `undefined`.
-
-### Types
-
--   `EnumType<T>`
-    A utility type that extracts the union of values from an enum-like object.
-    -   **`T`**: The type of the enum object (e.g., `typeof MyEnum`).
+| Member             | Signature                                                                     | Description                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `defineEnum()`     | `function defineEnum<const T extends object>(name: string, enumObject: T): T` | Registers an `enumObject` with a given `name` and returns the object.                            |
+| `getEnumName()`    | `function getEnumName(enumeration: object): string`                           | Retrieves the registered name for an enum object. Throws an error if the enum is not registered. |
+| `tryGetEnumName()` | `function tryGetEnumName(enumeration: object): string \| undefined`           | Safely retrieves the registered name for an enum object. Returns `undefined` if not registered.  |
+| `EnumType`         | `type EnumType<T extends object> = T[keyof T]`                                | Utility type that creates a union of an enum-like object's values.                               |

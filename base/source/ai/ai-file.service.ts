@@ -1,25 +1,27 @@
-import '#/polyfills.js';
-
 import { openAsBlob } from 'node:fs';
+import { Readable } from 'node:stream';
+import { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
-import { type Bucket, Storage } from '@google-cloud/storage';
+import { Storage, type Bucket } from '@google-cloud/storage';
 import { FileState, GoogleGenAI } from '@google/genai';
 
+import { CancellationSignal } from '#/cancellation/token.js';
 import { AsyncEnumerable } from '#/enumerable/async-enumerable.js';
 import { DetailsError } from '#/errors/details.error.js';
-import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/logger.js';
 import { createArray } from '#/utils/array/array.js';
+import { backoffGenerator, type BackoffGeneratorOptions } from '#/utils/backoff.js';
 import { formatBytes } from '#/utils/format.js';
-import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isBlob, isDefined, isUndefined } from '#/utils/type-guards.js';
-import { millisecondsPerSecond } from '#/utils/units.js';
 import type { AiServiceOptions } from './ai.service.js';
 import type { FileContentPart, FileInput } from './types.js';
 
+/**
+ * Options for {@link AiFileService}.
+ */
 export type AiFileServiceOptions = Pick<AiServiceOptions, 'apiKey' | 'keyFile' | 'vertex'>;
 
 export type AiFileServiceArgument = AiFileServiceOptions;
@@ -31,6 +33,10 @@ type File = {
   mimeType: string,
 };
 
+/**
+ * Manages file uploads and state for use with AI models.
+ * Handles both Google Generative AI File API and Google Cloud Storage for Vertex AI.
+ */
 @Singleton()
 export class AiFileService implements Resolvable<AiFileServiceArgument> {
   readonly #options = injectArgument(this);
@@ -47,11 +53,26 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   readonly #fileMap = new Map<string, File>();
   readonly #fileUriMap = new Map<string, File>();
   readonly #logger = inject(Logger, 'AiFileService');
+  readonly #cancellationSignal = inject(CancellationSignal);
+
+  readonly #backoffOptions: BackoffGeneratorOptions = {
+    cancellationSignal: this.#cancellationSignal,
+    strategy: 'linear',
+    initialDelay: 1000,
+    increase: 500,
+    jitter: 0.2,
+    maximumDelay: 10000,
+  };
 
   #bucket: Bucket | undefined;
 
   declare readonly [resolveArgumentType]: AiFileServiceArgument;
 
+  /**
+   * Uploads and processes a single file, making it available for AI model consumption.
+   * @param fileInput The file to process.
+   * @returns A promise that resolves to a {@link FileContentPart} for use in AI requests.
+   */
   async processFile(fileInput: FileInput): Promise<FileContentPart> {
     const file = await this.getFile(fileInput);
 
@@ -61,6 +82,11 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
     return { file: file.id };
   }
 
+  /**
+   * Uploads and processes multiple files in parallel, making them available for AI model consumption.
+   * @param fileInputs The files to process.
+   * @returns A promise that resolves to an array of {@link FileContentPart} for use in AI requests.
+   */
   async processFiles(fileInputs: FileInput[]): Promise<FileContentPart[]> {
     const files = await this.getFiles(fileInputs);
 
@@ -72,10 +98,22 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
     });
   }
 
+  /**
+   * Retrieves a file by its internal ID.
+   * The file must have been processed by this service instance before.
+   * @param id The internal ID of the file.
+   * @returns The file, or `undefined` if not found.
+   */
   getFileById(id: string): File | undefined {
     return this.#fileMap.get(id);
   }
 
+  /**
+   * Retrieves a file by its URI (e.g., GCS URI).
+   * The file must have been processed by this service instance before.
+   * @param uri The URI of the file.
+   * @returns The file, or `undefined` if not found.
+   */
   getFileByUri(uri: string): File | undefined {
     return this.#fileUriMap.get(uri);
   }
@@ -112,18 +150,18 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
     this.#logger.verbose(`Uploading file "${id}" (${formatBytes(blob.size)})...`);
 
     if (isDefined(this.#storage)) {
-      throw new NotImplementedError();
-      /*
       const bucket = await this.getBucket();
-      const [file] = await bucket.upload(path, { destination: id, contentType: mimeType });
+      const file = bucket.file(id);
+
+      const blobStream = Readable.fromWeb(blob.stream() as NodeReadableStream);
+      await file.save(blobStream, { contentType: blob.type, resumable: false });
 
       return {
         id,
-        name: id,
-        uri: file.cloudStorageURI.toString(),
-        mimeType
+        name: id, // For Vertex, name is the GCS object id
+        uri: `gs://${bucket.name}/${file.name}`,
+        mimeType: blob.type,
       };
-      */
     }
 
     const response = await this.#genAI.files.upload({ file: blob, config: { mimeType: blob.type } });
@@ -146,10 +184,13 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
     }
 
     const bucketName = assertDefinedPass(this.#options.vertex.bucket, 'Bucket not specified');
-    const [exists] = await this.#storage!.bucket(bucketName).exists();
+    const bucket = this.#storage!.bucket(bucketName);
+    const [exists] = await bucket.exists();
 
     if (!exists) {
-      const [bucket] = await this.#storage!.createBucket(bucketName, {
+      this.#logger.info(`Bucket "${bucketName}" not found, creating...`);
+
+      const [createdBucket] = await this.#storage!.createBucket(bucketName, {
         location: this.#options.vertex.location,
         lifecycle: {
           rule: [{
@@ -159,30 +200,39 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
         },
       });
 
+      this.#bucket = createdBucket;
+    }
+    else {
       this.#bucket = bucket;
     }
 
-    return this.#bucket!;
+    return this.#bucket;
   }
 
   private async waitForFileActive(file: File): Promise<void> {
-    if (isUndefined(this.#genAI)) {
+    if (isDefined(this.#options.vertex)) {
+      // For Vertex, uploads to GCS are instantly "active"
       return;
     }
 
-    let state = await this.#genAI.files.get({ name: file.name });
+    for await (const backoff of backoffGenerator(this.#backoffOptions)) {
+      const state = await this.#genAI.files.get({ name: file.name });
 
-    while (state.state == FileState.PROCESSING) {
-      await timeout(millisecondsPerSecond);
-      state = await this.#genAI.files.get({ name: file.name });
-    }
+      if (state.state == FileState.ACTIVE) {
+        this.#logger.verbose(`File "${file.id}" is active.`);
+        return;
+      }
 
-    if (state.state == FileState.FAILED) {
-      throw new DetailsError(state.error?.message ?? `Failed to process file ${state.name}`, state.error?.details);
+      if (state.state == FileState.FAILED) {
+        throw new DetailsError(state.error?.message ?? `Failed to process file ${state.name}`, state.error?.details);
+      }
+
+      backoff();
     }
   }
 
   private async waitForFilesActive(files: File[]): Promise<void> {
+    // parallelizing does not help here, as each file upload is independently processed in the background
     for (const file of files) {
       await this.waitForFileActive(file);
     }

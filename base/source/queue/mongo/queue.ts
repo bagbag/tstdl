@@ -256,14 +256,14 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   async *getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>> {
     const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
-    for await (const backoff of backoffGenerator(backoffOptions, cancellationSignal)) {
+    for await (const backoff of backoffGenerator({ ...backoffOptions, cancellationSignal })) {
       const job = await this.dequeue();
 
       if (job != undefined) {
         yield job;
       }
       else {
-        backoff(continueToken);
+        backoff({ continueToken });
       }
     }
 
@@ -273,14 +273,14 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   async *getBatchConsumer(size: number, cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>[]> {
     const continueToken = CancellationToken.from(this.messageBus.allMessages$);
 
-    for await (const backoff of backoffGenerator(backoffOptions, cancellationSignal)) {
+    for await (const backoff of backoffGenerator({ ...backoffOptions, cancellationSignal })) {
       const jobs = await this.dequeueMany(size);
 
       if (jobs.length > 0) {
         yield jobs;
       }
       else {
-        backoff(continueToken);
+        backoff({ continueToken });
       }
     }
 

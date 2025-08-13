@@ -1,8 +1,6 @@
 # @tstdl/base/http
 
-A powerful, isomorphic, middleware-based HTTP client and server library for TypeScript.
-
-This module provides a comprehensive suite of tools for handling HTTP communication. It features a flexible client with a middleware pipeline and a modern, async-iterable-based server, both designed for robustness and type safety.
+A powerful, isomorphic, middleware-based HTTP client and server library for TypeScript. This module provides a comprehensive suite of tools for handling HTTP communication, featuring a flexible client with a middleware pipeline and a modern, async-iterable-based server.
 
 ## Table of Contents
 
@@ -19,19 +17,17 @@ This module provides a comprehensive suite of tools for handling HTTP communicat
   - [Server Setup](#server-setup)
   - [Handling Incoming Requests](#handling-incoming-requests)
 - [API Summary](#api-summary)
-  - [Client](#client)
-  - [Server](#server)
-  - [Configuration](#configuration)
 
 ## Features
 
 - **Isomorphic Design:** Shared abstractions for client and server, with specific adapters for different environments (e.g., `undici` for Node.js).
-- **Middleware-Driven Client:** Intercept and modify requests and responses using a flexible and powerful async middleware pipeline.
-- **Pluggable Client Adapter:** The `HttpClientAdapter` allows swapping out the underlying HTTP engine.
-- **Modern Server Abstraction:** The `HttpServer` uses an async iterator pattern for elegant and efficient request handling.
+- **Middleware-Driven Client:** Intercept and modify requests/responses using a flexible async middleware pipeline for concerns like logging, authentication, and caching.
+- **Pluggable Client Adapter:** The `HttpClientAdapter` allows swapping the underlying HTTP engine. `UndiciHttpClientAdapter` is provided for high-performance Node.js applications.
+- **Modern Server Abstraction:** The `HttpServer` uses an async iterator pattern (`for await...of`) for elegant and efficient request handling.
+- **Advanced Body Handling:** Seamlessly works with JSON, text, forms (`x-www-form-urlencoded`), `FormData`, binary (`Uint8Array`, `Blob`), and `ReadableStream`.
+- **Automatic Parameter Mapping:** Intelligently maps request parameters to URL path segments, query strings, or the request body.
 - **Typed API:** Strongly typed interfaces for requests, responses, headers, and query parameters to catch errors at compile time.
-- **Flexible Body Handling:** Seamlessly works with JSON, text, forms (`x-www-form-urlencoded`), `FormData`, binary `Uint8Array`, and `ReadableStream`.
-- **Convenience Helpers:** Utility classes like `HttpHeaders`, `HttpQuery`, and `HttpForm` simplify common tasks.
+- **Utility Classes:** Helpers like `HttpHeaders`, `HttpQuery`, and `HttpForm` simplify common tasks.
 
 ## Core Concepts
 
@@ -39,25 +35,25 @@ This module provides a comprehensive suite of tools for handling HTTP communicat
 
 The client is designed around three main components: `HttpClient`, `HttpClientAdapter`, and `HttpClientMiddleware`.
 
--   **`HttpClient`**: The primary interface for making requests. It manages configuration, default headers, and the middleware pipeline. It offers convenience methods like `getJson()`, `post()`, etc.
+- **`HttpClient`**: The primary interface for making requests. It manages configuration, default headers, and the middleware pipeline. It offers convenience methods like `getJson()`, `post()`, etc.
 
--   **`HttpClientAdapter`**: The "engine" that performs the actual HTTP call. The library is decoupled from any specific implementation. For Node.js, the `UndiciHttpClientAdapter` is provided, which uses the high-performance `undici` library. You must configure an adapter for the client to function.
+- **`HttpClientAdapter`**: The "engine" that performs the actual HTTP call. The library is decoupled from any specific implementation. For Node.js, the `UndiciHttpClientAdapter` is provided, which uses the high-performance `undici` library. You must configure an adapter for the client to function.
 
--   **`HttpClientMiddleware`**: A function that intercepts a request before it's sent and the response after it's received. Middleware is composed into a pipeline, allowing for cross-cutting concerns like logging, authentication, request modification, and custom error handling. Each middleware receives a `context` object (containing the request and eventually the response) and a `next` function to pass control to the next middleware in the chain.
+- **`HttpClientMiddleware`**: A function that intercepts a request before it's sent and the response after it's received. Middleware is composed into a pipeline, allowing for cross-cutting concerns like logging, authentication, request modification, and custom error handling. Each middleware receives a `context` object (containing the request and eventually the response) and a `next` function to pass control to the next middleware in the chain.
 
 ### HTTP Server
 
 The server implementation is based on the `HttpServer` abstract class.
 
--   **`HttpServer`**: An async iterable that yields a `HttpServerRequestContext` for each incoming connection. This design promotes a clean, modern loop for processing requests (`for await (const context of server)`).
+- **`HttpServer`**: An async iterable that yields a `HttpServerRequestContext` for each incoming connection. This design promotes a clean, modern loop for processing requests (`for await (const context of server)`).
 
--   **`HttpServerRequestContext`**: An object that encapsulates everything needed to handle a single request. It contains:
-    -   `request`: An `HttpServerRequest` instance with details like URL, method, headers, and body.
-    -   `respond`: A function to send an `HttpServerResponse` back to the client.
-    -   `close`: A function to close the connection.
-    -   `context`: The raw context from the underlying server implementation (e.g., Node.js `IncomingMessage` and `ServerResponse`).
+- **`HttpServerRequestContext`**: An object that encapsulates everything needed to handle a single request. It contains:
+  - `request`: An `HttpServerRequest` instance with details like URL, method, headers, and body.
+  - `respond`: A function to send an `HttpServerResponse` back to the client.
+  - `close`: A function to close the connection.
+  - `context`: The raw context from the underlying server implementation (e.g., Node.js `IncomingMessage` and `ServerResponse`).
 
--   **`NodeHttpServer`**: The default implementation of `HttpServer` for Node.js, built on top of the native `node:http` module.
+- **`NodeHttpServer`**: The default implementation of `HttpServer` for Node.js, built on top of the native `node:http` module. It supports features like trusted proxy IP resolution.
 
 ## Usage
 
@@ -67,7 +63,7 @@ First, configure the `HttpClient` with an adapter. In a Node.js environment, use
 
 ```typescript
 import { HttpClient, configureUndiciHttpClientAdapter } from '@tstdl/base/http';
-import { Injector } from '#/injector/injector.js'; // Assuming a DI container setup
+import { Injector } from '@tstdl/base/injector';
 
 // Configure and register the Undici adapter
 configureUndiciHttpClientAdapter({ register: true });
@@ -78,7 +74,7 @@ const httpClient = Injector.resolve(HttpClient);
 
 ### Making Requests
 
-The `HttpClient` provides intuitive methods for all common HTTP verbs.
+The `HttpClient` provides intuitive methods for all common HTTP verbs. It also supports automatic parameter mapping.
 
 ```typescript
 // Simple GET request
@@ -89,6 +85,16 @@ const user = await httpClient.getJson('https://api.example.com/users', {
   query: { id: 123 }
 });
 console.log(user.name);
+
+// Automatic parameter mapping
+// Maps `userId` to the URL path and `active` to the query string.
+const user = await httpClient.getJson('https://api.example.com/users/:userId', {
+  parameters: {
+    userId: 123,
+    active: true
+  }
+});
+// Resulting URL: https://api.example.com/users/123?active=true
 
 // POST request with a JSON body
 const newItem = await httpClient.postJson('https://api.example.com/items', {
@@ -120,9 +126,15 @@ if (response.statusCode == 200) {
 Middleware can be used to add common functionality like authentication or logging.
 
 ```typescript
-import type { HttpClientMiddleware, HttpClientMiddlewareNext, HttpClientMiddlewareContext } from '@tstdl/base/http';
-import { configureHttpClient, configureUndiciHttpClientAdapter, HttpClient } from '@tstdl/base/http';
-import { Injector } from '#/injector/injector.js';
+import {
+  HttpClient,
+  configureHttpClient,
+  configureUndiciHttpClientAdapter,
+  type HttpClientMiddleware,
+  type HttpClientMiddlewareContext,
+  type HttpClientMiddlewareNext
+} from '@tstdl/base/http';
+import { Injector } from '@tstdl/base/injector';
 
 // A simple logging middleware
 const loggingMiddleware: HttpClientMiddleware = async (context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext) => {
@@ -159,7 +171,10 @@ try {
   if (error instanceof HttpError) {
     console.error(`HTTP Error: ${error.reason}`);
     console.error(`Status: ${error.response?.statusCode}`);
-    console.error('Body:', await error.responseInstance?.body.readAsText());
+
+    // The raw response instance is available on the error for inspection
+    const bodyText = await error.responseInstance?.body.readAsText();
+    console.error('Body:', bodyText);
   } else {
     console.error('An unknown error occurred:', error);
   }
@@ -171,8 +186,8 @@ try {
 Configure and run the `HttpServer`.
 
 ```typescript
-import { configureNodeHttpServer, HttpServer, HttpServerResponse } from '@tstdl/base/http';
-import { Injector } from '#/injector/injector.js';
+import { configureNodeHttpServer, HttpServer } from '@tstdl/base/http';
+import { Injector } from '@tstdl/base/injector';
 
 // Register the Node.js server implementation
 configureNodeHttpServer();
@@ -188,8 +203,12 @@ httpServer.listen(3000);
 Loop through incoming requests using the async iterator pattern.
 
 ```typescript
-import { HttpServer, HttpServerResponse, type HttpServerRequestContext } from '@tstdl/base/http';
-import { Injector } from '#/injector/injector.js';
+import {
+  HttpServer,
+  HttpServerResponse,
+  type HttpServerRequestContext
+} from '@tstdl/base/http';
+import { Injector } from '@tstdl/base/injector';
 
 const httpServer = Injector.resolve(HttpServer);
 
@@ -230,70 +249,47 @@ main();
 
 ## API Summary
 
-This is a brief overview of the main classes and functions.
+### Configuration
+
+| Function | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| **`configureHttpClient`** | `config: HttpClientModuleConfig` | `void` | Configures the global `HttpClient`, its adapter, and middleware. |
+| **`configureUndiciHttpClientAdapter`** | `options?: UndiciHttpClientAdapterOptions & { register?: boolean }` | `void` | Configures and optionally registers the `UndiciHttpClientAdapter`. |
+| **`configureNodeHttpServer`** | `configuration?: Partial<NodeHttpServerConfiguration>` | `void` | Registers the `NodeHttpServer` as the default `HttpServer`. |
 
 ### Client
 
--   **`HttpClient`**:
-    -   `get(url, options?)`: `Promise<HttpClientResponse>`
-    -   `getJson<T>(url, options?)`: `Promise<T>`
-    -   `getText(url, options?)`: `Promise<string>`
-    -   `post(url, options?)`: `Promise<HttpClientResponse>`
-    -   `put(url, options?)`: `Promise<HttpClientResponse>`
-    -   `patch(url, options?)`: `Promise<HttpClientResponse>`
-    -   `delete(url, options?)`: `Promise<HttpClientResponse>`
-    -   `request(method, url, options?)`: `Promise<HttpClientResponse>`
-    -   `rawRequest(request)`: `Promise<HttpClientResponse>`
-    -   `addMiddleware(middleware)`: `void`
-
--   **`HttpClientRequest`**:
-    -   `url: string`
-    -   `method: HttpMethod`
-    -   `headers: HttpHeaders`
-    -   `query: HttpQuery`
-    -   `body?: HttpRequestBody`
-    -   `timeout: number`
-
--   **`HttpClientResponse`**:
-    -   `request: HttpClientRequest`
-    -   `statusCode: number`
-    -   `headers: HttpHeaders`
-    -   `body: HttpBody`
-
--   **`HttpBody`**:
-    -   `readAsBuffer()`: `Promise<Uint8Array>`
-    -   `readAsText()`: `Promise<string>`
-    -   `readAsJson<T>()`: `Promise<T>`
-    -   `readAsStream()`: `ReadableStream<string | Uint8Array>`
+| Class / Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| **`HttpClient.get`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a GET request. |
+| **`HttpClient.getJson`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<T>` | Performs a GET request and parses the response body as JSON. |
+| **`HttpClient.post`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a POST request. |
+| **`HttpClient.put`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a PUT request. |
+| **`HttpClient.patch`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a PATCH request. |
+| **`HttpClient.delete`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a DELETE request. |
+| **`HttpClientRequest.url`** | | `string` | The full request URL. |
+| **`HttpClientRequest.method`** | | `HttpMethod` | The HTTP method. |
+| **`HttpClientRequest.headers`** | | `HttpHeaders` | Request headers map. |
+| **`HttpClientRequest.body`** | | `HttpRequestBody \| undefined` | The request body. |
+| **`HttpClientResponse.statusCode`** | | `number` | The HTTP status code. |
+| **`HttpClientResponse.headers`** | | `HttpHeaders` | Response headers map. |
+| **`HttpClientResponse.body`** | | `HttpBody` | The response body handler. |
+| **`HttpBody.readAsBuffer`** | `options?: ReadBodyOptions` | `Promise<Uint8Array>` | Reads the body as a buffer. |
+| **`HttpBody.readAsText`** | `options?: ReadBodyOptions` | `Promise<string>` | Reads the body as a string. |
+| **`HttpBody.readAsJson`** | `options?: ReadBodyAsJsonOptions` | `Promise<T>` | Reads and parses the body as JSON. |
+| **`HttpBody.readAsBinaryStream`** | `options?: ReadBodyOptions` | `ReadableStream<Uint8Array>` | Reads the body as a binary stream. |
 
 ### Server
 
--   **`HttpServer`**:
-    -   `listen(port)`: `Promise<void>`
-    -   `close(timeout)`: `Promise<void>`
-    -   `[Symbol.asyncIterator]()`: `AsyncIterator<HttpServerRequestContext>`
-
--   **`HttpServerRequest`**:
-    -   `url: URL`
-    -   `method: HttpMethod`
-    -   `headers: HttpHeaders`
-    -   `query: HttpQuery`
-    -   `cookies: CookieParser`
-    -   `body: HttpBody`
-    -   `ip: string`
-
--   **`HttpServerResponse`**:
-    -   `constructor(options?)`
-    -   `statusCode?: number`
-    -   `headers: HttpHeaders`
-    -   `body?: { json?, text?, buffer?, stream? }`
-    -   `static redirect(url, options?)`: `HttpServerResponse`
-
-### Configuration
-
--   **`configureHttpClient(config)`**: Configures the global `HttpClient`.
-    -   `config.adapter`: `Type<HttpClientAdapter>`
-    -   `config.middleware`: `OneOrMany<HttpClientMiddleware>`
-    -   `config.baseUrl`: `string`
--   **`configureNodeHttpServer(config?)`**: Registers the `NodeHttpServer` as the default `HttpServer`.
--   **`configureUndiciHttpClientAdapter(config?)`**: Configures and optionally registers the `UndiciHttpClientAdapter`.
+| Class / Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| **`HttpServer.listen`** | `port: number` | `Promise<void>` | Starts listening on the given port. |
+| **`HttpServer.close`** | `timeout: number` | `Promise<void>` | Stops the server gracefully. |
+| **`HttpServer.[Symbol.asyncIterator]`** | | `AsyncIterator<HttpServerRequestContext>` | Iterates over incoming requests. |
+| **`HttpServerRequest.url`** | | `URL` | The parsed URL of the request. |
+| **`HttpServerRequest.method`** | | `HttpMethod` | The HTTP method. |
+| **`HttpServerRequest.headers`** | | `HttpHeaders` | Incoming request headers. |
+| **`HttpServerRequest.body`** | | `HttpBody` | The request body handler. |
+| **`HttpServerRequest.ip`** | | `string` | The client's IP address. |
+| **`HttpServerResponse.constructor`** | `options?: HttpServerResponseOptions` | `HttpServerResponse` | Creates a new response object. |
+| **`HttpServerResponse.redirect`** | `url: string`, `options?: HttpServerResponseOptions` | `HttpServerResponse` | Creates a redirect response (303). |
