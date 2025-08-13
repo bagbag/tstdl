@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { assertDefinedPass } from '#/utils/type-guards.js';
 import type { DocumentCollectionAssignment } from '../../models/index.js';
 import type { DocumentAssignmentTaskView, DocumentAssignmentView, DocumentCollectionAssignmentView } from '../document-management.view-model.js';

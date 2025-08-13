@@ -1,4 +1,4 @@
-import type { StringMap } from '#/types.js';
+import type { StringMap } from '#/types/index.js';
 import { CookieParser } from '../cookie-parser.js';
 import type { HttpBodySource } from '../http-body.js';
 import { HttpBody } from '../http-body.js';

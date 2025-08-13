@@ -1,5 +1,5 @@
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { Json, UndefinableJsonObject } from '#/types.js';
+import type { Json, UndefinableJsonObject } from '#/types/index.js';
 import { fromEntries, hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { isDefined, isNotNull, isNumber, isString } from '#/utils/type-guards.js';
 import type { Schema, SchemaTestable } from '../schema.js';

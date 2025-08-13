@@ -1,6 +1,6 @@
 import { Singleton } from '#/injector/decorators.js';
 import type { KeyValueStore, KeyValueStoreProvider } from '#/key-value-store/index.js';
-import type { StringMap } from '#/types.js';
+import type { StringMap } from '#/types/index.js';
 import { MongoKeyValueRepository } from './mongo-key-value.repository.js';
 import { MongoKeyValueStore } from './mongo-key-value.store.js';
 

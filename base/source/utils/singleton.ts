@@ -1,4 +1,4 @@
-import type { ObjectLiteral } from '#/types.js';
+import type { ObjectLiteral } from '#/types/index.js';
 import { FactoryMap } from './factory-map.js';
 
 export type Builder<T> = () => T;

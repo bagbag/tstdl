@@ -9,7 +9,7 @@ import { Logger } from '#/logger/logger.js';
 import { injectRepository } from '#/orm/server/repository.js';
 import { getEntityIds } from '#/orm/utils.js';
 import { Queue } from '#/queue/queue.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { isNull, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerMinute } from '#/utils/units.js';

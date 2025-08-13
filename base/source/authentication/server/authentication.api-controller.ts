@@ -5,7 +5,7 @@ import { InvalidCredentialsError } from '#/errors/invalid-credentials.error.js';
 import type { HttpServerResponseOptions, SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { ObjectSchemaOrType, SchemaTestable } from '#/schema/index.js';
-import type { Record, Type, TypedOmit } from '#/types.js';
+import type { Record, Type, TypedOmit } from '#/types/index.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { assertDefinedPass, isDefined } from '#/utils/type-guards.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';

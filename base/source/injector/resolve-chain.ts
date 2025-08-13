@@ -1,5 +1,5 @@
 import { reflectionRegistry } from '#/reflection/index.js';
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { assertDefinedPass, isDefined } from '#/utils/type-guards.js';
 import type { InjectionToken } from './token.js';
 import { getTokenName } from './token.js';

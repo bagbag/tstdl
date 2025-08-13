@@ -4,7 +4,7 @@ import { inject } from '#/injector/inject.js';
 import { TRANSACTION_TIMESTAMP, type EntityMetadataInsert, type Query } from '#/orm/index.js';
 import { Transactional } from '#/orm/server/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/index.js';
 import { fromEntries } from '#/utils/object/index.js';
 import { assertDefinedPass, isString } from '#/utils/type-guards.js';

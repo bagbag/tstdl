@@ -6,7 +6,7 @@ import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
-import type { Enumeration, EnumerationArray, EnumerationValue, Record } from '#/types.js';
+import type { Enumeration, EnumerationArray, EnumerationValue, Record } from '#/types/index.js';
 import { enumEntries, enumValueName } from '#/utils/enum.js';
 import { memoize } from '#/utils/function/memoize.js';
 import { deepObjectEntries, hasOwnProperty } from '#/utils/object/object.js';

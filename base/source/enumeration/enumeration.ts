@@ -1,5 +1,5 @@
 
-import type { EnumerationObject } from '#/types.js';
+import type { EnumerationObject } from '#/types/index.js';
 import { isUndefined } from '#/utils/type-guards.js';
 
 const registry = new WeakMap<object, string>();

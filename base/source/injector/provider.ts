@@ -1,4 +1,4 @@
-import type { Constructor, Record, TypedOmit } from '#/types.js';
+import type { Constructor, Record, TypedOmit } from '#/types/index.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
 import { isFunction, isObject } from '#/utils/type-guards.js';
 import type { ResolveArgument } from './interfaces.js';

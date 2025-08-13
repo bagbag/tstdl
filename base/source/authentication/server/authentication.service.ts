@@ -7,7 +7,7 @@ import { KeyValueStore } from '#/key-value-store/key-value.store.js';
 import { Logger } from '#/logger/logger.js';
 import { DatabaseConfig } from '#/orm/server/index.js';
 import { EntityRepositoryConfig, injectRepository } from '#/orm/server/repository.js';
-import type { BinaryData, Record } from '#/types.js';
+import type { BinaryData, Record } from '#/types/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';

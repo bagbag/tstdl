@@ -4,7 +4,7 @@ import { BadRequestError } from '#/errors/index.js';
 import { inject } from '#/injector/inject.js';
 import type { NewEntity } from '#/orm/index.js';
 import { Transactional, injectRepository } from '#/orm/server/index.js';
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertDefinedPass, isNotNull } from '#/utils/type-guards.js';
 import { DocumentApproval, DocumentRequest, DocumentRequestCollectionAssignment, DocumentRequestState, DocumentRequestTemplate, DocumentRequestsTemplate, type Document } from '../../models/index.js';

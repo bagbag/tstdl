@@ -1,7 +1,7 @@
 import { type ApiDefinition, type ApiEndpointsDefinition, defineApi } from '#/api/types.js';
 import { assign, emptyObjectSchema, explicitObject, literal, never, number, object, type ObjectSchema, type ObjectSchemaOrType, optional, string } from '#/schema/index.js';
 import type { SchemaTestable } from '#/schema/schema.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { TokenPayload } from './index.js';
 import { SecretCheckResult } from './models/secret-check-result.model.js';
 import { TokenPayloadBase } from './models/token-payload-base.model.js';

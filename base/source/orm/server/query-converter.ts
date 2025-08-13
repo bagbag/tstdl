@@ -8,7 +8,7 @@ import { and, eq, gt, gte, inArray, isNotNull, isNull, isSQLWrapper, lt, lte, ne
 import type { PgColumn } from 'drizzle-orm/pg-core';
 
 import { NotSupportedError } from '#/errors/not-supported.error.js';
-import type { Primitive, Record } from '#/types.js';
+import type { Primitive, Record } from '#/types/index.js';
 import { hasOwnProperty, objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isDefined, isPrimitive, isRegExp, isString, isUndefined } from '#/utils/type-guards.js';
 import type { ComparisonAndQuery, ComparisonEqualsQuery, ComparisonGreaterThanOrEqualsQuery, ComparisonGreaterThanQuery, ComparisonInQuery, ComparisonLessThanOrEqualsQuery, ComparisonLessThanQuery, ComparisonNotEqualsQuery, ComparisonNotInQuery, ComparisonNotQuery, ComparisonOrQuery, ComparisonRegexQuery, LogicalAndQuery, LogicalNorQuery, LogicalOrQuery, Query } from '../query.js';

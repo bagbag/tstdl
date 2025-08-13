@@ -7,7 +7,7 @@ import { afterResolve } from '#/injector/interfaces.js';
 import { Logger } from '#/logger/logger.js';
 import { MessageBus } from '#/message-bus/message-bus.js';
 import { Database, tryGetTstdlTransaction, type PgTransaction, type Transaction } from '#/orm/server/index.js';
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/index.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import { isDefined } from '#/utils/type-guards.js';

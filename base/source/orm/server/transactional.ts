@@ -3,7 +3,7 @@ import { PgTransaction as DrizzlePgTransaction } from 'drizzle-orm/pg-core';
 import { createContextProvider } from '#/context/context.js';
 import { Injector, type InjectionToken, type ResolveArgument } from '#/injector/index.js';
 import { inject, injectAsync, runInInjectionContext } from '#/injector/inject.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { isDefined, isNull, isUndefined } from '#/utils/type-guards.js';
 import { Database } from './database.js';
 import { DrizzleTransaction, Transaction, type PgTransaction, type TransactionConfig } from './transaction.js';

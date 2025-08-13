@@ -7,7 +7,7 @@ import { MessageBus } from '#/message-bus/index.js';
 import type { EntityUpdate, NewEntity } from '#/orm/index.js';
 import { interval, RANDOM_UUID, TRANSACTION_TIMESTAMP } from '#/orm/index.js';
 import { DatabaseConfig, EntityRepositoryConfig, injectRepository } from '#/orm/server/index.js';
-import type { ObjectLiteral } from '#/types.js';
+import type { ObjectLiteral } from '#/types/index.js';
 import { cancelableTimeout } from '#/utils/timing.js';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import { millisecondsPerSecond } from '#/utils/units.js';

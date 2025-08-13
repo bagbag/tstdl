@@ -4,7 +4,7 @@ import { inject } from '#/injector/inject.js';
 import { computed, isSignal, toObservable, toSignal, untracked, type Signal } from '#/signals/api.js';
 import { switchAll } from '#/signals/index.js';
 import { runInUntracked } from '#/signals/untracked-operator.js';
-import type { PickBy, ReactiveValue, ReplaceKey } from '#/types.js';
+import type { PickBy, ReactiveValue, ReplaceKey } from '#/types/index.js';
 import { isString } from '#/utils/type-guards.js';
 import type { LocalizableText } from './localizable-text.model.js';
 import { LocalizationService } from './localization.service.js';

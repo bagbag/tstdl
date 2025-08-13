@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { assertDefinedPass } from '#/utils/type-guards.js';
 import type { DocumentRequestTemplate } from '../../models/index.js';
 import type { DocumentRequestsTemplateData, DocumentRequestsTemplateView } from '../document-requests-template.view-model.js';

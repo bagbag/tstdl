@@ -1,6 +1,6 @@
 import { CancellationToken, type CancellationSignal } from '#/cancellation/index.js';
 import { dispose, type Disposable } from '#/disposable/index.js';
-import type { OneOrMany, Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types.js';
+import type { OneOrMany, Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types/index.js';
 import { clone } from '#/utils/clone.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isArray, isBlob, isDefined, isString, isUint8Array, isUndefined } from '#/utils/type-guards.js';

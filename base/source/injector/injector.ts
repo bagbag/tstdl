@@ -5,7 +5,7 @@ import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
 import { isSyncOrAsyncDisposable, type AsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { reflectionRegistry, type ConstructorParameterMetadata } from '#/reflection/registry.js';
-import type { AbstractConstructor, Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types.js';
+import type { AbstractConstructor, Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';

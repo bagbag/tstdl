@@ -16,7 +16,7 @@ import { Lock } from '#/lock/index.js';
 import { Logger } from '#/logger/index.js';
 import { MessageBus } from '#/message-bus/index.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { timeout } from '#/utils/timing.js';
 import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';

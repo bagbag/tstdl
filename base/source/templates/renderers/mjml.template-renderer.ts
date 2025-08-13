@@ -1,5 +1,5 @@
 import { ForwardRef, Singleton } from '#/injector/decorators.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import mjml2html from 'mjml';
 import type { MJMLParsingOptions } from 'mjml-core';
 import { TemplateRendererProvider } from '../template-renderer.provider.js';

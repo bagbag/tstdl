@@ -2,7 +2,7 @@ import { MaxBytesExceededError } from '#/errors/max-bytes-exceeded.error.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { UnsupportedMediaTypeError } from '#/errors/unsupported-media-type.error.js';
 import type { HttpHeaders } from '#/http/http-headers.js';
-import type { UndefinableJson } from '#/types.js';
+import type { UndefinableJson } from '#/types/index.js';
 import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
 import { isAnyIterable } from '#/utils/any-iterable-iterator.js';
 import type { CompressionAlgorithm } from '#/utils/compression.js';

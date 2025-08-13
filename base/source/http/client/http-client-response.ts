@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { isString } from '#/utils/type-guards.js';
 import { HttpBody, type HttpBodySource } from '../http-body.js';
 import { HttpHeaders, type HttpHeadersObject } from '../http-headers.js';

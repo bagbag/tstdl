@@ -1,5 +1,5 @@
 import { AssertionError } from '#/errors/assertion.error.js';
-import type { BinaryData } from '#/types.js';
+import type { BinaryData } from '#/types/index.js';
 import { createArray } from './array/array.js';
 import { toUint8Array } from './binary.js';
 import { isUndefined } from './type-guards.js';

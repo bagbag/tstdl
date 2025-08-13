@@ -1,4 +1,4 @@
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import type { AiService, CallFunctionsOptions, SpecializedGenerationResult } from './ai.service.js';
 import type { Content, GenerationRequest, GenerationResult, SchemaFunctionDeclarations, SchemaFunctionDeclarationsResult } from './types.js';

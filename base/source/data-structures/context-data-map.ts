@@ -1,4 +1,4 @@
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { merge } from '#/utils/merge.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isArray, isUndefined } from '#/utils/type-guards.js';

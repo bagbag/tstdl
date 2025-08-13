@@ -6,3 +6,4 @@ dist/
 .eslintcache
 .volumes
 .repomix
+deno.lock

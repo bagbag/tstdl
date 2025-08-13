@@ -1,5 +1,5 @@
 import type { Logger } from '#/logger/index.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { handleApiError } from '../error-handler.js';
 import type { ApiGatewayMiddleware, ApiGatewayMiddlewareContext, ApiGatewayMiddlewareNext } from '../gateway.js';
 

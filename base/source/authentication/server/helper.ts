@@ -1,7 +1,7 @@
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import type { HttpServerRequest } from '#/http/server/index.js';
-import type { BinaryData, OneOrMany, Record } from '#/types.js';
+import type { BinaryData, OneOrMany, Record } from '#/types/index.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { parseAndValidateJwtTokenString } from '#/utils/jwt.js';
 import { isArray, isDefined, isUndefined } from '#/utils/type-guards.js';

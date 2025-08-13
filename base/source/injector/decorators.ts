@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { createClassDecorator, createDecorator, reflectionRegistry, type Decorator } from '#/reflection/index.js';
-import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types.js';
+import type { Constructor, OneOrMany, Record, Simplify, TypedOmit } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined, isFunction, isNotNull } from '#/utils/type-guards.js';
 import { Injector } from './injector.js';

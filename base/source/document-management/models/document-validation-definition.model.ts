@@ -1,7 +1,7 @@
 import { Entity } from '#/orm/entity.js';
 import { Json, Uuid } from '#/orm/types.js';
 import { StringProperty } from '#/schema/index.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { DocumentManagementTable } from './document-management-table.js';
 
 @DocumentManagementTable({ name: 'validation_definition' })

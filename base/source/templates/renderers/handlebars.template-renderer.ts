@@ -1,5 +1,5 @@
 import { Singleton } from '#/injector/decorators.js';
-import type { ObjectLiteral, Record } from '#/types.js';
+import type { ObjectLiteral, Record } from '#/types/index.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { hasOwnProperty, mapObjectValues, mapObjectValuesAsync, objectEntries, objectValues } from '#/utils/object/object.js';
 import { assertDefined, isDefined, isFunction, isString } from '#/utils/type-guards.js';

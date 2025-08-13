@@ -1,7 +1,7 @@
 import type { ReplOptions } from 'node:repl';
 
 import { dynamicImport } from '#/import.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { objectEntries } from './object/object.js';
 import { isDefined } from './type-guards.js';
 

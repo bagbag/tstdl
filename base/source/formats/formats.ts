@@ -1,6 +1,6 @@
-import { numericDateToTimestamp } from './utils/date-time.js';
-import { memoize, memoizeSingle } from './utils/function/memoize.js';
-import { isNullOrUndefined, isUndefined } from './utils/type-guards.js';
+import { numericDateToTimestamp } from '#/utils/date-time.js';
+import { memoize, memoizeSingle } from '#/utils/function/memoize.js';
+import { isNullOrUndefined, isUndefined } from '#/utils/type-guards.js';
 
 export let locale = 'de-DE';
 

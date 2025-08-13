@@ -5,7 +5,7 @@ import { Injector } from '#/injector/injector.js';
 import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
-import type { Type, UndefinableJsonObject } from '#/types.js';
+import type { Type, UndefinableJsonObject } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { copyObjectProperties, objectEntries } from '#/utils/object/object.js';
 import { toTitleCase } from '#/utils/string/title-case.js';

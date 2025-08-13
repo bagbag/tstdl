@@ -2,7 +2,7 @@ import type { WrapLogOptions } from '#/function/log.js';
 import { wrapLog } from '#/function/log.js';
 import type { Decorator } from '#/reflection/types.js';
 import { createDecorator } from '#/reflection/utils.js';
-import type { AbstractConstructor, Record } from '#/types.js';
+import type { AbstractConstructor, Record } from '#/types/index.js';
 import { objectKeys } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
 

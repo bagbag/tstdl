@@ -1,6 +1,6 @@
-import type { StringMap } from '../types.js';
+import type { Record } from '#/types/index.js';
 import type { KeyValueStore } from './key-value.store.js';
 
 export abstract class KeyValueStoreProvider {
-  abstract get<KV extends StringMap>(module: string): KeyValueStore<KV>;
+  abstract get<KV extends Record<string>>(module: string): KeyValueStore<KV>;
 }

@@ -1,4 +1,4 @@
-import type { BinaryData } from '#/types.js';
+import type { BinaryData } from '#/types/index.js';
 import { Alphabet } from './alphabet.js';
 import { toUint8Array } from './binary.js';
 

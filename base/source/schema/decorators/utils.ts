@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { isDefined, isFunction, isNullOrUndefined, isUndefined } from '#/utils/type-guards.js';
 import type { SchemaTestable } from '../schema.js';
 import { array } from '../schemas/array.js';

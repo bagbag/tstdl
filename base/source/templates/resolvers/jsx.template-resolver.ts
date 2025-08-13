@@ -1,6 +1,6 @@
 import { Singleton } from '#/injector/decorators.js';
 import { Method } from '#/schema/index.js';
-import type { PartialProperty, Record, TypedOmit } from '#/types.js';
+import type { PartialProperty, Record, TypedOmit } from '#/types/index.js';
 import type { ComponentClass, FunctionComponent } from 'preact';
 import { type Template, TemplateField, simpleTemplate } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';

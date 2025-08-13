@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
-import type { AbstractConstructor, Function } from '#/types.js';
+import type { AbstractConstructor, Function } from '#/types/index.js';
 import { getClassOfName } from '../function/index.js';
 import { propertyReflectMethods, reflectMethods } from '../proxy.js';
 import { assert, isDefined, isFunction, isUndefined } from '../type-guards.js';

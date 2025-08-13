@@ -3,7 +3,7 @@
  * Defines types used by ORM repositories for operations like loading, updating, and creating entities.
  * Includes types for ordering, loading options, and entity data structures for create/update operations.
  */
-import type { Paths, Record, TypedOmit } from '#/types.js';
+import type { Paths, Record, TypedOmit } from '#/types/index.js';
 import type { UntaggedDeep } from '#/types/tagged.js';
 import type { SQL, SQLWrapper } from 'drizzle-orm';
 import type { PartialDeep } from 'type-fest';

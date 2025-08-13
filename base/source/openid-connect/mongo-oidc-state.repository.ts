@@ -5,7 +5,7 @@ import { ForwardArg, ResolveArg, Singleton, resolveArgumentType } from '#/inject
 import { Injector } from '#/injector/injector.js';
 import type { LoggerArgument } from '#/logger/index.js';
 import { Logger } from '#/logger/index.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import type { OidcState } from './oidc-state.model.js';
 import { OidcStateRepository } from './oidc-state.repository.js';
 

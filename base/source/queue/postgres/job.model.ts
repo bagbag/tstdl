@@ -2,7 +2,7 @@ import { Index, Table } from '#/orm/decorators.js';
 import { EntityWithoutMetadata } from '#/orm/entity.js';
 import { Integer, Json, Timestamp } from '#/orm/index.js';
 import { StringProperty } from '#/schema/index.js';
-import type { ObjectLiteral } from '#/types.js';
+import type { ObjectLiteral } from '#/types/index.js';
 import type { Job } from '../queue.js';
 
 @Table('job')

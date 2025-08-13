@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { Memoize } from '#/utils/function/memoize.js';
 import { lazyObject } from '#/utils/object/index.js';
 import { normalizeText } from '#/utils/string/index.js';

@@ -1,6 +1,6 @@
+import { DetailsError } from '#/errors/details.error.js';
 import { supportsNotification } from '#/supports.js';
-import { DetailsError } from '../errors/details.error.js';
-import type { DeepArray, Record } from '../types.js';
+import type { DeepArray, Record } from '#/types/index.js';
 import { decycle } from './object/decycle.js';
 
 /**
@@ -81,7 +81,7 @@ export function parseFirstAndFamilyName(name: string): { firstName: string | und
 
   return {
     firstName: firstName.length > 0 ? firstName : undefined,
-    familyName: familyName.length > 0 ? familyName : undefined
+    familyName: familyName.length > 0 ? familyName : undefined,
   };
 }
 

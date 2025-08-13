@@ -1,5 +1,5 @@
 import { Any, any, Class, object, Optional, Property, StringProperty } from '#/schema/index.js';
-import type { PickBy, Record, SimplifyObject } from '#/types.js';
+import type { PickBy, Record, SimplifyObject } from '#/types/index.js';
 
 export type TemplateContext<T extends Template> = Parameters<NonNullable<T[typeof templateContext]>>[0];
 

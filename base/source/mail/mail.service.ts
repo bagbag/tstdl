@@ -2,7 +2,7 @@ import { Singleton, inject, provide } from '#/injector/index.js';
 import { Logger } from '#/logger/index.js';
 import { DatabaseConfig, EntityRepositoryConfig, injectRepository } from '#/orm/server/index.js';
 import { TemplateService } from '#/templates/template.service.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { assertDefined } from '#/utils/type-guards.js';

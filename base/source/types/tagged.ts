@@ -1,4 +1,4 @@
-import type { Record } from '#/types.js';
+import type { Record } from './types.js';
 
 export declare const tag: unique symbol;
 export declare const type: unique symbol;

@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { Memoize } from '#/utils/function/memoize.js';
 import { assertDefinedPass } from '#/utils/type-guards.js';
 import type { DocumentRequestState } from '../../models/index.js';

@@ -1,5 +1,5 @@
 import { Injector } from '#/injector/injector.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { StringTemplateRenderer } from './renderers/string.template-renderer.js';
 import { StringTemplateResolver } from './resolvers/string.template-resolver.js';

@@ -1,5 +1,5 @@
 import { JsonPath } from '#/json-path/json-path.js';
-import type { Record, StringMap } from '#/types.js';
+import type { Record, StringMap } from '#/types/index.js';
 import { clone } from '../clone.js';
 import { isArray, isDate, isDefined, isFunction, isObject, isPrimitive, isRegExp, isString, isWritableArray } from '../type-guards.js';
 import { getCachedDereference } from './dereference.js';

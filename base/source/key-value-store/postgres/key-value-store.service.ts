@@ -1,7 +1,7 @@
 import { Singleton, injectArgument, provide, type resolveArgumentType } from '#/injector/index.js';
 import { DatabaseConfig, Transactional } from '#/orm/server/index.js';
 import { EntityRepositoryConfig, injectRepository } from '#/orm/server/repository.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { assertDefinedPass, isDefined, isUndefined } from '#/utils/type-guards.js';
 import { KeyValueStore, type KeyValueStoreArgument } from '../key-value.store.js';

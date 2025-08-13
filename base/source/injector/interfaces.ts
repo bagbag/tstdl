@@ -1,4 +1,4 @@
-import type { Record, Type } from '#/types.js';
+import type { Record, Type } from '#/types/index.js';
 import type { ArgumentedInjectionToken, InjectionTokenArgument, ReifyingInjectionToken } from './token.js';
 import type { AfterResolveContext } from './types.js';
 

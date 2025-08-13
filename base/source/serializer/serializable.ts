@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Record, Type, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, Record, Type, TypedOmit } from '#/types/index.js';
 import { isDefined, isFunction } from '#/utils/type-guards.js';
 import { registerDefaultSerializers } from './handlers/register.js';
 

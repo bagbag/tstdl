@@ -1,5 +1,5 @@
 import { supportsBuffer } from '#/supports.js';
-import type { BinaryData, Type } from '#/types.js';
+import type { BinaryData, Type } from '#/types/index.js';
 import { typeExtends } from './index.js';
 import { assert, isArrayBuffer, isFunction, isNumber } from './type-guards.js';
 

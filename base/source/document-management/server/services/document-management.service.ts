@@ -8,7 +8,7 @@ import { Logger } from '#/logger/logger.js';
 import type { NewEntity } from '#/orm/index.js';
 import { Transactional, injectRepository, injectTransactional } from '#/orm/server/index.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { distinct } from '#/utils/array/index.js';
 import { compareByValueSelection } from '#/utils/comparison.js';
 import { groupToMap, groupToSingleMap } from '#/utils/iterable-helpers/index.js';

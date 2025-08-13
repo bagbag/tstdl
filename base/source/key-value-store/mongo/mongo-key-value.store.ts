@@ -2,7 +2,7 @@ import { getNewId } from '#/database/index.js';
 import type { UpdateFilter } from '#/database/mongo/index.js';
 import { Singleton } from '#/injector/index.js';
 import { KeyValueStore } from '#/key-value-store/index.js';
-import type { StringMap } from '#/types.js';
+import type { StringMap } from '#/types/index.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { assertString, isUndefined } from '#/utils/type-guards.js';

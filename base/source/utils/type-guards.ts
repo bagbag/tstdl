@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-invalid-void-type */
 
 import { supportsBlob, supportsReadableStream } from '#/supports.js';
-import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, Type, TypedArray } from '#/types.js';
+import type { AbstractConstructor, BinaryData, JsonPrimitive, PascalCase, Primitive, Type, TypedArray } from '#/types/index.js';
 import { AssertionError } from '../errors/assertion.error.js';
 
 export type AssertionMessage = string | (() => string);

@@ -1,7 +1,7 @@
 import type { LiteralUnion } from 'type-fest';
 
 import type { ObjectSchema, SchemaOutput, SchemaTestable } from '#/schema/index.js';
-import type { Record, UndefinableJsonObject } from '#/types.js';
+import type { Record, UndefinableJsonObject } from '#/types/index.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
 import type { ResolvedValueOrProvider, ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
 

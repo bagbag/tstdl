@@ -1,5 +1,5 @@
 import { Inject, Optional, Singleton } from '#/injector/decorators.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';
 import { isString } from '#/utils/type-guards.js';

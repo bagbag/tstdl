@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import type { AbstractConstructor, Writable } from '#/types.js';
+import type { AbstractConstructor, Writable } from '#/types/index.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { lazyObject, lazyObjectValue } from '#/utils/object/lazy-property.js';
 import { getDesignType, getParameterTypes, getReturnType } from '#/utils/reflection.js';

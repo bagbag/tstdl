@@ -2,7 +2,7 @@ import { Singleton } from '#/injector/decorators.js';
 import { inject } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
 import { QueueProvider, type QueueConfig } from '#/queue/index.js';
-import type { ObjectLiteral } from '#/types.js';
+import type { ObjectLiteral } from '#/types/index.js';
 import { PostgresQueue } from './queue.js';
 
 @Singleton()

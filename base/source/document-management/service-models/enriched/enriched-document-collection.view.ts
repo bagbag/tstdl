@@ -1,4 +1,4 @@
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { Memoize } from '#/utils/function/memoize.js';
 import type { DocumentCollectionView } from '../document-management.view-model.js';
 import type { EnrichedDocumentManagementData } from './enriched-document-management-data.view.js';

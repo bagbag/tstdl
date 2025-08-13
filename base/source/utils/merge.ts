@@ -2,7 +2,7 @@
 
 import type { IsEqual, MergeDeep, MergeDeepOptions as TypeFestMergeDeepOptions } from 'type-fest';
 
-import type { If, Merge, Record, TypedOmit } from '#/types.js';
+import type { If, Merge, Record, TypedOmit } from '#/types/index.js';
 import { createArray } from './array/array.js';
 import { objectEntries } from './object/object.js';
 import { assertArray, assertLiteralObject, assertMap, assertSet, isArray, isLiteralObject, isMap, isSet, isUndefined } from './type-guards.js';

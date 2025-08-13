@@ -5,7 +5,7 @@ import { createTransport } from 'nodemailer';
 import type { Disposable } from '#/disposable/disposable.js';
 import { Singleton, inject, injectArgument } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
-import type { WritableOneOrMany } from '#/types.js';
+import type { WritableOneOrMany } from '#/types/index.js';
 import { assertDefined, isUndefined } from '#/utils/type-guards.js';
 import { MailClient, MailClientConfig } from '../mail.client.js';
 import type { MailAddress, MailData, MailSendResult } from '../models/index.js';

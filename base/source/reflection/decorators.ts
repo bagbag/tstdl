@@ -2,7 +2,7 @@
 
 import 'reflect-metadata/lite'; // eslint-disable-line import/no-unassigned-import
 
-import type { ConstructorParameterDecorator } from '#/types.js';
+import type { ConstructorParameterDecorator } from '#/types/index.js';
 import { noop } from '#/utils/noop.js';
 import type { Decorator, DecoratorHandler } from './types.js';
 import { createAccessorDecorator, createClassDecorator, createConstructorParameterDecorator, createDecorator, createMethodDecorator, createMethodParameterDecorator, createParameterDecorator, createPropertyDecorator, createPropertyOrAccessorDecorator, type CreateDecoratorOptions, type SpecificCreateDecoratorOptions } from './utils.js';

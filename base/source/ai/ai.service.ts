@@ -10,7 +10,7 @@ import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { LazyPromise } from '#/promise/lazy-promise.js';
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
 import { Schema, type SchemaTestable } from '#/schema/index.js';
-import type { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types.js';
+import type { Enumeration as EnumerationType, EnumerationValue, Record, UndefinableJsonObject } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';

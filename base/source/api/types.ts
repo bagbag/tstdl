@@ -3,7 +3,7 @@ import type { HttpMethod } from '#/http/types.js';
 import type { SchemaOutput, SchemaTestable } from '#/schema/index.js';
 import type { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import type { ServerSentEvents } from '#/sse/server-sent-events.js';
-import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types.js';
+import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
 import { resolveValueOrProvider, type ValueOrProvider } from '#/utils/value-or-provider.js';

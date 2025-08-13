@@ -8,7 +8,7 @@ import { inject, injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import type { JsonPath } from '#/json-path/index.js';
 import { Schema } from '#/schema/schema.js';
-import type { DeepPartial, OneOrMany, Paths, Record, Type } from '#/types.js';
+import type { DeepPartial, OneOrMany, Paths, Record, Type } from '#/types/index.js';
 import type { UntaggedDeep } from '#/types/index.js';
 import { distinct, toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';

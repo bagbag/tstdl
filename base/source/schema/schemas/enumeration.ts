@@ -1,4 +1,4 @@
-import type { Enumeration as EnumerationType, EnumerationValue } from '#/types.js';
+import type { Enumeration as EnumerationType, EnumerationValue } from '#/types/index.js';
 import { enumValues } from '#/utils/enum.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray, isString } from '#/utils/type-guards.js';

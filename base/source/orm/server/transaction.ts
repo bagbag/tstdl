@@ -2,7 +2,7 @@ import { PgTransaction as DrizzlePgTransaction, type PgQueryResultHKT, type PgTr
 import { Subject } from 'rxjs';
 
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { Database } from './database.js';
 
 export type PgTransaction = DrizzlePgTransaction<PgQueryResultHKT, Record, Record>;

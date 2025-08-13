@@ -1,7 +1,7 @@
 import type { IsEqual, Or } from 'type-fest';
 
 import { JsonPath } from '#/json-path/json-path.js';
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import type { SchemaError } from './schema.error.js';
 import type { Coercible, Maskable } from './types.js';
 

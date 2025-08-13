@@ -1,4 +1,4 @@
-import type { Function, SimplifyObject } from '#/types.js';
+import type { Function, SimplifyObject } from '#/types/index.js';
 import { isNotNull, isString } from '#/utils/type-guards.js';
 
 /**

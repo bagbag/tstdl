@@ -1,4 +1,4 @@
-import type { Record } from '../types.js';
+import type { Record } from '#/types/index.js';
 import { fromEntries } from '../utils/object/object.js';
 
 const extractPattern = /^(?<mimeType>[^#]\S+)\t+(?<extensions>[\w ]+)$/ugm;

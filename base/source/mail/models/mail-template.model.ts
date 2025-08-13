@@ -1,5 +1,5 @@
 import type { Template, TemplateField } from '#/templates/template.model.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 
 export type MailTemplate<Context extends Record = any> = Template<{ subject: false, html: false, text: false }, undefined, Context>;
 

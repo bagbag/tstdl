@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, Record } from '#/types.js';
+import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, Record } from '#/types/index.js';
 import type { UnionToIntersection } from 'type-fest';
 import type { ConstructorParameterMetadata, MethodMetadata, MethodParameterMetadata, ParameterMetadata, PropertyMetadata, TypeMetadata } from './registry.js';
 

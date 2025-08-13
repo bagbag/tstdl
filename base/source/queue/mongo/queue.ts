@@ -29,7 +29,7 @@ const backoffOptions: BackoffOptions = {
   strategy: 'exponential',
   initialDelay: 100,
   increase: 2,
-  maximumDelay: 5000
+  maximumDelay: 5000,
 };
 
 @Singleton<MongoQueue, QueueArgument>({
@@ -44,8 +44,8 @@ const backoffOptions: BackoffOptions = {
       }
 
       return provider.get(argument.name, { ...defaultQueueConfig, ...argument });
-    }
-  }
+    },
+  },
 })
 export class MongoQueue<T = unknown> extends Queue<T> {
   private readonly repository: MongoJobRepository<T>;
@@ -80,7 +80,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
       enqueueTimestamp: currentTimestamp(),
       tries: 0,
       lastDequeueTimestamp: 0,
-      batch: null
+      batch: null,
     };
 
     const job = (uniqueTag == undefined)
@@ -110,7 +110,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
         enqueueTimestamp: now,
         tries: 0,
         lastDequeueTimestamp: 0,
-        batch: null
+        batch: null,
       };
 
       switch (options?.uniqueTag) {
@@ -134,7 +134,7 @@ export class MongoQueue<T = unknown> extends Queue<T> {
     const [nonUniqueJobs] = await Promise.all([
       (nonUnique.length > 0) ? this.repository.insertMany(nonUnique) : [],
       (keepOld.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(keepOld, UniqueTagStrategy.KeepOld) : undefined,
-      (takeNew.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(takeNew, UniqueTagStrategy.TakeNew) : undefined
+      (takeNew.length > 0) ? this.repository.bulkInsertWithUniqueTagStrategy(takeNew, UniqueTagStrategy.TakeNew) : undefined,
     ]);
 
     if (options?.returnJobs == true) {
@@ -150,23 +150,23 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async has(id: string): Promise<boolean> {
-    return this.repository.hasByFilter({ queue: this.queueKey, jobId: id });
+    return await this.repository.hasByFilter({ queue: this.queueKey, jobId: id });
   }
 
   async countByTag(tag: JobTag): Promise<number> {
-    return this.repository.countByFilter({ queue: this.queueKey, tag });
+    return await this.repository.countByFilter({ queue: this.queueKey, tag });
   }
 
   async get(id: string): Promise<Job<T> | undefined> {
-    return this.repository.tryLoadByFilter({ queue: this.queueKey, jobId: id });
+    return await this.repository.tryLoadByFilter({ queue: this.queueKey, jobId: id });
   }
 
   async getByTag(tag: JobTag): Promise<Job<T>[]> {
-    return this.repository.loadManyByFilter({ queue: this.queueKey, tag });
+    return await this.repository.loadManyByFilter({ queue: this.queueKey, tag });
   }
 
   async getByTags(tags: JobTag[]): Promise<Job<T>[]> {
-    return this.repository.loadManyByFilter({ queue: this.queueKey, tag: { $in: tags } });
+    return await this.repository.loadManyByFilter({ queue: this.queueKey, tag: { $in: tags } });
   }
 
   async cancel(id: string): Promise<void> {
@@ -197,8 +197,8 @@ export class MongoQueue<T = unknown> extends Queue<T> {
           priority: 1,
           enqueueTimestamp: 1,
           lastDequeueTimestamp: 1,
-          tries: 1
-        }
+          tries: 1,
+        },
       }
     );
 
@@ -218,8 +218,8 @@ export class MongoQueue<T = unknown> extends Queue<T> {
             [priorityProperty]: 1,
             [enqueueTimestampProperty]: 1,
             [lastDequeueTimestampProperty]: 1,
-            [triesProperty]: 1
-          }
+            [triesProperty]: 1,
+          },
         },
         { $limit: count },
         {
@@ -230,13 +230,13 @@ export class MongoQueue<T = unknown> extends Queue<T> {
                 $set: {
                   [triesProperty]: { $add: [`$${triesProperty}`, 1] },
                   [lastDequeueTimestampProperty]: currentTimestamp(),
-                  [batchProperty]: batch
-                }
-              }
+                  [batchProperty]: batch,
+                },
+              },
             ],
-            whenNotMatched: 'discard'
-          }
-        }
+            whenNotMatched: 'discard',
+          },
+        },
       ]).next();
     });
 
@@ -245,12 +245,12 @@ export class MongoQueue<T = unknown> extends Queue<T> {
   }
 
   async acknowledge(job: Job<T>): Promise<void> {
-    return this.cancel(job.id);
+    return await this.cancel(job.id);
   }
 
   async acknowledgeMany(jobs: Job<T>[]): Promise<void> {
     const jobIds = jobs.map((job) => job.id);
-    return this.cancelMany(jobIds);
+    return await this.cancelMany(jobIds);
   }
 
   async *getConsumer(cancellationSignal: CancellationSignal): AsyncIterableIterator<Job<T>> {
@@ -296,7 +296,7 @@ function toModelJob<T>(mongoJob: MongoJob<T>): Job<T> {
     data: mongoJob.data,
     enqueueTimestamp: mongoJob.enqueueTimestamp,
     lastDequeueTimestamp: mongoJob.lastDequeueTimestamp,
-    tries: mongoJob.tries
+    tries: mongoJob.tries,
   };
 
   return job;
@@ -309,15 +309,15 @@ function getDequeueFindParameters(queueKey: string, maxTries: number, processTim
   const filter: Filter<MongoJob<any>> = {
     queue: queueKey,
     tries: { $lt: maxTries },
-    lastDequeueTimestamp: { $lte: maximumLastDequeueTimestamp }
+    lastDequeueTimestamp: { $lte: maximumLastDequeueTimestamp },
   };
 
   const update: UpdateFilter<MongoJob<any>> = {
     $inc: { tries: 1 },
     $set: {
       lastDequeueTimestamp: now,
-      batch
-    }
+      batch,
+    },
   };
 
   return { filter, update };

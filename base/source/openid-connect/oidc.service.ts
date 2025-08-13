@@ -5,7 +5,7 @@ import { HttpClient } from '#/http/client/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
 import { Inject, Optional, Singleton } from '#/injector/index.js';
 import { Schema, object, optional, string } from '#/schema/index.js';
-import type { Json, Record } from '#/types.js';
+import type { Json, Record } from '#/types/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
 import { digest } from '#/utils/cryptography.js';
 import { currentTimestamp } from '#/utils/date-time.js';

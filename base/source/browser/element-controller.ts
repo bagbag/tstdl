@@ -1,6 +1,6 @@
 import type { ElementHandle, Locator } from 'playwright';
 
-import type { Merge, NonUndefinable, TypedOmit } from '#/types.js';
+import type { Merge, NonUndefinable, TypedOmit } from '#/types/index.js';
 import { isDefined, isString, isUndefined } from '#/utils/type-guards.js';
 import { resolveValueOrProvider } from '#/utils/value-or-provider.js';
 import type { ActionDelayOptions, Delay, TimeoutOptions } from './types.js';

@@ -1,6 +1,6 @@
 import { CustomError, type CustomErrorOptions } from '#/errors/custom.error.js';
 import type { JsonPath } from '#/json-path/index.js';
-import type { AbstractConstructor, OneOrMany, TypedOmit, UndefinableJson } from '#/types.js';
+import type { AbstractConstructor, OneOrMany, TypedOmit, UndefinableJson } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import type { ErrorExtraInfo } from '#/utils/format-error.js';
 import { isArray, isDefined, isFunction, isNotNullOrUndefined, isString } from '#/utils/type-guards.js';

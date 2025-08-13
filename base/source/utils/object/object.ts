@@ -1,5 +1,5 @@
 import { JsonPath, type JsonPathInput } from '#/json-path/json-path.js';
-import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject, UnionToIntersection } from '#/types.js';
+import type { BaseType, FromEntries, ObjectLiteral, Optionalize, PickBy, Record, SimplifyObject, UnionToIntersection } from '#/types/index.js';
 import { filterAsync } from '../async-iterable-helpers/filter.js';
 import { mapAsync } from '../async-iterable-helpers/map.js';
 import { toArrayAsync } from '../async-iterable-helpers/to-array.js';

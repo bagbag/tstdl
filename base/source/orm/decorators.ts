@@ -7,7 +7,7 @@ import type { LiteralUnion } from 'type-fest';
 
 import { createClassDecorator, createDecorator, createPropertyDecorator } from '#/reflection/index.js';
 import { Property } from '#/schema/index.js';
-import type { AbstractConstructor, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, TypedOmit } from '#/types/index.js';
 import { filterUndefinedObjectProperties, objectEntries } from '#/utils/object/object.js';
 import { isArray, isString, isUndefined } from '#/utils/type-guards.js';
 import type { AnyEntity, Entity, EntityType, EntityWithoutMetadata } from './entity.js';

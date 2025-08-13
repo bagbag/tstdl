@@ -1,4 +1,4 @@
-import type { Function, IfUnknown } from '#/types.js';
+import type { Function, IfUnknown } from '#/types/index.js';
 import { isDefined, isFunction, isNullOrUndefined, isObject } from '../type-guards.js';
 import { filterObject, hasOwnProperty, objectEntries } from './object.js';
 

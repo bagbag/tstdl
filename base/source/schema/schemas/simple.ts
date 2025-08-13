@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
-import type { AbstractConstructor, OneOrMany } from '#/types.js';
+import type { AbstractConstructor, OneOrMany } from '#/types/index.js';
 import { isDefined, isError, isNotNull, isNull, isUndefined } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';
 import { SchemaError } from '../schema.error.js';

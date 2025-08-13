@@ -8,7 +8,7 @@ import type { $Type, HasDefault as DrizzleHasDefault, IsPrimaryKey as DrizzleIsP
 import type { boolean, doublePrecision, integer, jsonb, PgColumnBuilder, PgColumnBuilderBase, PgEnumColumnBuilderInitial, text, uuid } from 'drizzle-orm/pg-core';
 
 import { Array, Integer } from '#/schema/index.js';
-import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types.js';
+import type { AbstractConstructor, EnumerationObject, EnumerationValue, ObjectLiteral, UnionToTuple } from '#/types/index.js';
 import type { GetTagMetadata, HasTag, Tagged, UnwrapTagged } from '#/types/index.js';
 import type { bytea, numericDate, timestamp } from './data-types/index.js';
 import { Check, Column, Embedded, Encrypted, Index, PrimaryKey, References, Table, Unique } from './decorators.js';

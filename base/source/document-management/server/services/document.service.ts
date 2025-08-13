@@ -6,7 +6,7 @@ import { Logger } from '#/logger/logger.js';
 import { injectTransactional, Transactional, type Transaction } from '#/orm/server/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
 import { getPdfPageCount } from '#/pdf/utils.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { toArray } from '#/utils/array/index.js';
 import { objectKeys } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/from-promise.js';

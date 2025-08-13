@@ -1,4 +1,4 @@
-import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationObject, EnumerationValue, Record } from '#/types.js';
+import type { EnumerationEntries, EnumerationEntry, EnumerationKey, EnumerationObject, EnumerationValue, Record } from '#/types/index.js';
 import { randomItem } from './array/array.js';
 import { memoizeSingle } from './function/memoize.js';
 import { mapObject, objectEntries } from './object/object.js';

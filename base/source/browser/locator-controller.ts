@@ -1,6 +1,6 @@
 import type { Frame, FrameLocator, Locator, Page } from 'playwright';
 
-import type { NonUndefinable, SimplifyObject } from '#/types.js';
+import type { NonUndefinable, SimplifyObject } from '#/types/index.js';
 import type { ElementControllerOptions } from './element-controller.js';
 import { ElementController } from './element-controller.js';
 

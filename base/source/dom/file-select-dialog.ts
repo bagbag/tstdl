@@ -1,4 +1,4 @@
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { isDefined, isString } from '#/utils/type-guards.js';
 
 export type FileSelectDialogOptions = {

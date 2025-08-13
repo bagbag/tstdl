@@ -2,7 +2,7 @@
 
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { SortedArrayList } from '#/data-structures/sorted-array-list.js';
-import type { Constructor, Function, Record, StringMap } from '#/types.js';
+import type { Constructor, Function, Record, StringMap } from '#/types/index.js';
 import { compareByValueSelection } from '#/utils/comparison.js';
 import { ForwardRef } from '#/utils/object/forward-ref.js';
 import { objectEntries } from '#/utils/object/object.js';

@@ -3,7 +3,7 @@
 import type { SetRequired } from 'type-fest';
 
 import { createDecorator, type Decorator } from '#/reflection/index.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { filterUndefinedObjectProperties } from '#/utils/object/object.js';
 import type { SchemaTestable } from '../schema.js';
 import { isSchemaTestable } from '../testable.js';

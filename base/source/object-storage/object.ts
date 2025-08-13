@@ -1,4 +1,4 @@
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 
 export type ObjectMetadata = Record<string>;
 

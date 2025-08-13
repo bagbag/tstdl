@@ -1,7 +1,7 @@
 import type { estypes } from '@elastic/elasticsearch';
 
 import type { Entity } from '#/database/index.js';
-import type { DeepFlatten, StringMap, TypedOmit } from '#/types.js';
+import type { DeepFlatten, StringMap, TypedOmit } from '#/types/index.js';
 import { mergeObjects } from '#/utils/object/merge.js';
 
 export type ElasticIndexMapping<T extends Entity = Entity> = TypedOmit<estypes.MappingTypeMapping, 'properties'> & ElasticNestedIndexMapping<TypedOmit<T, 'id'>>;

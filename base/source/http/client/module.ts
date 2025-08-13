@@ -1,5 +1,5 @@
 import { Injector } from '#/injector/injector.js';
-import type { OneOrMany, Type } from '#/types.js';
+import type { OneOrMany, Type } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { HttpClientOptions } from './http-client-options.js';

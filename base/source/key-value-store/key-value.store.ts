@@ -1,11 +1,11 @@
 import { injectArgument } from '#/injector/inject.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
-import type { StringMap } from '../types.js';
+import type { Record } from '#/types/index.js';
 
 /** Key value store module */
 export type KeyValueStoreArgument = string;
 
-export abstract class KeyValueStore<KV extends StringMap> implements Resolvable<KeyValueStoreArgument> {
+export abstract class KeyValueStore<KV extends Record<string>> implements Resolvable<KeyValueStoreArgument> {
   readonly module = injectArgument(this);
 
   declare readonly [resolveArgumentType]: KeyValueStoreArgument;

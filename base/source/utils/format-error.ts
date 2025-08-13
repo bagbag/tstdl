@@ -1,5 +1,5 @@
 import { unwrapError } from '#/errors/utils.js';
-import type { Record, UndefinableJson } from '#/types.js';
+import type { Record, UndefinableJson } from '#/types/index.js';
 import { decycle } from './object/decycle.js';
 import { objectKeys } from './object/object.js';
 import { isDefined, isFunction, isUndefined } from './type-guards.js';

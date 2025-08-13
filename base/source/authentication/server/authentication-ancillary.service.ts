@@ -1,5 +1,5 @@
 import { defineEnum, type EnumType } from '#/enumeration/enumeration.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { TokenPayload } from '../index.js';
 import type { InitSecretResetData } from '../models/init-secret-reset-data.model.js';
 

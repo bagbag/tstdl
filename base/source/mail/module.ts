@@ -1,7 +1,7 @@
 import { inject } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
 import { Database, migrate, type DatabaseConfig } from '#/orm/server/index.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { MailClient, MailClientConfig } from './mail.client.js';
 import type { DefaultMailData } from './models/index.js';

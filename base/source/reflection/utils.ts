@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types.js';
+import type { AbstractConstructor, Constructor, ConstructorParameterDecorator, OneOrMany, PropertiesOfType, Record, TypedOmit } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { noop } from '#/utils/noop.js';
 import { assert, isDefined, isFunction, isSymbol } from '#/utils/type-guards.js';

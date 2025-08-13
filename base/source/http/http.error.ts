@@ -1,4 +1,4 @@
-import type { Record, TypedOmit, UndefinableJson } from '#/types.js';
+import type { Record, TypedOmit, UndefinableJson } from '#/types/index.js';
 import type { ErrorExtraInfo } from '#/utils/format-error.js';
 import { propertyNameOf } from '#/utils/object/property-name.js';
 import { isDefined, isNotString, isString } from '#/utils/type-guards.js';

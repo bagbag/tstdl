@@ -1,4 +1,4 @@
-import type { AbstractConstructor, Record } from '#/types.js';
+import type { AbstractConstructor, Record } from '#/types/index.js';
 import { isFunction } from '#/utils/type-guards.js';
 import { Schema, type SchemaOptions, type SchemaTestable } from './schema.js';
 import { bigint } from './schemas/bigint.js';

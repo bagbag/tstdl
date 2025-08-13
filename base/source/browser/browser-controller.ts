@@ -5,7 +5,7 @@ import { disposeAsync } from '#/disposable/disposable.js';
 import { Injectable } from '#/injector/decorators.js';
 import { inject } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
-import type { Record, Writable } from '#/types.js';
+import type { Record, Writable } from '#/types/index.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { BrowserContextControllerOptions, BrowserContextState, NewPageOptions } from './browser-context-controller.js';
@@ -15,7 +15,7 @@ import { BrowserService } from './browser.service.js';
 import { mergeNewBrowserContextOptions } from './utils.js';
 
 export type BrowserControllerOptions = {
-  defaultNewContextOptions?: NewBrowserContextOptions
+  defaultNewContextOptions?: NewBrowserContextOptions,
 };
 
 export type NewBrowserContextOptions = {
@@ -26,7 +26,7 @@ export type NewBrowserContextOptions = {
   extraHttpHeaders?: Record<string, string | undefined>,
   defaultNewPageOptions?: NewPageOptions,
   viewport?: { width: number, height: number } | null,
-  proxy?: { server: string, bypass?: string, username?: string, password?: string }
+  proxy?: { server: string, bypass?: string, username?: string, password?: string },
 };
 
 export type BrowserControllerArgument = NewBrowserOptions;
@@ -108,7 +108,7 @@ export class BrowserController implements AsyncDisposable, Resolvable<BrowserCon
   }
 
   async waitForClose(): Promise<void> {
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
       if (!this.browser.isConnected()) {
         resolve();
       }

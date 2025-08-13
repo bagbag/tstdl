@@ -1,4 +1,4 @@
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { isFunction } from '#/utils/type-guards.js';
 
 declare const type: unique symbol;

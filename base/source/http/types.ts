@@ -1,4 +1,4 @@
-import type { OneOrMany, WritableOneOrMany } from '#/types.js';
+import type { OneOrMany, WritableOneOrMany } from '#/types/index.js';
 import { isArray, isNull } from '#/utils/type-guards.js';
 
 export type HttpValue = string | number | boolean | null;

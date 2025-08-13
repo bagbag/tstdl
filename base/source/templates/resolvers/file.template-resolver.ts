@@ -5,7 +5,7 @@ import { BadRequestError } from '#/errors/bad-request.error.js';
 import { InjectArg, Singleton } from '#/injector/decorators.js';
 import { type Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { StringProperty } from '#/schema/index.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { TemplateField } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';

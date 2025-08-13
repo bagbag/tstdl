@@ -9,7 +9,7 @@ import { Logger } from '#/logger/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
 import { injectTransactional, Transactional } from '#/orm/server/transactional.js';
 import { Queue, type Job } from '#/queue/queue.js';
-import type { OneOrMany, TypedExclude, TypedExtract } from '#/types.js';
+import type { OneOrMany, TypedExclude, TypedExtract } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { currentTimestamp } from '#/utils/date-time.js';
 import { _throw } from '#/utils/throw.js';

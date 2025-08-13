@@ -6,7 +6,7 @@ import { inject } from '#/injector/index.js';
 import { autoAlias, coalesce, getEntityMap, toJsonb, type NewEntity } from '#/orm/index.js';
 import { Transactional } from '#/orm/server/index.js';
 import { injectRepository } from '#/orm/server/repository.js';
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import { toArray } from '#/utils/array/index.js';
 import { assertBooleanPass, assertNumberPass, assertStringPass, isBoolean, isNotNull, isNull, isNumber, isString, isUndefined } from '#/utils/type-guards.js';
 import { DocumentProperty, DocumentPropertyDataType, DocumentPropertyValue, DocumentTypeProperty, type Document } from '../../models/index.js';

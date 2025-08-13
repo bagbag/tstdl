@@ -13,7 +13,7 @@ import type { FunctionModuleFunction } from '#/module/modules/function.module.js
 import { FunctionModule } from '#/module/modules/function.module.js';
 import { getShutdownSignal, getShutdownToken } from '#/process-shutdown.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
-import type { OneOrMany, Type } from '#/types.js';
+import type { OneOrMany, Type } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { mapAsync } from '#/utils/async-iterable-helpers/map.js';
 import { toArrayAsync } from '#/utils/async-iterable-helpers/to-array.js';

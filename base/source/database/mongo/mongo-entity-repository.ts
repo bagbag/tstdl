@@ -4,7 +4,7 @@ import { EntityRepository } from '#/database/index.js';
 import type { AfterResolve } from '#/injector/index.js';
 import { afterResolve } from '#/injector/index.js';
 import type { Logger } from '#/logger/index.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { equals } from '#/utils/equals.js';
 import { filterUndefinedObjectProperties, objectEntries, objectKeys } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';

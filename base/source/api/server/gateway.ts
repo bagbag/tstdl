@@ -10,7 +10,7 @@ import { InjectArg, ResolveArg, Singleton, resolveArgumentType, type Resolvable 
 import { Logger, type LoggerArgument } from '#/logger/index.js';
 import { Schema, type SchemaTestable } from '#/schema/index.js';
 import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
-import type { Type, UndefinableJson } from '#/types.js';
+import type { Type, UndefinableJson } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { composeAsyncMiddleware, type AsyncMiddleware, type AsyncMiddlewareNext, type ComposedAsyncMiddleware } from '#/utils/middleware.js';
 import { mapObjectValues } from '#/utils/object/object.js';

@@ -1,7 +1,7 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { createDecorator, type Decorator, type PropertyMetadata } from '#/reflection/index.js';
 import { any, Class, object, Property, Schema, type SchemaDecoratorOptions, type SchemaTestable, schemaTestableToSchema, type SchemaTestOptions, type SchemaTestResult } from '#/schema/index.js';
-import type { Constructor, TypedOmit } from '#/types.js';
+import type { Constructor, TypedOmit } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 
 export type JsonSchemaOptions<T> = { schema?: SchemaTestable<T> };

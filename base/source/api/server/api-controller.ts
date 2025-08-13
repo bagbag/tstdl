@@ -1,5 +1,5 @@
 import { Singleton, type InjectableOptionsWithoutLifecycle } from '#/injector/decorators.js';
-import type { Constructor, Type } from '#/types.js';
+import type { Constructor, Type } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isFunction } from '#/utils/type-guards.js';
 import type { ApiController, ApiDefinition } from '../types.js';

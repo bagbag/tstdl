@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isUndefined } from '#/utils/type-guards.js';
 import { createSchemaDecorator, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';

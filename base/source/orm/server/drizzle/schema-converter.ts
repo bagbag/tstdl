@@ -7,7 +7,7 @@ import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { JsonPath } from '#/json-path/json-path.js';
 import { reflectionRegistry, type TypeMetadata } from '#/reflection/registry.js';
 import { ArraySchema, BooleanSchema, DefaultSchema, EnumerationSchema, getObjectSchema, NullableSchema, NumberSchema, ObjectSchema, OptionalSchema, StringSchema, Uint8ArraySchema, type Record, type Schema } from '#/schema/index.js';
-import type { AbstractConstructor, Enumeration, EnumerationObject, Type } from '#/types.js';
+import type { AbstractConstructor, Enumeration, EnumerationObject, Type } from '#/types/index.js';
 import { compareByValueSelectionToOrder, orderRest } from '#/utils/comparison.js';
 import { decodeText, encodeUtf8 } from '#/utils/encoding.js';
 import { enumValues } from '#/utils/enum.js';

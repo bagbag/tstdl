@@ -2,7 +2,7 @@ import type { FunctionDeclaration, Schema as GoogleSchema } from '@google/genai'
 
 import { convertToOpenApiSchema } from '#/schema/converters/openapi-converter.js';
 import { FunctionSchema, getObjectSchema, object } from '#/schema/index.js';
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { fromEntries, objectEntries } from '#/utils/object/object.js';
 import { isNotNull, isNull, isString } from '#/utils/type-guards.js';
 

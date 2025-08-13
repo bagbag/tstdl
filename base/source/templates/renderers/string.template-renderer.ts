@@ -1,5 +1,5 @@
 import { Singleton } from '#/injector/decorators.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { isString } from '#/utils/type-guards.js';
 import type { StringTemplate } from '../resolvers/string.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';

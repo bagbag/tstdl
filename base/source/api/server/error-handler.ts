@@ -1,7 +1,7 @@
 import type { CustomError, CustomErrorStatic } from '#/errors/custom.error.js';
 import type { HttpServerResponse } from '#/http/server/index.js';
 import type { Logger } from '#/logger/index.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { formatError } from '#/utils/format-error.js';
 import { createErrorResponse, getErrorStatusCode, hasErrorHandler } from '../response.js';
 

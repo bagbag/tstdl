@@ -6,7 +6,7 @@ import { Injectable } from '#/injector/decorators.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { afterResolve, resolveArgumentType } from '#/injector/interfaces.js';
 import type { Logger } from '#/logger/logger.js';
-import type { Record, Writable } from '#/types.js';
+import type { Record, Writable } from '#/types/index.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { Tagged } from 'type-fest';

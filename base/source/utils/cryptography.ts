@@ -1,4 +1,4 @@
-import type { BinaryData, TypedExtract } from '#/types.js';
+import type { BinaryData, TypedExtract } from '#/types/index.js';
 import type { ReadonlyTuple } from 'type-fest';
 import { createArray } from './array/array.js';
 import { encodeBase64, encodeBase64Url } from './base64.js';

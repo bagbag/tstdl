@@ -1,5 +1,5 @@
 import { Injector } from '#/injector/injector.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import { ensureApiController } from './api-controller.js';
 import { ApiRequestTokenProvider } from './api-request-token.provider.js';

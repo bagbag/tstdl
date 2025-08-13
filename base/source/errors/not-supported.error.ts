@@ -1,4 +1,4 @@
-import type { EnumerationObject } from '#/types.js';
+import type { EnumerationObject } from '#/types/index.js';
 import { enumValueName } from '#/utils/enum.js';
 import { CustomError } from './custom.error.js';
 

@@ -3,7 +3,7 @@ import type { EmptyObject, Merge } from 'type-fest';
 import type { JsonPath } from '#/json-path/json-path.js';
 import { createDecorator, type Decorator, reflectionRegistry, type TypeMetadata } from '#/reflection/index.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit, Writable } from '#/types.js';
+import type { AbstractConstructor, Constructor, OneOrMany, PartialProperty, Record as RecordType, SimplifyObject, Type, TypedOmit, Writable } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { memoizeSingle } from '#/utils/function/memoize.js';
 import { filterObject, fromEntries, mapObjectValues, objectKeys } from '#/utils/object/object.js';

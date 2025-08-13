@@ -1,7 +1,7 @@
 import { hasErrorHandler, isErrorResponse, parseErrorResponse } from '#/api/response.js';
 import { Singleton, inject, injectAll, injectArgument, resolveArgumentType } from '#/injector/index.js';
 import type { Resolvable } from '#/injector/interfaces.js';
-import type { OneOrMany, UndefinableJson } from '#/types.js';
+import type { OneOrMany, UndefinableJson } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
 import { encodeBase64 } from '#/utils/base64.js';
 import { encodeUtf8 } from '#/utils/encoding.js';

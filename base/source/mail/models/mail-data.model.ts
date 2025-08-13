@@ -1,4 +1,4 @@
-import type { OneOrMany } from '#/types.js';
+import type { OneOrMany } from '#/types/index.js';
 import type { MailAddress } from './mail-address.model.js';
 import type { MailContent } from './mail-content.model.js';
 

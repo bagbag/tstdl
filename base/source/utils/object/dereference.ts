@@ -1,5 +1,5 @@
 import { JsonPath, type JsonPathInput } from '#/json-path/index.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { memoizeSingle } from '../function/memoize.js';
 import { isNullOrUndefined } from '../type-guards.js';
 

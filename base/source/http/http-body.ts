@@ -1,4 +1,4 @@
-import type { UndefinableJson } from '#/types.js';
+import type { UndefinableJson } from '#/types/index.js';
 import type { AnyIterable } from '#/utils/any-iterable-iterator.js';
 import { isNotNullOrUndefined, isNullOrUndefined } from '#/utils/type-guards.js';
 import type { HttpHeaders } from './http-headers.js';

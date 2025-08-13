@@ -1,4 +1,4 @@
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { JwtToken, JwtTokenHeader } from '#/utils/jwt.js';
 import type { TokenPayloadBase } from './token-payload-base.model.js';
 

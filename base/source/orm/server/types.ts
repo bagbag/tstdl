@@ -4,7 +4,7 @@ import type { CamelCase, ConditionalPick, SnakeCase } from 'type-fest';
 
 import type { JsonPath } from '#/json-path/json-path.js';
 import type { Record } from '#/schema/index.js';
-import type { UnionToIntersection } from '#/types.js';
+import type { UnionToIntersection } from '#/types/index.js';
 import type { Tagged } from '#/types/index.js';
 import type { OrmColumnReflectionData } from '../decorators.js';
 import type { EntityType } from '../entity.js';

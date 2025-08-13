@@ -1,7 +1,7 @@
 import type { SetCookieOptions } from '#/cookie/cookie.js';
 import { formatSetCookie } from '#/cookie/cookie.js';
 import type { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { HttpHeadersInput } from '../http-headers.js';

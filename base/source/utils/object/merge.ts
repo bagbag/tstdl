@@ -1,4 +1,4 @@
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { compareByValue } from '../comparison.js';
 import { arrayEquals } from '../equals.js';
 import { isArray, isPrimitive, isUndefined } from '../type-guards.js';

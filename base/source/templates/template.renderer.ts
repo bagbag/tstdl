@@ -1,6 +1,6 @@
 import type { SchemaTestable } from '#/schema/index.js';
 import { Schema } from '#/schema/index.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 
 export type TemplateRenderResult = string;

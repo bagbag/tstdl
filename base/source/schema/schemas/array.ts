@@ -1,6 +1,6 @@
 import type { JsonPath } from '#/json-path/json-path.js';
 import { SchemaError } from '#/schema/schema.error.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { isArray, isNotNull } from '#/utils/type-guards.js';
 import { typeOf } from '#/utils/type-of.js';

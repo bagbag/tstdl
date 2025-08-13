@@ -1,5 +1,5 @@
 import type { SerializationOptions } from '#/serializer/types.js';
-import type { Constructor, Record } from '#/types.js';
+import type { Constructor, Record } from '#/types/index.js';
 
 export type RpcConstructor<T extends Constructor> = T extends Constructor<any, infer R> ? Constructor<Promise<RpcRemote<InstanceType<T>>>, R> : never;
 export type RpcFunction<T extends (...args: any) => any> = T extends (...args: infer Args) => infer R ? (...args: Args) => Promise<Awaited<R>> : never;

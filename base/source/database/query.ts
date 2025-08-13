@@ -1,4 +1,4 @@
-import type { Flatten, Record } from '#/types.js';
+import type { Flatten, Record } from '#/types/index.js';
 import type { Geometry } from '#/types/geo-json.js';
 
 export type QueryOptions<T = any> = {

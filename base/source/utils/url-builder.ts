@@ -1,11 +1,11 @@
 import { normalizeSingleHttpValue, type HttpValue } from '#/http/types.js';
-import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '../types.js';
+import type { UndefinableJson, UndefinableJsonObject, UndefinableJsonPrimitive } from '#/types/index.js';
 import { memoizeSingle } from './function/memoize.js';
 import { isArray, isDefined, isObject, isUndefined } from './type-guards.js';
 
 const enum UrlBuilderPartType {
   Literal = 0,
-  Parameter = 1
+  Parameter = 1,
 }
 
 type UrlBuilderPart = {

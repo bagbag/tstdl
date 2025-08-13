@@ -1,7 +1,7 @@
 import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
 import { createAccessorDecorator } from '#/reflection/index.js';
-import type { Constructor } from '#/types.js';
+import type { Constructor } from '#/types/index.js';
 import { assertDefinedPass, isDefined } from '../type-guards.js';
 
 export type MemoizeOptions = {

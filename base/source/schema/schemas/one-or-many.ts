@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
-import type { OneOrMany as OneOrManyType } from '#/types.js';
+import type { OneOrMany as OneOrManyType } from '#/types/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { PropertySchema, type SchemaDecoratorOptions, type SchemaPropertyDecorator } from '../decorators/index.js';
 import { Schema, type SchemaOptions, type SchemaTestable, type SchemaTestOptions, type SchemaTestResult } from '../schema.js';

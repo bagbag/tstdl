@@ -2,7 +2,7 @@ import type { ApiClientImplementation } from '#/api/index.js';
 import { HTTP_CLIENT_MIDDLEWARE } from '#/http/client/tokens.js';
 import { getCurrentInjector } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { isDefined } from '#/utils/type-guards.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import { AuthenticationClientService } from './authentication.service.js';

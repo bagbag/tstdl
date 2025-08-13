@@ -1,5 +1,5 @@
 import type { JsonPath } from '#/json-path/json-path.js';
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { lazyProperty } from '#/utils/object/lazy-property.js';
 import { typeOf } from '#/utils/type-of.js';
 import { PropertySchema, type SchemaPropertyDecorator, type SchemaDecoratorOptions } from '../decorators/index.js';

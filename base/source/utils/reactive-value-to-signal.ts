@@ -1,7 +1,7 @@
 import { isObservable } from 'rxjs';
 
 import { computed, isSignal, toSignal, type Signal, type ToSignalOptions } from '#/signals/api.js';
-import type { ReactiveValue } from '#/types.js';
+import type { ReactiveValue } from '#/types/index.js';
 
 export type ReactiveValueToSignalOptions<T> = ToSignalOptions<T>;
 

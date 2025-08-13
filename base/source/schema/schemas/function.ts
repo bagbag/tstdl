@@ -2,7 +2,7 @@
 
 import { reflectionRegistry } from '#/reflection/registry.js';
 import { createMethodDecorator } from '#/reflection/utils.js';
-import type { AbstractConstructor, Function } from '#/types.js';
+import type { AbstractConstructor, Function } from '#/types/index.js';
 import { isArray, isDefined, isFunction, isNull, isUndefined } from '#/utils/type-guards.js';
 import { type CombinedSchemaDecorator, createSchemaDecorator, Property, type SchemaDecoratorOptions, type SchemaReflectionData } from '../decorators/index.js';
 import { schemaReflectionDataToSchema } from '../decorators/utils.js';

@@ -3,7 +3,7 @@
  * Defines base entity classes and related types for the ORM.
  */
 import { Defaulted, Integer } from '#/schema/index.js';
-import type { Type } from '#/types.js';
+import type { Type } from '#/types/index.js';
 import { PrimaryKey } from './decorators.js';
 import { Embedded, type HasDefault, type IsPrimaryKey, Json, Timestamp, Uuid } from './types.js';
 

@@ -3,7 +3,7 @@
 import type { Observable } from 'rxjs';
 import type { CamelCase, Except, IsEqual, LiteralUnion } from 'type-fest';
 
-import type { Signal } from './signals/api.js';
+import type { Signal } from '#/signals/api.js';
 
 export type ObjectLiteral = {}; // eslint-disable-line @typescript-eslint/no-empty-object-type
 

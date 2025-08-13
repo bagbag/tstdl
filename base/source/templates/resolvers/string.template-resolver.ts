@@ -1,6 +1,6 @@
 import { Singleton } from '#/injector/decorators.js';
 import { Union } from '#/schema/index.js';
-import type { Record, TypedOmit } from '#/types.js';
+import type { Record, TypedOmit } from '#/types/index.js';
 import { TemplateField } from '../template.model.js';
 import type { TemplateRenderer, TemplateRendererOptions, TemplateRendererString } from '../template.renderer.js';
 import { TemplateResolver } from '../template.resolver.js';

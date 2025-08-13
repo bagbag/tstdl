@@ -1,6 +1,6 @@
 import { Singleton } from '#/injector/decorators.js';
 import { renderJsxAsync } from '#/jsx/render-to-string.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { JsxTemplate } from '../resolvers/jsx.template-resolver.js';
 import type { TemplateRenderObject, TemplateRenderResult } from '../template.renderer.js';
 import { TemplateRenderer } from '../template.renderer.js';

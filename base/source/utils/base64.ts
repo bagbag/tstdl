@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers, no-bitwise */
 
 import { supportsBuffer } from '#/supports.js';
-import type { BinaryData } from '../types.js';
+import type { BinaryData } from '#/types/index.js';
 import { toUint8Array } from './binary.js';
 import { isArrayBuffer, isDefined } from './type-guards.js';
 

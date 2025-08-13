@@ -1,5 +1,5 @@
 import { Array, Enumeration, Property, string, StringProperty, Union } from '#/schema/index.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { Document, DocumentAssignmentTarget, DocumentAssignmentTask, DocumentCategory, DocumentCollection, DocumentCollectionAssignment, DocumentPropertyDataType, DocumentRequest, DocumentTag, DocumentType, DocumentTypeProperty, DocumentValidationExecution, DocumentWorkflow, type DocumentProperty } from '../models/index.js';
 
 export class DocumentCollectionView extends DocumentCollection {

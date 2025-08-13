@@ -1,6 +1,6 @@
 import type { CancellationSignal } from '#/cancellation/index.js';
 import { CancellationToken } from '#/cancellation/index.js';
-import type { StringMap } from '#/types.js';
+import type { StringMap } from '#/types/index.js';
 import type { Module, ModuleMetric } from './module.js';
 import { ModuleState } from './module.js';
 

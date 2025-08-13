@@ -1,5 +1,5 @@
+import type { BinaryData, OneOrMany, Record } from '#/types/index.js';
 import { InvalidTokenError } from '../errors/invalid-token.error.js';
-import type { BinaryData, OneOrMany, StringMap } from '../types.js';
 import { toArray } from './array/array.js';
 import { decodeBase64Url, encodeBase64Url } from './base64.js';
 import type { HashAlgorithm, Key } from './cryptography.js';
@@ -9,12 +9,12 @@ import { timingSafeBinaryEquals } from './equals.js';
 
 export type JwtTokenAlgorithm = 'HS256' | 'HS384' | 'HS512';
 
-export type JwtTokenHeader<T extends StringMap = StringMap> = {
+export type JwtTokenHeader<T extends Record<string> = Record<string>> = {
   alg: JwtTokenAlgorithm,
   typ: 'JWT',
 } & T;
 
-export type JwtToken<TPayload = StringMap, THeader extends JwtTokenHeader = JwtTokenHeader> = {
+export type JwtToken<TPayload = Record<string>, THeader extends JwtTokenHeader = JwtTokenHeader> = {
   readonly header: THeader,
   readonly payload: TPayload,
 };

@@ -1,4 +1,4 @@
-import type { ObjectLiteral } from '#/types.js';
+import type { ObjectLiteral } from '#/types/index.js';
 import type { Queue, QueueConfig } from './queue.js';
 
 export abstract class QueueProvider {

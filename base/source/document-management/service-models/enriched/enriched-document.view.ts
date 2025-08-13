@@ -1,5 +1,5 @@
 import type { EntityMetadata } from '#/orm/entity.js';
-import type { TypedOmit } from '#/types.js';
+import type { TypedOmit } from '#/types/index.js';
 import { Memoize } from '#/utils/function/memoize.js';
 import { assertDefinedPass, isNull } from '#/utils/type-guards.js';
 import type { DocumentApproval, DocumentTag, DocumentValidationExecution, DocumentWorkflow } from '../../models/index.js';

@@ -1,7 +1,7 @@
 import type { SecretRequirementsError } from '#/authentication/index.js';
 import { type HttpError, HttpErrorReason } from '#/http/http.error.js';
 import { enumerationLocalization, getLocalizationKeys, type Localization, type LocalizeFunctionContext, type LocalizeItem } from '#/text/localization.service.js';
-import type { Enumeration } from '#/types.js';
+import type { Enumeration } from '#/types/index.js';
 import { isDefined, isNotNull } from '#/utils/type-guards.js';
 import type { ApiError } from './api.error.js';
 import type { BadRequestError } from './bad-request.error.js';

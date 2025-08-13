@@ -1,4 +1,4 @@
-import type { DeepFlatten, DeepNonNullable, Record } from '#/types.js';
+import type { DeepFlatten, DeepNonNullable, Record } from '#/types/index.js';
 import { assertString, assertStringPass, isDefined, isUndefined } from '../type-guards.js';
 
 export const propertyName = Symbol('PropertyName');

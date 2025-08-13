@@ -1,6 +1,6 @@
 import type { CancellationSignal } from '#/cancellation/index.js';
 import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { ForwardRefTypeHint } from '#/utils/object/forward-ref.js';
 import type { Injector, ProvidersItem } from './injector.js';
 import type { ResolveArgument } from './interfaces.js';

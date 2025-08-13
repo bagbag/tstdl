@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 import { Singleton } from '#/injector/decorators.js';
-import type { PropertiesOfType, Record } from '#/types.js';
+import type { PropertiesOfType, Record } from '#/types/index.js';
 import { now } from '#/utils/date-time.js';
 import { formatError } from '#/utils/format-error.js';
 import { isDefined, isObject, isString } from '#/utils/type-guards.js';

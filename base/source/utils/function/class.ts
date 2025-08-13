@@ -1,4 +1,4 @@
-import type { AbstractConstructor } from '#/types.js';
+import type { AbstractConstructor } from '#/types/index.js';
 import { isUndefined } from '../type-guards.js';
 
 declare class EmptyClass { }

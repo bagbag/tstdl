@@ -6,7 +6,7 @@ import { NotFoundError } from '#/errors/not-found.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { deserialize, type NonPrimitive, registerSerializer, type SerializationOptions, type SerializationReplacer, serialize } from '#/serializer/index.js';
-import type { Record, TypedOmit } from '#/types.js';
+import type { Record, TypedOmit } from '#/types/index.js';
 import { valueOfType } from '#/utils/helpers.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
 import { reflectMethods } from '#/utils/proxy.js';

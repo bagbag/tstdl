@@ -1,5 +1,5 @@
 import { createContextProvider } from '#/context/index.js';
-import type { Record } from '#/types.js';
+import type { Record } from '#/types/index.js';
 import type { Resolvable } from './interfaces.js';
 import type { AfterResolveContext } from './types.js';
 

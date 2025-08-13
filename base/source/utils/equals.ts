@@ -1,4 +1,4 @@
-import type { BinaryData, Function, Record } from '#/types.js';
+import type { BinaryData, Function, Record } from '#/types/index.js';
 import { toArray } from './array/array.js';
 import { toUint8Array } from './binary.js';
 import { compareByValue } from './comparison.js';

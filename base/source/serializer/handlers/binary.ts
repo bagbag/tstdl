@@ -1,5 +1,5 @@
 
-import type { TypedArray } from '#/types.js';
+import type { TypedArray } from '#/types/index.js';
 import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { toArrayBuffer } from '#/utils/binary.js';
 
