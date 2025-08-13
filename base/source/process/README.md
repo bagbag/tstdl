@@ -26,9 +26,9 @@ The `spawnCommand` function is the main export of this module. It is designed to
 
 When you call `spawnCommand`, it returns a `SpawnCommandResult` object. This object is not the process itself, but a controller that provides:
 
--   **Streams:** Web-compatible streams for `stdin` (`writable`), `stdout` (`readable`), and `stderr`. This allows you to pipe data from and to other stream-based APIs seamlessly.
--   **Helper Methods:** Functions to easily write data to `stdin` (accepting `string`, `Uint8Array`, or another `ReadableStream`) and to consume `stdout` or `stderr` completely into a string or byte array.
--   **Lifecycle Management:** A promise-based `wait()` method to asynchronously wait for the process to complete. It includes built-in error handling for non-zero exit codes, which simplifies checking for successful execution.
+- **Streams:** Web-compatible streams for `stdin` (`writable`), `stdout` (`readable`), and `stderr`. This allows you to pipe data from and to other stream-based APIs seamlessly.
+- **Helper Methods:** Functions to easily write data to `stdin` (accepting `string`, `Uint8Array`, or another `ReadableStream`) and to consume `stdout` or `stderr` completely into a string or byte array.
+- **Lifecycle Management:** A promise-based `wait()` method to asynchronously wait for the process to complete. It includes built-in error handling for non-zero exit codes, which simplifies checking for successful execution.
 
 ## Usage
 
@@ -112,50 +112,48 @@ if (code !== 0) {
 
 Spawns a new child process.
 
--   **`command`**: The command to run.
--   **`args`**: A list of string arguments.
--   **Returns**: A `Promise` that resolves with a `SpawnCommandResult` object.
-
----
+- **`command`**: The command to run.
+- **`args`**: A list of string arguments.
+- **Returns**: A `Promise` that resolves with a `SpawnCommandResult` object.
 
 ### `SpawnCommandResult`
 
 An object returned by `spawnCommand` with the following properties and methods:
 
--   **`process: ChildProcessWithoutNullStreams`**
-    The underlying Node.js `ChildProcess` instance.
+- **`process: ChildProcessWithoutNullStreams`**
+  The underlying Node.js `ChildProcess` instance.
 
--   **`readable: ReadableStream<Uint8Array>`**
-    A `ReadableStream` for the process's `stdout`.
+- **`readable: ReadableStream<Uint8Array>`**
+  A `ReadableStream` for the process's `stdout`.
 
--   **`writable: WritableStream<Uint8Array>`**
-    A `WritableStream` for the process's `stdin`.
+- **`writable: WritableStream<Uint8Array>`**
+  A `WritableStream` for the process's `stdin`.
 
--   **`stderr: ReadableStream<Uint8Array>`**
-    A `ReadableStream` for the process's `stderr`.
+- **`stderr: ReadableStream<Uint8Array>`**
+  A `ReadableStream` for the process's `stderr`.
 
--   **`write(chunk: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): Promise<void>`**
-    Asynchronously writes a chunk of data to `stdin`. Automatically handles encoding for strings and closing the stream.
+- **`write(chunk: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): Promise<void>`**
+  Asynchronously writes a chunk of data to `stdin`. Automatically handles encoding for strings and closing the stream.
 
--   **`autoWrite(chunk: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): void`**
-    Writes data to `stdin` without awaiting completion (fire-and-forget). Useful for non-blocking writes.
+- **`autoWrite(chunk: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): void`**
+  Writes data to `stdin` without awaiting completion (fire-and-forget). Useful for non-blocking writes.
 
--   **`readOutputBytes(): Promise<Uint8Array>`**
-    Reads the entire `stdout` stream and returns the result as a `Uint8Array`.
+- **`readOutputBytes(): Promise<Uint8Array>`**
+  Reads the entire `stdout` stream and returns the result as a `Uint8Array`.
 
--   **`readOutput(): Promise<string>`**
-    Reads the entire `stdout` stream and returns it as a UTF-8 decoded string.
+- **`readOutput(): Promise<string>`**
+  Reads the entire `stdout` stream and returns it as a UTF-8 decoded string.
 
--   **`readErrorBytes(): Promise<Uint8Array>`**
-    Reads the entire `stderr` stream and returns the result as a `Uint8Array`.
+- **`readErrorBytes(): Promise<Uint8Array>`**
+  Reads the entire `stderr` stream and returns the result as a `Uint8Array`.
 
--   **`readError(): Promise<string>`**
-    Reads the entire `stderr` stream and returns it as a UTF-8 decoded string.
+- **`readError(): Promise<string>`**
+  Reads the entire `stderr` stream and returns it as a UTF-8 decoded string.
 
--   **`handleNonZeroExitCode(): void`**
-    Manually triggers the non-zero exit code error handling, which may cancel the I/O streams.
+- **`handleNonZeroExitCode(): void`**
+  Manually triggers the non-zero exit code error handling, which may cancel the I/O streams.
 
--   **`wait(options?: WaitOptions): Promise<ProcessResult>`**
-    Waits for the process to exit.
-    -   `options.throwOnNonZeroExitCode: boolean` (default: `true`): If `true`, throws an error if the process exits with a non-zero code.
-    -   Returns a `Promise` that resolves to a `ProcessResult` object: `{ code: number | null, signal: string | null }`.
+- **`wait(options?: WaitOptions): Promise<ProcessResult>`**
+  Waits for the process to exit.
+  - `options.throwOnNonZeroExitCode: boolean` (default: `true`): If `true`, throws an error if the process exits with a non-zero code.
+  - Returns a `Promise` that resolves to a `ProcessResult` object: `{ code: number | null, signal: string | null }`.

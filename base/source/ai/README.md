@@ -283,4 +283,3 @@ Manages the state for a multi-turn conversation.
 | `addContent` | `content: OneOrMany<Content>` | `void` | Adds content to the session history without generating a response. |
 | `generate` | `request: GenerationRequest` | `Promise<GenerationResult>` | Generates a response, automatically adding the new content and the model's reply to the history. |
 | `callFunctions` | `options: CallFunctionsOptions<T>` | `Promise<SpecializedGenerationResult<...>>` | Calls functions, automatically adding content and function results to the history. |
-```

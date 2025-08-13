@@ -1,5 +1,6 @@
 import { exists } from 'jsr:@std/fs';
 import { join } from 'jsr:@std/path';
+
 import packageJson from './package.json' with { type: 'json' };
 
 const allModules = Object.keys(packageJson.exports).map((key) => key.slice(2)).filter((key) => (key.length > 0) && !key.endsWith('json') && !key.endsWith('js'));
@@ -102,6 +103,8 @@ Study the example usage source code provided to understand how the module is typ
 
 Use package import statements instead of relative paths in your examples:
 Example: \`import { SomeService } from '@tstdl/base/some-module';\` instead of \`import { FooService } from '#/some-module/index.js';\`
+
+Use generic examples like User, Car, Pet, Product, etc. instead of the specific ones from the example source code.
 
 Available modules to import from: ${allModules.join(', ')}
 `.trim();
