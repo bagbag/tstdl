@@ -10,13 +10,13 @@ import type { ModuleMetric } from './module.js';
 export type MetricReport<Aggregation extends MetricAggregation> = {
   displayName: string,
   aggregation: Aggregation,
-  aggregationOptions?: MetricAggregationOptions<Aggregation>
+  aggregationOptions?: MetricAggregationOptions<Aggregation>,
 };
 
 export type MetricReportRegistration = {
   metric: ModuleMetric,
   moving: MovingMetric,
-  reports: MetricReport<MetricAggregation>[]
+  reports: MetricReport<MetricAggregation>[],
 };
 
 export class ModuleMetricReporter {
@@ -43,7 +43,7 @@ export class ModuleMetricReporter {
       const registration: MetricReportRegistration = {
         metric,
         moving: new MovingMetric(this.sampleCount * this.sampleInterval),
-        reports
+        reports,
       };
 
       return registration;

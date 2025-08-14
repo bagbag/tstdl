@@ -16,6 +16,6 @@ export class FunctionModule extends ModuleBase implements Module {
   }
 
   protected async _run(cancellationSignal: CancellationSignal): Promise<void> {
-    return this.fn(cancellationSignal);
+    await this.fn(cancellationSignal);
   }
 }
