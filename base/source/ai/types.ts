@@ -4,11 +4,15 @@ import type { ObjectSchema, SchemaOutput, SchemaTestable } from '#/schema/index.
 import type { Record, UndefinableJsonObject } from '#/types/index.js';
 import { hasOwnProperty } from '#/utils/object/object.js';
 import type { ResolvedValueOrProvider, ValueOrAsyncProvider } from '#/utils/value-or-provider.js';
+import { isBlob } from '#/utils/type-guards.js';
 
 /**
  * Represents a file to be uploaded, either from a local path or as a `Blob`.
  */
-export type FileInput = { path: string, mimeType: string } | Blob;
+export type FileInput =
+  | { path: string, mimeType: string }
+  | { stream: ReadableStream<Uint8Array>, mimeType: string, size?: number }
+  | Blob;
 
 /**
  * A record of named function declarations, where each key is the function name.
@@ -232,4 +236,12 @@ export function defineFunction<P extends Record, T extends SchemaFunctionDeclara
  */
 export function isSchemaFunctionDeclarationWithHandler(declaration: SchemaFunctionDeclaration): declaration is SchemaFunctionDeclarationWithHandler {
   return hasOwnProperty(declaration, 'handler');
+}
+
+export function isPathFileInput(input: FileInput): input is { path: string, mimeType: string } {
+  return !isBlob(input) && hasOwnProperty(input, 'path');
+}
+
+export function isStreamFileInput(input: FileInput): input is { stream: ReadableStream<Uint8Array>, mimeType: string, size?: number } {
+  return !isBlob(input) && hasOwnProperty(input, 'stream');
 }

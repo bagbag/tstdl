@@ -18,7 +18,7 @@ export type ReadBinaryStreamOptions = {
   onLengthSubceed?: 'error' | 'close' | 'leave-open',
 };
 
-export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array> {
+export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array<ArrayBuffer>> {
   const stream = isReadableStream(iterableOrStream)
     ? isDefined(length)
       ? toBytesStream(iterableOrStream)
@@ -153,7 +153,7 @@ export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBuffer
     return new Uint8Array(0);
   }
 
-  return concatArrayBufferViews(views, Uint8Array, totalLength);
+  return concatArrayBufferViews(views, totalLength);
 }
 
 export async function readTextStream(iterableOrStream: AsyncIterable<string> | ReadableStream<string>): Promise<string> {

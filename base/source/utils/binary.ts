@@ -1,7 +1,6 @@
 import { supportsBuffer } from '#/supports.js';
-import type { BinaryData, Type } from '#/types/index.js';
-import { typeExtends } from './index.js';
-import { assert, isArrayBuffer, isFunction, isNumber } from './type-guards.js';
+import type { BinaryData } from '#/types/index.js';
+import { assert, isArrayBuffer, isUint8Array } from './type-guards.js';
 
 /**
  * Get ArrayBuffer from binary data
@@ -39,23 +38,18 @@ export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Arr
     : new Uint8Array(buffer, byteOffset, byteLength);
 }
 
-export function concatArrayBuffers(buffers: ArrayBufferLike[]): ArrayBufferLike {
+export function concatArrayBuffers(buffers: readonly ArrayBufferLike[]): ArrayBuffer {
   const arrays = buffers.map((buffer) => new Uint8Array(buffer));
   const bytes = concatArrayBufferViews(arrays);
 
   return bytes.buffer;
 }
 
-export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLength?: number): T;
-export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: ArrayBufferView[], targetType: Type<T, [ArrayBufferLike, number, number]>, totalLength?: number): T;
-export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], totalLengthOrTargetType?: Type<T, [ArrayBufferLike, number, number]> | number, totalLengthOrNothing?: number): T {
+export function concatArrayBufferViews(arrays: readonly ArrayBufferView[], totalLength?: number): Uint8Array<ArrayBuffer> {
   assert(arrays.length > 0, 'No array provided.');
-  const totalLength = isNumber(totalLengthOrTargetType) ? totalLengthOrTargetType : totalLengthOrNothing;
-  const type = isFunction(totalLengthOrTargetType) ? totalLengthOrTargetType : arrays[0]!.constructor as Type<T, [ArrayBufferLike, ...any[]]>;
 
-  if (supportsBuffer && typeExtends(type, Uint8Array)) {
-    const merged = Buffer.concat(arrays as unknown as Uint8Array[], totalLength);
-    return new type(merged.buffer, merged.byteOffset, merged.byteLength);
+  if (supportsBuffer && arrays.every((array) => isUint8Array(array))) {
+    return Buffer.concat(arrays as Uint8Array[], totalLength);
   }
 
   const totalBytes = totalLength ?? arrays.reduce((sum, array) => sum + array.byteLength, 0);
@@ -68,5 +62,5 @@ export function concatArrayBufferViews<T extends ArrayBufferView>(arrays: T[], t
     currentIndex += uint8Array.byteLength;
   }
 
-  return new type(merged.buffer, merged.byteOffset, merged.byteLength);
+  return merged;
 }

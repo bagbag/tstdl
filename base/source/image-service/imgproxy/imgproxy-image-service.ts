@@ -6,8 +6,7 @@ import { concatArrayBufferViews } from '#/utils/binary.js';
 import { importHmacKey, sign } from '#/utils/cryptography.js';
 import { decodeHex, encodeUtf8 } from '#/utils/encoding.js';
 import { isDefined } from '#/utils/type-guards.js';
-import type { ImageOptions, ImageOrigin } from '../image-service.js';
-import { ImageService } from '../image-service.js';
+import { ImageOrigin, ImageService, type ImageOptions } from '../image-service.js';
 
 export type ImgproxyImageServiceConfig = {
   endpoint: string,
@@ -87,16 +86,16 @@ async function signString(keyBytes: Uint8Array, saltBytes: Uint8Array, target: s
 
 function convertOrigin(origin: ImageOrigin): string {
   switch (origin) {
-    case 'center': return 'ce';
-    case 'smart': return 'sm';
-    case 'top': return 'no';
-    case 'left': return 'we';
-    case 'right': return 'ea';
-    case 'bottom': return 'so';
-    case 'topleft': return 'nowe';
-    case 'topright': return 'noea';
-    case 'bottomleft': return 'sowe';
-    case 'bottomright': return 'soea';
+    case ImageOrigin.Center: return 'ce';
+    case ImageOrigin.Smart: return 'sm';
+    case ImageOrigin.Top: return 'no';
+    case ImageOrigin.Left: return 'we';
+    case ImageOrigin.Right: return 'ea';
+    case ImageOrigin.Bottom: return 'so';
+    case ImageOrigin.TopLeft: return 'nowe';
+    case ImageOrigin.TopRight: return 'noea';
+    case ImageOrigin.BottomLeft: return 'sowe';
+    case ImageOrigin.BottomRight: return 'soea';
 
     default: throw new Error();
   }

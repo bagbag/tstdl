@@ -1,4 +1,5 @@
-import { openAsBlob } from 'node:fs';
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
@@ -15,9 +16,10 @@ import { Logger } from '#/logger/logger.js';
 import { createArray } from '#/utils/array/array.js';
 import { backoffGenerator, type BackoffGeneratorOptions } from '#/utils/backoff.js';
 import { formatBytes } from '#/utils/format.js';
+import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { assertDefinedPass, isBlob, isDefined, isUndefined } from '#/utils/type-guards.js';
 import type { AiServiceOptions } from './ai.service.js';
-import type { FileContentPart, FileInput } from './types.js';
+import { isPathFileInput, type FileContentPart, type FileInput } from './types.js';
 
 /**
  * Options for {@link AiFileService}.
@@ -141,30 +143,80 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
   }
 
   private async uploadFile(fileInput: FileInput, id: string): Promise<File> {
-    const inputIsBlob = isBlob(fileInput);
-
-    const blob = inputIsBlob
-      ? fileInput
-      : await openAsBlob(fileInput.path, { type: fileInput.mimeType });
-
-    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(blob.size)})...`);
-
     if (isDefined(this.#storage)) {
-      const bucket = await this.getBucket();
-      const file = bucket.file(id);
-
-      const blobStream = Readable.fromWeb(blob.stream() as NodeReadableStream);
-      await file.save(blobStream, { contentType: blob.type, resumable: false });
-
-      return {
-        id,
-        name: id, // For Vertex, name is the GCS object id
-        uri: `gs://${bucket.name}/${file.name}`,
-        mimeType: blob.type,
-      };
+      return await this.uploadFileVertex(fileInput, id);
     }
 
-    const response = await this.#genAI.files.upload({ file: blob, config: { mimeType: blob.type } });
+    return await this.uploadFileGenAi(fileInput, id);
+  }
+
+  private async uploadFileVertex(fileInput: FileInput, id: string): Promise<File> {
+    const bucket = await this.getBucket();
+    const file = bucket.file(id);
+
+    let stream: Readable;
+    let contentType: string | undefined;
+    let size: number | undefined;
+
+    if (isBlob(fileInput)) {
+      stream = Readable.fromWeb(fileInput.stream() as NodeReadableStream);
+      contentType = fileInput.type;
+      size = fileInput.size;
+    }
+    else if (isPathFileInput(fileInput)) {
+      const stats = await stat(fileInput.path);
+      stream = createReadStream(fileInput.path);
+      contentType = fileInput.mimeType;
+      size = stats.size;
+    }
+    else {
+      stream = Readable.fromWeb(fileInput.stream as NodeReadableStream);
+      contentType = fileInput.mimeType;
+      size = fileInput.size;
+    }
+
+    this.#logger.verbose(`Uploading file "${id}"${isDefined(size) ? ` (${formatBytes(size)})` : ''}...`);
+
+    await file.save(stream, { contentType, resumable: false });
+
+    return {
+      id,
+      name: id,
+      uri: `gs://${bucket.name}/${file.name}`,
+      mimeType: contentType,
+    };
+  }
+
+  private async uploadFileGenAi(fileInput: FileInput, id: string): Promise<File> {
+    let uploadData: Blob | string;
+    let contentType: string | undefined;
+    let size: number;
+
+    if (isBlob(fileInput)) {
+      uploadData = fileInput;
+      contentType = fileInput.type;
+      size = fileInput.size;
+    }
+    else if (isPathFileInput(fileInput)) {
+      const fileState = await stat(fileInput.path);
+
+      uploadData = fileInput.path;
+      contentType = fileInput.mimeType;
+      size = fileState.size;
+    }
+    else {
+      const fileBytes = await readBinaryStream(fileInput.stream);
+      const blob = new Blob([fileBytes], { type: fileInput.mimeType });
+
+      uploadData = blob;
+      contentType = blob.type;
+      size = blob.size;
+    }
+
+    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(size)}) via GenAI API...`);
+
+    // upload supports paths and blobs, but not streams (yet)
+    const response = await this.#genAI.files.upload({ file: uploadData, config: { mimeType: contentType } });
 
     return {
       id,
