@@ -15,16 +15,15 @@ import { DocumentPropertyDataType, DocumentWorkflowState, DocumentWorkflowStep }
 import { getMimeTypeExtensions } from '@tstdl/base/file';
 import { dateShort } from '@tstdl/base/formats';
 import { switchAll } from '@tstdl/base/signals';
-import type { Record, TypedOmit } from '@tstdl/base/types';
+import { tstdlCommonLocalizationKeys } from '@tstdl/base/text';
+import type { InputType, Record, TypedOmit } from '@tstdl/base/types';
 import { assertDefinedPass, dateTimeToNumericDate, formatBytes, isBoolean, isNotNull, isNull, isNumber, isUndefined, numericDateToDateTime } from '@tstdl/base/utils';
 import { objectEntries } from '@tstdl/base/utils/object';
 import { normalizeTextInput } from '@tstdl/base/utils/string';
-import type { InputType } from '@tstdl/base/web-types';
 import { DateTime } from 'luxon';
 import { firstValueFrom, map } from 'rxjs';
 import { match } from 'ts-pattern';
 
-import { tstdlCommonLocalizationKeys } from '@tstdl/base/text';
 import type { DocumentManagementContext } from '../../context';
 import { DocumentTypeSelectDialogComponent } from '../document-type-select-dialog/document-type-select-dialog.component';
 

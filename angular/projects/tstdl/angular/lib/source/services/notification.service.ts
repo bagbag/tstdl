@@ -1,6 +1,6 @@
 import type { DynamicText } from '@tstdl/base/text';
 import type { Record, SimplifyObject, TypedOmit } from '@tstdl/base/types';
-import type { InputAttributes, InputMode, InputType, TextAreaAttributes } from '@tstdl/base/web-types';
+import type { InputAttributes, InputMode, InputType, TextAreaAttributes } from '@tstdl/base/types';
 
 export type MessageBoxInputs = Record<string, MessageBoxInput>;
 export type MessageBoxResult<T = any, I extends MessageBoxInputs = MessageBoxInputs, D = undefined> =

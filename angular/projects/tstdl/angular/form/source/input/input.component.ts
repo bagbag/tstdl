@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, ViewEncapsulation, booleanAttribute, computed, inject, input } from '@angular/core';
-import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/web-types';
+import type { InputAutocomplete, InputMode, InputType } from '@tstdl/base/types';
 
 @Component({
   selector: 'input[tslInput], textarea[tslInput]',
