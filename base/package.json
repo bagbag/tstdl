@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.146",
+  "version": "0.92.147",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -148,7 +148,7 @@
   "peerDependencies": {
     "@elastic/elasticsearch": "^9.1",
     "@google-cloud/storage": "^7.16",
-    "@google/genai": "^1.13",
+    "@google/genai": "^1.14",
     "@tstdl/angular": "^0.92",
     "@zxcvbn-ts/core": "^3.0",
     "@zxcvbn-ts/language-common": "^3.0",
