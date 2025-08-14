@@ -1,5 +1,7 @@
 import { compileClient } from '#/api/client/index.js';
 import { defineApi } from '#/api/index.js';
+import { defaultAccessControlAllowHeaders } from '#/api/utils.js';
+import { bustCacheToken } from '#/http/tokens.js';
 import { ReplaceClass } from '#/injector/decorators.js';
 import { array, boolean, literal, number, object, optional, string } from '#/schema/index.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
@@ -25,6 +27,12 @@ export const documentManagementApiDefinition = defineApi({
       parameters: loadDataParametersSchema,
       result: ServerSentEvents,
       credentials: true,
+      data: {
+        [bustCacheToken]: true,
+      },
+      cors: {
+        accessControlAllowHeaders: `${defaultAccessControlAllowHeaders}, Cache-Control`,
+      },
     },
     loadDocumentRequestsTemplateData: {
       resource: 'views/document-requests-template-data',

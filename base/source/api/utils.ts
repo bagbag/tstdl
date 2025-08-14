@@ -11,6 +11,8 @@ type GetApiEndpointUrlData = {
   explicitVersion?: number | null,
 };
 
+export const defaultAccessControlAllowHeaders = 'Content-Type, Authorization';
+
 export function getFullApiEndpointResource({ api, endpoint, defaultPrefix, explicitVersion }: GetApiEndpointUrlData): string {
   const versionArray = toArray(isDefined(explicitVersion) ? explicitVersion : endpoint.version);
   const version = sort(versionArray, compareByValueDescending)[0];

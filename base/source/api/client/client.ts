@@ -1,5 +1,5 @@
 import { HttpClient, HttpClientRequest, type HttpClientArgument, type HttpClientOptions, type HttpClientResponse, type HttpRequestBody } from '#/http/client/index.js';
-import { normalizeSingleHttpValue } from '#/http/types.js';
+import { bustCacheToken, normalizeSingleHttpValue } from '#/http/index.js';
 import { inject } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
 import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
@@ -29,6 +29,7 @@ export type ClientOptions = {
 
 export type ApiClientHttpRequestContext = {
   endpoint: ApiEndpointDefinition,
+  [bustCacheToken]?: boolean,
 };
 
 export const httpClientSymbol = Symbol('HttpClient for ApiClient');
@@ -111,6 +112,10 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           }
 
           return getServerSentEvents(this[httpClientSymbol].options.baseUrl, resource, endpoint, parameters);
+        }
+
+        if (context.endpoint.data?.[bustCacheToken] == true) {
+          context[bustCacheToken] = true;
         }
 
         const request = new HttpClientRequest({

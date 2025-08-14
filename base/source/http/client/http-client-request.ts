@@ -16,16 +16,16 @@ export type HttpRequestBody = {
   json?: UndefinableJson,
   form?: HttpForm,
   formData?: FormData,
-  binary?: Uint8Array | Blob | ReadableStream<Uint8Array>
+  binary?: Uint8Array | Blob | ReadableStream<Uint8Array>,
 };
 
 export type HttpRequestAuthorization = {
   basic?: {
     username: string,
-    password: string
+    password: string,
   },
   bearer?: string,
-  token?: string
+  token?: string,
 };
 
 export type HttpFormDataObjectValue = string | number | boolean | Uint8Array | Blob;
@@ -38,14 +38,14 @@ export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url
   credentials?: HttpRequestCredentials,
   authorization?: HttpRequestAuthorization,
   body?: TypedOmit<HttpRequestBody, 'form' | 'formData'> & { form?: HttpFormObject | HttpForm, formData?: HttpFormDataObject | FormData },
-  abortSignal?: CancellationSignal
+  abortSignal?: CancellationSignal,
 };
 
 export type HttpRequestCredentials = 'omit' | 'same-origin' | 'include';
 
 export type HttpClientRequestObject = HttpClientRequestOptions & {
   url: string,
-  method?: HttpMethod
+  method?: HttpMethod,
 };
 
 export class HttpClientRequest implements Disposable {
@@ -201,7 +201,7 @@ export class HttpClientRequest implements Disposable {
       body,
       timeout: this.timeout,
       throwOnNon200: this.throwOnNon200,
-      context: this.context
+      context: this.context,
     };
   }
 }

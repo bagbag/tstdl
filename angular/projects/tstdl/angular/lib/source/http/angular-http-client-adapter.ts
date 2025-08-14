@@ -1,9 +1,8 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector as AngularInjector, inject } from '@angular/core';
-import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders } from '@tstdl/base/http';
 import type { HttpClientRequest } from '@tstdl/base/http';
+import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders, bustCacheToken } from '@tstdl/base/http';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
-import type { StringMap } from '@tstdl/base/types';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
 import { firstValueFrom, race, switchMap, throwError } from 'rxjs';
@@ -16,10 +15,17 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
 
   async call(request: HttpClientRequest): Promise<HttpClientResponse> {
     try {
+      let requestUrl = request.url;
+      let requestHeaders = new AngularHttpHeaders(request.headers.asNormalizedObject() as Record<string, string | string[]>);
+
+      if (request.context[bustCacheToken] == true) {
+        requestHeaders.set('ngsw-bypass', '');
+      }
+
       const angularResponse = await firstValueFrom(
         race(
-          this.angularHttpClient.request(request.method, request.url, {
-            headers: new AngularHttpHeaders(request.headers.asNormalizedObject() as StringMap<string | string[]>),
+          this.angularHttpClient.request(request.method, requestUrl, {
+            headers: requestHeaders,
             responseType: 'blob',
             observe: 'response',
             body: getAngularBody(request.body),

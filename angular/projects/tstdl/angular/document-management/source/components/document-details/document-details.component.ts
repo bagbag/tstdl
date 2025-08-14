@@ -30,7 +30,7 @@ import { DocumentTypeSelectDialogComponent } from '../document-type-select-dialo
 export type DocumentDetailsData = {
   dialog: Dialog,
   context: DocumentManagementContext,
-  documentId: string
+  documentId: string,
 };
 
 type PropertyItem = {
