@@ -28,20 +28,89 @@ import { DocumentService } from './document.service.js';
 import { enumTypeKey } from './enum-type-key.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
-export type CategoryLabels<CategoryKey extends string> = Record<CategoryKey, string>;
-export type CategoryParents<CategoryKey extends string> = Record<CategoryKey, CategoryKey | null>;
-export type TypeLabels<TypeKey extends string> = Record<TypeKey, string>;
-export type TypeCategories<TypeKey extends string, CategoryKey extends string> = Record<TypeKey, CategoryKey>;
-export type PropertyConfigurations<DocumentPropertyKey extends string> = Record<DocumentPropertyKey, [DocumentPropertyDataType, label: string]>;
-export type TypeProperties<TypeKey extends string, DocumentPropertyKey extends string> = Record<TypeKey, DocumentPropertyKey[]>;
+export type DocumentCategoryLabels<CategoryKey extends string> = Record<CategoryKey, string>;
+export type DocumentCategoryParents<CategoryKey extends string> = Record<CategoryKey, CategoryKey | null>;
+export type DocumentTypeLabels<TypeKey extends string> = Record<TypeKey, string>;
+export type DocumentTypeCategories<TypeKey extends string, CategoryKey extends string> = Record<TypeKey, CategoryKey>;
+export type DocumentPropertyConfigurations<DocumentPropertyKey extends string> = Record<DocumentPropertyKey, [DocumentPropertyDataType, label: string]>;
+export type DocumentTypeProperties<TypeKey extends string, DocumentPropertyKey extends string> = Record<TypeKey, DocumentPropertyKey[]>;
 
+/**
+ * @example
+ * ```ts
+ * import { DocumentPropertyDataType } from '#/document-management/index.js';
+ * import type { DocumentCategoryLabels, DocumentCategoryParents, DocumentPropertyConfigurations, DocumentTypeCategories, DocumentTypeLabels, DocumentTypeProperties } from '#/document-management/server/index.js';
+ * import { defineEnum, type EnumType } from '#/enumeration/index.js';
+ *
+ * export const MyDocumentCategory = defineEnum('MyDocumentCategory', {
+ *   Administration: 'administration',
+ *   Finance: 'finance',
+ * });
+ *
+ * type MyDocumentCategory = EnumType<typeof MyDocumentCategory>;
+ *
+ * export const MyCategoryParents = {
+ *   [MyDocumentCategory.Administration]: null,
+ *   [MyDocumentCategory.Finance]: MyDocumentCategory.Administration,
+ * } as const satisfies DocumentCategoryParents<MyDocumentCategory>;
+ *
+ * export const MyDocumentCategoryLabels = {
+ *   [MyDocumentCategory.Administration]: 'Allgemeine Verwaltung',
+ *   [MyDocumentCategory.Finance]: 'Finanzen',
+ * } as const satisfies DocumentCategoryLabels<MyDocumentCategory>;
+ *
+ * export const MyDocumentType = defineEnum('MyDocumentType', {
+ *   TerminationNotice: 'termination-notice',
+ *   ComplaintLetter: 'complaint-letter',
+ *   IncomingInvoice: 'incoming-invoice',
+ *   OutgoingInvoice: 'outgoing-invoice',
+ * });
+ *
+ * type MyDocumentType = EnumType<typeof MyDocumentType>;
+ *
+ * export const MyDocumentTypeLabels = {
+ *   [MyDocumentType.TerminationNotice]: 'Kündigungsschreiben',
+ *   [MyDocumentType.ComplaintLetter]: 'Beschwerdeschreiben',
+ *   [MyDocumentType.IncomingInvoice]: 'Eingangsrechnung',
+ *   [MyDocumentType.OutgoingInvoice]: 'Ausgangsrechnung',
+ * } as const satisfies DocumentTypeLabels<MyDocumentType>;
+ *
+ * export const MyDocumentTypeCategories = {
+ *   [MyDocumentType.TerminationNotice]: MyDocumentCategory.Administration,
+ *   [MyDocumentType.ComplaintLetter]: MyDocumentCategory.Administration,
+ *   [MyDocumentType.IncomingInvoice]: MyDocumentCategory.Finance,
+ *   [MyDocumentType.OutgoingInvoice]: MyDocumentCategory.Finance,
+ * } as const satisfies DocumentTypeCategories<MyDocumentType, MyDocumentCategory>;
+ *
+ * export const MyDocumentProperty = defineEnum('MyDocumentProperty', {
+ *   Correspondent: 'correspondent',
+ *   ContractNumber: 'contract-number',
+ *   Amount: 'amount',
+ * });
+ *
+ * export type MyDocumentProperty = EnumType<typeof MyDocumentProperty>;
+ *
+ * export const MyDocumentPropertyConfiguration = {
+ *   [MyDocumentProperty.Correspondent]: [DocumentPropertyDataType.Text, 'Korrespondent'],
+ *   [MyDocumentProperty.ContractNumber]: [DocumentPropertyDataType.Text, 'Vertragsnummer'],
+ *   [MyDocumentProperty.Amount]: [DocumentPropertyDataType.Decimal, 'Betrag'],
+ * } as const satisfies DocumentPropertyConfigurations<MyDocumentProperty>;
+ *
+ * export const MyDocumentTypeProperties = {
+ *   [MyDocumentType.TerminationNotice]: [MyDocumentProperty.Correspondent, MyDocumentProperty.ContractNumber],
+ *   [MyDocumentType.ComplaintLetter]: [MyDocumentProperty.Correspondent],
+ *   [MyDocumentType.IncomingInvoice]: [MyDocumentProperty.Correspondent, MyDocumentProperty.Amount],
+ *   [MyDocumentType.OutgoingInvoice]: [MyDocumentProperty.Correspondent, MyDocumentProperty.Amount],
+ * } as const satisfies DocumentTypeProperties<MyDocumentType, MyDocumentProperty>;
+ * ```
+ */
 export type CategoriesAndTypesInitializationData<CategoryKey extends string, TypeKey extends string, DocumentPropertyKey extends string> = {
-  categoryLabels: CategoryLabels<CategoryKey>,
-  categoryParents: CategoryParents<NoInfer<CategoryKey>>,
-  typeLabels: TypeLabels<TypeKey>,
-  typeCategories: TypeCategories<NoInfer<TypeKey>, NoInfer<CategoryKey>>,
-  propertyConfigurations: PropertyConfigurations<DocumentPropertyKey>,
-  typeProperties: TypeProperties<NoInfer<TypeKey>, NoInfer<DocumentPropertyKey>>,
+  categoryLabels: DocumentCategoryLabels<CategoryKey>,
+  categoryParents: DocumentCategoryParents<NoInfer<CategoryKey>>,
+  typeLabels: DocumentTypeLabels<TypeKey>,
+  typeCategories: DocumentTypeCategories<NoInfer<TypeKey>, NoInfer<CategoryKey>>,
+  propertyConfigurations: DocumentPropertyConfigurations<DocumentPropertyKey>,
+  typeProperties: DocumentTypeProperties<NoInfer<TypeKey>, NoInfer<DocumentPropertyKey>>,
 };
 
 @DocumentManagementSingleton()
