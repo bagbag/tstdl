@@ -28,6 +28,22 @@ import { DocumentService } from './document.service.js';
 import { enumTypeKey } from './enum-type-key.js';
 import { DocumentManagementSingleton } from './singleton.js';
 
+export type CategoryLabels<CategoryKey extends string> = Record<CategoryKey, string>;
+export type CategoryParents<CategoryKey extends string> = Record<CategoryKey, CategoryKey | null>;
+export type TypeLabels<TypeKey extends string> = Record<TypeKey, string>;
+export type TypeCategories<TypeKey extends string, CategoryKey extends string> = Record<TypeKey, CategoryKey>;
+export type PropertyConfigurations<DocumentPropertyKey extends string> = Record<DocumentPropertyKey, [DocumentPropertyDataType, label: string]>;
+export type TypeProperties<TypeKey extends string, DocumentPropertyKey extends string> = Record<TypeKey, DocumentPropertyKey[]>;
+
+export type CategoriesAndTypesInitializationData<CategoryKey extends string, TypeKey extends string, DocumentPropertyKey extends string> = {
+  categoryLabels: CategoryLabels<CategoryKey>,
+  categoryParents: CategoryParents<NoInfer<CategoryKey>>,
+  typeLabels: TypeLabels<TypeKey>,
+  typeCategories: TypeCategories<NoInfer<TypeKey>, NoInfer<CategoryKey>>,
+  propertyConfigurations: PropertyConfigurations<DocumentPropertyKey>,
+  typeProperties: TypeProperties<NoInfer<TypeKey>, NoInfer<DocumentPropertyKey>>,
+};
+
 @DocumentManagementSingleton()
 export class DocumentManagementService extends Transactional {
   readonly #documentCollectionService = injectTransactional(DocumentCollectionService);
@@ -225,16 +241,11 @@ export class DocumentManagementService extends Transactional {
 
   async initializeCategoriesAndTypes<CategoryKey extends string, TypeKey extends string, DocumentPropertyKey extends string>(
     tenantId: string | null,
-    categoryLabels: Record<CategoryKey, string>,
-    categoryParents: Record<CategoryKey, CategoryKey | null>,
-    typeLabels: Record<TypeKey, string>,
-    typeCategories: Record<TypeKey, CategoryKey>,
-    propertyKeys: Record<DocumentPropertyKey, [DocumentPropertyDataType, string]>,
-    typeProperties: Record<TypeKey, DocumentPropertyKey[]>
+    data: CategoriesAndTypesInitializationData<CategoryKey, TypeKey, DocumentPropertyKey>
   ): Promise<{ categories: Record<CategoryKey, DocumentCategory>, types: Record<TypeKey, DocumentType>, properties: Record<DocumentPropertyKey, DocumentProperty> }> {
-    const categoryEntries = objectEntries(categoryLabels);
-    const typeEntries = objectEntries(typeLabels);
-    const propertyEntries = objectEntries(propertyKeys);
+    const categoryEntries = objectEntries(data.categoryLabels);
+    const typeEntries = objectEntries(data.typeLabels);
+    const propertyEntries = objectEntries(data.propertyConfigurations);
 
     const { categoryMap, typeMap, propertyMap } = await this.transaction(async (tx) => {
       const { categories: dbCategories, types: dbTypes } = await this.#documentCategoryTypeService.withTransaction(tx).loadCategoriesAndTypes(tenantId);
@@ -250,7 +261,7 @@ export class DocumentManagementService extends Transactional {
 
       for (const [enumKey, label] of categoryEntries) {
         const category = enumKeyCategoryMap.get(enumKey);
-        const parentKey = assertDefinedPass(categoryParents[enumKey], `Parent category not defined for ${enumKey}`);
+        const parentKey = assertDefinedPass(data.categoryParents[enumKey], `Parent category not defined for ${enumKey}`);
         const parentCategory = isNull(parentKey) ? null : assertDefinedPass(enumKeyCategoryMap.get(parentKey));
         const parentCategoryId = parentCategory?.id ?? null;
 
@@ -268,7 +279,7 @@ export class DocumentManagementService extends Transactional {
 
       for (const [enumKey, label] of typeEntries) {
         const type = enumKeyTypeMap.get(enumKey);
-        const enumCategory = typeCategories[enumKey];
+        const enumCategory = data.typeCategories[enumKey];
         const category = assertDefinedPass(enumKeyCategoryMap.get(enumCategory));
 
         if (isUndefined(type)) {
@@ -298,7 +309,7 @@ export class DocumentManagementService extends Transactional {
         }
       }
 
-      for (const [typeKey, propertyKeys] of objectEntries(typeProperties)) {
+      for (const [typeKey, propertyKeys] of objectEntries(data.typeProperties)) {
         const type = assertDefinedPass(enumKeyTypeMap.get(typeKey), `Type ${typeKey} not found.`);
 
         const newEntities = propertyKeys.map((propertyKey): NewEntity<DocumentTypeProperty> => ({

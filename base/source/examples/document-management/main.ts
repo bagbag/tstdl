@@ -137,7 +137,14 @@ async function main(): Promise<void> {
 
   const [documentManagementService, documentCollectionService] = await injectManyAsync(DocumentManagementService, DocumentCollectionService, DocumentCategoryTypeService, DocumentRequestService);
 
-  const { categories, types } = await documentManagementService.initializeCategoriesAndTypes(tenantId, TstdlDocumentCategoryLabels, TstdlCategoryParents, TstdlDocumentTypeLabels, TstdlDocumentTypeCategories, TstdlDocumentPropertyConfiguration, TstdlDocumentTypeProperties);
+  const { categories, types } = await documentManagementService.initializeCategoriesAndTypes(tenantId, {
+    categoryLabels: TstdlDocumentCategoryLabels,
+    categoryParents: TstdlCategoryParents,
+    typeLabels: TstdlDocumentTypeLabels,
+    typeCategories: TstdlDocumentTypeCategories,
+    propertyConfigurations: TstdlDocumentPropertyConfiguration,
+    typeProperties: TstdlDocumentTypeProperties,
+  });
 
   const collectionCount = await documentCollectionService.repository.count();
 
