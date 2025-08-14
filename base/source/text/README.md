@@ -7,7 +7,7 @@ A powerful, reactive, and type-safe text localization module for TypeScript appl
 - [Features](#features)
 - [Core Concepts](#core-concepts)
   - [LocalizationService](#localizationservice)
-  - [Localization Data](#localization-data)
+  - [Localization Definitions](#localization-definitions)
   - [DynamicText: Reactive Localization](#dynamictext-reactive-localization)
   - [Type-Safe Keys](#type-safe-keys)
 - [Usage](#usage)
@@ -34,11 +34,12 @@ A powerful, reactive, and type-safe text localization module for TypeScript appl
 ### LocalizationService
 
 The `LocalizationService` is the central hub for all localization tasks. It's a singleton service that you use to:
+
 - Register all your application's `Localization` definitions (one for each language).
 - Set and get the current active language.
 - Resolve localization keys into displayable strings, both reactively and non-reactively.
 
-### Localization Data
+### Localization Definitions
 
 A localization is defined in a `Localization` object, which has three main parts:
 
@@ -51,6 +52,7 @@ A localization is defined in a `Localization` object, which has three main parts
 The module introduces the `DynamicText` type, which is a reactive value (`T | Signal<T> | Observable<T>`) that can be resolved into a localized string.
 
 The core function `resolveDynamicText` takes a `DynamicText` and returns a `Signal<string>`. This signal automatically updates its value whenever:
+
 1. The source signal/observable emits a new value.
 2. The active language in the `LocalizationService` changes.
 
@@ -58,22 +60,22 @@ This architecture makes it incredibly simple to build UIs that respond to langua
 
 ### Type-Safe Keys
 
-Instead of using raw strings for keys (e.g., `'tstdl.firstName'`), which are prone to typos, you can use the `getLocalizationKeys()` helper. This function returns a deep proxy that mirrors your `keys` object structure, providing full type-safety and autocompletion in your IDE.
+Instead of using raw strings for keys (e.g., `'app.title'`), which are prone to typos, you can use the `getLocalizationKeys()` helper. This function returns a deep proxy that mirrors your `keys` object structure, providing full type-safety and autocompletion in your IDE.
 
 ```typescript
 // Define your localization structure
 type AppLocalization = Localization<{
   user: {
     greeting: LocalizeItem<{ name: string }>;
-  }
+  };
 }>;
 
 // Get the type-safe keys
-const t = getLocalizationKeys<AppLocalization>();
+const localizationKeys = getLocalizationKeys<AppLocalization>();
 
 // Use the key with full type-safety.
-// TypeScript knows `t.user.greeting` exists and requires a `name` parameter.
-const greetingData = localizationData(t.user.greeting, { name: 'Alice' });
+// TypeScript knows `localizationKeys.user.greeting` exists and requires a `name` parameter.
+const greetingData = localizationData(localizationKeys.user.greeting, { name: 'Alice' });
 ```
 
 ## Usage
@@ -85,19 +87,22 @@ First, define your localization objects. It's best practice to use the `getLocal
 ```typescript
 import { getLocalizationKeys, type Localization, type LocalizeItem, enumerationLocalization } from '@tstdl/base/text';
 
-// Define a custom enum
+// Define a custom enum for user roles
 export const UserRole = {
   Admin: 'admin',
-  User: 'user'
+  User: 'user',
 } as const;
 
-// Define the type for our localization structure
-type AppLocalization = Localization<{
-  app: {
-    title: LocalizeItem;
-    welcome: LocalizeItem<{ name: string }>;
-  };
-}, [typeof UserRole]>;
+// Define the type for our localization structure for type-safety
+type AppLocalization = Localization<
+  {
+    app: {
+      title: LocalizeItem;
+      welcome: LocalizeItem<{ name: string }>;
+    };
+  },
+  [typeof UserRole]
+>;
 
 // Create a typed proxy for our keys
 export const T = getLocalizationKeys<AppLocalization>();
@@ -108,15 +113,15 @@ export const englishLocalization: AppLocalization = {
   keys: {
     app: {
       title: 'My Awesome App',
-      welcome: 'Welcome, {{name}}!'
-    }
+      welcome: 'Welcome, {{name}}!',
+    },
   },
   enums: [
     enumerationLocalization(UserRole, 'User Role', {
       [UserRole.Admin]: 'Administrator',
-      [UserRole.User]: 'Standard User'
-    })
-  ]
+      [UserRole.User]: 'Standard User',
+    }),
+  ],
 };
 
 // Create the German localization
@@ -125,15 +130,15 @@ export const germanLocalization: AppLocalization = {
   keys: {
     app: {
       title: 'Meine Tolle App',
-      welcome: 'Willkommen, {{name}}!'
-    }
+      welcome: 'Willkommen, {{name}}!',
+    },
   },
   enums: [
     enumerationLocalization(UserRole, 'Benutzerrolle', {
       [UserRole.Admin]: 'Administrator',
-      [UserRole.User]: 'Standardbenutzer'
-    })
-  ]
+      [UserRole.User]: 'Standardbenutzer',
+    }),
+  ],
 };
 ```
 
@@ -142,7 +147,7 @@ export const germanLocalization: AppLocalization = {
 Inject the `LocalizationService` and register your defined localizations.
 
 ```typescript
-import { inject } from '#/injector/injector.js'; // Your DI framework
+import { inject } from '@tstdl/base/injector';
 import { LocalizationService } from '@tstdl/base/text';
 import { englishLocalization, germanLocalization } from './localizations';
 
@@ -160,9 +165,9 @@ localizationService.setLanguage('en');
 To get a single, non-reactive string, use `localizeOnce()`.
 
 ```typescript
-import { localizationService, T } from './setup';
+import { localizationKeys } from './localizations';
 
-const title = localizationService.localizeOnce(T.app.title);
+const title = localizationService.localizeOnce(localizationKeys.app.title);
 console.log(title); // Output: 'My Awesome App'
 
 // Switch language
@@ -177,15 +182,15 @@ console.log(germanTitle); // Output: 'Meine Tolle App'
 Use `resolveDynamicText` to get a `Signal` that automatically updates.
 
 ```typescript
-import { signal } from '#/signals/api.js';
-import { resolveDynamicText, T } from '@tstdl/base/text';
+import { resolveDynamicText } from '@tstdl/base/text';
+import { localizationKeys } from './localizations';
 
 // `titleSignal` is a Signal<string>
-const titleSignal = resolveDynamicText(T.app.title);
+const titleSignal = resolveDynamicText(localizationKeys.app.title);
 
 console.log(titleSignal()); // 'My Awesome App'
 
-// Change the language
+// Change the language in the service
 localizationService.setLanguage('de');
 
 // The signal's value automatically updates!
@@ -194,24 +199,21 @@ console.log(titleSignal()); // 'Meine Tolle App'
 
 ### 5. Using Parameterized Text
 
-The `localizationData` helper creates a data object for keys that require parameters. `resolveDynamicText` handles these reactively as well.
+The `localizationData` helper creates a data object for keys that require parameters. `resolveDynamicText` handles these reactively as well, even when the parameters themselves are reactive.
 
 ```typescript
-import { signal } from '#/signals/api.js';
-import {
-  resolveDynamicText,
-  localizationData,
-  T
-} from '@tstdl/base/text';
+import { computed, signal } from '@tstdl/base/signals';
+import { resolveDynamicText, localizationData } from '@tstdl/base/text';
+import { localizationKeys } from './localizations';
 
 const username = signal('Alice');
 
-// Create a signal that produces the localization data object
-const welcomeTextData = computed(() =>
-  localizationData(T.app.welcome, { name: username() })
-);
+// Create a signal that produces the localization data object.
+// This recomputes whenever `username` changes.
+const welcomeTextData = computed(() => localizationData(localizationKeys.app.welcome, { name: username() }));
 
-// Resolve it to the final string signal
+// Resolve it to the final string signal.
+// This signal updates when `welcomeTextData` changes OR when the language changes.
 const welcomeMessage = resolveDynamicText(welcomeTextData);
 
 console.log(welcomeMessage()); // 'Welcome, Alice!'
@@ -227,19 +229,24 @@ console.log(welcomeMessage()); // 'Willkommen, Bob!'
 
 ### 6. Localizing Enums
 
-Use `localizeEnum` to get a reactive translation for an enum value.
+Use `localizeEnum` to get a reactive translation for an enum value or its title.
 
 ```typescript
 import { localizeEnum } from '@tstdl/base/text';
 import { UserRole } from './localizations';
 
+// Get a reactive translation for a specific enum value
 const roleSignal = localizeEnum(UserRole, UserRole.Admin);
-
 console.log(roleSignal()); // 'Administrator'
+
+// Get a reactive translation for the enum's name/title
+const roleNameSignal = localizeEnum(UserRole);
+console.log(roleNameSignal()); // 'User Role'
 
 localizationService.setLanguage('de');
 
-console.log(roleSignal()); // 'Administrator' (same in this case, but would update)
+console.log(roleSignal()); // 'Administrator'
+console.log(roleNameSignal()); // 'Benutzerrolle'
 ```
 
 ### 7. Resolving Text in Complex Objects
@@ -247,22 +254,24 @@ console.log(roleSignal()); // 'Administrator' (same in this case, but would upda
 When working with lists of items, `resolveNestedDynamicTexts` can efficiently localize a property on each object.
 
 ```typescript
-import { signal } from '#/signals/api.js';
-import { resolveNestedDynamicTexts, type DynamicText } from '@tstdl/base/text';
+import { signal } from '@tstdl/base/signals';
+import { resolveNestedDynamicTexts, type DynamicText, localizationData } from '@tstdl/base/text';
+import { localizationKeys } from './localizations';
 
 interface User {
   id: number;
   name: string;
-  // The greeting is a dynamic text
+  // The greeting is a DynamicText containing localization data
   greeting: DynamicText;
 }
 
 const users = signal<User[]>([
-  { id: 1, name: 'Alice', greeting: localizationData(T.app.welcome, { name: 'Alice' }) },
-  { id: 2, name: 'Bob', greeting: localizationData(T.app.welcome, { name: 'Bob' }) }
+  { id: 1, name: 'Alice', greeting: localizationData(localizationKeys.app.welcome, { name: 'Alice' }) },
+  { id: 2, name: 'Bob', greeting: localizationData(localizationKeys.app.welcome, { name: 'Bob' }) },
 ]);
 
-// This creates a signal of users where `greeting` is now a string
+// This creates a signal of users where `greeting` is now a localized string.
+// It will update if the users array changes or if the language changes.
 const resolvedUsers = resolveNestedDynamicTexts(users(), 'greeting');
 
 console.log(resolvedUsers()[0].greeting); // 'Welcome, Alice!'
@@ -274,30 +283,29 @@ console.log(resolvedUsers()[0].greeting); // 'Willkommen, Alice!'
 
 ## API Summary
 
-### Classes
+### LocalizationService Methods
 
-| Class               | Description                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `LocalizationService` | The main singleton service for managing and resolving localized text.         |
+| Method                 | Arguments                                        | Return Type          | Description                                                                |
+| :--------------------- | :----------------------------------------------- | :------------------- | :------------------------------------------------------------------------- |
+| `registerLocalization` | `...localizations: Localization[]`               | `void`               | Registers one or more `Localization` objects with the service.             |
+| `setLanguage`          | `languageOrCode: Language \| string`             | `void`               | Sets the active language by its code or object.                            |
+| `localizeOnce`         | `data: LocalizationData<T>`                      | `string`             | Resolves `LocalizationData` to a string once for the current language.     |
+| `localize`             | `data: LocalizationData<T>`                      | `Signal<string>`     | Reactively resolves `LocalizationData` to a string signal.                 |
+| `localize$`            | `data: LocalizationData<T>`                      | `Observable<string>` | RxJS-friendly version of `localize`.                                       |
+| `localizeEnumOnce`     | `enum: E, value?: V, params?: any`               | `string`             | Resolves an enum value (or its name if value is omitted) to a string once. |
+| `localizeEnum`         | `enum: E, value?: V, params?: any`               | `Signal<string>`     | Reactively resolves an enum value/name to a string signal.                 |
+| `localizeEnum$`        | `enum: E, value?: V, params?: any`               | `Observable<string>` | RxJS-friendly version of `localizeEnum`.                                   |
+| `hasKey`               | `keyOrData: LocalizationKey \| LocalizationData` | `boolean`            | Checks if a translation exists for the given key in the active language.   |
+| `hasLanguage`          | `code: string`                                   | `boolean`            | Checks if a language with the given code is registered.                    |
 
-### `LocalizationService` Methods
+### Helper Functions
 
-| Method                               | Return Type      | Description                                                    |
-| ------------------------------------ | ---------------- | -------------------------------------------------------------- |
-| `registerLocalization(...locs)`      | `void`           | Registers one or more `Localization` objects.                  |
-| `setLanguage(code)`                  | `void`           | Sets the active language by its code.                          |
-| `localizeOnce(data)`                 | `string`         | Resolves `LocalizationData` to a string once.                  |
-| `localize(data)`                     | `Signal<string>` | Reactively resolves `LocalizationData` to a string signal.     |
-| `localizeEnumOnce(enum, value)`      | `string`         | Resolves an enum value to a string once.                       |
-| `localizeEnum(enum, value)`          | `Signal<string>` | Reactively resolves an enum value to a string signal.          |
-
-### Main Functions
-
-| Function                                        | Return Type                                 | Description                                                                                    |
-| ----------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `resolveDynamicText(text)`                      | `Signal<string>`                            | Resolves a `DynamicText` (string, signal, or observable) into a reactive string signal.        |
-| `resolveDynamicText$(text)`                     | `Observable<string>`                        | RxJS-friendly version of `resolveDynamicText`.                                                 |
-| `resolveNestedDynamicTexts(items, key)`         | `Signal<T[]>`                               | Takes an array of objects and resolves a `DynamicText` property on each item.                  |
-| `getLocalizationKeys<T>()`                      | `ProxyLocalizationKeys<T>`                  | Returns a deep proxy for creating type-safe localization keys.                                 |
-| `localizationData(key, params)`                 | `LocalizationDataObject<T>`                 | A helper to create a `LocalizationDataObject` for keys with parameters.                        |
-| `enumerationLocalization(enum, name, values)`   | `EnumerationLocalizationEntry<T>`           | A helper to structure enum localizations for registration.                                     |
+| Function                    | Arguments                            | Return Type                       | Description                                                                   |
+| :-------------------------- | :----------------------------------- | :-------------------------------- | :---------------------------------------------------------------------------- |
+| `resolveDynamicText`        | `text: DynamicText`                  | `Signal<string>`                  | Resolves a `DynamicText` value into a reactive string signal.                 |
+| `resolveDynamicText$`       | `text: DynamicText`                  | `Observable<string>`              | RxJS-friendly version of `resolveDynamicText`.                                |
+| `resolveDynamicTexts`       | `texts: DynamicText[]`               | `Signal<string[]>`                | Resolves an array of `DynamicText` values into a reactive signal of strings.  |
+| `resolveNestedDynamicTexts` | `items: T[], key: K`                 | `Signal<T[]>`                     | Takes an array of objects and resolves a `DynamicText` property on each item. |
+| `getLocalizationKeys`       | `<T extends Localization>()`         | `Proxy`                           | Returns a deep proxy for creating type-safe localization keys.                |
+| `localizationData`          | `key: LocalizationKey<T>, params: T` | `LocalizationDataObject<T>`       | Creates a data object for keys with parameters.                               |
+| `enumerationLocalization`   | `enum, [name], values`               | `EnumerationLocalizationEntry<T>` | A helper to structure enum localizations for registration.                    |

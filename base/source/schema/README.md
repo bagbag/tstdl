@@ -1,56 +1,75 @@
 # @tstdl/schema
 
-A powerful, TypeScript-first schema declaration, validation, and parsing library with deep integration into classes via decorators. Define data structures once and get static type safety, runtime validation, and serialization for free.
+A powerful, TypeScript-first schema declaration and validation library with deep integration into classes via decorators. Define data structures once and get static type safety, runtime validation, and serialization for free.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Core Concepts](#core-concepts)
-  - [Standalone Schemas](#standalone-schemas)
-  - [Class-based Schemas](#class-based-schemas)
+  - [Standalone Schemas (using builder functions)](#standalone-schemas-using-builder-functions)
+  - [Class-based Schemas (using decorators)](#class-based-schemas-using-decorators)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Basic Validation](#basic-validation)
-  - [Class-based Schemas with Decorators](#class-based-schemas-with-decorators)
+  - [Class-based Schemas](#class-based-schemas)
   - [Type Coercion](#type-coercion)
-- [API Reference](#api-reference)
+  - [Defining API Payloads](#defining-api-payloads)
+  - [OpenAPI Generation](#openapi-generation)
+- [API Summary](#api-summary)
+  - [Static Schema Methods](#static-schema-methods)
   - [Schema Builders](#schema-builders)
   - [Object Utilities](#object-utilities)
   - [Decorators](#decorators)
   - [Converters](#converters)
-- [OpenAPI Generation](#openapi-generation)
 
 ## Features
 
-- **Type Safety**: Automatically infers TypeScript types from your schemas.
-- **Fluent API**: A simple and chainable API for building complex schemas.
-- **Decorator-Based**: Define schemas directly from your classes, reducing boilerplate and keeping your models as the single source of truth.
+- **Type Safety**: Automatically infers TypeScript types directly from your schemas.
+- **Fluent API**: A simple and composable API for building complex schemas from primitives.
+- **Decorator-Based**: Define schemas directly on your classes, making your models the single source of truth.
 - **Runtime Validation**: Robust validation for any data, from API responses to user input.
 - **Type Coercion**: Optional coercion of data to the correct types (e.g., string to number).
-- **Detailed Error Reporting**: Get precise error messages with JSON paths to invalid data.
+- **Detailed Error Reporting**: Get precise error messages with JSON paths to pinpoint invalid data.
 - **Extensible**: Easily create custom schemas and transformations.
-- **Method & Function Schemas**: Define schemas for function parameters and return types.
-- **OpenAPI Generation**: Convert schemas to OpenAPI v3 schema objects.
+- **Function & Method Schemas**: Define schemas for function parameters and return types.
+- **OpenAPI Generation**: Convert schemas to OpenAPI v3 schema objects for API documentation.
 
 ## Core Concepts
 
-The library supports two primary ways of defining schemas, which can be used interchangeably.
+The library supports two complementary ways of defining schemas, which can be used interchangeably.
 
-### Standalone Schemas
-Use builder functions (`object`, `string`, `array`, etc.) to create schema definitions. This approach is great for defining data shapes that don't have a corresponding class, such as API payloads or configuration objects.
+### Standalone Schemas (using builder functions)
+
+Use builder functions (`object`, `string`, `array`, etc.) to compose schema definitions. This approach is ideal for defining data shapes that don't have a corresponding class, such as API payloads, configuration objects, or function arguments.
 
 ```typescript
-const userSchema = object({
+import { object, string, number, array } from '@tstdl/schema';
+
+const productSchema = object({
   id: string(),
   name: string(),
-  age: number({ minimum: 0 }),
+  price: number({ minimum: 0 }),
+  tags: array(string()),
 });
+
+// The inferred type is:
+// type Product = {
+//   id: string;
+//   name: string;
+//   price: number;
+//   tags: string[];
+// }
 ```
 
-### Class-based Schemas
-Use decorators (`@Class`, `@Property`, etc.) to derive schemas directly from your TypeScript classes. This turns your classes into the single source of truth for both type information and validation logic, eliminating redundant definitions. This requires `experimentalDecorators` and `emitDecoratorMetadata` to be enabled in `tsconfig.json`.
+### Class-based Schemas (using decorators)
+
+Use decorators (`@Class`, `@Property`, etc.) to derive schemas directly from your TypeScript classes. This turns your classes into the single source of truth for both static type information and runtime validation logic, eliminating redundant definitions.
+
+This approach requires `experimentalDecorators` and `emitDecoratorMetadata` to be enabled in your `tsconfig.json`.
 
 ```typescript
+import { Class, StringProperty, NumberProperty } from '@tstdl/schema';
+
 @Class()
 class User {
   @StringProperty()
@@ -59,7 +78,7 @@ class User {
   @StringProperty()
   name: string;
 
-  @NumberProperty({ minimum: 0 })
+  @NumberProperty({ minimum: 0, integer: true })
   age: number;
 }
 ```
@@ -71,6 +90,7 @@ npm install @tstdl/schema
 ```
 
 You also need to enable decorator-related flags in your `tsconfig.json` to use class-based schemas:
+
 ```json
 {
   "compilerOptions": {
@@ -84,58 +104,53 @@ You also need to enable decorator-related flags in your `tsconfig.json` to use c
 
 ### Basic Validation
 
-The core of the library is the `Schema` class and its static methods. You can define a schema, then use `Schema.parse()` to validate and parse data. If the data is invalid, it will throw a `SchemaError`.
+The `Schema` class provides static methods for validation. `Schema.parse()` returns a typed value or throws a `SchemaError`, while `Schema.validate()` returns a boolean.
 
 ```typescript
 import { Schema, object, string, number, SchemaError } from '@tstdl/schema';
 
 const userSchema = object({
-  id: string(),
   name: string(),
-  age: number({ minimum: 0 }),
+  age: number({ minimum: 18 }),
 });
 
-// Valid data
-const validUser = {
-  id: 'user-123',
-  name: 'John Doe',
-  age: 30,
-};
+// --- Valid Data ---
+const validUser = { name: 'John Doe', age: 30 };
 
-try {
-  const parsedUser = Schema.parse(userSchema, validUser);
-  console.log('Validation successful:', parsedUser);
-  // parsedUser is fully typed as { id: string; name: string; age: number; }
-} catch (e) {
-  // This block will not be reached
-}
+// `parse` returns the typed value or throws a SchemaError.
+const parsedUser = Schema.parse(userSchema, validUser);
+console.log('Parsed:', parsedUser); // Parsed: { name: 'John Doe', age: 30 }
 
-// Invalid data
-const invalidUser = {
-  id: 'user-123',
-  name: 'Jane Doe',
-  age: -5, // Invalid age
-};
+// `validate` returns a boolean.
+const isValid = Schema.validate(userSchema, validUser);
+console.log('Is Valid:', isValid); // Is Valid: true
+
+// --- Invalid Data ---
+const invalidUser = { name: 'Jane Doe', age: 15 };
 
 try {
   Schema.parse(userSchema, invalidUser);
 } catch (e) {
   if (e instanceof SchemaError) {
-    console.error('Validation failed!');
-    console.error(e.message); // -> /age: Value must be more than or equal to 0.
-    console.error(e.path); // -> /age
+    console.error(e.message); // -> /age: Value must be more than or equal to 18.
   }
+}
+
+// `assert` is a type guard that throws on failure.
+try {
+  Schema.assert(userSchema, invalidUser);
+} catch (e) {
+  console.error('Assertion failed.');
 }
 ```
 
-### Class-based Schemas with Decorators
+### Class-based Schemas
 
-This powerful feature lets you derive schemas directly from your classes.
+Decorators allow you to derive schemas directly from your classes, including nested objects.
 
 ```typescript
-import { Schema, Class, StringProperty, NumberProperty, Property } from '@tstdl/schema';
+import { Schema, Class, Property, StringProperty, NumberProperty } from '@tstdl/schema';
 
-// Define a schema for a nested object
 @Class()
 class Address {
   @StringProperty()
@@ -145,33 +160,25 @@ class Address {
   city: string;
 }
 
-// Define the main User schema
 @Class()
 class User {
   @StringProperty()
   id: string;
 
-  @StringProperty({ nullable: true })
-  firstName: string | null;
-
   @StringProperty()
-  lastName: string;
-
-  @NumberProperty({ minimum: 18, integer: true })
-  age: number;
+  name: string;
 
   @Property(Address) // Use the Address class as a schema for the nested object
   address: Address;
 }
 
-// Use the User class directly as a schema
+// The User class itself is now a valid schema
 const userData = {
-  id: 'usr-42',
-  lastName: 'Doe',
-  age: 30,
+  id: 'usr-123',
+  name: 'John Doe',
   address: {
     street: '123 Main St',
-    city: 'Anytown',
+    city: 'Metropolis',
   },
 };
 
@@ -179,111 +186,79 @@ const user = Schema.parse(User, userData);
 
 console.log(user instanceof User); // true
 console.log(user.address instanceof Address); // true
-console.log(user.firstName); // undefined (as it's nullable and was not provided)
+console.log(user.name); // John Doe
 ```
 
 ### Type Coercion
 
-The library can automatically convert types during parsing if you enable coercion. This is useful for handling data from sources like query parameters or form data, which are often strings.
+The library can automatically convert types during parsing by enabling the `coerce` option. This is useful for handling data from sources like query parameters or form data.
 
 ```typescript
-import { Schema, number } from '@tstdl/schema';
+import { Schema, object, number, boolean } from '@tstdl/schema';
 
-const schema = number();
+const settingsSchema = object({
+  port: number({ integer: true }),
+  isProduction: boolean(),
+});
 
-// Without coercion, this will fail
-try {
-  Schema.parse(schema, '123');
-} catch (e) {
-  if (e instanceof SchemaError) {
-    console.log(e.message); // -> /: Expected number but got string.
-  }
-}
+const rawSettings = {
+  port: '8080', // string instead of number
+  isProduction: 'true', // string instead of boolean
+};
 
-// With coercion, it works
-const value = Schema.parse(schema, '123', { coerce: true });
-console.log(value); // 123 (as a number)
+// With coercion enabled, the strings are converted to the correct types.
+const settings = Schema.parse(settingsSchema, rawSettings, { coerce: true });
+
+console.log(settings); // { port: 8080, isProduction: true }
+console.log(typeof settings.port); // 'number'
 ```
 
-## API Reference
+### Defining API Payloads
 
-### Schema Builders
+The schema builders are perfect for defining the shape of API request bodies, parameters, and responses.
 
-A brief overview of the available schema builder functions.
+```typescript
+import { defineApi } from '@tstdl/api';
+import { object, string, number, optional } from '@tstdl/schema';
 
-#### Primitives
-- `string(options?)`: For strings. Options include `pattern`.
-- `number(options?)`: For numbers. Options include `minimum`, `maximum`.
-- `integer(options?)`: A shorthand for `number({ integer: true, ... })`.
-- `boolean(options?)`: For booleans.
-- `bigint(options?)`: For bigints.
-- `date(options?)`: For `Date` objects.
-- `symbol()`: For symbols.
-- `literal(value)`: For an exact primitive value (e.g., `literal('success')`).
-- `enumeration(enum)`: For a TypeScript enum, or an array of literal values.
+export const productApiDefinition = defineApi({
+  resource: 'products',
+  endpoints: {
+    create: {
+      method: 'POST',
+      parameters: object({
+        name: string(),
+        price: number({ minimum: 0 }),
+        description: optional(string()),
+      }),
+      result: string(), // e.g., returns the new product ID
+    },
+  },
+});
+```
 
-#### Structures
-- `object(properties, options?)`: For objects with a known set of properties.
-- `array(itemSchema, options?)`: For arrays where all elements match `itemSchema`.
-- `union(...schemas)`: For values that can match one of several schemas.
-- `record(keySchema, valueSchema)`: For objects with arbitrary keys (like a dictionary).
-- `oneOrMany(schema)`: For a value that can be a single item or an array of items.
+### OpenAPI Generation
 
-#### Modifiers
-- `optional(schema)`: Makes a value optional (allows `undefined`).
-- `nullable(schema)`: Makes a value nullable (allows `null`).
-- `defaulted(schema, defaultValue)`: Provides a default value if the input is `null` or `undefined`.
-- `transform(schema, transformFn)`: Transforms a valid value after parsing.
-
-#### Special Types
-- `any()`: Allows any value (unsafe, use with caution).
-- `unknown()`: A safer alternative to `any()`.
-- `never()`: Allows no values.
-- `instance(Constructor)`: Validates that a value is an instance of a specific class.
-- `deferred(() => schema)`: For defining recursive schemas.
-- `uint8Array()`: For `Uint8Array` instances.
-- `readableStream()`: For `ReadableStream` instances.
-- `regexp()`: For `RegExp` instances.
-- `func(paramSchemas, returnSchema)`: For functions.
-
-### Object Utilities
-
-- `assign(...schemas)`: Merges multiple object schemas into one.
-- `pick(schema, keys)`: Creates a new object schema with only the specified keys from the original.
-- `omit(schema, keys)`: Creates a new object schema without the specified keys from the original.
-- `partial(schema, keys?)`: Makes all (or just the specified) properties of an object schema optional.
-
-### Decorators
-
-- `@Class(options?)`: Marks a class as a schema source.
-- `@Property(schema?, options?)`: Marks a property to be included in the class schema. The type is often inferred, but can be provided explicitly for complex types or arrays.
-- `@StringProperty`, `@NumberProperty`, `@BooleanProperty`, `@Enumeration`, etc.: Shortcuts for `@Property` with a primitive schema.
-
-### Converters
-
-- `convertToOpenApiSchema(schema)`: Converts a schema into an OpenAPI v3 compatible schema object.
-
-## OpenAPI Generation
-
-You can generate OpenAPI v3 compatible schemas from your schema definitions, which is invaluable for documenting your APIs.
+Generate OpenAPI v3 compatible schemas from your schema definitions, which is invaluable for documenting your APIs.
 
 ```typescript
 import { convertToOpenApiSchema } from '@tstdl/schema/converters';
-import { object, string, number, enumeration, optional } from '@tstdl/schema';
+import { object, string, integer, enumeration, optional } from '@tstdl/schema';
 
-enum Role {
-  Admin = 'ADMIN',
-  User = 'USER',
+enum PetStatus {
+  Available = 'available',
+  Pending = 'pending',
+  Sold = 'sold',
 }
 
-const userSchema = object({
-  id: string({ description: 'The user ID' }),
-  username: string(),
-  role: enumeration(Role),
-  age: optional(number({ minimum: 18 })),
+const petSchema = object({
+  id: string({ description: 'The pet ID' }),
+  name: string(),
+  status: enumeration(PetStatus),
+  age: optional(integer({ minimum: 0 })),
 });
 
-const openApiSchema = convertToOpenApiSchema(userSchema);
+const openApiSchema = convertToOpenApiSchema(petSchema);
 
 console.log(JSON.stringify(openApiSchema, null, 2));
 ```
@@ -297,32 +272,99 @@ console.log(JSON.stringify(openApiSchema, null, 2));
     "id": {
       "type": "string",
       "nullable": false,
-      "description": "The user ID"
+      "description": "The pet ID"
     },
-    "username": {
+    "name": {
       "type": "string",
       "nullable": false
     },
-    "role": {
+    "status": {
       "type": "string",
       "format": "enum",
-      "enum": [
-        "ADMIN",
-        "USER"
-      ],
+      "enum": ["available", "pending", "sold"],
       "nullable": false
     },
     "age": {
-      "type": "number",
-      "minimum": 18,
+      "type": "integer",
+      "minimum": 0,
       "nullable": false
     }
   },
-  "required": [
-    "id",
-    "username",
-    "role"
-  ],
+  "required": ["id", "name", "status"],
   "nullable": false
 }
 ```
+
+## API Summary
+
+### Static Schema Methods
+
+| Method                                     | Arguments                                                                | Returns               | Description                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------ | --------------------- | ---------------------------------------------------------------------------- |
+| `Schema.parse(schema, value, options?)`    | `schema: SchemaTestable<T>`, `value: any`, `options?: SchemaTestOptions` | `T`                   | Parses a value against a schema. Throws `SchemaError` on failure.            |
+| `Schema.validate(schema, value, options?)` | `schema: SchemaTestable<T>`, `value: any`, `options?: SchemaTestOptions` | `boolean`             | Validates a value against a schema. Returns `true` or `false`.               |
+| `Schema.assert(schema, value, options?)`   | `schema: SchemaTestable<T>`, `value: any`, `options?: SchemaTestOptions` | `void`                | Asserts that a value conforms to a schema. Throws `SchemaError` on failure.  |
+| `Schema.test(schema, value, options?)`     | `schema: SchemaTestable<T>`, `value: any`, `options?: SchemaTestOptions` | `SchemaTestResult<T>` | Tests a value against a schema. Returns a result object with value or error. |
+
+### Schema Builders
+
+| Builder                           | Description                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------- |
+| `string(options?)`                | Creates a schema for `string` values.                                           |
+| `number(options?)`                | Creates a schema for `number` values.                                           |
+| `integer(options?)`               | Shorthand for a `number` schema with `integer: true`.                           |
+| `boolean(options?)`               | Creates a schema for `boolean` values.                                          |
+| `bigint(options?)`                | Creates a schema for `bigint` values.                                           |
+| `date(options?)`                  | Creates a schema for `Date` objects.                                            |
+| `symbol()`                        | Creates a schema for `symbol` values.                                           |
+| `literal(value)`                  | Creates a schema for an exact primitive value (e.g., `literal('success')`).     |
+| `enumeration(enum)`               | Creates a schema for a TypeScript `enum` or an array of literal values.         |
+| `object(properties, options?)`    | Creates a schema for objects with a defined set of properties.                  |
+| `array(itemSchema, options?)`     | Creates a schema for arrays where all elements match a given schema.            |
+| `union(...schemas)`               | Creates a schema for values that can match one of several schemas.              |
+| `oneOrMany(schema)`               | Creates a schema for a value that is either a single item or an array of items. |
+| `record(keySchema, valueSchema)`  | Creates a schema for objects with arbitrary keys (like a dictionary).           |
+| `optional(schema)`                | Modifies a schema to allow `undefined` values.                                  |
+| `nullable(schema)`                | Modifies a schema to allow `null` values.                                       |
+| `defaulted(schema, defaultValue)` | Provides a default value if the input is `null` or `undefined`.                 |
+| `transform(schema, transformFn)`  | Transforms a valid value after parsing.                                         |
+| `deferred(() => schema)`          | Allows for the definition of recursive schemas.                                 |
+| `instance(Constructor)`           | Validates that a value is an instance of a specific class.                      |
+| `any()`                           | Allows any value (unsafe, use with caution).                                    |
+| `unknown()`                       | A safer alternative to `any()`, allows any value but requires type checking.    |
+| `never()`                         | A schema that allows no values.                                                 |
+| `func(...)`                       | Creates a schema for a `function`.                                              |
+| `uint8Array()`                    | Creates a schema for `Uint8Array` instances.                                    |
+| `readableStream()`                | Creates a schema for `ReadableStream` instances.                                |
+| `regexp()`                        | Creates a schema for `RegExp` instances.                                        |
+
+### Object Utilities
+
+| Utility                  | Arguments                                                 | Returns        | Description                                                                |
+| ------------------------ | --------------------------------------------------------- | -------------- | -------------------------------------------------------------------------- |
+| `assign(...schemas)`     | `...schemas: ObjectSchemaOrType[]`                        | `ObjectSchema` | Merges multiple object schemas into a single new schema.                   |
+| `pick(schema, keys)`     | `schema: ObjectSchemaOrType`, `keys: OneOrMany<keyof T>`  | `ObjectSchema` | Creates a new schema with only the specified properties from the original. |
+| `omit(schema, keys)`     | `schema: ObjectSchemaOrType`, `keys: OneOrMany<keyof T>`  | `ObjectSchema` | Creates a new schema without the specified properties.                     |
+| `partial(schema, keys?)` | `schema: ObjectSchemaOrType`, `keys?: OneOrMany<keyof T>` | `ObjectSchema` | Makes all (or specified) properties of an object schema optional.          |
+
+### Decorators
+
+| Decorator                      | Target      | Description                                                                       |
+| ------------------------------ | ----------- | --------------------------------------------------------------------------------- |
+| `@Class(options?)`             | `class`     | Marks a class as a schema source, enabling schema generation from its properties. |
+| `@Property(schema?, options?)` | `property`  | Marks a property to be included in the class schema. Type is often inferred.      |
+| `@StringProperty(options?)`    | `property`  | Shortcut for `@Property(string(options))`.                                        |
+| `@NumberProperty(options?)`    | `property`  | Shortcut for `@Property(number(options))`.                                        |
+| `@Integer(options?)`           | `property`  | Shortcut for `@Property(integer(options))`.                                       |
+| `@BooleanProperty(options?)`   | `property`  | Shortcut for `@Property(boolean(options))`.                                       |
+| `@DateProperty(options?)`      | `property`  | Shortcut for `@Property(date(options))`.                                          |
+| `@Enumeration(enum, options?)` | `property`  | Shortcut for `@Property(enumeration(enum, options))`.                             |
+| `@Array(schema, options?)`     | `property`  | Shortcut for `@Property(array(schema, options))`.                                 |
+| `@Method(...)`                 | `method`    | Defines a schema for a class method, including its parameters and return type.    |
+| `@Parameter(...)`              | `parameter` | Defines a schema and name for a specific method parameter.                        |
+
+### Converters
+
+| Function                         | Arguments                | Returns  | Description                                                    |
+| -------------------------------- | ------------------------ | -------- | -------------------------------------------------------------- |
+| `convertToOpenApiSchema(schema)` | `schema: SchemaTestable` | `object` | Converts a schema into an OpenAPI v3 compatible schema object. |
