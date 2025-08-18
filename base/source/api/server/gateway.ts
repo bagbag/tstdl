@@ -9,6 +9,8 @@ import type { ReadBodyOptions } from '#/http/utils.js';
 import { InjectArg, ResolveArg, Singleton, resolveArgumentType, type Resolvable } from '#/injector/index.js';
 import { Logger, type LoggerArgument } from '#/logger/index.js';
 import { Schema, type SchemaTestable } from '#/schema/index.js';
+import { DataStreamSource } from '#/sse/data-stream-source.js';
+import { DataStream } from '#/sse/data-stream.js';
 import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import type { Type, UndefinableJson } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
@@ -266,8 +268,9 @@ export class ApiGateway implements Resolvable<ApiGatewayOptions> {
         : isBlob(result) ? { stream: result.stream() as unknown as ReadableStream<Uint8Array> }
           : isReadableStream<Uint8Array>(result) ? { stream: result }
             : (result instanceof ServerSentEventsSource) ? { events: result }
-              : (context.endpoint.definition.result == String) ? { text: result as string }
-                : { json: result };
+              : (context.endpoint.definition.result == DataStream) ? { events: DataStreamSource.fromIterable(result).eventSource }
+                : (context.endpoint.definition.result == String) ? { text: result as string }
+                  : { json: result };
     }
 
     await next();

@@ -135,7 +135,7 @@ export class ArrayList<T> extends List<T, ArrayList<T>> {
   }
 
   protected _clear(): void {
-    this.backingArray.splice(0, this.backingArray.length);
+    this.backingArray.length = 0;
   }
 
   private updateSize(): void {

@@ -14,6 +14,7 @@ export class SetCollection<T> extends DistinctCollection<T, SetCollection<T>> im
   private static withBackingSet<T>(set: globalThis.Set<T>): SetCollection<T> {
     const collection = new SetCollection<T>();
     (collection as any as { backingSet: globalThis.Set<T> }).backingSet = set;
+    collection.updateSize();
 
     return collection;
   }

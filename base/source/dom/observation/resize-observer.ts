@@ -1,9 +1,10 @@
+import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
+
 import { IterableWeakMap } from '#/data-structures/iterable-weak-map.js';
 import { toSignal, type Signal } from '#/signals/api.js';
 import type { Record } from '#/types/index.js';
 import { FactoryMap } from '#/utils/factory-map.js';
 import { isDefined } from '#/utils/type-guards.js';
-import { Subject, filter, fromEventPattern, map, shareReplay, type Observable, type Subscription } from 'rxjs';
 
 let observer: ResizeObserver | undefined;
 let subject: Subject<ResizeObserverEntry[]> | undefined;
@@ -15,7 +16,7 @@ export function observeResize$(element: Element, options?: ResizeObserverOptions
   const elementObservables = elementObservablesMap.get(element);
 
   if (isDefined(elementObservables) && isDefined(elementObservables[box])) {
-    return elementObservables[box]!;
+    return elementObservables[box];
   }
 
   subject ??= new Subject();

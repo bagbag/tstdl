@@ -41,7 +41,7 @@ export class DocumentListComponent {
   readonly context = input.required<DocumentManagementContext>();
   readonly showWorkflowState = input(true);
 
-  readonly pendingDocuments = computed(() => this.context().data()?.documents.filter((document) => document.approval == 'pending'));
+  readonly pendingDocuments = computed(() => this.context().filteredDocuments()?.filter((document) => document.approval == 'pending'));
   readonly pendingUploads = signal([] as PendingUpload[]);
 
   constructor() {

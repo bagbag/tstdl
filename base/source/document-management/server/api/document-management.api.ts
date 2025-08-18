@@ -1,7 +1,6 @@
-import { create as createDiffPatch } from 'jsondiffpatch';
 import { match, P } from 'ts-pattern';
 
-import { createErrorResponse, type ApiController, type ApiRequestContext, type ApiServerResult } from '#/api/index.js';
+import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/index.js';
 import { apiController } from '#/api/server/index.js';
 import { CancellationSignal } from '#/cancellation/token.js';
 import { ForbiddenError, NotImplementedError } from '#/errors/index.js';
@@ -9,27 +8,11 @@ import { HttpServerResponse } from '#/http/index.js';
 import { inject } from '#/injector/index.js';
 import { Logger } from '#/logger/logger.js';
 import { injectRepository } from '#/orm/server/repository.js';
-import type { Record } from '#/schema/index.js';
-import { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import { toArray } from '#/utils/array/index.js';
-import { tryIgnoreAsync } from '#/utils/try-ignore.js';
-import { isDefined, isUndefined } from '#/utils/type-guards.js';
 import { documentManagementApiDefinition, type DocumentManagementApiDefinition } from '../../api/index.js';
 import { DocumentManagementAuthorizationService } from '../../authorization/index.js';
 import { DocumentRequestCollectionAssignment } from '../../models/document-request-collection-assignment.model.js';
-import type { DocumentManagementData } from '../../service-models/document-management.view-model.js';
 import { DocumentCategoryTypeService, DocumentFileService, DocumentManagementService, DocumentRequestService, DocumentService, DocumentWorkflowService } from '../services/index.js';
-
-const jsonDiffPatch = createDiffPatch({
-  omitRemovedValues: true,
-  arrays: {
-    detectMove: true,
-    includeValueOnMove: false,
-  },
-  objectHash(item, index) {
-    return ((item as Record<string, unknown>)['id'] as string | undefined) ?? String(index);
-  },
-});
 
 @apiController(documentManagementApiDefinition)
 export class DocumentManagementApiController implements ApiController<DocumentManagementApiDefinition> {
@@ -59,7 +42,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
     return await this.#documentManagementService.loadData(tenantId, toArray(context.parameters.collectionIds));
   }
 
-  async loadDataStream(context: ApiRequestContext<DocumentManagementApiDefinition, 'loadDataStream'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'loadDataStream'>> {
+  async *loadDataStream(context: ApiRequestContext<DocumentManagementApiDefinition, 'loadDataStream'>): ApiServerResult<DocumentManagementApiDefinition, 'loadDataStream'> {
     const token = await context.getToken();
     const tenantId = await this.#authorizationService.getTenantId(token);
 
@@ -71,44 +54,7 @@ export class DocumentManagementApiController implements ApiController<DocumentMa
       }
     }
 
-    const stream = this.#documentManagementService.loadDataStream(tenantId, toArray(context.parameters.collectionIds), this.#cancellationSignal);
-    const eventSource = new ServerSentEventsSource();
-
-    void (async () => {
-      let lastData: DocumentManagementData | undefined;
-
-      try {
-        for await (const data of stream) {
-          if (eventSource.closed()) {
-            break;
-          }
-
-          if (isUndefined(lastData)) {
-            await eventSource.sendJson({ name: 'data', data });
-          }
-          else {
-            const delta = jsonDiffPatch.diff(lastData, data);
-
-            if (isDefined(delta)) {
-              await eventSource.sendJson({ name: 'delta', data: delta });
-            }
-          }
-
-          lastData = data;
-        }
-      }
-      catch (error) {
-        this.#logger.error(error);
-
-        await tryIgnoreAsync(async () => await eventSource.sendJson({ name: 'error', data: createErrorResponse(error as Error).error }));
-        await tryIgnoreAsync(async () => await eventSource.close());
-      }
-      finally {
-        await tryIgnoreAsync(async () => await eventSource.close());
-      }
-    })();
-
-    return eventSource;
+    yield* this.#documentManagementService.loadDataStream(tenantId, toArray(context.parameters.collectionIds), this.#cancellationSignal);
   }
 
   async loadDocumentRequestsTemplateData(context: ApiRequestContext<DocumentManagementApiDefinition, 'loadDocumentRequestsTemplateData'>): Promise<ApiServerResult<DocumentManagementApiDefinition, 'loadDocumentRequestsTemplateData'>> {

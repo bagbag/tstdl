@@ -1,7 +1,7 @@
 import { HttpClient as AngularHttpClient, HttpErrorResponse as AngularHttpErrorResponse, HttpHeaders as AngularHttpHeaders, HttpEventType } from '@angular/common/http';
 import { Injector as AngularInjector, inject } from '@angular/core';
 import type { HttpClientRequest } from '@tstdl/base/http';
-import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders, bustCacheToken } from '@tstdl/base/http';
+import { HttpClientAdapter, HttpClientResponse, HttpError, HttpErrorReason, HttpHeaders, bustCache } from '@tstdl/base/http';
 import { Singleton, Injector as TstdlInjector } from '@tstdl/base/injector';
 import { isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '@tstdl/base/utils';
 import { toArray } from '@tstdl/base/utils/array';
@@ -18,7 +18,7 @@ export class AngularHttpClientAdapter implements HttpClientAdapter {
       let requestUrl = request.url;
       let requestHeaders = new AngularHttpHeaders(request.headers.asNormalizedObject() as Record<string, string | string[]>);
 
-      if (request.context[bustCacheToken] == true) {
+      if (request.context[bustCache] == true) {
         requestHeaders.set('ngsw-bypass', '');
       }
 

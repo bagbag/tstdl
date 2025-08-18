@@ -1,12 +1,13 @@
+import { takeUntil } from 'rxjs';
+
 import { ObservableFinalizationRegistry } from '#/memory/observable-finalization-registry.js';
 import { drain } from '#/utils/iterable-helpers/drain.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
-import { takeUntil } from 'rxjs';
-import { Collection } from './collection.js';
+import { Dictionary } from './dictionary.js';
 
 type WeakMapEntry<K extends object, V> = { ref: WeakRef<K>, value: V };
 
-export class IterableWeakMap<K extends object, V> extends Collection<[K, V], MapIterator<[K, V]>, IterableWeakMap<K, V>> implements Map<K, V> {
+export class IterableWeakMap<K extends object, V> extends Dictionary<K, V, IterableWeakMap<K, V>> implements Map<K, V> {
   private weakMap: WeakMap<K, WeakMapEntry<K, V>>;
   private refMap: Map<WeakRef<K>, V>;
   private finalizationRegistry: ObservableFinalizationRegistry<WeakRef<K>>;

@@ -122,7 +122,7 @@ export class HttpClientRequest implements Disposable {
    *
    * will not be used for actual request
    */
-  context: Record<string>;
+  context: Record;
 
   /**
    * Can be used to cancel the request. Throws HttpError

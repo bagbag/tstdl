@@ -19,6 +19,7 @@ import { map } from '@tstdl/base/signals';
 })
 export class DocumentManagementComponent {
   readonly collectionIdsInput = injectQueryParameter('collectionIds');
+  readonly searchTextInput = injectQueryParameter('searchText');
   readonly collectionIds = computed(() => this.collectionIdsInput()?.replace(' ', '').split(',').filter((id) => id.length > 0) ?? []);
 
   readonly context = documentManagementContext(this.collectionIds());
@@ -26,6 +27,7 @@ export class DocumentManagementComponent {
 
   constructor() {
     effect(() => this.context.collectionIds.set(this.collectionIds()));
+    effect(() => this.context.filter.searchText.set(this.searchTextInput() ?? ''));
   }
 }
 

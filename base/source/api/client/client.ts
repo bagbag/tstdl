@@ -1,9 +1,12 @@
+import type { Observable } from 'rxjs';
+
 import { HttpClient, HttpClientRequest, type HttpClientArgument, type HttpClientOptions, type HttpClientResponse, type HttpRequestBody } from '#/http/client/index.js';
-import { bustCacheToken, normalizeSingleHttpValue } from '#/http/index.js';
+import { bustCache, normalizeSingleHttpValue } from '#/http/index.js';
 import { inject } from '#/injector/inject.js';
 import { Injector } from '#/injector/injector.js';
 import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
 import { Schema } from '#/schema/index.js';
+import { DataStream } from '#/sse/data-stream.js';
 import { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { Type, UndefinableJsonObject } from '#/types/index.js';
 import { toArray } from '#/utils/array/array.js';
@@ -29,7 +32,7 @@ export type ClientOptions = {
 
 export type ApiClientHttpRequestContext = {
   endpoint: ApiEndpointDefinition,
-  [bustCacheToken]?: boolean,
+  [bustCache]?: boolean,
 };
 
 export const httpClientSymbol = Symbol('HttpClient for ApiClient');
@@ -114,8 +117,16 @@ export function compileClient<T extends ApiDefinition>(definition: T, options: C
           return getServerSentEvents(this[httpClientSymbol].options.baseUrl, resource, endpoint, parameters);
         }
 
-        if (context.endpoint.data?.[bustCacheToken] == true) {
-          context[bustCacheToken] = true;
+        if (endpoint.result == DataStream) {
+          if (isDefined(requestBody)) {
+            throw new Error('Body not supported for DataStream.');
+          }
+
+          return getDataStream(this[httpClientSymbol].options.baseUrl, resource, endpoint, parameters);
+        }
+
+        if (context.endpoint.data?.[bustCache] == true) {
+          context[bustCache] = true;
         }
 
         const request = new HttpClientRequest({
@@ -176,6 +187,11 @@ async function getResponseBody(response: HttpClientResponse, schema: ApiEndpoint
     : undefined;
 
   return Schema.parse(schema, body, { mask: true });
+}
+
+function getDataStream<T>(baseUrl: string | undefined, resource: string, endpoint: ApiEndpointDefinition, parameters: UndefinableJsonObject | undefined): Observable<T> {
+  const sse = getServerSentEvents(baseUrl, resource, endpoint, parameters);
+  return DataStream.parse<T>(sse);
 }
 
 function getServerSentEvents(baseUrl: string | undefined, resource: string, endpoint: ApiEndpointDefinition, parameters: UndefinableJsonObject | undefined): ServerSentEvents {

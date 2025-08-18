@@ -5,6 +5,7 @@ import { assertDefinedPass, isNull } from '#/utils/type-guards.js';
 import type { DocumentApproval, DocumentTag, DocumentValidationExecution, DocumentWorkflow } from '../../models/index.js';
 import type { DocumentPropertyValueView, DocumentView } from '../document-management.view-model.js';
 import { EnrichedDocumentAssignment } from './enriched-document-assignment.view.js';
+import type { EnrichedDocumentCategory } from './enriched-document-category.view.js';
 import type { EnrichedDocumentManagementData } from './enriched-document-management-data.view.js';
 import type { EnrichedDocumentType } from './enriched-document-type.view.js';
 
@@ -28,6 +29,11 @@ export class EnrichedDocument implements TypedOmit<DocumentView, 'typeId' | 'ass
   readonly workflows: DocumentWorkflow[];
   readonly validations: DocumentValidationExecution[];
   readonly metadata: EntityMetadata;
+
+  @Memoize()
+  get category(): EnrichedDocumentCategory | null {
+    return this.type?.category ?? null;
+  }
 
   @Memoize()
   get type(): EnrichedDocumentType | null {

@@ -1,9 +1,10 @@
+import { takeUntil } from 'rxjs';
+
 import { ObservableFinalizationRegistry } from '#/memory/observable-finalization-registry.js';
 import { isDefined, isUndefined } from '#/utils/type-guards.js';
-import { takeUntil } from 'rxjs';
-import { Collection } from './collection.js';
+import { Dictionary } from './dictionary.js';
 
-export class WeakRefMap<K, V extends object> extends Collection<[K, V], MapIterator<[K, V]>, WeakRefMap<K, V>> implements Map<K, V> {
+export class WeakRefMap<K, V extends object> extends Dictionary<K, V, WeakRefMap<K, V>> implements Map<K, V> {
   private readonly backingMapProvider: () => Map<K, WeakRef<V>>;
 
   private backingMap: Map<K, WeakRef<V>>;

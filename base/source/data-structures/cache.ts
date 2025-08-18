@@ -8,14 +8,18 @@ export class Cache<K, V> {
   }
 
   set capacity(capacity: number) {
-    this.removeEntries(this._capacity - capacity);
+    if (capacity < 0) {
+      throw new Error('Capacity must be positive.');
+    }
+
+    const itemsToRemove = Math.max(0, this.cache.size - capacity);
+    this.removeEntries(itemsToRemove);
     this._capacity = capacity;
   }
 
   constructor(capacity: number) {
-    this._capacity = capacity;
-
     this.cache = new Map();
+    this.capacity = capacity;
   }
 
   get(key: K): V | undefined {
@@ -42,7 +46,7 @@ export class Cache<K, V> {
   }
 
   delete(key: K): void {
-    this.delete(key);
+    this.cache.delete(key);
   }
 
   private removeEntries(count: number): void {

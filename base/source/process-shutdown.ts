@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+import { setTimeout } from 'node:timers';
 
 import type { CancellationSignal } from '#/cancellation/index.js';
 import { CancellationToken } from '#/cancellation/index.js';

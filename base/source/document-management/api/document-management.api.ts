@@ -1,10 +1,10 @@
 import { compileClient } from '#/api/client/index.js';
 import { defineApi } from '#/api/index.js';
 import { defaultAccessControlAllowHeaders } from '#/api/utils.js';
-import { bustCacheToken } from '#/http/tokens.js';
-import { ReplaceClass } from '#/injector/decorators.js';
+import { bustCache } from '#/http/tokens.js';
+import { ReplaceClass } from '#/injector/index.js';
 import { array, boolean, literal, number, object, optional, string } from '#/schema/index.js';
-import { ServerSentEvents } from '#/sse/server-sent-events.js';
+import { DataStream } from '#/sse/index.js';
 import { policy } from '../authorization/index.js';
 import { Document, DocumentCategory, DocumentRequest, DocumentRequestsTemplate, DocumentRequestTemplate, DocumentType } from '../models/index.js';
 import { addOrArchiveDocumentToOrFromCollectionParametersSchema, applyDocumentRequestsTemplateParametersSchema, createDocumentCategoryParametersSchema, createDocumentParametersSchema, createDocumentRequestParametersSchema, createDocumentRequestsTemplateParametersSchema, createDocumentRequestTemplateParametersSchema, createDocumentTypeParametersSchema, deleteDocumentRequestParametersSchema, deleteDocumentRequestsTemplateParametersSchema, deleteDocumentRequestTemplateParametersSchema, DocumentCategoryView, DocumentManagementData, DocumentRequestsTemplateData, loadDataParametersSchema, updateDocumentParametersSchema, updateDocumentRequestParametersSchema, updateDocumentRequestsTemplateParametersSchema, updateDocumentRequestTemplateParametersSchema } from '../service-models/index.js';
@@ -25,10 +25,10 @@ export const documentManagementApiDefinition = defineApi({
       resource: 'data/stream',
       method: 'GET',
       parameters: loadDataParametersSchema,
-      result: ServerSentEvents,
+      result: DataStream<DocumentManagementData>,
       credentials: true,
       data: {
-        [bustCacheToken]: true,
+        [bustCache]: true,
       },
       cors: {
         accessControlAllowHeaders: `${defaultAccessControlAllowHeaders}, Cache-Control`,

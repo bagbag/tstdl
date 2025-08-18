@@ -32,7 +32,7 @@
     "chroma-js": "2.6",
     "jsondiffpatch": "0.7",
     "luxon": "3.7",
-    "marked": "16.1",
+    "marked": "16.2",
     "ngx-extended-pdf-viewer": "24.3",
     "preact": "10.27",
     "react": "npm:@preact/compat@18.3",

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.server.json", // in dist tsconfig.base.json is renamed to tsconfig.json
+  "compilerOptions": {
+    "emitDeclarationOnly": true
+  }
+}

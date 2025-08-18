@@ -1,4 +1,3 @@
-import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { defaultRandomNumberGeneratorFn, type RandomNumberGeneratorFn } from '#/random/number-generator/random-number-generator-function.js';
 import { isNull } from './type-guards.js';
 
@@ -49,7 +48,7 @@ export function average(values: number[]): number {
  */
 export function minimum(values: number[]): number {
   if (values.length == 0) {
-    throw new NotSupportedError('No values provided.');
+    throw new Error('No values provided.');
   }
 
   return values.reduce((previous, current) => Math.min(previous, current), Number.POSITIVE_INFINITY);
@@ -62,7 +61,7 @@ export function minimum(values: number[]): number {
  */
 export function maximum(values: number[]): number {
   if (values.length == 0) {
-    throw new NotSupportedError('No values provided.');
+    throw new Error('No values provided.');
   }
 
   return values.reduce((previous, current) => Math.max(previous, current), Number.NEGATIVE_INFINITY);

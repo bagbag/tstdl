@@ -15,7 +15,6 @@ export class ArrayDictionary<K, V> extends Dictionary<K, V, ArrayDictionary<K, V
 
     if (isDefined(items)) {
       this.addMany(items);
-      this.updateSize();
     }
   }
 
@@ -34,16 +33,7 @@ export class ArrayDictionary<K, V> extends Dictionary<K, V, ArrayDictionary<K, V
   }
 
   set(key: K, value: V): void {
-    const index = this.keyArray.indexOf(key);
-
-    if (index == -1) {
-      this.keyArray.push(key);
-      this.valueArray.push(value);
-    }
-    else {
-      this.valueArray[index] = value;
-    }
-
+    this._setWithoutUpdate(key, value);
     this.updateSize();
   }
 
@@ -79,15 +69,7 @@ export class ArrayDictionary<K, V> extends Dictionary<K, V, ArrayDictionary<K, V
 
   addMany(items: Iterable<readonly [K, V]>): void {
     for (const [key, value] of items) {
-      const index = this.keyArray.indexOf(key);
-
-      if (index == -1) {
-        this.keyArray.push(key);
-        this.valueArray.push(value);
-      }
-      else {
-        this.valueArray[index] = value;
-      }
+      this._setWithoutUpdate(key, value);
     }
 
     this.updateSize();
@@ -121,7 +103,19 @@ export class ArrayDictionary<K, V> extends Dictionary<K, V, ArrayDictionary<K, V
     this.valueArray = [];
   }
 
+  private _setWithoutUpdate(key: K, value: V): void {
+    const index = this.keyArray.indexOf(key);
+
+    if (index == -1) {
+      this.keyArray.push(key);
+      this.valueArray.push(value);
+    }
+    else {
+      this.valueArray[index] = value;
+    }
+  }
+
   private updateSize(): void {
-    this.setSize(this.keyArray.length / 2);
+    this.setSize(this.keyArray.length);
   }
 }

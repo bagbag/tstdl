@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.151",
+  "version": "0.92.155",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -11,6 +11,7 @@
     "build:watch": "concurrently --raw --kill-others npm:tsc:watch npm:tsc-alias:watch",
     "build:production": "rm -rf dist && npm run build && npm run build:production:copy-files",
     "build:production:copy-files": "cp package.json eslint.config.js tsconfig.server.json dist/ && cp tsconfig.base.json dist/tsconfig.json && npm run copy:orm",
+    "build:dts": "tsc -p tsconfig.dts.json",
     "build:docs": "typedoc",
     "build:docs:watch": "typedoc --watch",
     "lint": "eslint --cache source/",
@@ -167,7 +168,7 @@
     "preact": "^10.27",
     "preact-render-to-string": "^6.5",
     "sharp": "^0.34",
-    "undici": "^7.13",
+    "undici": "^7.14",
     "urlpattern-polyfill": "^10.1"
   },
   "peerDependenciesMeta": {
@@ -183,7 +184,7 @@
     "@types/minio": "7.1",
     "@types/mjml": "4.7",
     "@types/node": "24",
-    "@types/nodemailer": "6.4",
+    "@types/nodemailer": "7.0",
     "@types/pg": "8.15",
     "concurrently": "9.2",
     "drizzle-kit": "0.31",

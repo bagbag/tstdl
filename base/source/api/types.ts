@@ -1,6 +1,9 @@
+import type { Observable } from 'rxjs';
+
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
 import type { HttpMethod } from '#/http/types.js';
 import type { SchemaOutput, SchemaTestable } from '#/schema/index.js';
+import type { DataStream } from '#/sse/index.js';
 import type { ServerSentEventsSource } from '#/sse/server-sent-events-source.js';
 import type { ServerSentEvents } from '#/sse/server-sent-events.js';
 import type { NonUndefinable, OneOrMany, Record, ReturnTypeOrT } from '#/types/index.js';
@@ -117,10 +120,12 @@ export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStr
 export type ApiInputType<T extends SchemaTestable> =
   | T extends ApiBinaryType ? InstanceType<ApiBinaryType>
   : T extends typeof ServerSentEvents ? ServerSentEventsSource
+  : T extends typeof DataStream<infer U> ? AsyncIterable<U>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 
 export type ApiOutputType<T extends SchemaTestable> =
   | T extends typeof ReadableStream ? ReadableStream<Uint8Array>
+  : T extends typeof DataStream<infer U> ? Observable<U>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 
 export type ApiParameters<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = ApiInputType<ApiEndpointParametersSchema<T, K>>;

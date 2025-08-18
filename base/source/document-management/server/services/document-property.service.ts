@@ -1,4 +1,4 @@
-import { and, isNotNull as drizzleIsNotNull, isNull as drizzleIsNull, eq, inArray, or } from 'drizzle-orm';
+import { and, isNotNull as drizzleIsNotNull, isNull as drizzleIsNull, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { NotFoundError } from '#/errors/not-found.error.js';
@@ -46,7 +46,7 @@ export class DocumentPropertyService extends Transactional {
         toJsonb(documentPropertyValue.integer),
         toJsonb(documentPropertyValue.decimal),
         toJsonb(documentPropertyValue.boolean),
-        toJsonb(documentPropertyValue.date),
+        toJsonb(sql<number>`${documentPropertyValue.date} - '1970-01-01'`),
       ).as('value'),
     })
     .from(document)
@@ -169,7 +169,7 @@ export class DocumentPropertyService extends Transactional {
       const deletePropertyIds = propertyValues.filter((value) => isNull(value.value)).map(({ propertyId }) => propertyId);
 
       await this.#documentPropertyValueRepository.withTransaction(tx).hardDeleteManyByQuery({ tenantId: document.tenantId, documentId: document.id, propertyId: { $in: deletePropertyIds } });
-      await this.#documentPropertyValueRepository.withTransaction(tx).upsertMany(['documentId', 'propertyId'], upserts);
+      await this.#documentPropertyValueRepository.withTransaction(tx).upsertMany(['tenantId', 'documentId', 'propertyId'], upserts);
 
       this.#observationService.documentChange(document.id, tx);
     });

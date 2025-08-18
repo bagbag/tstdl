@@ -34,9 +34,9 @@ export type DocumentInformationExtractionResult = {
   properties: DocumentInformationExtractionPropertyResult[],
 };
 
-const CLASSIFY_MODEL = 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
+const CLASSIFY_MODEL = 'gemini-2.5-flash-lite' satisfies AiModel;
 const EXTRACT_MODEL = 'gemini-2.5-flash' satisfies AiModel;
-const ASSIGN_MODEL = 'gemini-2.5-flash-lite-preview-06-17' satisfies AiModel;
+const ASSIGN_MODEL = 'gemini-2.5-flash-lite' satisfies AiModel;
 
 @DocumentManagementSingleton()
 export class DocumentManagementAiService {

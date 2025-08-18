@@ -6,7 +6,7 @@ export type TreeViewItem<T = unknown> = {
   label: string,
   icon?: IconName,
   value: T,
-  link?: Partial<Pick<RouterLink, 'routerLink' | 'queryParams' | 'fragment' | 'relativeTo'>>,
+  link?: Partial<Pick<RouterLink, 'routerLink' | 'queryParams' | 'queryParamsHandling' | 'fragment' | 'relativeTo'>>,
   children: TreeViewItem[],
 };
 

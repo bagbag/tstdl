@@ -7,11 +7,12 @@ import { CancellationToken } from '@tstdl/base/cancellation';
 import { getDocumentManagementFolders, toEnrichedDocumentManagementData, type DocumentManagementData } from '@tstdl/base/document-management';
 import { map } from '@tstdl/base/signals';
 import { isUndefined } from '@tstdl/base/utils';
-import { fromEntries, hasOwnProperty } from '@tstdl/base/utils/object';
-import { patch, type Delta } from 'jsondiffpatch';
-import { merge, map as rxjsMap, scan, takeUntil } from 'rxjs';
+import { fromEntries } from '@tstdl/base/utils/object';
+import { normalizeText } from '@tstdl/base/utils/string';
+import { map as rxjsMap, takeUntil } from 'rxjs';
 
 import { DocumentManagementApiService } from './api';
+import { DocumentFilter } from './filter';
 import { ForwardingDocumentManagementAuthorizationService } from './services';
 
 const colors = [
@@ -36,6 +37,7 @@ export class DocumentManagementContext {
   readonly api = inject(DocumentManagementApiService);
   readonly authorizationService = inject(ForwardingDocumentManagementAuthorizationService);
   readonly collectionIds = signal<string[]>([]);
+  readonly filter = new DocumentFilter();
 
   readonly rawData = resource({
     params: this.collectionIds,
@@ -44,23 +46,12 @@ export class DocumentManagementContext {
         return computed(() => ({ value: undefined }));
       }
 
-      const eventSource = await this.api.loadDataStream({ collectionIds });
-      abortSignal.addEventListener('abort', () => eventSource.close());
-
-      const data$ = eventSource.message$('data').pipe(rxjsMap((message) => ({ data: JSON.parse(message.data) as DocumentManagementData })));
-      const delta$ = eventSource.message$('delta').pipe(rxjsMap((message) => ({ delta: JSON.parse(message.data) as Delta })));
+      const data$ = await this.api.loadDataStream({ collectionIds });
 
       const cancelToken = CancellationToken.from(abortSignal);
 
-      const resourceStreamItem$ = merge(data$, delta$).pipe(
+      const resourceStreamItem$ = data$.pipe(
         takeUntil(cancelToken.set$),
-        scan((data, message) => {
-          if (hasOwnProperty(message, 'data')) {
-            return message.data;
-          }
-
-          return patch(structuredClone(data), message.delta) as DocumentManagementData;
-        }, undefined as DocumentManagementData | undefined),
         rxjsMap((value): ResourceStreamItem<DocumentManagementData | undefined> => ({ value }))
       );
 
@@ -69,12 +60,70 @@ export class DocumentManagementContext {
         { injector: this.#injector, initialValue: { value: undefined } satisfies ResourceStreamItem<DocumentManagementData | undefined> }
       );
     },
-    // loader: async ({ request }) => (request.length == 0) ? undefined : await this.api.loadData({ collectionIds: request }),
   });
 
   readonly data = map(this.rawData.value, (data) => isUndefined(data) ? undefined : toEnrichedDocumentManagementData(data));
-
   readonly folders = map(this.data, (data) => isUndefined(data) ? undefined : getDocumentManagementFolders(data));
+
+  readonly filteredDocuments = map(this.data, (data) => {
+    const searchTexts = normalizeText(this.filter.searchText() ?? '').split(' ').map((text) => text.trim()).filter((text) => text.length > 0);
+    const collections = this.filter.collections();
+    const categories = this.filter.categories();
+    const types = this.filter.types();
+    const tags = this.filter.tags();
+
+    return data?.documents.filter((document) => {
+      if (collections.length > 0) {
+        const hasCollection = document.assignments.collections.some((assignment) => collections.includes(assignment.collection.id));
+
+        if (!hasCollection) {
+          return false;
+        }
+      }
+
+      if (categories.length > 0) {
+        const hasCategory = categories.includes(document.type?.category.id!);
+
+        if (!hasCategory) {
+          return false;
+        }
+      }
+
+      if (types.length > 0) {
+        const hasType = types.includes(document.type?.id!);
+
+        if (!hasType) {
+          return false;
+        }
+      }
+
+      if (tags.length > 0) {
+        const hasTag = document.tags.some((tag) => tags.includes(tag.id));
+
+        if (!hasTag) {
+          return false;
+        }
+      }
+
+      if (searchTexts.length > 0) {
+        const collectionTexts = document.assignments.collections.map((assignment) => assignment.collection.name);
+        const categoryText = document.type?.category.label ?? '';
+        const typeText = document.type?.label ?? '';
+        const tagTexts = document.tags.map((tag) => tag.label);
+        const propertyTexts = document.properties.map((property) => String(property.value));
+        const documentText = normalizeText([document.title, document.subtitle, document.summary, document.comment, ...collectionTexts, categoryText, typeText, ...tagTexts, ...propertyTexts].join(' '));
+        const normalizedDocumentText = normalizeText(documentText);
+
+        for (const searchText of searchTexts) {
+          if (!normalizedDocumentText.includes(searchText)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  });
 
   readonly hasValue = computed(() => this.rawData.hasValue());
   readonly isLoading = this.rawData.isLoading;

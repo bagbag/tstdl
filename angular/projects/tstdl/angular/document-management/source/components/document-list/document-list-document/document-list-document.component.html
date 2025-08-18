@@ -53,7 +53,7 @@
     <div class="flex gap-2 w-full">
       @for (tag of document().tags; track tag) {
         <tsl-badge design="flat-with-outline" color="emerald" size="small">
-          <span class="truncate">{{ tag }}</span>
+          <span class="truncate">{{ tag.label }}</span>
         </tsl-badge>
       }
     </div>

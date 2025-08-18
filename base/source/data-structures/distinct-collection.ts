@@ -1,7 +1,7 @@
 import { Collection } from './collection.js';
 
 interface BackingSetInternal<T> {
-  _backingSet: Set<T> | undefined;
+  _getBackingSet(): ReadonlySet<T> | undefined;
 };
 
 export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, TThis> = DistinctCollection<T, any>> extends Collection<T, SetIterator<T>, TThis> {
@@ -18,6 +18,10 @@ export abstract class DistinctCollection<T, TThis extends DistinctCollection<T, 
   abstract has(value: T): boolean;
   abstract delete(value: T): boolean;
 
+  /**
+   * @internal
+   * Do not use directly. For internal adapter optimization.
+   */
   protected abstract _getBackingSet(): ReadonlySet<T> | undefined;
 }
 
@@ -27,7 +31,7 @@ export class SetAdapter<T> implements Set<T> {
   readonly [Symbol.toStringTag] = 'SetAdapter';
 
   private get fastestBackingSet(): ReadonlySet<T> {
-    return (this.collection as any as BackingSetInternal<T>)._backingSet ?? this.collection.toSet();
+    return (this.collection as unknown as BackingSetInternal<T>)._getBackingSet() ?? this.collection.toSet();
   }
 
   get size(): number {

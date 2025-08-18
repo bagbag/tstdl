@@ -163,7 +163,7 @@ export class SortedArrayList<T extends TComparator, TComparator = T> extends Lis
   }
 
   protected _clear(): void {
-    this.backingArray.splice(0, this.backingArray.length);
+    this.backingArray.length = 0;
   }
 
   private updateSize(): void {

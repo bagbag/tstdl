@@ -26,7 +26,7 @@ export abstract class AiValidationExecutor<R> extends DocumentValidationExecutor
     const validationPrompt = await this.getPrompt(context);
 
     const model = match<AiValidationDifficulty, AiModel>(this.difficulty)
-      .with('easy', () => 'gemini-2.5-flash-lite-preview-06-17')
+      .with('easy', () => 'gemini-2.5-flash-lite')
       .with('medium-low', () => 'gemini-2.5-flash')
       .with('medium-high', () => 'gemini-2.5-flash')
       .with('hard', () => 'gemini-2.5-pro')

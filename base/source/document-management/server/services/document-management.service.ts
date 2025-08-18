@@ -177,7 +177,7 @@ export class DocumentManagementService extends Transactional {
     return result.map((row) => row.collectionId);
   }
 
-  async *loadDataStream(tenantId: string, collectionIds: string[], cancellationSignal: CancellationSignal): AsyncIterableIterator<DocumentManagementData> {
+  async *loadDataStream(tenantId: string, collectionIds: string[], cancellationSignal: CancellationSignal): AsyncGenerator<DocumentManagementData> {
     const continuePromise = new DeferredPromise();
 
     const newData$ = this.#observationService.collectionsChangedMessageBus.allMessages$.pipe(

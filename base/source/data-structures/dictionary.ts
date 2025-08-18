@@ -8,7 +8,7 @@ export abstract class Dictionary<K, V, TThis extends Dictionary<K, V, TThis> = D
 
   /** Returns an adapter that has the same interface as {@link Map}. No copying of data involved. */
   asMap(): Map<K, V> {
-    return new DictionaryAdapter(this); // eslint-disable-line @typescript-eslint/no-use-before-define
+    return new DictionaryAdapter(this);
   }
 
   abstract has(key: K): boolean;

@@ -17,7 +17,7 @@ export type LazyPropertyObjectDefinition<T extends object, P extends keyof T> = 
   set?: (this: T, value: T[P]) => void,
 
   /** Lazily define property with initializer */
-  initializer?: LazyPropertyInitializer<T, P>
+  initializer?: LazyPropertyInitializer<T, P>,
 };
 
 export type LazyObjectValue<T> = { [lazyObjectValueSymbol]: typeof lazyObjectValueSymbol, value: T };
@@ -45,7 +45,7 @@ export type LazyPropertyDescriptor = {
    * True if the value associated with the property may be changed with an assignment operator
    * @default true
    */
-  writable?: boolean
+  writable?: boolean,
 };
 
 /**

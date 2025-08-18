@@ -213,7 +213,7 @@ export class AiFileService implements Resolvable<AiFileServiceArgument> {
       size = blob.size;
     }
 
-    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(size)}) via GenAI API...`);
+    this.#logger.verbose(`Uploading file "${id}" (${formatBytes(size)})...`);
 
     // upload supports paths and blobs, but not streams (yet)
     const response = await this.#genAI.files.upload({ file: uploadData, config: { mimeType: contentType } });
