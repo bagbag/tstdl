@@ -6,7 +6,7 @@ import { LogLevel, Logger, type LoggerArgument } from './logger/index.js';
 import { LOG_LEVEL } from './logger/tokens.js';
 import { initializeSignals, setProcessShutdownLogger } from './process-shutdown.js';
 import { timeout } from './utils/timing.js';
-import { assertDefinedPass, isDefined, isUndefined } from './utils/type-guards.js';
+import { assertDefinedPass, isDefined } from './utils/type-guards.js';
 
 declare global {
   var tstdlLoaded: boolean | undefined;
@@ -28,11 +28,7 @@ let _isDevMode = true;
  * @deprecated Usage of `getGlobalInjector` should be avoided. Use `Application` scoped injector instead.
  */
 export function getGlobalInjector(): Injector {
-  if (isUndefined(globalInjector)) {
-    globalInjector = new Injector('GlobalInjector');
-  }
-
-  return globalInjector;
+  return globalInjector ??= new Injector('GlobalInjector');
 }
 
 export function isDevMode(): boolean {

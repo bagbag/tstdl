@@ -18,8 +18,10 @@ import { MessageBus } from '#/message-bus/index.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
 import type { Record } from '#/types/index.js';
 import { currentTimestampSeconds } from '#/utils/date-time.js';
+import { formatError } from '#/utils/format-error.js';
 import { timeout } from '#/utils/timing.js';
-import { assertDefinedPass, isDefined, isNullOrUndefined, isString, isUndefined } from '#/utils/type-guards.js';
+import { assertDefinedPass, isDefined, isNullOrUndefined, isUndefined } from '#/utils/type-guards.js';
+import { millisecondsPerSecond } from '#/utils/units.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import type { SecretCheckResult, TokenPayload } from '../models/index.js';
 import { AUTHENTICATION_API_CLIENT, INITIAL_AUTHENTICATION_DATA } from './tokens.js';
@@ -32,6 +34,19 @@ const loggedOutBusName = 'AuthenticationService:loggedOut';
 const refreshLockResource = 'AuthenticationService:refresh';
 
 const localStorage = globalThis.localStorage as Storage | undefined;
+
+const refreshBufferSeconds = 15;
+const lockTimeout = 10000;
+const logoutTimeout = 150;
+
+const unrecoverableErrors = [
+  InvalidTokenError,
+  NotFoundError,
+  BadRequestError,
+  ForbiddenError,
+  NotSupportedError,
+  UnauthorizedError,
+];
 
 /**
  * Handles authentication on client side.
@@ -57,6 +72,8 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   private readonly lock = inject(Lock, refreshLockResource);
   private readonly logger = inject(Logger, 'AuthenticationService');
   private readonly disposeToken = new CancellationToken();
+
+  private clockOffset = 0;
 
   /**
    * Observable for authentication errors.
@@ -89,7 +106,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   readonly definedToken$ = this.token$.pipe(filter(isDefined));
 
   /** Emits when a valid token is available (not undefined and not expired) */
-  readonly validToken$ = this.definedToken$.pipe(filter((token) => token.exp > currentTimestampSeconds()));
+  readonly validToken$ = this.definedToken$.pipe(filter((token) => token.exp > this.estimatedServerTimestampSeconds()));
 
   /** Current subject */
   readonly subject$ = toObservable(this.subject);
@@ -110,33 +127,19 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   readonly loggedOut$ = this.loggedOutBus.allMessages$;
 
   private get authenticationData(): AuthenticationData {
-    const data = localStorage?.getItem(authenticationDataStorageKey);
-    return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
+    return this.readFromStorage(authenticationDataStorageKey) as AuthenticationData;
   }
 
   private set authenticationData(data: AuthenticationData | undefined) {
-    if (isUndefined(data)) {
-      localStorage?.removeItem(authenticationDataStorageKey);
-    }
-    else {
-      const json = JSON.stringify(data);
-      localStorage?.setItem(authenticationDataStorageKey, json);
-    }
+    this.writeToStorage(authenticationDataStorageKey, data);
   }
 
   private get impersonatorAuthenticationData(): AuthenticationData {
-    const data = localStorage?.getItem(impersonatorAuthenticationDataStorageKey);
-    return isNullOrUndefined(data) ? undefined as AuthenticationData : JSON.parse(data) as AuthenticationData;
+    return this.readFromStorage(impersonatorAuthenticationDataStorageKey) as AuthenticationData;
   }
 
   private set impersonatorAuthenticationData(data: AuthenticationData | undefined) {
-    if (isUndefined(data)) {
-      localStorage?.removeItem(impersonatorAuthenticationDataStorageKey);
-    }
-    else {
-      const json = JSON.stringify(data);
-      localStorage?.setItem(impersonatorAuthenticationDataStorageKey, json);
-    }
+    this.writeToStorage(impersonatorAuthenticationDataStorageKey, data);
   }
 
   /**
@@ -165,7 +168,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
 
   /** Whether a valid token is available (not undefined and not expired) */
   get hasValidToken(): boolean {
-    return (this.token()?.exp ?? 0) > currentTimestampSeconds();
+    return (this.token()?.exp ?? 0) > this.estimatedServerTimestampSeconds();
   }
 
   constructor(@Inject(INITIAL_AUTHENTICATION_DATA) @Optional() initialAuthenticationData: AuthenticationData | undefined) {
@@ -227,28 +230,34 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
       this.setAdditionalData(data);
     }
 
-    const token = await this.client.login({ subject, secret, data: this.authenticationData });
+    const [token] = await Promise.all([
+      this.client.login({ subject, secret, data: this.authenticationData }),
+      this.syncClock(),
+    ]);
+
     this.setNewToken(token);
   }
 
   /**
-   * Logout
+   * Logout from the current session.
+   * This will attempt to end the session on the server and then clear local credentials.
    */
   async logout(): Promise<void> {
     try {
       await Promise.race([
         this.client.endSession(),
-        timeout(150),
+        timeout(logoutTimeout),
       ]).catch((error: unknown) => this.logger.error(error as Error));
     }
     finally {
+      // Always clear the local token, even if the server call fails.
       this.setNewToken(undefined);
       this.loggedOutBus.publishAndForget();
     }
   }
 
   /**
-   * Force a refresh of the token
+   * Force an immediate refresh of the token.
    * @param data Additional authentication data
    */
   requestRefresh(data?: AuthenticationData): void {
@@ -260,7 +269,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Refresh the token
+   * Refresh the token.
    * @param data Additional authentication data
    */
   async refresh(data?: AuthenticationData): Promise<void> {
@@ -269,7 +278,11 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     }
 
     try {
-      const token = await this.client.refresh({ data: this.authenticationData });
+      const [token] = await Promise.all([
+        this.client.refresh({ data: this.authenticationData }),
+        this.syncClock(),
+      ]);
+
       this.setNewToken(token);
     }
     catch (error) {
@@ -279,12 +292,16 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Impersonate a subject
+   * Impersonate a subject.
    * @param subject The subject to impersonate
-   * @param data Additional authentication data
+   * @param data Additional authentication data for the impersonated session
    */
   async impersonate(subject: string, data?: AuthenticationData): Promise<void> {
-    await this.lock.use(10000, true, async () => {
+    if (this.impersonated()) {
+      throw new Error('Already impersonating. Please unimpersonate first.');
+    }
+
+    await this.lock.use(lockTimeout, true, async () => {
       this.impersonatorAuthenticationData = this.authenticationData;
       this.authenticationData = data;
 
@@ -293,6 +310,9 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
         this.setNewToken(token);
       }
       catch (error) {
+        // Rollback authentication data on failure
+        this.authenticationData = this.impersonatorAuthenticationData;
+        this.impersonatorAuthenticationData = undefined;
         await this.handleRefreshError(error as Error);
         throw error;
       }
@@ -300,11 +320,11 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Unimpersonate
+   * End impersonation and return to the original user session.
    * @param data Additional authentication data. If not provided, the data from before impersonation is used.
    */
   async unimpersonate(data?: AuthenticationData): Promise<void> {
-    await this.lock.use(10000, true, async () => {
+    await this.lock.use(lockTimeout, true, async () => {
       const newData = data ?? this.impersonatorAuthenticationData;
 
       try {
@@ -322,7 +342,17 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Initialize a secret reset
+   * Change the secret for a subject.
+   * @param subject The subject to change the secret for
+   * @param currentSecret The current secret
+   * @param newSecret The new secret
+   */
+  async changeSecret(subject: string, currentSecret: string, newSecret: string): Promise<void> {
+    await this.client.changeSecret({ subject, currentSecret, newSecret });
+  }
+
+  /**
+   * Initialize a secret reset.
    * @param subject The subject to reset the secret for
    * @param data Additional data for secret reset
    */
@@ -331,7 +361,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Reset a secret
+   * Reset a secret using a reset token.
    * @param token The secret reset token
    * @param newSecret The new secret
    */
@@ -340,32 +370,12 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /**
-   * Check a secret for requirements
+   * Check a secret for requirements.
    * @param secret The secret to check
    * @returns The result of the check
    */
   async checkSecret(secret: string): Promise<SecretCheckResult> {
     return await this.client.checkSecret({ secret });
-  }
-
-  private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
-    if (isNullOrUndefined(token)) {
-      localStorage?.removeItem(tokenStorageKey);
-    }
-    else {
-      const serialized = JSON.stringify(token);
-      localStorage?.setItem(tokenStorageKey, serialized);
-    }
-  }
-
-  private loadToken(): void {
-    const existingSerializedToken = localStorage?.getItem(tokenStorageKey);
-
-    const token = isString(existingSerializedToken)
-      ? JSON.parse(existingSerializedToken) as TokenPayload<AdditionalTokenPayload>
-      : undefined;
-
-    this.token.set(token);
   }
 
   private setNewToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
@@ -375,10 +385,20 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   private async refreshLoop(): Promise<void> {
+    if (this.isLoggedIn()) {
+      await this.syncClock();
+    }
+
     while (this.disposeToken.isUnset) {
       try {
+        // Use a non-blocking lock to ensure only one tab/instance runs the refresh logic at a time.
         await this.lock.use(0, false, async () => await this.refreshLoopIteration());
-        await firstValueFrom(race([timer(2500), this.disposeToken, this.forceRefreshToken]));
+
+        // Calculate delay until the next refresh check.
+        // The buffer ensures we refresh *before* the token actually expires.
+        const delay = ((this.token()?.exp ?? 0) - this.estimatedServerTimestampSeconds() - refreshBufferSeconds) * millisecondsPerSecond;
+
+        await firstValueFrom(race([timer(delay), this.disposeToken, this.forceRefreshToken]));
       }
       catch {
         await firstValueFrom(race([timer(5000), this.disposeToken, this.forceRefreshToken]));
@@ -387,15 +407,18 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   private async refreshLoopIteration(): Promise<void> {
+    // Wait for a token to be available or for the service to be disposed.
     const token = await firstValueFrom(race([this.definedToken$, this.disposeToken]));
 
     if (isUndefined(token)) {
       return;
     }
 
-    if (this.forceRefreshToken.isSet || (currentTimestampSeconds() >= (token.exp - 60))) {
+    const needsRefresh = this.estimatedServerTimestampSeconds() >= (token.exp - refreshBufferSeconds);
+
+    if (this.forceRefreshToken.isSet || needsRefresh) {
       this.forceRefreshToken.unset();
-      await this.refresh();
+      await this.refresh(); // Errors are caught by the outer loop
     }
   }
 
@@ -403,8 +426,63 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     this.logger.error(error);
     this.errorSubject.next(error);
 
-    if ((error instanceof InvalidTokenError) || (error instanceof NotFoundError) || (error instanceof BadRequestError) || (error instanceof ForbiddenError) || (error instanceof NotSupportedError) || (error instanceof UnauthorizedError)) {
+    if (unrecoverableErrors.some((errorType) => error instanceof errorType)) {
       await this.logout();
+    }
+  }
+
+  private estimatedServerTimestampSeconds(): number {
+    return currentTimestampSeconds() + this.clockOffset;
+  }
+
+  private async syncClock(): Promise<void> {
+    try {
+      const serverTimestamp = await this.client.timestamp();
+      this.clockOffset = serverTimestamp - currentTimestampSeconds();
+    }
+    catch (error) {
+      this.logger.warn(`Failed to synchronize clock with server: ${formatError(error)}`);
+      this.clockOffset = 0;
+    }
+  }
+
+  private saveToken(token: TokenPayload<AdditionalTokenPayload> | undefined): void {
+    this.writeToStorage(tokenStorageKey, token);
+  }
+
+  private loadToken(): void {
+    const token = this.readFromStorage<TokenPayload<AdditionalTokenPayload>>(tokenStorageKey);
+    this.token.set(token);
+  }
+
+  private readFromStorage<T>(key: string): T | undefined {
+    try {
+      const serialized = localStorage?.getItem(key);
+
+      if (isNullOrUndefined(serialized)) {
+        return undefined;
+      }
+
+      return JSON.parse(serialized) as T;
+    }
+    catch (error) {
+      this.logger.warn(`Failed to read and parse from localStorage key "${key}": ${formatError(error)}`);
+      return undefined;
+    }
+  }
+
+  private writeToStorage(key: string, value: unknown): void {
+    try {
+      if (isUndefined(value)) {
+        localStorage?.removeItem(key);
+      }
+      else {
+        const serialized = JSON.stringify(value);
+        localStorage?.setItem(key, serialized);
+      }
+    }
+    catch (error) {
+      this.logger.warn(`Failed to write to localStorage key "${key}": ${formatError(error)}`);
     }
   }
 }

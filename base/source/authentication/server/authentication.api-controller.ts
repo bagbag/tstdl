@@ -5,7 +5,7 @@ import type { HttpServerResponseOptions, SetCookieObject } from '#/http/server/i
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { ObjectSchemaOrType, SchemaTestable } from '#/schema/index.js';
 import type { Record, Type, TypedOmit } from '#/types/index.js';
-import { currentTimestamp } from '#/utils/date-time.js';
+import { currentTimestampSeconds } from '#/utils/date-time.js';
 import { assertDefinedPass, isDefined } from '#/utils/type-guards.js';
 import type { AuthenticationApiDefinition } from '../authentication.api.js';
 import { authenticationApiDefinition, getAuthenticationApiDefinition } from '../authentication.api.js';
@@ -158,10 +158,10 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
 
   /**
    * Get the current server timestamp.
-   * @returns The current server timestamp.
+   * @returns The current server timestamp in seconds.
    */
   timestamp(): ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'timestamp'> {
-    return currentTimestamp();
+    return currentTimestampSeconds();
   }
 
   protected getTokenResponse({ token, jsonToken, refreshToken, omitImpersonatorRefreshToken, impersonatorRefreshToken, impersonatorRefreshTokenExpiration }: TokenResult<AdditionalTokenPayload>): HttpServerResponse {

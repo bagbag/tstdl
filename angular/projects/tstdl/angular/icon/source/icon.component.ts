@@ -16,7 +16,7 @@ const sizeMap = {
   '3xl': 'text-3xl',
   '4xl': 'text-4xl',
   '5xl': 'text-5xl',
-  '6xl': 'text-6xl'
+  '6xl': 'text-6xl',
 };
 
 export abstract class IconComponentConfiguration {
@@ -31,8 +31,8 @@ export abstract class IconComponentConfiguration {
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
-    class: 'tsl-tw'
-  }
+    class: 'tsl-tw',
+  },
 })
 export class IconComponent {
   readonly #configuration = inject(IconComponentConfiguration, { optional: true });
