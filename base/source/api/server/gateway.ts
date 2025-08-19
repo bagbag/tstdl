@@ -6,8 +6,8 @@ import { NotImplementedError } from '#/errors/not-implemented.error.js';
 import type { HttpServerRequestContext } from '#/http/server/http-server.js';
 import { HttpServerResponse, type HttpServerRequest } from '#/http/server/index.js';
 import type { ReadBodyOptions } from '#/http/utils.js';
-import { InjectArg, ResolveArg, Singleton, resolveArgumentType, type Resolvable } from '#/injector/index.js';
-import { Logger, type LoggerArgument } from '#/logger/index.js';
+import { Singleton, inject, injectArgument, resolveArgumentType, type Resolvable } from '#/injector/index.js';
+import { Logger } from '#/logger/index.js';
 import { Schema, type SchemaTestable } from '#/schema/index.js';
 import { DataStreamSource } from '#/sse/data-stream-source.js';
 import { DataStream } from '#/sse/data-stream.js';
@@ -90,28 +90,24 @@ export type ApiMetadata = {
   defaultArgumentProvider: (context) => context.resolve(API_MODULE_OPTIONS).gatewayOptions,
 })
 export class ApiGateway implements Resolvable<ApiGatewayOptions> {
-  private readonly requestTokenProvider: ApiRequestTokenProvider;
-  private readonly logger: Logger;
+  private readonly requestTokenProvider = inject(ApiRequestTokenProvider);
+  private readonly logger = inject(Logger, ApiGateway.name);
   private readonly prefix: string | null;
   private readonly apis: Map<string, ApiItem>;
   private readonly middlewares: ApiGatewayMiddleware[];
   private readonly supressedErrors: Set<Type<Error>>;
   private readonly catchErrorMiddleware: ApiGatewayMiddleware;
-  private readonly options: ApiGatewayOptions;
+  private readonly options = injectArgument(this, { optional: true }) ?? {};
 
   private composedMiddleware: ComposedAsyncMiddleware<ApiGatewayMiddlewareContext>;
 
   declare readonly [resolveArgumentType]: ApiGatewayOptions;
-  constructor(requestTokenProvider: ApiRequestTokenProvider, @ResolveArg<LoggerArgument>('ApiGateway') logger: Logger, @InjectArg() options: ApiGatewayOptions = {}) {
-    this.requestTokenProvider = requestTokenProvider;
-    this.logger = logger;
-    this.options = options;
-
-    this.prefix = isNull(options.prefix) ? null : (options.prefix ?? 'api');
+  constructor() {
+    this.prefix = isNull(this.options.prefix) ? null : (this.options.prefix ?? 'api');
     this.apis = new Map();
-    this.middlewares = options.middlewares ?? [];
-    this.supressedErrors = new Set(options.supressedErrors);
-    this.catchErrorMiddleware = getCatchErrorMiddleware(this.supressedErrors, logger);
+    this.middlewares = this.options.middlewares ?? [];
+    this.supressedErrors = new Set(this.options.supressedErrors);
+    this.catchErrorMiddleware = getCatchErrorMiddleware(this.supressedErrors, this.logger);
 
     this.updateMiddleware();
   }

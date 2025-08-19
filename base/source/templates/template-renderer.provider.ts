@@ -1,14 +1,10 @@
-import { Inject, Optional, Singleton } from '#/injector/decorators.js';
+import { inject, Singleton } from '#/injector/index.js';
 import type { TemplateRenderer } from './template.renderer.js';
 import { TEMPLATE_RENDERERS } from './tokens.js';
 
 @Singleton()
 export class TemplateRendererProvider {
-  private readonly renderers: Set<TemplateRenderer>;
-
-  constructor(@Inject(TEMPLATE_RENDERERS) @Optional() renderers: TemplateRenderer[] = []) {
-    this.renderers = new Set(renderers);
-  }
+  private readonly renderers = new Set<TemplateRenderer>(inject(TEMPLATE_RENDERERS, undefined, { optional: true }) ?? []);
 
   register(renderer: TemplateRenderer): void {
     this.renderers.add(renderer);

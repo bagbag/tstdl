@@ -1,8 +1,7 @@
 import type { Observable } from 'rxjs';
 
 import { DetailsError } from '#/errors/details.error.js';
-import { ResolveArg, Singleton } from '#/injector/decorators.js';
-import type { LoggerArgument } from '#/logger/index.js';
+import { inject, Singleton } from '#/injector/index.js';
 import { Logger } from '#/logger/index.js';
 import type { Signal } from '#/signals/api.js';
 import { computed, signal, toObservable } from '#/signals/api.js';
@@ -16,11 +15,11 @@ import { assertDefinedPass, isArray, isDefined, isFunction, isNotNull, isNull, i
 
 export type Language = {
   code: string,
-  name: string
+  name: string,
 };
 
 export type LocalizeFunctionContext = {
-  localizationService: LocalizationService
+  localizationService: LocalizationService,
 };
 
 export type LocalizeFunction<Parameters = void> = (parameters: Parameters, context: LocalizeFunctionContext) => string;
@@ -36,7 +35,7 @@ export type EnumerationLocalizationEntry<T extends Enumeration = Enumeration> = 
 export type Localization<T extends LocalizationTemplate = LocalizationTemplate, Enums extends Enumeration[] = Enumeration[]> = {
   language: Language,
   keys: T,
-  enums: { [I in keyof Enums]: EnumerationLocalizationEntry<Enums[I]> }
+  enums: { [I in keyof Enums]: EnumerationLocalizationEntry<Enums[I]> },
 };
 
 declare const parametersSymbol: unique symbol;
@@ -55,7 +54,7 @@ export type LocalizationData<Parameters = any, E extends Enumeration = any> =
 
 export type LocalizationDataObject<Parameters> = {
   key: LocalizationKey<Parameters>,
-  parameters: Parameters
+  parameters: Parameters,
 };
 
 export type ProxyLocalizationKeys<T extends LocalizationTemplate> = {
@@ -68,13 +67,13 @@ export type ProxyLocalizationKeys<T extends LocalizationTemplate> = {
 
 type MappedEnumerationLocalizationEntry = {
   name: LocalizeItem | undefined,
-  values: EnumerationLocalization
+  values: EnumerationLocalization,
 };
 
 type MappedLocalization = {
   language: Language,
   keys: Map<string, string | LocalizeFunction<unknown>>,
-  enums: Map<Enumeration, MappedEnumerationLocalizationEntry>
+  enums: Map<Enumeration, MappedEnumerationLocalizationEntry>,
 };
 
 export function getProxyLocalizationKey<Parameters = void>(key: string): ProxyLocalizationKey<Parameters> {
@@ -120,7 +119,7 @@ const warnedMissingKeys = new Set<string>();
 
 @Singleton()
 export class LocalizationService {
-  readonly #logger: Logger;
+  readonly #logger = inject(Logger, LocalizationService.name);
   readonly #localizations = new Map<string, MappedLocalization>();
   readonly #activeLanguage = signal<Language | null>(null);
   readonly #availableLanguages = signal<Language[]>([]);
@@ -140,10 +139,6 @@ export class LocalizationService {
 
   readonly activeLanguage$ = toObservable(this.activeLanguage);
   readonly availableLanguages$ = toObservable(this.availableLanguages);
-
-  constructor(@ResolveArg<LoggerArgument>('LocalizationService') logger: Logger) {
-    this.#logger = logger;
-  }
 
   registerLocalization(...localizations: Localization[]): void {
     for (const localization of localizations) {

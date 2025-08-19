@@ -1,4 +1,5 @@
 import { ForbiddenError } from '#/errors/forbidden.error.js';
+import { InvalidCredentialsError } from '#/errors/index.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
 import { NotFoundError } from '#/errors/not-found.error.js';
 import { NotImplementedError } from '#/errors/not-implemented.error.js';
@@ -9,6 +10,7 @@ import { DatabaseConfig } from '#/orm/server/index.js';
 import { EntityRepositoryConfig, injectRepository } from '#/orm/server/repository.js';
 import type { BinaryData, Record } from '#/types/index.js';
 import { Alphabet } from '#/utils/alphabet.js';
+import { asyncHook } from '#/utils/async-hook/async-hook.js';
 import { decodeBase64, encodeBase64 } from '#/utils/base64.js';
 import { deriveBytesMultiple, importPbkdf2Key } from '#/utils/cryptography.js';
 import { currentTimestamp, timestampToTimestampSeconds } from '#/utils/date-time.js';
@@ -192,6 +194,13 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   readonly #options = inject(AuthenticationServiceOptions);
   readonly #logger = inject(Logger, 'authentication');
 
+  readonly hooks = {
+    beforeLogin: asyncHook<{ subject: string }>(),
+    afterLogin: asyncHook<{ subject: string }>(),
+    beforeChangeSecret: asyncHook<{ subject: string }>(),
+    afterChangeSecret: asyncHook<{ subject: string }>(),
+  };
+
   private readonly tokenVersion = this.#options.version ?? 1;
   private readonly tokenTimeToLive: number = this.#options.tokenTimeToLive ?? (5 * millisecondsPerMinute);
   private readonly refreshTokenTimeToLive = this.#options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
@@ -225,7 +234,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
 
   /**
    * Sets the credentials for a subject.
-   * This method should not be exposed to the public API without a secret reset token check.
+   * This method should not be exposed to the public API without an authenticated current password or secret reset token check.
    * @param subject The subject to set the credentials for.
    * @param secret The secret to set.
    * @param options Options for setting the credentials.
@@ -318,6 +327,27 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /**
+   * Logs in a subject.
+   * @param subject The subject to log in.
+   * @param secret The secret to log in with.
+   * @param data Additional authentication data.
+   * @returns Token
+   */
+  async login(subject: string, secret: string, data: AuthenticationData): Promise<TokenResult<AdditionalTokenPayload>> {
+    const authenticationResult = await this.authenticate(subject, secret);
+
+    if (!authenticationResult.success) {
+      throw new InvalidCredentialsError();
+    }
+
+    await this.hooks.afterLogin.trigger({ subject: authenticationResult.subject });
+    const token = await this.getToken(authenticationResult.subject, data);
+    await this.hooks.afterLogin.trigger({ subject: authenticationResult.subject });
+
+    return token;
+  }
+
+  /**
    * Ends a session.
    * @param sessionId The id of the session to end.
    */
@@ -405,14 +435,14 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   }
 
   /**
-   * Initializes a secret reset.
+   * Initializes a secret reset. This usually involves sending an email for verification.
    * @param subject The subject to reset the secret for.
    * @param data Additional data for the secret reset.
    * @throws {NotImplementedError} If no ancillary service is registered.
    */
   async initSecretReset(subject: string, data: AdditionalInitSecretResetData): Promise<void> {
     if (isUndefined(this.#authenticationAncillaryService)) {
-      throw new NotImplementedError();
+      throw new NotImplementedError('No ancillary service registered.');
     }
 
     const actualSubject = await this.tryResolveSubject(subject);
@@ -437,6 +467,24 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     };
 
     await this.#authenticationAncillaryService.handleInitSecretReset(initSecretResetData);
+  }
+
+  /**
+   * Changes a subject's secret.
+   * @param subject The subject to change the secret for.
+   * @param currentSecret The current secret.
+   * @param newSecret The new secret.
+   */
+  async changeSecret(subject: string, currentSecret: string, newSecret: string): Promise<void> {
+    const authenticationResult = await this.authenticate(subject, currentSecret);
+
+    if (!authenticationResult.success) {
+      throw new ForbiddenError('Invalid credentials.');
+    }
+
+    await this.hooks.beforeChangeSecret.trigger({ subject });
+    await this.setCredentials(subject, newSecret);
+    await this.hooks.afterChangeSecret.trigger({ subject });
   }
 
   /**

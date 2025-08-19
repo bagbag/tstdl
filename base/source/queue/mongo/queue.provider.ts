@@ -1,8 +1,6 @@
 import type { CollectionArgument, MongoRepositoryConfig } from '#/database/mongo/index.js';
-import { ForwardArg, ResolveArg, Singleton } from '#/injector/decorators.js';
-import { Injector } from '#/injector/injector.js';
-import { resolveArgumentType, type Resolvable } from '#/injector/interfaces.js';
-import { LockProvider, type LockProviderArgument } from '#/lock/index.js';
+import { inject, injectArgument, Injector, resolveArgumentType, Singleton, type Resolvable } from '#/injector/index.js';
+import { LockProvider } from '#/lock/index.js';
 import { MessageBusProvider } from '#/message-bus/index.js';
 import { Queue, QueueProvider, type QueueConfig } from '#/queue/index.js';
 import type { MongoJob } from './job.js';
@@ -13,18 +11,11 @@ let defaultJobRepositoryConfig: CollectionArgument<MongoJob>;
 
 @Singleton({ defaultArgumentProvider: () => defaultJobRepositoryConfig })
 export class MongoQueueProvider extends QueueProvider implements Resolvable<CollectionArgument<MongoJob>> {
-  private readonly repository: MongoJobRepository<any>;
-  private readonly lockProvider: LockProvider;
-  private readonly messageBusProvider: MessageBusProvider;
+  private readonly repository = inject(MongoJobRepository<any>, injectArgument(this));
+  private readonly lockProvider = inject(LockProvider, 'queue:');
+  private readonly messageBusProvider = inject(MessageBusProvider);
 
   declare readonly [resolveArgumentType]: CollectionArgument<MongoJob>;
-  constructor(@ForwardArg() repository: MongoJobRepository<any>, @ResolveArg<LockProviderArgument>('queue:') lockProvider: LockProvider, messageBusProvider: MessageBusProvider) {
-    super();
-
-    this.repository = repository;
-    this.lockProvider = lockProvider;
-    this.messageBusProvider = messageBusProvider;
-  }
 
   get<T>(name: string, config?: QueueConfig): MongoQueue<T> {
     const lock = this.lockProvider.get(name);

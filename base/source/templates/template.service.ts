@@ -1,4 +1,5 @@
-import { Inject, Optional, Singleton } from '#/injector/decorators.js';
+import { Singleton } from '#/injector/decorators.js';
+import { inject } from '#/injector/inject.js';
 import type { Record } from '#/types/index.js';
 import { objectEntries } from '#/utils/object/object.js';
 import { _throw } from '#/utils/throw.js';
@@ -16,19 +17,9 @@ export type TemplateServiceRenderResult<T extends Template = Template> = {
 
 @Singleton()
 export class TemplateService {
-  private readonly templateProvider: TemplateProvider;
-  private readonly templateRendererProvider: TemplateRendererProvider;
-  private readonly templateResolverProvider: TemplateResolverProvider;
-
-  constructor(
-    @Inject(TemplateProvider) @Optional() templateProvider: TemplateProvider | undefined,
-    templateRendererProvider: TemplateRendererProvider,
-    templateResolverProvider: TemplateResolverProvider
-  ) {
-    this.templateProvider = templateProvider ?? { get: () => _throw(new Error('No template provider provided. Cannot render template-keys.')) };
-    this.templateRendererProvider = templateRendererProvider;
-    this.templateResolverProvider = templateResolverProvider;
-  }
+  private readonly templateProvider = inject(TemplateProvider, undefined, { optional: true }) ?? { get: () => _throw(new Error('No template provider provided. Cannot render template-keys.')) };
+  private readonly templateRendererProvider = inject(TemplateRendererProvider);
+  private readonly templateResolverProvider = inject(TemplateResolverProvider);
 
   async get<T extends Template = Template>(key: string): Promise<T> {
     const template = await this.templateProvider.get(key);

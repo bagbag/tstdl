@@ -12,7 +12,7 @@ const indexes: TypedIndexDescription<MongoJob<any>>[] = [
   { key: { queue: 1, priority: 1, enqueueTimestamp: 1, lastDequeueTimestamp: 1, tries: 1 } },
   { key: { queue: 1, tag: 1 } },
   { key: { queue: 1, batch: 1 } },
-  { key: { queue: 1, tries: 1 } }
+  { key: { queue: 1, tries: 1 } },
 ];
 
 @Singleton()
@@ -29,7 +29,7 @@ export class MongoJobRepository<T> extends MongoEntityRepository<MongoJob<T>> im
       ? { $setOnInsert: { _id: getNewId(), ...rest } }
       : { $set: rest, $setOnInsert: { _id: getNewId() } };
 
-    return this.baseRepository.loadByFilterAndUpdate({ queue, tag }, updateQuery, { upsert: true, returnDocument: 'after' });
+    return await this.baseRepository.loadByFilterAndUpdate({ queue, tag }, updateQuery, { upsert: true, returnDocument: 'after' });
   }
 
   async bulkInsertWithUniqueTagStrategy(newJobs: NewMongoJob<T>[], uniqueTagStrategy: UniqueTagStrategy): Promise<void> {

@@ -2,7 +2,8 @@ import type { Browser, BrowserContext, LaunchOptions } from 'playwright';
 
 import type { AsyncDisposable } from '#/disposable/disposable.js';
 import { disposeAsync } from '#/disposable/disposable.js';
-import { InjectArg, Singleton } from '#/injector/decorators.js';
+import { Singleton } from '#/injector/decorators.js';
+import { injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { isDefined } from '#/utils/type-guards.js';
@@ -36,21 +37,15 @@ export type NewBrowserOptions = {
 
 @Singleton()
 export class BrowserService implements AsyncDisposable, Resolvable<BrowserServiceArgument> {
-  private readonly browsers: Set<Browser>;
-  private readonly persistentBrowserContexts: Set<BrowserContext>;
+  private readonly browsers = new Set<Browser>();
+  private readonly persistentBrowserContexts = new Set<BrowserContext>();
 
-  readonly options: BrowserServiceOptions | undefined;
+  readonly options = injectArgument(this, { optional: true });
 
   declare readonly [resolveArgumentType]: BrowserServiceArgument;
-  constructor(@InjectArg() options?: BrowserServiceOptions) {
-    this.options = options;
-
-    this.browsers = new Set();
-    this.persistentBrowserContexts = new Set();
-  }
 
   async [disposeAsync](): Promise<void> {
-    return this.dispose();
+    await this.dispose();
   }
 
   /**

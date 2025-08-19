@@ -1,14 +1,10 @@
-import { Inject, Optional, Singleton } from '#/injector/decorators.js';
+import { inject, Singleton } from '#/injector/index.js';
 import type { TemplateResolver } from './template.resolver.js';
 import { TEMPLATE_RESOLVERS } from './tokens.js';
 
 @Singleton()
 export class TemplateResolverProvider {
-  private readonly resolvers: Set<TemplateResolver>;
-
-  constructor(@Inject(TEMPLATE_RESOLVERS) @Optional() resolvers: TemplateResolver[] = []) {
-    this.resolvers = new Set(resolvers);
-  }
+  private readonly resolvers = new Set<TemplateResolver>(inject(TEMPLATE_RESOLVERS, undefined, { optional: true }) ?? []);
 
   register(renderer: TemplateResolver): void {
     this.resolvers.add(renderer);

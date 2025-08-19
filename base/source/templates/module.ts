@@ -11,13 +11,13 @@ import { TEMPLATE_RENDERERS, TEMPLATE_RESOLVERS } from './tokens.js';
 export type TemplateModuleConfig = {
   templateProvider: Type<TemplateProvider> | undefined,
   templateResolvers: Type<TemplateResolver>[],
-  templateRenderers: Type<TemplateRenderer>[]
+  templateRenderers: Type<TemplateRenderer>[],
 };
 
 export const templateModuleConfig: TemplateModuleConfig = {
   templateProvider: undefined,
   templateResolvers: [StringTemplateResolver],
-  templateRenderers: [StringTemplateRenderer]
+  templateRenderers: [StringTemplateRenderer],
 };
 
 Injector.registerSingleton(TEMPLATE_RESOLVERS, { useToken: TemplateResolver, resolveAll: true });

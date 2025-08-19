@@ -1,7 +1,6 @@
 import { apiController } from '#/api/server/index.js';
 import type { ApiController, ApiRequestContext, ApiServerResult } from '#/api/types.js';
 import type { SetCookieOptions } from '#/cookie/cookie.js';
-import { InvalidCredentialsError } from '#/errors/invalid-credentials.error.js';
 import type { HttpServerResponseOptions, SetCookieObject } from '#/http/server/index.js';
 import { HttpServerResponse } from '#/http/server/index.js';
 import type { ObjectSchemaOrType, SchemaTestable } from '#/schema/index.js';
@@ -36,17 +35,9 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
    * Get a token for a subject and secret.
    * @param parameters The parameters for the request.
    * @returns The token result.
-   * @throws {InvalidCredentialsError} If the credentials are invalid.
    */
-  async getToken({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'>> {
-    const authenticationResult = await this.authenticationService.authenticate(parameters.subject, parameters.secret);
-
-    if (!authenticationResult.success) {
-      throw new InvalidCredentialsError();
-    }
-
-    const result = await this.authenticationService.getToken(authenticationResult.subject, parameters.data);
-
+  async login({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'login'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'login'>> {
+    const result = await this.authenticationService.login(parameters.subject, parameters.secret, parameters.data);
     return this.getTokenResponse(result);
   }
 
@@ -131,6 +122,11 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
     });
   }
 
+  async changeSecret({ parameters }: ApiRequestContext<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'changeSecret'>): Promise<ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'changeSecret'>> {
+    await this.authenticationService.changeSecret(parameters.subject, parameters.currentSecret, parameters.newSecret);
+    return 'ok';
+  }
+
   /**
    * Initialize a secret reset.
    * @param parameters The parameters for the request.
@@ -169,7 +165,7 @@ export class AuthenticationApiController<AdditionalTokenPayload extends Record, 
   }
 
   protected getTokenResponse({ token, jsonToken, refreshToken, omitImpersonatorRefreshToken, impersonatorRefreshToken, impersonatorRefreshTokenExpiration }: TokenResult<AdditionalTokenPayload>): HttpServerResponse {
-    const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'> = jsonToken.payload as ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'getToken'>;
+    const result: ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'login'> = jsonToken.payload as ApiServerResult<AuthenticationApiDefinition<AdditionalTokenPayload, AuthenticationData, AdditionalInitSecretResetData>, 'login'>;
 
     const options: HttpServerResponseOptions = {
       cookies: {

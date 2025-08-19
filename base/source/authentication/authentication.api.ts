@@ -77,7 +77,7 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
   const tokenResultSchema = assign(TokenPayloadBase, additionalTokenPayloadSchema) as unknown as ObjectSchema<TokenPayload<AdditionalTokenPayload>>;
 
   return {
-    getToken: {
+    login: {
       resource: 'token',
       method: 'POST',
       parameters: explicitObject({
@@ -136,6 +136,17 @@ export function getAuthenticationApiEndpointsDefinition<AdditionalTokenPayload e
       data: {
         [dontWaitForValidToken]: true,
       },
+    },
+    changeSecret: {
+      resource: 'secret/change',
+      method: 'POST',
+      parameters: explicitObject({
+        subject: string(),
+        currentSecret: string(),
+        newSecret: string(),
+      }),
+      result: literal('ok' as const),
+      credentials: true,
     },
     initSecretReset: {
       resource: 'secret/init-reset',
