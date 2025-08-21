@@ -96,7 +96,7 @@ The README should include:
 - A "Table of Contents" section for easy navigation.
 - A "Features" section if applicable.
 - A "Core Concepts" section explaining the main ideas and architecture.
-- A "Usage" section with clear code examples.
+- A "Usage" section with a comprehensive list of simple code examples. If there are multiple ways to use a feature, provide examples for each.
 - An "API Summary" section briefly listing the main exported functions/classes. Include their arguments, return type and a short description. Format as a markdown table.
 
 Study the example usage source code provided to understand how the module is typically used.

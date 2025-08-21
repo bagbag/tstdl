@@ -1,7 +1,5 @@
 import type { Browser, BrowserContext, BrowserContextOptions } from 'playwright';
 
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import { Injectable } from '#/injector/decorators.js';
 import { inject } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
@@ -47,7 +45,7 @@ type BrowserControllerResolutionContext = { browserService: BrowserService };
   }
 })
 export class BrowserController implements AsyncDisposable, Resolvable<BrowserControllerArgument> {
-  /** @deprecated should be avoided */
+  /** @deprecated direct usage of underlying browser object should be avoided */
   readonly browser: Browser;
   readonly options: BrowserControllerOptions | undefined;
 
@@ -57,7 +55,7 @@ export class BrowserController implements AsyncDisposable, Resolvable<BrowserCon
     this.options = options;
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.close();
   }
 
@@ -108,7 +106,7 @@ export class BrowserController implements AsyncDisposable, Resolvable<BrowserCon
   }
 
   async waitForClose(): Promise<void> {
-    return await new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
       if (!this.browser.isConnected()) {
         resolve();
       }

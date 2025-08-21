@@ -1,7 +1,5 @@
 import type { Page } from 'playwright';
 
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import type { Logger } from '#/logger/logger.js';
 import { filterUndefinedFromRecord } from '#/utils/object/object.js';
 import { readableStreamFromPromise } from '#/utils/stream/from-promise.js';
@@ -23,7 +21,7 @@ export type PageControllerOptions = DocumentControllerOptions;
 export type ScrollToCoordinates = { x?: number, y?: number };
 
 export class PageController extends DocumentController<Page> implements AsyncDisposable {
-  /** @deprecated should be avoided */
+  /** @deprecated direct usage of underlying page object should be avoided */
   readonly page: Page;
   override readonly options: PageControllerOptions;
 
@@ -34,7 +32,7 @@ export class PageController extends DocumentController<Page> implements AsyncDis
     this.options = options;
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.close();
   }
 
@@ -71,7 +69,7 @@ export class PageController extends DocumentController<Page> implements AsyncDis
   }
 
   async waitForClose(): Promise<void> {
-    return new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
       if (this.page.isClosed()) {
         resolve();
         return;
@@ -101,7 +99,7 @@ export class PageController extends DocumentController<Page> implements AsyncDis
 
   async renderPdf(options: PdfRenderOptions & Abortable = {}): Promise<Uint8Array> {
     const createPdfOptions = convertPdfOptions(options);
-    return withTimeout(options.timeout ?? 30 * millisecondsPerSecond, this.page.pdf(createPdfOptions), { errorMessage: 'Rendering pdf timed out.' });
+    return await withTimeout(options.timeout ?? 30 * millisecondsPerSecond, this.page.pdf(createPdfOptions), { errorMessage: 'Rendering pdf timed out.' });
   }
 
   async scroll(deltaX: number, deltaY: number): Promise<void> {
@@ -126,7 +124,7 @@ export class PageController extends DocumentController<Page> implements AsyncDis
     const isElement = coordinatesOrController instanceof ElementController;
 
     while (true) {
-      const { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight } = await this.page.evaluate(async () => {
+      const { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight } = await this.page.evaluate(() => {
         const { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight } = document.documentElement;
         return { scrollWidth, scrollHeight, scrollLeft, scrollTop, clientWidth, clientHeight };
       });
@@ -187,7 +185,7 @@ function convertPdfOptions(options: PdfRenderOptions): Parameters<Page['pdf']>[0
         top: options.margin,
         bottom: options.margin,
         right: options.margin,
-        left: options.margin
+        left: options.margin,
       };
 
   return {
@@ -200,6 +198,6 @@ function convertPdfOptions(options: PdfRenderOptions): Parameters<Page['pdf']>[0
     margin,
     displayHeaderFooter: options.displayHeaderFooter ?? (isDefined(options.headerTemplate) || isDefined(options.footerTemplate)),
     headerTemplate: options.headerTemplate,
-    footerTemplate: options.footerTemplate
+    footerTemplate: options.footerTemplate,
   };
 }

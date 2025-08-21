@@ -1,4 +1,4 @@
-# Application Modules (`@tstdl/base/module`)
+# Application Modules (@tstdl/base/module)
 
 This module provides a framework for building modular, service-based applications. It establishes a clear contract for components (`Module`) with managed lifecycles, state tracking, and integrated metric reporting.
 
@@ -15,25 +15,26 @@ This module provides a framework for building modular, service-based application
   - [Using Pre-built Modules](#using-pre-built-modules)
     - [FunctionModule](#functionmodule)
     - [WebServerModule](#webservermodule)
-  - [Running and Stopping Modules](#running-and-stopping-modules)
+  - [Running and Stopping a Module](#running-and-stopping-a-module)
   - [Reporting Metrics](#reporting-metrics)
 - [API Summary](#api-summary)
 
 ## Features
 
 - **Modular Architecture**: Decompose your application into independent, reusable modules.
-- **Managed Lifecycle**: Each module has a defined `run()` and `stop()` lifecycle, managed by the framework.
+- **Managed Lifecycle**: Each module has a defined `run()` and `stop()` lifecycle.
 - **State Tracking**: Modules have an explicit state (`Running`, `Stopped`, `Erroneous`).
 - **Graceful Shutdown**: Built-in support for graceful shutdown via `CancellationSignal`.
+- **Integrated Metrics**: A standardized way for modules to expose metrics.
+- **Pre-built Modules**: Includes ready-to-use modules for common tasks like running a web server.
 
 ## Core Concepts
 
 ### The Module Interface
 
-The core of this package is the `Module` interface. Any class implementing this interface can be managed by the application's lifecycle helpers.
+The core of this package is the `Module` interface. Any class implementing this interface can be managed by the application's lifecycle.
 
 A `Module` has:
-
 - `name`: A string identifier.
 - `state`: The current `ModuleState` (`Running`, `Stopped`, etc.).
 - `metrics`: An object map of metrics the module exposes.
@@ -65,28 +66,28 @@ import { CancellationSignal } from '@tstdl/base/cancellation';
 import { ModuleBase, ModuleMetricType } from '@tstdl/base/module';
 import { cancelableTimeout } from '@tstdl/base/utils';
 
-class MyWorkerModule extends ModuleBase {
-  private processedItems = 0;
+class ProductProcessorModule extends ModuleBase {
+  private processedProducts = 0;
 
   readonly metrics = {
     processed: {
       type: ModuleMetricType.Counter,
-      getValue: () => this.processedItems,
+      getValue: () => this.processedProducts,
     },
   };
 
   constructor() {
-    super('MyWorker');
+    super('ProductProcessor');
   }
 
   protected async _run(cancellationSignal: CancellationSignal): Promise<void> {
     while (cancellationSignal.isUnset) {
-      console.log('Doing work...');
-      this.processedItems++;
+      console.log('Processing next product...');
+      this.processedProducts++;
       await cancelableTimeout(1000, cancellationSignal);
     }
 
-    console.log('Worker stopping gracefully.');
+    console.log('Product processor stopping gracefully.');
   }
 }
 ```
@@ -102,10 +103,10 @@ import { FunctionModule } from '@tstdl/base/module';
 import { CancellationSignal } from '@tstdl/base/cancellation';
 import { cancelableTimeout } from '@tstdl/base/utils';
 
-const simpleTask = new FunctionModule(async (cancellationSignal: CancellationSignal) => {
-  console.log('Function module started.');
+const simpleTaskModule = new FunctionModule(async (cancellationSignal: CancellationSignal) => {
+  console.log('Simple task started.');
   await cancelableTimeout(5000, cancellationSignal);
-  console.log('Function module finished.');
+  console.log('Simple task finished.');
 }, 'SimpleTask');
 ```
 
@@ -117,7 +118,7 @@ The `WebServerModule` starts a fully-featured HTTP server with API routing. It i
 import { WebServerModule, configureWebServerModule } from '@tstdl/base/module';
 import { Injector } from '@tstdl/base/injector';
 
-// Configure the module (optional)
+// Configure the module (optional, can be done once at application startup)
 configureWebServerModule({ port: 3000 });
 
 // Resolve from injector
@@ -127,39 +128,32 @@ const webServerModule = injector.resolve(WebServerModule);
 // webServerModule can now be run like any other module.
 ```
 
-### Running and Stopping Modules
+### Running and Stopping a Module
 
-The `runModules` and `stopModules` utilities manage the lifecycle of an array of modules, making it easy to compose an application's entry point.
+You can manage the lifecycle of any module instance by calling its `run()` and `stop()` methods.
 
 ```typescript
-import { WebServerModule } from '@tstdl/base/module';
-import { runModules, stopModules } from '@tstdl/base/module';
 import { getShutdownSignal } from '@tstdl/base/process-shutdown';
-import { Logger } from '@tstdl/base/logger';
-import { Injector } from '@tstdl/base/injector';
 
 async function main(): Promise<void> {
-  const injector = new Injector();
-  const logger = injector.resolve(Logger);
-  const webServerModule = injector.resolve(WebServerModule, { port: 8080 });
-  const myWorkerModule = new MyWorkerModule();
+  const processor = new ProductProcessorModule();
 
-  const modules = [webServerModule, myWorkerModule];
+  // Run the module in the background
+  const runPromise = processor.run();
+  runPromise.catch(console.error);
 
-  // Run all modules concurrently
-  const runPromise = runModules(modules, logger);
+  console.log('Product processor is running. Press CTRL+C to stop.');
 
-  // Wait for a shutdown signal (e.g., CTRL+C)
+  // Wait for a shutdown signal
   await getShutdownSignal();
 
-  // Stop all modules gracefully
-  await stopModules(modules, logger);
-
-  // Wait for the run process to finish
-  await runPromise;
+  console.log('Shutdown signal received. Stopping module...');
+  await processor.stop();
+  await runPromise; // Wait for the module to fully stop
+  console.log('Module stopped.');
 }
 
-main().catch(console.error);
+main();
 ```
 
 ### Reporting Metrics
@@ -172,7 +166,7 @@ import { getShutdownSignal } from '@tstdl/base/process-shutdown';
 import { Injector } from '@tstdl/base/injector';
 
 const injector = new Injector();
-const webServerModule = injector.resolve(WebServerModule, { port: 8080 });
+const webServerModule = injector.resolve(WebServerModule);
 
 // Sample every 1s, keep 60s of data, report every 5s.
 const reporter = new ModuleMetricReporter(1000, 60, 5);
@@ -190,17 +184,16 @@ reporter.register('WebServer', {
 reporter.run(getShutdownSignal());
 
 // ... run your modules
+webServerModule.run();
 ```
 
 ## API Summary
 
-| Name                                | Type           | Description                                                                                          |
-| :---------------------------------- | :------------- | :--------------------------------------------------------------------------------------------------- |
-| `Module`                            | interface      | Defines the contract for an application module with a managed lifecycle.                             |
-| `ModuleBase`                        | abstract class | Base class for creating modules, handling state and cancellation automatically.                      |
-| `FunctionModule`                    | class          | A simple module implementation that wraps a single asynchronous function.                            |
-| `WebServerModule`                   | class          | A module that starts an HTTP server and API gateway, configured via dependency injection.            |
-| `ModuleMetricReporter`              | class          | Samples and reports metrics from registered modules to the console for monitoring.                   |
-| `runModules(modules, logger?)`      | function       | Starts multiple modules concurrently. Returns a promise that resolves when all modules have stopped. |
-| `stopModules(modules, logger?)`     | function       | Stops multiple modules gracefully. Returns a promise that resolves when all modules are stopped.     |
-| `configureWebServerModule(config?)` | function       | Configures the default settings for the `WebServerModule`.                                           |
+| Class/Interface | Arguments | Description |
+| :--- | :--- | :--- |
+| `Module` | - | Defines the contract for an application module with a managed lifecycle. |
+| `ModuleBase` | `name: string` | Abstract base class for creating modules, handling state and cancellation automatically. |
+| `FunctionModule` | `fn: FunctionModuleFunction`, `name?: string` | A simple module implementation that wraps a single asynchronous function. |
+| `WebServerModule` | - | A module that starts an HTTP server and API gateway, resolved via dependency injection. |
+| `configureWebServerModule()` | `config?: Partial<WebServerModuleConfiguration>` | Configures the default settings for the `WebServerModule`. |
+| `ModuleMetricReporter` | `sampleInterval: number`, `sampleCount: number`, `reportEveryNthSample: number` | Samples and reports metrics from registered modules to the console for monitoring. |

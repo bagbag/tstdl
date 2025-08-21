@@ -1,8 +1,7 @@
-import type * as NodeWorkerThreads from 'node:worker_threads'; // eslint-disable-line import/no-nodejs-modules
+import type * as NodeWorkerThreads from 'node:worker_threads';
+
 import type { LiteralUnion } from 'type-fest';
 
-import type { AsyncDisposable } from '#/disposable/index.js';
-import { disposeAsync } from '#/disposable/index.js';
 import { isNode } from '#/environment.js';
 import { dynamicImport } from '#/import.js';
 import type { Logger } from '#/logger/index.js';
@@ -16,11 +15,11 @@ type ThreadPoolWorker = Worker | NodeWorkerThreads.Worker;
 
 type PoolEntry = {
   worker: ThreadPoolWorker,
-  remotes: Map<string, RpcRemote<ThreadWorker>>
+  remotes: Map<string, RpcRemote<ThreadWorker>>,
 };
 
 export type ThreadOptions = (WorkerOptions | NodeWorkerThreads.WorkerOptions) & {
-  threadCount?: number
+  threadCount?: number,
 };
 
 let spawnWorker: (url: string | URL, options: any) => ThreadPoolWorker | Promise<ThreadPoolWorker>;
@@ -30,7 +29,7 @@ if (isNode) {
     const workerThreads = await dynamicImport<typeof NodeWorkerThreads>('node:worker_threads');
 
     spawnWorker = () => new workerThreads.Worker(url, options as NodeWorkerThreads.WorkerOptions);
-    return spawnWorker(url, options);
+    return await spawnWorker(url, options);
   };
 }
 else {
@@ -47,31 +46,31 @@ export class ThreadPool implements AsyncDisposable {
     this.url = url;
     this.options = options;
 
-    this.pool = new Pool(async () => this.spawn(), async ({ worker }) => worker.terminate(), logger, { size: options?.threadCount });
+    this.pool = new Pool(async () => await this.spawn(), async ({ worker }) => await worker.terminate(), logger, { size: options?.threadCount });
   }
 
   async dispose(): Promise<void> {
-    return this[disposeAsync]();
+    await this[Symbol.asyncDispose]();
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.pool.dispose();
   }
 
   getProcessor<T extends ThreadWorker>(name: string = 'default'): (...args: Parameters<T>) => Promise<ReturnType<T>> {
-    const processor = async (...args: Parameters<T>): Promise<ReturnType<T>> => this.process(name, ...args);
+    const processor = async (...args: Parameters<T>): Promise<ReturnType<T>> => await this.process(name, ...args);
     return processor;
   }
 
   async process<T extends ThreadWorker>(name: LiteralUnion<'default', string>, ...args: Parameters<T>): Promise<ReturnType<T>> {
-    return this.pool.use(async (entry) => {
+    return await this.pool.use(async (entry) => {
       if (!entry.remotes.has(name)) {
         const rpcEndpoint = MessagePortRpcEndpoint.from(entry.worker);
         const remote = await Rpc.connect<T>(rpcEndpoint, `thread-worker:${name}`);
         entry.remotes.set(name, remote);
       }
 
-      return entry.remotes.get(name)!(...args) as Promise<ReturnType<T>>;
+      return await (entry.remotes.get(name)!(...args) as Promise<ReturnType<T>>);
     });
   }
 

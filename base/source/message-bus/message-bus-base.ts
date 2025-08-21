@@ -1,10 +1,9 @@
 import type { Observable } from 'rxjs';
 import { defer, merge, share, Subject, takeUntil } from 'rxjs';
 
+import { CancellationToken } from '#/cancellation/token.js';
 import type { Logger } from '#/logger/index.js';
 import { tryIgnoreLogAsync } from '#/utils/try-ignore.js';
-import { CancellationToken } from '../cancellation/token.js';
-import { disposeAsync } from '../disposable/disposable.js';
 import { MessageBus } from './message-bus.js';
 
 export abstract class MessageBusBase<T> extends MessageBus<T> {
@@ -33,7 +32,7 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
   }
 
   publishAndForget(message: T): void {
-    void tryIgnoreLogAsync(this.logger, async () => this.publish(message));
+    void tryIgnoreLogAsync(this.logger, async () => await this.publish(message));
   }
 
   async publish(message: T): Promise<void> {
@@ -42,10 +41,10 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
     }
 
     this.publishSubject.next(message);
-    return this._publish(message);
+    await this._publish(message);
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     if (this.disposeToken.isSet) {
       throw new Error('message-bus is disposed');
     }
@@ -53,7 +52,7 @@ export abstract class MessageBusBase<T> extends MessageBus<T> {
     this.disposeToken.set();
     this.publishSubject.complete();
 
-    return this._dispose();
+    await this._dispose();
   }
 
   /**

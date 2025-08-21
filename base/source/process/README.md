@@ -8,7 +8,8 @@ Provides a modern, promise- and stream-based wrapper for spawning child processe
 - [Core Concepts](#core-concepts)
 - [Usage](#usage)
   - [Basic Usage](#basic-usage)
-  - [Piping Data](#piping-data)
+  - [Writing Data to a Process](#writing-data-to-a-process)
+  - [Piping Between Processes](#piping-between-processes)
   - [Error Handling](#error-handling)
 - [API Summary](#api-summary)
 
@@ -19,6 +20,7 @@ Provides a modern, promise- and stream-based wrapper for spawning child processe
 - Promise-based `wait()` method for gracefully handling process termination.
 - Automatic and configurable error throwing for non-zero exit codes.
 - Convenient helper methods to read `stdout` and `stderr` as strings or byte arrays.
+- Seamlessly pipe data from and to other stream-based APIs.
 
 ## Core Concepts
 
@@ -28,7 +30,7 @@ When you call `spawnCommand`, it returns a `SpawnCommandResult` object. This obj
 
 In addition to being a stream, the `SpawnCommandResult` object is augmented with several helper properties and methods:
 
-- **`stderr` Stream:** A separate `ReadableStream` for the process's `stderr`.
+- **`stderr` Stream:** A separate `ReadableStream` for the process's standard error output.
 - **Helper Methods:** Functions to easily write data to `stdin` (accepting `string`, `Uint8Array`, or another `ReadableStream`) and to consume `stdout` or `stderr` completely into a string or byte array.
 - **Lifecycle Management:** A promise-based `wait()` method to asynchronously wait for the process to complete. It includes built-in error handling for non-zero exit codes, which simplifies checking for successful execution.
 - **`process` Property:** Direct access to the underlying Node.js `ChildProcess` instance for advanced use cases.
@@ -53,9 +55,9 @@ const { code } = await command.wait();
 console.log(`Process exited with code ${code}`);
 ```
 
-### Piping Data
+### Writing Data to a Process
 
-You can easily write data to the process's `stdin` and read from its `stdout`. The `write()` method handles stream creation and closing automatically.
+You can easily write data to the process's `stdin` from a string, `Uint8Array`, or another stream. The `write()` method handles stream creation and closing automatically.
 
 ```typescript
 import { spawnCommand } from '@tstdl/base/process';
@@ -73,6 +75,29 @@ console.log(output); // "this is the world\n"
 
 const { code } = await command.wait();
 console.log(`Process exited with code ${code}`); // 0
+```
+
+### Piping Between Processes
+
+The stream-based nature of the API makes it trivial to pipe the output of one command directly into the input of another.
+
+```typescript
+import { spawnCommand } from '@tstdl/base/process';
+
+// Pipe the output of `ls -la` into `grep .ts`
+const ls = await spawnCommand('ls', ['-la']);
+const grep = await spawnCommand('grep', ['.ts']);
+
+// Pipe ls's stdout to grep's stdin
+await ls.readable.pipeTo(grep.writable);
+
+// Read the final output from grep
+const grepOutput = await grep.readOutput();
+console.log(grepOutput);
+
+// Wait for both processes to complete
+const [lsResult, grepResult] = await Promise.all([ls.wait(), grep.wait()]);
+console.log(`ls exited with ${lsResult.code}, grep exited with ${grepResult.code}`);
 ```
 
 ### Error Handling
@@ -127,11 +152,11 @@ An object returned by `spawnCommand`. It is a `TransformStream` augmented with t
 | `readable`                | `ReadableStream<Uint8Array>`                                                                                    | A `ReadableStream` for the process's `stdout`. (Inherited from `TransformStream`)                                    |
 | `writable`                | `WritableStream<Uint8Array>`                                                                                    | A `WritableStream` for the process's `stdin`. (Inherited from `TransformStream`)                                     |
 | `stderr`                  | `ReadableStream<Uint8Array>`                                                                                    | A `ReadableStream` for the process's `stderr`.                                                                       |
-| `write()`                 | `(chunk: ReadableStream \| Uint8Array \| string, options?: StreamPipeOptions) => Promise<void>`                 | Asynchronously writes a chunk of data to `stdin`. Automatically handles encoding for strings and closing the stream. |
+| `write()`                 | `(chunk: ReadableStream \| Uint8Array \| string, options?: StreamPipeOptions) => Promise<void>`                 | Asynchronously writes data to `stdin`. Automatically encodes strings and closes the stream upon completion.        |
 | `autoWrite()`             | `(chunk: ReadableStream \| Uint8Array \| string, options?: StreamPipeOptions) => void`                          | Writes data to `stdin` without awaiting completion (fire-and-forget). Useful for non-blocking writes.                |
 | `readOutputBytes()`       | `() => Promise<Uint8Array>`                                                                                     | Reads the entire `stdout` stream and returns the result as a `Uint8Array`.                                           |
 | `readOutput()`            | `() => Promise<string>`                                                                                         | Reads the entire `stdout` stream and returns it as a UTF-8 decoded string.                                           |
 | `readErrorBytes()`        | `() => Promise<Uint8Array>`                                                                                     | Reads the entire `stderr` stream and returns the result as a `Uint8Array`.                                           |
 | `readError()`             | `() => Promise<string>`                                                                                         | Reads the entire `stderr` stream and returns it as a UTF-8 decoded string.                                           |
-| `handleNonZeroExitCode()` | `() => void`                                                                                                    | Manually triggers the non-zero exit code error handling, which may cancel the I/O streams.                           |
-| `wait()`                  | `(options?: { throwOnNonZeroExitCode?: boolean }) => Promise<{ code: number \| null, signal: string \| null }>` | Waits for the process to exit. Throws by default if the exit code is non-zero.                                       |
+| `handleNonZeroExitCode()` | `() => void`                                                                                                    | Manually checks the process's exit code. If non-zero, it cancels the I/O streams with the corresponding error.       |
+| `wait()`                  | `(options?: { throwOnNonZeroExitCode?: boolean }) => Promise<{ code: number \| null, signal: string \| null }>` | Waits for the process to exit. Throws an error by default if the exit code is non-zero.                              |

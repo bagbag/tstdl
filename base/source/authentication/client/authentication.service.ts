@@ -2,8 +2,6 @@ import { Subject, filter, firstValueFrom, race, timer } from 'rxjs';
 
 import type { ApiClient } from '#/api/client/index.js';
 import { CancellationToken } from '#/cancellation/token.js';
-import type { AsyncDisposable } from '#/disposable/index.js';
-import { disposeAsync } from '#/disposable/index.js';
 import { BadRequestError } from '#/errors/bad-request.error.js';
 import { ForbiddenError } from '#/errors/forbidden.error.js';
 import { InvalidTokenError } from '#/errors/invalid-token.error.js';
@@ -196,7 +194,7 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
   }
 
   /** @internal */
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.dispose();
   }
 

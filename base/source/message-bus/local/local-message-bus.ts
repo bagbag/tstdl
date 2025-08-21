@@ -14,8 +14,8 @@ import type { LocalMessageBusItem } from './types.js';
     useFactory: (argument, context) => {
       const channel = assertStringPass(argument, 'LocalMessageBus resolve argument must be a string (channel)');
       return context.resolve(LocalMessageBusProvider).get(channel);
-    }
-  }
+    },
+  },
 })
 export class LocalMessageBus<T> extends MessageBusBase<T> implements MessageBus<T> {
   private readonly subject: Subject<LocalMessageBusItem<T>>;

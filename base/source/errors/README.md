@@ -15,6 +15,7 @@ A comprehensive collection of custom, robust, and extensible error classes for T
   - [Creating Your Own Custom Error](#creating-your-own-custom-error)
   - [Using `DetailsError` for Extra Context](#using-detailserror-for-extra-context)
   - [Handling Multiple Errors with `MultiError`](#handling-multiple-errors-with-multierror)
+  - [Using the `fast` Option for Performance](#using-the-fast-option-for-performance)
   - [Identifying Errors](#identifying-errors)
 - [API Summary](#api-summary)
 
@@ -35,39 +36,11 @@ A comprehensive collection of custom, robust, and extensible error classes for T
 All errors in this module extend the abstract `CustomError` class. It enhances the native `Error` object with several key features:
 
 - A static `errorName` property for reliable identification, which is safe from minification issues that can affect `constructor.name`.
-- A standardized constructor that accepts an `options` object, including `message`, `cause`, and a performance-oriented `fast` flag.
-
-```typescript
-export abstract class CustomError extends Error {
-  static readonly errorName: string;
-
-  constructor(
-    options: {
-      name?: string;
-      message?: string;
-      stack?: string;
-      cause?: Error;
-      fast?: boolean;
-    } = {},
-  ) {
-    // ... implementation
-  }
-}
-```
+- A standardized constructor that accepts an `options` object, including `message`, `cause`, and a performance-oriented `fast` flag. When `fast` is `true`, the error is constructed without calling `super()`, which avoids capturing a stack trace and can significantly improve performance in hot code paths.
 
 ### Standard Error Classes
 
-The module provides a suite of pre-defined error classes for common failure scenarios, making your code more expressive and self-documenting.
-
-| Class                 | Purpose                                                             |
-| --------------------- | ------------------------------------------------------------------- |
-| `NotFoundError`       | An entity or resource was not found.                                |
-| `ForbiddenError`      | The user has valid credentials but lacks permission for the action. |
-| `UnauthorizedError`   | The request requires user authentication.                           |
-| `BadRequestError`     | The server cannot process the request due to a client error.        |
-| `InvalidTokenError`   | An authentication token is invalid or has expired.                  |
-| `NotImplementedError` | A feature or method is not yet implemented.                         |
-| `TimeoutError`        | An operation exceeded its time limit.                               |
+The module provides a suite of pre-defined error classes for common failure scenarios like HTTP errors, making your code more expressive and self-documenting.
 
 ### Specialized Errors
 
@@ -81,29 +54,6 @@ For more complex scenarios, the module includes specialized error types:
 
 The module is designed with internationalization in mind. It exports `englishTstdlErrorsLocalization` and `germanTstdlErrorsLocalization`, which provide user-friendly headers and messages for each error type. This allows you to easily integrate error display into a multi-language UI.
 
-```typescript
-// Snippet from errors.localization.ts
-export const germanTstdlErrorsLocalization: ErrorsLocalization<...> = {
-  language: { code: 'de', name: 'Deutsch' },
-  keys: {
-    tstdl: {
-      errors: {
-        NotFoundError: {
-          header: 'Nicht gefunden',
-          message: (error) => error.message
-        },
-        ForbiddenError: {
-          header: 'Zugriff nicht erlaubt',
-          message: 'Sie haben keine Berechtigung für diese Aktion.'
-        },
-        // ... other error localizations
-      }
-    }
-  }
-  // ...
-};
-```
-
 ## Usage
 
 ### Throwing a Standard Error
@@ -112,15 +62,16 @@ Import and throw the error that best describes the situation.
 
 ```typescript
 import { NotFoundError } from '@tstdl/base/errors';
+import { ProductRepository } from './product.repository.js';
 
-function findUser(id: string) {
-  const user = database.users.find(id);
+function getProduct(id: string) {
+  const product = ProductRepository.findById(id);
 
-  if (!user) {
-    throw new NotFoundError(`User with ID "${id}" could not be found.`);
+  if (!product) {
+    throw new NotFoundError(`Product with ID "${id}" could not be found.`);
   }
 
-  return user;
+  return product;
 }
 ```
 
@@ -145,45 +96,9 @@ export class InsufficientStockError extends CustomError {
 throw new InsufficientStockError('item-123', 5, 10);
 ```
 
-### Using `DetailsError` for Extra Context
+### Using the `fast` Option for Performance
 
-Attach a payload to your error for richer logging or handling.
-
-```typescript
-import { DetailsError } from '@tstdl/base/errors';
-
-function validateRequest(payload: any) {
-  const validationErrors = getValidationErrors(payload); // returns { field: string, error: string }[]
-
-  if (validationErrors.length > 0) {
-    throw new DetailsError('Payload validation failed.', { validationErrors });
-  }
-}
-```
-
-### Handling Multiple Errors with `MultiError`
-
-Aggregate several errors and handle them together.
-
-```typescript
-import { MultiError } from '@tstdl/base/errors';
-
-async function processBatch(items: Item[]) {
-  const errors: Error[] = [];
-
-  for (const item of items) {
-    try {
-      await processItem(item);
-    } catch (error) {
-      errors.push(error as Error);
-    }
-  }
-
-  if (errors.length > 0) {
-    throw new MultiError(errors, `Failed to process ${errors.length} items in the batch.`);
-  }
-}
-```
+In performance-critical code where stack traces are unnecessary, use the `fast: true` option to improve speed by skipping stack trace generation.
 
 ### Identifying Errors
 
@@ -215,27 +130,27 @@ try {
 
 This is a summary of the main classes and functions exported by the module.
 
-| Class / Function                  | Signature                                                                       | Description                                                                |
-| --------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `CustomError`                     | `constructor(options?: CustomErrorOptions)`                                     | The abstract base class for all other errors.                              |
-| `ApiError`                        | `constructor(response: ErrorResponse)`                                          | Wraps an error response from an API, exposing `response` and `details`.    |
-| `AssertionError`                  | `constructor(message: string)`                                                  | Represents a failed assertion.                                             |
-| `BadRequestError`                 | `constructor(message?: string)`                                                 | Indicates a client-side error in the request (HTTP 400).                   |
-| `DetailsError<T>`                 | `constructor(message: string, details: T)`                                      | An error with an attached `details` payload for extra context.             |
-| `ForbiddenError`                  | `constructor(message?: string)`                                                 | Indicates insufficient permissions for a resource (HTTP 403).              |
-| `InvalidCredentialsError`         | `constructor(message?: string)`                                                 | Indicates incorrect login credentials.                                     |
-| `InvalidTokenError`               | `constructor(message?: string)`                                                 | Indicates an invalid or expired authentication token.                      |
-| `MaxBytesExceededError`           | `constructor(message?: string)`                                                 | Indicates that a size limit was exceeded.                                  |
-| `MaxBytesExceededError.fromBytes` | `(bytes: number): MaxBytesExceededError`                                        | Static factory to create an error with a specific byte limit message.      |
-| `MethodNotAllowedError`           | `constructor(message?: string)`                                                 | Indicates an HTTP method is not allowed for a resource (HTTP 405).         |
-| `MultiError`                      | `constructor(errors: Error[], message?: string)`                                | Aggregates multiple `Error` objects into a single error.                   |
-| `NotFoundError`                   | `constructor(message?: string)`                                                 | Indicates that a resource was not found (HTTP 404).                        |
-| `NotImplementedError`             | `constructor(message?: string)`                                                 | Indicates that a function or feature is not implemented (HTTP 501).        |
-| `NotSupportedError`               | `constructor(message?: string)`                                                 | Indicates that an operation or value is not supported.                     |
-| `NotSupportedError.fromEnum`      | `(enumeration: EnumerationObject, name: string, value: any): NotSupportedError` | Static factory to create a standard message for an unsupported enum value. |
-| `TimeoutError`                    | `constructor(message?: string)`                                                 | Indicates that an operation timed out.                                     |
-| `UnauthorizedError`               | `constructor(message?: string)`                                                 | Indicates that a request requires authentication (HTTP 401).               |
-| `UnsupportedMediaTypeError`       | `constructor(message?: string)`                                                 | Indicates that the media type of the request is not supported (HTTP 415).  |
-| `unwrapError`                     | `(error: any): any`                                                             | A utility to extract the underlying error from a wrapped error object.     |
-| `germanTstdlErrorsLocalization`   | `ErrorsLocalization`                                                            | Provides German localizations for the error types.                         |
-| `englishTstdlErrorsLocalization`  | `ErrorsLocalization`                                                            | Provides English localizations for the error types.                        |
+| Class / Function | Signature | Description |
+| :--- | :--- | :--- |
+| `CustomError` | `constructor(options?: CustomErrorOptions)` | The abstract base class for all other errors. |
+| `ApiError` | `constructor(response: ErrorResponse)` | Wraps an error response from an API, exposing `response` and `details`. |
+| `AssertionError` | `constructor(message: string)` | Represents a failed assertion. |
+| `BadRequestError` | `constructor(message?: string)` | Indicates a client-side error in the request (HTTP 400). |
+| `DetailsError<T>` | `constructor(message: string, details: T)` | An error with an attached `details` payload for extra context. |
+| `ForbiddenError` | `constructor(message?: string)` | Indicates insufficient permissions for a resource (HTTP 403). |
+| `InvalidCredentialsError` | `constructor(message?: string)` | Indicates incorrect login credentials. |
+| `InvalidTokenError` | `constructor(message?: string)` | Indicates an invalid or expired authentication token. |
+| `MaxBytesExceededError` | `constructor(message?: string)` | Indicates that a size limit was exceeded. |
+| `MaxBytesExceededError.fromBytes` | `(bytes: number): MaxBytesExceededError` | Static factory to create an error with a specific byte limit message. |
+| `MethodNotAllowedError` | `constructor(message?: string)` | Indicates an HTTP method is not allowed for a resource (HTTP 405). |
+| `MultiError` | `constructor(errors: Error[], message?: string)` | Aggregates multiple `Error` objects into a single error. |
+| `NotFoundError` | `constructor(message?: string)` | Indicates that a resource was not found (HTTP 404). |
+| `NotImplementedError` | `constructor(message?: string)` | Indicates that a function or feature is not implemented (HTTP 501). |
+| `NotSupportedError` | `constructor(message?: string)` | Indicates that an operation or value is not supported. |
+| `NotSupportedError.fromEnum` | `(enumeration, name, value): NotSupportedError` | Static factory to create a standard message for an unsupported enum value. |
+| `TimeoutError` | `constructor(message?: string)` | Indicates that an operation timed out. |
+| `UnauthorizedError` | `constructor(message?: string)` | Indicates that a request requires authentication (HTTP 401). |
+| `UnsupportedMediaTypeError` | `constructor(message?: string)` | Indicates that the media type of the request is not supported (HTTP 415). |
+| `unwrapError` | `(error: any): any` | A utility to extract the underlying error from a wrapped error object. |
+| `germanTstdlErrorsLocalization` | `ErrorsLocalization` | Provides German localizations for the error types. |
+| `englishTstdlErrorsLocalization` | `ErrorsLocalization` | Provides English localizations for the error types. |

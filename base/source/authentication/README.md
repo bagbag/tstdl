@@ -1,4 +1,4 @@
-# Authentication Module
+# @tstdl/base/authentication
 
 A comprehensive, JWT-based authentication module for managing user sessions, credentials, and tokens on both client and server sides.
 
@@ -53,9 +53,9 @@ This is the heart of the backend authentication logic. Its main responsibilities
 
 This service is designed for use in a browser environment. It simplifies all client-side authentication tasks:
 
-- **Token Storage**: Securely stores tokens in `localStorage`.
+- **Token Storage**: Persists tokens in `localStorage` to maintain sessions across page reloads.
 - **State Management**: Exposes the authentication state (e.g., `isLoggedIn`, `token`, `subject`) as signals and RxJS Observables, making it easy to build reactive UIs.
-- **Automatic Refresh**: Automatically refreshes the access token before it expires, ensuring a seamless user experience.
+- **Automatic Refresh**: Automatically refreshes the access token before it expires using the refresh token, ensuring a seamless user experience.
 - **API Interaction**: Provides simple methods (`login()`, `logout()`, `impersonate()`, etc.) that communicate with the server-side API.
 
 ### Extensibility: `AuthenticationAncillaryService`
@@ -81,22 +81,28 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
 
 1.  **Implement the `AuthenticationAncillaryService`**
 
-    Create a class that extends `AuthenticationAncillaryService` to connect the module to your application's user data and logic.
+    Create a class that extends `AuthenticationAncillaryService` to connect the module to your application's user model and business logic.
 
     ```typescript
     import { AuthenticationAncillaryService, GetTokenPayloadContext, ResolveSubjectResult } from '@tstdl/base/authentication/server';
     import { InitSecretResetData, TokenPayload } from '@tstdl/base/authentication';
     import { Singleton, inject } from '@tstdl/base/injector';
     import { MailService } from '@tstdl/base/mail';
-    import { UserService } from './user.service.ts'; // Your user service
+    import { UserService, User } from './user.service.ts'; // Your user service and model
 
+    // Define the custom data you want in your JWT payload
     type MyTokenPayload = {
       permissions: string[];
       isSuperUser: boolean;
     };
 
+    // Define any extra data needed for authentication
+    type MyAuthData = {
+      tenantId?: string;
+    };
+
     @Singleton()
-    class MyAncillaryService extends AuthenticationAncillaryService<MyTokenPayload> {
+    class MyAncillaryService extends AuthenticationAncillaryService<MyTokenPayload, MyAuthData> {
       readonly #userService = inject(UserService);
       readonly #mailService = inject(MailService);
 
@@ -105,9 +111,11 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
         return user ? { success: true, subject: user.id } : { success: false };
       }
 
-      async getTokenPayload(subject: string): Promise<MyTokenPayload> {
+      async getTokenPayload(subject: string, authData: MyAuthData): Promise<MyTokenPayload> {
         const user = await this.#userService.load(subject);
-        return { permissions: user.permissions, isSuperUser: user.isSuperUser };
+        // You can use authData to scope permissions, e.g., to a specific tenant
+        const permissions = user.getPermissionsForTenant(authData.tenantId);
+        return { permissions, isSuperUser: user.isSuperUser };
       }
 
       async canImpersonate(impersonatorToken: TokenPayload<MyTokenPayload>, subjectToImpersonate: string): Promise<boolean> {
@@ -131,7 +139,7 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
 
 2.  **Configure the Module**
 
-    In your application's bootstrap file, configure the authentication module.
+    In your application's bootstrap file, configure the authentication module and run its migrations.
 
     ```typescript
     import { configureAuthenticationServer, migrateAuthenticationSchema } from '@tstdl/base/authentication/server';
@@ -140,7 +148,7 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
     // Configure the server
     configureAuthenticationServer({
       serviceOptions: {
-        // Use environment variables in production!
+        // Use environment variables or a secrets manager in production!
         secret: 'a-very-strong-and-long-secret-key-for-signing-tokens',
       },
       authenticationAncillaryService: MyAncillaryService,
@@ -151,7 +159,8 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
     ```
 
 3.  **Register the API Controller**
-    The module's `AuthenticationApiController` is registered automatically via `@apiController`. Ensure your API server setup discovers and uses it.
+
+    The module's `AuthenticationApiController` is automatically registered via the `@apiController` decorator. Ensure your API server setup discovers and uses it.
 
 ### Client-Side Setup
 
@@ -186,16 +195,16 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
       readonly subject = this.#authService.subject;
       readonly welcomeMessage = computed(() => `Welcome, ${this.subject() ?? 'Guest'}`);
 
-      async onLogin(user: string, secret: string) {
+      async login(email: string, secret: string) {
         try {
-          await this.#authService.login(user, secret);
+          await this.#authService.login(email, secret, { tenantId: 'some-tenant' });
           console.log('Login successful!');
         } catch (error) {
           console.error('Login failed:', error);
         }
       }
 
-      async onLogout() {
+      async logout() {
         await this.#authService.logout();
         console.log('Logged out.');
       }
@@ -206,11 +215,11 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
 
 ### Configuration Functions
 
-| Function                                | Description                                                                                                       |
-| :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
+| Function | Description |
+| :--- | :--- |
 | `configureAuthenticationServer(config)` | Configures the server-side authentication module. Requires `serviceOptions` and `authenticationAncillaryService`. |
-| `configureAuthenticationClient(config)` | Configures the client-side authentication module. Can register HTTP middleware.                                   |
-| `migrateAuthenticationSchema()`         | Applies database migrations for the authentication schema.                                                        |
+| `configureAuthenticationClient(config)` | Configures the client-side authentication module. Can register HTTP middleware. |
+| `migrateAuthenticationSchema()` | Applies database migrations for the authentication schema. |
 
 ### Core Services (Server-Side)
 
@@ -218,16 +227,17 @@ The module uses a shared, type-safe API definition (`authenticationApiDefinition
 
 The main service for handling authentication logic on the server.
 
-| Method           | Arguments                                                                                                                    | Returns                         | Description                                            |
-| :--------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------ | :----------------------------------------------------- |
-| `setCredentials` | `subject: string`, `secret: string`, `options?: SetCredentialsOptions`                                                       | `Promise<void>`                 | Sets or updates credentials for a subject.             |
-| `authenticate`   | `subject: string`, `secret: string`                                                                                          | `Promise<AuthenticationResult>` | Verifies a subject's credentials.                      |
-| `getToken`       | `subject: string`, `authenticationData: AuthenticationData`, `options?: { impersonator?: string }`                           | `Promise<TokenResult>`          | Creates a new session and returns tokens.              |
-| `refresh`        | `refreshToken: string`, `authenticationData: AuthenticationData`, `options?: { ... }`                                        | `Promise<TokenResult>`          | Refreshes an access token using a valid refresh token. |
-| `impersonate`    | `impersonatorToken: string`, `impersonatorRefreshToken: string`, `subject: string`, `authenticationData: AuthenticationData` | `Promise<TokenResult>`          | Initiates an impersonation session.                    |
-| `unimpersonate`  | `impersonatorRefreshToken: string`, `authenticationData: AuthenticationData`                                                 | `Promise<TokenResult>`          | Ends an impersonation session.                         |
-| `endSession`     | `sessionId: string`                                                                                                          | `Promise<void>`                 | Invalidates a user session.                            |
-| `validateToken`  | `token: string`                                                                                                              | `Promise<Token>`                | Validates a JWT access token.                          |
+| Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `setCredentials` | `subject: string`, `secret: string`, `options?: SetCredentialsOptions` | `Promise<void>` | Sets or updates credentials for a subject. |
+| `authenticate` | `subject: string`, `secret: string` | `Promise<AuthenticationResult>` | Verifies a subject's credentials. |
+| `getToken` | `subject: string`, `authenticationData: AuthData`, `options?: { impersonator?: string }` | `Promise<TokenResult>` | Creates a new session and returns tokens. |
+| `login` | `subject: string`, `secret: string`, `data: AuthData` | `Promise<TokenResult>` | Authenticates and returns tokens for a new session. |
+| `refresh` | `refreshToken: string`, `authenticationData: AuthData`, `options?: { ... }` | `Promise<TokenResult>` | Refreshes an access token using a valid refresh token. |
+| `impersonate` | `impersonatorToken: string`, `impersonatorRefreshToken: string`, `subject: string`, `authenticationData: AuthData` | `Promise<TokenResult>` | Initiates an impersonation session. |
+| `unimpersonate` | `impersonatorRefreshToken: string`, `authenticationData: AuthData` | `Promise<TokenResult>` | Ends an impersonation session. |
+| `endSession` | `sessionId: string` | `Promise<void>` | Invalidates a user session. |
+| `validateToken` | `token: string` | `Promise<Token>` | Validates a JWT access token. |
 
 ### Core Services (Client-Side)
 
@@ -235,18 +245,18 @@ The main service for handling authentication logic on the server.
 
 The main service for managing authentication on the client.
 
-| Member          | Type                                                                            | Description                                                |
-| :-------------- | :------------------------------------------------------------------------------ | :--------------------------------------------------------- |
-| `token`         | `Signal<TokenPayload \| undefined>`                                             | The current authentication token payload.                  |
-| `isLoggedIn`    | `Signal<boolean>`                                                               | A computed signal that is `true` if the user is logged in. |
-| `subject`       | `Signal<string \| undefined>`                                                   | The subject (ID) of the currently logged-in user.          |
-| `impersonator`  | `Signal<string \| undefined>`                                                   | The subject of the impersonator, if any.                   |
-| `login`         | `(subject: string, secret: string, data?: AuthenticationData) => Promise<void>` | Authenticates the user and stores the tokens.              |
-| `logout`        | `() => Promise<void>`                                                           | Logs the user out and clears tokens.                       |
-| `refresh`       | `(data?: AuthenticationData) => Promise<void>`                                  | Manually refreshes the authentication token.               |
-| `impersonate`   | `(subject: string, data?: AuthenticationData) => Promise<void>`                 | Starts an impersonation session.                           |
-| `unimpersonate` | `(data?: AuthenticationData) => Promise<void>`                                  | Ends an impersonation session.                             |
-| `checkSecret`   | `(secret: string) => Promise<SecretCheckResult>`                                | Checks a secret against server-side requirements.          |
+| Member | Type | Description |
+| :--- | :--- | :--- |
+| `token` | `Signal<TokenPayload \| undefined>` | The current authentication token payload. |
+| `isLoggedIn` | `Signal<boolean>` | A computed signal that is `true` if the user is logged in. |
+| `subject` | `Signal<string \| undefined>` | The subject (ID) of the currently logged-in user. |
+| `impersonator` | `Signal<string \| undefined>` | The subject of the impersonator, if any. |
+| `login` | `(subject: string, secret: string, data?: AuthData) => Promise<void>` | Authenticates the user and stores the tokens. |
+| `logout` | `() => Promise<void>` | Logs the user out and clears tokens. |
+| `refresh` | `(data?: AuthData) => Promise<void>` | Manually refreshes the authentication token. |
+| `impersonate` | `(subject: string, data?: AuthData) => Promise<void>` | Starts an impersonation session. |
+| `unimpersonate` | `(data?: AuthData) => Promise<void>` | Ends an impersonation session. |
+| `checkSecret` | `(secret: string) => Promise<SecretCheckResult>` | Checks a secret against server-side requirements. |
 
 ### Extensibility (Server-Side)
 
@@ -254,25 +264,25 @@ The main service for managing authentication on the client.
 
 Implement this service to integrate your application's logic.
 
-| Abstract Method         | Arguments                                                                                      | Returns                           | Description                                                    |
-| :---------------------- | :--------------------------------------------------------------------------------------------- | :-------------------------------- | :------------------------------------------------------------- |
-| `resolveSubject`        | `providedSubject: string`                                                                      | `Promise<ResolveSubjectResult>`   | Maps a login identifier (e.g., email) to a user ID.            |
-| `getTokenPayload`       | `subject: string`, `authenticationData: AuthenticationData`, `context: GetTokenPayloadContext` | `Promise<AdditionalTokenPayload>` | Adds custom data to the JWT payload.                           |
-| `handleInitSecretReset` | `data: InitSecretResetData & Additional...`                                                    | `Promise<void>`                   | Handles the logic for a secret reset (e.g., sending an email). |
-| `canImpersonate`        | `token: TokenPayload`, `subject: string`, `authenticationData: AuthenticationData`             | `Promise<boolean>`                | Determines if a user can impersonate another.                  |
+| Abstract Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `resolveSubject` | `providedSubject: string` | `Promise<ResolveSubjectResult>` | Maps a login identifier (e.g., email) to a user ID. |
+| `getTokenPayload` | `subject: string`, `authenticationData: AuthData`, `context: GetTokenPayloadContext` | `Promise<AdditionalTokenPayload>` | Adds custom data to the JWT payload. |
+| `handleInitSecretReset` | `data: InitSecretResetData & Additional...` | `Promise<void>` | Handles the logic for a secret reset (e.g., sending an email). |
+| `canImpersonate` | `token: TokenPayload`, `subject: string`, `authenticationData: AuthData` | `Promise<boolean>` | Determines if a user can impersonate another. |
 
 #### `AuthenticationSecretRequirementsValidator` (Abstract Class)
 
 Implement this service to define custom secret validation rules.
 
-| Abstract Method              | Arguments        | Returns                      | Description                                                            |
-| :--------------------------- | :--------------- | :--------------------------- | :--------------------------------------------------------------------- |
-| `checkSecretRequirements`    | `secret: string` | `Promise<SecretCheckResult>` | Checks a secret and returns a detailed result object.                  |
-| `testSecretRequirements`     | `secret: string` | `Promise<SecretTestResult>`  | Tests a secret and returns a simple success/fail result with a reason. |
-| `validateSecretRequirements` | `secret: string` | `Promise<void>`              | Validates a secret, throwing a `SecretRequirementsError` on failure.   |
+| Abstract Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `checkSecretRequirements` | `secret: string` | `Promise<SecretCheckResult>` | Checks a secret and returns a detailed result object. |
+| `testSecretRequirements` | `secret: string` | `Promise<SecretTestResult>` | Tests a secret and returns a simple success/fail result with a reason. |
+| `validateSecretRequirements` | `secret: string` | `Promise<void>` | Validates a secret, throwing a `SecretRequirementsError` on failure. |
 
 ### HTTP Middleware (Client-Side)
 
-| Function                                                  | Description                                                                                              |
-| :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
+| Function | Description |
+| :--- | :--- |
 | `waitForAuthenticationCredentialsMiddleware(authService)` | An `HttpClientMiddleware` that pauses outgoing requests until a valid authentication token is available. |

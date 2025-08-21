@@ -81,7 +81,7 @@ import { writeFile } from 'fs/promises';
 // Get an instance of the service from the injector
 const pdfService = inject(PdfService);
 
-const htmlContent = '<h1>Hello, World!</h1><p>This is a PDF generated from an HTML string.</p>';
+const htmlContent = '<h1>Product Receipt</h1><p>Thank you for your purchase.</p>';
 
 // Render the HTML to a byte array
 const pdfBytes: Uint8Array = await pdfService.renderHtml(htmlContent, {
@@ -89,7 +89,7 @@ const pdfBytes: Uint8Array = await pdfService.renderHtml(htmlContent, {
   margin: { top: '2cm', bottom: '2cm' },
 });
 
-await writeFile('output.pdf', pdfBytes);
+await writeFile('receipt.pdf', pdfBytes);
 ```
 
 ### Rendering a URL to PDF
@@ -138,7 +138,7 @@ const invoiceTemplate = pdfTemplate(
 
 // Provide the data to fill in the template
 const context = {
-  customerName: 'John Doe',
+  customerName: 'Jane Doe',
   amount: 199.99,
 };
 
@@ -155,12 +155,12 @@ Combine multiple PDF files into a single document. The sources can be file paths
 import { mergePdfs } from '@tstdl/base/pdf';
 import { readFile, writeFile } from 'fs/promises';
 
-const pdfBuffer = await readFile('file1.pdf');
-const pdfPath = 'file2.pdf';
+const pdfBuffer1 = await readFile('report-part1.pdf');
+const pdfPath2 = 'report-part2.pdf';
 
-const mergedPdfBytes: Uint8Array = await mergePdfs([pdfBuffer, pdfPath]);
+const mergedPdfBytes: Uint8Array = await mergePdfs([pdfBuffer1, pdfPath2]);
 
-await writeFile('merged.pdf', mergedPdfBytes);
+await writeFile('full-report.pdf', mergedPdfBytes);
 ```
 
 ### Getting Page Count
@@ -182,25 +182,25 @@ Extract a single page from a PDF and convert it into an image format like PNG or
 import { pdfToImage } from '@tstdl/base/pdf';
 import { writeFile } from 'fs/promises';
 
-// Convert the first page to a 300px wide PNG
-const imageBytes = await pdfToImage('my-document.pdf', 1, 300, 'png');
+// Convert the first page to a 768px wide JPEG
+const imageBytes = await pdfToImage('my-document.pdf', 1, 768, 'jpeg');
 
-await writeFile('page-1.png', imageBytes);
+await writeFile('page-1-preview.jpeg', imageBytes);
 ```
 
 ## API Summary
 
-| Member                   | Signature                                                                                                                         | Description                                                                              |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **`PdfService`**         | `class`                                                                                                                           | Main service for generating PDFs from HTML, URLs, or templates using a headless browser. |
-| `renderHtml()`           | `(html: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                          | Renders an HTML string to a PDF and returns it as a byte array.                          |
-| `renderHtmlStream()`     | `(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                   | Renders an HTML string to a PDF stream for memory-efficient processing.                  |
-| `renderUrl()`            | `(url: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                           | Renders a web page from a URL to a PDF and returns it as a byte array.                   |
-| `renderUrlStream()`      | `(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                    | Renders a web page from a URL to a PDF stream.                                           |
-| `renderTemplate()`       | `<C>(template: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                    | Renders a template to a PDF and returns it as a byte array.                              |
-| `renderTemplateStream()` | `<C>(template: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`             | Renders a template to a PDF stream.                                                      |
-| **`pdfTemplate()`**      | `(name: string, fields: object, options?: PdfTemplateOptions): PdfTemplate`                                                       | A factory function to create a `PdfTemplate` instance for dynamic PDF generation.        |
-| **`getPdfPageCount()`**  | `(file: string \| Uint8Array \| ReadableStream): Promise<number>`                                                                 | Gets the total number of pages in a PDF file. **Requires `qpdf`**.                       |
-| **`mergePdfs()`**        | `(pdfs: (string \| Uint8Array \| ReadableStream)[]): Promise<Uint8Array>`                                                         | Merges multiple PDF files into one, returned as a byte array. **Requires `pdfunite`**.   |
-| **`mergePdfsStream()`**  | `(pdfs: (string \| Uint8Array \| ReadableStream)[]): Promise<ReadableStream<Uint8Array>>`                                         | Merges multiple PDF files into a single PDF stream. **Requires `pdfunite`**.             |
-| **`pdfToImage()`**       | `(file: string \| Uint8Array \| ReadableStream, page: number, size: number, format: 'png' \| 'jpeg' \| ...): Promise<Uint8Array>` | Converts a single page of a PDF into an image. **Requires `pdftocairo`**.                |
+| Member                   | Signature                                                                                                                              | Description                                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **`PdfService`**         | `class`                                                                                                                                | Main service for generating PDFs from HTML, URLs, or templates using a headless browser. |
+| `renderHtml()`           | `(html: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                               | Renders an HTML string to a PDF and returns it as a byte array.                          |
+| `renderHtmlStream()`     | `(html: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                        | Renders an HTML string to a PDF stream for memory-efficient processing.                  |
+| `renderUrl()`            | `(url: string, options?: PdfServiceRenderOptions): Promise<Uint8Array>`                                                                | Renders a web page from a URL to a PDF and returns it as a byte array.                   |
+| `renderUrlStream()`      | `(url: string, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>`                                                         | Renders a web page from a URL to a PDF stream.                                           |
+| `renderTemplate()`       | `<C extends object>(keyOrTemplate: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): Promise<Uint8Array>`     | Renders a template to a PDF and returns it as a byte array.                              |
+| `renderTemplateStream()` | `<C extends object>(keyOrTemplate: string \| PdfTemplate<C>, context?: C, options?: PdfServiceRenderOptions): ReadableStream<Uint8Array>` | Renders a template to a PDF stream.                                                      |
+| **`pdfTemplate()`**      | `(name: string, fields: object, options?: PdfTemplateOptions): PdfTemplate`                                                            | A factory function to create a `PdfTemplate` instance for dynamic PDF generation.        |
+| **`getPdfPageCount()`**  | `(file: string \| Uint8Array \| ReadableStream<Uint8Array>): Promise<number>`                                                          | Gets the total number of pages in a PDF file. **Requires `qpdf`**.                       |
+| **`mergePdfs()`**        | `(pdfs: (string \| Uint8Array \| ReadableStream<Uint8Array>)[]): Promise<Uint8Array>`                                                   | Merges multiple PDF files into one, returned as a byte array. **Requires `pdfunite`**.   |
+| **`mergePdfsStream()`**  | `(pdfs: (string \| Uint8Array \| ReadableStream<Uint8Array>)[]): Promise<ReadableStream<Uint8Array>>`                                     | Merges multiple PDF files into a single PDF stream. **Requires `pdfunite`**.             |
+| **`pdfToImage()`**       | `(file: ..., page: number, size: number, format: 'png' \| 'jpeg' \| 'tiff' \| ...): Promise<Uint8Array>`                                 | Converts a single page of a PDF into an image. **Requires `pdftocairo`**.                |

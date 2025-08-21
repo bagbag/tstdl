@@ -1,12 +1,9 @@
-import type { AsyncDisposable, Disposable } from './disposable.js';
-import { dispose, disposeAsync } from './disposable.js';
-
 export function using<T extends Disposable, U>(disposable: T, user: (disposable: T) => U): U {
   try {
     return user(disposable);
   }
   finally {
-    disposable[dispose]();
+    disposable[Symbol.dispose]();
   }
 }
 
@@ -15,6 +12,6 @@ export async function usingAsync<T extends AsyncDisposable, U>(disposable: T, us
     return await user(disposable);
   }
   finally {
-    await disposable[disposeAsync]();
+    await disposable[Symbol.asyncDispose]();
   }
 }

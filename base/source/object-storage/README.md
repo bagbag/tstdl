@@ -9,6 +9,7 @@ A flexible and extensible module for handling object storage, providing an abstr
 - [Usage](#usage)
   - [Configuration](#configuration)
   - [Injecting and Using `ObjectStorage`](#injecting-and-using-objectstorage)
+  - [Generating Pre-signed URLs](#generating-pre-signed-urls)
   - [Lifecycle Management](#lifecycle-management)
   - [Moving and Copying Objects](#moving-and-copying-objects)
   - [Listing Objects](#listing-objects)
@@ -23,10 +24,10 @@ A flexible and extensible module for handling object storage, providing an abstr
 
 - **Abstract `ObjectStorage` Class**: Enables implementation-agnostic file handling, making your application more testable and adaptable.
 - **S3-Compatible Implementation**: Includes a robust `S3ObjectStorage` class for any S3-compatible service (e.g., AWS S3, MinIO).
-- **Module-based Isolation**: Isolate objects within a single bucket using module names as key prefixes or use a dedicated bucket per module for stronger separation.
+- **Module-based Isolation**: Isolate objects within a single bucket using module names as key prefixes, or use a dedicated bucket per module for stronger separation.
 - **Automatic Bucket Management**: Handles bucket creation and lifecycle configuration (e.g., object expiration) on initialization.
 - **Comprehensive Object Operations**: Supports a full suite of object operations: upload, download, copy, move, delete, stat, and list.
-- **Pre-signed URLs**: Generate secure, temporary URLs for direct browser uploads or downloads, offloading traffic from your application server.
+- **Pre-signed URLs**: Generate secure, temporary URLs for direct browser uploads and downloads, offloading traffic from your application server.
 - **Stream-based I/O**: Efficiently handles large files using `ReadableStream<Uint8Array>` to minimize memory consumption.
 - **DI-Friendly**: Designed to integrate seamlessly with `@tstdl/base/injector` for easy dependency injection and resolution.
 
@@ -95,33 +96,54 @@ Once configured, you can inject and use `ObjectStorage` in any service.
 import { inject } from '@tstdl/base/injector';
 import { ObjectStorage } from '@tstdl/base/object-storage';
 
-class MyFileService {
-  // Inject an ObjectStorage instance for the 'user-avatars' module.
-  readonly #avatarStorage = inject(ObjectStorage, 'user-avatars');
+class ProductImageService {
+  // Inject an ObjectStorage instance for the 'product-images' module.
+  readonly #imageStorage = inject(ObjectStorage, 'product-images');
 
-  async uploadAvatar(userId: string, content: Uint8Array): Promise<void> {
-    const key = `${userId}.png`;
-    await this.#avatarStorage.uploadObject(key, content, {
-      contentType: 'image/png',
+  async uploadImage(productId: string, content: Uint8Array): Promise<void> {
+    const key = `${productId}.webp`;
+    await this.#imageStorage.uploadObject(key, content, {
+      contentType: 'image/webp',
     });
   }
 
-  async getAvatarUrl(userId: string): Promise<string> {
-    const key = `${userId}.png`;
-
-    // Generate a temporary URL that expires in one hour
-    const oneHourFromNow = Date.now() + 3600 * 1000;
-    return this.#avatarStorage.getDownloadUrl(key, oneHourFromNow);
+  async getImageContent(productId: string): Promise<Uint8Array> {
+    const key = `${productId}.webp`;
+    return this.#imageStorage.getContent(key);
   }
 
-  async getAvatarContent(userId: string): Promise<Uint8Array> {
-    const key = `${userId}.png`;
-    return this.#avatarStorage.getContent(key);
+  async deleteImage(productId: string): Promise<void> {
+    const key = `${productId}.webp`;
+    await this.#imageStorage.deleteObject(key);
+  }
+}
+```
+
+### Generating Pre-signed URLs
+
+Pre-signed URLs are useful for allowing clients (like a web browser) to directly upload or download files without routing through your server.
+
+```typescript
+import { inject } from '@tstdl/base/injector';
+import { ObjectStorage } from '@tstdl/base/object-storage';
+import { millisecondsPerMinute } from '@tstdl/base/utils';
+
+class UserDocumentService {
+  readonly #documentStorage = inject(ObjectStorage, 'user-documents');
+
+  async getDocumentDownloadUrl(userId: string, docId: string): Promise<string> {
+    const key = `${userId}/${docId}.pdf`;
+    const expiration = Date.now() + (60 * millisecondsPerMinute); // Expires in 60 minutes
+    return this.#documentStorage.getDownloadUrl(key, expiration);
   }
 
-  async deleteAvatar(userId: string): Promise<void> {
-    const key = `${userId}.png`;
-    await this.#avatarStorage.deleteObject(key);
+  async createDocumentUploadUrl(userId: string, docId: string): Promise<string> {
+    const key = `${userId}/${docId}.pdf`;
+    const expiration = Date.now() + (10 * millisecondsPerMinute); // Expires in 10 minutes
+    return this.#documentStorage.getUploadUrl(key, expiration, {
+      contentLength: 5 * 1024 * 1024, // 5 MB limit
+      contentType: 'application/pdf'
+    });
   }
 }
 ```
@@ -132,7 +154,7 @@ You can configure object lifecycle policies, such as expiration, when injecting 
 
 ```typescript
 import { inject } from '@tstdl/base/injector';
-import { ObjectStorage, type ObjectStorageArgument } from '@tstdl/base/object-storage';
+import { ObjectStorage } from '@tstdl/base/object-storage';
 import { secondsPerDay } from '@tstdl/base/utils';
 
 class TemporaryFileService {
@@ -156,18 +178,18 @@ class TemporaryFileService {
 
 ### Moving and Copying Objects
 
-You can move or copy objects within the same module, or even between different modules.
+You can move or copy objects within the same module or even between different modules.
 
 ```typescript
 import { inject } from '@tstdl/base/injector';
 import { ObjectStorage } from '@tstdl/base/object-storage';
 
 class FileManager {
-  readonly #stagingStorage = inject(ObjectStorage, 'staging');
-  readonly #permanentStorage = inject(ObjectStorage, 'permanent');
+  readonly #stagingStorage = inject(ObjectStorage, 'staging-uploads');
+  readonly #permanentStorage = inject(ObjectStorage, 'permanent-files');
 
   async promoteFile(key: string): Promise<void> {
-    // Move the file from the 'staging' module to the 'permanent' module.
+    // Move the file from the 'staging-uploads' module to the 'permanent-files' module.
     await this.#stagingStorage.moveObject(key, [this.#permanentStorage, key]);
   }
 }
@@ -198,53 +220,53 @@ class ReportService {
 
 ### Setup Function
 
-| Function                                                                                    | Description                                                                          |
-| :------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------- |
+| Function | Description |
+| :--- | :--- |
 | `configureS3ObjectStorage(config: S3ObjectStorageProviderConfig, register?: boolean): void` | Configures and registers the `S3ObjectStorageProvider` with the dependency injector. |
 
 ### S3 Configuration
 
 **`S3ObjectStorageProviderConfig`**
 
-| Property          | Type                 | Description                                                                                     |
-| :---------------- | :------------------- | :---------------------------------------------------------------------------------------------- |
-| `endpoint`        | `string`             | The S3 service endpoint URL (e.g., `http://localhost:9000`).                                    |
-| `accessKey`       | `string`             | Your S3 access key.                                                                             |
-| `secretKey`       | `string`             | Your S3 secret key.                                                                             |
-| `bucket`          | `string` (optional)  | The name of a single, shared bucket for all modules. Mutually exclusive with `bucketPerModule`. |
-| `bucketPerModule` | `boolean` (optional) | If `true`, each module name maps to a dedicated bucket name. Mutually exclusive with `bucket`.  |
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `endpoint` | `string` | The S3 service endpoint URL (e.g., `http://localhost:9000`). |
+| `accessKey` | `string` | Your S3 access key. |
+| `secretKey` | `string` | Your S3 secret key. |
+| `bucket` | `string` (optional) | The name of a single, shared bucket for all modules. Mutually exclusive with `bucketPerModule`. |
+| `bucketPerModule` | `boolean` (optional) | If `true`, each module name maps to a dedicated bucket name. Mutually exclusive with `bucket`. |
 
 ### ObjectStorage Class
 
-| Method             | Arguments                                                                                               | Returns                              | Description                                                                               |
-| :----------------- | :------------------------------------------------------------------------------------------------------ | :----------------------------------- | :---------------------------------------------------------------------------------------- |
-| `exists`           | `key: string`                                                                                           | `Promise<boolean>`                   | Checks if an object exists.                                                               |
-| `uploadObject`     | `key: string`, `content: Uint8Array \| ReadableStream<Uint8Array>`, `options?: UploadObjectOptions`     | `Promise<void>`                      | Uploads an object. `options` can include `contentLength`, `contentType`, and `metadata`.  |
-| `copyObject`       | `sourceKey: string`, `destinationKey: string \| [ObjectStorage, string]`, `options?: CopyObjectOptions` | `Promise<void>`                      | Copies an object within the same storage or to another storage instance.                  |
-| `moveObject`       | `sourceKey: string`, `destinationKey: string \| [ObjectStorage, string]`, `options?: MoveObjectOptions` | `Promise<void>`                      | Moves an object by copying and then deleting the source.                                  |
-| `getUploadUrl`     | `key: string`, `expirationTimestamp: number`, `options?: UploadUrlOptions`                              | `Promise<string>`                    | Gets a pre-signed URL for uploading an object directly.                                   |
-| `getDownloadUrl`   | `key: string`, `expirationTimestamp: number`, `responseHeaders?: Record<string, string>`                | `Promise<string>`                    | Gets a pre-signed URL for downloading an object.                                          |
-| `getObjects`       |                                                                                                         | `Promise<ObjectStorageObject[]>`     | Gets an array of all objects in the module. Use `getObjectsCursor` for large collections. |
-| `getObjectsCursor` |                                                                                                         | `AsyncIterable<ObjectStorageObject>` | Gets a memory-efficient async iterable for all objects in the module.                     |
-| `getObject`        | `key: string`                                                                                           | `Promise<ObjectStorageObject>`       | Gets a handle to a specific object.                                                       |
-| `getResourceUri`   | `key: string`                                                                                           | `Promise<string>`                    | Gets the unique resource URI for an object (e.g., `s3://bucket/key`).                     |
-| `getContent`       | `key: string`                                                                                           | `Promise<Uint8Array>`                | Gets the full content of an object as a byte array.                                       |
-| `getContentStream` | `key: string`                                                                                           | `ReadableStream<Uint8Array>`         | Gets a readable stream of the object's content.                                           |
-| `deleteObject`     | `key: string`                                                                                           | `Promise<void>`                      | Deletes a single object.                                                                  |
-| `deleteObjects`    | `keys: string[]`                                                                                        | `Promise<void>`                      | Deletes multiple objects.                                                                 |
+| Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `exists` | `key: string` | `Promise<boolean>` | Checks if an object exists. |
+| `uploadObject` | `key: string`, `content: Uint8Array \| ReadableStream<Uint8Array>`, `options?: UploadObjectOptions` | `Promise<void>` | Uploads an object. `options` can include `contentLength`, `contentType`, and `metadata`. |
+| `copyObject` | `sourceKey: string`, `destination: string \| [ObjectStorage, string]`, `options?: CopyObjectOptions` | `Promise<void>` | Copies an object within the same storage or to another storage instance. |
+| `moveObject` | `sourceKey: string`, `destination: string \| [ObjectStorage, string]`, `options?: MoveObjectOptions` | `Promise<void>` | Moves an object by copying and then deleting the source. |
+| `getUploadUrl` | `key: string`, `expirationTimestamp: number`, `options?: UploadUrlOptions` | `Promise<string>` | Gets a pre-signed URL for uploading an object directly. |
+| `getDownloadUrl` | `key: string`, `expirationTimestamp: number`, `responseHeaders?: Record<string, string>` | `Promise<string>` | Gets a pre-signed URL for downloading an object. |
+| `getObjects` | | `Promise<ObjectStorageObject[]>` | Gets an array of all objects in the module. Use `getObjectsCursor` for large collections. |
+| `getObjectsCursor` | | `AsyncIterable<ObjectStorageObject>` | Gets a memory-efficient async iterable for all objects in the module. |
+| `getObject` | `key: string` | `Promise<ObjectStorageObject>` | Gets a handle to a specific object. |
+| `getResourceUri` | `key: string` | `Promise<string>` | Gets the unique resource URI for an object (e.g., `s3://bucket/key`). |
+| `getContent` | `key: string` | `Promise<Uint8Array>` | Gets the full content of an object as a byte array. |
+| `getContentStream` | `key: string` | `ReadableStream<Uint8Array>` | Gets a readable stream of the object's content. |
+| `deleteObject` | `key: string` | `Promise<void>` | Deletes a single object. |
+| `deleteObjects` | `keys: string[]` | `Promise<void>` | Deletes multiple objects. |
 
 ### ObjectStorageProvider Class
 
-| Method | Arguments        | Returns         | Description                                                             |
-| :----- | :--------------- | :-------------- | :---------------------------------------------------------------------- |
-| `get`  | `module: string` | `ObjectStorage` | Creates or retrieves an `ObjectStorage` instance for a specific module. |
+| Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `get` | `module: string` | `ObjectStorage` | Creates or retrieves an `ObjectStorage` instance for a specific module. |
 
 ### ObjectStorageObject Class
 
-| Method             | Arguments | Returns                      | Description                                                |
-| :----------------- | :-------- | :--------------------------- | :--------------------------------------------------------- |
-| `getResourceUri`   |           | `Promise<string>`            | Gets the unique resource URI (e.g., `s3://...`).           |
-| `getContentLength` |           | `Promise<number>`            | Gets the size of the object in bytes.                      |
-| `getMetadata`      |           | `Promise<ObjectMetadata>`    | Gets the user-defined metadata associated with the object. |
-| `getContent`       |           | `Promise<Uint8Array>`        | Gets the content of the object as a byte array.            |
-| `getContentStream` |           | `ReadableStream<Uint8Array>` | Gets a readable stream of the object's content.            |
+| Method | Arguments | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `getResourceUri` | | `Promise<string>` | Gets the unique resource URI (e.g., `s3://...`). |
+| `getContentLength` | | `Promise<number>` | Gets the size of the object in bytes. |
+| `getMetadata` | | `Promise<ObjectMetadata>` | Gets the user-defined metadata associated with the object. |
+| `getContent` | | `Promise<Uint8Array>` | Gets the content of the object as a byte array. |
+| `getContentStream` | | `ReadableStream<Uint8Array>` | Gets a readable stream of the object's content. |

@@ -23,11 +23,11 @@
     }
 
     .tab-label {
-      @apply font-semibold transition-colors;
+      @apply text-lg font-semibold transition-colors;
     }
 
     .tab-description {
-      @apply mt-2 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch] transition-colors;
+      @apply mt-3 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch] transition-colors;
     }
 
     .tabs-container,

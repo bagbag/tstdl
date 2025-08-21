@@ -1,6 +1,6 @@
 # TypeScript Type Utilities (`@tstdl/base/types`)
 
-A comprehensive collection of fundamental, advanced, and specialized TypeScript utility types designed to enhance type safety, improve developer experience, and provide standard type definitions for common data structures.
+A comprehensive collection of fundamental, advanced, and specialized TypeScript utility types designed to enhance type safety, improve developer experience, and provide standard definitions for common data structures.
 
 ## Table of Contents
 
@@ -9,6 +9,7 @@ A comprehensive collection of fundamental, advanced, and specialized TypeScript 
   - [General Utility Types](#general-utility-types)
   - [Tagged Types](#tagged-types)
   - [GeoJSON Types](#geojson-types)
+  - [Web Types](#web-types)
 - [Usage](#usage)
   - [General Utilities](#general-utilities)
   - [Tagged Types](#tagged-types)
@@ -21,8 +22,8 @@ A comprehensive collection of fundamental, advanced, and specialized TypeScript 
 
 ## Features
 
-- **Rich Utility Belt**: A vast collection of utility types for advanced type manipulation, including `Writable`, `DeepPartial`, `Simplify`, `PickBy`, `OmitBy`, `Optionalize`, and many more.
-- **Tagged (Branded) Types**: A robust implementation to create distinct types from primitives (e.g., `string`, `number`) for improved type safety.
+- **Rich Utility Belt**: A vast collection of utility types for advanced type manipulation, including `Writable`, `DeepPartial`, `Simplify`, `PickBy`, `OmitBy`, `Optionalize`, `Paths`, `PickDeep`, and many more.
+- **Tagged (Branded) Types**: A robust implementation to create distinct nominal types from primitives (e.g., `string`, `number`) for improved type safety.
 - **GeoJSON Types**: A complete set of type definitions for all standard GeoJSON objects, compliant with RFC 7946.
 - **Web-related Types**: Standardized types for HTML input attributes like `InputType`, `InputMode`, and `InputAutocomplete`.
 
@@ -42,6 +43,10 @@ In many applications, primitives like `string` or `number` are used to represent
 
 GeoJSON is a standard format for encoding a variety of geographic data structures. This module provides a comprehensive set of TypeScript interfaces (`Point`, `LineString`, `Polygon`, `Feature`, `FeatureCollection`, etc.) that align with the official GeoJSON specification. These types ensure that your geospatial data structures are correctly typed and validated by the TypeScript compiler.
 
+### Web Types
+
+To streamline web development with TypeScript, this module includes standardized types for common HTML attributes. This includes literal unions for an `<input>` element's `type`, `inputmode`, and `autocomplete` attributes, as well as comprehensive interfaces for all valid attributes on `<input>` and `<textarea>` elements.
+
 ## Usage
 
 ### General Utilities
@@ -49,7 +54,7 @@ GeoJSON is a standard format for encoding a variety of geographic data structure
 Here are some examples of how to use the general utility types to manipulate and refine your types.
 
 ```typescript
-import type { Writable, Simplify, Optionalize } from '@tstdl/base/types';
+import type { Writable, Simplify, Optionalize, Paths, TypeFromPath } from '@tstdl/base/types';
 
 // Making a readonly object writable
 const user = { id: 1, name: 'John' } as const;
@@ -70,6 +75,20 @@ type ProductWithUndefined = {
 type OptionalProduct = Optionalize<ProductWithUndefined>;
 // type is { id: string; description?: string | undefined; price: number; }
 const product: OptionalProduct = { id: 'p1', price: 100 }; // OK, description is optional
+
+// Working with nested object paths
+type UserProfile = {
+  id: number;
+  contact: {
+    email: string;
+    address: { city: string; zip: string; };
+  };
+};
+
+type UserPaths = Paths<UserProfile>; // "id" | "contact" | "contact.email" | "contact.address" | "contact.address.city" | "contact.address.zip"
+const emailPath: UserPaths = 'contact.email';
+
+type CityType = TypeFromPath<UserProfile, 'contact.address.city'>; // string
 ```
 
 ### Tagged Types
@@ -146,49 +165,52 @@ logLocation(parkFeature);
 
 This module provides a wide array of utility types for type manipulation. Below are some of the most common ones.
 
-| Type                    | Description                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------------- |
-| `Writable<T>`           | Makes all properties of `T` mutable (removes `readonly`).                                           |
-| `DeepWritable<T>`       | Recursively makes all properties of `T` mutable.                                                    |
-| `DeepPartial<T>`        | Recursively makes all properties of `T` optional.                                                   |
-| `Simplify<T>`           | Flattens intersection types (`&`) into a single object type for better readability.                 |
-| `Optionalize<T>`        | Converts properties of `T` that can be `undefined` into optional properties (`?`).                  |
-| `PickBy<T, V>`          | Creates a type by picking properties from `T` whose values are assignable to `V`.                   |
-| `OmitBy<T, V>`          | Creates a type by omitting properties from `T` whose values are assignable to `V`.                  |
-| `OneOrMany<T>`          | Represents a single `T` or a `readonly T[]`.                                                        |
-| `Json`                  | Represents any valid JSON value (`string \| number \| boolean \| null \| JsonObject \| JsonArray`). |
-| `Paths<T>`              | Creates a union of all possible dot-notation paths for keys in object `T`.                          |
-| `TypeFromPath<T, Path>` | Infers the type of a property in `T` at a given `Path`.                                             |
-| `PickDeep<T, S>`        | Picks properties from `T` recursively based on a selection shape `S`.                               |
-| `OmitDeep<T, S>`        | Omits properties from `T` recursively based on a selection shape `S`.                               |
+| Type | Description |
+| --- | --- |
+| `Writable<T>` | Makes all properties of `T` mutable (removes `readonly`). |
+| `DeepWritable<T>` | Recursively makes all properties of `T` mutable. |
+| `DeepPartial<T>` | Recursively makes all properties of `T` optional. |
+| `DeepReadonly<T>` | Recursively makes all properties of `T` readonly. |
+| `DeepNonNullable<T>` | Recursively removes `null` and `undefined` from all properties of `T`. |
+| `Simplify<T>` | Flattens intersection types (`&`) into a single object type for better readability. |
+| `Optionalize<T>` | Converts properties of `T` that can be `undefined` into optional properties (`?`). |
+| `PickBy<T, V>` | Creates a type by picking properties from `T` whose values are assignable to `V`. |
+| `OmitBy<T, V>` | Creates a type by omitting properties from `T` whose values are assignable to `V`. |
+| `OneOrMany<T>` | Represents a single `T` or a `readonly T[]`. |
+| `Json` | Represents any valid JSON value (`string \| number \| boolean \| null \| JsonObject \| JsonArray`). |
+| `Paths<T>` | Creates a union of all possible dot-notation paths for keys in object `T`. |
+| `TypeFromPath<T, Path>` | Infers the type of a property in `T` at a given `Path`. |
+| `PickDeep<T, S>` | Picks properties from `T` recursively based on a selection shape `S`. |
+| `OmitDeep<T, S>` | Omits properties from `T` recursively based on a selection shape `S`. |
+| `Merge<T1, T2>` | Merges two types, with properties from `T2` overwriting those in `T1`. |
 
 ### Tagged Types
 
-| Type                            | Description                                                                 |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| `Tagged<Type, TagName>`         | Creates a new, distinct ("branded") type from a base `Type`.                |
-| `Untagged<T>`                   | Extracts the base, untagged type from a `Tagged` type.                      |
-| `GetTagMetadata<Type, TagName>` | Extracts the metadata from a `Tagged` type.                                 |
-| `HasTag<T, Token>`              | Checks if a type `T` has a specific tag `Token`. Returns `true` or `false`. |
+| Type | Description |
+| --- | --- |
+| `Tagged<Type, TagName>` | Creates a new, distinct ("branded") type from a base `Type`. |
+| `Untagged<T>` | Extracts the base, untagged type from a `Tagged` type. |
+| `GetTagMetadata<Type, TagName>` | Extracts the metadata from a `Tagged` type. |
+| `HasTag<T, Token>` | Checks if a type `T` has a specific tag `Token`. Returns `true` or `false`. |
 
 ### GeoJSON Types
 
-| Type                      | Description                                                            |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `Position`                | A tuple representing coordinates: `[longitude, latitude, elevation?]`. |
-| `Point`                   | A GeoJSON geometry object with a single `Position`.                    |
-| `LineString`              | A GeoJSON geometry object with an array of `Position`s.                |
-| `Polygon`                 | A GeoJSON geometry object with an array of `Position` arrays.          |
-| `Geometry`                | A union of all possible GeoJSON geometry types.                        |
-| `Feature<G, P>`           | A GeoJSON object containing a `Geometry` object and properties.        |
-| `FeatureCollection<G, P>` | A GeoJSON object containing an array of `Feature` objects.             |
+| Type | Description |
+| --- | --- |
+| `Position` | A tuple representing coordinates: `[longitude, latitude, elevation?]`. |
+| `Point` | A GeoJSON geometry object with a single `Position`. |
+| `LineString` | A GeoJSON geometry object with an array of `Position`s. |
+| `Polygon` | A GeoJSON geometry object with an array of `Position` arrays (rings). |
+| `Geometry` | A union of all possible GeoJSON geometry types. |
+| `Feature<G, P>` | A GeoJSON object containing a `Geometry` object and properties. |
+| `FeatureCollection<G, P>` | A GeoJSON object containing an array of `Feature` objects. |
 
 ### Web Types
 
-| Type                 | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `InputType`          | A literal union of all valid `type` attribute values for an HTML `<input>` element.         |
-| `InputMode`          | A literal union of all valid `inputmode` attribute values for an HTML `<input>` element.    |
-| `InputAutocomplete`  | A literal union of all valid `autocomplete` attribute values for an HTML `<input>` element. |
-| `InputAttributes`    | An object type representing all valid attributes for an HTML `<input>` element.             |
-| `TextAreaAttributes` | An object type representing all valid attributes for an HTML `<textarea>` element.          |
+| Type | Description |
+| --- | --- |
+| `InputType` | A literal union of all valid `type` attribute values for an HTML `<input>` element. |
+| `InputMode` | A literal union of all valid `inputmode` attribute values for an HTML `<input>` element. |
+| `InputAutocomplete` | A literal union of all valid `autocomplete` attribute values for an HTML `<input>` element. |
+| `InputAttributes` | An object type representing all valid attributes for an HTML `<input>` element. |
+| `TextAreaAttributes` | An object type representing all valid attributes for an HTML `<textarea>` element. |

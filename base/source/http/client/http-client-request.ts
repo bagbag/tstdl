@@ -1,5 +1,4 @@
 import { CancellationToken, type CancellationSignal } from '#/cancellation/index.js';
-import { dispose, type Disposable } from '#/disposable/index.js';
 import type { OneOrMany, Record, TypedOmit, UndefinableJson, UndefinableJsonObject } from '#/types/index.js';
 import { clone } from '#/utils/clone.js';
 import { objectEntries } from '#/utils/object/object.js';
@@ -164,7 +163,7 @@ export class HttpClientRequest implements Disposable {
     this.#abortToken = requestOptions.abortSignal?.createChild() ?? new CancellationToken();
   }
 
-  [dispose](): void {
+  [Symbol.dispose](): void {
     this.#abortToken.set();
     this.#abortToken.complete();
   }

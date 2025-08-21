@@ -1,7 +1,5 @@
 import { ArrayList } from '#/data-structures/array-list.js';
 import { SetCollection } from '#/data-structures/set-collection.js';
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import { hardwareConcurrency } from '#/environment.js';
 import type { Logger } from '#/logger/index.js';
 import { isDefined } from '#/utils/type-guards.js';
@@ -18,7 +16,7 @@ export type PoolOptions = {
    * Dipose used instance on error instead of reusing it.
    * @default false
    */
-  disposeOnError?: boolean
+  disposeOnError?: boolean,
 };
 
 export type PoolUseOptions = {
@@ -27,7 +25,7 @@ export type PoolUseOptions = {
    * Dipose used instance on error instead of reusing it. Overwrites pool instance option
    * @default false
    */
-  disposeOnError?: boolean
+  disposeOnError?: boolean,
 };
 
 export type PoolInstanceFactory<T> = () => T | Promise<T>;
@@ -101,7 +99,7 @@ export class Pool<T extends object> implements AsyncDisposable {
       await this.freeInstances.$onItems;
     }
 
-    return this.get();
+    return await this.get();
   }
 
   async release(instance: T): Promise<void> {
@@ -165,10 +163,10 @@ export class Pool<T extends object> implements AsyncDisposable {
   }
 
   async dispose(): Promise<void> {
-    return this[disposeAsync]();
+    await this[Symbol.asyncDispose]();
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     this.disposed = true;
 
     if (this.length == 0) {

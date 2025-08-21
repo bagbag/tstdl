@@ -9,14 +9,20 @@ A powerful, isomorphic, middleware-based HTTP client and server library for Type
   - [HTTP Client](#http-client)
   - [HTTP Server](#http-server)
 - [Usage](#usage)
-  - [Client Setup](#client-setup)
-  - [Making Requests](#making-requests)
-  - [Handling Responses](#handling-responses)
-  - [Using Middleware](#using-middleware)
-  - [Error Handling](#error-handling)
-  - [Server Setup](#server-setup)
-  - [Handling Incoming Requests](#handling-incoming-requests)
+  - [Client](#client)
+    - [Client Setup](#client-setup)
+    - [Making Requests](#making-requests)
+    - [Handling Responses](#handling-responses)
+    - [Using Middleware](#using-middleware)
+    - [Bypassing Caches](#bypassing-caches)
+    - [Error Handling](#error-handling)
+  - [Server](#server)
+    - [Server Setup](#server-setup)
+    - [Handling Incoming Requests](#handling-incoming-requests)
 - [API Summary](#api-summary)
+  - [Configuration](#configuration)
+  - [Client Classes](#client-classes)
+  - [Server Classes](#server-classes)
 
 ## Features
 
@@ -35,7 +41,7 @@ A powerful, isomorphic, middleware-based HTTP client and server library for Type
 
 The client is designed around three main components: `HttpClient`, `HttpClientAdapter`, and `HttpClientMiddleware`.
 
-- **`HttpClient`**: The primary interface for making requests. It manages configuration, default headers, and the middleware pipeline. It offers convenience methods like `getJson()`, `post()`, etc.
+- **`HttpClient`**: The primary interface for making requests. It manages configuration, default headers, and the middleware pipeline. It offers convenience methods like `getJson()`, `post()`, etc. The flow of a request is: `HttpClient` -> `Middleware Chain` -> `HttpClientAdapter`.
 
 - **`HttpClientAdapter`**: The "engine" that performs the actual HTTP call. The library is decoupled from any specific implementation. For Node.js, the `UndiciHttpClientAdapter` is provided, which uses the high-performance `undici` library. You must configure an adapter for the client to function.
 
@@ -57,71 +63,116 @@ The server implementation is based on the `HttpServer` abstract class.
 
 ## Usage
 
-### Client Setup
+### Client
+
+#### Client Setup
 
 First, configure the `HttpClient` with an adapter. In a Node.js environment, use the `UndiciHttpClientAdapter`.
 
 ```typescript
-import { HttpClient, configureUndiciHttpClientAdapter } from '@tstdl/base/http';
+import { HttpClient, configureHttpClient, configureUndiciHttpClientAdapter } from '@tstdl/base/http';
 import { Injector } from '@tstdl/base/injector';
 
 // Configure and register the Undici adapter
 configureUndiciHttpClientAdapter({ register: true });
 
-// Get an instance of the client
+// Configure the HttpClient with a base URL
+configureHttpClient({
+  baseUrl: 'https://api.example.com'
+});
+
+// Get an instance of the client from the DI container
 const httpClient = Injector.resolve(HttpClient);
 ```
 
-### Making Requests
+#### Making Requests
 
 The `HttpClient` provides intuitive methods for all common HTTP verbs. It also supports automatic parameter mapping.
 
+**Simple GET Request**
 ```typescript
-// Simple GET request
-const response = await httpClient.get('https://api.example.com/items');
+const response = await httpClient.get('/users');
+const users = await response.body.readAsJson();
+```
 
-// GET request with query parameters
-const user = await httpClient.getJson('https://api.example.com/users', {
+**GET with Query Parameters**
+You can provide query parameters via the `query` object or use automatic mapping with the `parameters` object.
+```typescript
+// Using the `query` object
+const user = await httpClient.getJson('/users', {
   query: { id: 123 }
 });
-console.log(user.name);
 
-// Automatic parameter mapping
-// Maps `userId` to the URL path and `active` to the query string.
-const user = await httpClient.getJson('https://api.example.com/users/:userId', {
-  parameters: {
-    userId: 123,
-    active: true
-  }
+// Using automatic parameter mapping
+const products = await httpClient.getJson('/products', {
+  parameters: { category: 'electronics', inStock: true }
 });
-// Resulting URL: https://api.example.com/users/123?active=true
+// Resulting URL: /products?category=electronics&inStock=true
+```
 
-// POST request with a JSON body
-const newItem = await httpClient.postJson('https://api.example.com/items', {
-  body: {
-    json: { name: 'New Item', value: 42 }
-  }
+**URL Path Parameters**
+```typescript
+// Maps `userId` to the URL path segment.
+const user = await httpClient.getJson('/users/:userId', {
+  parameters: { userId: 'abc-123' }
+});
+// Resulting URL: /users/abc-123
+```
+
+**POST with JSON Body**
+```typescript
+const newProduct = { name: 'Super Widget', price: 99.99 };
+const createdProduct = await httpClient.postJson('/products', {
+  body: { json: newProduct }
 });
 ```
 
-### Handling Responses
+**POST with Form Data**
+```typescript
+// for application/x-www-form-urlencoded
+const response = await httpClient.post('/login', {
+  body: {
+    form: {
+      username: 'test',
+      password: 'password123'
+    }
+  }
+});
 
-The `HttpClientResponse` object contains the status, headers, and a `body` property of type `HttpBody` for easy content access.
+// for multipart/form-data
+const formData = new FormData();
+formData.append('username', 'testuser');
+formData.append('avatar', new Blob(['...file content...']), 'avatar.jpg');
+
+await httpClient.post('/users/profile-picture', {
+  body: { formData }
+});
+```
+
+#### Handling Responses
+
+The `HttpClientResponse` object contains the status, headers, and a `body` property of type `HttpBody` for easy content access. The body can only be read once.
 
 ```typescript
-const response = await httpClient.get('https://api.example.com/items/1');
+const response = await httpClient.get('/products/1');
 
 console.log(response.statusCode); // 200
 console.log(response.headers.contentType); // 'application/json'
 
-// Read the body as a specific type. The body can only be read once.
+// Read the body based on its type
 if (response.statusCode == 200) {
-  const item = await response.body.readAsJson();
+  const item = await response.body.readAsJson(); // or .readAsText(), .readAsBuffer(), ...
   console.log(item);
+}
+
+// Streaming a response body
+const stream = response.body.readAsBinaryStream();
+for await (const chunk of stream) {
+  console.log(`Received ${chunk.length} bytes`);
 }
 ```
 
-### Using Middleware
+#### Using Middleware
 
 Middleware can be used to add common functionality like authentication or logging.
 
@@ -136,13 +187,6 @@ import {
 } from '@tstdl/base/http';
 import { Injector } from '@tstdl/base/injector';
 
-// A simple logging middleware
-const loggingMiddleware: HttpClientMiddleware = async (context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext) => {
-  console.log(`Sending ${context.request.method} request to ${context.request.url}`);
-  await next(); // Pass control to the next middleware
-  console.log(`Received response with status ${context.response!.statusCode}`);
-};
-
 // An authentication middleware
 const authMiddleware: HttpClientMiddleware = async (context: HttpClientMiddlewareContext, next: HttpClientMiddlewareNext) => {
   context.request.headers.set('Authorization', 'Bearer my-secret-token');
@@ -151,14 +195,30 @@ const authMiddleware: HttpClientMiddleware = async (context: HttpClientMiddlewar
 
 configureUndiciHttpClientAdapter();
 configureHttpClient({
-  middleware: [loggingMiddleware, authMiddleware]
+  middleware: [authMiddleware]
 });
 
 const httpClient = Injector.resolve(HttpClient);
-await httpClient.get('https://api.example.com/secure-data');
+await httpClient.get('/secure-data');
 ```
 
-### Error Handling
+#### Bypassing Caches
+
+Some adapters or middleware may implement caching. To bypass this for a specific request, you can use the `bustCache` token in the request context.
+
+```typescript
+import { bustCache, HttpClient } from '@tstdl/base/http';
+import { Injector } from '@tstdl/base/injector';
+
+const httpClient = Injector.resolve(HttpClient);
+
+// This request will signal to bypass any caching layers
+const freshData = await httpClient.getJson('/real-time-data', {
+  context: { [bustCache]: true }
+});
+```
+
+#### Error Handling
 
 By default, the client throws an `HttpError` for responses with non-2xx status codes.
 
@@ -166,11 +226,11 @@ By default, the client throws an `HttpError` for responses with non-2xx status c
 import { HttpError } from '@tstdl/base/http';
 
 try {
-  await httpClient.get('https://api.example.com/not-found');
+  await httpClient.get('/not-found');
 } catch (error) {
   if (error instanceof HttpError) {
-    console.error(`HTTP Error: ${error.reason}`);
-    console.error(`Status: ${error.response?.statusCode}`);
+    console.error(`HTTP Error: ${error.reason}`); // e.g., 'Not Found'
+    console.error(`Status: ${error.response?.statusCode}`); // 404
 
     // The raw response instance is available on the error for inspection
     const bodyText = await error.responseInstance?.body.readAsText();
@@ -181,12 +241,14 @@ try {
 }
 ```
 
-### Server Setup
+### Server
+
+#### Server Setup
 
 Configure and run the `HttpServer`.
 
 ```typescript
-import { configureNodeHttpServer, HttpServer } from '@tstdl/base/http';
+import { configureNodeHttpServer, HttpServer } from '@tstdl/base/http/server';
 import { Injector } from '@tstdl/base/injector';
 
 // Register the Node.js server implementation
@@ -198,7 +260,7 @@ const httpServer = Injector.resolve(HttpServer);
 httpServer.listen(3000);
 ```
 
-### Handling Incoming Requests
+#### Handling Incoming Requests
 
 Loop through incoming requests using the async iterator pattern.
 
@@ -207,7 +269,7 @@ import {
   HttpServer,
   HttpServerResponse,
   type HttpServerRequestContext
-} from '@tstdl/base/http';
+} from '@tstdl/base/http/server';
 import { Injector } from '@tstdl/base/injector';
 
 const httpServer = Injector.resolve(HttpServer);
@@ -226,21 +288,26 @@ async function main(): Promise<void> {
 
 async function handleRequest(context: HttpServerRequestContext): Promise<void> {
   const { request, respond } = context;
-  const url = request.url;
+  const { url, method } = request;
 
-  if (url.pathname == '/hello' && request.method == 'GET') {
-    const name = request.query.tryGetSingle('name') ?? 'World';
-    const response = new HttpServerResponse({
+  if (url.pathname == '/users' && method == 'GET') {
+    const users = [{ id: 1, name: 'John Doe' }];
+    await respond(new HttpServerResponse({
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: {
-        json: { message: `Hello, ${name}!` }
-      }
-    });
-    await respond(response);
+      body: { json: users }
+    }));
+  } else if (url.pathname == '/users' && method == 'POST') {
+    const newUser = await request.body.readAsJson();
+    console.log('New user:', newUser);
+    await respond(new HttpServerResponse({ statusCode: 201 }));
+  } else if (url.pathname == '/redirect') {
+    await respond(HttpServerResponse.redirect('/users'));
   } else {
-    const response = new HttpServerResponse({ statusCode: 404 });
-    await respond(response);
+    await respond(new HttpServerResponse({
+      statusCode: 404,
+      body: { text: 'Not Found' }
+    }));
   }
 }
 
@@ -251,45 +318,50 @@ main();
 
 ### Configuration
 
-| Function | Arguments | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| **`configureHttpClient`** | `config: HttpClientModuleConfig` | `void` | Configures the global `HttpClient`, its adapter, and middleware. |
-| **`configureUndiciHttpClientAdapter`** | `options?: UndiciHttpClientAdapterOptions & { register?: boolean }` | `void` | Configures and optionally registers the `UndiciHttpClientAdapter`. |
-| **`configureNodeHttpServer`** | `configuration?: Partial<NodeHttpServerConfiguration>` | `void` | Registers the `NodeHttpServer` as the default `HttpServer`. |
+| Function | Signature | Description |
+| :--- | :--- | :--- |
+| **`configureHttpClient`** | `(config: HttpClientModuleConfig) => void` | Configures the global `HttpClient`, its adapter, and middleware. |
+| **`configureUndiciHttpClientAdapter`** | `(options?: UndiciHttpClientAdapterOptions & { register?: boolean }) => void` | Configures and optionally registers the `UndiciHttpClientAdapter`. |
+| **`configureNodeHttpServer`** | `(configuration?: Partial<NodeHttpServerConfiguration>) => void` | Registers the `NodeHttpServer` as the default `HttpServer`. |
 
-### Client
+### Client Classes
 
-| Class / Method | Arguments | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| **`HttpClient.get`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a GET request. |
-| **`HttpClient.getJson`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<T>` | Performs a GET request and parses the response body as JSON. |
-| **`HttpClient.post`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a POST request. |
-| **`HttpClient.put`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a PUT request. |
-| **`HttpClient.patch`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a PATCH request. |
-| **`HttpClient.delete`** | `url: string`, `options?: HttpClientRequestOptions` | `Promise<HttpClientResponse>` | Performs a DELETE request. |
-| **`HttpClientRequest.url`** | | `string` | The full request URL. |
-| **`HttpClientRequest.method`** | | `HttpMethod` | The HTTP method. |
-| **`HttpClientRequest.headers`** | | `HttpHeaders` | Request headers map. |
-| **`HttpClientRequest.body`** | | `HttpRequestBody \| undefined` | The request body. |
-| **`HttpClientResponse.statusCode`** | | `number` | The HTTP status code. |
-| **`HttpClientResponse.headers`** | | `HttpHeaders` | Response headers map. |
-| **`HttpClientResponse.body`** | | `HttpBody` | The response body handler. |
-| **`HttpBody.readAsBuffer`** | `options?: ReadBodyOptions` | `Promise<Uint8Array>` | Reads the body as a buffer. |
-| **`HttpBody.readAsText`** | `options?: ReadBodyOptions` | `Promise<string>` | Reads the body as a string. |
-| **`HttpBody.readAsJson`** | `options?: ReadBodyAsJsonOptions` | `Promise<T>` | Reads and parses the body as JSON. |
-| **`HttpBody.readAsBinaryStream`** | `options?: ReadBodyOptions` | `ReadableStream<Uint8Array>` | Reads the body as a binary stream. |
+| Class / Method / Property | Signature / Type | Description |
+| :--- | :--- | :--- |
+| `HttpClient` | `class` | The main entry point for making HTTP requests. |
+| **`getJson<T>`** | `(url: string, options?: HttpClientRequestOptions) => Promise<T>` | Performs a GET request and parses the response body as JSON. |
+| **`postJson<T>`** | `(url: string, options?: HttpClientRequestOptions) => Promise<T>` | Performs a POST request and parses the response body as JSON. |
+| **`request`** | `(method: HttpMethod, url: string, options?: HttpClientRequestOptions) => Promise<HttpClientResponse>` | Performs a request with the specified method. |
+| `HttpClientRequest` | `class` | Represents an outgoing HTTP request. |
+| **`url`** | `string` | The full request URL. |
+| **`method`** | `HttpMethod` | The HTTP method (e.g., 'GET', 'POST'). |
+| **`headers`** | `HttpHeaders` | A map-like object for request headers. |
+| **`body`** | `HttpRequestBody \| undefined` | The request body, supporting various types. |
+| **`abort()`** | `() => void` | Aborts the request. |
+| `HttpClientResponse` | `class` | Represents an incoming HTTP response. |
+| **`statusCode`** | `number` | The HTTP status code. |
+| **`headers`** | `HttpHeaders` | A map-like object for response headers. |
+| **`body`** | `HttpBody` | The response body handler. |
+| **`close()`** | `() => void` | Closes the response and releases resources. |
+| `HttpBody` | `class` | Provides methods to read the response body in various formats. |
+| **`readAsBuffer()`** | `() => Promise<Uint8Array>` | Reads the body as a buffer. |
+| **`readAsText()`** | `() => Promise<string>` | Reads the body as a string. |
+| **`readAsJson<T>()`** | `() => Promise<T>` | Reads and parses the body as JSON. |
+| **`readAsBinaryStream()`** | `() => ReadableStream<Uint8Array>` | Reads the body as a binary stream. |
 
-### Server
+### Server Classes
 
-| Class / Method | Arguments | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| **`HttpServer.listen`** | `port: number` | `Promise<void>` | Starts listening on the given port. |
-| **`HttpServer.close`** | `timeout: number` | `Promise<void>` | Stops the server gracefully. |
-| **`HttpServer.[Symbol.asyncIterator]`** | | `AsyncIterator<HttpServerRequestContext>` | Iterates over incoming requests. |
-| **`HttpServerRequest.url`** | | `URL` | The parsed URL of the request. |
-| **`HttpServerRequest.method`** | | `HttpMethod` | The HTTP method. |
-| **`HttpServerRequest.headers`** | | `HttpHeaders` | Incoming request headers. |
-| **`HttpServerRequest.body`** | | `HttpBody` | The request body handler. |
-| **`HttpServerRequest.ip`** | | `string` | The client's IP address. |
-| **`HttpServerResponse.constructor`** | `options?: HttpServerResponseOptions` | `HttpServerResponse` | Creates a new response object. |
-| **`HttpServerResponse.redirect`** | `url: string`, `options?: HttpServerResponseOptions` | `HttpServerResponse` | Creates a redirect response (303). |
+| Class / Method / Property | Signature / Type | Description |
+| :--- | :--- | :--- |
+| `HttpServer` | `abstract class` | An async iterable server for handling HTTP requests. |
+| **`listen`** | `(port: number) => Promise<void>` | Starts listening on the given port. |
+| **`close`** | `(timeout: number) => Promise<void>` | Stops the server gracefully within a timeout. |
+| `HttpServerRequest` | `class` | Represents an incoming HTTP request on the server. |
+| **`url`** | `URL` | The parsed URL of the request. |
+| **`method`** | `HttpMethod` | The HTTP method. |
+| **`headers`** | `HttpHeaders` | Incoming request headers. |
+| **`body`** | `HttpBody` | The request body handler. |
+| **`ip`** | `string` | The client's IP address. |
+| `HttpServerResponse` | `class` | Represents an outgoing HTTP response from the server. |
+| **`constructor`** | `(options?: HttpServerResponseOptions) => HttpServerResponse` | Creates a new response object. |
+| **`redirect`** | `(url: string, options?: HttpServerResponseOptions) => HttpServerResponse` | Creates a redirect response (303). |

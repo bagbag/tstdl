@@ -20,7 +20,7 @@ A powerful and flexible TypeScript wrapper for Google's Generative AI (Gemini) m
 
 - **Unified API:** Seamlessly switch between Google Generative AI and Vertex AI endpoints with a single configuration.
 - **Content Generation:** Simple and streaming APIs for text and multi-modal content generation.
-- **Structured JSON Output:** Enforce JSON output that conforms to your defined schemas.
+- **Structured JSON Output:** Enforce JSON output that conforms to your defined schemas from `@tstdl/base/schema`.
 - **Robust Function Calling:** Define functions with schemas and handlers, with automatic execution of function calls from the model.
 - **Conversational State:** `AiSession` class for easily managing multi-turn conversation history.
 - **File Management:** Asynchronous file uploading and processing for use in multi-modal prompts, with support for Google's File API and Google Cloud Storage (for Vertex).
@@ -129,24 +129,23 @@ import { AiService } from '@tstdl/base/ai';
 
 const aiService = inject(AiService);
 
-const recipeSchema = object({
-  name: string(),
-  ingredients: array(string()),
-  steps: array(string())
+const productSchema = object({
+  name: string({ description: 'The name of the product.' }),
+  features: array(string({ description: 'A key feature of the product.' }))
 });
 
 const result = await aiService.generate({
   model: 'gemini-2.5-flash',
-  generationSchema: recipeSchema,
+  generationSchema: productSchema,
   contents: [{
     role: 'user',
-    parts: [{ text: 'Provide a simple recipe for pancakes.' }]
+    parts: [{ text: 'Generate a product description for a new smart pet feeder.' }]
   }]
 });
 
-// result.json is fully typed according to recipeSchema
-console.log('Recipe:', result.json.name);
-result.json.ingredients.forEach((ingredient) => console.log(`- ${ingredient}`));
+// result.json is fully typed according to productSchema
+console.log('Product:', result.json.name);
+result.json.features.forEach((feature) => console.log(`- ${feature}`));
 ```
 
 ### Function Calling
@@ -227,10 +226,10 @@ import { AiService, type FileInput } from '@tstdl/base/ai';
 const aiService = inject(AiService);
 
 // Create a Blob from a file buffer
-const imageBlob: FileInput = new Blob([readFileSync('./my-image.png')], { type: 'image/png' });
+const imageBlob: FileInput = new Blob([readFileSync('./car-image.png')], { type: 'image/png' });
 
 // Or provide a path directly (only works in Node.js environments)
-const docPath: FileInput = { path: './my-document.pdf', mimeType: 'application/pdf' };
+const docPath: FileInput = { path: './car-manual.pdf', mimeType: 'application/pdf' };
 
 // Process the file (uploads it to Google's service)
 const imagePart = await aiService.processFile(imageBlob);
@@ -241,7 +240,7 @@ const result = await aiService.generate({
   contents: [{
     role: 'user',
     parts: [
-      { text: 'What is in this image?' },
+      { text: 'What is the make of the car in this image?' },
       imagePart // Use the file part here
     ]
   }]
@@ -273,6 +272,7 @@ The primary service for all AI interactions.
 | `callFunctionsStream` | `options: CallFunctionsOptions<T>` | `SpecializedGenerationResultGenerator<...>` | A streaming version of `callFunctions`. |
 | `processFile` | `fileInput: FileInput` | `Promise<FileContentPart>` | Uploads and processes a single file for use in prompts. |
 | `processFiles` | `fileInputs: FileInput[]` | `Promise<FileContentPart[]>` | Uploads and processes multiple files in parallel. |
+| `getFileById` | `id: string` | `FileContentPart` | Creates a file content part from a previously processed file ID. |
 
 ### `AiSession`
 

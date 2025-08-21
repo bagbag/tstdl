@@ -6,15 +6,17 @@ A flexible, RxJS-based message bus module for in-process and cross-context commu
 
 - [Features](#features)
 - [Core Concepts](#core-concepts)
+  - [Implementations](#implementations)
   - [MessageBus](#messagebus)
+  - [MessageBusProvider](#messagebusprovider)
   - [Channels](#channels)
-  - [Providers and Implementations](#providers-and-implementations)
   - [Message Observables](#message-observables)
 - [Usage](#usage)
   - [1. Configuration](#1-configuration)
   - [2. Injecting a Message Bus](#2-injecting-a-message-bus)
   - [3. Publishing Messages](#3-publishing-messages)
   - [4. Subscribing to Messages](#4-subscribing-to-messages)
+  - [Example: Cross-Tab Communication](#example-cross-tab-communication)
   - [5. Cleanup](#5-cleanup)
 - [API Summary](#api-summary)
 
@@ -32,34 +34,36 @@ A flexible, RxJS-based message bus module for in-process and cross-context commu
 
 ## Core Concepts
 
+### Implementations
+
+The module offers two primary implementations tailored for different communication scopes. The choice of implementation is determined by which configuration function you call at startup.
+
+- **`LocalMessageBus`**
+  - **Use Case**: Communication within a single JavaScript execution context (e.g., a single browser tab or a Node.js application).
+  - **Mechanism**: Uses a shared in-memory RxJS `Subject` for each channel, making it highly efficient for in-process messaging.
+
+- **`BroadcastChannelMessageBus`**
+  - **Use Case**: Communication between different browsing contexts of the same origin (e.g., synchronizing state across multiple open tabs).
+  - **Mechanism**: Wraps the standard web `BroadcastChannel` API, allowing different tabs or windows to communicate.
+
 ### MessageBus
 
 The `MessageBus<T>` is the core abstract class. It represents a communication channel for messages of type `T`. It provides methods to publish messages and observables to subscribe to them. Each `MessageBus` instance is tied to a specific named channel.
 
+### MessageBusProvider
+
+The `MessageBusProvider` is a factory responsible for creating and managing `MessageBus` instances for each channel. When you inject a `MessageBus`, this provider ensures that all requests for the same channel share the appropriate underlying resource (like a `Subject` or a `BroadcastChannel` instance).
+
 ### Channels
 
 Channels are simple strings that act as identifiers for a message stream. Messages published to a channel are only received by subscribers to that same channel. This allows multiple, independent communication streams to coexist within the same application.
-
-### Providers and Implementations
-
-The module provides two concrete implementations of `MessageBus`, each with a corresponding provider for dependency injection.
-
-- **`LocalMessageBusProvider` & `LocalMessageBus`**
-  - **Use Case**: Communication within a single JavaScript execution context (e.g., a single browser tab or Node.js application).
-  - **Mechanism**: Uses a shared in-memory RxJS `Subject` for each channel. This is highly efficient for in-process messaging.
-
-- **`BroadcastChannelMessageBusProvider` & `BroadcastChannelMessageBus`**
-  - **Use Case**: Communication between different browsing contexts of the same origin (e.g., synchronizing state across multiple open tabs).
-  - **Mechanism**: Wraps the standard web `BroadcastChannel` API.
-
-The `MessageBusProvider` is a factory responsible for creating and managing bus instances for each channel, ensuring that all requests for the same channel share the appropriate underlying resource.
 
 ### Message Observables
 
 Each `MessageBus` instance exposes two distinct RxJS observables:
 
 - `messages$: Observable<T>`: Emits messages published by **other** instances on the same channel. This is useful for reacting to external events, for example, a state change triggered in another browser tab.
-- `allMessages$: Observable<T>`: Emits **all** messages on the channel, including those published by the current instance itself. This is useful when you want to react to a message regardless of its origin, such as for logging or state updates.
+- `allMessages$: Observable<T>`: Emits **all** messages on the channel, including those published by the current instance itself. This is useful when you want to react to a message regardless of its origin, such as for logging or updating the UI that triggered the action.
 
 ## Usage
 
@@ -94,10 +98,10 @@ import { inject } from '@tstdl/base/injector';
 import { MessageBus } from '@tstdl/base/message-bus';
 
 // Define the type of messages for your channel
-type UserEvent = { type: 'login'; userId: string } | { type: 'logout' };
+type ProductEvent = { type: 'added-to-cart'; productId: string };
 
-class UserSession {
-  private readonly userEventBus = inject(MessageBus<UserEvent>, 'user-events');
+class ProductService {
+  private readonly productEventBus = inject(MessageBus<ProductEvent>, 'product-events');
 
   // ...
 }
@@ -108,11 +112,20 @@ class UserSession {
 Use the `publish()` or `publishAndForget()` methods to send messages to the channel.
 
 ```typescript
-// Publish a message and wait for the operation to complete
-await userEventBus.publish({ type: 'login', userId: 'usr-123' });
+class ProductService {
+  private readonly productEventBus = inject(MessageBus<ProductEvent>, 'product-events');
 
-// Publish a message without waiting (fire and forget)
-userEventBus.publishAndForget({ type: 'logout' });
+  async addProductToCart(productId: string): Promise<void> {
+    // Publish a message and wait for the operation to complete
+    await this.productEventBus.publish({ type: 'added-to-cart', productId });
+    console.log('Product event published.');
+  }
+
+  removeProductFromCart(productId: string): void {
+    // Publish a message without waiting (fire and forget)
+    this.productEventBus.publishAndForget({ type: 'removed-from-cart', productId });
+  }
+}
 ```
 
 ### 4. Subscribing to Messages
@@ -122,27 +135,69 @@ Subscribe to the `messages$` or `allMessages$` observables to receive and react 
 ```typescript
 import { Subscription } from 'rxjs';
 
-const subscriptions = new Subscription();
+class CartNotificationService {
+  private readonly productEventBus = inject(MessageBus<ProductEvent>, 'product-events');
+  private readonly subscription = new Subscription();
 
-// Listen to login/logout events from *other* browser tabs or contexts
-const externalSub = userEventBus.messages$.subscribe((event) => {
-  if (event.type === 'login') {
-    console.log(`User ${event.userId} logged in from another tab.`);
-    // e.g., refresh shared session state
+  constructor() {
+    // Listen to *all* events, including those published by this instance, to update the UI
+    const sub = this.productEventBus.allMessages$.subscribe((event) => {
+      console.log('A product event occurred:', event);
+      // e.g., show a toast notification
+    });
+
+    this.subscription.add(sub);
   }
-});
 
-// Listen to *all* events, including those published by this instance
-const allSub = userEventBus.allMessages$.subscribe((event) => {
-  console.log('A user event occurred:', event);
-  // e.g., update local UI state
-});
+  destroy(): void {
+    this.subscription.unsubscribe();
+  }
+}
+```
 
-subscriptions.add(externalSub);
-subscriptions.add(allSub);
+### Example: Cross-Tab Communication
 
-// To clean up later:
-// subscriptions.unsubscribe();
+This example shows how `BroadcastChannelMessageBus` can synchronize a user's session status across multiple browser tabs.
+
+```typescript
+// 1. Configure for cross-tab communication at startup
+// configureBroadcastChannelMessageBus();
+
+// 2. Define the message type
+type SessionEvent = { type: 'logout' };
+
+// 3. In your authentication service (or similar)
+class AuthService {
+  private readonly sessionBus = inject(MessageBus<SessionEvent>, 'session-channel');
+
+  async logout(): Promise<void> {
+    // ... perform logout logic ...
+    await this.sessionBus.publish({ type: 'logout' });
+  }
+}
+
+// 4. In a root component or service that manages UI state
+class SessionWatcher {
+  private readonly sessionBus = inject(MessageBus<SessionEvent>, 'session-channel');
+  private readonly subscription = new Subscription();
+
+  constructor() {
+    // Listen only to messages from *other* tabs
+    const sub = this.sessionBus.messages$.subscribe((event) => {
+      if (event.type === 'logout') {
+        console.log('Logout event received from another tab. Redirecting to login page.');
+        // Redirect user to the login page
+        window.location.href = '/login';
+      }
+    });
+
+    this.subscription.add(sub);
+  }
+
+  destroy(): void {
+    this.subscription.unsubscribe();
+  }
+}
 ```
 
 ### 5. Cleanup
@@ -152,8 +207,11 @@ subscriptions.add(allSub);
 ```typescript
 import { disposeAsync } from '@tstdl/base/disposable';
 
-// Assuming userEventBus is no longer needed
-await disposeAsync(userEventBus);
+const bus = new LocalMessageBus(...);
+// ... use the bus ...
+
+// When it's no longer needed
+await bus[Symbol.asyncDispose]();
 ```
 
 If the bus is managed by a DI container, this cleanup is often handled automatically based on the component's lifecycle.
@@ -162,20 +220,26 @@ If the bus is managed by a DI container, this cleanup is often handled automatic
 
 ### `MessageBus<T>`
 
-| Member               | Signature / Type                | Description                                                                        |
-| :------------------- | :------------------------------ | :--------------------------------------------------------------------------------- |
-| `messages$`          | `Observable<T>`                 | An observable for messages received from other instances.                          |
-| `allMessages$`       | `Observable<T>`                 | An observable for all messages, including those published by the current instance. |
-| `publish()`          | `(message: T) => Promise<void>` | Asynchronously publishes a message to the channel.                                 |
-| `publishAndForget()` | `(message: T) => void`          | Publishes a message without awaiting completion (fire and forget).                 |
-| `[disposeAsync]()`   | `() => Promise<void>`           | Disposes the message bus and releases its resources.                               |
+The core abstract class for a message bus instance.
+
+| Member | Signature / Type | Description |
+| :--- | :--- | :--- |
+| `messages$` | `Observable<T>` | An observable for messages received from other instances. |
+| `allMessages$` | `Observable<T>` | An observable for all messages, including those published by the current instance. |
+| `publish()` | `(message: T) => Promise<void>` | Asynchronously publishes a message to the channel. |
+| `publishAndForget()` | `(message: T) => void` | Publishes a message without awaiting completion (fire and forget). |
+| `[disposeAsync]()` | `() => Promise<void>` | Disposes the message bus and releases its resources. |
 
 ### Providers
 
-- **`LocalMessageBusProvider`**: Provides `LocalMessageBus` instances for same-context communication.
-- **`BroadcastChannelMessageBusProvider`**: Provides `BroadcastChannelMessageBus` instances for cross-context communication.
+| Class | Description |
+| :--- | :--- |
+| `LocalMessageBusProvider` | Provides `LocalMessageBus` instances for same-context communication. |
+| `BroadcastChannelMessageBusProvider` | Provides `BroadcastChannelMessageBus` instances for cross-context communication. |
 
 ### Configuration Functions
 
-- **`configureLocalMessageBus(): void`**: Registers `LocalMessageBusProvider` as the default provider for `MessageBus`.
-- **`configureBroadcastChannelMessageBus(): void`**: Registers `BroadcastChannelMessageBusProvider` as the default provider for `MessageBus`.
+| Function | Description |
+| :--- | :--- |
+| `configureLocalMessageBus()` | Registers `LocalMessageBusProvider` as the default provider for `MessageBus`. |
+| `configureBroadcastChannelMessageBus()` | Registers `BroadcastChannelMessageBusProvider` as the default provider for `MessageBus`. |

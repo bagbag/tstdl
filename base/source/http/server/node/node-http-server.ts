@@ -6,7 +6,6 @@ import { bindNodeCallback, share } from 'rxjs';
 import { match, P } from 'ts-pattern';
 
 import { CancellationToken } from '#/cancellation/index.js';
-import { disposeAsync, type AsyncDisposable } from '#/disposable/index.js';
 import { HttpHeaders } from '#/http/http-headers.js';
 import { HttpQuery } from '#/http/http-query.js';
 import type { HttpMethod } from '#/http/types.js';
@@ -45,7 +44,7 @@ export class NodeHttpServer extends HttpServer<NodeHttpServerContext> implements
     this.#httpServer.on('request', (request: Http.IncomingMessage, response: Http.ServerResponse) => this.#requestIterable.feed({ request, response }));
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     if (this.#httpServer.listening) {
       await this.close(3000);
       this.#requestIterable.end();

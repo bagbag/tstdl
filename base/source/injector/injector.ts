@@ -1,8 +1,7 @@
 import { CancellationSignal, CancellationToken } from '#/cancellation/index.js';
 import { CircularBuffer } from '#/data-structures/circular-buffer.js';
 import { MultiKeyMap } from '#/data-structures/multi-key-map.js';
-import type { AsyncDisposeHandler } from '#/disposable/async-disposer.js';
-import { isSyncOrAsyncDisposable, type AsyncDisposable } from '#/disposable/disposable.js';
+import { isSyncOrAsyncDisposable } from '#/disposable/disposable.js';
 import { DeferredPromise } from '#/promise/deferred-promise.js';
 import { reflectionRegistry, type ConstructorParameterMetadata } from '#/reflection/registry.js';
 import type { AbstractConstructor, Constructor, OneOrMany, Record, TypedOmit, WritableOneOrMany } from '#/types/index.js';
@@ -21,6 +20,8 @@ import { injectMetadataSymbol, injectableMetadataSymbol } from './symbols.js';
 import { getTokenName, type InjectionToken } from './token.js';
 import type { InjectMetadata } from './type-info.js';
 import type { AfterResolveContext, RegistrationOptions, ResolveContext, ResolveContextData, ResolveOptions } from './types.js';
+
+export type DisposeHandler = Disposable | AsyncDisposable | (() => PromiseLike<void> | void);
 
 type ResolutionTag = symbol;
 
@@ -111,7 +112,7 @@ export class Injector implements AsyncDisposable {
     this.register(Injector, { useValue: this });
     this.register(CancellationSignal, { useValue: this.#disposeToken.signal });
 
-    this.#addDisposeHandler = (handler: AsyncDisposeHandler): void => {
+    this.#addDisposeHandler = (handler: DisposeHandler): void => {
       if (isSyncOrAsyncDisposable(handler)) {
         this.#disposableStack.use(handler);
       }

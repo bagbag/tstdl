@@ -7,6 +7,8 @@ A TypeScript module for robust password strength estimation, combining the advan
 - [Features](#features)
 - [Core Concepts](#core-concepts)
 - [Usage](#usage)
+  - [Basic Password Check](#basic-password-check)
+  - [Disabling the "Have I Been Pwned" Check](#disabling-the-have-i-been-pwned-check)
 - [API Summary](#api-summary)
 
 ## Features
@@ -33,7 +35,7 @@ The core of the strength estimation comes from the powerful `zxcvbn-ts` library.
 - Repeated characters and sequences (e.g., `aaaa`, `12345`)
 - Dates and common years
 
-Based on this analysis, `zxcvbn-ts` assigns a score from 0 to 4 and provides feedback, which this module translates into localized warnings and suggestions.
+Based on this analysis, `zxcvbn-ts` assigns a score from 0 to 4 and provides feedback, which this module translates into localization keys for warnings and suggestions.
 
 ### 2. "Have I Been Pwned" (HIBP) Check
 
@@ -48,9 +50,9 @@ If a match is found, it means the password has been exposed. In this case, the p
 
 ## Usage
 
-### Basic Example
+### Basic Password Check
 
-Here is a basic example of how to check a password. The `warnings` and `suggestions` in the result are localization keys, which can be used with a localization service to display user-friendly messages.
+This example shows how to check a password and use a localization service to display user-friendly feedback. The `warnings` and `suggestions` in the result are localization keys.
 
 ```typescript
 import { checkPassword, PasswordStrength, englishPasswordCheckLocalization } from '@tstdl/base/password';
@@ -58,15 +60,20 @@ import { LocalizationService } from '@tstdl/base/text';
 
 // Initialize a localization service with the desired language pack
 const localizationService = new LocalizationService([englishPasswordCheckLocalization]);
+localizationService.setLanguage('en');
 
 async function evaluatePassword(password: string) {
   try {
     const result = await checkPassword(password);
 
-    console.log(`Password Strength: ${PasswordStrength[result.strength]}`); // e.g., "Weak"
+    console.log(`Password Strength: ${PasswordStrength[result.strength]} (Score: ${result.strength})`);
 
-    if (result.pwned) {
-      console.log(`This password has been pwned ${result.pwned} times!`);
+    if (result.pwned !== undefined) {
+      if (result.pwned > 0) {
+        console.log(`This password has been pwned ${result.pwned} times!`);
+      } else {
+        console.log('This password was not found in the pwned database.');
+      }
     }
 
     if (result.warnings.length > 0) {
@@ -106,11 +113,11 @@ evaluatePasswordOffline('a-very-secure-offline-password!');
 
 ## API Summary
 
-| Function / Class                   | Arguments / Properties                                                                              | Return Type                    | Description                                                                                    |
-| :--------------------------------- | :-------------------------------------------------------------------------------------------------- | :----------------------------- | :--------------------------------------------------------------------------------------------- |
-| `checkPassword`                    | `password: string`<br>`options?: { checkForPwned?: boolean }`                                       | `Promise<PasswordCheckResult>` | Asynchronously checks password strength using zxcvbn-ts and optionally the HIBP database.      |
-| `haveIBeenPwned`                   | `password: string`                                                                                  | `Promise<number>`              | Checks a password against the HIBP database and returns the number of times it has been pwned. |
-| `PasswordCheckResult`              | `strength: PasswordStrength`<br>`pwned?: number`<br>`warnings: string[]`<br>`suggestions: string[]` | `PasswordCheckResult`          | The result object returned by `checkPassword`. Warnings and suggestions are localization keys. |
-| `PasswordStrength`                 | (Enum)                                                                                              | `enum`                         | An enum representing password strength from `VeryWeak` (0) to `VeryStrong` (4).                |
-| `englishPasswordCheckLocalization` | -                                                                                                   | `PasswordCheckLocalization`    | English localization data for warnings and suggestions.                                        |
-| `germanPasswordCheckLocalization`  | -                                                                                                   | `PasswordCheckLocalization`    | German localization data for warnings and suggestions.                                         |
+| Function / Class | Arguments / Properties | Return Type | Description |
+| :--- | :--- | :--- | :--- |
+| `checkPassword` | `password: string`<br>`options?: { checkForPwned?: boolean }` | `Promise<PasswordCheckResult>` | Asynchronously checks password strength using zxcvbn-ts and optionally the HIBP database. |
+| `haveIBeenPwned` | `password: string` | `Promise<number>` | Checks a password against the HIBP database and returns the number of times it has been pwned. |
+| `PasswordCheckResult` | `strength: PasswordStrength`<br>`pwned?: number`<br>`warnings: string[]`<br>`suggestions: string[]` | `class` | The result object returned by `checkPassword`. Warnings and suggestions are localization keys. |
+| `PasswordStrength` | (Enum) | `enum` | An enum representing password strength from `VeryWeak` (0) to `VeryStrong` (4). |
+| `englishPasswordCheckLocalization` | - | `PasswordCheckLocalization` | English localization data for warnings and suggestions. |
+| `germanPasswordCheckLocalization` | - | `PasswordCheckLocalization` | German localization data for warnings and suggestions. |

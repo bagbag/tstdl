@@ -1,6 +1,5 @@
 import { API_CONTROLLERS, ApiGateway, getApiControllerDefinition } from '#/api/server/index.js';
 import type { CancellationSignal } from '#/cancellation/index.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import { HttpServer } from '#/http/server/http-server.js';
 import { Singleton } from '#/injector/decorators.js';
 import { inject, injectArgument } from '#/injector/inject.js';
@@ -58,7 +57,7 @@ export class WebServerModule extends ModuleBase implements Module, Resolvable<We
     await this.httpServer.listen(this.config.port);
 
     const closePromise = cancellationSignal.$set.then(async () => {
-      await this.httpServer[disposeAsync]();
+      await this.httpServer[Symbol.asyncDispose]();
     });
 
     for await (const context of this.httpServer) {

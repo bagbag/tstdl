@@ -1,7 +1,5 @@
 import type { Browser, BrowserContext, LaunchOptions } from 'playwright';
 
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import { Singleton } from '#/injector/decorators.js';
 import { injectArgument } from '#/injector/inject.js';
 import type { Resolvable, resolveArgumentType } from '#/injector/interfaces.js';
@@ -26,13 +24,13 @@ export type NewBrowserOptions = {
 
   windowSize?: {
     width: number,
-    height: number
+    height: number,
   },
 
   /** @deprecated should be avoided */
   browserArguments?: string[],
 
-  defaultNewContextOptions?: NewBrowserContextOptions
+  defaultNewContextOptions?: NewBrowserContextOptions,
 };
 
 @Singleton()
@@ -44,7 +42,7 @@ export class BrowserService implements AsyncDisposable, Resolvable<BrowserServic
 
   declare readonly [resolveArgumentType]: BrowserServiceArgument;
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.dispose();
   }
 

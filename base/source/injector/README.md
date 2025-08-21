@@ -1,4 +1,4 @@
-# TypeScript Dependency Injection (@tstdl/injector)
+# @tstdl/injector
 
 A powerful, flexible, and type-safe Dependency Injection (DI) framework for TypeScript. It is designed to be ergonomic for developers while offering advanced features to handle complex scenarios like circular dependencies, multiple providers, and asynchronous initialization.
 
@@ -8,11 +8,14 @@ A powerful, flexible, and type-safe Dependency Injection (DI) framework for Type
 - [Core Concepts](#core-concepts)
 - [Usage](#usage)
   - [Basic Setup and Injection](#basic-setup-and-injection)
+  - [Constructor Injection](#constructor-injection)
   - [Using Injection Tokens for Non-Class Dependencies](#using-injection-tokens-for-non-class-dependencies)
   - [Factory Providers for Complex Logic](#factory-providers-for-complex-logic)
+  - [Lifecycle Management](#lifecycle-management)
   - [Asynchronous Initialization with `afterResolve`](#asynchronous-initialization-with-afterresolve)
-  - [Handling Circular Dependencies with `@ForwardRef`](#handling-circular-dependencies-with-forwardref)
+  - [Handling Circular Dependencies with `forwardRef`](#handling-circular-dependencies-with-forwardref)
   - [Injecting Multiple Implementations](#injecting-multiple-implementations)
+  - [Passing Arguments to `resolve`](#passing-arguments-to-resolve)
 - [API Summary](#api-summary)
 
 ## Features
@@ -23,7 +26,7 @@ A powerful, flexible, and type-safe Dependency Injection (DI) framework for Type
 - **Comprehensive Lifecycle Management:** `singleton`, `injector`, `resolution`, and `transient` scopes.
 - **Hierarchical Injectors:** Create scoped contexts using `injector.fork()`.
 - **Injection Tokens:** Support for non-class dependencies (e.g., interfaces, configuration objects) via `injectionToken()`.
-- **Circular Dependency Resolution:** Automatic handling of circular dependencies using `@ForwardRef`.
+- **Circular Dependency Resolution:** Automatic handling of circular dependencies using `forwardRef`.
 - **Asynchronous Initialization:** Perform async setup tasks with `afterResolve` lifecycle hooks.
 - **Programmatic Resolution:** Full control over dependency resolution with `injector.resolve()` and `runInInjectionContext()`.
 
@@ -63,7 +66,7 @@ An "injection context" is active whenever the injector is instantiating a class.
 
 ### Basic Setup and Injection
 
-Mark your classes with `@Injectable()` or `@Singleton()` to make them available for dependency injection. Then, use the `inject()` function in a property initializer.
+Mark your classes with `@Injectable()` or `@Singleton()` to make them available for dependency injection. Then, use the `inject()` function in a property initializer. This is the recommended approach for its clarity and simplicity.
 
 ```typescript
 // services/logger.service.ts
@@ -104,11 +107,27 @@ const injector = new Injector('Root');
 
 // Resolve the top-level service. The injector handles creating all dependencies.
 const userService = injector.resolve(UserService);
-const user = userService.getUser(123);
+userService.getUser(123);
 
 // Output:
 // [LOG]: UserService instantiated.
 // [LOG]: Fetching user 123
+```
+
+### Constructor Injection
+
+While property injection is recommended, constructor injection is also fully supported. The `@Inject()` decorator is only needed if the type cannot be inferred (e.g., for an interface or token).
+
+```typescript
+@Injectable()
+export class ProductService {
+  private readonly logger: LoggerService;
+
+  constructor(logger: LoggerService) {
+    this.logger = logger;
+    this.logger.log('ProductService instantiated via constructor.');
+  }
+}
 ```
 
 ### Using Injection Tokens for Non-Class Dependencies
@@ -142,6 +161,7 @@ class ApiClient {
   // Or use constructor injection with the @Inject() decorator
   constructor(@Inject(API_CONFIG) private readonly configParam: ApiConfig) {
     console.log('API URL:', this.config.url);
+    console.log('API Key from param:', this.configParam.apiKey);
   }
 }
 
@@ -153,35 +173,58 @@ injector.resolve(ApiClient);
 Use a factory function when creation logic is complex or depends on other services.
 
 ```typescript
-import { inject, injectionToken, Injector } from '@tstdl/injector';
+import { inject, injectionToken, Injectable, Injector } from '@tstdl/injector';
+
+// Pretend this is a third-party class
+class ThirdPartyDbClient {
+  constructor(public connectionString: string) {}
+}
 
 const DATABASE_URL = injectionToken<string>('DATABASE_URL');
-const DatabaseClient = injectionToken('DatabaseClient');
+const DATABASE_CLIENT = injectionToken<ThirdPartyDbClient>('DatabaseClient');
 
 const injector = new Injector('Root');
 injector.register(DATABASE_URL, { useValue: 'postgres://user:pass@host:5432/db' });
 
 // The factory can use inject() because it runs in an injection context
-injector.register(DatabaseClient, {
+injector.register(DATABASE_CLIENT, {
   useFactory: () => {
     const url = inject(DATABASE_URL);
-    return new ThirdPartyDbClient(url); // Assumes a setup function
+    console.log(`Creating database client for ${url}`);
+    return new ThirdPartyDbClient(url);
   },
 });
+
+@Injectable()
+class PetService {
+  private readonly dbClient = inject(DATABASE_CLIENT);
+
+  getPetName(): string {
+    return 'Fido';
+  }
+}
+
+injector.resolve(PetService);
 ```
 
-### Constructor Injection
+### Lifecycle Management
 
-While property injection is recommended, constructor injection is also fully supported. The `@Inject()` decorator is only needed if the type cannot be inferred (e.g., for an interface or token).
+Control how many instances of a dependency are created using lifecycles.
 
 ```typescript
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly logger: LoggerService, // Type is a class, no decorator needed
-    @Inject(API_CONFIG) private readonly config: ApiConfig, // Type is a token, @Inject is required
-  ) {}
-}
+import { Injectable, Scoped, Singleton, Injector } from '@tstdl/injector';
+
+@Singleton() // One instance for the entire application
+class AppConfigService { }
+
+@Scoped('injector') // One instance per injector and its children
+class SessionService { }
+
+@Scoped('resolution') // One instance per injector.resolve() resolution tree
+class RequestService { }
+
+@Injectable() // New instance every time ('transient' lifecycle)
+class TransactionService { }
 ```
 
 ### Asynchronous Initialization with `afterResolve`
@@ -213,24 +256,23 @@ const injector = new Injector('Root');
 const dbService = await injector.resolveAsync(DatabaseService);
 ```
 
-### Handling Circular Dependencies with forward refs
+### Handling Circular Dependencies with `forwardRef`
 
-If `ServiceA` depends on `ServiceB`, and `ServiceB` depends on `ServiceA`, the injector can resolve this cycle by using the `forwardRef` option or the `@ForwardRef()` decorator.
+If `ServiceA` depends on `ServiceB`, and `ServiceB` depends on `ServiceA`, the injector can resolve this cycle by using the `forwardRef` option.
 
 ```typescript
 // service-a.ts
 import { inject, Injectable, ForwardRef } from '@tstdl/injector';
 import { ServiceB } from './service-b.js';
 
-// forwardRef breaks the cycle. The injector provides a proxy object
-// initially and replaces it with the real instance once it's available.
-
 @Injectable()
 export class ServiceA {
-  // using inject() with forwardRef
+  // Using inject() with the forwardRef option breaks the cycle.
+  // The injector provides a proxy object initially and replaces it
+  // with the real instance once it's available.
   private readonly serviceB = inject(ServiceB, undefined, { forwardRef: true });
 
-  // using @ForwardRef() decorator
+  // For constructor injection, use the @ForwardRef decorator
   constructor(@ForwardRef(() => ServiceB) public readonly serviceB: ServiceB) {}
 
   doSomething() {
@@ -246,7 +288,7 @@ import { ServiceA } from './service-a.js';
 export class ServiceB {
   private readonly serviceA = inject(ServiceA);
 
-  doSomethingElse() {
+  doSomethingElse(): void {
     /* ... */
   }
 }
@@ -267,15 +309,12 @@ export const PLUGIN_TOKEN = injectionToken<Plugin>('PLUGIN_TOKEN');
 
 @Injectable()
 class PluginA implements Plugin {
-  run() {
-    console.log('PluginA running');
-  }
+  run() { console.log('PluginA running'); }
 }
+
 @Injectable()
 class PluginB implements Plugin {
-  run() {
-    console.log('PluginB running');
-  }
+  run() { console.log('PluginB running'); }
 }
 
 const injector = new Injector('Root');
@@ -294,30 +333,57 @@ class PluginManager {
 injector.resolve(PluginManager).runPlugins();
 ```
 
+### Passing Arguments to `resolve`
+
+You can pass an `argument` when resolving a dependency. This argument is available throughout the resolution chain via `injectArgument()`.
+
+```typescript
+import { injectArgument, Injectable, Injector, Resolvable } from '@tstdl/injector';
+
+type UserContext = { userId: string };
+
+@Injectable()
+export class UserPreferencesService implements Resolvable<UserContext> {
+  private readonly context = injectArgument<UserContext>(this);
+
+  getPreferences(): { theme: string } {
+    console.log(`Getting preferences for user ${this.context.userId}`);
+    return { theme: 'dark' };
+  }
+}
+
+const injector = new Injector('Root');
+const userContext: UserContext = { userId: 'user-42' };
+
+// Pass the context object as the second argument to resolve()
+const prefsService = injector.resolve(UserPreferencesService, userContext);
+const prefs = prefsService.getPreferences();
+```
+
 ## API Summary
 
-| Item                      | Signature                           | Description                                                                                          |
-| :------------------------ | :---------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| **Classes**               |                                     |                                                                                                      |
-| `Injector`                | `new Injector(name, parent?)`       | The main DI container. Manages providers and resolutions.                                            |
-| **Injector Methods**      |                                     |                                                                                                      |
-| `injector.register()`     | `(token, provider, options?)`       | Registers a provider for a token in the injector instance.                                           |
-| `injector.fork()`         | `(name)`                            | Creates a child injector, inheriting registrations from its parent.                                  |
-| `injector.resolve()`      | `(token, argument?, options?)`      | Resolves a single instance for a token.                                                              |
-| `injector.resolveAll()`   | `(token, argument?, options?)`      | Resolves all providers for a token into an array.                                                    |
-| `injector.resolveAsync()` | `(token, argument?, options?)`      | Asynchronously resolves a token, allowing for async `afterResolve` hooks.                            |
-| **Functions**             |                                     |                                                                                                      |
-| `inject()`                | `(token, argument?, options?)`      | Injects a dependency within an injection context (e.g., property initializers).                      |
-| `injectAll()`             | `(token, argument?, options?)`      | Injects all providers registered for a token as an array.                                            |
-| `injectArgument()`        | `()`                                | Injects the resolve argument of the current class.                                                   |
-| `injectionToken()`        | `(description)`                     | Creates a unique token for non-class dependencies.                                                   |
-| `runInInjectionContext()` | `(injector, fn)`                    | Runs a function within a specific DI context, enabling the use of `inject()`.                        |
-| **Decorators**            |                                     |                                                                                                      |
-| `@Injectable()`           | `(options?)`                        | Marks a class as available for injection and configures its provider.                                |
-| `@Singleton()`            | `(options?)`                        | Shorthand for `@Injectable({ lifecycle: 'singleton' })`.                                             |
-| `@Scoped()`               | `(lifecycle, options?)`             | Shorthand for `@Injectable({ lifecycle: 'resolution' \| 'injector' })`.                              |
-| `@Inject()`               | `(token?, argument?, mapperOrKey?)` | Specifies the token to use for injection, mainly for constructor parameters or non-class types.      |
-| `@ForwardRef()`           | `(token?, argument?)`               | Resolves a circular dependency by injecting a proxy that is later replaced with the actual instance. |
-| `@Optional()`             | `()`                                | Marks a dependency as optional; injects `undefined` if the token is not found.                       |
-| `@InjectArg()`            | `(mapperOrKey?)`                    | Injects the argument that was passed to `resolve()` for the current class.                           |
-| `@ForwardArg()`           | `(mapper?)`                         | Forwards the parent's resolve argument to a dependency.                                              |
+| Item | Signature | Description |
+| :--- | :--- | :--- |
+| **Classes** | | |
+| `Injector` | `new Injector(name, parent?)` | The main DI container. Manages providers and resolutions. |
+| **Injector Methods** | | |
+| `injector.register()` | `(token, provider, options?)` | Registers a provider for a token in the injector instance. |
+| `injector.fork()` | `(name)` | Creates a child injector, inheriting registrations from its parent. |
+| `injector.resolve()` | `(token, argument?, options?)` | Resolves a single instance for a token. |
+| `injector.resolveAll()` | `(token, argument?, options?)` | Resolves all providers for a token into an array. |
+| `injector.resolveAsync()` | `(token, argument?, options?)` | Asynchronously resolves a token, allowing for async `afterResolve` hooks. |
+| **Functions** | | |
+| `inject()` | `(token, argument?, options?)` | Injects a dependency within an injection context (e.g., property initializers). |
+| `injectAll()` | `(token, argument?, options?)` | Injects all providers registered for a token as an array. |
+| `injectArgument()` | `()` | Injects the resolve argument of the current class. |
+| `injectionToken()` | `(description)` | Creates a unique token for non-class dependencies. |
+| `runInInjectionContext()` | `(injector, fn)` | Runs a function within a specific DI context, enabling the use of `inject()`. |
+| **Decorators** | | |
+| `@Injectable()` | `(options?)` | Marks a class as available for injection and configures its provider. |
+| `@Singleton()` | `(options?)` | Shorthand for `@Injectable({ lifecycle: 'singleton' })`. |
+| `@Scoped()` | `(lifecycle, options?)` | Shorthand for `@Injectable({ lifecycle: 'resolution' \| 'injector' })`. |
+| `@Inject()` | `(token?, argument?, mapperOrKey?)` | Specifies the token to use for injection, mainly for constructor parameters or non-class types. |
+| `@ForwardRef()` | `(token?, argument?)` | Resolves a circular dependency by injecting a proxy that is later replaced with the actual instance. |
+| `@Optional()` | `()` | Marks a dependency as optional; injects `undefined` if the token is not found. |
+| `@InjectArg()` | `(mapperOrKey?)` | Injects the argument that was passed to `resolve()` for the current class. |
+| `@ForwardArg()` | `(mapper?)` | Forwards the parent's resolve argument to a dependency. |

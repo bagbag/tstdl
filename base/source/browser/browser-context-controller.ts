@@ -1,7 +1,5 @@
 import type { BrowserContext, Page } from 'playwright';
 
-import type { AsyncDisposable } from '#/disposable/disposable.js';
-import { disposeAsync } from '#/disposable/disposable.js';
 import { Injectable } from '#/injector/decorators.js';
 import type { Resolvable } from '#/injector/interfaces.js';
 import { afterResolve, resolveArgumentType } from '#/injector/interfaces.js';
@@ -17,12 +15,12 @@ import { PageController } from './page-controller.js';
 import { attachLogger } from './utils.js';
 
 export type BrowserContextControllerOptions = {
-  defaultNewPageOptions?: NewPageOptions
+  defaultNewPageOptions?: NewPageOptions,
 };
 
 export type NewPageOptions = {
   extraHttpHeaders?: Record<string, string>,
-  controllerOptions?: PageControllerOptions
+  controllerOptions?: PageControllerOptions,
 };
 
 export type BrowserContextState = Tagged<Record<string | number, unknown>, 'BrowserContextState'>;
@@ -39,13 +37,13 @@ export type BrowserContextControllerArgument = NewBrowserContextOptions;
       const { context: browserContext, controllerOptions } = await browserController.newRawContext(argument);
       (value as Writable<BrowserContextController>).context = browserContext;
       (value as Writable<BrowserContextController>).options = controllerOptions;
-    }
-  }
+    },
+  },
 })
 export class BrowserContextController implements AsyncDisposable, Resolvable<BrowserContextControllerArgument> {
   readonly #pageControllers = new WeakMap<Page, PageController>();
 
-  /** @deprecated should be avoided */
+  /** @deprecated direct usage of underlying page object should be avoided */
   readonly context: BrowserContext;
   readonly options: BrowserContextControllerOptions;
 
@@ -65,7 +63,7 @@ export class BrowserContextController implements AsyncDisposable, Resolvable<Bro
     });
   }
 
-  async [disposeAsync](): Promise<void> {
+  async [Symbol.asyncDispose](): Promise<void> {
     await this.close();
   }
 
@@ -142,7 +140,7 @@ export class BrowserContextController implements AsyncDisposable, Resolvable<Bro
   }
 
   async waitForClose(): Promise<void> {
-    return new Promise((resolve) => this.context.once('close', () => resolve()));
+    await new Promise<void>((resolve) => this.context.once('close', () => resolve()));
   }
 
   attachLogger(logger: Logger): void {

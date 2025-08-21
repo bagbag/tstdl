@@ -1,5 +1,3 @@
-import type { AsyncDisposable } from '#/disposable/index.js';
-import { disposeAsync } from '#/disposable/index.js';
 import type { HttpServerRequest, HttpServerResponse } from '#/http/server/index.js';
 
 export type HttpServerRequestContext<Context = unknown> = {
@@ -16,5 +14,5 @@ export abstract class HttpServer<Context = unknown> implements AsyncIterable<Htt
   abstract close(timeout: number): Promise<void>;
 
   abstract [Symbol.asyncIterator](): AsyncIterator<HttpServerRequestContext<Context>>;
-  abstract [disposeAsync](): Promise<void>;
+  abstract [Symbol.asyncDispose](): Promise<void>;
 }

@@ -2,7 +2,6 @@ import type SMTPTransport = require('nodemailer/lib/smtp-transport'); // eslint-
 import type { Transporter } from 'nodemailer';
 import { createTransport } from 'nodemailer';
 
-import type { Disposable } from '#/disposable/disposable.js';
 import { Singleton, inject, injectArgument } from '#/injector/index.js';
 import { Injector } from '#/injector/injector.js';
 import type { WritableOneOrMany } from '#/types/index.js';
@@ -38,14 +37,14 @@ export class NodemailerMailClient extends MailClient implements Disposable {
       subject: data.subject,
       text: data.content.text,
       html: data.content.html,
-      headers: data.headers
+      headers: data.headers,
     });
 
     return {
       messageId: result.messageId,
       accepted: result.accepted,
       rejected: result.rejected,
-      pending: result.pending
+      pending: result.pending,
     };
   }
 
@@ -71,11 +70,13 @@ function convertConfig(config: MailClientConfig): SMTPTransport.Options {
     host: config.host,
     port: config.port,
     secure: config.secure ?? (config.port == 465),
-    auth: isUndefined(config.auth) ? undefined : {
-      type: 'login',
-      user: config.auth.user,
-      pass: config.auth.password
-    }
+    auth: isUndefined(config.auth)
+      ? undefined
+      : {
+        type: 'login',
+        user: config.auth.user,
+        pass: config.auth.password,
+      },
   };
 }
 

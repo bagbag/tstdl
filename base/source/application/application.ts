@@ -72,7 +72,7 @@ export class Application implements Resolvable<ApplicationArgument> {
   }
 
   static async waitForShutdown(): Promise<void> {
-    return Application.instance.waitForShutdown();
+    await Application.instance.waitForShutdown();
   }
 
   static async shutdown(): Promise<void> {
@@ -117,7 +117,7 @@ export class Application implements Resolvable<ApplicationArgument> {
   }
 
   async waitForShutdown(): Promise<void> {
-    return this.#shutdownPromise;
+    await this.#shutdownPromise;
   }
 
   private async _run(functionsAndModules: OneOrMany<FunctionModuleFunction | Type<Module>>[], options: RunOptions = {}): Promise<void> {
@@ -139,11 +139,11 @@ export class Application implements Resolvable<ApplicationArgument> {
         }
       }
 
-      modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
+      modules = await toArrayAsync(mapAsync(this.#moduleTypesAndInstances, async (instanceOrType) => (isFunction(instanceOrType) ? await this.#injector.resolveAsync(instanceOrType) : instanceOrType)));
 
       await Promise.race([
         this.runModules(modules),
-        this.shutdownSignal
+        this.shutdownSignal,
       ]);
     }
     catch (error) {
@@ -170,7 +170,7 @@ export class Application implements Resolvable<ApplicationArgument> {
     const promises = modules.map(async (module) => {
       try {
         this.#logger.info(`Starting module ${module.name}`);
-        await runInInjectionContext(this.#injector, async () => module.run());
+        await runInInjectionContext(this.#injector, async () => await module.run());
         this.#logger.info(`Module ${module.name} stopped.`);
       }
       catch (error) {
