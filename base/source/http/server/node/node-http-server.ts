@@ -177,7 +177,7 @@ function writeHeaders(response: HttpServerResponse, httpResponse: ServerResponse
 
 async function writeResponseBody(response: HttpServerResponse, httpResponse: ServerResponse): Promise<void> {
   const simpleData = match(response.body)
-    .with({ json: P.select(P.nonNullable) }, (json) => JSON.stringify(json))
+    .with({ json: P.select(P.when(isDefined)) }, (json) => JSON.stringify(json))
     .with({ text: P.select(P.nonNullable) }, (text) => text)
     .with({ buffer: P.select(P.nonNullable) }, (buffer) => buffer)
     .otherwise(() => undefined);

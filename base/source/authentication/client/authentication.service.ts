@@ -11,7 +11,7 @@ import { NotFoundError } from '#/errors/not-found.error.js';
 import { NotSupportedError } from '#/errors/not-supported.error.js';
 import { UnauthorizedError } from '#/errors/unauthorized.error.js';
 import type { AfterResolve } from '#/injector/index.js';
-import { Inject, Optional, Singleton, afterResolve, inject } from '#/injector/index.js';
+import { Singleton, afterResolve, inject } from '#/injector/index.js';
 import { Lock } from '#/lock/index.js';
 import { Logger } from '#/logger/index.js';
 import { MessageBus } from '#/message-bus/index.js';
@@ -171,9 +171,9 @@ export class AuthenticationClientService<AdditionalTokenPayload extends Record =
     return (this.token()?.exp ?? 0) > this.estimatedServerTimestampSeconds();
   }
 
-  constructor(@Inject(INITIAL_AUTHENTICATION_DATA) @Optional() initialAuthenticationData: AuthenticationData | undefined) {
+  constructor() {
     if (isUndefined(this.authenticationData)) {
-      this.authenticationData = initialAuthenticationData;
+      this.authenticationData = inject(INITIAL_AUTHENTICATION_DATA, undefined, { optional: true }) as AuthenticationData;
     }
   }
 

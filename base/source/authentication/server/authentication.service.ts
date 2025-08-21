@@ -479,7 +479,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     const authenticationResult = await this.authenticate(subject, currentSecret);
 
     if (!authenticationResult.success) {
-      throw new ForbiddenError('Invalid credentials.');
+      throw new InvalidCredentialsError();
     }
 
     await this.hooks.beforeChangeSecret.trigger({ subject });

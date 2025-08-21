@@ -46,7 +46,7 @@ type TstdlErrors = [
   typeof TimeoutError,
   typeof UnauthorizedError,
   typeof HttpError,
-  typeof SecretRequirementsError
+  typeof SecretRequirementsError,
 ];
 
 export const tstdlErrorsLocalizationKeys = getLocalizationKeys<ErrorsLocalization>().tstdl;
@@ -57,67 +57,67 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
     tstdl: {
       errors: {
         ApiError: {
-          header: 'API Fehler',
-          message: 'Bitte versuchen Sie es später noch einmal.'
+          header: 'Ein Serverfehler ist aufgetreten',
+          message: 'Bitte versuchen Sie es in einem Moment erneut. Sollte das Problem weiterhin bestehen, kontaktieren Sie bitte den Support.',
         },
         BadRequestError: {
-          header: 'Ungültige Anfrage',
-          message: getErrorMessage
+          header: 'Ungültige Eingabe',
+          message: 'Bitte überprüfen Sie die eingegebenen Daten und versuchen Sie es erneut.',
         },
         ForbiddenError: {
-          header: 'Zugriff nicht erlaubt',
-          message: getErrorMessage
+          header: 'Zugriff verweigert',
+          message: 'Sie haben nicht die erforderlichen Berechtigungen, um diese Aktion auszuführen.',
         },
         InvalidCredentialsError: {
           header: 'Ungültige Zugangsdaten',
-          message: 'Überprüfen Sie Ihre Eingaben'
+          message: 'Der Benutzername oder das Passwort ist falsch. Bitte überprüfen Sie Ihre Eingaben.',
         },
         InvalidTokenError: {
-          header: 'Anmeldung abgelaufen oder ungültig',
-          message: 'Bitte melden Sie sich erneut an'
+          header: 'Sitzung abgelaufen',
+          message: 'Ihre Sitzung ist abgelaufen oder ungültig. Bitte melden Sie sich erneut an.',
         },
         MaxBytesExceededError: {
-          header: 'Daten größer als erlaubt',
-          message: getErrorMessage
+          header: 'Datei zu groß',
+          message: 'Die ausgewählte Datei überschreitet die maximal zulässige Größe.',
         },
         MethodNotAllowedError: {
-          header: 'Anfrage nicht erlaubt',
-          message: getErrorMessage
+          header: 'Unerwarteter Fehler',
+          message: 'Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
         },
         NotFoundError: {
           header: 'Nicht gefunden',
-          message: getErrorMessage
+          message: 'Das gesuchte Element konnte nicht gefunden werden. Möglicherweise wurde es verschoben oder gelöscht.',
         },
         NotImplementedError: {
-          header: 'Funktion nicht implementiert',
-          message: getErrorMessage
+          header: 'Funktion nicht verfügbar',
+          message: 'Diese Funktion ist noch nicht verfügbar. Bitte versuchen Sie es zu einem späteren Zeitpunkt erneut.',
         },
         NotSupportedError: {
-          header: 'Nicht unterstützt',
-          message: getErrorMessage
+          header: 'Aktion nicht unterstützt',
+          message: 'Die angeforderte Aktion wird nicht unterstützt.',
         },
         TimeoutError: {
-          header: 'Zeitüberschreitung',
-          message: getErrorMessage
+          header: 'Zeitüberschreitung der Anfrage',
+          message: 'Der Server hat zu lange für eine Antwort gebraucht. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.',
         },
         UnauthorizedError: {
-          header: 'Unautorisiert',
-          message: getErrorMessage
+          header: 'Anmeldung erforderlich',
+          message: 'Sie müssen angemeldet sein, um diese Aktion auszuführen. Bitte melden Sie sich an.',
         },
         HttpError: {
           header: (error) => (
             (isDefined(error.response) && error.response.statusCode != 0)
-              ? `Http Fehler - ${error.response.statusCode.toString()}`
-              : 'Http Fehler'
+              ? `Fehler ${error.response.statusCode.toString()}`
+              : 'Verbindungsfehler'
           ),
-          message: getHttpErrorMessage
+          message: getHttpErrorMessage,
         },
         SecretRequirementsError: {
-          header: 'Passwortanforderungen nicht erfüllt',
-          message: getErrorMessage
-        }
-      }
-    }
+          header: 'Passwort zu schwach',
+          message: getErrorMessage,
+        },
+      },
+    },
   },
   enums: [
     enumerationLocalization(HttpErrorReason, {
@@ -128,9 +128,9 @@ export const germanTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors, [typ
       [HttpErrorReason.StatusCode]: 'Antwort enthielt einen Fehler',
       [HttpErrorReason.ErrorResponse]: 'Antwort enthielt einen Fehler',
       [HttpErrorReason.ResponseError]: 'Fehler beim Empfang der Antwort',
-      [HttpErrorReason.Timeout]: 'Zeitüberschreitung'
-    })
-  ]
+      [HttpErrorReason.Timeout]: 'Zeitüberschreitung',
+    }),
+  ],
 };
 
 export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
@@ -139,67 +139,67 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
     tstdl: {
       errors: {
         ApiError: {
-          header: 'API error',
-          message: 'Please try again later'
+          header: 'A Server Error Occurred',
+          message: 'Please try again in a moment. If the problem persists, please contact support.',
         },
         BadRequestError: {
-          header: 'Bad Request',
-          message: getErrorMessage
+          header: 'Invalid Information',
+          message: 'Please check the information you entered and try again.',
         },
         ForbiddenError: {
-          header: 'Access forbidden',
-          message: getErrorMessage
+          header: 'Permission Denied',
+          message: 'You do not have the necessary permissions to perform this action.',
         },
         InvalidCredentialsError: {
-          header: 'Invalid credentials',
-          message: 'Check your inputs'
+          header: 'Invalid Credentials',
+          message: 'The username or password you entered is incorrect. Please check your details.',
         },
         InvalidTokenError: {
-          header: 'Login expired or invalid',
-          message: 'Please log in again'
+          header: 'Session Expired',
+          message: 'Your session has expired or is invalid. Please log in again.',
         },
         MaxBytesExceededError: {
-          header: 'Data larger than allowed',
-          message: getErrorMessage
+          header: 'File Too Large',
+          message: 'The selected file exceeds the maximum allowed size.',
         },
         MethodNotAllowedError: {
-          header: 'Request not allowed',
-          message: getErrorMessage
+          header: 'Unexpected Error',
+          message: 'An internal error occurred. Please try again later.',
         },
         NotFoundError: {
-          header: 'Not found',
-          message: getErrorMessage
+          header: 'Not Found',
+          message: 'The item you are looking for could not be found. It may have been moved or deleted.',
         },
         NotImplementedError: {
-          header: 'Function not implemented',
-          message: getErrorMessage
+          header: 'Feature Not Available',
+          message: 'This feature is not yet available. Please check back later.',
         },
         NotSupportedError: {
-          header: 'Not supported',
-          message: getErrorMessage
+          header: 'Unsupported Action',
+          message: 'The requested action is not supported.',
         },
         TimeoutError: {
-          header: 'Timeout',
-          message: getErrorMessage
+          header: 'Request Timed Out',
+          message: 'The server took too long to respond. Please check your internet connection and try again.',
         },
         UnauthorizedError: {
-          header: 'Unauthorized',
-          message: getErrorMessage
+          header: 'Authentication Required',
+          message: 'You must be logged in to perform this action. Please log in.',
         },
         HttpError: {
           header: (error) => (
             (isDefined(error.response) && error.response.statusCode != 0)
-              ? `Http error - ${error.response.statusCode.toString()}`
-              : 'Http error'
+              ? `Error ${error.response.statusCode.toString()}`
+              : 'Connection Error'
           ),
-          message: getHttpErrorMessage
+          message: getHttpErrorMessage,
         },
         SecretRequirementsError: {
-          header: 'Secret requirements not met',
-          message: getErrorMessage
-        }
-      }
-    }
+          header: 'Password Is Too Weak',
+          message: getErrorMessage,
+        },
+      },
+    },
   },
   enums: [
     enumerationLocalization(HttpErrorReason, {
@@ -210,15 +210,17 @@ export const englishTstdlErrorsLocalization: ErrorsLocalization<TstdlErrors> = {
       [HttpErrorReason.StatusCode]: 'Response contained an error',
       [HttpErrorReason.ErrorResponse]: 'Response contained an error',
       [HttpErrorReason.ResponseError]: 'Error while receiving the response',
-      [HttpErrorReason.Timeout]: 'Zeitüberschreitung'
-    })
-  ]
+      [HttpErrorReason.Timeout]: 'Timeout',
+    }),
+  ],
 };
 
 function getHttpErrorMessage(error: HttpError, context: LocalizeFunctionContext): string {
-  return (isDefined(error.response) && (isNotNull(error.response.statusMessage)))
-    ? error.response.statusMessage
-    : context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason });
+  if (isDefined(error.response) && isNotNull(error.response.statusMessage)) {
+    return error.response.statusMessage;
+  }
+
+  return context.localizationService.localizeOnce({ enum: HttpErrorReason, value: error.reason });
 }
 
 function getErrorMessage(error: Error): string {

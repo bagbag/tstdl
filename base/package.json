@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.159",
+  "version": "0.92.161",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -80,6 +80,7 @@
     "./jsx": "./jsx/index.js",
     "./key-value-store": "./key-value-store/index.js",
     "./key-value-store/mongo": "./key-value-store/mongo/index.js",
+    "./key-value-store/postgres": "./key-value-store/postgres/index.js",
     "./lock": "./lock/index.js",
     "./lock/mongo": "./lock/mongo/index.js",
     "./lock/web": "./lock/web/index.js",
@@ -164,9 +165,9 @@
     "mongodb": "^6.18",
     "nodemailer": "^7.0",
     "pg": "^8.16",
-    "playwright": "^1.54",
+    "playwright": "^1.55",
     "preact": "^10.27",
-    "preact-render-to-string": "^6.5",
+    "preact-render-to-string": "^6.6",
     "sharp": "^0.34",
     "undici": "^7.14",
     "urlpattern-polyfill": "^10.1"
