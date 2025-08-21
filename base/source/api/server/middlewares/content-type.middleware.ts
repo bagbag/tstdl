@@ -13,7 +13,7 @@ export async function contentTypeMiddleware(context: ApiGatewayMiddlewareContext
   }
 
   response.headers.contentType = match(response.body)
-    .with({ json: P.select(P.nonNullable) }, () => 'application/json; charset=utf-8')
+    .with({ json: P.select(P.when(isDefined)) }, () => 'application/json; charset=utf-8')
     .with({ text: P.select(P.nonNullable) }, () => 'text/plain; charset=utf-8')
     .with({ buffer: P.select(P.nonNullable) }, () => 'application/octet-stream')
     .with({ stream: P.select(P.nonNullable) }, () => 'application/octet-stream')
