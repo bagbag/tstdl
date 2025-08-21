@@ -118,8 +118,7 @@ export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpoi
 export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
 export type ApiInputType<T extends SchemaTestable> =
-  | T extends typeof ReadableStream ? ReadableStream<Uint8Array<ArrayBuffer>>
-  : T extends ApiBinaryType ? InstanceType<T>
+  | T extends ApiBinaryType ? InstanceType<Exclude<ApiBinaryType, typeof ReadableStream> | typeof ReadableStream<Uint8Array<ArrayBuffer>>>
   : T extends typeof ServerSentEvents ? ServerSentEventsSource
   : T extends typeof DataStream<infer U> ? AsyncIterable<U>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
