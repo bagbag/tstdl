@@ -10,7 +10,7 @@
       <!-- IF ROUTER DRIVEN: Render as <a> tags with routerLink -->
       @if (isRouterDriven()) {
         <a
-          class="tab"
+          class="tab block"
           [routerLink]="tab.routerLink()"
           [target]="tab.routerLinkOptions()?.target"
           [queryParams]="tab.routerLinkOptions()?.queryParams"
