@@ -233,7 +233,7 @@ export const assertNotArrayBuffer: AssertNotFunction<ArrayBuffer> = arrayBufferG
 export const assertArrayBufferPass: AssertPassFunction<ArrayBuffer> = arrayBufferGuards.assertArrayBufferPass;
 export const assertNotArrayBufferPass: AssertNotPassFunction<ArrayBuffer> = arrayBufferGuards.assertNotArrayBufferPass;
 
-const sharedArrayBufferGuards = createInstanceGuards('SharedArrayBuffer', SharedArrayBuffer);
+const sharedArrayBufferGuards = createInstanceGuards('SharedArrayBuffer', globalThis.SharedArrayBuffer ?? class MockSharedArrayBuffer { }); // in case SharedArrayBuffer is not available
 export const isSharedArrayBuffer: IsFunction<SharedArrayBuffer> = sharedArrayBufferGuards.isSharedArrayBuffer;
 export const isNotSharedArrayBuffer: IsNotFunction<SharedArrayBuffer> = sharedArrayBufferGuards.isNotSharedArrayBuffer;
 export const assertSharedArrayBuffer: AssertFunction<SharedArrayBuffer> = sharedArrayBufferGuards.assertSharedArrayBuffer;
