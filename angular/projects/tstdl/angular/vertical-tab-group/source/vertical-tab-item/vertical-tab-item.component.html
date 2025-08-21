@@ -1,0 +1,16 @@
+<div class="flex items-center gap-2">
+  @if (tab().icon(); as icon) {
+    <tsl-icon [icon]="icon" size="2xl"></tsl-icon>
+  }
+  <div class="tab-label">
+    @if (tab().labelTemplateRef(); as labelTemplateRef) {
+      <ng-container [ngTemplateOutlet]="labelTemplateRef"></ng-container>
+    } @else {
+      {{ tab().label() | dynamicText }}
+    }
+  </div>
+</div>
+
+@if (tab().description(); as description) {
+  <div class="tab-description">{{ description | dynamicText }}</div>
+}

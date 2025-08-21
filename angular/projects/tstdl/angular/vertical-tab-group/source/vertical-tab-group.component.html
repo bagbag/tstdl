@@ -7,37 +7,50 @@
 
   <div>
     @for (tab of tabs(); track tab) {
-      <div class="tab" (click)="selectedTabIndex.set(tabs().indexOf(tab))" [class.tab-selected]="tab == selectedTab()">
-        <div class="flex items-center gap-2">
-          @if (tab.icon(); as icon) {
-            <tsl-icon [icon]="icon" size="2xl"></tsl-icon>
-          }
-          <div class="tab-label">
-            @if (tab.labelTemplateRef(); as labelTemplateRef) {
-              <ng-container [ngTemplateOutlet]="labelTemplateRef"></ng-container>
-            } @else {
-              {{ tab.label() | dynamicText }}
-            }
-          </div>
+      <!-- IF ROUTER DRIVEN: Render as <a> tags with routerLink -->
+      @if (isRouterDriven()) {
+        <a
+          class="tab"
+          [routerLink]="tab.routerLink()"
+          [target]="tab.routerLinkOptions()?.target"
+          [queryParams]="tab.routerLinkOptions()?.queryParams"
+          [fragment]="tab.routerLinkOptions()?.fragment"
+          [queryParamsHandling]="tab.routerLinkOptions()?.queryParamsHandling"
+          [state]="tab.routerLinkOptions()?.state"
+          [info]="tab.routerLinkOptions()?.info"
+          [relativeTo]="tab.routerLinkOptions()?.relativeTo"
+          [preserveFragment]="tab.routerLinkOptions()?.preserveFragment"
+          [skipLocationChange]="tab.routerLinkOptions()?.skipLocationChange"
+          [replaceUrl]="tab.routerLinkOptions()?.replaceUrl"
+          routerLinkActive="tab-selected"
+          [routerLinkActiveOptions]="{ exact: true }">
+          <tsl-vertical-tab-item [tab]="tab"></tsl-vertical-tab-item>
+        </a>
+      } @else {
+        <!-- ELSE (STATEFUL): Render as divs with click handlers -->
+        <div tabindex="0" class="tab" [class.tab-selected]="tab == selectedTab()" (click)="selectedTabIndex.set(tabs().indexOf(tab))" (keyup.enter)="selectedTabIndex.set(tabs().indexOf(tab))">
+          <tsl-vertical-tab-item [tab]="tab"></tsl-vertical-tab-item>
         </div>
-
-        @if (tab.description(); as description) {
-          <div class="tab-description">{{ description | dynamicText }}</div>
-        }
-      </div>
+      }
     }
   </div>
 </div>
 
 <div class="tabs-container">
-  @for (tab of tabs(); let index = $index; track tab) {
-    <div
-      class="tab-container"
-      [class.opacity-0]="index != selectedTabIndex()"
-      [class.pointer-events-none]="index != selectedTabIndex()"
-      [attr.inert]="index != selectedTabIndex() ? true : null"
-      [ngClass]="tab.class()">
-      <ng-container [ngTemplateOutlet]="tab.contentTemplate() ?? null"></ng-container>
-    </div>
+  <!-- IF ROUTER DRIVEN: Project content to allow for <router-outlet> -->
+  @if (isRouterDriven()) {
+    <ng-content></ng-content>
+  } @else {
+    <!-- ELSE (STATEFUL): Render tab content from templates -->
+    @for (tab of tabs(); let index = $index; track tab) {
+      <div
+        class="tab-container"
+        [class.opacity-0]="index != selectedTabIndex()"
+        [class.pointer-events-none]="index != selectedTabIndex()"
+        [attr.inert]="index != selectedTabIndex() ? true : null"
+        [ngClass]="tab.class()">
+        <ng-container [ngTemplateOutlet]="tab.contentTemplate() ?? null"></ng-container>
+      </div>
+    }
   }
 </div>

@@ -3,7 +3,7 @@
     @apply grid grid-cols-[auto_1fr] bg-white dark:bg-neutral-800;
 
     .tab {
-      @apply relative px-6 py-4 border-b last:border-b-0 cursor-pointer;
+      @apply relative px-6 py-4 border-b last:border-b-0 cursor-pointer transition-colors;
 
       &:not(.tab-selected) {
         @apply hover:bg-amber-50 hover:dark:bg-neutral-500/20;
@@ -19,15 +19,15 @@
     }
 
     .tab-title-container {
-      @apply px-6 py-6 border-b text-3xl font-bold;
+      @apply px-6 py-6 border-b text-3xl font-bold transition-colors;
     }
 
     .tab-label {
-      @apply font-semibold;
+      @apply font-semibold transition-colors;
     }
 
     .tab-description {
-      @apply mt-2 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch];
+      @apply mt-2 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch] transition-colors;
     }
 
     .tabs-container {
