@@ -30,12 +30,17 @@
       @apply mt-2 text-sm text-neutral-700 dark:text-neutral-300 max-w-[35ch] transition-colors;
     }
 
+    .tabs-container,
+    .tabs-router-container {
+      @apply p-4 bg-neutral-50 dark:bg-neutral-700;
+    }
+
     .tabs-container {
-      @apply grid grid-cols-1 grid-rows-1 bg-neutral-50 dark:bg-neutral-700;
+      @apply grid grid-cols-1 grid-rows-1;
     }
 
     .tab-container {
-      @apply col-start-1 row-start-1 p-4 transition-opacity;
+      @apply col-start-1 row-start-1 transition-opacity;
     }
   }
 }

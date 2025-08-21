@@ -36,12 +36,14 @@
   </div>
 </div>
 
-<div class="tabs-container">
+@if (isRouterDriven()) {
   <!-- IF ROUTER DRIVEN: Project content to allow for <router-outlet> -->
-  @if (isRouterDriven()) {
-    <ng-content></ng-content>
-  } @else {
-    <!-- ELSE (STATEFUL): Render tab content from templates -->
+  <div class="tabs-router-container">
+    <ng-content select=":not(tsl-vertical-tab)"></ng-content>
+  </div>
+} @else {
+  <!-- ELSE (STATEFUL): Render tab content from templates -->
+  <div class="tabs-container">
     @for (tab of tabs(); let index = $index; track tab) {
       <div
         class="tab-container"
@@ -52,5 +54,5 @@
         <ng-container [ngTemplateOutlet]="tab.contentTemplate() ?? null"></ng-container>
       </div>
     }
-  }
-</div>
+  </div>
+}
