@@ -18,11 +18,11 @@ export type ImgproxyImageServiceConfig = {
 export const IMGPROXY_IMAGE_SERVICE_CONFIG = injectionToken<ImgproxyImageServiceConfig>('ImgproxyImageServiceConfig');
 
 @Singleton<ImgproxyImageService, ImgproxyImageServiceConfig>({
-  defaultArgumentProvider: (context) => context.resolve(IMGPROXY_IMAGE_SERVICE_CONFIG)
+  defaultArgumentProvider: (context) => context.resolve(IMGPROXY_IMAGE_SERVICE_CONFIG),
 })
 export class ImgproxyImageService extends ImageService implements Resolvable<ImgproxyImageServiceConfig> {
-  readonly #keyBytes: Uint8Array;
-  readonly #saltBytes: Uint8Array;
+  readonly #keyBytes: Uint8Array<ArrayBuffer>;
+  readonly #saltBytes: Uint8Array<ArrayBuffer>;
   readonly #signatureSize: number;
 
   readonly endpoint: string;
@@ -76,7 +76,7 @@ export class ImgproxyImageService extends ImageService implements Resolvable<Img
   }
 }
 
-async function signString(keyBytes: Uint8Array, saltBytes: Uint8Array, target: string, size: number = 32): Promise<string> {
+async function signString(keyBytes: Uint8Array<ArrayBuffer>, saltBytes: Uint8Array, target: string, size: number = 32): Promise<string> {
   const hmacKey = await importHmacKey('SHA-256', keyBytes, false);
   const targetBytes = concatArrayBufferViews([saltBytes, encodeUtf8(target)]);
 

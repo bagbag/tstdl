@@ -233,6 +233,22 @@ export const assertNotArrayBuffer: AssertNotFunction<ArrayBuffer> = arrayBufferG
 export const assertArrayBufferPass: AssertPassFunction<ArrayBuffer> = arrayBufferGuards.assertArrayBufferPass;
 export const assertNotArrayBufferPass: AssertNotPassFunction<ArrayBuffer> = arrayBufferGuards.assertNotArrayBufferPass;
 
+const sharedArrayBufferGuards = createInstanceGuards('SharedArrayBuffer', SharedArrayBuffer);
+export const isSharedArrayBuffer: IsFunction<SharedArrayBuffer> = sharedArrayBufferGuards.isSharedArrayBuffer;
+export const isNotSharedArrayBuffer: IsNotFunction<SharedArrayBuffer> = sharedArrayBufferGuards.isNotSharedArrayBuffer;
+export const assertSharedArrayBuffer: AssertFunction<SharedArrayBuffer> = sharedArrayBufferGuards.assertSharedArrayBuffer;
+export const assertNotSharedArrayBuffer: AssertNotFunction<SharedArrayBuffer> = sharedArrayBufferGuards.assertNotSharedArrayBuffer;
+export const assertSharedArrayBufferPass: AssertPassFunction<SharedArrayBuffer> = sharedArrayBufferGuards.assertSharedArrayBufferPass;
+export const assertNotSharedArrayBufferPass: AssertNotPassFunction<SharedArrayBuffer> = sharedArrayBufferGuards.assertNotSharedArrayBufferPass;
+
+const arrayBufferLikeGuards = createGuards('ArrayBufferLike', (value): value is ArrayBufferLike => isArrayBuffer(value) || isSharedArrayBuffer(value));
+export const isArrayBufferLike: IsFunction<ArrayBufferLike> = arrayBufferLikeGuards.isArrayBufferLike;
+export const isNotArrayBufferLike: IsNotFunction<ArrayBufferLike> = arrayBufferLikeGuards.isNotArrayBufferLike;
+export const assertArrayBufferLike: AssertFunction<ArrayBufferLike> = arrayBufferLikeGuards.assertArrayBufferLike;
+export const assertNotArrayBufferLike: AssertNotFunction<ArrayBufferLike> = arrayBufferLikeGuards.assertNotArrayBufferLike;
+export const assertArrayBufferLikePass: AssertPassFunction<ArrayBufferLike> = arrayBufferLikeGuards.assertArrayBufferLikePass;
+export const assertNotArrayBufferLikePass: AssertNotPassFunction<ArrayBufferLike> = arrayBufferLikeGuards.assertNotArrayBufferLikePass;
+
 const arrayBufferViewGuards = createGuards('ArrayBufferView', (value: any): value is ArrayBufferView => ArrayBuffer.isView(value));
 export const isArrayBufferView: IsFunction<ArrayBufferView> = arrayBufferViewGuards.isArrayBufferView;
 export const isNotArrayBufferView: IsNotFunction<ArrayBufferView> = arrayBufferViewGuards.isNotArrayBufferView;
@@ -241,7 +257,7 @@ export const assertNotArrayBufferView: AssertNotFunction<ArrayBufferView> = arra
 export const assertArrayBufferViewPass: AssertPassFunction<ArrayBufferView> = arrayBufferViewGuards.assertArrayBufferViewPass;
 export const assertNotArrayBufferViewPass: AssertNotPassFunction<ArrayBufferView> = arrayBufferViewGuards.assertNotArrayBufferViewPass;
 
-const binaryDataGuards = createGuards('BinaryData', (value: any): value is BinaryData => (isArrayBuffer(value) || isArrayBufferView(value)));
+const binaryDataGuards = createGuards('BinaryData', (value: any): value is BinaryData => (isArrayBufferLike(value) || isArrayBufferView(value)));
 export const isBinaryData: IsFunction<BinaryData> = binaryDataGuards.isBinaryData;
 export const isNotBinaryData: IsNotFunction<BinaryData> = binaryDataGuards.isNotBinaryData;
 export const assertBinaryData: AssertFunction<BinaryData> = binaryDataGuards.assertBinaryData;

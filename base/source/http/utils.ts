@@ -13,7 +13,7 @@ import { sizeLimitTransform } from '#/utils/stream/size-limited-stream.js';
 import { readBinaryStream } from '#/utils/stream/stream-reader.js';
 import { isArrayBuffer, isBlob, isDefined, isReadableStream, isUint8Array, isUndefined } from '#/utils/type-guards.js';
 
-type Body = Uint8Array | Blob | AnyIterable<Uint8Array> | ReadableStream<Uint8Array>;
+type Body = Uint8Array<ArrayBuffer> | Blob | AnyIterable<Uint8Array<ArrayBuffer>> | ReadableStream<Uint8Array<ArrayBuffer>>;
 
 export type ReadBodyOptions = {
   maxBytes?: number,
@@ -23,13 +23,13 @@ export type ReadBodyAsJsonOptions = ReadBodyOptions & {
   fallbackToText?: boolean,
 };
 
-export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): ReadableStream<Uint8Array> {
+export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): ReadableStream<Uint8Array<ArrayBuffer>> {
   ensureSize(headers.contentLength ?? 0, options);
 
   let stream = isReadableStream(body)
     ? body
     : isBlob(body)
-      ? body.stream() as unknown as ReadableStream<Uint8Array>
+      ? body.stream()
       : (isUint8Array(body))
         ? new ReadableStream({
           type: 'bytes',
@@ -57,10 +57,10 @@ export function readBodyAsBinaryStream(body: Body, headers: HttpHeaders, options
   return stream;
 }
 
-export async function readBodyAsBuffer(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): Promise<Uint8Array> {
+export async function readBodyAsBuffer(body: Body, headers: HttpHeaders, options: ReadBodyOptions = {}): Promise<Uint8Array<ArrayBuffer>> {
   ensureSize(headers.contentLength ?? 0, options);
 
-  let uint8Array: Uint8Array;
+  let uint8Array: Uint8Array<ArrayBuffer>;
 
   if (isUint8Array(body)) {
     uint8Array = body;

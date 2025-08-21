@@ -1,6 +1,6 @@
 import { supportsBuffer } from '#/supports.js';
 import type { BinaryData } from '#/types/index.js';
-import { assert, isArrayBuffer, isUint8Array } from './type-guards.js';
+import { assert, isArrayBufferLike, isUint8Array } from './type-guards.js';
 
 /**
  * Get ArrayBuffer from binary data
@@ -8,7 +8,7 @@ import { assert, isArrayBuffer, isUint8Array } from './type-guards.js';
  * @param clone force cloning (might still clone if datas underlying buffer is larger than its view)
  */
 export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBufferLike {
-  if (isArrayBuffer(data)) {
+  if (isArrayBufferLike(data)) {
     return clone ? data.slice(0) : data;
   }
 
@@ -25,7 +25,7 @@ export function toArrayBuffer(data: BinaryData, clone: boolean = false): ArrayBu
  * @param clone whether to clone buffer or not
  */
 export function toUint8Array(data: BinaryData, clone: boolean = false): Uint8Array {
-  if (isArrayBuffer(data)) {
+  if (isArrayBufferLike(data)) {
     return clone
       ? new Uint8Array(data.slice(0))
       : new Uint8Array(data);

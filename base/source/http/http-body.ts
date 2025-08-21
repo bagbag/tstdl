@@ -5,7 +5,7 @@ import type { HttpHeaders } from './http-headers.js';
 import type { ReadBodyOptions } from './utils.js';
 import { readBody, readBodyAsBinaryStream, readBodyAsBuffer, readBodyAsJson, readBodyAsStream, readBodyAsText, readBodyAsTextStream } from './utils.js';
 
-export type HttpBodySource = undefined | Uint8Array | Blob | AnyIterable<Uint8Array> | ReadableStream<Uint8Array>;
+export type HttpBodySource = undefined | Uint8Array<ArrayBuffer> | Blob | AnyIterable<Uint8Array<ArrayBuffer>> | ReadableStream<Uint8Array<ArrayBuffer>>;
 
 export class HttpBody {
   private readonly body: HttpBodySource;
@@ -28,7 +28,7 @@ export class HttpBody {
     this.bodyAlreadyRead = false;
   }
 
-  async readAsBuffer(options?: ReadBodyOptions): Promise<Uint8Array> {
+  async readAsBuffer(options?: ReadBodyOptions): Promise<Uint8Array<ArrayBuffer>> {
     this.prepareBodyRead();
     return await readBodyAsBuffer(this.body!, this.headers, options);
   }

@@ -1,6 +1,6 @@
 {
   "name": "@tstdl/base",
-  "version": "0.92.161",
+  "version": "0.92.163",
   "author": "Patrick Hein",
   "publishConfig": {
     "access": "public"
@@ -196,7 +196,7 @@
     "typedoc-github-wiki-theme": "2.1",
     "typedoc-plugin-markdown": "4.8",
     "typedoc-plugin-missing-exports": "4.1",
-    "typescript": "5.8",
+    "typescript": "5.9",
     "typescript-eslint": "8.40"
   },
   "overrides": {

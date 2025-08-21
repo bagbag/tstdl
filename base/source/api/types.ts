@@ -115,16 +115,17 @@ export type ApiEndpointParametersSchema<T extends ApiDefinition, K extends ApiEn
 export type ApiEndpointBodySchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['body']>;
 export type ApiEndpointResultSchema<T extends ApiDefinition, K extends ApiEndpointKeys<T>> = NonUndefinable<ApiEndpoint<T, K>['result']>;
 
-export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream<any>;
+export type ApiBinaryType = typeof Uint8Array | typeof Blob | typeof ReadableStream;
 
 export type ApiInputType<T extends SchemaTestable> =
-  | T extends ApiBinaryType ? InstanceType<ApiBinaryType>
+  | T extends typeof ReadableStream ? ReadableStream<Uint8Array<ArrayBuffer>>
+  : T extends ApiBinaryType ? InstanceType<T>
   : T extends typeof ServerSentEvents ? ServerSentEventsSource
   : T extends typeof DataStream<infer U> ? AsyncIterable<U>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 
 export type ApiOutputType<T extends SchemaTestable> =
-  | T extends typeof ReadableStream ? ReadableStream<Uint8Array>
+  | T extends typeof ReadableStream ? ReadableStream<Uint8Array<ArrayBuffer>>
   : T extends typeof DataStream<infer U> ? Observable<U>
   : T extends SchemaTestable ? SchemaOutput<T> : never;
 

@@ -9,7 +9,7 @@ import { assertDefined, isNotNullOrUndefined } from './type-guards.js';
 import { zBase32Encode } from './z-base32.js';
 
 export interface CompressionResult {
-  toBuffer(): Promise<Uint8Array>;
+  toBuffer(): Promise<Uint8Array<ArrayBuffer>>;
   toHex(): Promise<string>;
   toBase64(): Promise<string>;
   toBase64Url(): Promise<string>;
@@ -52,18 +52,18 @@ const compressFunction = {
   'deflate-raw': 'deflateRaw' satisfies keyof typeof NodeZlib,
 } as const;
 
-async function _compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
+async function _compress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array<ArrayBuffer>> {
   const zlib = await dynamicImport<typeof NodeZlib>('zlib');
   const compressor = zlib[compressFunction[algorithm]];
   assertDefined(compressor, `Unsupported algorithm ${algorithm}`);
 
-  return await new Promise<Uint8Array>((resolve, reject) => {
+  return await new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
     const callback: NodeZlib.CompressCallback = (error, result) => {
       if (isNotNullOrUndefined(error)) {
         reject(error);
       }
       else {
-        resolve(result);
+        resolve(result as Uint8Array<ArrayBuffer>);
       }
     };
 
@@ -100,10 +100,10 @@ export function decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlg
   };
 }
 
-export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: NodeZlib.ZlibOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'brotli', options?: NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array>;
-export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array> {
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'gzip' | 'deflate' | 'deflate-raw', options?: NodeZlib.ZlibOptions): ReadableStream<Uint8Array<ArrayBuffer>>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: 'brotli', options?: NodeZlib.BrotliOptions): ReadableStream<Uint8Array<ArrayBuffer>>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array<ArrayBuffer>>;
+export function decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): ReadableStream<Uint8Array<ArrayBuffer>> {
   const streamPromise = _decompressStream(stream, algorithm, options);
   return readableStreamFromPromise(streamPromise);
 }
@@ -115,18 +115,18 @@ const decompressFunction = {
   'deflate-raw': 'inflateRaw' satisfies keyof typeof NodeZlib,
 } as const;
 
-async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array> {
+async function _decompress(buffer: NodeZlib.InputType, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<Uint8Array<ArrayBuffer>> {
   const zlib = await dynamicImport<typeof NodeZlib>('zlib');
   const decompressor = zlib[decompressFunction[algorithm]];
   assertDefined(decompressor, `Unsupported algorithm ${algorithm}`);
 
-  return await new Promise<Uint8Array>((resolve, reject) => {
+  return await new Promise<Uint8Array<ArrayBuffer>>((resolve, reject) => {
     const callback: NodeZlib.CompressCallback = (error, result) => {
       if (isNotNullOrUndefined(error)) {
         reject(error);
       }
       else {
-        resolve(result);
+        resolve(result as Uint8Array<ArrayBuffer>);
       }
     };
 
@@ -146,14 +146,14 @@ const decompressStreamFunction = {
   'deflate-raw': 'createInflateRaw' satisfies keyof typeof NodeZlib,
 } as const;
 
-async function _decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<ReadableStream<Uint8Array>> {
+async function _decompressStream(stream: NodeStream.Readable | ReadableStream, algorithm: CompressionAlgorithm, options?: NodeZlib.ZlibOptions | NodeZlib.BrotliOptions): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
   const zlib = await dynamicImport<typeof NodeZlib>('zlib');
   const nodeStream = await dynamicImport<typeof NodeStream>('stream');
 
   const nodeDecompressor = zlib[decompressStreamFunction[algorithm]](options);
   assertDefined(nodeDecompressor, `Unsupported algorithm ${algorithm}`);
 
-  const decompressor = nodeStream.Transform.toWeb(nodeDecompressor) as TransformStream<Uint8Array, Uint8Array>;
+  const decompressor = nodeStream.Transform.toWeb(nodeDecompressor) as TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>;
 
   if (stream instanceof nodeStream.Readable) {
     return (nodeStream.Readable.toWeb(stream) as ReadableStream<Uint8Array>).pipeThrough(decompressor);

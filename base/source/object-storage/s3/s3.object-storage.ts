@@ -172,18 +172,18 @@ export class S3ObjectStorage extends ObjectStorage {
     await this.deleteObject(sourceKey);
   }
 
-  async getContent(key: string): Promise<Uint8Array> {
+  async getContent(key: string): Promise<Uint8Array<ArrayBuffer>> {
     const bucketKey = this.getBucketKey(key);
     const result = await this.client.getObject(this.bucket, bucketKey);
     return await readBinaryStream(result);
   }
 
-  getContentStream(key: string): ReadableStream<Uint8Array> {
+  getContentStream(key: string): ReadableStream<Uint8Array<ArrayBuffer>> {
     const bucketKey = this.getBucketKey(key);
 
     return readableStreamFromPromise(async () => {
       const readable = await this.client.getObject(this.bucket, bucketKey);
-      return Readable.toWeb(readable) as ReadableStream<Uint8Array>;
+      return Readable.toWeb(readable) as ReadableStream<Uint8Array<ArrayBuffer>>;
     });
   }
 

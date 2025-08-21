@@ -107,13 +107,13 @@ export abstract class ObjectStorage implements Resolvable<ObjectStorageArgument>
    * Get object content
    * @param key object key
    */
-  abstract getContent(key: string): Promise<Uint8Array>;
+  abstract getContent(key: string): Promise<Uint8Array<ArrayBuffer>>;
 
   /**
    * Get stream of object content
    * @param key object key
    */
-  abstract getContentStream(key: string): ReadableStream<Uint8Array>;
+  abstract getContentStream(key: string): ReadableStream<Uint8Array<ArrayBuffer>>;
 
   /**
    * Get an url which can be used to download the object without further authorization

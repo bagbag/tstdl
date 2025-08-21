@@ -35,9 +35,9 @@ export async function spawnCommand(command: string, args?: string[]): Promise<Sp
     new Promise((_, reject) => process.on('error', reject)),
   ]);
 
-  const readable = Readable.toWeb(process.stdout) as ReadableStream<Uint8Array>;
-  const writable = Writable.toWeb(process.stdin) as WritableStream<Uint8Array>;
-  const stderr = Readable.toWeb(process.stderr) as ReadableStream<Uint8Array>;
+  const readable = Readable.toWeb(process.stdout) as ReadableStream<Uint8Array<ArrayBuffer>>;
+  const writable = Writable.toWeb(process.stdin) as WritableStream<Uint8Array<ArrayBuffer>>;
+  const stderr = Readable.toWeb(process.stderr) as ReadableStream<Uint8Array<ArrayBuffer>>;
 
   async function write(data: ReadableStream<Uint8Array> | Uint8Array | string, options?: StreamPipeOptions): Promise<void> {
     if (isReadableStream(data)) {
@@ -59,19 +59,19 @@ export async function spawnCommand(command: string, args?: string[]): Promise<Sp
   }
 
   async function readOutputBytes(): Promise<Uint8Array> {
-    return readBinaryStream(readable);
+    return await readBinaryStream(readable);
   }
 
   async function readOutput(): Promise<string> {
-    return readTextStream(readable.pipeThrough(decodeTextStream()));
+    return await readTextStream(readable.pipeThrough(decodeTextStream()));
   }
 
   async function readErrorBytes(): Promise<Uint8Array> {
-    return readBinaryStream(stderr);
+    return await readBinaryStream(stderr);
   }
 
   async function readError(): Promise<string> {
-    return readTextStream(stderr.pipeThrough(decodeTextStream()));
+    return await readTextStream(stderr.pipeThrough(decodeTextStream()));
   }
 
   const signalPromise = new Promise<ProcessResult>((resolve) => process.on('close', (code, signal) => resolve({ code, signal })));

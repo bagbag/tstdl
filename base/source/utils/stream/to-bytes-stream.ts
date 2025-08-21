@@ -2,10 +2,10 @@ import { isNotNull, isNull } from '../type-guards.js';
 import { kibibyte } from '../units.js';
 
 export type ToBytesStreamOptions = {
-  ignoreCancel?: boolean
+  ignoreCancel?: boolean,
 };
 
-export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?: ToBytesStreamOptions): ReadableStream<Uint8Array> {
+export function toBytesStream(stream: ReadableStream<ArrayBufferView<ArrayBuffer>>, options?: ToBytesStreamOptions): ReadableStream<Uint8Array> {
   try { // Try to use byob mode from source
     let byobReader: ReadableStreamBYOBReader;
 
@@ -31,13 +31,13 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
         else {
           await byobReader.cancel(reason);
         }
-      }
+      },
     });
   }
   catch { /* Ignore */ }
 
-  let reader: ReadableStreamDefaultReader<ArrayBufferView>;
-  let buffer: ArrayBufferView | null = null;
+  let reader: ReadableStreamDefaultReader<ArrayBufferView<ArrayBuffer>>;
+  let buffer: ArrayBufferView<ArrayBuffer> | null = null;
 
   return new ReadableStream({
     type: 'bytes',
@@ -92,6 +92,6 @@ export function toBytesStream(stream: ReadableStream<ArrayBufferView>, options?:
       else {
         await reader.cancel(reason);
       }
-    }
+    },
   });
 }

@@ -67,10 +67,10 @@ export class AuthenticationServiceOptions {
    * Secrets used for signing tokens and refreshTokens.
    * If single secret is provided, multiple secrets are derived internally.
    */
-  secret: string | BinaryData | {
-    tokenSigningSecret: Uint8Array,
-    refreshTokenSigningSecret: Uint8Array,
-    secretResetTokenSigningSecret: Uint8Array,
+  secret: string | BinaryData<ArrayBuffer> | {
+    tokenSigningSecret: Uint8Array<ArrayBuffer>,
+    refreshTokenSigningSecret: Uint8Array<ArrayBuffer>,
+    secretResetTokenSigningSecret: Uint8Array<ArrayBuffer>,
   };
 
   /**
@@ -147,8 +147,8 @@ type CreateTokenResult<AdditionalTokenPayload extends Record> = {
 type CreateRefreshTokenResult = {
   token: string,
   jsonToken: RefreshToken,
-  salt: Uint8Array,
-  hash: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
+  hash: Uint8Array<ArrayBuffer>,
 };
 
 type CreateSecretResetTokenResult = {
@@ -206,9 +206,9 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
   private readonly refreshTokenTimeToLive = this.#options.refreshTokenTimeToLive ?? (5 * millisecondsPerDay);
   private readonly secretResetTokenTimeToLive = this.#options.secretResetTokenTimeToLive ?? (10 * millisecondsPerMinute);
 
-  private derivedTokenSigningSecret: Uint8Array;
-  private derivedRefreshTokenSigningSecret: Uint8Array;
-  private derivedSecretResetTokenSigningSecret: Uint8Array;
+  private derivedTokenSigningSecret: Uint8Array<ArrayBuffer>;
+  private derivedRefreshTokenSigningSecret: Uint8Array<ArrayBuffer>;
+  private derivedSecretResetTokenSigningSecret: Uint8Array<ArrayBuffer>;
 
   /** @internal */
   async [afterResolve](): Promise<void> {
@@ -678,7 +678,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     return { token, jsonToken };
   }
 
-  private async deriveSigningSecrets(secret: string | BinaryData): Promise<void> {
+  private async deriveSigningSecrets(secret: string | BinaryData<ArrayBuffer>): Promise<void> {
     const key = await importPbkdf2Key(secret);
     const saltBase64 = await this.#keyValueStore.getOrSet('derivationSalt', encodeBase64(getRandomBytes(32)));
     const salt = decodeBase64(saltBase64);
@@ -691,7 +691,7 @@ export class AuthenticationService<AdditionalTokenPayload extends Record = Recor
     this.derivedSecretResetTokenSigningSecret = derivedSecretResetTokenSigningSecret;
   }
 
-  private async getHash(secret: string | BinaryData, salt: BinaryData): Promise<Uint8Array> {
+  private async getHash(secret: string | BinaryData<ArrayBuffer>, salt: BinaryData<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
     const key = await importPbkdf2Key(secret);
     const hash = await globalThis.crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-512', iterations: 250000, salt }, key, 512);
 

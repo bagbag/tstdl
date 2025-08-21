@@ -39,7 +39,7 @@ export class DocumentService extends Transactional {
 
   readonly repository = injectRepository(Document);
 
-  async create(tenantId: string, { typeId, title, subtitle, date, summary, tags, approval, comment, originalFileName, assignment, properties, metadata }: TypedOmit<CreateDocumentParameters, 'uploadId'>, contentSource: Uint8Array | ReadableStream<Uint8Array> | { uploadId: string, uploadKey: string }, { createUserId }: { createUserId?: string }): Promise<Document> {
+  async create(tenantId: string, { typeId, title, subtitle, date, summary, tags, approval, comment, originalFileName, assignment, properties, metadata }: TypedOmit<CreateDocumentParameters, 'uploadId'>, contentSource: Uint8Array<ArrayBuffer> | ReadableStream<Uint8Array<ArrayBuffer>> | { uploadId: string, uploadKey: string }, { createUserId }: { createUserId?: string }): Promise<Document> {
     const document = await this.transaction(async (tx) => {
       const isUpload = isNotUint8Array(contentSource) && isNotReadableStream(contentSource);
 

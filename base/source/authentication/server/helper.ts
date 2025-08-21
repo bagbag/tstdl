@@ -43,14 +43,14 @@ export function tryGetAuthorizationTokenStringFromRequest(request: HttpServerReq
  * @returns The token or undefined if not found.
  * @throws {InvalidTokenError} If the token is invalid.
  */
-export async function tryGetTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload> | undefined> {
+export async function tryGetTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData<ArrayBuffer>): Promise<Token<AdditionalTokenPayload> | undefined> {
   const tokenString = tryGetAuthorizationTokenStringFromRequest(request);
 
   if (isUndefined(tokenString)) {
     return undefined;
   }
 
-  return getTokenFromString(tokenString, tokenVersion, secret);
+  return await getTokenFromString(tokenString, tokenVersion, secret);
 }
 
 /**
@@ -61,7 +61,7 @@ export async function tryGetTokenFromRequest<AdditionalTokenPayload extends Reco
  * @returns The token.
  * @throws {InvalidTokenError} If the token is invalid or not found.
  */
-export async function getTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
+export async function getTokenFromRequest<AdditionalTokenPayload extends Record = Record<never>>(request: HttpServerRequest, tokenVersion: number, secret: string | BinaryData<ArrayBuffer>): Promise<Token<AdditionalTokenPayload>> {
   const token = await tryGetTokenFromRequest<AdditionalTokenPayload>(request, tokenVersion, secret);
 
   if (isUndefined(token)) {
@@ -79,7 +79,7 @@ export async function getTokenFromRequest<AdditionalTokenPayload extends Record 
  * @returns The token.
  * @throws {InvalidTokenError} If the token is invalid.
  */
-export async function getTokenFromString<AdditionalTokenPayload extends Record = Record<never>>(tokenString: string, tokenVersion: number, secret: string | BinaryData): Promise<Token<AdditionalTokenPayload>> {
+export async function getTokenFromString<AdditionalTokenPayload extends Record = Record<never>>(tokenString: string, tokenVersion: number, secret: string | BinaryData<ArrayBuffer>): Promise<Token<AdditionalTokenPayload>> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing authorization token');
   }
@@ -104,7 +104,7 @@ export async function getTokenFromString<AdditionalTokenPayload extends Record =
  * @returns The refresh token.
  * @throws {InvalidTokenError} If the refresh token is invalid.
  */
-export async function getRefreshTokenFromString(tokenString: string, secret: string | BinaryData): Promise<RefreshToken> {
+export async function getRefreshTokenFromString(tokenString: string, secret: string | BinaryData<ArrayBuffer>): Promise<RefreshToken> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing refresh token');
   }
@@ -125,7 +125,7 @@ export async function getRefreshTokenFromString(tokenString: string, secret: str
  * @returns The secret reset token.
  * @throws {InvalidTokenError} If the secret reset token is invalid.
  */
-export async function getSecretResetTokenFromString(tokenString: string, secret: string | BinaryData): Promise<SecretResetToken> {
+export async function getSecretResetTokenFromString(tokenString: string, secret: string | BinaryData<ArrayBuffer>): Promise<SecretResetToken> {
   if (isUndefined(tokenString)) {
     throw new InvalidTokenError('Missing secret reset token');
   }

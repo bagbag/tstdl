@@ -28,9 +28,9 @@ export type JwtTokenParseResult<T extends JwtToken = JwtToken> = {
     signature: string,
   },
   bytes: {
-    header: Uint8Array,
-    payload: Uint8Array,
-    signature: Uint8Array,
+    header: Uint8Array<ArrayBuffer>,
+    payload: Uint8Array<ArrayBuffer>,
+    signature: Uint8Array<ArrayBuffer>,
   },
   string: {
     header: string,
@@ -132,7 +132,7 @@ export async function parseAndValidateJwtTokenString<T extends JwtToken = JwtTok
   }
 }
 
-async function getSignature(data: BinaryData, algorithm: JwtTokenAlgorithm, secret: Key | string): Promise<ArrayBuffer> {
+async function getSignature(data: BinaryData<ArrayBuffer>, algorithm: JwtTokenAlgorithm, secret: Key | string): Promise<ArrayBuffer> {
   const hashAlgorithm = getHmacHashAlgorithm(algorithm);
   const hmacKey = await importHmacKey(hashAlgorithm, secret, false);
   const hmacSignature = sign('HMAC', hmacKey, data);

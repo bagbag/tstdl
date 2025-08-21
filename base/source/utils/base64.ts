@@ -3,14 +3,14 @@
 import { supportsBuffer } from '#/supports.js';
 import type { BinaryData } from '#/types/index.js';
 import { toUint8Array } from './binary.js';
-import { isArrayBuffer, isDefined } from './type-guards.js';
+import { isArrayBufferLike, isDefined } from './type-guards.js';
 
 export function encodeBase64(array: BinaryData, bytesOffset?: number, bytesLength?: number): string {
   let arrayBuffer: ArrayBufferLike;
   let offset: number | undefined;
   let length: number | undefined;
 
-  if (isArrayBuffer(array)) {
+  if (isArrayBufferLike(array)) {
     arrayBuffer = array;
   }
   else {
@@ -28,7 +28,7 @@ export function encodeBase64(array: BinaryData, bytesOffset?: number, bytesLengt
   return encodeBase64Fallback(array);
 }
 
-export function decodeBase64(base64: string): Uint8Array {
+export function decodeBase64(base64: string): Uint8Array<ArrayBuffer> {
   if (supportsBuffer) {
     const buffer = Buffer.from(base64, 'base64');
     return buffer;
@@ -41,7 +41,7 @@ export function encodeBase64Url(array: BinaryData, bytesOffset?: number, length?
   return base64ToBase64Url(encodeBase64(array, bytesOffset, length));
 }
 
-export function decodeBase64Url(base64Url: string): Uint8Array {
+export function decodeBase64Url(base64Url: string): Uint8Array<ArrayBuffer> {
   return decodeBase64(base64UrlToBase64(base64Url));
 }
 
@@ -78,7 +78,7 @@ function encodeBase64Fallback(data: BinaryData): string {
   return base64.substring(0, base64.length - 2 + nMod3) + (nMod3 == 2 ? '' : nMod3 == 1 ? '=' : '==');
 }
 
-function decodeBase64Fallback(base64: string, blockSize?: number): Uint8Array {
+function decodeBase64Fallback(base64: string, blockSize?: number): Uint8Array<ArrayBuffer> {
   const clearedBase64 = base64.replace(/[^A-Za-z0-9+/]/ug, '');
   const inputLength = clearedBase64.length;
   const outputLength = isDefined(blockSize) ? Math.ceil(((inputLength * 3) + 1 >> 2) / blockSize) * blockSize : (inputLength * 3) + 1 >> 2;
@@ -127,7 +127,7 @@ export function utf8ArrayToString(bytes: Uint8Array): string {
   return string;
 }
 
-export function stringToUtf8Array(string: string): Uint8Array {
+export function stringToUtf8Array(string: string): Uint8Array<ArrayBuffer> {
   let bytesLength = 0;
 
   for (let i = 0; i < string.length; i++) {

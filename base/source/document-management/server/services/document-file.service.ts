@@ -58,9 +58,9 @@ export class DocumentFileService extends Transactional {
     return { uploadId: id, uploadUrl: url };
   }
 
-  async store(documentId: string, content: Uint8Array | ReadableStream<Uint8Array>): Promise<DocumentFileMetadata>;
-  async store(documentId: string, content: { uploadId: string, uploadKey: string }): Promise<[DocumentFileMetadata, Uint8Array]>;
-  async store(documentId: string, content: Uint8Array | ReadableStream<Uint8Array> | { uploadId: string, uploadKey: string }): Promise<DocumentFileMetadata | [DocumentFileMetadata, Uint8Array]> {
+  async store(documentId: string, content: Uint8Array<ArrayBuffer> | ReadableStream<Uint8Array<ArrayBuffer>>): Promise<DocumentFileMetadata>;
+  async store(documentId: string, content: { uploadId: string, uploadKey: string }): Promise<[DocumentFileMetadata, Uint8Array<ArrayBuffer>]>;
+  async store(documentId: string, content: Uint8Array<ArrayBuffer> | ReadableStream<Uint8Array<ArrayBuffer>> | { uploadId: string, uploadKey: string }): Promise<DocumentFileMetadata | [DocumentFileMetadata, Uint8Array<ArrayBuffer>]> {
     const isUpload = isNotUint8Array(content) && isNotReadableStream(content);
 
     if (isUpload) {

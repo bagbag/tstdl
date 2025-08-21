@@ -21,7 +21,7 @@ export type ReadBinaryStreamOptions = {
 export async function readBinaryStream(iterableOrStream: AnyIterable<ArrayBufferView> | ReadableStream<ArrayBufferView>, { length, onLengthExceed = 'error', onLengthSubceed = 'error' }: ReadBinaryStreamOptions = {}): Promise<Uint8Array<ArrayBuffer>> {
   const stream = isReadableStream(iterableOrStream)
     ? isDefined(length)
-      ? toBytesStream(iterableOrStream)
+      ? toBytesStream(iterableOrStream as ReadableStream<ArrayBufferView<ArrayBuffer>>)
       : iterableOrStream
     : getReadableStreamFromIterable(iterableOrStream);
 

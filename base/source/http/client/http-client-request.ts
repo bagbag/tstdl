@@ -16,7 +16,7 @@ export type HttpRequestBody = {
   json?: UndefinableJson,
   form?: HttpForm,
   formData?: FormData,
-  binary?: Uint8Array | Blob | ReadableStream<Uint8Array>,
+  binary?: Uint8Array<ArrayBuffer> | Blob | ReadableStream<Uint8Array<ArrayBuffer>>,
 };
 
 export type HttpRequestAuthorization = {
@@ -28,7 +28,7 @@ export type HttpRequestAuthorization = {
   token?: string,
 };
 
-export type HttpFormDataObjectValue = string | number | boolean | Uint8Array | Blob;
+export type HttpFormDataObjectValue = string | number | boolean | Uint8Array<ArrayBuffer> | Blob;
 export type HttpFormDataObject = Record<string, OneOrMany<HttpFormDataObjectValue>>;
 
 export type HttpClientRequestOptions = Partial<TypedOmit<HttpClientRequest, 'url' | 'method' | 'abortSignal' | 'abort' | 'headers' | 'query' | 'body'>> & {

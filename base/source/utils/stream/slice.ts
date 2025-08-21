@@ -42,11 +42,11 @@ export function sliceStream<T>(stream: ReadableStream<T>, offset: number, length
       },
       async cancel(reason) {
         await reader.cancel(reason);
-      }
+      },
     });
   }
 
-  const byobReader = toBytesStream(stream as ReadableStream<ArrayBufferView>).getReader({ mode: 'byob' });
+  const byobReader = toBytesStream(stream as ReadableStream<ArrayBufferView<ArrayBuffer>>).getReader({ mode: 'byob' });
   let bytesRead = 0;
 
   let offsetBuffer: ArrayBuffer | null = new ArrayBuffer(mebibyte);
@@ -92,6 +92,6 @@ export function sliceStream<T>(stream: ReadableStream<T>, offset: number, length
     },
     async cancel(reason) {
       await byobReader.cancel(reason);
-    }
+    },
   }) as ReadableStream<T>;
 }

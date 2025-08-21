@@ -214,7 +214,7 @@ export type TypedArray =
   | BigInt64Array
   | BigUint64Array;
 
-export type BinaryData = ArrayBuffer | ArrayBufferView;
+export type BinaryData<T extends ArrayBufferLike = ArrayBufferLike> = ArrayBufferView<T> | T;
 
 export type Paths<T extends Record> = T extends object
   ? { [K in keyof T]-?: K extends string | number ? `${K}` | `${K}.${Paths<T[K]>}` : never }[keyof T]

@@ -15,11 +15,11 @@ export class AuthenticationCredentials extends Entity {
    * The salt used to hash the secret.
    */
   @Uint8ArrayProperty()
-  salt: Uint8Array;
+  salt: Uint8Array<ArrayBuffer>;
 
   /**
    * The hashed secret.
    */
   @Uint8ArrayProperty()
-  hash: Uint8Array;
+  hash: Uint8Array<ArrayBuffer>;
 }

@@ -159,7 +159,7 @@ function getRequestBody(body: unknown): HttpRequestBody | undefined {
     return undefined;
   }
 
-  if (isUint8Array(body) || isReadableStream(body) || isBlob(body)) {
+  if (isUint8Array<Uint8Array<ArrayBuffer>>(body) || isReadableStream(body) || isBlob(body)) {
     return { binary: body };
   }
 

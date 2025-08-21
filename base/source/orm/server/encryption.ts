@@ -22,7 +22,7 @@ const ivBytes = 12;
  * @param key The CryptoKey to use for encryption.
  * @returns A promise that resolves to the encrypted byte array (version + IV + ciphertext).
  */
-export async function encryptBytes(bytes: Uint8Array, key: CryptoKey): Promise<Uint8Array> {
+export async function encryptBytes(bytes: Uint8Array<ArrayBuffer>, key: CryptoKey): Promise<Uint8Array> {
   const iv = getRandomBytes(ivBytes);
 
   const encrypted = await encrypt({ name: 'AES-GCM', iv }, key, bytes).toBuffer();
@@ -46,7 +46,7 @@ export async function encryptBytes(bytes: Uint8Array, key: CryptoKey): Promise<U
  * @throws {DetailsError} If decryption fails (e.g., wrong key, corrupted data).
  * @throws {Error} If the encryption version is invalid.
  */
-export async function decryptBytes(bytes: Uint8Array, key: CryptoKey): Promise<Uint8Array> {
+export async function decryptBytes(bytes: Uint8Array, key: CryptoKey): Promise<Uint8Array<ArrayBuffer>> {
   const bytesView = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
 
   const version = bytesView.getUint16(0);

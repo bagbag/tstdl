@@ -2,7 +2,7 @@
   <div>
     <a
       class="tree-view-item tree-view-item-small my-0.5"
-      [class.tree-view-item-active]="item == selectedItem()"
+      [class.tree-view-item-active]="item.active || item == selectedItem()"
       [routerLink]="item.link?.routerLink"
       [queryParams]="item.link?.queryParams"
       [fragment]="item.link?.fragment"

@@ -15,7 +15,7 @@ let randomBytesBufferIndex = 0;
  * @param count number of bytes to get
  * @param allowUnsafe whether to allow sharing the underlying pool
  */
-export function getRandomBytes(count: number, allowUnsafe: boolean = false): Uint8Array {
+export function getRandomBytes(count: number, allowUnsafe: boolean = false): Uint8Array<ArrayBuffer> {
   if (!allowUnsafe || (count >= bufferBypassThreshold)) {
     return globalThis.crypto.getRandomValues(new Uint8Array(count));
   }
@@ -50,7 +50,7 @@ export function getRandomString(length: number, alphabet: string = Alphabet.Lowe
 
   for (let i = 0; i < length; i++) {
     const index = Math.floor(values[i]! * factor);
-    result += alphabet[index];
+    result += alphabet[index]!;
   }
 
   return result;

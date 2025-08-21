@@ -21,11 +21,11 @@ export class AuthenticationSession extends Entity {
    * The salt used to hash the refresh token.
    */
   @Uint8ArrayProperty()
-  refreshTokenSalt: Uint8Array;
+  refreshTokenSalt: Uint8Array<ArrayBuffer>;
 
   /**
    * The hashed refresh token.
    */
   @Uint8ArrayProperty()
-  refreshTokenHash: Uint8Array;
+  refreshTokenHash: Uint8Array<ArrayBuffer>;
 }

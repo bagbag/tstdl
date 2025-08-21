@@ -19,13 +19,13 @@ export type KeyAlgorithm = Parameters<typeof globalThis.crypto.subtle.generateKe
 export type DeriveAlgorithm = Parameters<typeof globalThis.crypto.subtle.deriveBits>['0'];
 
 export type KeyType = 'raw' | 'pkcs8' | 'spki' | 'jwk';
-export type Key = JsonWebKey | BinaryData;
+export type Key = JsonWebKey | BinaryData<ArrayBuffer>;
 
 export type ScryptOptions = {
   cost?: number,
   blockSize?: number,
   parallelization?: number,
-  maximumMemory?: number
+  maximumMemory?: number,
 };
 
 export interface CryptionResult {
@@ -50,7 +50,7 @@ export type SignResult = CryptionResult;
  * @param key key
  * @param data data to encrypt. Encodes string to utf8
  */
-export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: BinaryData | string): CryptionResult {
+export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: BinaryData<ArrayBuffer> | string): CryptionResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
   const encryptedBuffer = globalThis.crypto.subtle.encrypt(algorithm, key, bytes);
 
@@ -69,7 +69,7 @@ export function encrypt(algorithm: CryptionAlgorithm, key: CryptoKey, data: Bina
  * @param key key
  * @param data data to decrypt
  */
-export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: BinaryData): DecryptionResult {
+export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: BinaryData<ArrayBuffer>): DecryptionResult {
   const decryptedBuffer = globalThis.crypto.subtle.decrypt(algorithm, key, bytes);
 
   return {
@@ -87,7 +87,7 @@ export function decrypt(algorithm: CryptionAlgorithm, key: CryptoKey, bytes: Bin
  * @param algorithm algorithm as supported by Web Crypto API
  * @param data data to encrypt. Encodes string to utf8
  */
-export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | string): DigestResult {
+export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData<ArrayBuffer> | string): DigestResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
   const arrayBufferPromise = globalThis.crypto.subtle.digest(algorithm, bytes);
 
@@ -108,7 +108,7 @@ export function digest(algorithm: HashAlgorithmIdentifier, data: BinaryData | st
  * @param key key
  * @param data data to sign
  */
-export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData | string): SignResult {
+export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData<ArrayBuffer> | string): SignResult {
   const bytes = isString(data) ? encodeUtf8(data) : data;
 
   const arrayBufferPromise = globalThis.crypto.subtle.sign(algorithm, key, bytes);
@@ -131,7 +131,7 @@ export function sign(algorithm: SignAlgorithm, key: CryptoKey, data: BinaryData 
  * @param signature signature
  * @param data data to verify using provided signature
  */
-export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature: BinaryData | string, data: BinaryData | string): Promise<boolean> {
+export async function verify(algorithm: SignAlgorithm, key: CryptoKey, signature: BinaryData<ArrayBuffer> | string, data: BinaryData<ArrayBuffer> | string): Promise<boolean> {
   const signatureBytes = isString(signature) ? encodeUtf8(signature) : signature;
   const dataBytes = isString(data) ? encodeUtf8(data) : data;
 
@@ -192,7 +192,7 @@ export async function importEcdsaKey(curve: EcdsaCurve, key: Key | string, extra
  * @param key binary key
  * @param extractable whether the key can be used for exportKey
  */
-export async function importPbkdf2Key(key: BinaryData | string, extractable: boolean = false): Promise<CryptoKey> {
+export async function importPbkdf2Key(key: BinaryData<ArrayBuffer> | string, extractable: boolean = false): Promise<CryptoKey> {
   const binaryKey = isString(key) ? encodeUtf8(key) : key;
   return await globalThis.crypto.subtle.importKey('raw', binaryKey, { name: 'PBKDF2' }, extractable, ['deriveKey', 'deriveBits']);
 }
@@ -234,14 +234,14 @@ export async function deriveBytes(algorithm: DeriveAlgorithm, baseKey: CryptoKey
  * @param length length of each Uint8Array in bytes, if single number is provided, it is used for every array
  * @param count how many Uint8Arrays to derive
  */
-export async function deriveBytesMultiple<const Lengths extends readonly number[]>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengths: Lengths): Promise<ReadonlyTuple<Uint8Array, Lengths['length']>>;
-export async function deriveBytesMultiple<const C extends number>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, length: C, count: number): Promise<ReadonlyTuple<Uint8Array, C>>;
-export async function deriveBytesMultiple(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengthOrLengths: number | number[], countOrNothing?: number): Promise<Uint8Array[]> {
+export async function deriveBytesMultiple<const Lengths extends readonly number[]>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengths: Lengths): Promise<ReadonlyTuple<Uint8Array<ArrayBuffer>, Lengths['length']>>;
+export async function deriveBytesMultiple<const C extends number>(algorithm: DeriveAlgorithm, baseKey: CryptoKey, length: C, count: number): Promise<ReadonlyTuple<Uint8Array<ArrayBuffer>, C>>;
+export async function deriveBytesMultiple(algorithm: DeriveAlgorithm, baseKey: CryptoKey, lengthOrLengths: number | number[], countOrNothing?: number): Promise<Uint8Array<ArrayBuffer>[]> {
   const lengths = isArray(lengthOrLengths) ? lengthOrLengths : createArray(countOrNothing!, () => lengthOrLengths);
   const totalBits = lengths.reduce((sum, length) => sum + length, 0) * 8;
   const bytes = await globalThis.crypto.subtle.deriveBits(algorithm, baseKey, totalBits);
 
-  const arrays: Uint8Array[] = [];
+  const arrays: Uint8Array<ArrayBuffer>[] = [];
 
   for (let i = 0; i < bytes.byteLength;) {
     const slice = bytes.slice(i, i + lengths[arrays.length]!);
@@ -254,6 +254,6 @@ export async function deriveBytesMultiple(algorithm: DeriveAlgorithm, baseKey: C
   return arrays;
 }
 
-function isBinaryKey(key: Key): key is BinaryData {
-  return isDefined((key as Partial<BinaryData & JsonWebKey>).byteLength);
+function isBinaryKey(key: Key): key is BinaryData<ArrayBuffer> {
+  return isDefined((key as Partial<BinaryData<ArrayBuffer> & JsonWebKey>).byteLength);
 }

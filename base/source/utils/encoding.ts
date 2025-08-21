@@ -12,7 +12,7 @@ const hexToByte = new Map(byteToHex.map((hex, value) => [hex, value]));
  * @param text text to encode
  * @returns utf8 encoded text
  */
-export function encodeUtf8(text: string): Uint8Array {
+export function encodeUtf8(text: string): Uint8Array<ArrayBuffer> {
   const encoder = new TextEncoder();
   return encoder.encode(text);
 }
@@ -20,7 +20,7 @@ export function encodeUtf8(text: string): Uint8Array {
 /**
  * Encodes text stream to utf8 bytes stream
  */
-export function encodeUtf8Stream(): TransformStream<string, Uint8Array> {
+export function encodeUtf8Stream(): TransformStream<string, Uint8Array<ArrayBuffer>> {
   return new TextEncoderStream();
 }
 
@@ -55,7 +55,7 @@ export function encodeHex(buffer: BinaryData): string {
 
   // eslint-disable-next-line @typescript-eslint/prefer-for-of
   for (let i = 0; i < bytes.length; i++) {
-    result += byteToHex[bytes[i]!];
+    result += byteToHex[bytes[i]!]!;
   }
 
   return result;
@@ -66,7 +66,7 @@ export function encodeHex(buffer: BinaryData): string {
  * @param hex hex string to decode
  * @returns decoded buffer
  */
-export function decodeHex(hex: string): Uint8Array {
+export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(hex.length / 2);
 
   for (let i = 0; i < hex.length; i += 2) {
